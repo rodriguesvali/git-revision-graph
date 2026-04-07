@@ -1,6 +1,9 @@
 {
   "name": "git-refs-explorer",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
   "remoteUser": "root",
   "postCreateCommand": "if [ -f package.json ]; then npm install; fi",
   "customizations": {

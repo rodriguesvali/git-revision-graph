@@ -11,6 +11,8 @@ Use native VS Code extension patterns first. Prefer commands, tree views, conten
 
 When the task targets this repository, read `references/project-map.md` before making non-trivial changes.
 
+When you need up-to-date documentation for VS Code APIs, extension manifests, or current extension guidance, use `context7` before relying on memory.
+
 ## Core Workflow
 
 1. Inspect `package.json` first.
