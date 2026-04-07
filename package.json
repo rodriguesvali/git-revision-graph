@@ -1,0 +1,109 @@
+{
+  "name": "git-refs-explorer",
+  "displayName": "Git Refs Explorer",
+  "description": "Visualize Git references and run compare, checkout, and merge workflows from a dedicated VS Code view.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other",
+    "Source Control"
+  ],
+  "activationEvents": [
+    "onView:gitRefs.refsView",
+    "onCommand:gitRefs.refresh",
+    "onCommand:gitRefs.compareRefs",
+    "onCommand:gitRefs.compareWithWorktree",
+    "onCommand:gitRefs.checkout",
+    "onCommand:gitRefs.merge"
+  ],
+  "main": "./out/extension.js",
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitRefs",
+          "title": "Git Refs",
+          "icon": "media/git-refs.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitRefs": [
+        {
+          "id": "gitRefs.refsView",
+          "name": "References"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "gitRefs.refresh",
+        "title": "Refresh References",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "gitRefs.compareRefs",
+        "title": "Compare References"
+      },
+      {
+        "command": "gitRefs.compareWithWorktree",
+        "title": "Compare With Worktree"
+      },
+      {
+        "command": "gitRefs.checkout",
+        "title": "Checkout Reference"
+      },
+      {
+        "command": "gitRefs.merge",
+        "title": "Merge Into Current Branch"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "gitRefs.refresh",
+          "when": "view == gitRefs.refsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gitRefs.compareRefs",
+          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "group": "inline"
+        },
+        {
+          "command": "gitRefs.compareWithWorktree",
+          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "group": "inline@2"
+        },
+        {
+          "command": "gitRefs.checkout",
+          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "group": "navigation"
+        },
+        {
+          "command": "gitRefs.merge",
+          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "group": "navigation@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.5",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.6.2"
+  }
+}
