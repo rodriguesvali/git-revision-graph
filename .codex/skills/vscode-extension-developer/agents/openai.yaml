@@ -1,0 +1,4 @@
+interface:
+  display_name: "VS Code Extension Developer"
+  short_description: "Build and evolve VS Code extensions"
+  default_prompt: "Use $vscode-extension-developer to design, implement, and validate changes to this VS Code extension project."
