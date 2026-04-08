@@ -62,7 +62,8 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       }
     },
     referenceManager: {
-      async deleteRemoteBranch() {}
+      async deleteRemoteBranch() {},
+      async unsetBranchUpstream() {}
     },
     ancestryInspector: {
       async isRefAncestorOfHead() {

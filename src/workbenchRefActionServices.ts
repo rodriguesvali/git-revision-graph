@@ -71,6 +71,16 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
             maxBuffer: 8 * 1024 * 1024
           }
         );
+      },
+      async unsetBranchUpstream(repository, branchName) {
+        await execFile(
+          'git',
+          ['branch', '--unset-upstream', branchName],
+          {
+            cwd: repository.rootUri.fsPath,
+            maxBuffer: 8 * 1024 * 1024
+          }
+        );
       }
     },
     ancestryInspector: {

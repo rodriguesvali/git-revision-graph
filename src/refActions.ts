@@ -1,4 +1,5 @@
 import { ChangeQuickPickItem, toChangeQuickPickItems } from './changePresentation';
+import { toErrorDetail } from './errorDetail';
 import { RefType, Repository } from './git';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
@@ -33,6 +34,7 @@ export interface RefreshController {
 
 export interface ReferenceManager {
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
+  unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
 }
 
 export interface AncestryInspector {
@@ -165,6 +167,8 @@ export async function createBranchFromResolvedReference(
     await repository.createBranch(branchName, true, branchCreation.startPointRefName);
     if (branchCreation.upstreamRefName) {
       await repository.setBranchUpstream(branchName, branchCreation.upstreamRefName);
+    } else {
+      await services.referenceManager.unsetBranchUpstream(repository, branchName);
     }
 
     services.ui.showInformationMessage(
@@ -433,8 +437,4 @@ function buildSyncResultMessage(syncState: HeadSyncState): string {
   }
 
   return `${syncState.branchName} was pushed to ${syncState.upstreamLabel}.`;
-}
-
-function toErrorDetail(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

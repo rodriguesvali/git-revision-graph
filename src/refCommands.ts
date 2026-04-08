@@ -1,4 +1,5 @@
 import { ChangeQuickPickItem } from './changePresentation';
+import { toErrorDetail } from './errorDetail';
 import { API, Ref, RefType, Repository } from './git';
 import { isReferenceNode, RefNode } from './refNodes';
 import {
@@ -229,8 +230,4 @@ function toActionKind(ref: Ref): RefActionKind {
     case RefType.Head:
       return 'branch';
   }
-}
-
-function toErrorDetail(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

@@ -19,12 +19,14 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly errorMessages: string[];
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
+  readonly upstreamClears: string[];
   readonly refreshCalls: number;
 } {
   const infoMessages: string[] = [];
   const errorMessages: string[] = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
+  const upstreamClears: string[] = [];
   const counter = { refreshCalls: 0 };
 
   const services: RefActionServices = {
@@ -68,6 +70,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     referenceManager: {
       async deleteRemoteBranch(_repository, remoteName, branchName) {
         deletedRemoteBranches.push({ remoteName, branchName });
+      },
+      async unsetBranchUpstream(_repository, branchName) {
+        upstreamClears.push(branchName);
       }
     },
     ancestryInspector: {
@@ -86,6 +91,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     errorMessages,
     diffCalls,
     deletedRemoteBranches,
+    upstreamClears,
     get refreshCalls() {
       return counter.refreshCalls;
     }
@@ -195,6 +201,8 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(repository.calls.createBranch, [
     { name: 'release/2026-copy', checkout: true, ref: 'release/2026' }
   ]);
+  assert.deepEqual(harness.upstreamClears, ['release/2026-copy']);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
   assert.equal(harness.refreshCalls, 2);
 });
@@ -216,6 +224,7 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   assert.deepEqual(repository.calls.createBranch, [
     { name: 'feature/demo', checkout: true, ref: 'origin/feature/demo' }
   ]);
+  assert.deepEqual(harness.upstreamClears, []);
   assert.deepEqual(repository.calls.setBranchUpstream, [
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
@@ -333,4 +342,27 @@ test('deleteResolvedReference refuses to delete remote HEAD aliases', async () =
 
   assert.deepEqual(harness.deletedRemoteBranches, []);
   assert.equal(harness.infoMessages[0], 'The remote reference origin/HEAD cannot be deleted from this view.');
+});
+
+test('deleteResolvedReference surfaces git stderr details for local branch failures', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  repository.deleteBranch = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: "error: Cannot delete branch 'teste01' checked out at '/tmp/worktree'",
+      gitErrorCode: 'WorktreeBranchAlreadyUsed',
+      exitCode: 1
+    });
+  };
+  const harness = createServices();
+
+  await deleteResolvedReference(
+    repository,
+    { refName: 'teste01', label: 'teste01', kind: 'branch' },
+    harness.services
+  );
+
+  assert.equal(
+    harness.errorMessages[0],
+    "Could not delete the reference. error: Cannot delete branch 'teste01' checked out at '/tmp/worktree' [WorktreeBranchAlreadyUsed] (exit code: 1)"
+  );
 });
