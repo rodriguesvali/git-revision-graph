@@ -202,6 +202,25 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
   assert.equal(harness.refreshCalls, 2);
 });
 
+test('deleteResolvedReference uses the tag name in the delete confirmation label', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.Tag, name: 'v1.2.3' })]
+  });
+  const harness = createServices();
+
+  await deleteResolvedReference(
+    repository,
+    { refName: 'v1.2.3', label: 'v1.2.3', kind: 'tag' },
+    harness.services
+  );
+
+  assert.equal(harness.confirmRequests[0]?.message, 'Delete the Tag v1.2.3?');
+  assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Tag: v1.2.3');
+  assert.deepEqual(repository.calls.deleteTag, ['v1.2.3']);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.3 was deleted.');
+});
+
 test('checkoutResolvedReference blocks workspace-changing operations while conflicts are unresolved', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -475,6 +494,7 @@ test('deleteResolvedReference explains that deleting a tracked local branch leav
     harness.confirmRequests[0]?.message,
     'Delete the Local Branch feature/demo?\n\nThis removes only the local branch. The tracked remote branch origin/feature/demo will remain unchanged.'
   );
+  assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Branch: feature/demo');
   assert.deepEqual(repository.calls.deleteBranch, [{ name: 'feature/demo', force: false }]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was deleted.');
 });

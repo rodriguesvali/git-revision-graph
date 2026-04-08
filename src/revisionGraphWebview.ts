@@ -713,7 +713,12 @@ export function renderRevisionGraphHtml(
         });
         if (!isCurrentHead) {
           if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
-            appendMenuItem('Delete', () => {
+            const deleteLabel = target.kind === 'tag'
+              ? 'Delete Tag: ' + target.name
+              : target.kind === 'remote'
+                ? 'Delete Remote Branch: ' + target.name
+                : 'Delete Branch: ' + target.name;
+            appendMenuItem(deleteLabel, () => {
               vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
             });
           }

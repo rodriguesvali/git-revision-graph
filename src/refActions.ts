@@ -314,7 +314,7 @@ export async function deleteResolvedReference(
     if (target.kind === 'tag') {
       const confirmed = await services.ui.confirm({
         message: `Delete the Tag ${target.label}?`,
-        confirmLabel: 'Delete'
+        confirmLabel: `Delete Tag: ${target.label}`
       });
       if (!confirmed) {
         return;
@@ -334,7 +334,7 @@ export async function deleteResolvedReference(
 
     const confirmed = await services.ui.confirm({
       message: buildDeleteBranchConfirmationMessage(target.label, upstreamLabel),
-      confirmLabel: 'Delete'
+      confirmLabel: `Delete Branch: ${target.label}`
     });
     if (!confirmed) {
       return;
