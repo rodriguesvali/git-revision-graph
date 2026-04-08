@@ -32,10 +32,23 @@ type RevisionGraphMessage =
   | { readonly type: 'refresh' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
+  | { readonly type: 'show-log'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | { readonly type: 'merge'; readonly refName: string };
+
+interface RevisionLogEntry {
+  readonly hash: string;
+  readonly shortHash: string;
+  readonly author: string;
+  readonly date: string;
+  readonly subject: string;
+}
+
+interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
+  readonly entry: RevisionLogEntry;
+}
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -67,6 +80,11 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
         case 'compare-selected':
           if (this.currentRepository) {
             await compareRevisions(this.currentRepository, message.baseRefName, message.compareRefName);
+          }
+          return;
+        case 'show-log':
+          if (this.currentRepository) {
+            await showRevisionLog(this.currentRepository, message.baseRefName, message.compareRefName);
           }
           return;
         case 'open-unified-diff':
@@ -129,7 +147,8 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
       const scene = buildRevisionGraphScene(commits);
       this.view.webview.html = renderRevisionGraphHtml(
         vscode.workspace.asRelativePath(this.currentRepository.rootUri, false),
-        scene
+        scene,
+        this.currentRepository.state.HEAD?.name
       );
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorMessage(error));
@@ -186,7 +205,11 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
   return picked?.repository;
 }
 
-function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphScene): string {
+function renderRevisionGraphHtml(
+  repositoryLabel: string,
+  scene: RevisionGraphScene,
+  currentHeadName: string | undefined
+): string {
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
   const height = Math.max(480, scene.rowCount * ROW_HEIGHT + NODE_PADDING_Y * 2);
@@ -365,6 +388,7 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const references = ${referenceData};
+    const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const selected = [];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
@@ -494,6 +518,7 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     function openContextMenu(clientX, clientY, target) {
       const base = selected[0] ? getReference(selected[0]) : undefined;
       const compare = selected[1] ? getReference(selected[1]) : undefined;
+      const isCurrentHead = target.kind === 'head' || (currentHeadName && target.name === currentHeadName);
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -505,6 +530,13 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
         appendMenuItem('Compare', () => {
           vscode.postMessage({
             type: 'compare-selected',
+            baseRefName: base.name,
+            compareRefName: compare.name
+          });
+        });
+        appendMenuItem('Show log', () => {
+          vscode.postMessage({
+            type: 'show-log',
             baseRefName: base.name,
             compareRefName: compare.name
           });
@@ -524,12 +556,14 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
         appendMenuItem('Compare with Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
-        appendMenuItem('Checkout', () => {
-          vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-        });
-        appendMenuItem('Merge into Current HEAD', () => {
-          vscode.postMessage({ type: 'merge', refName: target.name });
-        });
+        if (!isCurrentHead) {
+          appendMenuItem('Checkout', () => {
+            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+          });
+          appendMenuItem('Merge into ' + (currentHeadName || 'Current HEAD'), () => {
+            vscode.postMessage({ type: 'merge', refName: target.name });
+          });
+        }
         if (selected.length > 0) {
           appendMenuItem('Clear selection', () => {
             selected.splice(0, selected.length);
@@ -663,6 +697,39 @@ async function openUnifiedDiff(repository: Repository, left: string, right: stri
   }
 }
 
+async function showRevisionLog(repository: Repository, left: string, right: string): Promise<void> {
+  try {
+    const entries = await loadRevisionLogEntries(repository.rootUri.fsPath, left, right, GRAPH_COMMIT_LIMIT);
+    if (entries.length === 0) {
+      void vscode.window.showInformationMessage(`No commits found between ${left} and ${right}.`);
+      return;
+    }
+
+    const picked = await vscode.window.showQuickPick<RevisionLogQuickPickItem>(
+      entries.map((entry) => ({
+        label: `${entry.shortHash} ${entry.subject}`,
+        description: `${entry.author} on ${entry.date}`,
+        detail: entry.hash,
+        entry
+      })),
+      {
+        title: 'Show log',
+        placeHolder: `Commits in ${left}..${right}`,
+        matchOnDescription: true,
+        matchOnDetail: true
+      }
+    );
+
+    if (!picked) {
+      return;
+    }
+
+    await openCommitLogEntry(repository, picked.entry.hash);
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Could not show the revision log. ${toErrorMessage(error)}`);
+  }
+}
+
 async function compareRevisionWithWorktree(repository: Repository, hash: string): Promise<void> {
   try {
     const changes = await repository.diffWith(hash);
@@ -776,6 +843,30 @@ function buildEmptyUri(filePath: string): vscode.Uri {
   return vscode.Uri.from({ scheme: EMPTY_SCHEME, path: filePath });
 }
 
+async function openCommitLogEntry(repository: Repository, commitHash: string): Promise<void> {
+  try {
+    const { stdout } = await execFile(
+      'git',
+      ['show', '--stat', '--patch', '--format=fuller', '--no-color', commitHash],
+      {
+        cwd: repository.rootUri.fsPath,
+        maxBuffer: 8 * 1024 * 1024
+      }
+    );
+
+    const document = await vscode.workspace.openTextDocument({
+      content: stdout,
+      language: 'diff'
+    });
+
+    await vscode.window.showTextDocument(document, {
+      preview: true
+    });
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Could not open the selected commit. ${toErrorMessage(error)}`);
+  }
+}
+
 async function openChangeDiffBetweenRefs(repository: Repository, change: Change, leftRef: string, rightRef: string): Promise<void> {
   const { leftPath, rightPath } = getDiffChangeUris(change);
   const { leftIsEmpty, rightIsEmpty } = getDiffChangeKinds(change);
@@ -840,4 +931,43 @@ function createReferenceId(hash: string, kind: string, name: string): string {
 function getSuggestedLocalBranchName(refName: string): string {
   const firstSlash = refName.indexOf('/');
   return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
+}
+
+async function loadRevisionLogEntries(
+  repositoryPath: string,
+  left: string,
+  right: string,
+  limit: number
+): Promise<RevisionLogEntry[]> {
+  const fieldSeparator = '\u001f';
+  const recordSeparator = '\u001e';
+  const { stdout } = await execFile(
+    'git',
+    [
+      'log',
+      '--date=short',
+      `--max-count=${limit}`,
+      `--pretty=format:%H${fieldSeparator}%h${fieldSeparator}%ad${fieldSeparator}%an${fieldSeparator}%s${recordSeparator}`,
+      `${left}..${right}`
+    ],
+    {
+      cwd: repositoryPath,
+      maxBuffer: 8 * 1024 * 1024
+    }
+  );
+
+  return stdout
+    .split(recordSeparator)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [hash, shortHash, date, author, ...subjectParts] = line.split(fieldSeparator);
+      return {
+        hash,
+        shortHash,
+        date,
+        author,
+        subject: subjectParts.join(fieldSeparator)
+      };
+    });
 }

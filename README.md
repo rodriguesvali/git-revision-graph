@@ -26,6 +26,7 @@ The current development cycle hardens that MVP by separating core logic into sma
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Merge a selected reference into the current branch
 - Revision Graph webview for recent commits across all refs
+- Compare actions in the Revision Graph for changed files, unified diff, and commit log
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 
@@ -225,6 +226,7 @@ Use both automated and manual checks when changing command behavior:
    - merge of a selected reference into the current branch
    - open `Revision Graph` from the `Git Refs` title bar
    - Ctrl/Cmd-click two commits and compare them
+   - Ctrl/Cmd-click two commits and open `Show log`
    - select one commit and compare it with the worktree
    - select one commit and checkout it
 
