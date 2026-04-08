@@ -16,7 +16,8 @@ export function renderRevisionGraphHtml(
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
-  mergeBlockedTargets: readonly string[]
+  mergeBlockedTargets: readonly string[],
+  autoArrangeOnLoad: boolean
 ): string {
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
@@ -84,6 +85,9 @@ export function renderRevisionGraphHtml(
         var(--bg);
       font-family: var(--vscode-font-family);
       overflow: hidden;
+    }
+    body.loading {
+      cursor: progress;
     }
     button, select {
       border: 1px solid var(--border);
@@ -159,6 +163,54 @@ export function renderRevisionGraphHtml(
     }
     .context-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .context-item:disabled { opacity: 0.45; cursor: default; }
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease;
+    }
+    body.loading .loading-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .loading-card {
+      min-width: 240px;
+      max-width: min(360px, calc(100vw - 48px));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+    }
+    .loading-spinner {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 2px solid color-mix(in srgb, var(--accent) 18%, transparent);
+      border-top-color: var(--accent);
+      border-right-color: color-mix(in srgb, var(--accent) 74%, transparent);
+      animation: graph-spin 0.78s linear infinite;
+    }
+    .loading-message {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    @keyframes graph-spin {
+      to { transform: rotate(360deg); }
+    }
     .node.dragging {
       box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
       transform: translateY(-1px);
@@ -223,12 +275,19 @@ export function renderRevisionGraphHtml(
     </div>
   </div>
   <div class="context-menu" id="contextMenu"></div>
+  <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+    <div class="loading-card" role="status" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div class="loading-message" id="loadingMessage">Loading revision graph...</div>
+    </div>
+  </div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
+    const autoArrangeOnLoad = ${JSON.stringify(autoArrangeOnLoad)};
     const zoomLevels = ${JSON.stringify(zoomLevels)};
     const graphNodes = ${graphNodeData};
     const graphEdges = ${graphEdgeData};
@@ -242,6 +301,8 @@ export function renderRevisionGraphHtml(
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
     const contextMenu = document.getElementById('contextMenu');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingMessage = document.getElementById('loadingMessage');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
@@ -421,6 +482,9 @@ export function renderRevisionGraphHtml(
     applyNodeLayout(false);
     syncSelection();
     requestAnimationFrame(() => {
+      if (autoArrangeOnLoad) {
+        autoArrangeLayout();
+      }
       centerGraphInViewport();
     });
 
@@ -461,6 +525,10 @@ export function renderRevisionGraphHtml(
       const base = selected[0] ? getReference(selected[0]) : undefined;
       const compare = selected[1] ? getReference(selected[1]) : undefined;
       const isCurrentHead = target.kind === 'head' || (currentHeadName && target.name === currentHeadName);
+      const matchesActiveAncestorFilter =
+        !!activeAncestorFilter &&
+        activeAncestorFilter.refName === target.name &&
+        activeAncestorFilter.refKind === target.kind;
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -498,17 +566,25 @@ export function renderRevisionGraphHtml(
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
-        if (activeAncestorFilter && activeAncestorFilter.refName === target.name && activeAncestorFilter.refKind === target.kind) {
+        if (matchesActiveAncestorFilter) {
           appendMenuItem('Clear Filter', () => {
-            vscode.postMessage({ type: 'clear-ancestor-filter' });
+            postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
           });
-        } else {
-          appendMenuItem('Filter Ancestors', () => {
-            vscode.postMessage({
+        } else if (activeAncestorFilter) {
+          appendMenuItem('Filter Ancestors From This Ref', () => {
+            postMessageWithLoading({
               type: 'filter-ancestor-refs',
               refName: target.name,
               refKind: target.kind
-            });
+            }, 'Filtering ancestors of ' + target.name + '...');
+          });
+        } else {
+          appendMenuItem('Filter Ancestors', () => {
+            postMessageWithLoading({
+              type: 'filter-ancestor-refs',
+              refName: target.name,
+              refKind: target.kind
+            }, 'Filtering ancestors of ' + target.name + '...');
           });
         }
         appendMenuItem('Checkout', () => {
@@ -526,9 +602,9 @@ export function renderRevisionGraphHtml(
             });
           }
         }
-        if (activeAncestorFilter && (activeAncestorFilter.refName !== target.name || activeAncestorFilter.refKind !== target.kind)) {
+        if (activeAncestorFilter && !matchesActiveAncestorFilter) {
           appendMenuItem('Show All References', () => {
-            vscode.postMessage({ type: 'clear-ancestor-filter' });
+            postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
           });
         }
         if (selected.length > 0) {
@@ -579,6 +655,25 @@ export function renderRevisionGraphHtml(
     function closeContextMenu() {
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
+    }
+
+    function postMessageWithLoading(message, label) {
+      showLoading(label);
+      requestAnimationFrame(() => {
+        vscode.postMessage(message);
+      });
+    }
+
+    function showLoading(label) {
+      if (typeof label === 'string' && loadingMessage) {
+        loadingMessage.textContent = label;
+      }
+      if (loadingOverlay) {
+        loadingOverlay.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.add('loading');
+      document.body.setAttribute('aria-busy', 'true');
+      closeContextMenu();
     }
 
     function applyNodeLayout(persist = true) {
