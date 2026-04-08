@@ -113,7 +113,7 @@ export async function compareWithWorktree(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Choose a reference to compare with the worktree', undefined, services);
+    : await pickReference(repository, 'Choose a Reference to Compare With the Worktree', undefined, services);
   if (!selected) {
     return;
   }
@@ -151,7 +151,7 @@ export async function checkoutReference(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Choose a reference to check out', undefined, services);
+    : await pickReference(repository, 'Choose a Reference to Check Out', undefined, services);
   if (!selected) {
     return;
   }
@@ -165,7 +165,7 @@ export async function checkoutReference(
     if (selected.ref.type === RefType.RemoteHead) {
       const suggestedName = getSuggestedLocalBranchName(selected.ref);
       const branchName = await services.ui.promptBranchName({
-        prompt: `Create a local branch tracking ${selected.label}`,
+        prompt: `Create a Local Branch Tracking ${selected.label}`,
         value: suggestedName
       });
 
@@ -210,7 +210,7 @@ export async function mergeReference(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Choose a reference to merge', undefined, services);
+    : await pickReference(repository, 'Choose a Reference to Merge', undefined, services);
   if (!selected) {
     return;
   }
@@ -290,7 +290,7 @@ async function resolveRepository(
   }
 
   if (git.repositories.length === 0) {
-    services.ui.showInformationMessage('No Git repository is open in the workspace.');
+    services.ui.showInformationMessage('No Git Repository Is Open in the Workspace.');
     return undefined;
   }
 

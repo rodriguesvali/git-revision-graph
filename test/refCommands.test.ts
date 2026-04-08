@@ -169,5 +169,5 @@ test('commands show empty-state feedback when no repository is available', async
 
   await compareRefs(createApi([]), undefined, services);
 
-  assert.equal(infoMessages[0], 'No Git repository is open in the workspace.');
+  assert.equal(infoMessages[0], 'No Git Repository Is Open in the Workspace.');
 });

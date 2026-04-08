@@ -8,7 +8,7 @@ import { createApi, createRef, createRepository } from './fakes';
 test('shows empty state message when no repositories are open', () => {
   const api = createApi([]);
 
-  assert.equal(getViewMessage(api), 'Open a workspace with a Git repository to view references.');
+  assert.equal(getViewMessage(api), 'Open a Workspace with a Git Repository to View References.');
   assert.deepEqual(getRootNodes(api), []);
 });
 

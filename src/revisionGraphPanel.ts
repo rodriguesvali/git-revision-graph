@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
 import { getStatusLabel } from './changePresentation';
-import { Change, Repository, API } from './git';
+import { Change, Repository, API, RefType } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { getDiffChangeKinds, getDiffChangeUris } from './refCommands';
 import {
@@ -234,7 +234,7 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
       }))
       .sort((left, right) => left.label.localeCompare(right.label)),
     {
-      placeHolder: 'Choose the repository for the revision graph'
+      placeHolder: 'Choose the Repository for the Revision Graph'
     }
   );
 
@@ -577,7 +577,7 @@ function renderRevisionGraphHtml(
             compareRefName: compare.name
           });
         });
-        appendMenuItem('Show log', () => {
+        appendMenuItem('Show Log', () => {
           vscode.postMessage({
             type: 'show-log',
             baseRefName: base.name,
@@ -591,20 +591,20 @@ function renderRevisionGraphHtml(
             compareRefName: compare.name
           });
         });
-        appendMenuItem('Clear selection', () => {
+        appendMenuItem('Clear Selection', () => {
           selected.splice(0, selected.length);
           syncSelection();
         });
       } else {
-        appendMenuItem('Compare with Worktree', () => {
+        appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
         if (activeAncestorFilter && activeAncestorFilter.refName === target.name && activeAncestorFilter.refKind === target.kind) {
-          appendMenuItem('Clear filter', () => {
+          appendMenuItem('Clear Filter', () => {
             vscode.postMessage({ type: 'clear-ancestor-filter' });
           });
         } else {
-          appendMenuItem('Filter ancestors', () => {
+          appendMenuItem('Filter Ancestors', () => {
             vscode.postMessage({
               type: 'filter-ancestor-refs',
               refName: target.name,
@@ -612,26 +612,26 @@ function renderRevisionGraphHtml(
             });
           });
         }
+        appendMenuItem('Checkout', () => {
+          vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+        });
         if (!isCurrentHead) {
-          appendMenuItem('Checkout', () => {
-            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-          });
           if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
             appendMenuItem('Delete', () => {
               vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
             });
           }
-          appendMenuItem('Merge into ' + (currentHeadName || 'Current HEAD'), () => {
+          appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => {
             vscode.postMessage({ type: 'merge', refName: target.name });
           });
         }
         if (activeAncestorFilter && (activeAncestorFilter.refName !== target.name || activeAncestorFilter.refKind !== target.kind)) {
-          appendMenuItem('Show all references', () => {
+          appendMenuItem('Show All References', () => {
             vscode.postMessage({ type: 'clear-ancestor-filter' });
           });
         }
         if (selected.length > 0) {
-          appendMenuItem('Clear selection', () => {
+          appendMenuItem('Clear Selection', () => {
             selected.splice(0, selected.length);
             syncSelection();
           });
@@ -779,7 +779,7 @@ async function showRevisionLog(repository: Repository, left: string, right: stri
         entry
       })),
       {
-        title: 'Show log',
+        title: 'Show Log',
         placeHolder: `Commits in ${left}..${right}`,
         matchOnDescription: true,
         matchOnDetail: true
@@ -816,7 +816,16 @@ async function checkoutReference(repository: Repository, refName: string, refKin
   try {
     if (refKind === 'head' || refKind === 'branch') {
       if (repository.state.HEAD?.name === refName) {
-        void vscode.window.showInformationMessage(`${refName} is already checked out.`);
+        const branchName = await vscode.window.showInputBox({
+          prompt: `Create a New Branch from ${refName}`,
+          value: '',
+          validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
+        });
+        if (!branchName) {
+          return;
+        }
+        await repository.createBranch(branchName, true, refName);
+        void vscode.window.showInformationMessage(`Branch ${branchName} was created and checked out from ${refName}.`);
         return;
       }
       const confirmed = await vscode.window.showWarningMessage(`Check out ${refName}?`, { modal: true }, 'Checkout');
@@ -829,18 +838,26 @@ async function checkoutReference(repository: Repository, refName: string, refKin
     }
 
     if (refKind === 'remote') {
-      const suggestedName = getSuggestedLocalBranchName(refName);
+      const remoteCheckout = resolveRemoteCheckoutTarget(repository, refName);
       const branchName = await vscode.window.showInputBox({
-        prompt: `Create a local branch tracking ${refName}`,
-        value: suggestedName,
+        prompt: remoteCheckout.upstreamRefName
+          ? `Create a Local Branch Tracking ${remoteCheckout.upstreamRefName}`
+          : `Create a Local Branch from ${refName}`,
+        value: remoteCheckout.suggestedLocalName,
         validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
       });
       if (!branchName) {
         return;
       }
-      await repository.createBranch(branchName, true, refName);
-      await repository.setBranchUpstream(branchName, refName);
-      void vscode.window.showInformationMessage(`Branch ${branchName} was created and checked out from ${refName}.`);
+      await repository.createBranch(branchName, true, remoteCheckout.startPointRefName);
+      if (remoteCheckout.upstreamRefName) {
+        await repository.setBranchUpstream(branchName, remoteCheckout.upstreamRefName);
+      }
+      void vscode.window.showInformationMessage(
+        remoteCheckout.upstreamRefName
+          ? `Branch ${branchName} was created and checked out from ${remoteCheckout.upstreamRefName}.`
+          : `Branch ${branchName} was created and checked out from ${refName}.`
+      );
       return;
     }
 
@@ -895,7 +912,7 @@ async function deleteReference(
       }
 
       const confirmed = await vscode.window.showWarningMessage(
-        `Delete the remote branch ${refName}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
+        `Delete the Remote Branch ${refName}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
         { modal: true },
         'Delete Remote Reference'
       );
@@ -917,7 +934,7 @@ async function deleteReference(
 
     if (refKind === 'tag') {
       const confirmed = await vscode.window.showWarningMessage(
-        `Delete the tag ${refName}?`,
+        `Delete the Tag ${refName}?`,
         { modal: true },
         'Delete'
       );
@@ -931,7 +948,7 @@ async function deleteReference(
     }
 
     const confirmed = await vscode.window.showWarningMessage(
-      `Delete the branch ${refName}?`,
+      `Delete the Branch ${refName}?`,
       { modal: true },
       'Delete'
     );
@@ -1017,7 +1034,7 @@ async function openChangeDiffWithWorktree(repository: Repository, change: Change
 }
 
 function renderEmptyHtml(): string {
-  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>Open a workspace with a Git repository to view the revision graph.</p></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>Open a Workspace with a Git Repository to View the Revision Graph.</p></body></html>`;
 }
 
 function renderErrorHtml(message: string): string {
@@ -1062,6 +1079,48 @@ function createReferenceId(hash: string, kind: string, name: string): string {
 function getSuggestedLocalBranchName(refName: string): string {
   const firstSlash = refName.indexOf('/');
   return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
+}
+
+function resolveRemoteCheckoutTarget(
+  repository: Repository,
+  refName: string
+): {
+  startPointRefName: string;
+  upstreamRefName: string | undefined;
+  suggestedLocalName: string;
+} {
+  const remoteTarget = parseRemoteDeletionTarget(refName);
+  if (!remoteTarget || remoteTarget.branchName !== 'HEAD') {
+    return {
+      startPointRefName: refName,
+      upstreamRefName: refName,
+      suggestedLocalName: getSuggestedLocalBranchName(refName)
+    };
+  }
+
+  const symbolicRef = repository.state.refs.find(
+    (ref) => ref.type === RefType.RemoteHead && ref.name === refName
+  );
+  const candidates = repository.state.refs.filter(
+    (ref) =>
+      ref.type === RefType.RemoteHead &&
+      ref.name &&
+      ref.name.startsWith(`${remoteTarget.remoteName}/`) &&
+      ref.name !== refName
+  );
+
+  const upstreamRef =
+    candidates.find((ref) => ref.commit && symbolicRef?.commit && ref.commit === symbolicRef.commit) ??
+    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/${repository.state.HEAD?.name}`) ??
+    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/main`) ??
+    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/master`) ??
+    candidates[0];
+
+  return {
+    startPointRefName: upstreamRef?.name ?? refName,
+    upstreamRefName: upstreamRef?.name,
+    suggestedLocalName: upstreamRef?.name ? getSuggestedLocalBranchName(upstreamRef.name) : ''
+  };
 }
 
 function parseRemoteDeletionTarget(refName: string): { remoteName: string; branchName: string } | undefined {

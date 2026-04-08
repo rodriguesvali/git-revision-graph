@@ -4,7 +4,7 @@ import { compareRefsByName } from './refPresentation';
 
 export function getViewMessage(git: API): string | undefined {
   return git.repositories.length === 0
-    ? 'Open a workspace with a Git repository to view references.'
+    ? 'Open a Workspace with a Git Repository to View References.'
     : undefined;
 }
 
