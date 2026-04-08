@@ -748,11 +748,11 @@ export function renderRevisionGraphHtml(
         autoArrangeLayout();
         centerGraphInViewport();
       });
-      appendMenuItem('Zoom Out (Alt+-)', () => {
+      appendMenuItem('Zoom Out [ Alt - ]', () => {
         zoomOut();
         centerGraphInViewport();
       }, !canZoomOut);
-      appendMenuItem('Zoom In (Alt+=)', () => {
+      appendMenuItem('Zoom In [ Alt + ]', () => {
         zoomIn();
         centerGraphInViewport();
       }, !canZoomIn);

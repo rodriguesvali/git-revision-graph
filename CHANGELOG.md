@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.7
+
+- Improved branch lifecycle workflows by preventing local branch creation from inheriting unintended upstream tracking, which also avoids surprising delete behavior later.
+- Refined deletion of tracked local branches with clearer confirmations, better error details, and a guided `Force Delete` fallback when the branch is not fully merged into its upstream.
+- Unified error reporting across the extension so Git and shell failures now surface richer details such as stderr output, Git error codes, and exit codes.
+- Added conflict-aware workspace protections that block workspace-changing actions while conflicts or pending changes remain unresolved.
+- When merge or sync operations stop on conflicts, the extension now directs the user to Source Control automatically without opening files on their behalf.
+- Updated the board context menu shortcut labels for zoom actions to better match the intended keyboard hints.
+
 ## 0.0.6
 
 - Refined selection highlighting to follow the primary ancestor and descendant path instead of emphasizing every reachable side branch.
