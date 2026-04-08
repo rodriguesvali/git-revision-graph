@@ -22,14 +22,19 @@ const ROW_HEIGHT = 140;
 const NODE_WIDTH = 180;
 const NODE_PADDING_X = 26;
 const NODE_PADDING_Y = 24;
+const VIEWPORT_PADDING_TOP = 18;
+const VIEWPORT_PADDING_RIGHT = 220;
+const VIEWPORT_PADDING_BOTTOM = 18;
+const VIEWPORT_PADDING_LEFT = 18;
 const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 
 type RevisionGraphMessage =
   | { readonly type: 'refresh' }
   | { readonly type: 'choose-repository' }
-  | { readonly type: 'compare-selected'; readonly hashes: readonly string[] }
-  | { readonly type: 'compare-with-worktree'; readonly hash: string }
-  | { readonly type: 'checkout'; readonly hash: string };
+  | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
+  | { readonly type: 'compare-with-worktree'; readonly refName: string }
+  | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
+  | { readonly type: 'merge'; readonly refName: string };
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -59,18 +64,25 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
           await this.render();
           return;
         case 'compare-selected':
-          if (this.currentRepository && message.hashes.length === 2) {
-            await compareRevisions(this.currentRepository, message.hashes[0], message.hashes[1]);
+          if (this.currentRepository) {
+            await compareRevisions(this.currentRepository, message.baseRefName, message.compareRefName);
           }
           return;
         case 'compare-with-worktree':
           if (this.currentRepository) {
-            await compareRevisionWithWorktree(this.currentRepository, message.hash);
+            await compareRevisionWithWorktree(this.currentRepository, message.refName);
           }
           return;
         case 'checkout':
           if (this.currentRepository) {
-            await checkoutRevision(this.currentRepository, message.hash);
+            await checkoutReference(this.currentRepository, message.refName, message.refKind);
+            await this.render();
+          }
+          return;
+        case 'merge':
+          if (this.currentRepository) {
+            await mergeReferenceIntoHead(this.currentRepository, message.refName);
+            await this.render();
           }
           return;
       }
@@ -172,11 +184,16 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
   const height = Math.max(480, scene.rowCount * ROW_HEIGHT + NODE_PADDING_Y * 2);
-  const selectionData = JSON.stringify(
-    scene.nodes.map((node) => ({
-      hash: node.hash,
-      title: node.refs.map((ref) => ref.name).join(', ')
-    }))
+  const referenceData = JSON.stringify(
+    scene.nodes.flatMap((node) =>
+      node.refs.map((ref) => ({
+        id: createReferenceId(node.hash, ref.kind, ref.name),
+        hash: node.hash,
+        name: ref.name,
+        kind: ref.kind,
+        title: ref.name
+      }))
+    )
   );
 
   return `<!DOCTYPE html>
@@ -232,7 +249,7 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     }
     .title { font-size: 14px; font-weight: 700; }
     .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .actions, .zoom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .zoom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     button, select {
       border: 1px solid var(--border);
       background: var(--panel);
@@ -244,14 +261,25 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     button.primary { background: color-mix(in srgb, var(--accent) 24%, var(--panel-strong)); }
     button:disabled { opacity: 0.45; cursor: default; }
     .summary { color: var(--muted); font-size: 12px; text-align: right; min-width: 240px; }
-    .viewport { position: relative; height: calc(100vh - 64px); overflow: auto; padding: 18px 220px 18px 18px; }
+    .viewport {
+      position: relative;
+      height: calc(100vh - 64px);
+      overflow: auto;
+      padding: ${VIEWPORT_PADDING_TOP}px ${VIEWPORT_PADDING_RIGHT}px ${VIEWPORT_PADDING_BOTTOM}px ${VIEWPORT_PADDING_LEFT}px;
+      cursor: grab;
+    }
+    .viewport.dragging {
+      cursor: grabbing;
+      user-select: none;
+    }
     .canvas { position: relative; width: ${width}px; height: ${height}px; transform-origin: top left; }
     svg { position: absolute; inset: 0; overflow: visible; }
     .node {
       position: absolute; width: ${NODE_WIDTH}px; min-height: 54px; border-radius: 10px;
       border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
-      color: var(--node-text-dark); cursor: pointer; user-select: none; overflow: hidden;
+      color: var(--node-text-dark); cursor: inherit; user-select: none; overflow: hidden;
     }
+    .viewport.dragging .node { cursor: grabbing; }
     .node:hover { transform: translateY(-1px); }
     .node.selected { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); }
     .node-head { background: var(--node-head); color: white; }
@@ -262,29 +290,48 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     .ref-line {
       padding: 8px 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; line-height: 1.25;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
     .ref-line.head { background: rgba(0,0,0,0.1); font-weight: 700; }
+    .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
+    .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
     .minimap {
       position: fixed; right: 18px; bottom: 18px; width: 150px; height: 210px; border: 1px solid var(--minimap-border);
       border-radius: 10px; background: color-mix(in srgb, var(--bg) 92%, var(--panel)); overflow: hidden; z-index: 25;
     }
     .minimap svg { width: 100%; height: 100%; }
     .minimap-frame { fill: transparent; stroke: color-mix(in srgb, var(--accent) 65%, transparent); stroke-width: 2; }
+    .context-menu {
+      position: fixed;
+      z-index: 60;
+      min-width: 220px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      padding: 6px;
+      display: none;
+    }
+    .context-menu.open { display: block; }
+    .context-item {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .context-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .context-item:disabled { opacity: 0.45; cursor: default; }
   </style>
 </head>
 <body>
   <div class="toolbar">
     <div>
       <div class="title">Revision Graph</div>
-      <div class="subtitle">${escapeHtml(repositoryLabel)} • ${scene.nodes.length} refs visiveis • janela de ${GRAPH_COMMIT_LIMIT} commits</div>
-    </div>
-    <div class="actions">
-      <button id="refreshButton">Refresh</button>
-      <button id="chooseRepoButton">Repository</button>
-      <button id="compareButton" class="primary" disabled>Compare 2 Selected</button>
-      <button id="worktreeButton" disabled>Compare With Worktree</button>
-      <button id="checkoutButton" disabled>Checkout Selected</button>
+      <div class="subtitle">${escapeHtml(repositoryLabel)} • ${scene.nodes.length} refs visiveis • clique direito sobre uma reference para abrir o menu</div>
     </div>
     <div class="zoom">
       <select id="zoomSelect">
@@ -312,47 +359,118 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
       <rect id="minimapFrame" class="minimap-frame" x="0" y="0" width="0" height="0"></rect>
     </svg>
   </div>
+  <div class="context-menu" id="contextMenu"></div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
-    const nodes = ${selectionData};
+    const references = ${referenceData};
     const selected = [];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
-    const compareButton = document.getElementById('compareButton');
-    const worktreeButton = document.getElementById('worktreeButton');
-    const checkoutButton = document.getElementById('checkoutButton');
     const summary = document.getElementById('selectionSummary');
     const zoomSelect = document.getElementById('zoomSelect');
     const minimapFrame = document.getElementById('minimapFrame');
+    const contextMenu = document.getElementById('contextMenu');
+    let dragState = null;
+    let suppressNodeClick = false;
+    let contextTarget = null;
 
-    document.getElementById('refreshButton').addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
-    document.getElementById('chooseRepoButton').addEventListener('click', () => vscode.postMessage({ type: 'choose-repository' }));
     zoomSelect.addEventListener('change', () => setZoom(Number(zoomSelect.value)));
-    compareButton.addEventListener('click', () => selected.length === 2 && vscode.postMessage({ type: 'compare-selected', hashes: [...selected] }));
-    worktreeButton.addEventListener('click', () => selected.length === 1 && vscode.postMessage({ type: 'compare-with-worktree', hash: selected[0] }));
-    checkoutButton.addEventListener('click', () => selected.length === 1 && vscode.postMessage({ type: 'checkout', hash: selected[0] }));
-
-    for (const element of document.querySelectorAll('[data-node-hash]')) {
+    for (const element of document.querySelectorAll('[data-ref-id]')) {
       element.addEventListener('click', (event) => {
-        const hash = element.getAttribute('data-node-hash');
+        if (suppressNodeClick) {
+          suppressNodeClick = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        const refId = element.getAttribute('data-ref-id');
         const additive = event.ctrlKey || event.metaKey;
-        if (!hash) return;
-        const existingIndex = selected.indexOf(hash);
+        if (!refId) return;
+        const existingIndex = selected.indexOf(refId);
         if (!additive) {
-          selected.splice(0, selected.length, hash);
+          selected.splice(0, selected.length, refId);
         } else if (existingIndex >= 0) {
           selected.splice(existingIndex, 1);
         } else if (selected.length < 2) {
-          selected.push(hash);
+          selected.push(refId);
         } else {
-          selected.splice(0, selected.length, selected[1], hash);
+          selected.splice(0, selected.length, selected[1], refId);
         }
+        closeContextMenu();
         syncSelection();
+      });
+      element.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        const refId = element.getAttribute('data-ref-id');
+        if (!refId) return;
+        contextTarget = getReference(refId);
+        if (!contextTarget) return;
+        openContextMenu(event.clientX, event.clientY, contextTarget);
       });
     }
 
+    viewport.addEventListener('mousedown', (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      dragState = {
+        startX: event.clientX,
+        startY: event.clientY,
+        scrollLeft: viewport.scrollLeft,
+        scrollTop: viewport.scrollTop,
+        moved: false
+      };
+      viewport.classList.add('dragging');
+      closeContextMenu();
+      event.preventDefault();
+    });
     viewport.addEventListener('scroll', syncMinimap);
+    viewport.addEventListener('scroll', closeContextMenu);
     window.addEventListener('resize', syncMinimap);
+    window.addEventListener('resize', closeContextMenu);
+    window.addEventListener('mousemove', (event) => {
+      if (!dragState) {
+        return;
+      }
+      const dx = event.clientX - dragState.startX;
+      const dy = event.clientY - dragState.startY;
+      if (!dragState.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        dragState.moved = true;
+        suppressNodeClick = true;
+      }
+      viewport.scrollLeft = dragState.scrollLeft - dx;
+      viewport.scrollTop = dragState.scrollTop - dy;
+      syncMinimap();
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragState) {
+        return;
+      }
+      viewport.classList.remove('dragging');
+      if (!dragState.moved) {
+        suppressNodeClick = false;
+      } else {
+        setTimeout(() => {
+          suppressNodeClick = false;
+        }, 0);
+      }
+      dragState = null;
+    });
+    window.addEventListener('click', (event) => {
+      if (!contextMenu.contains(event.target)) {
+        closeContextMenu();
+      }
+    });
+    window.addEventListener('contextmenu', (event) => {
+      if (!event.target.closest('[data-ref-id]')) {
+        closeContextMenu();
+      }
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeContextMenu();
+      }
+    });
     setZoom(1);
     syncSelection();
 
@@ -365,30 +483,116 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     }
 
     function syncSelection() {
-      for (const element of document.querySelectorAll('[data-node-hash]')) {
-        element.classList.toggle('selected', selected.includes(element.getAttribute('data-node-hash')));
+      for (const element of document.querySelectorAll('[data-ref-id]')) {
+        const refId = element.getAttribute('data-ref-id');
+        element.classList.toggle('base', refId === selected[0]);
+        element.classList.toggle('compare', refId === selected[1]);
       }
-      compareButton.disabled = selected.length !== 2;
-      worktreeButton.disabled = selected.length !== 1;
-      checkoutButton.disabled = selected.length !== 1;
-      summary.textContent = selected.length === 0
-        ? 'No nodes selected'
-        : selected
-            .map((hash) => nodes.find((node) => node.hash === hash))
-            .filter(Boolean)
-            .map((node) => node.title)
-            .join('  |  ');
+      if (selected.length === 0) {
+        summary.textContent = 'No references selected';
+      } else if (selected.length === 1) {
+        summary.textContent = 'Base: ' + getReference(selected[0]).title;
+      } else {
+        summary.textContent = 'Base: ' + getReference(selected[0]).title + '  |  Compare: ' + getReference(selected[1]).title;
+      }
       syncMinimap();
+    }
+
+    function openContextMenu(clientX, clientY, target) {
+      if (!selected.includes(target.id)) {
+        selected.splice(0, selected.length, target.id);
+        syncSelection();
+      }
+      const base = selected[0] ? getReference(selected[0]) : undefined;
+      const compare = selected[1] ? getReference(selected[1]) : undefined;
+      contextMenu.innerHTML = '';
+      appendMenuItem('Selecionar como Base', () => {
+        selected.splice(0, selected.length, target.id);
+        syncSelection();
+      });
+      appendMenuItem(
+        'Selecionar para Comparacao',
+        () => {
+          if (selected[0] !== target.id) {
+            selected.splice(1, selected.length, target.id);
+            syncSelection();
+          }
+        },
+        !base || base.id === target.id
+      );
+      appendMenuItem(
+        'Comparar Base com Comparacao',
+        () => {
+          const currentBase = selected[0] && getReference(selected[0]);
+          const currentCompare = selected[1] && getReference(selected[1]);
+          if (currentBase && currentCompare) {
+            vscode.postMessage({
+              type: 'compare-selected',
+              baseRefName: currentBase.name,
+              compareRefName: currentCompare.name
+            });
+          }
+        },
+        !(base && compare)
+      );
+      appendMenuItem('Comparar com Worktree', () => {
+        vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
+      });
+      appendMenuItem('Checkout', () => {
+        vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+      });
+      appendMenuItem('Merge no HEAD atual', () => {
+        vscode.postMessage({ type: 'merge', refName: target.name });
+      });
+      appendMenuItem('Limpar selecao', () => {
+        selected.splice(0, selected.length);
+        syncSelection();
+      }, selected.length === 0);
+      contextMenu.style.left = clientX + 'px';
+      contextMenu.style.top = clientY + 'px';
+      contextMenu.classList.add('open');
+    }
+
+    function appendMenuItem(label, onClick, disabled = false) {
+      const button = document.createElement('button');
+      button.className = 'context-item';
+      button.textContent = label;
+      button.disabled = disabled;
+      button.addEventListener('click', () => {
+        onClick();
+        closeContextMenu();
+      });
+      contextMenu.appendChild(button);
+    }
+
+    function closeContextMenu() {
+      contextMenu.classList.remove('open');
+      contextMenu.innerHTML = '';
+      contextTarget = null;
+    }
+
+    function getReference(refId) {
+      return references.find((ref) => ref.id === refId);
     }
 
     function syncMinimap() {
       const zoom = Number(zoomSelect.value);
-      const scaleX = 150 / (${width});
-      const scaleY = 210 / (${height});
-      minimapFrame.setAttribute('x', String(viewport.scrollLeft / zoom * scaleX));
-      minimapFrame.setAttribute('y', String(viewport.scrollTop / zoom * scaleY));
-      minimapFrame.setAttribute('width', String(viewport.clientWidth / zoom * scaleX));
-      minimapFrame.setAttribute('height', String(viewport.clientHeight / zoom * scaleY));
+      const visibleX = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / zoom);
+      const visibleY = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / zoom);
+      const visibleWidth = Math.max(
+        0,
+        (viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}) / zoom
+      );
+      const visibleHeight = Math.max(
+        0,
+        (viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / zoom
+      );
+      const frameWidth = Math.min(${width} - visibleX, visibleWidth);
+      const frameHeight = Math.min(${height} - visibleY, visibleHeight);
+      minimapFrame.setAttribute('x', String(visibleX));
+      minimapFrame.setAttribute('y', String(visibleY));
+      minimapFrame.setAttribute('width', String(frameWidth));
+      minimapFrame.setAttribute('height', String(frameHeight));
     }
   </script>
 </body>
@@ -400,7 +604,7 @@ function renderNode(node: RevisionGraphNode): string {
   const y = NODE_PADDING_Y + node.row * ROW_HEIGHT;
   const nodeClass = getNodeClass(node);
   const refLines = node.refs
-    .map((ref) => `<div class="ref-line ${ref.kind === 'head' ? 'head' : ''}">${escapeHtml(ref.name)}</div>`)
+    .map((ref) => `<div class="ref-line ${ref.kind === 'head' ? 'head' : ''}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}</div>`)
     .join('');
 
   return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" style="left:${x}px; top:${y}px" title="${escapeHtml(node.refs.map((ref) => ref.name).join('\n'))}">
@@ -458,16 +662,72 @@ async function compareRevisionWithWorktree(repository: Repository, hash: string)
   }
 }
 
-async function checkoutRevision(repository: Repository, hash: string): Promise<void> {
-  const confirmed = await vscode.window.showWarningMessage(`Fazer checkout do commit ${hash.slice(0, 8)}?`, { modal: true }, 'Checkout');
-  if (confirmed !== 'Checkout') {
+async function checkoutReference(repository: Repository, refName: string, refKind: string): Promise<void> {
+  try {
+    if (refKind === 'head' || refKind === 'branch') {
+      if (repository.state.HEAD?.name === refName) {
+        void vscode.window.showInformationMessage(`${refName} ja esta selecionada.`);
+        return;
+      }
+      const confirmed = await vscode.window.showWarningMessage(`Fazer checkout de ${refName}?`, { modal: true }, 'Checkout');
+      if (confirmed !== 'Checkout') {
+        return;
+      }
+      await repository.checkout(refName);
+      void vscode.window.showInformationMessage(`Checkout concluido para ${refName}.`);
+      return;
+    }
+
+    if (refKind === 'remote') {
+      const suggestedName = getSuggestedLocalBranchName(refName);
+      const branchName = await vscode.window.showInputBox({
+        prompt: `Criar branch local rastreando ${refName}`,
+        value: suggestedName,
+        validateInput: (value) => (value.trim().length === 0 ? 'Informe um nome de branch.' : undefined)
+      });
+      if (!branchName) {
+        return;
+      }
+      await repository.createBranch(branchName, true, refName);
+      await repository.setBranchUpstream(branchName, refName);
+      void vscode.window.showInformationMessage(`Branch ${branchName} criada e selecionada a partir de ${refName}.`);
+      return;
+    }
+
+    const confirmed = await vscode.window.showWarningMessage(`Fazer checkout de ${refName}?`, { modal: true }, 'Checkout');
+    if (confirmed !== 'Checkout') {
+      return;
+    }
+    await repository.checkout(refName);
+    void vscode.window.showInformationMessage(`Checkout concluido para ${refName}.`);
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Nao foi possivel fazer checkout da referencia. ${toErrorMessage(error)}`);
+  }
+}
+
+async function mergeReferenceIntoHead(repository: Repository, refName: string): Promise<void> {
+  const currentBranch = repository.state.HEAD?.name ?? 'HEAD atual';
+  if (repository.state.HEAD?.name === refName) {
+    void vscode.window.showInformationMessage('A branch atual nao pode ser merged nela mesma.');
     return;
   }
+
+  const confirmed = await vscode.window.showWarningMessage(
+    `Fazer merge de ${refName} em ${currentBranch}?`,
+    { modal: true },
+    'Merge'
+  );
+  if (confirmed !== 'Merge') {
+    return;
+  }
+
   try {
-    await repository.checkout(hash);
-    void vscode.window.showInformationMessage(`Checkout concluido para ${hash.slice(0, 8)}.`);
+    await repository.merge(refName);
+    void vscode.window.showInformationMessage(`Merge de ${refName} iniciado em ${currentBranch}.`);
   } catch (error) {
-    await vscode.window.showErrorMessage(`Nao foi possivel fazer checkout da revisao. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(
+      `Merge nao concluido. Se houve conflitos, finalize pela experiencia de Source Control do VS Code. ${toErrorMessage(error)}`
+    );
   }
 }
 
@@ -554,4 +814,13 @@ function escapeHtml(value: string): string {
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function createReferenceId(hash: string, kind: string, name: string): string {
+  return `${hash}::${kind}::${name}`;
+}
+
+function getSuggestedLocalBranchName(refName: string): string {
+  const firstSlash = refName.indexOf('/');
+  return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
 }
