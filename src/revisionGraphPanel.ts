@@ -2,11 +2,15 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
-import { getStatusLabel } from './changePresentation';
-import { Change, Repository, API, RefType } from './git';
-import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
+import { Repository, API } from './git';
 import { isSameRepositoryPath, reconcileCurrentRepository, sortRepositoriesByPath } from './repositorySelection';
-import { getDiffChangeKinds, getDiffChangeUris } from './refCommands';
+import {
+  checkoutResolvedReference,
+  compareResolvedRefs,
+  compareResolvedRefWithWorktree,
+  deleteResolvedReference,
+  mergeResolvedReference
+} from './refActions';
 import {
   buildRevisionGraphScene,
   filterRevisionGraphCommitsToAncestors,
@@ -17,6 +21,7 @@ import {
   RevisionGraphRef,
   RevisionGraphScene
 } from './revisionGraphData';
+import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 const execFile = promisify(execFileCallback);
 const GRAPH_COMMIT_LIMIT = 600;
@@ -67,6 +72,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   private ancestorFilter: RevisionGraphAncestorFilter | undefined;
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly actionServices = createWorkbenchRefActionServices();
 
   constructor(
     private readonly git: API
@@ -136,7 +142,12 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           return;
         case 'compare-selected':
           if (this.currentRepository) {
-            await compareRevisions(this.currentRepository, message.baseRefName, message.compareRefName);
+            await compareResolvedRefs(
+              this.currentRepository,
+              { refName: message.baseRefName, label: message.baseRefName },
+              { refName: message.compareRefName, label: message.compareRefName },
+              this.actionServices
+            );
           }
           return;
         case 'show-log':
@@ -151,18 +162,30 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           return;
         case 'compare-with-worktree':
           if (this.currentRepository) {
-            await compareRevisionWithWorktree(this.currentRepository, message.refName);
+            await compareResolvedRefWithWorktree(
+              this.currentRepository,
+              { refName: message.refName, label: message.refName },
+              this.actionServices
+            );
           }
           return;
         case 'checkout':
           if (this.currentRepository) {
-            await checkoutReference(this.currentRepository, message.refName, message.refKind);
+            await checkoutResolvedReference(
+              this.currentRepository,
+              { refName: message.refName, label: message.refName, kind: message.refKind as RevisionGraphRef['kind'] },
+              this.actionServices
+            );
             await this.render();
           }
           return;
         case 'delete':
           if (this.currentRepository) {
-            await deleteReference(this.currentRepository, message.refName, message.refKind);
+            await deleteResolvedReference(
+              this.currentRepository,
+              { refName: message.refName, label: message.refName, kind: message.refKind },
+              this.actionServices
+            );
             if (this.ancestorFilter?.refName === message.refName && this.ancestorFilter.refKind === message.refKind) {
               this.ancestorFilter = undefined;
             }
@@ -171,7 +194,11 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           return;
         case 'merge':
           if (this.currentRepository) {
-            await mergeReferenceIntoHead(this.currentRepository, message.refName);
+            await mergeResolvedReference(
+              this.currentRepository,
+              { refName: message.refName, label: message.refName },
+              this.actionServices
+            );
             await this.render();
           }
           return;
@@ -802,22 +829,6 @@ function renderEdge(edge: RevisionGraphEdge, mini = false): string {
   return `${defs}<path d="M ${sourceX} ${sourceY} L ${sourceX} ${midY} L ${targetX} ${midY} L ${targetX} ${targetY}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
 
-async function compareRevisions(repository: Repository, left: string, right: string): Promise<void> {
-  try {
-    const changes = await repository.diffBetween(left, right);
-    if (changes.length === 0) {
-      void vscode.window.showInformationMessage(`No differences found between ${left.slice(0, 8)} and ${right.slice(0, 8)}.`);
-      return;
-    }
-    const picked = await pickChange(changes, `Changed files between ${left.slice(0, 8)} and ${right.slice(0, 8)}`);
-    if (picked) {
-      await openChangeDiffBetweenRefs(repository, picked, left, right);
-    }
-  } catch (error) {
-    await vscode.window.showErrorMessage(`Could not compare revisions. ${toErrorMessage(error)}`);
-  }
-}
-
 async function openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void> {
   try {
     const { stdout } = await execFile(
@@ -880,201 +891,6 @@ async function showRevisionLog(repository: Repository, left: string, right: stri
   }
 }
 
-async function compareRevisionWithWorktree(repository: Repository, hash: string): Promise<void> {
-  try {
-    const changes = await repository.diffWith(hash);
-    if (changes.length === 0) {
-      void vscode.window.showInformationMessage(`The worktree is already aligned with ${hash.slice(0, 8)}.`);
-      return;
-    }
-    const picked = await pickChange(changes, `Changed files between ${hash.slice(0, 8)} and the worktree`);
-    if (picked) {
-      await openChangeDiffWithWorktree(repository, picked, hash);
-    }
-  } catch (error) {
-    await vscode.window.showErrorMessage(`Could not compare the revision with the worktree. ${toErrorMessage(error)}`);
-  }
-}
-
-async function checkoutReference(repository: Repository, refName: string, refKind: string): Promise<void> {
-  try {
-    if (refKind === 'head' || refKind === 'branch') {
-      if (repository.state.HEAD?.name === refName) {
-        const branchName = await vscode.window.showInputBox({
-          prompt: `Create a New Branch from ${refName}`,
-          value: '',
-          validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
-        });
-        if (!branchName) {
-          return;
-        }
-        await repository.createBranch(branchName, true, refName);
-        void vscode.window.showInformationMessage(`Branch ${branchName} was created and checked out from ${refName}.`);
-        return;
-      }
-      const confirmed = await vscode.window.showWarningMessage(`Check out ${refName}?`, { modal: true }, 'Checkout');
-      if (confirmed !== 'Checkout') {
-        return;
-      }
-      await repository.checkout(refName);
-      void vscode.window.showInformationMessage(`Checkout completed for ${refName}.`);
-      return;
-    }
-
-    if (refKind === 'remote') {
-      const remoteCheckout = resolveRemoteCheckoutTarget(repository, refName);
-      const branchName = await vscode.window.showInputBox({
-        prompt: remoteCheckout.upstreamRefName
-          ? `Create a Local Branch Tracking ${remoteCheckout.upstreamRefName}`
-          : `Create a Local Branch from ${refName}`,
-        value: remoteCheckout.suggestedLocalName,
-        validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
-      });
-      if (!branchName) {
-        return;
-      }
-      await repository.createBranch(branchName, true, remoteCheckout.startPointRefName);
-      if (remoteCheckout.upstreamRefName) {
-        await repository.setBranchUpstream(branchName, remoteCheckout.upstreamRefName);
-      }
-      void vscode.window.showInformationMessage(
-        remoteCheckout.upstreamRefName
-          ? `Branch ${branchName} was created and checked out from ${remoteCheckout.upstreamRefName}.`
-          : `Branch ${branchName} was created and checked out from ${refName}.`
-      );
-      return;
-    }
-
-    const confirmed = await vscode.window.showWarningMessage(`Check out ${refName}?`, { modal: true }, 'Checkout');
-    if (confirmed !== 'Checkout') {
-      return;
-    }
-    await repository.checkout(refName);
-    void vscode.window.showInformationMessage(`Checkout completed for ${refName}.`);
-  } catch (error) {
-    await vscode.window.showErrorMessage(`Could not check out the reference. ${toErrorMessage(error)}`);
-  }
-}
-
-async function mergeReferenceIntoHead(repository: Repository, refName: string): Promise<void> {
-  const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
-  if (repository.state.HEAD?.name === refName) {
-    void vscode.window.showInformationMessage('The current branch cannot be merged into itself.');
-    return;
-  }
-
-  const confirmed = await vscode.window.showWarningMessage(
-    `Merge ${refName} into ${currentBranch}?`,
-    { modal: true },
-    'Merge'
-  );
-  if (confirmed !== 'Merge') {
-    return;
-  }
-
-  try {
-    await repository.merge(refName);
-    void vscode.window.showInformationMessage(`Merge from ${refName} started in ${currentBranch}.`);
-  } catch (error) {
-    await vscode.window.showErrorMessage(
-      `Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. ${toErrorMessage(error)}`
-    );
-  }
-}
-
-async function deleteReference(
-  repository: Repository,
-  refName: string,
-  refKind: RevisionGraphRef['kind']
-): Promise<void> {
-  try {
-    if (refKind === 'remote') {
-      const remoteTarget = parseRemoteDeletionTarget(refName);
-      if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
-        void vscode.window.showInformationMessage(`The remote reference ${refName} cannot be deleted from this view.`);
-        return;
-      }
-
-      const confirmed = await vscode.window.showWarningMessage(
-        `Delete the Remote Branch ${refName}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
-        { modal: true },
-        'Delete Remote Reference'
-      );
-      if (confirmed !== 'Delete Remote Reference') {
-        return;
-      }
-
-      await execFile(
-        'git',
-        ['push', remoteTarget.remoteName, '--delete', remoteTarget.branchName],
-        {
-          cwd: repository.rootUri.fsPath,
-          maxBuffer: 8 * 1024 * 1024
-        }
-      );
-      void vscode.window.showInformationMessage(`Remote branch ${refName} was deleted from ${remoteTarget.remoteName}.`);
-      return;
-    }
-
-    if (refKind === 'tag') {
-      const confirmed = await vscode.window.showWarningMessage(
-        `Delete the Tag ${refName}?`,
-        { modal: true },
-        'Delete'
-      );
-      if (confirmed !== 'Delete') {
-        return;
-      }
-
-      await repository.deleteTag(refName);
-      void vscode.window.showInformationMessage(`Tag ${refName} was deleted.`);
-      return;
-    }
-
-    const confirmed = await vscode.window.showWarningMessage(
-      `Delete the Branch ${refName}?`,
-      { modal: true },
-      'Delete'
-    );
-    if (confirmed !== 'Delete') {
-      return;
-    }
-
-    await repository.deleteBranch(refName, false);
-    void vscode.window.showInformationMessage(`Branch ${refName} was deleted.`);
-  } catch (error) {
-    await vscode.window.showErrorMessage(`Could not delete the reference. ${toErrorMessage(error)}`);
-  }
-}
-
-async function pickChange(changes: Change[], placeHolder: string): Promise<Change | undefined> {
-  const items = changes
-    .map((change) => {
-      const { rightPath } = getDiffChangeUris(change);
-      return {
-        label: rightPath.split('/').at(-1) ?? rightPath,
-        description: vscode.workspace.asRelativePath(vscode.Uri.file(rightPath), false),
-        detail: getStatusLabel(change.status),
-        change
-      };
-    })
-    .sort((left, right) => (left.description ?? '').localeCompare(right.description ?? ''));
-
-  return (await vscode.window.showQuickPick(items, { placeHolder, matchOnDescription: true, matchOnDetail: true }))?.change;
-}
-
-function buildRefUri(repository: Repository, ref: string, filePath: string): vscode.Uri {
-  return vscode.Uri.from({
-    scheme: REF_SCHEME,
-    path: filePath,
-    query: new URLSearchParams({ repo: repository.rootUri.fsPath, ref, path: filePath }).toString()
-  });
-}
-
-function buildEmptyUri(filePath: string): vscode.Uri {
-  return vscode.Uri.from({ scheme: EMPTY_SCHEME, path: filePath });
-}
-
 async function openCommitLogEntry(repository: Repository, commitHash: string): Promise<void> {
   try {
     const { stdout } = await execFile(
@@ -1097,24 +913,6 @@ async function openCommitLogEntry(repository: Repository, commitHash: string): P
   } catch (error) {
     await vscode.window.showErrorMessage(`Could not open the selected commit. ${toErrorMessage(error)}`);
   }
-}
-
-async function openChangeDiffBetweenRefs(repository: Repository, change: Change, leftRef: string, rightRef: string): Promise<void> {
-  const { leftPath, rightPath } = getDiffChangeUris(change);
-  const { leftIsEmpty, rightIsEmpty } = getDiffChangeKinds(change);
-  const leftUri = leftIsEmpty ? buildEmptyUri(rightPath) : buildRefUri(repository, leftRef, leftPath);
-  const rightUri = rightIsEmpty ? buildEmptyUri(leftPath) : buildRefUri(repository, rightRef, rightPath);
-  const title = `${leftRef.slice(0, 8)} <-> ${rightRef.slice(0, 8)} • ${vscode.workspace.asRelativePath(vscode.Uri.file(rightPath), false)}`;
-  await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
-}
-
-async function openChangeDiffWithWorktree(repository: Repository, change: Change, ref: string): Promise<void> {
-  const { leftPath, rightPath } = getDiffChangeUris(change);
-  const { leftIsEmpty, rightIsEmpty } = getDiffChangeKinds(change);
-  const leftUri = leftIsEmpty ? buildEmptyUri(rightPath) : buildRefUri(repository, ref, leftPath);
-  const rightUri = rightIsEmpty ? buildEmptyUri(leftPath) : vscode.Uri.file(rightPath);
-  const title = `${ref.slice(0, 8)} <-> worktree • ${vscode.workspace.asRelativePath(vscode.Uri.file(rightPath), false)}`;
-  await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
 }
 
 function renderEmptyHtml(hasRepositories: boolean): string {
@@ -1162,65 +960,6 @@ function toErrorMessage(error: unknown): string {
 
 function createReferenceId(hash: string, kind: string, name: string): string {
   return `${hash}::${kind}::${name}`;
-}
-
-function getSuggestedLocalBranchName(refName: string): string {
-  const firstSlash = refName.indexOf('/');
-  return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
-}
-
-function resolveRemoteCheckoutTarget(
-  repository: Repository,
-  refName: string
-): {
-  startPointRefName: string;
-  upstreamRefName: string | undefined;
-  suggestedLocalName: string;
-} {
-  const remoteTarget = parseRemoteDeletionTarget(refName);
-  if (!remoteTarget || remoteTarget.branchName !== 'HEAD') {
-    return {
-      startPointRefName: refName,
-      upstreamRefName: refName,
-      suggestedLocalName: getSuggestedLocalBranchName(refName)
-    };
-  }
-
-  const symbolicRef = repository.state.refs.find(
-    (ref) => ref.type === RefType.RemoteHead && ref.name === refName
-  );
-  const candidates = repository.state.refs.filter(
-    (ref) =>
-      ref.type === RefType.RemoteHead &&
-      ref.name &&
-      ref.name.startsWith(`${remoteTarget.remoteName}/`) &&
-      ref.name !== refName
-  );
-
-  const upstreamRef =
-    candidates.find((ref) => ref.commit && symbolicRef?.commit && ref.commit === symbolicRef.commit) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/${repository.state.HEAD?.name}`) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/main`) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/master`) ??
-    candidates[0];
-
-  return {
-    startPointRefName: upstreamRef?.name ?? refName,
-    upstreamRefName: upstreamRef?.name,
-    suggestedLocalName: upstreamRef?.name ? getSuggestedLocalBranchName(upstreamRef.name) : ''
-  };
-}
-
-function parseRemoteDeletionTarget(refName: string): { remoteName: string; branchName: string } | undefined {
-  const firstSlash = refName.indexOf('/');
-  if (firstSlash <= 0 || firstSlash === refName.length - 1) {
-    return undefined;
-  }
-
-  return {
-    remoteName: refName.slice(0, firstSlash),
-    branchName: refName.slice(firstSlash + 1)
-  };
 }
 
 async function loadRevisionLogEntries(

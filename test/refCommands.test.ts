@@ -61,6 +61,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
         counter.refreshCalls += 1;
       }
     },
+    referenceManager: {
+      async deleteRemoteBranch() {}
+    },
     formatPath(fsPath) {
       return fsPath;
     }
@@ -146,7 +149,7 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   assert.deepEqual(repository.calls.setBranchUpstream, [
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
-  assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from feature/demo.');
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 2);
 });
 
