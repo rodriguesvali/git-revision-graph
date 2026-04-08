@@ -238,8 +238,9 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
       position: sticky;
       top: 0;
       z-index: 30;
-      display: grid;
-      grid-template-columns: 1fr auto auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 12px;
       align-items: center;
       padding: 12px 16px;
@@ -248,7 +249,6 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
       backdrop-filter: blur(10px);
     }
     .title { font-size: 14px; font-weight: 700; }
-    .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .zoom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     button, select {
       border: 1px solid var(--border);
@@ -258,9 +258,7 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
       padding: 6px 10px;
       cursor: pointer;
     }
-    button.primary { background: color-mix(in srgb, var(--accent) 24%, var(--panel-strong)); }
     button:disabled { opacity: 0.45; cursor: default; }
-    .summary { color: var(--muted); font-size: 12px; text-align: right; min-width: 240px; }
     .viewport {
       position: relative;
       height: calc(100vh - 64px);
@@ -295,6 +293,8 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     .ref-line.head { background: rgba(0,0,0,0.1); font-weight: 700; }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
+    .base-suffix { display: none; }
+    .ref-line.base.has-compare .base-suffix { display: inline; }
     .minimap {
       position: fixed; right: 18px; bottom: 18px; width: 150px; height: 210px; border: 1px solid var(--minimap-border);
       border-radius: 10px; background: color-mix(in srgb, var(--bg) 92%, var(--panel)); overflow: hidden; z-index: 25;
@@ -329,10 +329,7 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
 </head>
 <body>
   <div class="toolbar">
-    <div>
-      <div class="title">Revision Graph</div>
-      <div class="subtitle">${escapeHtml(repositoryLabel)} • ${scene.nodes.length} refs visiveis • clique direito sobre uma reference para abrir o menu</div>
-    </div>
+    <div class="title">Revision Graph</div>
     <div class="zoom">
       <select id="zoomSelect">
         <option value="0.6">60%</option>
@@ -341,7 +338,6 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
         <option value="1.25">125%</option>
         <option value="1.5">150%</option>
       </select>
-      <div class="summary" id="selectionSummary">No nodes selected</div>
     </div>
   </div>
   <div class="viewport" id="viewport">
@@ -366,14 +362,11 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     const selected = [];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
-    const summary = document.getElementById('selectionSummary');
     const zoomSelect = document.getElementById('zoomSelect');
     const minimapFrame = document.getElementById('minimapFrame');
     const contextMenu = document.getElementById('contextMenu');
     let dragState = null;
     let suppressNodeClick = false;
-    let contextTarget = null;
-
     zoomSelect.addEventListener('change', () => setZoom(Number(zoomSelect.value)));
     for (const element of document.querySelectorAll('[data-ref-id]')) {
       element.addEventListener('click', (event) => {
@@ -403,9 +396,9 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
         event.preventDefault();
         const refId = element.getAttribute('data-ref-id');
         if (!refId) return;
-        contextTarget = getReference(refId);
-        if (!contextTarget) return;
-        openContextMenu(event.clientX, event.clientY, contextTarget);
+        const target = getReference(refId);
+        if (!target) return;
+        openContextMenu(event.clientX, event.clientY, target);
       });
     }
 
@@ -487,67 +480,50 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
         const refId = element.getAttribute('data-ref-id');
         element.classList.toggle('base', refId === selected[0]);
         element.classList.toggle('compare', refId === selected[1]);
-      }
-      if (selected.length === 0) {
-        summary.textContent = 'No references selected';
-      } else if (selected.length === 1) {
-        summary.textContent = 'Base: ' + getReference(selected[0]).title;
-      } else {
-        summary.textContent = 'Base: ' + getReference(selected[0]).title + '  |  Compare: ' + getReference(selected[1]).title;
+        element.classList.toggle('has-compare', selected.length === 2 && refId === selected[0]);
       }
       syncMinimap();
     }
 
     function openContextMenu(clientX, clientY, target) {
-      if (!selected.includes(target.id)) {
-        selected.splice(0, selected.length, target.id);
-        syncSelection();
-      }
       const base = selected[0] ? getReference(selected[0]) : undefined;
       const compare = selected[1] ? getReference(selected[1]) : undefined;
+      const hasComparisonSelection =
+        selected.length === 2 &&
+        base &&
+        compare &&
+        (base.id === target.id || compare.id === target.id);
+
       contextMenu.innerHTML = '';
-      appendMenuItem('Selecionar como Base', () => {
-        selected.splice(0, selected.length, target.id);
-        syncSelection();
-      });
-      appendMenuItem(
-        'Selecionar para Comparacao',
-        () => {
-          if (selected[0] !== target.id) {
-            selected.splice(1, selected.length, target.id);
+      if (hasComparisonSelection) {
+        appendMenuItem('Compare', () => {
+          vscode.postMessage({
+            type: 'compare-selected',
+            baseRefName: base.name,
+            compareRefName: compare.name
+          });
+        });
+        appendMenuItem('Limpar selecao', () => {
+          selected.splice(0, selected.length);
+          syncSelection();
+        });
+      } else {
+        appendMenuItem('Comparar Base com Worktree', () => {
+          vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
+        });
+        appendMenuItem('Checkout', () => {
+          vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+        });
+        appendMenuItem('Merge no HEAD atual', () => {
+          vscode.postMessage({ type: 'merge', refName: target.name });
+        });
+        if (selected.length > 0) {
+          appendMenuItem('Limpar selecao', () => {
+            selected.splice(0, selected.length);
             syncSelection();
-          }
-        },
-        !base || base.id === target.id
-      );
-      appendMenuItem(
-        'Comparar Base com Comparacao',
-        () => {
-          const currentBase = selected[0] && getReference(selected[0]);
-          const currentCompare = selected[1] && getReference(selected[1]);
-          if (currentBase && currentCompare) {
-            vscode.postMessage({
-              type: 'compare-selected',
-              baseRefName: currentBase.name,
-              compareRefName: currentCompare.name
-            });
-          }
-        },
-        !(base && compare)
-      );
-      appendMenuItem('Comparar com Worktree', () => {
-        vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
-      });
-      appendMenuItem('Checkout', () => {
-        vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-      });
-      appendMenuItem('Merge no HEAD atual', () => {
-        vscode.postMessage({ type: 'merge', refName: target.name });
-      });
-      appendMenuItem('Limpar selecao', () => {
-        selected.splice(0, selected.length);
-        syncSelection();
-      }, selected.length === 0);
+          });
+        }
+      }
       contextMenu.style.left = clientX + 'px';
       contextMenu.style.top = clientY + 'px';
       contextMenu.classList.add('open');
@@ -568,7 +544,6 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
     function closeContextMenu() {
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
-      contextTarget = null;
     }
 
     function getReference(refId) {
@@ -604,7 +579,7 @@ function renderNode(node: RevisionGraphNode): string {
   const y = NODE_PADDING_Y + node.row * ROW_HEIGHT;
   const nodeClass = getNodeClass(node);
   const refLines = node.refs
-    .map((ref) => `<div class="ref-line ${ref.kind === 'head' ? 'head' : ''}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}</div>`)
+    .map((ref) => `<div class="ref-line ${ref.kind === 'head' ? 'head' : ''}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
     .join('');
 
   return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" style="left:${x}px; top:${y}px" title="${escapeHtml(node.refs.map((ref) => ref.name).join('\n'))}">
