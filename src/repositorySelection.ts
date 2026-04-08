@@ -1,0 +1,32 @@
+interface RepositoryLike {
+  readonly rootUri: {
+    readonly fsPath: string;
+  };
+}
+
+export function sortRepositoriesByPath<T extends RepositoryLike>(repositories: readonly T[]): T[] {
+  return [...repositories].sort((left, right) => left.rootUri.fsPath.localeCompare(right.rootUri.fsPath));
+}
+
+export function reconcileCurrentRepository<T extends RepositoryLike>(
+  repositories: readonly T[],
+  currentRepository: T | undefined
+): T | undefined {
+  if (currentRepository) {
+    const matchingRepository = repositories.find(
+      (repository) => repository.rootUri.fsPath === currentRepository.rootUri.fsPath
+    );
+    if (matchingRepository) {
+      return matchingRepository;
+    }
+  }
+
+  return repositories.length === 1 ? repositories[0] : undefined;
+}
+
+export function isSameRepositoryPath(
+  left: RepositoryLike | undefined,
+  right: RepositoryLike | undefined
+): boolean {
+  return left?.rootUri.fsPath === right?.rootUri.fsPath;
+}

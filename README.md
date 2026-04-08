@@ -1,6 +1,6 @@
 # GIT Revision Graph
 
-GIT Revision Graph is a Visual Studio Code extension prototype for browsing Git references and running common reference-based workflows from a dedicated view.
+GIT Revision Graph is a Visual Studio Code extension prototype for browsing a Git revision graph and running common reference-based workflows from a dedicated view.
 
 The current implementation focuses on a practical MVP built on top of the public API exposed by the built-in `vscode.git` extension.
 
@@ -8,7 +8,7 @@ The current development cycle hardens that MVP by separating core logic into sma
 
 ## Goals
 
-- Visualize the Git reference tree in a dedicated Activity Bar view
+- Visualize the Git revision graph and its references in a dedicated Activity Bar view
 - Group local branches, tags, and remote branches in a way that is easy to scan
 - Provide direct actions for compare, checkout, and merge workflows
 - Reuse VS Code's native Git and diff experience instead of re-implementing Git internals
@@ -35,7 +35,7 @@ The current scope is intentionally small and centered on validating the extensio
 Included in the MVP:
 
 - Reference discovery through the built-in Git extension API
-- Tree-based navigation
+- Webview-based graph navigation
 - Context menu actions
 - Command Palette access to the same actions
 - File-level diff opening through the native VS Code diff editor
@@ -45,9 +45,9 @@ Not included yet:
 
 - A persistent compare results view
 - Advanced merge conflict guidance
-- Rich filtering and search in the reference tree
+- Rich filtering and search beyond the current graph interactions
 - Reference creation, deletion, rename, fetch, or push flows
-- Branch graph visualization
+- Full-history graph rendering beyond the bounded recent-commit window
 
 ## How It Works
 
@@ -58,8 +58,9 @@ At a high level:
 1. The extension gets the Git API through `vscode.git`.
 2. It reads repositories from the current workspace.
 3. It loads references with `getRefs(...)`.
-4. It renders those references through a `TreeDataProvider`.
-5. It executes workflows such as compare, checkout, and merge by calling the Git API directly.
+4. It renders the active repository through a `WebviewViewProvider`.
+5. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
+6. It executes workflows such as compare, checkout, and merge by calling the Git API directly.
 
 This approach keeps the extension lightweight for reference workflows. The revision graph view uses `git log` directly because the public `vscode.git` API does not expose enough commit graph data to render branch ancestry.
 
@@ -83,7 +84,7 @@ This approach keeps the extension lightweight for reference workflows. The revis
 
 - `src/extension.ts`
   - extension activation and VS Code wiring
-  - tree view registration
+  - webview registration
   - command registration
   - adapters that bridge VS Code UI to the testable command layer
 
@@ -96,8 +97,8 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - command-side UX messages and refresh behavior
 
 - `src/refTreeProvider.ts`
-  - `TreeDataProvider` implementation
-  - refresh handling for repository open/close and checkout/state events
+  - legacy `TreeDataProvider` prototype kept as reference code
+  - not part of the currently activated product surface
 
 - `src/refPresentation.ts`, `src/refTreeData.ts`, `src/changePresentation.ts`
   - pure helpers for labels, sorting, tree grouping, and diff item presentation
@@ -112,7 +113,7 @@ This approach keeps the extension lightweight for reference workflows. The revis
 
 - `package.json`
   - extension metadata
-  - contributed view container and tree view
+  - contributed view container and revision graph webview
   - commands and context menus
 
 ## Development Requirements
@@ -184,8 +185,9 @@ The current extension contributes these commands:
 - `gitRefs.checkout`
 - `gitRefs.merge`
 - `gitRefs.openRevisionGraph`
+- `gitRefs.chooseRevisionGraphRepository`
 
-These commands are available from the tree view context menu and can also be triggered through the Command Palette.
+These commands are available from the revision graph view and can also be triggered through the Command Palette.
 
 ## Known Limitations
 
@@ -202,7 +204,7 @@ These commands are available from the tree view context menu and can also be tri
 Potential improvements after the MVP:
 
 - Add a persistent compare results view
-- Add search and filtering in the references tree
+- Add search and filtering in the revision graph
 - Improve conflict-awareness before checkout and merge
 - Add branch creation and tag creation flows
 - Support richer branch metadata in the UI

@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { getStatusLabel } from './changePresentation';
 import { Change, Repository, API, RefType } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
+import { isSameRepositoryPath, reconcileCurrentRepository, sortRepositoriesByPath } from './repositorySelection';
 import { getDiffChangeKinds, getDiffChangeUris } from './refCommands';
 import {
   buildRevisionGraphScene,
@@ -60,14 +61,40 @@ interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
   readonly entry: RevisionLogEntry;
 }
 
-export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
+export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
   private ancestorFilter: RevisionGraphAncestorFilter | undefined;
+  private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
+  private readonly disposables: vscode.Disposable[] = [];
 
   constructor(
     private readonly git: API
-  ) {}
+  ) {
+    this.setCurrentRepository(reconcileCurrentRepository(git.repositories, undefined));
+    this.attachToRepositories(git.repositories);
+
+    this.disposables.push(
+      git.onDidOpenRepository((repository) => {
+        this.attachRepository(repository);
+        this.handleRepositorySetChanged();
+      }),
+      git.onDidCloseRepository((repository) => {
+        this.detachRepository(repository);
+        this.handleRepositorySetChanged();
+      })
+    );
+  }
+
+  dispose(): void {
+    for (const disposable of this.repoSubscriptions.values()) {
+      disposable.dispose();
+    }
+
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
+  }
 
   async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
     this.view = view;
@@ -75,8 +102,16 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
       enableScripts: true
     };
 
+    view.onDidDispose(() => {
+      if (this.view === view) {
+        this.view = undefined;
+      }
+    });
+
+    this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
+
     if (!this.currentRepository) {
-      this.currentRepository = await pickRepository(this.git, false);
+      this.setCurrentRepository(await pickRepository(this.git, false));
     }
 
     view.webview.onDidReceiveMessage(async (message: RevisionGraphMessage) => {
@@ -85,8 +120,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
           await this.render();
           return;
         case 'choose-repository':
-          this.currentRepository = await pickRepository(this.git, true);
-          this.ancestorFilter = undefined;
+          this.setCurrentRepository(await pickRepository(this.git, true));
           await this.render();
           return;
         case 'filter-ancestor-refs':
@@ -149,14 +183,15 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
 
   async open(): Promise<void> {
     await vscode.commands.executeCommand(`${REVISION_GRAPH_VIEW_ID}.focus`);
+    this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
     if (!this.currentRepository) {
-      this.currentRepository = await pickRepository(this.git, false);
+      this.setCurrentRepository(await pickRepository(this.git, false));
     }
     await this.render();
   }
 
   async chooseRepository(): Promise<void> {
-    this.currentRepository = await pickRepository(this.git, true);
+    this.setCurrentRepository(await pickRepository(this.git, true));
     await this.open();
   }
 
@@ -170,7 +205,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
     }
 
     if (!this.currentRepository) {
-      this.view.webview.html = renderEmptyHtml();
+      this.view.webview.html = renderEmptyHtml(this.git.repositories.length > 0);
       return;
     }
 
@@ -189,6 +224,55 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorMessage(error));
     }
+  }
+
+  private attachToRepositories(repositories: readonly Repository[]): void {
+    for (const repository of repositories) {
+      this.attachRepository(repository);
+    }
+  }
+
+  private attachRepository(repository: Repository): void {
+    const key = repository.rootUri.toString();
+    if (this.repoSubscriptions.has(key)) {
+      return;
+    }
+
+    this.repoSubscriptions.set(
+      key,
+      vscode.Disposable.from(
+        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository)),
+        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository))
+      )
+    );
+  }
+
+  private detachRepository(repository: Repository): void {
+    const key = repository.rootUri.toString();
+    this.repoSubscriptions.get(key)?.dispose();
+    this.repoSubscriptions.delete(key);
+  }
+
+  private handleRepositorySetChanged(): void {
+    this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
+    void this.render();
+  }
+
+  private handleRepositoryStateChange(repository: Repository): void {
+    const previousRepository = this.currentRepository;
+    this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
+
+    if (isSameRepositoryPath(repository, this.currentRepository) || (!previousRepository && this.currentRepository)) {
+      void this.render();
+    }
+  }
+
+  private setCurrentRepository(repository: Repository | undefined): void {
+    if (!isSameRepositoryPath(this.currentRepository, repository)) {
+      this.ancestorFilter = undefined;
+    }
+
+    this.currentRepository = repository;
   }
 }
 
@@ -226,7 +310,7 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
   }
 
   const picked = await vscode.window.showQuickPick(
-    git.repositories
+    sortRepositoriesByPath(git.repositories)
       .map((repository) => ({
         label: vscode.workspace.asRelativePath(repository.rootUri, false),
         description: repository.rootUri.fsPath,
@@ -1033,8 +1117,12 @@ async function openChangeDiffWithWorktree(repository: Repository, change: Change
   await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
 }
 
-function renderEmptyHtml(): string {
-  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>GIT Revision Graph</h2><p>Open a Workspace with a Git Repository to View the GIT Revision Graph.</p></body></html>`;
+function renderEmptyHtml(hasRepositories: boolean): string {
+  const message = hasRepositories
+    ? 'Choose a repository from the view toolbar to load the revision graph.'
+    : 'Open a workspace with a Git repository to view the revision graph.';
+
+  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>GIT Revision Graph</h2><p>${message}</p></body></html>`;
 }
 
 function renderErrorHtml(message: string): string {

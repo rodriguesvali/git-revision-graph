@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is a small VS Code extension prototype named `Git Refs Explorer`. It visualizes Git refs and runs compare, checkout, and merge workflows from a dedicated Activity Bar view.
+This repository is a small VS Code extension prototype named `Git Refs Explorer`. Its active product surface is a revision-graph webview that visualizes Git refs and runs compare, checkout, merge, and deletion workflows from a dedicated Activity Bar view.
 
 ## Main Files
 
@@ -12,10 +12,13 @@ This repository is a small VS Code extension prototype named `Git Refs Explorer`
   - Activation events and extension dependency on `vscode.git`
 - `src/extension.ts`
   - Activation entrypoint
-  - Tree data provider
+  - Webview provider registration
   - Command handlers
   - Content providers for ref-backed diffs
   - Shared helpers for labels, URI construction, and error handling
+- `src/revisionGraphPanel.ts`
+  - Active revision graph controller and webview UI
+  - Graph-side actions such as compare, log, unified diff, checkout, merge, and delete
 - `src/git.ts`
   - Minimal TypeScript interfaces for the subset of the built-in Git API used here
 - `README.md`
@@ -24,17 +27,19 @@ This repository is a small VS Code extension prototype named `Git Refs Explorer`
 ## Current Product Shape
 
 - Activity Bar container: `gitRefs`
-- Tree view: `gitRefs.refsView`
+- Active view: `gitRefs.revisionGraphView`
 - Commands:
   - `gitRefs.refresh`
   - `gitRefs.compareRefs`
   - `gitRefs.compareWithWorktree`
   - `gitRefs.checkout`
   - `gitRefs.merge`
+  - `gitRefs.openRevisionGraph`
+  - `gitRefs.chooseRevisionGraphRepository`
 
-The current implementation intentionally reuses native VS Code UX:
+The current implementation mixes native VS Code UX with a dedicated webview surface:
 
-- `TreeDataProvider` for navigation
+- `WebviewViewProvider` for graph navigation
 - `QuickPick` for reference and file selection
 - `showInputBox` for branch naming
 - `showWarningMessage` for destructive confirmations
@@ -45,12 +50,13 @@ The current implementation intentionally reuses native VS Code UX:
 - Prefer the public `vscode.git` API over shelling out to `git`.
 - Preserve multi-repository workspace support.
 - Handle the zero-repository case cleanly.
-- Keep the current MVP lightweight. Do not introduce a webview or persistent custom data layer unless the user asks for a more ambitious redesign.
+- Keep the current MVP lightweight. The webview is already part of the active architecture, but avoid adding a heavier persistent data layer unless the user asks for a more ambitious redesign.
 
 ## Known Gaps
 
-- No automated test suite exists yet.
-- `src/extension.ts` currently centralizes most logic, so larger changes should consider extracting modules.
+- An automated unit test suite exists for the pure data and command helpers.
+- The test suite covers pure helpers well, but the webview controller still has limited direct coverage.
+- `src/revisionGraphPanel.ts` currently centralizes most logic, so larger changes should consider extracting modules.
 - Compare results currently surface through a `QuickPick`, not a persistent results view.
 - UX around merge conflicts and detached/tag workflows is intentionally minimal.
 

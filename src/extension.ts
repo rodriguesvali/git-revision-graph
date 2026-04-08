@@ -17,9 +17,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   const revisionGraphProvider = new RevisionGraphViewProvider(git);
-  const services = createCommandServices();
+  const services = createCommandServices(revisionGraphProvider);
 
   context.subscriptions.push(
+    revisionGraphProvider,
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
@@ -59,7 +60,7 @@ async function getGitApi(): Promise<API | undefined> {
   return gitExtension.getAPI(1);
 }
 
-function createCommandServices(): RefCommandServices {
+function createCommandServices(revisionGraphProvider: RevisionGraphViewProvider): RefCommandServices {
   return {
     ui: {
       async pickRepository(items, placeHolder) {
@@ -110,8 +111,12 @@ function createCommandServices(): RefCommandServices {
       }
     },
     refreshController: {
-      refresh() {},
-      updateViewMessage() {}
+      refresh() {
+        void revisionGraphProvider.refresh();
+      },
+      updateViewMessage() {
+        void revisionGraphProvider.refresh();
+      }
     },
     formatPath(fsPath) {
       return vscode.workspace.asRelativePath(vscode.Uri.file(fsPath), false);
