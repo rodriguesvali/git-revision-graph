@@ -120,15 +120,52 @@ export function renderRevisionGraphHtml(
       position: absolute; width: ${NODE_WIDTH}px; min-height: 54px; border-radius: 10px;
       border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
       color: var(--node-text-dark); cursor: inherit; user-select: none; overflow: hidden;
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, outline-color 120ms ease;
     }
     .viewport.dragging .node { cursor: grabbing; }
     .node:hover { transform: translateY(-1px); }
-    .node.selected { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); }
+    .node.selected {
+      outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+      outline-offset: 1px;
+      border-color: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.18));
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .node.related {
+      outline-offset: 1px;
+      border-color: color-mix(in srgb, var(--accent) 28%, rgba(0, 0, 0, 0.18));
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15), 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+    .node.related.ancestor-related {
+      outline: 2px solid color-mix(in srgb, var(--accent) 46%, var(--text) 18%);
+    }
+    .node.related.descendant-related {
+      outline: 2px solid color-mix(in srgb, var(--accent) 68%, white 10%);
+    }
+    .node.related.ancestor-related.descendant-related {
+      outline: 2px solid color-mix(in srgb, var(--accent) 58%, white 12%);
+    }
     .node-head { background: var(--node-head); color: white; }
     .node-branch { background: var(--node-branch); }
     .node-tag { background: var(--node-tag); }
     .node-remote { background: var(--node-remote); }
     .node-mixed { background: var(--node-mixed); }
+    .graph-edge {
+      transition: stroke 120ms ease, stroke-width 120ms ease, opacity 120ms ease;
+    }
+    .graph-edge.related {
+      stroke: color-mix(in srgb, var(--accent) 66%, white 10%);
+      stroke-width: 3.4;
+      opacity: 1;
+    }
+    .graph-edge.related.ancestor-path {
+      stroke: color-mix(in srgb, var(--accent) 58%, var(--text) 16%);
+    }
+    .graph-edge.related.descendant-path {
+      stroke: color-mix(in srgb, var(--accent) 78%, white 8%);
+    }
+    .graph-edge.muted {
+      opacity: 0.18;
+    }
     .ref-line {
       padding: 8px 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; line-height: 1.25;
@@ -307,6 +344,8 @@ export function renderRevisionGraphHtml(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
     const edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
+    const parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
+    const childMap = buildDirectionalMap(graphEdges, 'to', 'from');
     const storedState = vscode.getState() || {};
     const nodeOffsets = Object.assign({}, storedState.nodeOffsets || {});
     const baseCanvasWidth = ${width};
@@ -329,7 +368,9 @@ export function renderRevisionGraphHtml(
         const additive = event.ctrlKey || event.metaKey;
         if (!refId) return;
         const existingIndex = selected.indexOf(refId);
-        if (!additive) {
+        if (!additive && selected.length === 1 && existingIndex === 0) {
+          selected.splice(0, selected.length);
+        } else if (!additive) {
           selected.splice(0, selected.length, refId);
         } else if (existingIndex >= 0) {
           selected.splice(existingIndex, 1);
@@ -518,7 +559,38 @@ export function renderRevisionGraphHtml(
         element.classList.toggle('compare', refId === selected[1]);
         element.classList.toggle('has-compare', selected.length === 2 && refId === selected[0]);
       }
+      syncRelationshipHighlights();
       syncMinimap();
+    }
+
+    function syncRelationshipHighlights() {
+      const anchorReference = selected[0] ? getReference(selected[0]) : undefined;
+      const anchorHash = anchorReference ? anchorReference.hash : null;
+      const ancestorHashes = anchorHash ? collectReachableHashes(anchorHash, parentMap) : new Set();
+      const descendantHashes = anchorHash ? collectReachableHashes(anchorHash, childMap) : new Set();
+      const relatedHashes = new Set([...ancestorHashes, ...descendantHashes]);
+
+      for (const [hash, element] of nodeElements.entries()) {
+        const isAncestorRelated = !!anchorHash && anchorHash !== hash && ancestorHashes.has(hash);
+        const isDescendantRelated = !!anchorHash && anchorHash !== hash && descendantHashes.has(hash);
+        element.classList.toggle('selected', anchorHash === hash);
+        element.classList.toggle('related', !!anchorHash && anchorHash !== hash && relatedHashes.has(hash));
+        element.classList.toggle('ancestor-related', isAncestorRelated);
+        element.classList.toggle('descendant-related', isDescendantRelated);
+      }
+
+      for (const element of edgeElements) {
+        const fromHash = element.getAttribute('data-edge-from');
+        const toHash = element.getAttribute('data-edge-to');
+        const isAncestorPath = !!anchorHash && !!fromHash && !!toHash && ancestorHashes.has(fromHash) && ancestorHashes.has(toHash);
+        const isDescendantPath = !!anchorHash && !!fromHash && !!toHash && descendantHashes.has(fromHash) && descendantHashes.has(toHash);
+        const isRelated = isAncestorPath || isDescendantPath;
+
+        element.classList.toggle('related', isRelated);
+        element.classList.toggle('ancestor-path', isAncestorPath);
+        element.classList.toggle('descendant-path', isDescendantPath);
+        element.classList.toggle('muted', !!anchorHash && !isRelated);
+      }
     }
 
     function openContextMenu(clientX, clientY, target) {
@@ -733,6 +805,41 @@ export function renderRevisionGraphHtml(
         }
       }
       return map;
+    }
+
+    function buildDirectionalMap(edges, sourceKey, targetKey) {
+      const map = new Map();
+      for (const node of graphNodes) {
+        map.set(node.hash, []);
+      }
+      for (const edge of edges) {
+        const source = edge[sourceKey];
+        const target = edge[targetKey];
+        if (!map.has(source)) {
+          map.set(source, []);
+        }
+        map.get(source).push(target);
+      }
+      return map;
+    }
+
+    function collectReachableHashes(startHash, adjacencyMap) {
+      const visited = new Set();
+      const queue = [startHash];
+      while (queue.length > 0) {
+        const hash = queue.shift();
+        if (!hash || visited.has(hash)) {
+          continue;
+        }
+        visited.add(hash);
+        const nextHashes = adjacencyMap.get(hash) || [];
+        for (const nextHash of nextHashes) {
+          if (!visited.has(nextHash)) {
+            queue.push(nextHash);
+          }
+        }
+      }
+      return visited;
     }
 
     function relaxPositions(positions, nodes, neighborMap, reverseBias) {
@@ -1040,7 +1147,7 @@ function renderEdge(edge: RevisionGraphEdge): string {
     NODE_PADDING_X + edge.toLane * LANE_WIDTH + NODE_WIDTH / 2,
     NODE_PADDING_Y + edge.toRow * ROW_HEIGHT + 8
   );
-  return `<path data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
+  return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
 
 function getNodeClass(node: RevisionGraphNode): string {
