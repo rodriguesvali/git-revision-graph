@@ -72,7 +72,6 @@ export function renderRevisionGraphHtml(
       --node-remote: #f6d8a8;
       --node-mixed: #f0e6c8;
       --node-text-dark: #181818;
-      --minimap-border: color-mix(in srgb, var(--border) 80%, transparent);
     }
     * { box-sizing: border-box; }
     body {
@@ -136,12 +135,6 @@ export function renderRevisionGraphHtml(
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
     .base-suffix { display: none; }
     .ref-line.base.has-compare .base-suffix { display: inline; }
-    .minimap {
-      position: fixed; right: 18px; bottom: 18px; width: 150px; height: 210px; border: 1px solid var(--minimap-border);
-      border-radius: 10px; background: color-mix(in srgb, var(--bg) 92%, var(--panel)); overflow: hidden; z-index: 25;
-    }
-    .minimap svg { width: 100%; height: 100%; }
-    .minimap-frame { fill: transparent; stroke: color-mix(in srgb, var(--accent) 65%, transparent); stroke-width: 2; }
     .context-menu {
       position: fixed;
       z-index: 60;
@@ -229,15 +222,6 @@ export function renderRevisionGraphHtml(
       </div>
     </div>
   </div>
-  <div class="minimap" aria-hidden="true">
-    <svg id="minimapSvg" viewBox="0 0 ${width} ${height}">
-      <g id="minimapLayer">
-        ${scene.edges.map((edge) => renderEdge(edge, true)).join('')}
-        ${scene.nodes.map((node) => renderMiniNode(node)).join('')}
-      </g>
-      <rect id="minimapFrame" class="minimap-frame" x="0" y="0" width="0" height="0"></rect>
-    </svg>
-  </div>
   <div class="context-menu" id="contextMenu"></div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
@@ -257,18 +241,11 @@ export function renderRevisionGraphHtml(
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
-    const minimapSvg = document.getElementById('minimapSvg');
-    const minimapFrame = document.getElementById('minimapFrame');
-    const minimapLayer = document.getElementById('minimapLayer');
     const contextMenu = document.getElementById('contextMenu');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
-    const miniNodeElements = new Map(
-      Array.from(document.querySelectorAll('[data-mini-node-hash]')).map((element) => [element.getAttribute('data-mini-node-hash'), element])
-    );
     const edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
-    const miniEdgeElements = Array.from(document.querySelectorAll('[data-mini-edge-from]'));
     const storedState = vscode.getState() || {};
     const nodeOffsets = Object.assign({}, storedState.nodeOffsets || {});
     const baseCanvasWidth = ${width};
@@ -610,13 +587,8 @@ export function renderRevisionGraphHtml(
         const left = clampNodeLeft(defaultLeft + Number(nodeOffsets[hash] || 0));
         nodeOffsets[hash] = left - defaultLeft;
         element.style.left = left + 'px';
-        const miniNode = miniNodeElements.get(hash);
-        if (miniNode) {
-          miniNode.setAttribute('x', String(left + ${NODE_WIDTH / 2 - 10}));
-        }
       }
-      updateEdges(edgeElements, false);
-      updateEdges(miniEdgeElements, true);
+      updateEdges(edgeElements);
       updateScenePlacement();
       if (persist) {
         persistNodeLayout();
@@ -720,10 +692,10 @@ export function renderRevisionGraphHtml(
       return { minX, maxX };
     }
 
-    function updateEdges(elements, mini) {
+    function updateEdges(elements) {
       for (const element of elements) {
-        const fromHash = mini ? element.getAttribute('data-mini-edge-from') : element.getAttribute('data-edge-from');
-        const toHash = mini ? element.getAttribute('data-mini-edge-to') : element.getAttribute('data-edge-to');
+        const fromHash = element.getAttribute('data-edge-from');
+        const toHash = element.getAttribute('data-edge-to');
         if (!fromHash || !toHash) {
           continue;
         }
@@ -756,7 +728,6 @@ export function renderRevisionGraphHtml(
       );
       canvas.style.width = availableWidth + 'px';
       canvas.style.height = availableHeight + 'px';
-      minimapSvg.setAttribute('viewBox', '0 0 ' + availableWidth + ' ' + availableHeight);
     }
 
     function updateScenePlacement() {
@@ -771,7 +742,6 @@ export function renderRevisionGraphHtml(
       layoutOffsetX = clamp(preferredCenterX ? canvasWidth / 2 - preferredCenterX : 0, 0, maxOffsetX);
       layoutOffsetY = clamp(preferredCenterY ? canvasHeight / 2 - preferredCenterY : 0, 0, maxOffsetY);
       sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
-      minimapLayer.setAttribute('transform', 'translate(' + layoutOffsetX + ' ' + layoutOffsetY + ')');
     }
 
     function centerGraphInViewport() {
@@ -936,27 +906,7 @@ export function renderRevisionGraphHtml(
       return references.find((ref) => ref.id === refId);
     }
 
-    function syncMinimap() {
-      const zoom = currentZoom;
-      const visibleX = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / zoom);
-      const visibleY = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / zoom);
-      const visibleWidth = Math.max(
-        0,
-        (viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}) / zoom
-      );
-      const visibleHeight = Math.max(
-        0,
-        (viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / zoom
-      );
-      const canvasWidth = getCanvasWidth();
-      const canvasHeight = getCanvasHeight();
-      const frameWidth = Math.min(canvasWidth - visibleX, visibleWidth);
-      const frameHeight = Math.min(canvasHeight - visibleY, visibleHeight);
-      minimapFrame.setAttribute('x', String(visibleX));
-      minimapFrame.setAttribute('y', String(visibleY));
-      minimapFrame.setAttribute('width', String(frameWidth));
-      minimapFrame.setAttribute('height', String(frameHeight));
-    }
+    function syncMinimap() {}
   </script>
 </body>
 </html>`;
@@ -988,24 +938,16 @@ function renderNode(node: RevisionGraphNode): string {
   </div>`;
 }
 
-function renderMiniNode(node: RevisionGraphNode): string {
-  const x = NODE_PADDING_X + node.lane * LANE_WIDTH + NODE_WIDTH / 2 - 10;
-  const y = NODE_PADDING_Y + node.row * ROW_HEIGHT + 18;
-  return `<rect data-mini-node-hash="${node.hash}" x="${x}" y="${y}" width="20" height="12" rx="3" fill="${miniNodeColor(node)}" opacity="0.92"></rect>`;
-}
-
-function renderEdge(edge: RevisionGraphEdge, mini = false): string {
-  const strokeWidth = mini ? 3 : 2.4;
-  const marker = mini ? '' : 'marker-end="url(#arrowhead)"';
+function renderEdge(edge: RevisionGraphEdge): string {
+  const strokeWidth = 2.4;
+  const marker = 'marker-end="url(#arrowhead)"';
   const path = describeEdgePath(
     NODE_PADDING_X + edge.fromLane * LANE_WIDTH + NODE_WIDTH / 2,
     NODE_PADDING_Y + edge.fromRow * ROW_HEIGHT + 48,
     NODE_PADDING_X + edge.toLane * LANE_WIDTH + NODE_WIDTH / 2,
     NODE_PADDING_Y + edge.toRow * ROW_HEIGHT + 8
   );
-  return mini
-    ? `<path data-mini-edge-from="${edge.from}" data-mini-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"></path>`
-    : `<path data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
+  return `<path data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
 
 function getNodeClass(node: RevisionGraphNode): string {
@@ -1015,16 +957,6 @@ function getNodeClass(node: RevisionGraphNode): string {
   if (kinds.size === 1 && kinds.has('remote')) return 'node-remote';
   if (kinds.size === 1 && kinds.has('branch')) return 'node-branch';
   return 'node-mixed';
-}
-
-function miniNodeColor(node: RevisionGraphNode): string {
-  switch (getNodeClass(node)) {
-    case 'node-head': return '#d62828';
-    case 'node-tag': return '#f7f300';
-    case 'node-remote': return '#f6d8a8';
-    case 'node-branch': return '#ffd79a';
-    default: return '#e8d9b5';
-  }
 }
 
 function createNonce(): string {
