@@ -5,6 +5,23 @@
   "version": "0.0.1",
   "publisher": "local",
   "license": "MIT",
+  "homepage": "https://github.com/rodriguesvali/git-revision-graph#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodriguesvali/git-revision-graph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rodriguesvali/git-revision-graph/issues"
+  },
+  "keywords": [
+    "git",
+    "graph",
+    "branches",
+    "tags",
+    "source-control",
+    "visualization"
+  ],
+  "markdown": "github",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -96,9 +113,14 @@
   "scripts": {
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/**/*.test.js"
+    "test": "npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/**/*.test.js",
+    "package:vsix": "vsce package",
+    "publish:patch": "vsce publish patch",
+    "publish:minor": "vsce publish minor",
+    "publish:major": "vsce publish major"
   },
   "devDependencies": {
+    "@vscode/vsce": "^3.7.1",
     "@types/node": "^20.16.5",
     "@types/vscode": "^1.90.0",
     "typescript": "^5.6.2"

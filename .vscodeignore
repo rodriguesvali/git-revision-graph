@@ -1,0 +1,16 @@
+.codex/**
+.devcontainer/**
+.git/**
+.github/**
+.gitignore
+.vscode/**
+coverage/**
+out-test/**
+src/**
+test/**
+tsconfig.json
+tsconfig.test.json
+*.ts
+*.map
+package-lock.json
+PUBLISHING.md
