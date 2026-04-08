@@ -35,11 +35,16 @@ export interface ReferenceManager {
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
 }
 
+export interface AncestryInspector {
+  isRefAncestorOfHead(repository: Repository, refName: string, headRefName: string): Promise<boolean>;
+}
+
 export interface RefActionServices {
   readonly ui: RefActionUi;
   readonly diffPresenter: DiffPresenter;
   readonly refreshController: RefreshController;
   readonly referenceManager: ReferenceManager;
+  readonly ancestryInspector: AncestryInspector;
   readonly formatPath: (fsPath: string) => string;
 }
 
@@ -157,21 +162,29 @@ export async function mergeResolvedReference(
   target: RefSelection,
   services: RefActionServices
 ): Promise<void> {
-  const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
-  if (repository.state.HEAD?.name === target.refName) {
-    services.ui.showInformationMessage('The current branch cannot be merged into itself.');
-    return;
-  }
-
-  const confirmed = await services.ui.confirm({
-    message: `Merge ${target.label} into ${currentBranch}?`,
-    confirmLabel: 'Merge'
-  });
-  if (!confirmed) {
-    return;
-  }
-
   try {
+    const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
+    if (repository.state.HEAD?.name === target.refName) {
+      services.ui.showInformationMessage('The current branch cannot be merged into itself.');
+      return;
+    }
+
+    if (
+      repository.state.HEAD?.name &&
+      await services.ancestryInspector.isRefAncestorOfHead(repository, target.refName, repository.state.HEAD.name)
+    ) {
+      services.ui.showInformationMessage(`${target.label} is already contained in ${currentBranch}.`);
+      return;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: `Merge ${target.label} into ${currentBranch}?`,
+      confirmLabel: 'Merge'
+    });
+    if (!confirmed) {
+      return;
+    }
+
     await repository.merge(target.refName);
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();

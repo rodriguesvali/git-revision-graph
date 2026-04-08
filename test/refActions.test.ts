@@ -68,6 +68,11 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
         deletedRemoteBranches.push({ remoteName, branchName });
       }
     },
+    ancestryInspector: {
+      async isRefAncestorOfHead() {
+        return false;
+      }
+    },
     formatPath(fsPath) {
       return fsPath.replace('/workspace/repo/', '');
     }
@@ -163,6 +168,24 @@ test('mergeResolvedReference preserves the self-merge guard', async () => {
 
   assert.deepEqual(repository.calls.merge, []);
   assert.equal(harness.infoMessages[0], 'The current branch cannot be merged into itself.');
+});
+
+test('mergeResolvedReference prevents merges that are already ancestors of HEAD', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.ancestryInspector.isRefAncestorOfHead = async () => true;
+
+  await mergeResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.merge, []);
+  assert.equal(harness.infoMessages[0], 'release/2026 is already contained in main.');
 });
 
 test('deleteResolvedReference deletes remote branches through the shared reference manager', async () => {

@@ -15,6 +15,7 @@ import {
   RevisionGraphRef
 } from './revisionGraphData';
 import {
+  isRefAncestorOfHead,
   loadRevisionGraphCommits,
   openUnifiedDiff,
   pickRevisionGraphRepository,
@@ -207,11 +208,17 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         ? filterRevisionGraphCommitsToAncestors(commits, this.ancestorFilter.refName, this.ancestorFilter.refKind)
         : commits;
       const scene = buildRevisionGraphScene(visibleCommits.length > 0 ? visibleCommits : commits);
+      const mergeBlockedTargets = await getMergeBlockedTargets(
+        this.currentRepository,
+        this.currentRepository.state.HEAD?.name,
+        scene
+      );
       this.view.webview.html = renderRevisionGraphHtml(
         vscode.workspace.asRelativePath(this.currentRepository.rootUri, false),
         scene,
         this.currentRepository.state.HEAD?.name,
-        this.ancestorFilter
+        this.ancestorFilter,
+        mergeBlockedTargets
       );
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorMessage(error));
@@ -269,3 +276,37 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
 }
 
 export { REVISION_GRAPH_VIEW_ID };
+
+async function getMergeBlockedTargets(
+  repository: Repository,
+  currentHeadName: string | undefined,
+  scene: ReturnType<typeof buildRevisionGraphScene>
+): Promise<string[]> {
+  if (!currentHeadName) {
+    return [];
+  }
+
+  const refs = scene.nodes.flatMap((node) => node.refs);
+  const uniqueRefs = [
+    ...new Map(
+      refs.map((ref) => [`${ref.kind}::${ref.name}`, ref] as const)
+    ).values()
+  ];
+
+  const mergeBlockedEntries = await Promise.all(
+    uniqueRefs.map(async (ref) => {
+      if (ref.kind === 'head' || ref.name === currentHeadName) {
+        return undefined;
+      }
+
+      try {
+        const isAncestor = await isRefAncestorOfHead(repository, ref.name, currentHeadName);
+        return isAncestor ? `${ref.kind}::${ref.name}` : undefined;
+      } catch {
+        return undefined;
+      }
+    })
+  );
+
+  return mergeBlockedEntries.filter((entry): entry is string => typeof entry === 'string');
+}

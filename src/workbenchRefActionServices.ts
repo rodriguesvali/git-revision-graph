@@ -6,6 +6,7 @@ import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresent
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { RefActionServices } from './refActions';
+import { isRefAncestorOfHead } from './revisionGraphRepository';
 
 const execFile = promisify(execFileCallback);
 
@@ -70,6 +71,11 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
             maxBuffer: 8 * 1024 * 1024
           }
         );
+      }
+    },
+    ancestryInspector: {
+      async isRefAncestorOfHead(repository, refName, headRefName) {
+        return isRefAncestorOfHead(repository, refName, headRefName);
       }
     },
     formatPath(fsPath) {

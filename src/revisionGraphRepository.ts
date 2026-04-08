@@ -89,6 +89,34 @@ export async function openUnifiedDiff(repository: Repository, left: string, righ
   }
 }
 
+export async function isRefAncestorOfHead(
+  repository: Repository,
+  refName: string,
+  headRefName: string
+): Promise<boolean> {
+  try {
+    await execFile(
+      'git',
+      ['merge-base', '--is-ancestor', refName, headRefName],
+      {
+        cwd: repository.rootUri.fsPath,
+        maxBuffer: 8 * 1024 * 1024
+      }
+    );
+    return true;
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error
+      ? (error as { code?: unknown }).code
+      : undefined;
+
+    if (code === 1) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
 export async function showRevisionLog(repository: Repository, left: string, right: string, limit: number): Promise<void> {
   try {
     const entries = await loadRevisionLogEntries(repository.rootUri.fsPath, left, right, limit);

@@ -15,7 +15,8 @@ export function renderRevisionGraphHtml(
   repositoryLabel: string,
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
-  ancestorFilter: RevisionGraphAncestorFilter | undefined
+  ancestorFilter: RevisionGraphAncestorFilter | undefined,
+  mergeBlockedTargets: readonly string[]
 ): string {
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
@@ -170,6 +171,7 @@ export function renderRevisionGraphHtml(
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
+    const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
     const zoomLevels = ${JSON.stringify(zoomLevels)};
     const selected = [];
     const viewport = document.getElementById('viewport');
@@ -391,9 +393,11 @@ export function renderRevisionGraphHtml(
               vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
             });
           }
-          appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => {
-            vscode.postMessage({ type: 'merge', refName: target.name });
-          });
+          if (!mergeBlockedTargets.has(target.kind + '::' + target.name)) {
+            appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => {
+              vscode.postMessage({ type: 'merge', refName: target.name });
+            });
+          }
         }
         if (activeAncestorFilter && (activeAncestorFilter.refName !== target.name || activeAncestorFilter.refKind !== target.kind)) {
           appendMenuItem('Show All References', () => {

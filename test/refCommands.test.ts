@@ -64,6 +64,11 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     referenceManager: {
       async deleteRemoteBranch() {}
     },
+    ancestryInspector: {
+      async isRefAncestorOfHead() {
+        return false;
+      }
+    },
     formatPath(fsPath) {
       return fsPath;
     }
