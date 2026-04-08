@@ -113,30 +113,12 @@ export async function checkoutResolvedReference(
     }
 
     if (target.kind === 'remote') {
-      const remoteCheckout = resolveRemoteCheckoutTarget(repository, target.refName);
-      const branchName = await services.ui.promptBranchName({
-        prompt: remoteCheckout.upstreamRefName
-          ? `Create a Local Branch Tracking ${remoteCheckout.upstreamRefName}`
-          : `Create a Local Branch from ${target.label}`,
-        value: remoteCheckout.suggestedLocalName
-      });
+      await createBranchFromResolvedReference(repository, target, services);
+      return;
+    }
 
-      if (!branchName) {
-        return;
-      }
-
-      await repository.createBranch(branchName, true, remoteCheckout.startPointRefName);
-      if (remoteCheckout.upstreamRefName) {
-        await repository.setBranchUpstream(branchName, remoteCheckout.upstreamRefName);
-      }
-
-      services.ui.showInformationMessage(
-        remoteCheckout.upstreamRefName
-          ? `Branch ${branchName} was created and checked out from ${remoteCheckout.upstreamRefName}.`
-          : `Branch ${branchName} was created and checked out from ${target.label}.`
-      );
-      services.refreshController.refresh();
-      services.refreshController.updateViewMessage();
+    if (target.kind === 'tag') {
+      await createBranchFromResolvedReference(repository, target, services);
       return;
     }
 
@@ -154,6 +136,39 @@ export async function checkoutResolvedReference(
     services.refreshController.updateViewMessage();
   } catch (error) {
     await services.ui.showErrorMessage(`Could not check out the reference. ${toErrorDetail(error)}`);
+  }
+}
+
+export async function createBranchFromResolvedReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<void> {
+  try {
+    const branchCreation = getBranchCreationTarget(repository, target);
+    const branchName = await services.ui.promptBranchName({
+      prompt: branchCreation.prompt,
+      value: branchCreation.suggestedLocalName
+    });
+
+    if (!branchName) {
+      return;
+    }
+
+    await repository.createBranch(branchName, true, branchCreation.startPointRefName);
+    if (branchCreation.upstreamRefName) {
+      await repository.setBranchUpstream(branchName, branchCreation.upstreamRefName);
+    }
+
+    services.ui.showInformationMessage(
+      branchCreation.upstreamRefName
+        ? `Branch ${branchName} was created and checked out from ${branchCreation.upstreamRefName}.`
+        : `Branch ${branchName} was created and checked out from ${target.label}.`
+    );
+    services.refreshController.refresh();
+    services.refreshController.updateViewMessage();
+  } catch (error) {
+    await services.ui.showErrorMessage(`Could not create the branch. ${toErrorDetail(error)}`);
   }
 }
 
@@ -299,6 +314,33 @@ function resolveRemoteCheckoutTarget(
   };
 }
 
+function getBranchCreationTarget(
+  repository: Repository,
+  target: RefActionTarget
+): {
+  startPointRefName: string;
+  upstreamRefName: string | undefined;
+  suggestedLocalName: string;
+  prompt: string;
+} {
+  if (target.kind === 'remote') {
+    const remoteCheckout = resolveRemoteCheckoutTarget(repository, target.refName);
+    return {
+      ...remoteCheckout,
+      prompt: remoteCheckout.upstreamRefName
+        ? `Create a New Local Branch Tracking ${remoteCheckout.upstreamRefName}`
+        : `Create a New Local Branch from ${target.label}`
+    };
+  }
+
+  return {
+    startPointRefName: target.refName,
+    upstreamRefName: undefined,
+    suggestedLocalName: getSuggestedNewBranchName(target.refName, target.kind),
+    prompt: `Create a New Local Branch from ${target.label}`
+  };
+}
+
 function parseRemoteDeletionTarget(refName: string): { remoteName: string; branchName: string } | undefined {
   const firstSlash = refName.indexOf('/');
   if (firstSlash <= 0 || firstSlash === refName.length - 1) {
@@ -314,6 +356,14 @@ function parseRemoteDeletionTarget(refName: string): { remoteName: string; branc
 function getSuggestedLocalBranchName(refName: string): string {
   const firstSlash = refName.indexOf('/');
   return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
+}
+
+function getSuggestedNewBranchName(refName: string, kind: RefActionKind): string {
+  if (kind === 'head' || kind === 'branch') {
+    return `${refName}-copy`;
+  }
+
+  return refName;
 }
 
 function toErrorDetail(error: unknown): string {

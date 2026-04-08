@@ -38,6 +38,8 @@ export interface RevisionGraphScene {
   readonly rowCount: number;
 }
 
+type RevisionGraphRefKind = RevisionGraphRef['kind'];
+
 interface CommitLaneLayout {
   readonly hash: string;
   readonly row: number;
@@ -47,7 +49,10 @@ interface CommitLaneLayout {
 const FIELD_SEPARATOR = '\u001f';
 const RECORD_SEPARATOR = '\u001e';
 
-export function parseRevisionGraphLog(output: string): RevisionGraphCommit[] {
+export function parseRevisionGraphLog(
+  output: string,
+  refKindsByName?: ReadonlyMap<string, RevisionGraphRefKind>
+): RevisionGraphCommit[] {
   return output
     .split(RECORD_SEPARATOR)
     .map((record) => record.trim())
@@ -60,7 +65,7 @@ export function parseRevisionGraphLog(output: string): RevisionGraphCommit[] {
         author,
         date,
         subject,
-        refs: parseDecorationRefs(decorations ?? '')
+        refs: parseDecorationRefs(decorations ?? '', refKindsByName)
       };
     });
 }
@@ -172,7 +177,10 @@ export function filterRevisionGraphCommitsToAncestors(
   return commits.filter((commit) => reachable.has(commit.hash));
 }
 
-export function parseDecorationRefs(decorations: string): RevisionGraphRef[] {
+export function parseDecorationRefs(
+  decorations: string,
+  refKindsByName?: ReadonlyMap<string, RevisionGraphRefKind>
+): RevisionGraphRef[] {
   if (!decorations) {
     return [];
   }
@@ -188,6 +196,11 @@ export function parseDecorationRefs(decorations: string): RevisionGraphRef[] {
 
       if (label.startsWith('tag: ')) {
         return { name: label.slice('tag: '.length), kind: 'tag' };
+      }
+
+      const knownKind = refKindsByName?.get(label);
+      if (knownKind) {
+        return { name: label, kind: knownKind };
       }
 
       if (label.includes('/')) {

@@ -2,8 +2,8 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
-import { API, Repository } from './git';
-import { getRevisionGraphGitFormat, parseRevisionGraphLog } from './revisionGraphData';
+import { API, Ref, RefType, Repository } from './git';
+import { getRevisionGraphGitFormat, parseRevisionGraphLog, RevisionGraphRef } from './revisionGraphData';
 import { sortRepositoriesByPath } from './repositorySelection';
 import { RevisionLogEntry } from './revisionGraphTypes';
 
@@ -13,7 +13,8 @@ interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
   readonly entry: RevisionLogEntry;
 }
 
-export async function loadRevisionGraphCommits(repositoryPath: string, limit: number) {
+export async function loadRevisionGraphCommits(repository: Repository, limit: number) {
+  const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
   const { stdout } = await execFile(
     'git',
     [
@@ -26,12 +27,12 @@ export async function loadRevisionGraphCommits(repositoryPath: string, limit: nu
       `--pretty=format:${getRevisionGraphGitFormat()}`
     ],
     {
-      cwd: repositoryPath,
+      cwd: repository.rootUri.fsPath,
       maxBuffer: 8 * 1024 * 1024
     }
   );
 
-  return parseRevisionGraphLog(stdout);
+  return parseRevisionGraphLog(stdout, refKindsByName);
 }
 
 export async function pickRevisionGraphRepository(git: API, alwaysPrompt: boolean): Promise<Repository | undefined> {
@@ -152,6 +153,57 @@ export async function showRevisionLog(repository: Repository, left: string, righ
 
 export function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function buildRevisionGraphRefKinds(refs: readonly Ref[]): Map<string, RevisionGraphRef['kind']> {
+  const refKindsByName = new Map<string, RevisionGraphRef['kind']>();
+
+  for (const ref of refs) {
+    const refName = getRefName(ref);
+    if (!refName) {
+      continue;
+    }
+
+    const nextKind = toRevisionGraphRefKind(ref.type);
+    const currentKind = refKindsByName.get(refName);
+    if (!currentKind || getRefKindPriority(nextKind) < getRefKindPriority(currentKind)) {
+      refKindsByName.set(refName, nextKind);
+    }
+  }
+
+  return refKindsByName;
+}
+
+function getRefName(ref: Ref): string {
+  if (ref.type === RefType.RemoteHead && ref.remote && ref.name) {
+    return ref.name.startsWith(`${ref.remote}/`) ? ref.name : `${ref.remote}/${ref.name}`;
+  }
+
+  return ref.name ?? '';
+}
+
+function toRevisionGraphRefKind(type: RefType): RevisionGraphRef['kind'] {
+  switch (type) {
+    case RefType.Head:
+      return 'branch';
+    case RefType.RemoteHead:
+      return 'remote';
+    case RefType.Tag:
+      return 'tag';
+  }
+}
+
+function getRefKindPriority(kind: RevisionGraphRef['kind']): number {
+  switch (kind) {
+    case 'head':
+      return 0;
+    case 'tag':
+      return 1;
+    case 'branch':
+      return 2;
+    case 'remote':
+      return 3;
+  }
 }
 
 async function openCommitLogEntry(repository: Repository, commitHash: string): Promise<void> {

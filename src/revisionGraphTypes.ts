@@ -12,6 +12,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
+  | { readonly type: 'create-branch'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
 

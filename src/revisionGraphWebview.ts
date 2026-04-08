@@ -662,8 +662,13 @@ export function renderRevisionGraphHtml(
             }, 'Filtering ancestors of ' + target.name + '...');
           });
         }
-        appendMenuItem('Checkout', () => {
-          vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+        if (target.kind !== 'tag') {
+          appendMenuItem('Checkout', () => {
+            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+          });
+        }
+        appendMenuItem('Create New Branch', () => {
+          vscode.postMessage({ type: 'create-branch', refName: target.name, refKind: target.kind });
         });
         if (!isCurrentHead) {
           if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {

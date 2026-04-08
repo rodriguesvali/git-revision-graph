@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
 import {
+  createBranchFromResolvedReference,
   checkoutResolvedReference,
   compareResolvedRefs,
   deleteResolvedReference,
@@ -150,6 +151,74 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
     { name: 'main', upstream: 'origin/main' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
+test('checkoutResolvedReference creates a branch from tags instead of checking them out directly', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Tag, name: 'v1.2.3' })]
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'v1.2.3', label: 'v1.2.3', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
+test('createBranchFromResolvedReference creates a new branch from a local branch reference', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'release/2026-copy', checkout: true, ref: 'release/2026' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
+test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })]
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'feature/demo', checkout: true, ref: 'origin/feature/demo' }
+  ]);
+  assert.deepEqual(repository.calls.setBranchUpstream, [
+    { name: 'feature/demo', upstream: 'origin/feature/demo' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 2);
 });
 

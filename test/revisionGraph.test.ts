@@ -35,6 +35,21 @@ test('parses decoration labels by type', () => {
   ]);
 });
 
+test('prefers repository ref kinds for branch names that contain slashes', () => {
+  const commits = parseRevisionGraphLog(
+    'aaa111\u001f\u001fAda\u001f2026-04-08\u001fFixes\u001fLatam/work/2026-010-Bugs, origin/main\u001e',
+    new Map([
+      ['Latam/work/2026-010-Bugs', 'branch' as const],
+      ['origin/main', 'remote' as const]
+    ])
+  );
+
+  assert.deepEqual(commits[0].refs, [
+    { name: 'Latam/work/2026-010-Bugs', kind: 'branch' },
+    { name: 'origin/main', kind: 'remote' }
+  ]);
+});
+
 test('builds a ref-centric graph scene with grouped labels and nearest ancestor edges', () => {
   const scene = buildRevisionGraphScene([
     { hash: 'a1', parents: ['b1', 'c1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [] },

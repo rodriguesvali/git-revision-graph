@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { Repository, API } from './git';
 import { isSameRepositoryPath, reconcileCurrentRepository } from './repositorySelection';
 import {
+  createBranchFromResolvedReference,
   checkoutResolvedReference,
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
@@ -145,6 +146,16 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
             await this.render();
           }
           return;
+        case 'create-branch':
+          if (this.currentRepository) {
+            await createBranchFromResolvedReference(
+              this.currentRepository,
+              { refName: message.refName, label: message.refName, kind: message.refKind },
+              this.actionServices
+            );
+            await this.render();
+          }
+          return;
         case 'delete':
           if (this.currentRepository) {
             await deleteResolvedReference(
@@ -203,7 +214,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     }
 
     try {
-      const commits = await loadRevisionGraphCommits(this.currentRepository.rootUri.fsPath, GRAPH_COMMIT_LIMIT);
+      const commits = await loadRevisionGraphCommits(this.currentRepository, GRAPH_COMMIT_LIMIT);
       const visibleCommits = this.ancestorFilter
         ? filterRevisionGraphCommitsToAncestors(commits, this.ancestorFilter.refName, this.ancestorFilter.refKind)
         : commits;

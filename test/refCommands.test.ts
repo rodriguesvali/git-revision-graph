@@ -158,6 +158,23 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   assert.equal(harness.refreshCalls, 2);
 });
 
+test('checkoutReference creates a branch when the selected reference is a tag', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.Tag, name: 'v1.2.3' })]
+  });
+  const harness = createServices();
+
+  await checkoutReference(createApi([repository]), undefined, harness.services);
+
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
 test('mergeReference prevents merging the current branch into itself', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
