@@ -332,7 +332,7 @@ export function renderRevisionGraphHtml(
     .workspace-led {
       position: fixed;
       top: 14px;
-      right: 14px;
+      right: 44px;
       z-index: 70;
       width: 30px;
       height: 30px;

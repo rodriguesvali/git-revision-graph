@@ -15,7 +15,7 @@ interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
 }
 
 export async function loadRevisionGraphCommits(repository: Repository, limit: number) {
-  const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
+  const refKindsByName = buildRevisionGraphRefKinds(await repository.getRefs());
   const { stdout } = await execFile(
     'git',
     [

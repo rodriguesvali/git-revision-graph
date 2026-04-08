@@ -163,7 +163,7 @@ export async function createBranchFromResolvedReference(
       return;
     }
 
-    const branchCreation = getBranchCreationTarget(repository, target);
+    const branchCreation = await getBranchCreationTarget(repository, target);
     const branchName = await services.ui.promptBranchName({
       prompt: branchCreation.prompt,
       value: branchCreation.suggestedLocalName
@@ -346,14 +346,14 @@ export async function deleteResolvedReference(
   }
 }
 
-function resolveRemoteCheckoutTarget(
+async function resolveRemoteCheckoutTarget(
   repository: Repository,
   refName: string
-): {
+): Promise<{
   startPointRefName: string;
   upstreamRefName: string | undefined;
   suggestedLocalName: string;
-} {
+}> {
   const remoteTarget = parseRemoteDeletionTarget(refName);
   if (!remoteTarget || remoteTarget.branchName !== 'HEAD') {
     return {
@@ -363,10 +363,11 @@ function resolveRemoteCheckoutTarget(
     };
   }
 
-  const symbolicRef = repository.state.refs.find(
+  const refs = await repository.getRefs();
+  const symbolicRef = refs.find(
     (ref) => ref.type === RefType.RemoteHead && ref.name === refName
   );
-  const candidates = repository.state.refs.filter(
+  const candidates = refs.filter(
     (ref) =>
       ref.type === RefType.RemoteHead &&
       ref.name &&
@@ -388,17 +389,17 @@ function resolveRemoteCheckoutTarget(
   };
 }
 
-function getBranchCreationTarget(
+async function getBranchCreationTarget(
   repository: Repository,
   target: RefActionTarget
-): {
+): Promise<{
   startPointRefName: string;
   upstreamRefName: string | undefined;
   suggestedLocalName: string;
   prompt: string;
-} {
+}> {
   if (target.kind === 'remote') {
-    const remoteCheckout = resolveRemoteCheckoutTarget(repository, target.refName);
+    const remoteCheckout = await resolveRemoteCheckoutTarget(repository, target.refName);
     return {
       ...remoteCheckout,
       prompt: remoteCheckout.upstreamRefName
