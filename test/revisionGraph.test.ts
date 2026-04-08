@@ -47,9 +47,9 @@ test('builds a ref-centric graph scene with grouped labels and nearest ancestor 
   assert.deepEqual(
     scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane, row: node.row, refs: node.refs.map((ref) => ref.name) })),
     [
-      { hash: 'b1', lane: 0, row: 1, refs: ['main', 'origin/main'] },
-      { hash: 'c1', lane: 1, row: 2, refs: ['origin/feature/demo'] },
-      { hash: 'd1', lane: 0, row: 3, refs: ['v1.0.0'] }
+      { hash: 'b1', lane: 0, row: 0, refs: ['main', 'origin/main'] },
+      { hash: 'c1', lane: 1, row: 1, refs: ['origin/feature/demo'] },
+      { hash: 'd1', lane: 0, row: 2, refs: ['v1.0.0'] }
     ]
   );
   assert.deepEqual(

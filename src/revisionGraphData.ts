@@ -70,7 +70,7 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
   const commitByHash = new Map(commits.map((commit) => [commit.hash, commit] as const));
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 
-  const nodes = commits
+  const rawNodes = commits
     .filter((commit) => commit.refs.length > 0)
     .map<RevisionGraphNode>((commit) => {
       const layout = layoutByHash.get(commit.hash);
@@ -88,6 +88,7 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
         lane: layout.lane
       };
     });
+  const nodes = compactNodeRows(rawNodes);
 
   const nodeByHash = new Map(nodes.map((node) => [node.hash, node] as const));
   const edges: RevisionGraphEdge[] = [];
@@ -222,6 +223,15 @@ function layoutCommitLanes(commits: readonly RevisionGraphCommit[]): CommitLaneL
   }
 
   return nodes;
+}
+
+function compactNodeRows(nodes: readonly RevisionGraphNode[]): RevisionGraphNode[] {
+  return [...nodes]
+    .sort((left, right) => left.row - right.row)
+    .map((node, row) => ({
+      ...node,
+      row
+    }));
 }
 
 function findNearestReferencedAncestors(
