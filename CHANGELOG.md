@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.5
+
+- Added relationship highlighting from the first selected reference, emphasizing ancestor and descendant connectors and adding related card borders for easier graph inspection.
+- Improved selection behavior by allowing a second click on the same reference to clear the active selection.
+- Added a loading overlay during ancestor filtering and clarified context menu labels when a filter is already active.
+- Updated the board to automatically reorganize the graph whenever its data is refreshed, keeping the layout cleaner after load, filter, and repository updates.
+
 ## 0.0.4
 
 - Refined automatic graph organization to favor a more compact, vertical reading flow in larger repositories instead of spreading cards aggressively across the horizontal axis.
