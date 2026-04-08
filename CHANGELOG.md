@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.2
+
+- Improved revision graph readability with curved connectors, compacted vertical spacing, and centered graph presentation inside the board.
+- Added horizontal drag handles for reference cards so users can manually rearrange the graph during a session.
+- Added a board context menu with `Reorganize`, `Zoom Out`, and `Zoom In` actions for graph layout control.
+- Refined automatic graph organization for repositories with sparse or denser reference layouts.
+- Improved drag interaction feedback and minimap behavior to better match the rendered graph.
+
 ## 0.0.1
 
 - Initial public release of GIT Revision Graph.

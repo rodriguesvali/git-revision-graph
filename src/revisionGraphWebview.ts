@@ -230,7 +230,7 @@ export function renderRevisionGraphHtml(
     </div>
   </div>
   <div class="minimap" aria-hidden="true">
-    <svg viewBox="0 0 ${width} ${height}">
+    <svg id="minimapSvg" viewBox="0 0 ${width} ${height}">
       <g id="minimapLayer">
         ${scene.edges.map((edge) => renderEdge(edge, true)).join('')}
         ${scene.nodes.map((node) => renderMiniNode(node)).join('')}
@@ -252,6 +252,7 @@ export function renderRevisionGraphHtml(
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
+    const minimapSvg = document.getElementById('minimapSvg');
     const minimapFrame = document.getElementById('minimapFrame');
     const minimapLayer = document.getElementById('minimapLayer');
     const contextMenu = document.getElementById('contextMenu');
@@ -750,6 +751,7 @@ export function renderRevisionGraphHtml(
       );
       canvas.style.width = availableWidth + 'px';
       canvas.style.height = availableHeight + 'px';
+      minimapSvg.setAttribute('viewBox', '0 0 ' + availableWidth + ' ' + availableHeight);
     }
 
     function updateScenePlacement() {
@@ -906,8 +908,10 @@ export function renderRevisionGraphHtml(
         0,
         (viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / zoom
       );
-      const frameWidth = Math.min(${width} - visibleX, visibleWidth);
-      const frameHeight = Math.min(${height} - visibleY, visibleHeight);
+      const canvasWidth = getCanvasWidth();
+      const canvasHeight = getCanvasHeight();
+      const frameWidth = Math.min(canvasWidth - visibleX, visibleWidth);
+      const frameHeight = Math.min(canvasHeight - visibleY, visibleHeight);
       minimapFrame.setAttribute('x', String(visibleX));
       minimapFrame.setAttribute('y', String(visibleY));
       minimapFrame.setAttribute('width', String(frameWidth));
