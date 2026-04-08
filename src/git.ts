@@ -79,6 +79,7 @@ export interface Repository {
   checkout(treeish: string): Promise<void>;
   createBranch(name: string, checkout: boolean, ref?: string): Promise<void>;
   deleteBranch(name: string, force?: boolean): Promise<void>;
+  getBranch(name: string): Promise<Branch>;
   deleteTag(name: string): Promise<void>;
   setBranchUpstream(name: string, upstream: string): Promise<void>;
   merge(ref: string): Promise<void>;

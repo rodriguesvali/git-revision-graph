@@ -116,6 +116,18 @@ export function createRepository(options: {
     async deleteBranch(name: string, force?: boolean): Promise<void> {
       calls.deleteBranch.push({ name, force });
     },
+    async getBranch(name: string): Promise<Branch> {
+      if (options.head?.name === name) {
+        return options.head;
+      }
+
+      const branch = refs.find((ref) => ref.name === name);
+      if (branch) {
+        return branch as Branch;
+      }
+
+      throw new Error(`Branch ${name} not found.`);
+    },
     async deleteTag(name: string): Promise<void> {
       calls.deleteTag.push(name);
     },

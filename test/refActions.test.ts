@@ -17,6 +17,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly services: RefActionServices;
   readonly infoMessages: string[];
   readonly errorMessages: string[];
+  readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
@@ -24,10 +25,12 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
 } {
   const infoMessages: string[] = [];
   const errorMessages: string[] = [];
+  const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const counter = { refreshCalls: 0 };
+  const overrideConfirm = overrides.confirm;
 
   const services: RefActionServices = {
     ui: {
@@ -37,7 +40,11 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async promptBranchName(options) {
         return options.value;
       },
-      async confirm() {
+      async confirm(options) {
+        confirmRequests.push(options);
+        if (overrideConfirm) {
+          return overrideConfirm(options);
+        }
         return true;
       },
       showInformationMessage(message) {
@@ -89,6 +96,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     services,
     infoMessages,
     errorMessages,
+    confirmRequests,
     diffCalls,
     deletedRemoteBranches,
     upstreamClears,
@@ -342,6 +350,66 @@ test('deleteResolvedReference refuses to delete remote HEAD aliases', async () =
 
   assert.deepEqual(harness.deletedRemoteBranches, []);
   assert.equal(harness.infoMessages[0], 'The remote reference origin/HEAD cannot be deleted from this view.');
+});
+
+test('deleteResolvedReference explains that deleting a tracked local branch leaves the remote branch untouched', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createHead('feature/demo', 0, 0, { remote: 'origin', name: 'feature/demo' })
+    ]
+  });
+  const harness = createServices();
+
+  await deleteResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'branch' },
+    harness.services
+  );
+
+  assert.equal(
+    harness.confirmRequests[0]?.message,
+    'Delete the Local Branch feature/demo?\n\nThis removes only the local branch. The tracked remote branch origin/feature/demo will remain unchanged.'
+  );
+  assert.deepEqual(repository.calls.deleteBranch, [{ name: 'feature/demo', force: false }]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was deleted.');
+});
+
+test('deleteResolvedReference offers force delete when a tracked branch is not fully merged into its upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createHead('feature/demo', 0, 0, { remote: 'origin', name: 'feature/demo' })
+    ]
+  });
+  repository.deleteBranch = async (name: string, force?: boolean): Promise<void> => {
+    repository.calls.deleteBranch.push({ name, force });
+    if (!force) {
+      throw Object.assign(new Error('Failed to execute git'), {
+        gitErrorCode: 'BranchNotFullyMerged',
+        stderr: "error: the branch 'feature/demo' is not fully merged"
+      });
+    }
+  };
+  const harness = createServices();
+
+  await deleteResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'branch' },
+    harness.services
+  );
+
+  assert.equal(harness.confirmRequests[1]?.confirmLabel, 'Force Delete');
+  assert.equal(
+    harness.confirmRequests[1]?.message,
+    'feature/demo is not fully merged into origin/feature/demo.\n\nForce delete the local branch anyway? The tracked remote branch origin/feature/demo will remain unchanged.'
+  );
+  assert.deepEqual(repository.calls.deleteBranch, [
+    { name: 'feature/demo', force: false },
+    { name: 'feature/demo', force: true }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was force deleted.');
+  assert.equal(harness.refreshCalls, 2);
 });
 
 test('deleteResolvedReference surfaces git stderr details for local branch failures', async () => {

@@ -1,6 +1,6 @@
 import { ChangeQuickPickItem, toChangeQuickPickItems } from './changePresentation';
 import { toErrorDetail } from './errorDetail';
-import { RefType, Repository } from './git';
+import { Branch, RefType, Repository } from './git';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
 
@@ -298,18 +298,20 @@ export async function deleteResolvedReference(
       return;
     }
 
+    const branch = await getLocalBranchForDeletion(repository, target.refName);
+    const upstreamLabel = branch?.upstream
+      ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
+      : undefined;
+
     const confirmed = await services.ui.confirm({
-      message: `Delete the Branch ${target.label}?`,
+      message: buildDeleteBranchConfirmationMessage(target.label, upstreamLabel),
       confirmLabel: 'Delete'
     });
     if (!confirmed) {
       return;
     }
 
-    await repository.deleteBranch(target.refName, false);
-    services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
-    services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
+    await deleteLocalBranch(repository, target, upstreamLabel, services);
   } catch (error) {
     await services.ui.showErrorMessage(`Could not delete the reference. ${toErrorDetail(error)}`);
   }
@@ -437,4 +439,68 @@ function buildSyncResultMessage(syncState: HeadSyncState): string {
   }
 
   return `${syncState.branchName} was pushed to ${syncState.upstreamLabel}.`;
+}
+
+async function getLocalBranchForDeletion(repository: Repository, branchName: string): Promise<Branch | undefined> {
+  try {
+    return await repository.getBranch(branchName);
+  } catch {
+    return undefined;
+  }
+}
+
+async function deleteLocalBranch(
+  repository: Repository,
+  target: RefActionTarget,
+  upstreamLabel: string | undefined,
+  services: RefActionServices
+): Promise<void> {
+  try {
+    await repository.deleteBranch(target.refName, false);
+    services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
+    services.refreshController.refresh();
+    services.refreshController.updateViewMessage();
+  } catch (error) {
+    if (!hasGitErrorCode(error, 'BranchNotFullyMerged')) {
+      throw error;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: buildForceDeleteBranchMessage(target.label, upstreamLabel),
+      confirmLabel: 'Force Delete'
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    await repository.deleteBranch(target.refName, true);
+    services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
+    services.refreshController.refresh();
+    services.refreshController.updateViewMessage();
+  }
+}
+
+function buildDeleteBranchConfirmationMessage(label: string, upstreamLabel: string | undefined): string {
+  if (!upstreamLabel) {
+    return `Delete the Branch ${label}?`;
+  }
+
+  return `Delete the Local Branch ${label}?\n\nThis removes only the local branch. The tracked remote branch ${upstreamLabel} will remain unchanged.`;
+}
+
+function buildForceDeleteBranchMessage(label: string, upstreamLabel: string | undefined): string {
+  const mergeBaseLabel = upstreamLabel ?? 'HEAD';
+  const remoteNotice = upstreamLabel
+    ? ` The tracked remote branch ${upstreamLabel} will remain unchanged.`
+    : '';
+
+  return `${label} is not fully merged into ${mergeBaseLabel}.\n\nForce delete the local branch anyway?${remoteNotice}`;
+}
+
+function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  return 'gitErrorCode' in error && error.gitErrorCode === gitErrorCode;
 }
