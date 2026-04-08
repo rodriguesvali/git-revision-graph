@@ -28,17 +28,7 @@
   },
   "categories": [
     "Other",
-    "Source Control"
-  ],
-  "activationEvents": [
-    "onView:gitRefs.revisionGraphView",
-    "onCommand:gitRefs.refresh",
-    "onCommand:gitRefs.compareRefs",
-    "onCommand:gitRefs.compareWithWorktree",
-    "onCommand:gitRefs.checkout",
-    "onCommand:gitRefs.merge",
-    "onCommand:gitRefs.openRevisionGraph",
-    "onCommand:gitRefs.chooseRevisionGraphRepository"
+    "SCM Providers"
   ],
   "main": "./out/extension.js",
   "extensionDependencies": [
@@ -59,7 +49,8 @@
         {
           "id": "gitRefs.revisionGraphView",
           "name": "GIT Revision Graph",
-          "type": "webview"
+          "type": "webview",
+          "icon": "media/git-refs.svg"
         }
       ]
     },
