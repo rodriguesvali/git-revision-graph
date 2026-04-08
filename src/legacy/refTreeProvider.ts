@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 
-import { API } from './git';
-import { RefNode } from './refNodes';
+import { API } from '../git';
+import { RefNode } from '../refNodes';
 import { getCategoryChildren, getRemoteChildren, getRepositoryChildren, getRootNodes } from './refTreeData';
 import {
   getReferenceDescription,
   getReferenceIcon,
   getReferenceShortLabel,
   getReferenceTooltip
-} from './refPresentation';
+} from '../refPresentation';
 
 export class GitRefsTreeDataProvider implements vscode.TreeDataProvider<RefNode>, vscode.Disposable {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<RefNode | undefined>();

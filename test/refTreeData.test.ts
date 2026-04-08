@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType } from '../src/git';
-import { getCategoryChildren, getRootNodes, getViewMessage } from '../src/refTreeData';
+import { getCategoryChildren, getRootNodes, getViewMessage } from '../src/legacy/refTreeData';
 import { createApi, createRef, createRepository } from './fakes';
 
 test('shows empty state message when no repositories are open', () => {

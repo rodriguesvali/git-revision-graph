@@ -96,16 +96,16 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - repository/reference resolution
   - command-side UX messages and refresh behavior
 
-- `src/refTreeProvider.ts`
+- `src/legacy/refTreeProvider.ts`
   - legacy `TreeDataProvider` prototype kept as reference code
   - not part of the currently activated product surface
 
-- `src/refPresentation.ts`, `src/refTreeData.ts`, `src/changePresentation.ts`
+- `src/refPresentation.ts`, `src/legacy/refTreeData.ts`, `src/changePresentation.ts`
   - pure helpers for labels, sorting, tree grouping, and diff item presentation
 
-- `src/revisionGraphData.ts`, `src/revisionGraphPanel.ts`
+- `src/revisionGraphData.ts`, `src/revisionGraphPanel.ts`, `src/revisionGraphRepository.ts`, `src/revisionGraphWebview.ts`
   - commit graph parsing and lane layout
-  - revision graph webview rendering
+  - revision graph controller, repository helpers, and webview rendering
   - commit selection and compare/checkout actions from the graph
 
 - `test/*.test.ts`

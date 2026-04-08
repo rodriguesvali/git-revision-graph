@@ -19,6 +19,10 @@ This repository is a small VS Code extension prototype named `Git Refs Explorer`
 - `src/revisionGraphPanel.ts`
   - Active revision graph controller and webview UI
   - Graph-side actions such as compare, log, unified diff, checkout, merge, and delete
+- `src/revisionGraphRepository.ts`
+  - Git-backed loading and log helpers used by the revision graph
+- `src/revisionGraphWebview.ts`
+  - HTML/CSS/JS generation for the revision graph webview
 - `src/git.ts`
   - Minimal TypeScript interfaces for the subset of the built-in Git API used here
 - `README.md`
@@ -57,6 +61,7 @@ The current implementation mixes native VS Code UX with a dedicated webview surf
 - An automated unit test suite exists for the pure data and command helpers.
 - The test suite covers pure helpers well, but the webview controller still has limited direct coverage.
 - `src/revisionGraphPanel.ts` currently centralizes most logic, so larger changes should consider extracting modules.
+- The legacy tree prototype now lives under `src/legacy/` and is kept only as reference/tested fallback code.
 - Compare results currently surface through a `QuickPick`, not a persistent results view.
 - UX around merge conflicts and detached/tag workflows is intentionally minimal.
 

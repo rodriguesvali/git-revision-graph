@@ -1,6 +1,6 @@
-import { API, RefType, Repository } from './git';
-import { RefCategory, RefNode, ReferenceNode, RemoteNode, RepositoryNode } from './refNodes';
-import { compareRefsByName } from './refPresentation';
+import { API, RefType, Repository } from '../git';
+import { RefCategory, RefNode, ReferenceNode, RemoteNode, RepositoryNode } from '../refNodes';
+import { compareRefsByName } from '../refPresentation';
 
 export function getViewMessage(git: API): string | undefined {
   return git.repositories.length === 0
