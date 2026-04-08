@@ -3,7 +3,11 @@ import { RevisionGraphAncestorFilter } from './revisionGraphTypes';
 
 const LANE_WIDTH = 220;
 const ROW_HEIGHT = 140;
-const NODE_WIDTH = 180;
+const NODE_MIN_WIDTH = 180;
+const NODE_MAX_WIDTH = 420;
+const NODE_CONTENT_CHAR_WIDTH = 8.2;
+const NODE_WIDTH_PADDING = 62;
+const NODE_HORIZONTAL_GAP = 28;
 const NODE_PADDING_X = 26;
 const NODE_PADDING_Y = 24;
 const VIEWPORT_PADDING_TOP = 18;
@@ -19,9 +23,25 @@ export function renderRevisionGraphHtml(
   mergeBlockedTargets: readonly string[]
 ): string {
   const nonce = createNonce();
-  const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
+  const nodeLayouts = scene.nodes.map((node) => ({
+    hash: node.hash,
+    row: node.row,
+    lane: node.lane,
+    width: getNodeWidth(node)
+  }));
+  const maxNodeWidth = nodeLayouts.reduce((max, node) => Math.max(max, node.width), NODE_MIN_WIDTH);
+  const laneSpan = Math.max(LANE_WIDTH, maxNodeWidth + NODE_HORIZONTAL_GAP);
+  const nodeLayoutsWithPosition = nodeLayouts.map((node) => ({
+    ...node,
+    defaultLeft: NODE_PADDING_X + node.lane * laneSpan
+  }));
+  const width = Math.max(
+    880,
+    nodeLayoutsWithPosition.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
+  );
   const height = Math.max(480, scene.rowCount * ROW_HEIGHT + NODE_PADDING_Y * 2);
   const zoomLevels = [0.6, 0.8, 1, 1.25, 1.5];
+  const nodeLayoutByHash = new Map(nodeLayoutsWithPosition.map((node) => [node.hash, node] as const));
   const referenceData = JSON.stringify(
     scene.nodes.flatMap((node) =>
       node.refs.map((ref) => ({
@@ -34,12 +54,7 @@ export function renderRevisionGraphHtml(
     )
   );
   const graphNodeData = JSON.stringify(
-    scene.nodes.map((node) => ({
-      hash: node.hash,
-      row: node.row,
-      lane: node.lane,
-      defaultLeft: NODE_PADDING_X + node.lane * LANE_WIDTH
-    }))
+    nodeLayoutsWithPosition
   );
   const graphEdgeData = JSON.stringify(
     scene.edges.map((edge) => ({
@@ -70,7 +85,7 @@ export function renderRevisionGraphHtml(
       --node-head: #d62828;
       --node-tag: #f7f300;
       --node-remote: #f6d8a8;
-      --node-mixed: #f0e6c8;
+      --node-mixed: color-mix(in srgb, var(--panel) 94%, white 6%);
       --node-text-dark: #181818;
     }
     * { box-sizing: border-box; }
@@ -116,7 +131,7 @@ export function renderRevisionGraphHtml(
     .scene-layer { position: absolute; width: ${width}px; height: ${height}px; transform-origin: top left; }
     svg { position: absolute; inset: 0; overflow: visible; }
     .node {
-      position: absolute; width: ${NODE_WIDTH}px; min-height: 54px; border-radius: 10px;
+      position: absolute; min-width: ${NODE_MIN_WIDTH}px; min-height: 54px; border-radius: 10px;
       border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
       color: var(--node-text-dark); cursor: inherit; user-select: none; overflow: hidden;
       transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, outline-color 120ms ease;
@@ -170,7 +185,21 @@ export function renderRevisionGraphHtml(
       font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; line-height: 1.25;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
-    .ref-line.head { background: rgba(0,0,0,0.1); font-weight: 700; }
+    .ref-line.kind-head {
+      background: color-mix(in srgb, var(--node-head) 92%, white 8%);
+      color: white;
+      font-weight: 700;
+    }
+    .ref-line.kind-branch {
+      background: color-mix(in srgb, var(--node-branch) 88%, white 12%);
+    }
+    .ref-line.kind-tag {
+      background: color-mix(in srgb, var(--node-tag) 90%, white 10%);
+      font-weight: 700;
+    }
+    .ref-line.kind-remote {
+      background: color-mix(in srgb, var(--node-remote) 88%, white 12%);
+    }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
     .base-suffix { display: none; }
@@ -304,9 +333,9 @@ export function renderRevisionGraphHtml(
               <polygon points="0 0, 6 3, 0 6" fill="var(--edge)"></polygon>
             </marker>
           </defs>
-          ${scene.edges.map((edge) => renderEdge(edge)).join('')}
+          ${scene.edges.map((edge) => renderEdge(edge, nodeLayoutByHash)).join('')}
         </svg>
-        ${scene.nodes.map((node) => renderNode(node)).join('')}
+        ${scene.nodes.map((node) => renderNode(node, nodeLayoutByHash.get(node.hash)?.width ?? NODE_MIN_WIDTH, nodeLayoutByHash.get(node.hash)?.defaultLeft ?? NODE_PADDING_X)).join('')}
       </div>
     </div>
   </div>
@@ -449,7 +478,7 @@ export function renderRevisionGraphHtml(
       if (nodeDragState) {
         const defaultLeft = getDefaultNodeLeft(nodeDragState.hash);
         const rawOffset = nodeDragState.startOffset + (event.clientX - nodeDragState.startX) / currentZoom;
-        nodeOffsets[nodeDragState.hash] = clampNodeOffset(defaultLeft, rawOffset);
+        nodeOffsets[nodeDragState.hash] = clampNodeOffset(nodeDragState.hash, defaultLeft, rawOffset);
         applyNodeLayout(false);
         return;
       }
@@ -759,7 +788,7 @@ export function renderRevisionGraphHtml(
     function applyNodeLayout(persist = true) {
       for (const [hash, element] of nodeElements.entries()) {
         const defaultLeft = getDefaultNodeLeft(hash);
-        const left = clampNodeLeft(defaultLeft + Number(nodeOffsets[hash] || 0));
+        const left = clampNodeLeft(hash, defaultLeft + Number(nodeOffsets[hash] || 0));
         nodeOffsets[hash] = left - defaultLeft;
         element.style.left = left + 'px';
       }
@@ -792,7 +821,7 @@ export function renderRevisionGraphHtml(
         resolveRowOverlaps(positions);
       }
       for (const node of graphNodes) {
-        const nextLeft = clampNodeLeft(positions.get(node.hash) || node.defaultLeft);
+        const nextLeft = clampNodeLeft(node.hash, positions.get(node.hash) || node.defaultLeft);
         positions.set(node.hash, nextLeft);
         nodeOffsets[node.hash] = nextLeft - node.defaultLeft;
       }
@@ -946,12 +975,11 @@ export function renderRevisionGraphHtml(
         const neighborAverage = neighbors.reduce((sum, hash) => sum + (positions.get(hash) || current), 0) / neighbors.length;
         const laneBias = node.defaultLeft + (reverseBias ? -10 : 10) * Math.sign(neighborAverage - node.defaultLeft);
         const target = neighborAverage * 0.38 + laneBias * 0.62;
-        positions.set(node.hash, clampNodeLeft(current * 0.45 + target * 0.55));
+        positions.set(node.hash, clampNodeLeft(node.hash, current * 0.45 + target * 0.55));
       }
     }
 
     function resolveRowOverlaps(positions) {
-      const minGap = ${NODE_WIDTH + 28};
       const rows = groupNodesByRow();
       for (const rowNodes of rows.values()) {
         const ordered = [...rowNodes]
@@ -965,17 +993,20 @@ export function renderRevisionGraphHtml(
 
         const resolved = ordered.map((node) => positions.get(node.hash) || node.defaultLeft);
         for (let index = 1; index < resolved.length; index += 1) {
+          const previousNode = ordered[index - 1];
+          const currentNode = ordered[index];
+          const minGap = getMinimumGap(previousNode.hash, currentNode.hash);
           resolved[index] = Math.max(resolved[index], resolved[index - 1] + minGap);
         }
 
         const defaultCenter =
-          ordered.reduce((sum, node) => sum + node.defaultLeft + ${NODE_WIDTH / 2}, 0) / ordered.length;
+          ordered.reduce((sum, node) => sum + node.defaultLeft + getNodeWidth(node.hash) / 2, 0) / ordered.length;
         const resolvedCenter =
-          resolved.reduce((sum, left) => sum + left + ${NODE_WIDTH / 2}, 0) / resolved.length;
+          resolved.reduce((sum, left, index) => sum + left + getNodeWidth(ordered[index].hash) / 2, 0) / resolved.length;
         const centered = resolved.map((left) => left + (defaultCenter - resolvedCenter));
 
         for (let index = 0; index < ordered.length; index += 1) {
-          positions.set(ordered[index].hash, clampNodeLeft(centered[index]));
+          positions.set(ordered[index].hash, clampNodeLeft(ordered[index].hash, centered[index]));
         }
       }
     }
@@ -989,7 +1020,7 @@ export function renderRevisionGraphHtml(
       for (const node of graphNodes) {
         const current = positions.get(node.hash) || node.defaultLeft;
         const compressed = anchorX + (current - anchorX) * spreadFactor;
-        positions.set(node.hash, clampNodeLeft(compressed));
+        positions.set(node.hash, clampNodeLeft(node.hash, compressed));
       }
     }
 
@@ -1094,7 +1125,7 @@ export function renderRevisionGraphHtml(
         const top = getNodeTop(hash);
         const element = nodeElements.get(hash);
         minX = Math.min(minX, left);
-        maxX = Math.max(maxX, left + ${NODE_WIDTH});
+        maxX = Math.max(maxX, left + getNodeWidth(hash));
         minY = Math.min(minY, top);
         maxY = Math.max(maxY, top + (element ? element.offsetHeight : 54));
       }
@@ -1123,7 +1154,7 @@ export function renderRevisionGraphHtml(
       const element = nodeElements.get(headNodeHash);
       const height = element ? element.offsetHeight : 54;
       return {
-        centerX: left + ${NODE_WIDTH / 2},
+        centerX: left + getNodeWidth(headNodeHash) / 2,
         centerY: top + height / 2
       };
     }
@@ -1140,7 +1171,7 @@ export function renderRevisionGraphHtml(
     }
 
     function getNodeCenterX(hash) {
-      return getNodeLeft(hash) + ${NODE_WIDTH / 2};
+      return getNodeLeft(hash) + getNodeWidth(hash) / 2;
     }
 
     function getNodeSourceY(hash) {
@@ -1175,13 +1206,27 @@ export function renderRevisionGraphHtml(
       return Number(element.dataset.defaultLeft || 0);
     }
 
-    function clampNodeOffset(defaultLeft, offset) {
-      const clampedLeft = clampNodeLeft(defaultLeft + offset);
+    function getNodeWidth(hash) {
+      const element = nodeElements.get(hash);
+      if (element) {
+        return element.offsetWidth || Number(element.dataset.nodeWidth || 0) || ${NODE_MIN_WIDTH};
+      }
+      const node = graphNodeByHash.get(hash);
+      return node ? node.width : ${NODE_MIN_WIDTH};
+    }
+
+    function getMinimumGap(leftHash, rightHash) {
+      return getNodeWidth(leftHash) / 2 + getNodeWidth(rightHash) / 2 + ${NODE_HORIZONTAL_GAP};
+    }
+
+    function clampNodeOffset(hash, defaultLeft, offset) {
+      const clampedLeft = clampNodeLeft(hash, defaultLeft + offset);
       return clampedLeft - defaultLeft;
     }
 
-    function clampNodeLeft(left) {
-      return Math.max(0, Math.min(${width - NODE_WIDTH}, left));
+    function clampNodeLeft(hash, left) {
+      const nodeWidth = getNodeWidth(hash);
+      return Math.max(0, Math.min(getCanvasWidth() - nodeWidth, left));
     }
 
     function clamp(value, min, max) {
@@ -1218,27 +1263,31 @@ export function renderErrorHtml(message: string): string {
   return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>GIT Revision Graph</h2><p>${escapeHtml(message)}</p></body></html>`;
 }
 
-function renderNode(node: RevisionGraphNode): string {
-  const x = NODE_PADDING_X + node.lane * LANE_WIDTH;
+function renderNode(node: RevisionGraphNode, width: number, x: number): string {
   const y = NODE_PADDING_Y + node.row * ROW_HEIGHT;
   const nodeClass = getNodeClass(node);
   const refLines = node.refs
-    .map((ref) => `<div class="ref-line ${ref.kind === 'head' ? 'head' : ''}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
+    .map((ref) => `<div class="ref-line kind-${escapeHtml(ref.kind)}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
     .join('');
 
-  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px" title="${escapeHtml(node.refs.map((ref) => ref.name).join('\n'))}">
+  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(node.refs.map((ref) => ref.name).join('\n'))}">
     <button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>
     ${refLines}
   </div>`;
 }
 
-function renderEdge(edge: RevisionGraphEdge): string {
+function renderEdge(
+  edge: RevisionGraphEdge,
+  nodeLayoutByHash: ReadonlyMap<string, { readonly defaultLeft: number; readonly width: number }>
+): string {
   const strokeWidth = 2.4;
   const marker = 'marker-end="url(#arrowhead)"';
+  const sourceNode = nodeLayoutByHash.get(edge.from);
+  const targetNode = nodeLayoutByHash.get(edge.to);
   const path = describeEdgePath(
-    NODE_PADDING_X + edge.fromLane * LANE_WIDTH + NODE_WIDTH / 2,
+    (sourceNode?.defaultLeft ?? (NODE_PADDING_X + edge.fromLane * LANE_WIDTH)) + (sourceNode?.width ?? NODE_MIN_WIDTH) / 2,
     NODE_PADDING_Y + edge.fromRow * ROW_HEIGHT + 48,
-    NODE_PADDING_X + edge.toLane * LANE_WIDTH + NODE_WIDTH / 2,
+    (targetNode?.defaultLeft ?? (NODE_PADDING_X + edge.toLane * LANE_WIDTH)) + (targetNode?.width ?? NODE_MIN_WIDTH) / 2,
     NODE_PADDING_Y + edge.toRow * ROW_HEIGHT + 8
   );
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
@@ -1246,11 +1295,24 @@ function renderEdge(edge: RevisionGraphEdge): string {
 
 function getNodeClass(node: RevisionGraphNode): string {
   const kinds = new Set(node.refs.map((ref) => ref.kind));
-  if (kinds.has('head')) return 'node-head';
+  if (kinds.size === 1 && kinds.has('head')) return 'node-head';
   if (kinds.size === 1 && kinds.has('tag')) return 'node-tag';
   if (kinds.size === 1 && kinds.has('remote')) return 'node-remote';
   if (kinds.size === 1 && kinds.has('branch')) return 'node-branch';
   return 'node-mixed';
+}
+
+function getNodeWidth(node: RevisionGraphNode): number {
+  const longestLabelLength = node.refs.reduce((max, ref) => Math.max(max, ref.name.length), 0);
+  return clampNumber(
+    Math.ceil(longestLabelLength * NODE_CONTENT_CHAR_WIDTH + NODE_WIDTH_PADDING),
+    NODE_MIN_WIDTH,
+    NODE_MAX_WIDTH
+  );
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function createNonce(): string {
