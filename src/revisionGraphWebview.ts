@@ -20,7 +20,8 @@ export function renderRevisionGraphHtml(
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
-  mergeBlockedTargets: readonly string[]
+  mergeBlockedTargets: readonly string[],
+  autoArrangeOnInit: boolean
 ): string {
   const nonce = createNonce();
   const nodeLayouts = scene.nodes.map((node) => ({
@@ -351,6 +352,7 @@ export function renderRevisionGraphHtml(
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
+    const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
     const zoomLevels = ${JSON.stringify(zoomLevels)};
     const graphNodes = ${graphNodeData};
@@ -552,7 +554,9 @@ export function renderRevisionGraphHtml(
     applyNodeLayout(false);
     syncSelection();
     requestAnimationFrame(() => {
-      autoArrangeLayout();
+      if (autoArrangeOnInit) {
+        autoArrangeLayout();
+      }
       centerGraphInViewport();
     });
 

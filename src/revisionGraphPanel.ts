@@ -37,6 +37,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
   private ancestorFilter: RevisionGraphAncestorFilter | undefined;
+  private autoArrangeOnNextRender = true;
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly actionServices = createWorkbenchRefActionServices();
@@ -101,6 +102,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
             refName: message.refName,
             refKind: message.refKind
           };
+          this.autoArrangeOnNextRender = true;
           await this.render();
           return;
         case 'clear-ancestor-filter':
@@ -229,8 +231,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         scene,
         this.currentRepository.state.HEAD?.name,
         this.ancestorFilter,
-        mergeBlockedTargets
+        mergeBlockedTargets,
+        this.autoArrangeOnNextRender
       );
+      this.autoArrangeOnNextRender = false;
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorMessage(error));
     }
@@ -280,6 +284,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.ancestorFilter = undefined;
+      this.autoArrangeOnNextRender = true;
     }
 
     this.currentRepository = repository;

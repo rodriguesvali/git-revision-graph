@@ -30,7 +30,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Compare actions in the Revision Graph for changed files, unified diff, and commit log
 - Ancestor filtering from a selected reference in the Revision Graph
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
-- Automatic graph reorganization when board data is refreshed
+- Automatic graph reorganization on the initial graph load and after applying ancestor filtering
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
