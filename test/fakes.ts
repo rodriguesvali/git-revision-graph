@@ -63,6 +63,8 @@ export function createRepository(options: {
   readonly calls: {
     readonly checkout: string[];
     readonly createBranch: Array<{ readonly name: string; readonly checkout: boolean; readonly ref?: string }>;
+    readonly deleteBranch: Array<{ readonly name: string; readonly force?: boolean }>;
+    readonly deleteTag: string[];
     readonly setBranchUpstream: Array<{ readonly name: string; readonly upstream: string }>;
     readonly merge: string[];
   };
@@ -75,6 +77,8 @@ export function createRepository(options: {
   const calls = {
     checkout: [] as string[],
     createBranch: [] as Array<{ readonly name: string; readonly checkout: boolean; readonly ref?: string }>,
+    deleteBranch: [] as Array<{ readonly name: string; readonly force?: boolean }>,
+    deleteTag: [] as string[],
     setBranchUpstream: [] as Array<{ readonly name: string; readonly upstream: string }>,
     merge: [] as string[]
   };
@@ -104,6 +108,12 @@ export function createRepository(options: {
     },
     async createBranch(name: string, checkout: boolean, ref?: string): Promise<void> {
       calls.createBranch.push({ name, checkout, ref });
+    },
+    async deleteBranch(name: string, force?: boolean): Promise<void> {
+      calls.deleteBranch.push({ name, force });
+    },
+    async deleteTag(name: string): Promise<void> {
+      calls.deleteTag.push(name);
     },
     async setBranchUpstream(name: string, upstream: string): Promise<void> {
       calls.setBranchUpstream.push({ name, upstream });

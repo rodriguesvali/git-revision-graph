@@ -25,6 +25,7 @@ The current development cycle hardens that MVP by separating core logic into sma
 - Checkout for branches, tags, and commits
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Merge a selected reference into the current branch
+- Delete local branches, tags, and remote branches from the Revision Graph
 - Revision Graph webview for recent commits across all refs
 - Compare actions in the Revision Graph for changed files, unified diff, and commit log
 - Ancestor filtering from a selected reference in the Revision Graph
@@ -194,6 +195,7 @@ These commands are available from the tree view context menu and can also be tri
 
 - Compare results are presented through a Quick Pick of changed files rather than a dedicated persistent results panel.
 - Merge conflict resolution is delegated to the standard Source Control experience in VS Code.
+- Remote branch deletion uses an explicit confirmation because it affects the remote repository and collaborators.
 - Binary files or unusual encodings may not render nicely in content-based diffs.
 - The UX for tags and detached HEAD workflows is intentionally minimal in the MVP.
 - The revision graph currently renders a bounded set of recent commits instead of the entire repository history.

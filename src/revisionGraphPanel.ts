@@ -40,6 +40,7 @@ type RevisionGraphMessage =
   | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
+  | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
 
 interface RevisionGraphAncestorFilter {
@@ -122,6 +123,15 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
         case 'checkout':
           if (this.currentRepository) {
             await checkoutReference(this.currentRepository, message.refName, message.refKind);
+            await this.render();
+          }
+          return;
+        case 'delete':
+          if (this.currentRepository) {
+            await deleteReference(this.currentRepository, message.refName, message.refKind);
+            if (this.ancestorFilter?.refName === message.refName && this.ancestorFilter.refKind === message.refKind) {
+              this.ancestorFilter = undefined;
+            }
             await this.render();
           }
           return;
@@ -606,6 +616,11 @@ function renderRevisionGraphHtml(
           appendMenuItem('Checkout', () => {
             vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
           });
+          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
+            appendMenuItem('Delete', () => {
+              vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
+            });
+          }
           appendMenuItem('Merge into ' + (currentHeadName || 'Current HEAD'), () => {
             vscode.postMessage({ type: 'merge', refName: target.name });
           });
@@ -866,6 +881,71 @@ async function mergeReferenceIntoHead(repository: Repository, refName: string): 
   }
 }
 
+async function deleteReference(
+  repository: Repository,
+  refName: string,
+  refKind: RevisionGraphRef['kind']
+): Promise<void> {
+  try {
+    if (refKind === 'remote') {
+      const remoteTarget = parseRemoteDeletionTarget(refName);
+      if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
+        void vscode.window.showInformationMessage(`The remote reference ${refName} cannot be deleted from this view.`);
+        return;
+      }
+
+      const confirmed = await vscode.window.showWarningMessage(
+        `Delete the remote branch ${refName}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
+        { modal: true },
+        'Delete Remote Reference'
+      );
+      if (confirmed !== 'Delete Remote Reference') {
+        return;
+      }
+
+      await execFile(
+        'git',
+        ['push', remoteTarget.remoteName, '--delete', remoteTarget.branchName],
+        {
+          cwd: repository.rootUri.fsPath,
+          maxBuffer: 8 * 1024 * 1024
+        }
+      );
+      void vscode.window.showInformationMessage(`Remote branch ${refName} was deleted from ${remoteTarget.remoteName}.`);
+      return;
+    }
+
+    if (refKind === 'tag') {
+      const confirmed = await vscode.window.showWarningMessage(
+        `Delete the tag ${refName}?`,
+        { modal: true },
+        'Delete'
+      );
+      if (confirmed !== 'Delete') {
+        return;
+      }
+
+      await repository.deleteTag(refName);
+      void vscode.window.showInformationMessage(`Tag ${refName} was deleted.`);
+      return;
+    }
+
+    const confirmed = await vscode.window.showWarningMessage(
+      `Delete the branch ${refName}?`,
+      { modal: true },
+      'Delete'
+    );
+    if (confirmed !== 'Delete') {
+      return;
+    }
+
+    await repository.deleteBranch(refName, false);
+    void vscode.window.showInformationMessage(`Branch ${refName} was deleted.`);
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Could not delete the reference. ${toErrorMessage(error)}`);
+  }
+}
+
 async function pickChange(changes: Change[], placeHolder: string): Promise<Change | undefined> {
   const items = changes
     .map((change) => {
@@ -982,6 +1062,18 @@ function createReferenceId(hash: string, kind: string, name: string): string {
 function getSuggestedLocalBranchName(refName: string): string {
   const firstSlash = refName.indexOf('/');
   return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
+}
+
+function parseRemoteDeletionTarget(refName: string): { remoteName: string; branchName: string } | undefined {
+  const firstSlash = refName.indexOf('/');
+  if (firstSlash <= 0 || firstSlash === refName.length - 1) {
+    return undefined;
+  }
+
+  return {
+    remoteName: refName.slice(0, firstSlash),
+    branchName: refName.slice(firstSlash + 1)
+  };
 }
 
 async function loadRevisionLogEntries(

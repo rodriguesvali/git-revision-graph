@@ -78,6 +78,8 @@ export interface Repository {
   diffWith(ref: string): Promise<Change[]>;
   checkout(treeish: string): Promise<void>;
   createBranch(name: string, checkout: boolean, ref?: string): Promise<void>;
+  deleteBranch(name: string, force?: boolean): Promise<void>;
+  deleteTag(name: string): Promise<void>;
   setBranchUpstream(name: string, upstream: string): Promise<void>;
   merge(ref: string): Promise<void>;
 }
