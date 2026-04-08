@@ -57,6 +57,10 @@ export interface Change {
 export interface RepositoryState {
   readonly HEAD: Branch | undefined;
   readonly refs: Ref[];
+  readonly mergeChanges: Change[];
+  readonly indexChanges: Change[];
+  readonly workingTreeChanges: Change[];
+  readonly untrackedChanges: Change[];
   readonly onDidChange: vscode.Event<void>;
 }
 

@@ -43,6 +43,9 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
       },
       async showErrorMessage(message) {
         await vscode.window.showErrorMessage(message);
+      },
+      async showSourceControl() {
+        await vscode.commands.executeCommand('workbench.view.scm');
       }
     },
     diffPresenter: {

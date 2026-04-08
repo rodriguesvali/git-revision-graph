@@ -20,6 +20,7 @@ export interface RefActionUi {
   showInformationMessage(message: string): void;
   showWarningMessage(message: string): void;
   showErrorMessage(message: string): Promise<void>;
+  showSourceControl(): Promise<void>;
 }
 
 export interface DiffPresenter {
@@ -121,6 +122,10 @@ export async function checkoutResolvedReference(
       return;
     }
 
+    if (!await ensureWorkspaceReadyForMutation(repository, 'checking out another reference', services)) {
+      return;
+    }
+
     if (target.kind === 'remote') {
       await createBranchFromResolvedReference(repository, target, services);
       return;
@@ -154,6 +159,10 @@ export async function createBranchFromResolvedReference(
   services: RefActionServices
 ): Promise<void> {
   try {
+    if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
+      return;
+    }
+
     const branchCreation = getBranchCreationTarget(repository, target);
     const branchName = await services.ui.promptBranchName({
       prompt: branchCreation.prompt,
@@ -199,6 +208,16 @@ export async function syncCurrentHeadWithUpstream(
       return;
     }
 
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before synchronizing the current branch.');
+      await services.ui.showSourceControl();
+      return;
+    }
+
+    if (syncState.behind > 0 && !await ensureWorkspaceReadyForMutation(repository, 'synchronizing the current branch', services)) {
+      return;
+    }
+
     if (syncState.behind > 0) {
       await repository.pull();
     }
@@ -212,6 +231,9 @@ export async function syncCurrentHeadWithUpstream(
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
+    if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
+      await services.ui.showSourceControl();
+    }
   }
 }
 
@@ -235,6 +257,10 @@ export async function mergeResolvedReference(
       return;
     }
 
+    if (!await ensureWorkspaceReadyForMutation(repository, 'merging another reference', services)) {
+      return;
+    }
+
     const confirmed = await services.ui.confirm({
       message: `Merge ${target.label} into ${currentBranch}?`,
       confirmLabel: 'Merge'
@@ -251,6 +277,9 @@ export async function mergeResolvedReference(
     await services.ui.showErrorMessage(
       toOperationError('Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.', error)
     );
+    if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
+      await services.ui.showSourceControl();
+    }
   }
 }
 
@@ -439,6 +468,46 @@ function buildSyncResultMessage(syncState: HeadSyncState): string {
   }
 
   return `${syncState.branchName} was pushed to ${syncState.upstreamLabel}.`;
+}
+
+async function ensureWorkspaceReadyForMutation(
+  repository: Repository,
+  operationDescription: string,
+  services: RefActionServices
+): Promise<boolean> {
+  if (hasMergeConflicts(repository)) {
+    services.ui.showWarningMessage(`Resolve the current conflicts in Source Control before ${operationDescription}.`);
+    await services.ui.showSourceControl();
+    return false;
+  }
+
+  if (hasWorkspaceChanges(repository)) {
+    services.ui.showWarningMessage(`The workspace must be clean before ${operationDescription}. Review, stash, or commit the current changes first.`);
+    return false;
+  }
+
+  return true;
+}
+
+function hasMergeConflicts(repository: Repository): boolean {
+  return repository.state.mergeChanges.length > 0;
+}
+
+function hasWorkspaceChanges(repository: Repository): boolean {
+  return (
+    repository.state.mergeChanges.length > 0
+    || repository.state.indexChanges.length > 0
+    || repository.state.workingTreeChanges.length > 0
+    || repository.state.untrackedChanges.length > 0
+  );
+}
+
+function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, repository: Repository): boolean {
+  return (
+    hasMergeConflicts(repository)
+    || matchesGitErrorCode(error, 'Conflict')
+    || matchesGitErrorCode(error, 'UnmergedChanges')
+  );
 }
 
 async function getLocalBranchForDeletion(repository: Repository, branchName: string): Promise<Branch | undefined> {

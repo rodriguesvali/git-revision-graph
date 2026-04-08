@@ -43,6 +43,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       async showErrorMessage(message) {
         errorMessages.push(message);
       },
+      async showSourceControl() {
+        return;
+      },
       ...overrides
     },
     diffPresenter: {

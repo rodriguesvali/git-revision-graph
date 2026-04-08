@@ -16,7 +16,9 @@ import { createChange, createHead, createRef, createRepository } from './fakes';
 function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly services: RefActionServices;
   readonly infoMessages: string[];
+  readonly warningMessages: string[];
   readonly errorMessages: string[];
+  readonly sourceControlOpens: number;
   readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
@@ -24,12 +26,14 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly refreshCalls: number;
 } {
   const infoMessages: string[] = [];
+  const warningMessages: string[] = [];
   const errorMessages: string[] = [];
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const counter = { refreshCalls: 0 };
+  let sourceControlOpens = 0;
   const overrideConfirm = overrides.confirm;
 
   const services: RefActionServices = {
@@ -51,10 +55,13 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
         infoMessages.push(message);
       },
       showWarningMessage(message) {
-        infoMessages.push(message);
+        warningMessages.push(message);
       },
       async showErrorMessage(message) {
         errorMessages.push(message);
+      },
+      async showSourceControl() {
+        sourceControlOpens += 1;
       },
       ...overrides
     },
@@ -95,7 +102,11 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   return {
     services,
     infoMessages,
+    warningMessages,
     errorMessages,
+    get sourceControlOpens() {
+      return sourceControlOpens;
+    },
     confirmRequests,
     diffCalls,
     deletedRemoteBranches,
@@ -189,6 +200,26 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 2);
+});
+
+test('checkoutResolvedReference blocks workspace-changing operations while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })],
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before checking out another reference.');
+  assert.equal(harness.sourceControlOpens, 1);
 });
 
 test('createBranchFromResolvedReference creates a new branch from a local branch reference', async () => {
@@ -286,6 +317,50 @@ test('syncCurrentHeadWithUpstream refuses when the current branch has no upstrea
   assert.equal(harness.infoMessages[0], 'The current branch is not tracking a remote branch.');
 });
 
+test('syncCurrentHeadWithUpstream blocks pull-based sync while the workspace is dirty', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' }),
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })]
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(
+    harness.warningMessages[0],
+    'The workspace must be clean before synchronizing the current branch. Review, stash, or commit the current changes first.'
+  );
+  assert.equal(harness.sourceControlOpens, 0);
+});
+
+test('syncCurrentHeadWithUpstream opens Source Control when pull leaves conflicts to resolve', async () => {
+  const mergeChanges = [] as ReturnType<typeof createChange>[];
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' }),
+    mergeChanges
+  });
+  repository.pull = async () => {
+    mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
+    throw Object.assign(new Error('Failed to execute git'), {
+      gitErrorCode: 'Conflict',
+      stderr: 'Pull stopped because there are merge conflicts.'
+    });
+  };
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.equal(
+    harness.errorMessages[0],
+    'Could not synchronize the current branch. Pull stopped because there are merge conflicts. [Conflict]'
+  );
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
 test('mergeResolvedReference preserves the self-merge guard', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -319,6 +394,35 @@ test('mergeResolvedReference prevents merges that are already ancestors of HEAD'
 
   assert.deepEqual(repository.calls.merge, []);
   assert.equal(harness.infoMessages[0], 'release/2026 is already contained in main.');
+});
+
+test('mergeResolvedReference opens Source Control when the merge leaves conflicts to resolve', async () => {
+  const mergeChanges = [] as ReturnType<typeof createChange>[];
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges
+  });
+  repository.merge = async () => {
+    mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
+    throw Object.assign(new Error('Failed to execute git'), {
+      gitErrorCode: 'Conflict',
+      stderr: 'Automatic merge failed; fix conflicts and then commit the result.'
+    });
+  };
+  const harness = createServices();
+
+  await mergeResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+
+  assert.equal(
+    harness.errorMessages[0],
+    'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. Automatic merge failed; fix conflicts and then commit the result. [Conflict]'
+  );
+  assert.equal(harness.sourceControlOpens, 1);
 });
 
 test('deleteResolvedReference deletes remote branches through the shared reference manager', async () => {

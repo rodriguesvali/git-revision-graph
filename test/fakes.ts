@@ -58,6 +58,10 @@ export function createRepository(options: {
   readonly head?: Branch;
   readonly diffBetween?: Change[];
   readonly diffWith?: Change[];
+  readonly mergeChanges?: Change[];
+  readonly indexChanges?: Change[];
+  readonly workingTreeChanges?: Change[];
+  readonly untrackedChanges?: Change[];
 }): Repository & {
   readonly state: RepositoryState;
   readonly calls: {
@@ -76,6 +80,10 @@ export function createRepository(options: {
   const refs = options.refs ?? [];
   const diffBetween = options.diffBetween ?? [];
   const diffWith = options.diffWith ?? [];
+  const mergeChanges = options.mergeChanges ?? [];
+  const indexChanges = options.indexChanges ?? [];
+  const workingTreeChanges = options.workingTreeChanges ?? [];
+  const untrackedChanges = options.untrackedChanges ?? [];
   const calls = {
     checkout: [] as string[],
     createBranch: [] as Array<{ readonly name: string; readonly checkout: boolean; readonly ref?: string }>,
@@ -92,6 +100,10 @@ export function createRepository(options: {
     state: {
       HEAD: options.head,
       refs,
+      mergeChanges,
+      indexChanges,
+      workingTreeChanges,
+      untrackedChanges,
       onDidChange: stateChanges.event
     },
     onDidCheckout: checkoutChanges.event,
