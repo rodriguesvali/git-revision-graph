@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.6
+
+- Refined selection highlighting to follow the primary ancestor and descendant path instead of emphasizing every reachable side branch.
+- Reduced visual noise in larger repositories by isolating the main stack related to the selected reference.
+- Improved graph inspection around the selected reference by keeping connector and card highlights focused on the path that most directly impacts the current result.
+
 ## 0.0.5
 
 - Added relationship highlighting from the first selected reference, emphasizing ancestor and descendant connectors and adding related card borders for easier graph inspection.
