@@ -94,6 +94,9 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         case 'refresh':
           await this.render();
           return;
+        case 'open-source-control':
+          await this.actionServices.ui.showSourceControl();
+          return;
         case 'choose-repository':
           this.setCurrentRepository(await pickRevisionGraphRepository(this.git, true));
           await this.render();
@@ -243,6 +246,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         this.currentRepository.state.HEAD?.upstream
           ? formatUpstreamLabel(this.currentRepository.state.HEAD.upstream.remote, this.currentRepository.state.HEAD.upstream.name)
           : undefined,
+        hasWorkspaceChanges(this.currentRepository),
         this.ancestorFilter,
         mergeBlockedTargets,
         this.autoArrangeOnNextRender
@@ -342,4 +346,11 @@ async function getMergeBlockedTargets(
 
 function formatUpstreamLabel(remoteName: string, refName: string): string {
   return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
+}
+
+function hasWorkspaceChanges(repository: Repository): boolean {
+  return repository.state.mergeChanges.length > 0
+    || repository.state.indexChanges.length > 0
+    || repository.state.workingTreeChanges.length > 0
+    || repository.state.untrackedChanges.length > 0;
 }

@@ -21,10 +21,15 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     rowCount: 1
   };
 
-  const autoArrangeHtml = renderRevisionGraphHtml('repo', scene, 'main', 'origin/main', undefined, [], true);
-  const passiveHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, undefined, [], false);
+  const autoArrangeHtml = renderRevisionGraphHtml('repo', scene, 'main', 'origin/main', false, undefined, [], true);
+  const passiveHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, true, undefined, [], false);
 
   assert.match(autoArrangeHtml, /const autoArrangeOnInit = true;/);
   assert.match(passiveHtml, /const autoArrangeOnInit = false;/);
   assert.match(autoArrangeHtml, /const currentHeadUpstreamName = "origin\/main";/);
+  assert.match(autoArrangeHtml, /class="workspace-led clean"/);
+  assert.match(passiveHtml, /class="workspace-led dirty"/);
+  assert.match(autoArrangeHtml, /title="Workspace clean: no pending changes\."?/);
+  assert.match(passiveHtml, /title="Workspace dirty: click to open Source Control Changes\."?/);
+  assert.match(passiveHtml, /const isWorkspaceDirty = true;/);
 });

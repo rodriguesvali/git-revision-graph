@@ -4,6 +4,7 @@ export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 
 export type RevisionGraphMessage =
   | { readonly type: 'refresh' }
+  | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'filter-ancestor-refs'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'clear-ancestor-filter' }

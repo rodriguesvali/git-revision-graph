@@ -20,11 +20,15 @@ export function renderRevisionGraphHtml(
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
   currentHeadUpstreamName: string | undefined,
+  isWorkspaceDirty: boolean,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
   mergeBlockedTargets: readonly string[],
   autoArrangeOnInit: boolean
 ): string {
   const nonce = createNonce();
+  const workspaceStatusTooltip = isWorkspaceDirty
+    ? 'Workspace dirty: click to open Source Control Changes.'
+    : 'Workspace clean: no pending changes.';
   const nodeLayouts = scene.nodes.map((node) => ({
     hash: node.hash,
     row: node.row,
@@ -89,6 +93,8 @@ export function renderRevisionGraphHtml(
       --node-remote: #f6d8a8;
       --node-mixed: color-mix(in srgb, var(--panel) 94%, white 6%);
       --node-text-dark: #181818;
+      --workspace-clean: #2dff63;
+      --workspace-dirty: #ff3b30;
     }
     * { box-sizing: border-box; }
     body {
@@ -323,9 +329,69 @@ export function renderRevisionGraphHtml(
     .node.dragging .node-grip {
       cursor: grabbing;
     }
+    .workspace-led {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 70;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--bg) 30%, black 28%);
+      background: var(--workspace-clean);
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
+        0 0 20px color-mix(in srgb, var(--workspace-clean) 62%, transparent),
+        inset 0 1px 2px rgba(255, 255, 255, 0.35);
+      appearance: none;
+      -webkit-appearance: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+    .workspace-led.clean {
+      cursor: default;
+    }
+    .workspace-led.dirty {
+      background: var(--workspace-dirty);
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
+        0 0 22px color-mix(in srgb, var(--workspace-dirty) 68%, transparent),
+        inset 0 1px 2px rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      animation: workspace-led-pulse 1.7s ease-in-out infinite;
+    }
+    .workspace-led.dirty:hover {
+      transform: scale(1.08);
+    }
+    .workspace-led:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
+      outline-offset: 3px;
+    }
+    @keyframes workspace-led-pulse {
+      0%, 100% {
+        box-shadow:
+          0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
+          0 0 18px color-mix(in srgb, var(--workspace-dirty) 58%, transparent),
+          inset 0 1px 2px rgba(255, 255, 255, 0.24);
+      }
+      50% {
+        box-shadow:
+          0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
+          0 0 30px color-mix(in srgb, var(--workspace-dirty) 82%, transparent),
+          inset 0 1px 2px rgba(255, 255, 255, 0.32);
+      }
+    }
   </style>
 </head>
 <body>
+  <button
+    class="workspace-led ${isWorkspaceDirty ? 'dirty' : 'clean'}"
+    id="workspaceLed"
+    type="button"
+    ${isWorkspaceDirty ? '' : 'disabled'}
+    aria-label="${escapeHtml(workspaceStatusTooltip)}"
+    title="${escapeHtml(workspaceStatusTooltip)}"
+  ></button>
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <div class="scene-layer" id="sceneLayer">
@@ -353,6 +419,7 @@ export function renderRevisionGraphHtml(
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const currentHeadUpstreamName = ${JSON.stringify(currentHeadUpstreamName ?? null)};
+    const isWorkspaceDirty = ${JSON.stringify(isWorkspaceDirty)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
     const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
@@ -371,6 +438,7 @@ export function renderRevisionGraphHtml(
     const contextMenu = document.getElementById('contextMenu');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
+    const workspaceLed = document.getElementById('workspaceLed');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
@@ -445,6 +513,11 @@ export function renderRevisionGraphHtml(
         closeContextMenu();
         event.preventDefault();
         event.stopPropagation();
+      });
+    }
+    if (workspaceLed && isWorkspaceDirty) {
+      workspaceLed.addEventListener('click', () => {
+        vscode.postMessage({ type: 'open-source-control' });
       });
     }
 
