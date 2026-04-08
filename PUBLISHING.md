@@ -5,7 +5,7 @@ This project is ready to be distributed either as a local `.vsix` package or thr
 ## Before the first publish
 
 1. Create a Marketplace publisher at `https://marketplace.visualstudio.com/manage/publishers/`.
-2. Replace `"publisher": "local"` in `package.json` with your real publisher ID.
+2. Confirm that the `"publisher"` field in `package.json` matches your real Marketplace publisher ID.
 3. Create an Azure DevOps Personal Access Token with Marketplace `Manage` scope.
 4. Log in locally:
 

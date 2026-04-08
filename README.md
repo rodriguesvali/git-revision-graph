@@ -1,10 +1,13 @@
 # GIT Revision Graph
 
-GIT Revision Graph is a Visual Studio Code extension prototype for browsing a Git revision graph and running common reference-based workflows from a dedicated view.
+GIT Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running common reference-based workflows from a dedicated view.
 
-The current implementation focuses on a practical MVP built on top of the public API exposed by the built-in `vscode.git` extension.
+It is built on top of the public API exposed by the built-in `vscode.git` extension and keeps the experience close to the native VS Code diff and Source Control workflows.
 
-The current development cycle hardens that MVP by separating core logic into smaller modules, standardizing command UX, and adding automated tests around the most important reference workflows.
+## Install
+
+- From Marketplace: search for `GIT Revision Graph`
+- From a package file: install the generated `.vsix` via `Extensions: Install from VSIX...`
 
 ## Goals
 
@@ -28,9 +31,9 @@ The current development cycle hardens that MVP by separating core logic into sma
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 
-## MVP Scope
+## Scope
 
-The current scope is intentionally small and centered on validating the extension architecture.
+The current scope is intentionally focused and centered on fast reference-based workflows.
 
 Included in the MVP:
 
