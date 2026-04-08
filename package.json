@@ -1,7 +1,7 @@
 {
   "name": "git-refs-explorer",
-  "displayName": "Git Refs Explorer",
-  "description": "Visualize Git references and run compare, checkout, and merge workflows from a dedicated VS Code view.",
+  "displayName": "GIT Revision Graph",
+  "description": "Visualize Git references and run compare, checkout, merge, and graph workflows from a dedicated VS Code view.",
   "version": "0.0.1",
   "publisher": "local",
   "license": "MIT",
@@ -48,7 +48,7 @@
     "commands": [
       {
         "command": "gitRefs.refresh",
-        "title": "Refresh Revision Graph",
+        "title": "Refresh GIT Revision Graph",
         "icon": "$(refresh)"
       },
       {
@@ -69,12 +69,12 @@
       },
       {
         "command": "gitRefs.openRevisionGraph",
-        "title": "Open Revision Graph",
+        "title": "Open GIT Revision Graph",
         "icon": "$(git-commit)"
       },
       {
         "command": "gitRefs.chooseRevisionGraphRepository",
-        "title": "Choose Revision Graph Repository",
+        "title": "Choose GIT Revision Graph Repository",
         "icon": "$(repo)"
       }
     ],

@@ -1,6 +1,6 @@
-# Git Refs Explorer
+# GIT Revision Graph
 
-Git Refs Explorer is a Visual Studio Code extension prototype for browsing Git references and running common reference-based workflows from a dedicated view.
+GIT Revision Graph is a Visual Studio Code extension prototype for browsing Git references and running common reference-based workflows from a dedicated view.
 
 The current implementation focuses on a practical MVP built on top of the public API exposed by the built-in `vscode.git` extension.
 
@@ -15,18 +15,14 @@ The current development cycle hardens that MVP by separating core logic into sma
 
 ## Current Features
 
-- Dedicated `Git Refs` Activity Bar container
-- `References` tree view for:
-  - local branches
-  - tags
-  - remote branches grouped by remote
+- Dedicated `GIT Revision Graph` Activity Bar container
+- `GIT Revision Graph` webview for recent commits across all refs
 - Compare between two references
 - Compare a reference against the current worktree
 - Checkout for branches, tags, and commits
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Merge a selected reference into the current branch
 - Delete local branches, tags, and remote branches from the Revision Graph
-- Revision Graph webview for recent commits across all refs
 - Compare actions in the Revision Graph for changed files, unified diff, and commit log
 - Ancestor filtering from a selected reference in the Revision Graph
 - Automatic refresh when repository state changes
@@ -159,7 +155,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `Git Refs` view from the Activity Bar.
+5. Use the `GIT Revision Graph` view from the Activity Bar.
 
 ## Dev Container
 
@@ -227,7 +223,7 @@ Use both automated and manual checks when changing command behavior:
    - compare a reference with the worktree
    - checkout of a local branch, tag, and remote branch
    - merge of a selected reference into the current branch
-   - open `Revision Graph` from the `Git Refs` title bar
+   - open `GIT Revision Graph` from the `GIT Revision Graph` title bar
    - Ctrl/Cmd-click two commits and compare them
    - Ctrl/Cmd-click two commits and open `Show log`
    - select one commit and compare it with the worktree

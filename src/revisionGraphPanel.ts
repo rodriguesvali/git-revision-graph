@@ -1034,11 +1034,11 @@ async function openChangeDiffWithWorktree(repository: Repository, change: Change
 }
 
 function renderEmptyHtml(): string {
-  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>Open a Workspace with a Git Repository to View the Revision Graph.</p></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>GIT Revision Graph</h2><p>Open a Workspace with a Git Repository to View the GIT Revision Graph.</p></body></html>`;
 }
 
 function renderErrorHtml(message: string): string {
-  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>${escapeHtml(message)}</p></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>GIT Revision Graph</h2><p>${escapeHtml(message)}</p></body></html>`;
 }
 
 function getNodeClass(node: RevisionGraphNode): string {
