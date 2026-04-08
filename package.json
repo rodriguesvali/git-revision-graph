@@ -13,12 +13,14 @@
     "Source Control"
   ],
   "activationEvents": [
-    "onView:gitRefs.refsView",
+    "onView:gitRefs.revisionGraphView",
     "onCommand:gitRefs.refresh",
     "onCommand:gitRefs.compareRefs",
     "onCommand:gitRefs.compareWithWorktree",
     "onCommand:gitRefs.checkout",
-    "onCommand:gitRefs.merge"
+    "onCommand:gitRefs.merge",
+    "onCommand:gitRefs.openRevisionGraph",
+    "onCommand:gitRefs.chooseRevisionGraphRepository"
   ],
   "main": "./out/extension.js",
   "extensionDependencies": [
@@ -29,7 +31,7 @@
       "activitybar": [
         {
           "id": "gitRefs",
-          "title": "Git Refs",
+          "title": "Revision Graph",
           "icon": "media/git-refs.svg"
         }
       ]
@@ -37,15 +39,16 @@
     "views": {
       "gitRefs": [
         {
-          "id": "gitRefs.refsView",
-          "name": "References"
+          "id": "gitRefs.revisionGraphView",
+          "name": "Revision Graph",
+          "type": "webview"
         }
       ]
     },
     "commands": [
       {
         "command": "gitRefs.refresh",
-        "title": "Refresh References",
+        "title": "Refresh Revision Graph",
         "icon": "$(refresh)"
       },
       {
@@ -63,35 +66,28 @@
       {
         "command": "gitRefs.merge",
         "title": "Merge Into Current Branch"
+      },
+      {
+        "command": "gitRefs.openRevisionGraph",
+        "title": "Open Revision Graph",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "gitRefs.chooseRevisionGraphRepository",
+        "title": "Choose Revision Graph Repository",
+        "icon": "$(repo)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "gitRefs.refresh",
-          "when": "view == gitRefs.refsView",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "gitRefs.compareRefs",
-          "when": "view == gitRefs.refsView && viewItem == git-ref",
-          "group": "inline"
-        },
-        {
-          "command": "gitRefs.compareWithWorktree",
-          "when": "view == gitRefs.refsView && viewItem == git-ref",
-          "group": "inline@2"
-        },
-        {
-          "command": "gitRefs.checkout",
-          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "when": "view == gitRefs.revisionGraphView",
           "group": "navigation"
         },
         {
-          "command": "gitRefs.merge",
-          "when": "view == gitRefs.refsView && viewItem == git-ref",
+          "command": "gitRefs.chooseRevisionGraphRepository",
+          "when": "view == gitRefs.revisionGraphView",
           "group": "navigation@2"
         }
       ]
@@ -99,7 +95,8 @@
   },
   "scripts": {
     "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/**/*.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.16.5",

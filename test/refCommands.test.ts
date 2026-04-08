@@ -1,0 +1,173 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { RefType, Status } from '../src/git';
+import { compareRefs, compareWithWorktree, checkoutReference, mergeReference, RefCommandServices } from '../src/refCommands';
+import { createApi, createChange, createHead, createRef, createRepository } from './fakes';
+
+function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
+  readonly services: RefCommandServices;
+  readonly infoMessages: string[];
+  readonly errorMessages: string[];
+  readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
+  readonly refreshCalls: number;
+} {
+  const infoMessages: string[] = [];
+  const errorMessages: string[] = [];
+  const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
+  const counter = { refreshCalls: 0 };
+
+  const services: RefCommandServices = {
+    ui: {
+      async pickRepository(items) {
+        return items[0]?.repository;
+      },
+      async pickReference(items) {
+        return items[0];
+      },
+      async pickChange(items) {
+        return items[0];
+      },
+      async promptBranchName(options) {
+        return options.value;
+      },
+      async confirm() {
+        return true;
+      },
+      showInformationMessage(message) {
+        infoMessages.push(message);
+      },
+      showWarningMessage(message) {
+        infoMessages.push(message);
+      },
+      async showErrorMessage(message) {
+        errorMessages.push(message);
+      },
+      ...overrides
+    },
+    diffPresenter: {
+      async openBetweenRefs(_repository, _change, leftRef, rightRef) {
+        diffCalls.push({ kind: 'between', refA: leftRef, refB: rightRef });
+      },
+      async openWithWorktree(_repository, _change, ref) {
+        diffCalls.push({ kind: 'worktree', refA: ref });
+      }
+    },
+    refreshController: {
+      refresh() {
+        counter.refreshCalls += 1;
+      },
+      updateViewMessage() {
+        counter.refreshCalls += 1;
+      }
+    },
+    formatPath(fsPath) {
+      return fsPath;
+    }
+  };
+
+  return {
+    services,
+    infoMessages,
+    errorMessages,
+    diffCalls,
+    get refreshCalls() {
+      return counter.refreshCalls;
+    }
+  };
+}
+
+test('compareRefs resolves multi-repo workspaces and opens a diff for the picked change', async () => {
+  const repoA = createRepository({ root: '/workspace/a' });
+  const repoB = createRepository({
+    root: '/workspace/b',
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' }),
+      createRef({ type: RefType.Tag, name: 'v1.0.0' })
+    ],
+    diffBetween: [createChange({ uriPath: '/workspace/b/src/file.ts', status: Status.MODIFIED })]
+  });
+  const api = createApi([repoA, repoB]);
+  const { services, diffCalls } = createServices({
+    async pickRepository(items) {
+      return items[1].repository;
+    },
+    async pickReference(items, placeHolder) {
+      return placeHolder.includes('primeira') ? items[0] : items[0];
+    }
+  });
+
+  await compareRefs(api, undefined, services);
+
+  assert.deepEqual(diffCalls, [{ kind: 'between', refA: 'main', refB: 'v1.0.0' }]);
+});
+
+test('compareWithWorktree reports when there are no changes', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.Head, name: 'main' })],
+    diffWith: []
+  });
+  const { services, infoMessages, diffCalls } = createServices();
+
+  await compareWithWorktree(createApi([repository]), undefined, services);
+
+  assert.deepEqual(diffCalls, []);
+  assert.equal(infoMessages[0], 'A worktree ja esta alinhada com main.');
+});
+
+test('checkoutReference short-circuits when the selected branch is already current', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'main' })]
+  });
+  const harness = createServices();
+
+  await checkoutReference(createApi([repository]), undefined, harness.services);
+
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.equal(harness.infoMessages[0], 'main ja esta selecionada.');
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('checkoutReference creates and tracks a local branch for remote refs with nested names', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })]
+  });
+  const harness = createServices();
+
+  await checkoutReference(createApi([repository]), undefined, harness.services);
+
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'feature/demo', checkout: true, ref: 'origin/feature/demo' }
+  ]);
+  assert.deepEqual(repository.calls.setBranchUpstream, [
+    { name: 'feature/demo', upstream: 'origin/feature/demo' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo criada e selecionada a partir de feature/demo.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
+test('mergeReference prevents merging the current branch into itself', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'main' })]
+  });
+  const { services, infoMessages } = createServices();
+
+  await mergeReference(createApi([repository]), undefined, services);
+
+  assert.deepEqual(repository.calls.merge, []);
+  assert.equal(infoMessages[0], 'A branch atual nao pode ser merged nela mesma.');
+});
+
+test('commands show empty-state feedback when no repository is available', async () => {
+  const { services, infoMessages } = createServices();
+
+  await compareRefs(createApi([]), undefined, services);
+
+  assert.equal(infoMessages[0], 'Nenhum repositorio Git aberto no workspace.');
+});

@@ -4,6 +4,8 @@ Git Refs Explorer is a Visual Studio Code extension prototype for browsing Git r
 
 The current implementation focuses on a practical MVP built on top of the public API exposed by the built-in `vscode.git` extension.
 
+The current development cycle hardens that MVP by separating core logic into smaller modules, standardizing command UX, and adding automated tests around the most important reference workflows.
+
 ## Goals
 
 - Visualize the Git reference tree in a dedicated Activity Bar view
@@ -23,6 +25,7 @@ The current implementation focuses on a practical MVP built on top of the public
 - Checkout for branches, tags, and commits
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Merge a selected reference into the current branch
+- Revision Graph webview for recent commits across all refs
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 
@@ -37,6 +40,7 @@ Included in the MVP:
 - Context menu actions
 - Command Palette access to the same actions
 - File-level diff opening through the native VS Code diff editor
+- Revision graph rendering through a dedicated webview panel
 
 Not included yet:
 
@@ -58,7 +62,7 @@ At a high level:
 4. It renders those references through a `TreeDataProvider`.
 5. It executes workflows such as compare, checkout, and merge by calling the Git API directly.
 
-This approach keeps the extension lightweight and reduces the need to shell out to `git` for core operations.
+This approach keeps the extension lightweight for reference workflows. The revision graph view uses `git log` directly because the public `vscode.git` API does not expose enough commit graph data to render branch ancestry.
 
 ## Project Structure
 
@@ -79,14 +83,33 @@ This approach keeps the extension lightweight and reduces the need to shell out 
 ## Main Files
 
 - `src/extension.ts`
-  - extension activation
+  - extension activation and VS Code wiring
   - tree view registration
   - command registration
-  - compare, checkout, and merge workflows
-  - custom content providers for opening ref-based diffs
+  - adapters that bridge VS Code UI to the testable command layer
 
 - `src/git.ts`
   - minimal TypeScript interfaces for the Git extension API used by this project
+
+- `src/refCommands.ts`
+  - compare, checkout, and merge workflows
+  - repository/reference resolution
+  - command-side UX messages and refresh behavior
+
+- `src/refTreeProvider.ts`
+  - `TreeDataProvider` implementation
+  - refresh handling for repository open/close and checkout/state events
+
+- `src/refPresentation.ts`, `src/refTreeData.ts`, `src/changePresentation.ts`
+  - pure helpers for labels, sorting, tree grouping, and diff item presentation
+
+- `src/revisionGraphData.ts`, `src/revisionGraphPanel.ts`
+  - commit graph parsing and lane layout
+  - revision graph webview rendering
+  - commit selection and compare/checkout actions from the graph
+
+- `test/*.test.ts`
+  - automated coverage for tree grouping, labels, compare flows, checkout behavior, merge protections, and empty states
 
 - `package.json`
   - extension metadata
@@ -119,6 +142,12 @@ Build the extension:
 
 ```bash
 npm run build
+```
+
+Run the automated test suite:
+
+```bash
+npm test
 ```
 
 Open the project in VS Code and run the extension:
@@ -155,6 +184,7 @@ The current extension contributes these commands:
 - `gitRefs.compareWithWorktree`
 - `gitRefs.checkout`
 - `gitRefs.merge`
+- `gitRefs.openRevisionGraph`
 
 These commands are available from the tree view context menu and can also be triggered through the Command Palette.
 
@@ -164,7 +194,8 @@ These commands are available from the tree view context menu and can also be tri
 - Merge conflict resolution is delegated to the standard Source Control experience in VS Code.
 - Binary files or unusual encodings may not render nicely in content-based diffs.
 - The UX for tags and detached HEAD workflows is intentionally minimal in the MVP.
-- The project currently has no automated test suite.
+- The revision graph currently renders a bounded set of recent commits instead of the entire repository history.
+- Manual verification in the Extension Development Host is still recommended for end-to-end validation against the real `vscode.git` extension.
 
 ## Next Steps
 
@@ -174,8 +205,30 @@ Potential improvements after the MVP:
 - Add search and filtering in the references tree
 - Improve conflict-awareness before checkout and merge
 - Add branch creation and tag creation flows
-- Add tests for tree rendering and command behavior
 - Support richer branch metadata in the UI
+- Expand the revision graph with zoom, minimap, and richer revision actions
+
+## Validation Strategy
+
+Use both automated and manual checks when changing command behavior:
+
+1. Run `npm test`.
+2. Press `F5` to launch the Extension Development Host.
+3. Open:
+   - a workspace without a Git repository
+   - a workspace with one repository
+   - a workspace with multiple repositories
+4. Exercise:
+   - compare between two references
+   - compare a reference with the worktree
+   - checkout of a local branch, tag, and remote branch
+   - merge of a selected reference into the current branch
+   - open `Revision Graph` from the `Git Refs` title bar
+   - Ctrl/Cmd-click two commits and compare them
+   - select one commit and compare it with the worktree
+   - select one commit and checkout it
+
+The extension continues to rely on the public API of the built-in `vscode.git` extension and does not shell out to `git` for its main product workflows.
 
 ## License
 
