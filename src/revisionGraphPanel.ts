@@ -213,6 +213,7 @@ function renderRevisionGraphHtml(
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
   const height = Math.max(480, scene.rowCount * ROW_HEIGHT + NODE_PADDING_Y * 2);
+  const zoomLevels = [0.6, 0.8, 1, 1.25, 1.5];
   const referenceData = JSON.stringify(
     scene.nodes.flatMap((node) =>
       node.refs.map((ref) => ({
@@ -231,7 +232,7 @@ function renderRevisionGraphHtml(
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Revision Graph</title>
+  <title>GIT Revision Graph</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -263,22 +264,6 @@ function renderRevisionGraphHtml(
       font-family: var(--vscode-font-family);
       overflow: hidden;
     }
-    .toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: color-mix(in srgb, var(--bg) 94%, transparent);
-      backdrop-filter: blur(10px);
-    }
-    .title { font-size: 14px; font-weight: 700; }
-    .zoom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     button, select {
       border: 1px solid var(--border);
       background: var(--panel);
@@ -290,7 +275,7 @@ function renderRevisionGraphHtml(
     button:disabled { opacity: 0.45; cursor: default; }
     .viewport {
       position: relative;
-      height: calc(100vh - 64px);
+      height: 100vh;
       overflow: auto;
       padding: ${VIEWPORT_PADDING_TOP}px ${VIEWPORT_PADDING_RIGHT}px ${VIEWPORT_PADDING_BOTTOM}px ${VIEWPORT_PADDING_LEFT}px;
       cursor: grab;
@@ -357,18 +342,6 @@ function renderRevisionGraphHtml(
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <div class="title">Revision Graph</div>
-    <div class="zoom">
-      <select id="zoomSelect">
-        <option value="0.6">60%</option>
-        <option value="0.8">80%</option>
-        <option value="1" selected>100%</option>
-        <option value="1.25">125%</option>
-        <option value="1.5">150%</option>
-      </select>
-    </div>
-  </div>
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <svg viewBox="0 0 ${width} ${height}" aria-hidden="true">
@@ -389,15 +362,15 @@ function renderRevisionGraphHtml(
     const vscode = acquireVsCodeApi();
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
+    const zoomLevels = ${JSON.stringify(zoomLevels)};
     const selected = [];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
-    const zoomSelect = document.getElementById('zoomSelect');
     const minimapFrame = document.getElementById('minimapFrame');
     const contextMenu = document.getElementById('contextMenu');
+    let currentZoom = 1;
     let dragState = null;
     let suppressNodeClick = false;
-    zoomSelect.addEventListener('change', () => setZoom(Number(zoomSelect.value)));
     for (const element of document.querySelectorAll('[data-ref-id]')) {
       element.addEventListener('click', (event) => {
         if (suppressNodeClick) {
@@ -490,6 +463,23 @@ function renderRevisionGraphHtml(
       }
     });
     window.addEventListener('keydown', (event) => {
+      if (event.altKey && !event.ctrlKey && !event.metaKey) {
+        if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') {
+          event.preventDefault();
+          zoomIn();
+          return;
+        }
+        if (event.key === '-' || event.key === '_' || event.code === 'NumpadSubtract') {
+          event.preventDefault();
+          zoomOut();
+          return;
+        }
+        if (event.key === '0' || event.code === 'Numpad0') {
+          event.preventDefault();
+          setZoom(1);
+          return;
+        }
+      }
       if (event.key === 'Escape') {
         closeContextMenu();
       }
@@ -498,11 +488,26 @@ function renderRevisionGraphHtml(
     syncSelection();
 
     function setZoom(zoom) {
-      zoomSelect.value = String(zoom);
+      currentZoom = zoom;
       canvas.style.transform = 'scale(' + zoom + ')';
       canvas.style.width = '${width}px';
       canvas.style.height = '${height}px';
       syncMinimap();
+    }
+
+    function zoomIn() {
+      const nextZoom = zoomLevels.find((value) => value > currentZoom);
+      if (nextZoom) {
+        setZoom(nextZoom);
+      }
+    }
+
+    function zoomOut() {
+      const previousLevels = zoomLevels.filter((value) => value < currentZoom);
+      const nextZoom = previousLevels.length > 0 ? previousLevels[previousLevels.length - 1] : undefined;
+      if (nextZoom) {
+        setZoom(nextZoom);
+      }
     }
 
     function syncSelection() {
@@ -598,7 +603,7 @@ function renderRevisionGraphHtml(
     }
 
     function syncMinimap() {
-      const zoom = Number(zoomSelect.value);
+      const zoom = currentZoom;
       const visibleX = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / zoom);
       const visibleY = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / zoom);
       const visibleWidth = Math.max(

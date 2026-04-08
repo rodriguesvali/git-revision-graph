@@ -31,7 +31,7 @@
       "activitybar": [
         {
           "id": "gitRefs",
-          "title": "Revision Graph",
+          "title": "GIT Revision Graph",
           "icon": "media/git-refs.svg"
         }
       ]
@@ -40,7 +40,7 @@
       "gitRefs": [
         {
           "id": "gitRefs.revisionGraphView",
-          "name": "Revision Graph",
+          "name": "GIT Revision Graph",
           "type": "webview"
         }
       ]
