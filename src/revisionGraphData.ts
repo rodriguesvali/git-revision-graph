@@ -134,6 +134,43 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
   };
 }
 
+export function filterRevisionGraphCommitsToAncestors(
+  commits: readonly RevisionGraphCommit[],
+  refName: string,
+  refKind?: RevisionGraphRef['kind']
+): RevisionGraphCommit[] {
+  const commitByHash = new Map(commits.map((commit) => [commit.hash, commit] as const));
+  const targetHashes = commits
+    .filter((commit) =>
+      commit.refs.some((ref) => ref.name === refName && (refKind === undefined || ref.kind === refKind))
+    )
+    .map((commit) => commit.hash);
+
+  if (targetHashes.length === 0) {
+    return [];
+  }
+
+  const reachable = new Set<string>();
+  const queue = [...targetHashes];
+
+  while (queue.length > 0) {
+    const hash = queue.shift();
+    if (!hash || reachable.has(hash)) {
+      continue;
+    }
+
+    reachable.add(hash);
+    const commit = commitByHash.get(hash);
+    if (!commit) {
+      continue;
+    }
+
+    queue.push(...commit.parents);
+  }
+
+  return commits.filter((commit) => reachable.has(commit.hash));
+}
+
 export function parseDecorationRefs(decorations: string): RevisionGraphRef[] {
   if (!decorations) {
     return [];

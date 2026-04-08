@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildRevisionGraphScene, parseDecorationRefs, parseRevisionGraphLog } from '../src/revisionGraphData';
+import {
+  buildRevisionGraphScene,
+  filterRevisionGraphCommitsToAncestors,
+  parseDecorationRefs,
+  parseRevisionGraphLog
+} from '../src/revisionGraphData';
 
 test('parses git log output into revision graph commits', () => {
   const output = [
@@ -53,5 +58,21 @@ test('builds a ref-centric graph scene with grouped labels and nearest ancestor 
       ['b1', 'd1'],
       ['c1', 'd1']
     ]
+  );
+});
+
+test('filters the graph to a reference and its ancestor commits', () => {
+  const commits = [
+    { hash: 'a1', parents: ['b1', 'c1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [] },
+    { hash: 'b1', parents: ['d1'], author: 'Ada', date: '2026-04-06', subject: 'Main', refs: [{ name: 'main', kind: 'head' as const }] },
+    { hash: 'c1', parents: ['d1'], author: 'Ada', date: '2026-04-05', subject: 'Feature', refs: [{ name: 'origin/feature/demo', kind: 'remote' as const }] },
+    { hash: 'd1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Root', refs: [{ name: 'v1.0.0', kind: 'tag' as const }] }
+  ];
+
+  const filtered = filterRevisionGraphCommitsToAncestors(commits, 'origin/feature/demo', 'remote');
+
+  assert.deepEqual(
+    filtered.map((commit) => commit.hash),
+    ['c1', 'd1']
   );
 });

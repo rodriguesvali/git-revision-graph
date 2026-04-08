@@ -27,6 +27,7 @@ The current development cycle hardens that MVP by separating core logic into sma
 - Merge a selected reference into the current branch
 - Revision Graph webview for recent commits across all refs
 - Compare actions in the Revision Graph for changed files, unified diff, and commit log
+- Ancestor filtering from a selected reference in the Revision Graph
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 
@@ -229,6 +230,7 @@ Use both automated and manual checks when changing command behavior:
    - Ctrl/Cmd-click two commits and open `Show log`
    - select one commit and compare it with the worktree
    - select one commit and checkout it
+   - filter ancestor references from a selected reference and return to the full graph
 
 The extension continues to rely on the public API of the built-in `vscode.git` extension and does not shell out to `git` for its main product workflows.
 

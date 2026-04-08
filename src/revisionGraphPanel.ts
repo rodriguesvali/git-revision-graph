@@ -8,10 +8,12 @@ import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { getDiffChangeKinds, getDiffChangeUris } from './refCommands';
 import {
   buildRevisionGraphScene,
+  filterRevisionGraphCommitsToAncestors,
   getRevisionGraphGitFormat,
   parseRevisionGraphLog,
   RevisionGraphEdge,
   RevisionGraphNode,
+  RevisionGraphRef,
   RevisionGraphScene
 } from './revisionGraphData';
 
@@ -31,12 +33,19 @@ const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 type RevisionGraphMessage =
   | { readonly type: 'refresh' }
   | { readonly type: 'choose-repository' }
+  | { readonly type: 'filter-ancestor-refs'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
+  | { readonly type: 'clear-ancestor-filter' }
   | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'show-log'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | { readonly type: 'merge'; readonly refName: string };
+
+interface RevisionGraphAncestorFilter {
+  readonly refName: string;
+  readonly refKind: RevisionGraphRef['kind'];
+}
 
 interface RevisionLogEntry {
   readonly hash: string;
@@ -53,6 +62,7 @@ interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
+  private ancestorFilter: RevisionGraphAncestorFilter | undefined;
 
   constructor(
     private readonly git: API
@@ -75,6 +85,18 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
           return;
         case 'choose-repository':
           this.currentRepository = await pickRepository(this.git, true);
+          this.ancestorFilter = undefined;
+          await this.render();
+          return;
+        case 'filter-ancestor-refs':
+          this.ancestorFilter = {
+            refName: message.refName,
+            refKind: message.refKind
+          };
+          await this.render();
+          return;
+        case 'clear-ancestor-filter':
+          this.ancestorFilter = undefined;
           await this.render();
           return;
         case 'compare-selected':
@@ -144,11 +166,15 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
 
     try {
       const commits = await loadRevisionGraphCommits(this.currentRepository.rootUri.fsPath, GRAPH_COMMIT_LIMIT);
-      const scene = buildRevisionGraphScene(commits);
+      const visibleCommits = this.ancestorFilter
+        ? filterRevisionGraphCommitsToAncestors(commits, this.ancestorFilter.refName, this.ancestorFilter.refKind)
+        : commits;
+      const scene = buildRevisionGraphScene(visibleCommits.length > 0 ? visibleCommits : commits);
       this.view.webview.html = renderRevisionGraphHtml(
         vscode.workspace.asRelativePath(this.currentRepository.rootUri, false),
         scene,
-        this.currentRepository.state.HEAD?.name
+        this.currentRepository.state.HEAD?.name,
+        this.ancestorFilter
       );
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorMessage(error));
@@ -208,7 +234,8 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
 function renderRevisionGraphHtml(
   repositoryLabel: string,
   scene: RevisionGraphScene,
-  currentHeadName: string | undefined
+  currentHeadName: string | undefined,
+  ancestorFilter: RevisionGraphAncestorFilter | undefined
 ): string {
   const nonce = createNonce();
   const width = Math.max(880, scene.laneCount * LANE_WIDTH + NODE_WIDTH + NODE_PADDING_X * 2);
@@ -362,6 +389,7 @@ function renderRevisionGraphHtml(
     const vscode = acquireVsCodeApi();
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
+    const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
     const zoomLevels = ${JSON.stringify(zoomLevels)};
     const selected = [];
     const viewport = document.getElementById('viewport');
@@ -561,12 +589,30 @@ function renderRevisionGraphHtml(
         appendMenuItem('Compare with Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
+        if (activeAncestorFilter && activeAncestorFilter.refName === target.name && activeAncestorFilter.refKind === target.kind) {
+          appendMenuItem('Clear filter', () => {
+            vscode.postMessage({ type: 'clear-ancestor-filter' });
+          });
+        } else {
+          appendMenuItem('Filter ancestors', () => {
+            vscode.postMessage({
+              type: 'filter-ancestor-refs',
+              refName: target.name,
+              refKind: target.kind
+            });
+          });
+        }
         if (!isCurrentHead) {
           appendMenuItem('Checkout', () => {
             vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
           });
           appendMenuItem('Merge into ' + (currentHeadName || 'Current HEAD'), () => {
             vscode.postMessage({ type: 'merge', refName: target.name });
+          });
+        }
+        if (activeAncestorFilter && (activeAncestorFilter.refName !== target.name || activeAncestorFilter.refKind !== target.kind)) {
+          appendMenuItem('Show all references', () => {
+            vscode.postMessage({ type: 'clear-ancestor-filter' });
           });
         }
         if (selected.length > 0) {
