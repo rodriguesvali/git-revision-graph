@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.4
+
+- Refined automatic graph organization to favor a more compact, vertical reading flow in larger repositories instead of spreading cards aggressively across the horizontal axis.
+- Updated overlap resolution so horizontal spacing is handled more locally by row, improving readability in dense graphs.
+- Removed the minified overview area to simplify the board and free more space for the main graph.
+- Preserved `HEAD`-anchored centering while keeping the board focused on the primary graph interaction area.
+
 ## 0.0.3
 
 - Updated graph centering so the current `HEAD` becomes the primary anchor point for board positioning and initial viewport focus.

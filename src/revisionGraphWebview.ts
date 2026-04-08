@@ -613,19 +613,13 @@ export function renderRevisionGraphHtml(
       for (let pass = 0; pass < 8; pass += 1) {
         relaxPositions(positions, graphNodes, neighborMap, false);
         relaxPositions(positions, [...graphNodes].reverse(), neighborMap, true);
-        resolveOverlaps(positions);
+        compactHorizontalSpread(positions);
+        resolveRowOverlaps(positions);
       }
-      maximizeSpacing(positions);
-      resolveOverlaps(positions);
-
-      const bounds = getPositionBounds(positions);
-      const targetCenter = ${width / 2};
-      const currentCenter = (bounds.minX + bounds.maxX) / 2;
-      const centeredDelta = targetCenter - currentCenter;
       for (const node of graphNodes) {
-        const centered = clampNodeLeft((positions.get(node.hash) || node.defaultLeft) + centeredDelta);
-        positions.set(node.hash, centered);
-        nodeOffsets[node.hash] = centered - node.defaultLeft;
+        const nextLeft = clampNodeLeft(positions.get(node.hash) || node.defaultLeft);
+        positions.set(node.hash, nextLeft);
+        nodeOffsets[node.hash] = nextLeft - node.defaultLeft;
       }
       applyNodeLayout();
     }
@@ -654,42 +648,74 @@ export function renderRevisionGraphHtml(
         }
         const current = positions.get(node.hash) || node.defaultLeft;
         const neighborAverage = neighbors.reduce((sum, hash) => sum + (positions.get(hash) || current), 0) / neighbors.length;
-        const laneBias = node.defaultLeft + (reverseBias ? -18 : 18) * Math.sign(neighborAverage - node.defaultLeft);
-        const target = neighborAverage * 0.72 + laneBias * 0.28;
-        positions.set(node.hash, clampNodeLeft(current * 0.4 + target * 0.6));
+        const laneBias = node.defaultLeft + (reverseBias ? -10 : 10) * Math.sign(neighborAverage - node.defaultLeft);
+        const target = neighborAverage * 0.38 + laneBias * 0.62;
+        positions.set(node.hash, clampNodeLeft(current * 0.45 + target * 0.55));
       }
     }
 
-    function resolveOverlaps(positions) {
+    function resolveRowOverlaps(positions) {
       const minGap = ${NODE_WIDTH + 28};
-      const ordered = [...graphNodes]
-        .sort((left, right) => (positions.get(left.hash) || left.defaultLeft) - (positions.get(right.hash) || right.defaultLeft));
-      let cursor = 0;
-      for (const node of ordered) {
-        const next = Math.max(cursor, positions.get(node.hash) || node.defaultLeft);
-        positions.set(node.hash, clampNodeLeft(next));
-        cursor = (positions.get(node.hash) || 0) + minGap;
-      }
-      const overflow = cursor - minGap - (${width - NODE_WIDTH});
-      if (overflow > 0) {
-        for (const node of ordered) {
-          positions.set(node.hash, clampNodeLeft((positions.get(node.hash) || node.defaultLeft) - overflow));
+      const rows = groupNodesByRow();
+      for (const rowNodes of rows.values()) {
+        const ordered = [...rowNodes]
+          .sort((left, right) =>
+            (positions.get(left.hash) || left.defaultLeft) - (positions.get(right.hash) || right.defaultLeft) ||
+            left.defaultLeft - right.defaultLeft
+          );
+        if (ordered.length <= 1) {
+          continue;
+        }
+
+        const resolved = ordered.map((node) => positions.get(node.hash) || node.defaultLeft);
+        for (let index = 1; index < resolved.length; index += 1) {
+          resolved[index] = Math.max(resolved[index], resolved[index - 1] + minGap);
+        }
+
+        const defaultCenter =
+          ordered.reduce((sum, node) => sum + node.defaultLeft + ${NODE_WIDTH / 2}, 0) / ordered.length;
+        const resolvedCenter =
+          resolved.reduce((sum, left) => sum + left + ${NODE_WIDTH / 2}, 0) / resolved.length;
+        const centered = resolved.map((left) => left + (defaultCenter - resolvedCenter));
+
+        for (let index = 0; index < ordered.length; index += 1) {
+          positions.set(ordered[index].hash, clampNodeLeft(centered[index]));
         }
       }
     }
 
-    function getPositionBounds(positions) {
-      let minX = Infinity;
-      let maxX = -Infinity;
+    function compactHorizontalSpread(positions) {
+      if (graphNodes.length <= 1) {
+        return;
+      }
+      const anchorX = getAutoLayoutAnchorX(positions);
+      const spreadFactor = graphNodes.length >= 40 ? 0.62 : graphNodes.length >= 20 ? 0.72 : 0.84;
       for (const node of graphNodes) {
-        const left = positions.get(node.hash) || node.defaultLeft;
-        minX = Math.min(minX, left);
-        maxX = Math.max(maxX, left + ${NODE_WIDTH});
+        const current = positions.get(node.hash) || node.defaultLeft;
+        const compressed = anchorX + (current - anchorX) * spreadFactor;
+        positions.set(node.hash, clampNodeLeft(compressed));
       }
-      if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
-        return { minX: 0, maxX: ${width} };
+    }
+
+    function groupNodesByRow() {
+      const rows = new Map();
+      for (const node of graphNodes) {
+        if (!rows.has(node.row)) {
+          rows.set(node.row, []);
+        }
+        rows.get(node.row).push(node);
       }
-      return { minX, maxX };
+      return rows;
+    }
+
+    function getAutoLayoutAnchorX(positions) {
+      if (headNodeHash && positions.has(headNodeHash)) {
+        return positions.get(headNodeHash) || 0;
+      }
+      if (graphNodes.length === 0) {
+        return 0;
+      }
+      return graphNodes.reduce((sum, node) => sum + (positions.get(node.hash) || node.defaultLeft), 0) / graphNodes.length;
     }
 
     function updateEdges(elements) {
@@ -815,34 +841,6 @@ export function renderRevisionGraphHtml(
         centerX: headBounds.centerX + layoutOffsetX,
         centerY: headBounds.centerY + layoutOffsetY
       };
-    }
-
-    function maximizeSpacing(positions) {
-      if (graphNodes.length === 0) {
-        return;
-      }
-      if (graphNodes.length === 1) {
-        const onlyNode = graphNodes[0];
-        positions.set(onlyNode.hash, (${width} - ${NODE_WIDTH}) / 2);
-        return;
-      }
-
-      const outerMargin = 24;
-      const minGap = ${NODE_WIDTH + 28};
-      const ordered = [...graphNodes]
-        .sort((left, right) => (positions.get(left.hash) || left.defaultLeft) - (positions.get(right.hash) || right.defaultLeft));
-      const usableSpan = Math.max(0, ${width - NODE_WIDTH} - outerMargin * 2);
-      const distributedStep = usableSpan / (ordered.length - 1);
-      const step = Math.max(minGap, distributedStep);
-      const packedWidth = step * (ordered.length - 1);
-      const start = Math.max(outerMargin, (${width - NODE_WIDTH} - packedWidth) / 2);
-
-      ordered.forEach((node, index) => {
-        const evenlySpacedLeft = start + index * step;
-        const currentLeft = positions.get(node.hash) || node.defaultLeft;
-        const blendedLeft = currentLeft * 0.2 + evenlySpacedLeft * 0.8;
-        positions.set(node.hash, clampNodeLeft(blendedLeft));
-      });
     }
 
     function getNodeCenterX(hash) {
