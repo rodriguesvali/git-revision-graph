@@ -19,6 +19,7 @@ export function renderRevisionGraphHtml(
   repositoryLabel: string,
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
+  currentHeadUpstreamName: string | undefined,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
   mergeBlockedTargets: readonly string[],
   autoArrangeOnInit: boolean
@@ -351,6 +352,7 @@ export function renderRevisionGraphHtml(
     const vscode = acquireVsCodeApi();
     const references = ${referenceData};
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
+    const currentHeadUpstreamName = ${JSON.stringify(currentHeadUpstreamName ?? null)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
     const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
@@ -633,6 +635,7 @@ export function renderRevisionGraphHtml(
       const base = selected[0] ? getReference(selected[0]) : undefined;
       const compare = selected[1] ? getReference(selected[1]) : undefined;
       const isCurrentHead = target.kind === 'head' || (currentHeadName && target.name === currentHeadName);
+      const canSyncCurrentHead = target.kind === 'head' && !!currentHeadUpstreamName;
       const matchesActiveAncestorFilter =
         !!activeAncestorFilter &&
         activeAncestorFilter.refName === target.name &&
@@ -698,6 +701,11 @@ export function renderRevisionGraphHtml(
         if (target.kind !== 'tag') {
           appendMenuItem('Checkout', () => {
             vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+          });
+        }
+        if (canSyncCurrentHead) {
+          appendMenuItem('Sync with ' + currentHeadUpstreamName, () => {
+            vscode.postMessage({ type: 'sync-current-head' });
           });
         }
         appendMenuItem('Create New Branch', () => {

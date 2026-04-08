@@ -13,6 +13,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | { readonly type: 'create-branch'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
+  | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
 

@@ -67,6 +67,8 @@ export function createRepository(options: {
     readonly deleteTag: string[];
     readonly setBranchUpstream: Array<{ readonly name: string; readonly upstream: string }>;
     readonly merge: string[];
+    readonly pull: boolean[];
+    readonly push: Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>;
   };
 } {
   const stateChanges = createEventEmitter<void>();
@@ -80,7 +82,9 @@ export function createRepository(options: {
     deleteBranch: [] as Array<{ readonly name: string; readonly force?: boolean }>,
     deleteTag: [] as string[],
     setBranchUpstream: [] as Array<{ readonly name: string; readonly upstream: string }>,
-    merge: [] as string[]
+    merge: [] as string[],
+    pull: [] as boolean[],
+    push: [] as Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>
   };
 
   return {
@@ -121,6 +125,12 @@ export function createRepository(options: {
     async merge(ref: string): Promise<void> {
       calls.merge.push(ref);
     },
+    async pull(): Promise<void> {
+      calls.pull.push(true);
+    },
+    async push(remoteName?: string, branchName?: string, setUpstream?: boolean): Promise<void> {
+      calls.push.push({ remoteName, branchName, setUpstream });
+    },
     calls
   };
 }
@@ -156,11 +166,12 @@ export function createUri(fsPath: string): Repository['rootUri'] {
   } as unknown as Repository['rootUri'];
 }
 
-export function createHead(name: string, ahead?: number, behind?: number): Branch {
+export function createHead(name: string, ahead?: number, behind?: number, upstream?: Branch['upstream']): Branch {
   return createBranch({
     type: RefType.Head,
     name,
     ahead,
-    behind
+    behind,
+    upstream
   });
 }

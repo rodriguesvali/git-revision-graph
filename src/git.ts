@@ -82,6 +82,8 @@ export interface Repository {
   deleteTag(name: string): Promise<void>;
   setBranchUpstream(name: string, upstream: string): Promise<void>;
   merge(ref: string): Promise<void>;
+  pull(unshallow?: boolean): Promise<void>;
+  push(remoteName?: string, branchName?: string, setUpstream?: boolean): Promise<void>;
 }
 
 export interface API {

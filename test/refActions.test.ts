@@ -8,7 +8,8 @@ import {
   compareResolvedRefs,
   deleteResolvedReference,
   mergeResolvedReference,
-  RefActionServices
+  RefActionServices,
+  syncCurrentHeadWithUpstream
 } from '../src/refActions';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
@@ -220,6 +221,52 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 2);
+});
+
+test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 2, 1, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: undefined, branchName: undefined, setUpstream: undefined }
+  ]);
+  assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
+  assert.equal(harness.refreshCalls, 2);
+});
+
+test('syncCurrentHeadWithUpstream reports when the current branch is already synchronized', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(harness.infoMessages[0], 'main is already synchronized with origin/main.');
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('syncCurrentHeadWithUpstream refuses when the current branch has no upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(harness.infoMessages[0], 'The current branch is not tracking a remote branch.');
 });
 
 test('mergeResolvedReference preserves the self-merge guard', async () => {

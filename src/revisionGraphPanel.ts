@@ -8,7 +8,8 @@ import {
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
-  mergeResolvedReference
+  mergeResolvedReference,
+  syncCurrentHeadWithUpstream
 } from './refActions';
 import {
   buildRevisionGraphScene,
@@ -158,6 +159,15 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
             await this.render();
           }
           return;
+        case 'sync-current-head':
+          if (this.currentRepository) {
+            await syncCurrentHeadWithUpstream(
+              this.currentRepository,
+              this.actionServices
+            );
+            await this.render();
+          }
+          return;
         case 'delete':
           if (this.currentRepository) {
             await deleteResolvedReference(
@@ -230,6 +240,9 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         vscode.workspace.asRelativePath(this.currentRepository.rootUri, false),
         scene,
         this.currentRepository.state.HEAD?.name,
+        this.currentRepository.state.HEAD?.upstream
+          ? formatUpstreamLabel(this.currentRepository.state.HEAD.upstream.remote, this.currentRepository.state.HEAD.upstream.name)
+          : undefined,
         this.ancestorFilter,
         mergeBlockedTargets,
         this.autoArrangeOnNextRender
@@ -325,4 +338,8 @@ async function getMergeBlockedTargets(
   );
 
   return mergeBlockedEntries.filter((entry): entry is string => typeof entry === 'string');
+}
+
+function formatUpstreamLabel(remoteName: string, refName: string): string {
+  return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
 }

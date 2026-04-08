@@ -21,9 +21,10 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     rowCount: 1
   };
 
-  const autoArrangeHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, [], true);
-  const passiveHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, [], false);
+  const autoArrangeHtml = renderRevisionGraphHtml('repo', scene, 'main', 'origin/main', undefined, [], true);
+  const passiveHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, undefined, [], false);
 
   assert.match(autoArrangeHtml, /const autoArrangeOnInit = true;/);
   assert.match(passiveHtml, /const autoArrangeOnInit = false;/);
+  assert.match(autoArrangeHtml, /const currentHeadUpstreamName = "origin\/main";/);
 });

@@ -48,6 +48,13 @@ export interface RefActionServices {
   readonly formatPath: (fsPath: string) => string;
 }
 
+interface HeadSyncState {
+  readonly branchName: string;
+  readonly upstreamLabel: string;
+  readonly ahead: number;
+  readonly behind: number;
+}
+
 export async function compareResolvedRefs(
   repository: Repository,
   left: RefSelection,
@@ -169,6 +176,38 @@ export async function createBranchFromResolvedReference(
     services.refreshController.updateViewMessage();
   } catch (error) {
     await services.ui.showErrorMessage(`Could not create the branch. ${toErrorDetail(error)}`);
+  }
+}
+
+export async function syncCurrentHeadWithUpstream(
+  repository: Repository,
+  services: RefActionServices
+): Promise<void> {
+  try {
+    const syncState = getCurrentHeadSyncState(repository);
+    if (!syncState) {
+      services.ui.showInformationMessage('The current branch is not tracking a remote branch.');
+      return;
+    }
+
+    if (syncState.ahead <= 0 && syncState.behind <= 0) {
+      services.ui.showInformationMessage(`${syncState.branchName} is already synchronized with ${syncState.upstreamLabel}.`);
+      return;
+    }
+
+    if (syncState.behind > 0) {
+      await repository.pull();
+    }
+
+    if (syncState.ahead > 0) {
+      await repository.push();
+    }
+
+    services.refreshController.refresh();
+    services.refreshController.updateViewMessage();
+    services.ui.showInformationMessage(buildSyncResultMessage(syncState));
+  } catch (error) {
+    await services.ui.showErrorMessage(`Could not synchronize the current branch. ${toErrorDetail(error)}`);
   }
 }
 
@@ -364,6 +403,36 @@ function getSuggestedNewBranchName(refName: string, kind: RefActionKind): string
   }
 
   return refName;
+}
+
+function getCurrentHeadSyncState(repository: Repository): HeadSyncState | undefined {
+  const head = repository.state.HEAD;
+  if (!head?.name || !head.upstream) {
+    return undefined;
+  }
+
+  return {
+    branchName: head.name,
+    upstreamLabel: formatUpstreamLabel(head.upstream.remote, head.upstream.name),
+    ahead: head.ahead ?? 0,
+    behind: head.behind ?? 0
+  };
+}
+
+function formatUpstreamLabel(remoteName: string, refName: string): string {
+  return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
+}
+
+function buildSyncResultMessage(syncState: HeadSyncState): string {
+  if (syncState.behind > 0 && syncState.ahead > 0) {
+    return `${syncState.branchName} was synchronized with ${syncState.upstreamLabel}.`;
+  }
+
+  if (syncState.behind > 0) {
+    return `${syncState.branchName} was updated from ${syncState.upstreamLabel}.`;
+  }
+
+  return `${syncState.branchName} was pushed to ${syncState.upstreamLabel}.`;
 }
 
 function toErrorDetail(error: unknown): string {

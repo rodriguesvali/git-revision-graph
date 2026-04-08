@@ -25,6 +25,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Compare a reference against the current worktree
 - Checkout for branches, tags, and commits
 - Guided checkout flow for remote branches by creating a local tracking branch
+- Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
 - Delete local branches, tags, and remote branches from the Revision Graph
 - Compare actions in the Revision Graph for changed files, unified diff, and commit log
