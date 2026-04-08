@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.8
+
+- Improved delete actions for branches and tags by showing clearer, ref-specific labels such as `Delete Branch: <name>` and `Delete Tag: <name>`.
+- Added a workspace status LED to the top-right corner of the revision graph to indicate whether the repository is clean or has pending changes.
+- When the workspace has pending changes, the red status LED now opens Source Control Changes directly.
+- Added descriptive tooltips to the workspace status indicator for both clean and dirty states.
+- Refined the workspace status LED visuals with brighter colors and updated sizing for better visibility.
+
 ## 0.0.7
 
 - Improved branch lifecycle workflows by preventing local branch creation from inheriting unintended upstream tracking, which also avoids surprising delete behavior later.

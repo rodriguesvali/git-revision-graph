@@ -2,7 +2,7 @@
   "name": "git-revision-graph",
   "displayName": "GIT Revision Graph",
   "description": "Visualize Git references and run compare, checkout, merge, and graph workflows from a dedicated VS Code view.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "rodriguesvali",
   "license": "MIT",
   "icon": "media/icon.png",
