@@ -1,5 +1,5 @@
 import { ChangeQuickPickItem, toChangeQuickPickItems } from './changePresentation';
-import { toErrorDetail } from './errorDetail';
+import { hasGitErrorCode as matchesGitErrorCode, toErrorDetail, toOperationError } from './errorDetail';
 import { Branch, RefType, Repository } from './git';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
@@ -80,7 +80,7 @@ export async function compareResolvedRefs(
 
     await services.diffPresenter.openBetweenRefs(repository, pickedChange.change, left.refName, right.refName);
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not compare references. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not compare references.', error));
   }
 }
 
@@ -106,7 +106,7 @@ export async function compareResolvedRefWithWorktree(
 
     await services.diffPresenter.openWithWorktree(repository, pickedChange.change, target.refName);
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not compare the reference with the worktree. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not compare the reference with the worktree.', error));
   }
 }
 
@@ -144,7 +144,7 @@ export async function checkoutResolvedReference(
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not check out the reference. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
 }
 
@@ -179,7 +179,7 @@ export async function createBranchFromResolvedReference(
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not create the branch. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
 }
 
@@ -211,7 +211,7 @@ export async function syncCurrentHeadWithUpstream(
     services.refreshController.updateViewMessage();
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not synchronize the current branch. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
   }
 }
 
@@ -249,7 +249,7 @@ export async function mergeResolvedReference(
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
-      `Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. ${toErrorDetail(error)}`
+      toOperationError('Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.', error)
     );
   }
 }
@@ -313,7 +313,7 @@ export async function deleteResolvedReference(
 
     await deleteLocalBranch(repository, target, upstreamLabel, services);
   } catch (error) {
-    await services.ui.showErrorMessage(`Could not delete the reference. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(toOperationError('Could not delete the reference.', error));
   }
 }
 
@@ -461,7 +461,7 @@ async function deleteLocalBranch(
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();
   } catch (error) {
-    if (!hasGitErrorCode(error, 'BranchNotFullyMerged')) {
+    if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
       throw error;
     }
 
@@ -495,12 +495,4 @@ function buildForceDeleteBranchMessage(label: string, upstreamLabel: string | un
     : '';
 
   return `${label} is not fully merged into ${mergeBaseLabel}.\n\nForce delete the local branch anyway?${remoteNotice}`;
-}
-
-function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-
-  return 'gitErrorCode' in error && error.gitErrorCode === gitErrorCode;
 }

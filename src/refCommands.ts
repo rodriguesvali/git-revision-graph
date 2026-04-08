@@ -1,5 +1,4 @@
 import { ChangeQuickPickItem } from './changePresentation';
-import { toErrorDetail } from './errorDetail';
 import { API, Ref, RefType, Repository } from './git';
 import { isReferenceNode, RefNode } from './refNodes';
 import {
@@ -67,16 +66,12 @@ export async function compareRefs(
     return;
   }
 
-  try {
-    await compareResolvedRefs(
-      repository,
-      { refName: first.refName, label: first.label },
-      { refName: second.refName, label: second.label },
-      services
-    );
-  } catch (error) {
-    await services.ui.showErrorMessage(`Could not compare references. ${toErrorDetail(error)}`);
-  }
+  await compareResolvedRefs(
+    repository,
+    { refName: first.refName, label: first.label },
+    { refName: second.refName, label: second.label },
+    services
+  );
 }
 
 export async function compareWithWorktree(

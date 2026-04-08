@@ -2,6 +2,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
+import { toErrorDetail, toOperationError } from './errorDetail';
 import { API, Ref, RefType, Repository } from './git';
 import { getRevisionGraphGitFormat, parseRevisionGraphLog, RevisionGraphRef } from './revisionGraphData';
 import { sortRepositoriesByPath } from './repositorySelection';
@@ -86,7 +87,7 @@ export async function openUnifiedDiff(repository: Repository, left: string, righ
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(`Could not open the unified diff. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(toOperationError('Could not open the unified diff.', error));
   }
 }
 
@@ -147,12 +148,8 @@ export async function showRevisionLog(repository: Repository, left: string, righ
 
     await openCommitLogEntry(repository, picked.entry.hash);
   } catch (error) {
-    await vscode.window.showErrorMessage(`Could not show the revision log. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(toOperationError('Could not show the revision log.', error));
   }
-}
-
-export function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function buildRevisionGraphRefKinds(refs: readonly Ref[]): Map<string, RevisionGraphRef['kind']> {
@@ -226,7 +223,7 @@ async function openCommitLogEntry(repository: Repository, commitHash: string): P
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(`Could not open the selected commit. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(toOperationError('Could not open the selected commit.', error));
   }
 }
 

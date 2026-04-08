@@ -3,6 +3,7 @@ interface GitLikeError {
   readonly stderr?: string;
   readonly exitCode?: number;
   readonly gitErrorCode?: string;
+  readonly code?: number | string;
 }
 
 export function toErrorDetail(error: unknown): string {
@@ -19,9 +20,23 @@ export function toErrorDetail(error: unknown): string {
 
   if (typeof gitError?.exitCode === 'number') {
     suffixes.push(`(exit code: ${gitError.exitCode})`);
+  } else if (typeof gitError?.code === 'number') {
+    suffixes.push(`(exit code: ${gitError.code})`);
   }
 
   return suffixes.length > 0 ? `${primaryDetail} ${suffixes.join(' ')}` : primaryDetail;
+}
+
+export function toOperationError(message: string, error: unknown): string {
+  return `${message} ${toErrorDetail(error)}`;
+}
+
+export function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  return 'gitErrorCode' in error && error.gitErrorCode === gitErrorCode;
 }
 
 function asGitLikeError(error: unknown): GitLikeError | undefined {

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { toErrorDetail } from './errorDetail';
 import { Repository, API } from './git';
 import { isSameRepositoryPath, reconcileCurrentRepository } from './repositorySelection';
 import {
@@ -21,8 +22,7 @@ import {
   loadRevisionGraphCommits,
   openUnifiedDiff,
   pickRevisionGraphRepository,
-  showRevisionLog,
-  toErrorMessage
+  showRevisionLog
 } from './revisionGraphRepository';
 import {
   renderEmptyHtml,
@@ -249,7 +249,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
       );
       this.autoArrangeOnNextRender = false;
     } catch (error) {
-      this.view.webview.html = renderErrorHtml(toErrorMessage(error));
+      this.view.webview.html = renderErrorHtml(toErrorDetail(error));
     }
   }
 
