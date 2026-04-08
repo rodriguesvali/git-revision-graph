@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.9
+
+- Repositioned the workspace status LED 30px to the left for a cleaner top-right layout in the revision graph.
+- Replaced deprecated Git refs access with `repository.getRefs()` to align the extension with the current VS Code Git API and reduce extension host deprecation warnings.
+
 ## 0.0.8
 
 - Improved delete actions for branches and tags by showing clearer, ref-specific labels such as `Delete Branch: <name>` and `Delete Tag: <name>`.
