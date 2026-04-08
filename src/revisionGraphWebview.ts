@@ -249,6 +249,11 @@ export function renderRevisionGraphHtml(
     const graphNodes = ${graphNodeData};
     const graphEdges = ${graphEdgeData};
     const selected = [];
+    const headReference =
+      references.find((ref) => ref.kind === 'head') ||
+      references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
+      null;
+    const headNodeHash = headReference ? headReference.hash : null;
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
@@ -758,25 +763,31 @@ export function renderRevisionGraphHtml(
       const bounds = getGraphBounds();
       const canvasWidth = getCanvasWidth();
       const canvasHeight = getCanvasHeight();
-      const graphWidth = Math.max(0, bounds.maxX - bounds.minX);
-      const graphHeight = Math.max(0, bounds.maxY - bounds.minY);
-      layoutOffsetX = Math.max(0, (canvasWidth - graphWidth) / 2 - bounds.minX);
-      layoutOffsetY = Math.max(0, (canvasHeight - graphHeight) / 2 - bounds.minY);
+      const headAnchor = getHeadAnchorBounds();
+      const preferredCenterX = headAnchor ? headAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
+      const preferredCenterY = headAnchor ? headAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
+      const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
+      const maxOffsetY = Math.max(0, canvasHeight - baseCanvasHeight);
+      layoutOffsetX = clamp(preferredCenterX ? canvasWidth / 2 - preferredCenterX : 0, 0, maxOffsetX);
+      layoutOffsetY = clamp(preferredCenterY ? canvasHeight / 2 - preferredCenterY : 0, 0, maxOffsetY);
       sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
       minimapLayer.setAttribute('transform', 'translate(' + layoutOffsetX + ' ' + layoutOffsetY + ')');
     }
 
     function centerGraphInViewport() {
       const bounds = getDisplayedGraphBounds();
+      const displayedHeadAnchor = getDisplayedHeadAnchorBounds();
+      const targetCenterX = displayedHeadAnchor ? displayedHeadAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
+      const targetCenterY = displayedHeadAnchor ? displayedHeadAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
       const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
       const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
       viewport.scrollLeft = Math.max(
         0,
-        ${VIEWPORT_PADDING_LEFT} + ((bounds.minX + bounds.maxX) / 2) * currentZoom - visibleWidth / 2
+        ${VIEWPORT_PADDING_LEFT} + targetCenterX * currentZoom - visibleWidth / 2
       );
       viewport.scrollTop = Math.max(
         0,
-        ${VIEWPORT_PADDING_TOP} + ((bounds.minY + bounds.maxY) / 2) * currentZoom - visibleHeight / 2
+        ${VIEWPORT_PADDING_TOP} + targetCenterY * currentZoom - visibleHeight / 2
       );
       syncMinimap();
     }
@@ -808,6 +819,31 @@ export function renderRevisionGraphHtml(
         maxX: bounds.maxX + layoutOffsetX,
         minY: bounds.minY + layoutOffsetY,
         maxY: bounds.maxY + layoutOffsetY
+      };
+    }
+
+    function getHeadAnchorBounds() {
+      if (!headNodeHash || !nodeElements.has(headNodeHash)) {
+        return null;
+      }
+      const top = getNodeTop(headNodeHash);
+      const left = getNodeLeft(headNodeHash);
+      const element = nodeElements.get(headNodeHash);
+      const height = element ? element.offsetHeight : 54;
+      return {
+        centerX: left + ${NODE_WIDTH / 2},
+        centerY: top + height / 2
+      };
+    }
+
+    function getDisplayedHeadAnchorBounds() {
+      const headBounds = getHeadAnchorBounds();
+      if (!headBounds) {
+        return null;
+      }
+      return {
+        centerX: headBounds.centerX + layoutOffsetX,
+        centerY: headBounds.centerY + layoutOffsetY
       };
     }
 
@@ -882,6 +918,10 @@ export function renderRevisionGraphHtml(
 
     function clampNodeLeft(left) {
       return Math.max(0, Math.min(${width - NODE_WIDTH}, left));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
 
     function getCanvasWidth() {

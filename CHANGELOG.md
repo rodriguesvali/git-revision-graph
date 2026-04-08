@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.3
+
+- Updated graph centering so the current `HEAD` becomes the primary anchor point for board positioning and initial viewport focus.
+- Improved the revision graph presentation around the active branch by preferring the checked out reference over the geometric center of the graph when centering.
+
 ## 0.0.2
 
 - Improved revision graph readability with curved connectors, compacted vertical spacing, and centered graph presentation inside the board.
