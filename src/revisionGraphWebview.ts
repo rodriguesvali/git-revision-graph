@@ -342,8 +342,10 @@ export function renderRevisionGraphHtml(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
     const edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
+    const graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
     const parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
     const childMap = buildDirectionalMap(graphEdges, 'to', 'from');
+    const headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
     const storedState = vscode.getState() || {};
     const nodeOffsets = Object.assign({}, storedState.nodeOffsets || {});
     const baseCanvasWidth = ${width};
@@ -562,9 +564,13 @@ export function renderRevisionGraphHtml(
     function syncRelationshipHighlights() {
       const anchorReference = selected[0] ? getReference(selected[0]) : undefined;
       const anchorHash = anchorReference ? anchorReference.hash : null;
-      const ancestorHashes = anchorHash ? collectReachableHashes(anchorHash, parentMap) : new Set();
-      const descendantHashes = anchorHash ? collectReachableHashes(anchorHash, childMap) : new Set();
+      const ancestorPath = anchorHash ? tracePrimaryPath(anchorHash, 'ancestor') : [];
+      const descendantPath = anchorHash ? tracePrimaryPath(anchorHash, 'descendant') : [];
+      const ancestorHashes = new Set(ancestorPath);
+      const descendantHashes = new Set(descendantPath);
       const relatedHashes = new Set([...ancestorHashes, ...descendantHashes]);
+      const ancestorEdgeKeys = buildPathEdgeKeys(ancestorPath, 'ancestor');
+      const descendantEdgeKeys = buildPathEdgeKeys(descendantPath, 'descendant');
 
       for (const [hash, element] of nodeElements.entries()) {
         const isAncestorRelated = !!anchorHash && anchorHash !== hash && ancestorHashes.has(hash);
@@ -578,8 +584,9 @@ export function renderRevisionGraphHtml(
       for (const element of edgeElements) {
         const fromHash = element.getAttribute('data-edge-from');
         const toHash = element.getAttribute('data-edge-to');
-        const isAncestorPath = !!anchorHash && !!fromHash && !!toHash && ancestorHashes.has(fromHash) && ancestorHashes.has(toHash);
-        const isDescendantPath = !!anchorHash && !!fromHash && !!toHash && descendantHashes.has(fromHash) && descendantHashes.has(toHash);
+        const edgeKey = fromHash && toHash ? fromHash + '->' + toHash : '';
+        const isAncestorPath = !!anchorHash && ancestorEdgeKeys.has(edgeKey);
+        const isDescendantPath = !!anchorHash && descendantEdgeKeys.has(edgeKey);
         const isRelated = isAncestorPath || isDescendantPath;
 
         element.classList.toggle('related', isRelated);
@@ -819,23 +826,109 @@ export function renderRevisionGraphHtml(
       return map;
     }
 
-    function collectReachableHashes(startHash, adjacencyMap) {
-      const visited = new Set();
+    function buildDistanceMap(startHash, adjacencyMap) {
+      const distances = new Map([[startHash, 0]]);
       const queue = [startHash];
       while (queue.length > 0) {
         const hash = queue.shift();
-        if (!hash || visited.has(hash)) {
+        if (!hash) {
           continue;
         }
-        visited.add(hash);
+        const baseDistance = distances.get(hash) || 0;
         const nextHashes = adjacencyMap.get(hash) || [];
         for (const nextHash of nextHashes) {
-          if (!visited.has(nextHash)) {
+          if (!distances.has(nextHash)) {
+            distances.set(nextHash, baseDistance + 1);
             queue.push(nextHash);
           }
         }
       }
-      return visited;
+      return distances;
+    }
+
+    function tracePrimaryPath(startHash, direction) {
+      const path = [startHash];
+      const visited = new Set(path);
+      let currentHash = startHash;
+
+      while (true) {
+        const nextHash = selectPrimaryNeighbor(currentHash, visited, direction);
+        if (!nextHash) {
+          break;
+        }
+        path.push(nextHash);
+        visited.add(nextHash);
+        currentHash = nextHash;
+      }
+
+      return path;
+    }
+
+    function selectPrimaryNeighbor(currentHash, visited, direction) {
+      const adjacencyMap = direction === 'ancestor' ? parentMap : childMap;
+      const candidates = (adjacencyMap.get(currentHash) || []).filter((hash) => !visited.has(hash));
+      if (candidates.length === 0) {
+        return undefined;
+      }
+
+      const preferredCandidates = filterPreferredCandidates(currentHash, candidates, direction);
+      const pool = preferredCandidates.length > 0 ? preferredCandidates : candidates;
+      return [...pool].sort((leftHash, rightHash) =>
+        scorePathCandidate(currentHash, leftHash, direction) - scorePathCandidate(currentHash, rightHash, direction)
+      )[0];
+    }
+
+    function filterPreferredCandidates(currentHash, candidates, direction) {
+      if (direction === 'descendant') {
+        const onHeadPath = candidates.filter((hash) => headDistanceByHash.has(hash));
+        return onHeadPath.length > 0 ? onHeadPath : [];
+      }
+
+      const currentHeadDistance = headDistanceByHash.get(currentHash);
+      if (currentHeadDistance === undefined) {
+        return [];
+      }
+
+      const forwardHeadPath = candidates.filter((hash) => {
+        const candidateHeadDistance = headDistanceByHash.get(hash);
+        return candidateHeadDistance !== undefined && candidateHeadDistance > currentHeadDistance;
+      });
+      return forwardHeadPath.length > 0 ? forwardHeadPath : [];
+    }
+
+    function scorePathCandidate(currentHash, candidateHash, direction) {
+      const currentNode = graphNodeByHash.get(currentHash);
+      const candidateNode = graphNodeByHash.get(candidateHash);
+      const laneDelta = Math.abs((candidateNode?.lane || 0) - (currentNode?.lane || 0));
+      const rowDistance = Math.abs((candidateNode?.row || 0) - (currentNode?.row || 0));
+      const horizontalDistance = Math.abs((candidateNode?.defaultLeft || 0) - (currentNode?.defaultLeft || 0));
+      const candidateHeadDistance = headDistanceByHash.get(candidateHash);
+
+      if (direction === 'descendant' && candidateHeadDistance !== undefined) {
+        return candidateHeadDistance * 10000 + laneDelta * 100 + rowDistance * 10 + horizontalDistance;
+      }
+
+      if (direction === 'ancestor') {
+        const currentHeadDistance = headDistanceByHash.get(currentHash);
+        if (currentHeadDistance !== undefined && candidateHeadDistance !== undefined) {
+          return Math.abs(candidateHeadDistance - (currentHeadDistance + 1)) * 10000 + laneDelta * 100 + rowDistance * 10 + horizontalDistance;
+        }
+      }
+
+      return laneDelta * 100 + rowDistance * 10 + horizontalDistance;
+    }
+
+    function buildPathEdgeKeys(path, direction) {
+      const keys = new Set();
+      for (let index = 0; index < path.length - 1; index += 1) {
+        const currentHash = path[index];
+        const nextHash = path[index + 1];
+        const edgeKey = direction === 'ancestor'
+          ? currentHash + '->' + nextHash
+          : nextHash + '->' + currentHash;
+        keys.add(edgeKey);
+      }
+      return keys;
     }
 
     function relaxPositions(positions, nodes, neighborMap, reverseBias) {
