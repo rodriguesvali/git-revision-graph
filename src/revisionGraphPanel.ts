@@ -160,7 +160,7 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
   }
 
   if (git.repositories.length === 0) {
-    void vscode.window.showInformationMessage('Nenhum repositorio Git aberto no workspace.');
+    void vscode.window.showInformationMessage('No Git repository is open in the workspace.');
     return undefined;
   }
 
@@ -173,7 +173,7 @@ async function pickRepository(git: API, alwaysPrompt: boolean): Promise<Reposito
       }))
       .sort((left, right) => left.label.localeCompare(right.label)),
     {
-      placeHolder: 'Escolha o repositorio do revision graph'
+      placeHolder: 'Choose the repository for the revision graph'
     }
   );
 
@@ -503,22 +503,22 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
             compareRefName: compare.name
           });
         });
-        appendMenuItem('Limpar selecao', () => {
+        appendMenuItem('Clear selection', () => {
           selected.splice(0, selected.length);
           syncSelection();
         });
       } else {
-        appendMenuItem('Comparar Base com Worktree', () => {
+        appendMenuItem('Compare with Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
         appendMenuItem('Checkout', () => {
           vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
         });
-        appendMenuItem('Merge no HEAD atual', () => {
+        appendMenuItem('Merge into Current HEAD', () => {
           vscode.postMessage({ type: 'merge', refName: target.name });
         });
         if (selected.length > 0) {
-          appendMenuItem('Limpar selecao', () => {
+          appendMenuItem('Clear selection', () => {
             selected.splice(0, selected.length);
             syncSelection();
           });
@@ -609,15 +609,15 @@ async function compareRevisions(repository: Repository, left: string, right: str
   try {
     const changes = await repository.diffBetween(left, right);
     if (changes.length === 0) {
-      void vscode.window.showInformationMessage(`Nenhuma diferenca encontrada entre ${left.slice(0, 8)} e ${right.slice(0, 8)}.`);
+      void vscode.window.showInformationMessage(`No differences found between ${left.slice(0, 8)} and ${right.slice(0, 8)}.`);
       return;
     }
-    const picked = await pickChange(changes, `Arquivos alterados entre ${left.slice(0, 8)} e ${right.slice(0, 8)}`);
+    const picked = await pickChange(changes, `Changed files between ${left.slice(0, 8)} and ${right.slice(0, 8)}`);
     if (picked) {
       await openChangeDiffBetweenRefs(repository, picked, left, right);
     }
   } catch (error) {
-    await vscode.window.showErrorMessage(`Nao foi possivel comparar as revisoes. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(`Could not compare revisions. ${toErrorMessage(error)}`);
   }
 }
 
@@ -625,15 +625,15 @@ async function compareRevisionWithWorktree(repository: Repository, hash: string)
   try {
     const changes = await repository.diffWith(hash);
     if (changes.length === 0) {
-      void vscode.window.showInformationMessage(`A worktree ja esta alinhada com ${hash.slice(0, 8)}.`);
+      void vscode.window.showInformationMessage(`The worktree is already aligned with ${hash.slice(0, 8)}.`);
       return;
     }
-    const picked = await pickChange(changes, `Arquivos alterados entre ${hash.slice(0, 8)} e a worktree`);
+    const picked = await pickChange(changes, `Changed files between ${hash.slice(0, 8)} and the worktree`);
     if (picked) {
       await openChangeDiffWithWorktree(repository, picked, hash);
     }
   } catch (error) {
-    await vscode.window.showErrorMessage(`Nao foi possivel comparar a revisao com a worktree. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(`Could not compare the revision with the worktree. ${toErrorMessage(error)}`);
   }
 }
 
@@ -641,54 +641,54 @@ async function checkoutReference(repository: Repository, refName: string, refKin
   try {
     if (refKind === 'head' || refKind === 'branch') {
       if (repository.state.HEAD?.name === refName) {
-        void vscode.window.showInformationMessage(`${refName} ja esta selecionada.`);
+        void vscode.window.showInformationMessage(`${refName} is already checked out.`);
         return;
       }
-      const confirmed = await vscode.window.showWarningMessage(`Fazer checkout de ${refName}?`, { modal: true }, 'Checkout');
+      const confirmed = await vscode.window.showWarningMessage(`Check out ${refName}?`, { modal: true }, 'Checkout');
       if (confirmed !== 'Checkout') {
         return;
       }
       await repository.checkout(refName);
-      void vscode.window.showInformationMessage(`Checkout concluido para ${refName}.`);
+      void vscode.window.showInformationMessage(`Checkout completed for ${refName}.`);
       return;
     }
 
     if (refKind === 'remote') {
       const suggestedName = getSuggestedLocalBranchName(refName);
       const branchName = await vscode.window.showInputBox({
-        prompt: `Criar branch local rastreando ${refName}`,
+        prompt: `Create a local branch tracking ${refName}`,
         value: suggestedName,
-        validateInput: (value) => (value.trim().length === 0 ? 'Informe um nome de branch.' : undefined)
+        validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
       });
       if (!branchName) {
         return;
       }
       await repository.createBranch(branchName, true, refName);
       await repository.setBranchUpstream(branchName, refName);
-      void vscode.window.showInformationMessage(`Branch ${branchName} criada e selecionada a partir de ${refName}.`);
+      void vscode.window.showInformationMessage(`Branch ${branchName} was created and checked out from ${refName}.`);
       return;
     }
 
-    const confirmed = await vscode.window.showWarningMessage(`Fazer checkout de ${refName}?`, { modal: true }, 'Checkout');
+    const confirmed = await vscode.window.showWarningMessage(`Check out ${refName}?`, { modal: true }, 'Checkout');
     if (confirmed !== 'Checkout') {
       return;
     }
     await repository.checkout(refName);
-    void vscode.window.showInformationMessage(`Checkout concluido para ${refName}.`);
+    void vscode.window.showInformationMessage(`Checkout completed for ${refName}.`);
   } catch (error) {
-    await vscode.window.showErrorMessage(`Nao foi possivel fazer checkout da referencia. ${toErrorMessage(error)}`);
+    await vscode.window.showErrorMessage(`Could not check out the reference. ${toErrorMessage(error)}`);
   }
 }
 
 async function mergeReferenceIntoHead(repository: Repository, refName: string): Promise<void> {
-  const currentBranch = repository.state.HEAD?.name ?? 'HEAD atual';
+  const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
   if (repository.state.HEAD?.name === refName) {
-    void vscode.window.showInformationMessage('A branch atual nao pode ser merged nela mesma.');
+    void vscode.window.showInformationMessage('The current branch cannot be merged into itself.');
     return;
   }
 
   const confirmed = await vscode.window.showWarningMessage(
-    `Fazer merge de ${refName} em ${currentBranch}?`,
+    `Merge ${refName} into ${currentBranch}?`,
     { modal: true },
     'Merge'
   );
@@ -698,10 +698,10 @@ async function mergeReferenceIntoHead(repository: Repository, refName: string): 
 
   try {
     await repository.merge(refName);
-    void vscode.window.showInformationMessage(`Merge de ${refName} iniciado em ${currentBranch}.`);
+    void vscode.window.showInformationMessage(`Merge from ${refName} started in ${currentBranch}.`);
   } catch (error) {
     await vscode.window.showErrorMessage(
-      `Merge nao concluido. Se houve conflitos, finalize pela experiencia de Source Control do VS Code. ${toErrorMessage(error)}`
+      `Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. ${toErrorMessage(error)}`
     );
   }
 }
@@ -753,7 +753,7 @@ async function openChangeDiffWithWorktree(repository: Repository, change: Change
 }
 
 function renderEmptyHtml(): string {
-  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>Abra um workspace com um repositorio Git para visualizar o revision graph.</p></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><body style="font-family: sans-serif; padding: 24px;"><h2>Revision Graph</h2><p>Open a workspace with a Git repository to view the revision graph.</p></body></html>`;
 }
 
 function renderErrorHtml(message: string): string {

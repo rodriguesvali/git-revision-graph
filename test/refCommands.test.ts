@@ -113,7 +113,7 @@ test('compareWithWorktree reports when there are no changes', async () => {
   await compareWithWorktree(createApi([repository]), undefined, services);
 
   assert.deepEqual(diffCalls, []);
-  assert.equal(infoMessages[0], 'A worktree ja esta alinhada com main.');
+  assert.equal(infoMessages[0], 'The worktree is already aligned with main.');
 });
 
 test('checkoutReference short-circuits when the selected branch is already current', async () => {
@@ -127,7 +127,7 @@ test('checkoutReference short-circuits when the selected branch is already curre
   await checkoutReference(createApi([repository]), undefined, harness.services);
 
   assert.deepEqual(repository.calls.checkout, []);
-  assert.equal(harness.infoMessages[0], 'main ja esta selecionada.');
+  assert.equal(harness.infoMessages[0], 'main is already checked out.');
   assert.equal(harness.refreshCalls, 0);
 });
 
@@ -146,7 +146,7 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   assert.deepEqual(repository.calls.setBranchUpstream, [
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
-  assert.equal(harness.infoMessages[0], 'Branch feature/demo criada e selecionada a partir de feature/demo.');
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from feature/demo.');
   assert.equal(harness.refreshCalls, 2);
 });
 
@@ -161,7 +161,7 @@ test('mergeReference prevents merging the current branch into itself', async () 
   await mergeReference(createApi([repository]), undefined, services);
 
   assert.deepEqual(repository.calls.merge, []);
-  assert.equal(infoMessages[0], 'A branch atual nao pode ser merged nela mesma.');
+  assert.equal(infoMessages[0], 'The current branch cannot be merged into itself.');
 });
 
 test('commands show empty-state feedback when no repository is available', async () => {
@@ -169,5 +169,5 @@ test('commands show empty-state feedback when no repository is available', async
 
   await compareRefs(createApi([]), undefined, services);
 
-  assert.equal(infoMessages[0], 'Nenhum repositorio Git aberto no workspace.');
+  assert.equal(infoMessages[0], 'No Git repository is open in the workspace.');
 });

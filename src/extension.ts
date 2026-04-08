@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const git = await getGitApi();
   if (!git) {
     void vscode.window.showWarningMessage(
-      'Git Refs Explorer precisa da extensao nativa vscode.git ativa para funcionar.'
+      'Git Refs Explorer requires the built-in vscode.git extension to be active.'
     );
     return;
   }
@@ -80,7 +80,7 @@ function createCommandServices(): RefCommandServices {
         return vscode.window.showInputBox({
           prompt: options.prompt,
           value: options.value,
-          validateInput: (value) => (value.trim().length === 0 ? 'Informe um nome de branch.' : undefined)
+          validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
         });
       },
       async confirm(options) {

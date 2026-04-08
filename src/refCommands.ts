@@ -63,14 +63,14 @@ export async function compareRefs(
 
   const first = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Escolha a primeira referencia para comparar', undefined, services);
+    : await pickReference(repository, 'Choose the first reference to compare', undefined, services);
   if (!first) {
     return;
   }
 
   const second = await pickReference(
     repository,
-    `Compare ${first.label} com...`,
+    `Compare ${first.label} with...`,
     first.refName,
     services
   );
@@ -82,14 +82,14 @@ export async function compareRefs(
     const changes = await repository.diffBetween(first.refName, second.refName);
     if (changes.length === 0) {
       services.ui.showInformationMessage(
-        `Nenhuma diferenca encontrada entre ${first.label} e ${second.label}.`
+        `No differences found between ${first.label} and ${second.label}.`
       );
       return;
     }
 
     const pickedChange = await services.ui.pickChange(
       toChangeQuickPickItems(changes, services.formatPath),
-      `Arquivos alterados entre ${first.label} e ${second.label}`
+      `Changed files between ${first.label} and ${second.label}`
     );
     if (!pickedChange) {
       return;
@@ -97,7 +97,7 @@ export async function compareRefs(
 
     await services.diffPresenter.openBetweenRefs(repository, pickedChange.change, first.refName, second.refName);
   } catch (error) {
-    await services.ui.showErrorMessage(`Nao foi possivel comparar as referencias. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(`Could not compare references. ${toErrorDetail(error)}`);
   }
 }
 
@@ -113,7 +113,7 @@ export async function compareWithWorktree(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Escolha a referencia para comparar com a worktree', undefined, services);
+    : await pickReference(repository, 'Choose a reference to compare with the worktree', undefined, services);
   if (!selected) {
     return;
   }
@@ -121,13 +121,13 @@ export async function compareWithWorktree(
   try {
     const changes = await repository.diffWith(selected.refName);
     if (changes.length === 0) {
-      services.ui.showInformationMessage(`A worktree ja esta alinhada com ${selected.label}.`);
+      services.ui.showInformationMessage(`The worktree is already aligned with ${selected.label}.`);
       return;
     }
 
     const pickedChange = await services.ui.pickChange(
       toChangeQuickPickItems(changes, services.formatPath),
-      `Arquivos alterados entre ${selected.label} e a worktree`
+      `Changed files between ${selected.label} and the worktree`
     );
     if (!pickedChange) {
       return;
@@ -135,7 +135,7 @@ export async function compareWithWorktree(
 
     await services.diffPresenter.openWithWorktree(repository, pickedChange.change, selected.refName);
   } catch (error) {
-    await services.ui.showErrorMessage(`Nao foi possivel comparar a referencia com a worktree. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(`Could not compare the reference with the worktree. ${toErrorDetail(error)}`);
   }
 }
 
@@ -151,21 +151,21 @@ export async function checkoutReference(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Escolha a referencia para fazer checkout', undefined, services);
+    : await pickReference(repository, 'Choose a reference to check out', undefined, services);
   if (!selected) {
     return;
   }
 
   try {
     if (selected.ref.type === RefType.Head && repository.state.HEAD?.name === selected.ref.name) {
-      services.ui.showInformationMessage(`${selected.label} ja esta selecionada.`);
+      services.ui.showInformationMessage(`${selected.label} is already checked out.`);
       return;
     }
 
     if (selected.ref.type === RefType.RemoteHead) {
       const suggestedName = getSuggestedLocalBranchName(selected.ref);
       const branchName = await services.ui.promptBranchName({
-        prompt: `Criar branch local rastreando ${selected.label}`,
+        prompt: `Create a local branch tracking ${selected.label}`,
         value: suggestedName
       });
 
@@ -176,11 +176,11 @@ export async function checkoutReference(
       await repository.createBranch(branchName, true, selected.refName);
       await repository.setBranchUpstream(branchName, selected.refName);
       services.ui.showInformationMessage(
-        `Branch ${branchName} criada e selecionada a partir de ${selected.label}.`
+        `Branch ${branchName} was created and checked out from ${selected.label}.`
       );
     } else {
       const confirmed = await services.ui.confirm({
-        message: `Fazer checkout de ${selected.label}?`,
+        message: `Check out ${selected.label}?`,
         confirmLabel: 'Checkout'
       });
       if (!confirmed) {
@@ -188,13 +188,13 @@ export async function checkoutReference(
       }
 
       await repository.checkout(selected.refName);
-      services.ui.showInformationMessage(`Checkout concluido para ${selected.label}.`);
+      services.ui.showInformationMessage(`Checkout completed for ${selected.label}.`);
     }
 
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();
   } catch (error) {
-    await services.ui.showErrorMessage(`Nao foi possivel fazer checkout da referencia. ${toErrorDetail(error)}`);
+    await services.ui.showErrorMessage(`Could not check out the reference. ${toErrorDetail(error)}`);
   }
 }
 
@@ -210,19 +210,19 @@ export async function mergeReference(
 
   const selected = isReferenceNode(node)
     ? toQuickPickItem(repository, node.ref)
-    : await pickReference(repository, 'Escolha a referencia para fazer merge', undefined, services);
+    : await pickReference(repository, 'Choose a reference to merge', undefined, services);
   if (!selected) {
     return;
   }
 
-  const currentBranch = repository.state.HEAD?.name ?? 'HEAD atual';
+  const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
   if (selected.ref.type === RefType.Head && selected.ref.name === repository.state.HEAD?.name) {
-    services.ui.showInformationMessage('A branch atual nao pode ser merged nela mesma.');
+    services.ui.showInformationMessage('The current branch cannot be merged into itself.');
     return;
   }
 
   const confirmed = await services.ui.confirm({
-    message: `Fazer merge de ${selected.label} em ${currentBranch}?`,
+    message: `Merge ${selected.label} into ${currentBranch}?`,
     confirmLabel: 'Merge'
   });
   if (!confirmed) {
@@ -233,10 +233,10 @@ export async function mergeReference(
     await repository.merge(selected.refName);
     services.refreshController.refresh();
     services.refreshController.updateViewMessage();
-    services.ui.showInformationMessage(`Merge de ${selected.label} iniciado em ${currentBranch}.`);
+    services.ui.showInformationMessage(`Merge from ${selected.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
-      `Merge nao concluido. Se houve conflitos, finalize pela experiencia de Source Control do VS Code. ${toErrorDetail(error)}`
+      `Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. ${toErrorDetail(error)}`
     );
   }
 }
@@ -290,13 +290,13 @@ async function resolveRepository(
   }
 
   if (git.repositories.length === 0) {
-    services.ui.showInformationMessage('Nenhum repositorio Git aberto no workspace.');
+    services.ui.showInformationMessage('No Git repository is open in the workspace.');
     return undefined;
   }
 
   return services.ui.pickRepository(
     buildRepositoryPickItems(git.repositories, services.formatPath),
-    'Escolha o repositorio'
+    'Choose a repository'
   );
 }
 
