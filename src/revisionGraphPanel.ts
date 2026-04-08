@@ -32,6 +32,7 @@ type RevisionGraphMessage =
   | { readonly type: 'refresh' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
+  | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'compare-with-worktree'; readonly refName: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | { readonly type: 'merge'; readonly refName: string };
@@ -66,6 +67,11 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider {
         case 'compare-selected':
           if (this.currentRepository) {
             await compareRevisions(this.currentRepository, message.baseRefName, message.compareRefName);
+          }
+          return;
+        case 'open-unified-diff':
+          if (this.currentRepository) {
+            await openUnifiedDiff(this.currentRepository, message.baseRefName, message.compareRefName);
           }
           return;
         case 'compare-with-worktree':
@@ -503,6 +509,13 @@ function renderRevisionGraphHtml(repositoryLabel: string, scene: RevisionGraphSc
             compareRefName: compare.name
           });
         });
+        appendMenuItem('Unified Diff', () => {
+          vscode.postMessage({
+            type: 'open-unified-diff',
+            baseRefName: base.name,
+            compareRefName: compare.name
+          });
+        });
         appendMenuItem('Clear selection', () => {
           selected.splice(0, selected.length);
           syncSelection();
@@ -618,6 +631,35 @@ async function compareRevisions(repository: Repository, left: string, right: str
     }
   } catch (error) {
     await vscode.window.showErrorMessage(`Could not compare revisions. ${toErrorMessage(error)}`);
+  }
+}
+
+async function openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void> {
+  try {
+    const { stdout } = await execFile(
+      'git',
+      ['diff', '--no-color', left, right],
+      {
+        cwd: repository.rootUri.fsPath,
+        maxBuffer: 8 * 1024 * 1024
+      }
+    );
+
+    if (stdout.trim().length === 0) {
+      void vscode.window.showInformationMessage(`No unified diff found between ${left.slice(0, 8)} and ${right.slice(0, 8)}.`);
+      return;
+    }
+
+    const document = await vscode.workspace.openTextDocument({
+      content: stdout,
+      language: 'diff'
+    });
+
+    await vscode.window.showTextDocument(document, {
+      preview: true
+    });
+  } catch (error) {
+    await vscode.window.showErrorMessage(`Could not open the unified diff. ${toErrorMessage(error)}`);
   }
 }
 
