@@ -426,6 +426,40 @@ export function renderRevisionGraphHtml(
     .view-controls input[type="checkbox"] {
       margin: 0;
     }
+    .view-controls .toolbar-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .view-controls .toolbar-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 32px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 9px;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .view-controls .toolbar-button.icon-only {
+      width: 32px;
+      min-width: 32px;
+      padding: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .view-controls .toolbar-button .button-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      font-size: 15px;
+      line-height: 1;
+    }
     .node-summary {
       padding: 10px 12px 12px;
       border-top: 1px solid rgba(0, 0, 0, 0.08);
@@ -465,6 +499,32 @@ export function renderRevisionGraphHtml(
       />
       <span>Show Branchings &amp; Merges</span>
     </label>
+    <div class="toolbar-actions" aria-label="Graph actions">
+      <button
+        id="reorganizeButton"
+        class="toolbar-button"
+        type="button"
+        title="Reorganize graph layout"
+        aria-label="Reorganize graph layout"
+      >
+        <span class="button-icon">=</span>
+        <span>Reorganize</span>
+      </button>
+      <button
+        id="zoomOutButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Zoom Out (Alt -)"
+        aria-label="Zoom Out"
+      >-</button>
+      <button
+        id="zoomInButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Zoom In (Alt +)"
+        aria-label="Zoom In"
+      >+</button>
+    </div>
   </div>
   <button
     class="workspace-led ${isWorkspaceDirty ? 'dirty' : 'clean'}"
@@ -524,6 +584,9 @@ export function renderRevisionGraphHtml(
     const scopeSelect = document.getElementById('scopeSelect');
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showBranchingsToggle = document.getElementById('showBranchingsToggle');
+    const reorganizeButton = document.getElementById('reorganizeButton');
+    const zoomOutButton = document.getElementById('zoomOutButton');
+    const zoomInButton = document.getElementById('zoomInButton');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
@@ -635,6 +698,24 @@ export function renderRevisionGraphHtml(
         }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...');
       });
     }
+    if (reorganizeButton) {
+      reorganizeButton.addEventListener('click', () => {
+        autoArrangeLayout();
+        centerGraphInViewport();
+      });
+    }
+    if (zoomOutButton) {
+      zoomOutButton.addEventListener('click', () => {
+        zoomOut();
+        centerGraphInViewport();
+      });
+    }
+    if (zoomInButton) {
+      zoomInButton.addEventListener('click', () => {
+        zoomIn();
+        centerGraphInViewport();
+      });
+    }
     viewport.addEventListener('mousedown', (event) => {
       if (event.button !== 0) {
         return;
@@ -652,13 +733,6 @@ export function renderRevisionGraphHtml(
     });
     viewport.addEventListener('scroll', syncMinimap);
     viewport.addEventListener('scroll', closeContextMenu);
-    viewport.addEventListener('contextmenu', (event) => {
-      if (event.target.closest('[data-node-hash]')) {
-        return;
-      }
-      event.preventDefault();
-      openBoardContextMenu(event.clientX, event.clientY);
-    });
     window.addEventListener('resize', () => {
       syncCanvasSize();
       updateScenePlacement();
@@ -754,6 +828,7 @@ export function renderRevisionGraphHtml(
       canvas.style.transform = 'scale(' + zoom + ')';
       syncCanvasSize();
       applyNodeLayout(false);
+      syncToolbarActions();
       syncMinimap();
     }
 
@@ -902,27 +977,6 @@ export function renderRevisionGraphHtml(
       contextMenu.classList.add('open');
     }
 
-    function openBoardContextMenu(clientX, clientY) {
-      const canZoomIn = zoomLevels.some((value) => value > currentZoom);
-      const canZoomOut = zoomLevels.some((value) => value < currentZoom);
-      contextMenu.innerHTML = '';
-      appendMenuItem('Reorganize', () => {
-        autoArrangeLayout();
-        centerGraphInViewport();
-      });
-      appendMenuItem('Zoom Out [ Alt - ]', () => {
-        zoomOut();
-        centerGraphInViewport();
-      }, !canZoomOut);
-      appendMenuItem('Zoom In [ Alt + ]', () => {
-        zoomIn();
-        centerGraphInViewport();
-      }, !canZoomIn);
-      contextMenu.style.left = clientX + 'px';
-      contextMenu.style.top = clientY + 'px';
-      contextMenu.classList.add('open');
-    }
-
     function appendMenuItem(label, onClick, disabled = false) {
       const button = document.createElement('button');
       button.className = 'context-item';
@@ -938,6 +992,17 @@ export function renderRevisionGraphHtml(
     function closeContextMenu() {
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
+    }
+
+    function syncToolbarActions() {
+      const canZoomIn = zoomLevels.some((value) => value > currentZoom);
+      const canZoomOut = zoomLevels.some((value) => value < currentZoom);
+      if (zoomInButton) {
+        zoomInButton.disabled = !canZoomIn;
+      }
+      if (zoomOutButton) {
+        zoomOutButton.disabled = !canZoomOut;
+      }
     }
 
     function postMessageWithLoading(message, label) {

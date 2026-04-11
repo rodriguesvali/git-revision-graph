@@ -58,6 +58,9 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
   assert.match(passiveHtml, /const isWorkspaceDirty = true;/);
   assert.match(autoArrangeHtml, /<select id="scopeSelect">/);
   assert.match(autoArrangeHtml, /Show Branchings &amp; Merges/);
+  assert.match(autoArrangeHtml, /id="reorganizeButton"/);
+  assert.match(autoArrangeHtml, /id="zoomOutButton"[\s\S]*title="Zoom Out \(Alt -\)"/);
+  assert.match(autoArrangeHtml, /id="zoomInButton"[\s\S]*title="Zoom In \(Alt \+\)"/);
 });
 
 test('renders reference dividers only between consecutive refs', () => {
