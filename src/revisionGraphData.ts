@@ -93,7 +93,7 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
         lane: layout.lane
       };
     });
-  const nodes = compactNodeRows(rawNodes);
+  const nodes = compactNodeRows(compactNodeLanes(rawNodes));
 
   const nodeByHash = new Map(nodes.map((node) => [node.hash, node] as const));
   const edges: RevisionGraphEdge[] = [];
@@ -105,28 +105,30 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
       continue;
     }
 
-    const nearestAncestors = findNearestReferencedAncestors(commit.parents, commitByHash, nodeByHash);
-    for (const ancestorHash of nearestAncestors) {
-      const target = nodeByHash.get(ancestorHash);
-      if (!target) {
-        continue;
-      }
-
-      const key = `${node.hash}->${ancestorHash}`;
-      if (edgeKeys.has(key)) {
-        continue;
-      }
-
-      edgeKeys.add(key);
-      edges.push({
-        from: node.hash,
-        to: ancestorHash,
-        fromRow: node.row,
-        fromLane: node.lane,
-        toRow: target.row,
-        toLane: target.lane
-      });
+    const nearestAncestor = findNearestReferencedAncestor(commit.parents, commitByHash, nodeByHash);
+    if (!nearestAncestor) {
+      continue;
     }
+
+    const target = nodeByHash.get(nearestAncestor);
+    if (!target) {
+      continue;
+    }
+
+    const key = `${node.hash}->${nearestAncestor}`;
+    if (edgeKeys.has(key)) {
+      continue;
+    }
+
+    edgeKeys.add(key);
+    edges.push({
+      from: node.hash,
+      to: nearestAncestor,
+      fromRow: node.row,
+      fromLane: node.lane,
+      toRow: target.row,
+      toLane: target.lane
+    });
   }
 
   const laneCount = nodes.reduce((max, node) => Math.max(max, node.lane + 1), 0);
@@ -138,6 +140,39 @@ export function buildRevisionGraphScene(commits: readonly RevisionGraphCommit[])
     laneCount: Math.max(laneCount, 1),
     rowCount: Math.max(rowCount, 1)
   };
+}
+
+export function buildPrimaryAncestorPaths(
+  commits: readonly RevisionGraphCommit[],
+  scene: RevisionGraphScene
+): Record<string, string[]> {
+  const commitByHash = new Map(commits.map((commit) => [commit.hash, commit] as const));
+  const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
+  const pathsByHash: Record<string, string[]> = {};
+
+  for (const node of scene.nodes) {
+    const path = [node.hash];
+    const visited = new Set(path);
+    let currentCommit = commitByHash.get(node.hash);
+
+    while (currentCommit?.parents[0]) {
+      const firstParentHash = currentCommit.parents[0];
+      if (visited.has(firstParentHash)) {
+        break;
+      }
+
+      visited.add(firstParentHash);
+      if (visibleHashes.has(firstParentHash)) {
+        path.push(firstParentHash);
+      }
+
+      currentCommit = commitByHash.get(firstParentHash);
+    }
+
+    pathsByHash[node.hash] = path;
+  }
+
+  return pathsByHash;
 }
 
 export function filterRevisionGraphCommitsToAncestors(
@@ -247,14 +282,32 @@ function compactNodeRows(nodes: readonly RevisionGraphNode[]): RevisionGraphNode
     }));
 }
 
-function findNearestReferencedAncestors(
+function compactNodeLanes(nodes: readonly RevisionGraphNode[]): RevisionGraphNode[] {
+  const compactLaneByOriginal = new Map<number, number>();
+  const orderedOriginalLanes = [...new Set(nodes.map((node) => node.lane))].sort((left, right) => left - right);
+
+  for (const [compactLane, originalLane] of orderedOriginalLanes.entries()) {
+    compactLaneByOriginal.set(originalLane, compactLane);
+  }
+
+  return nodes.map((node) => ({
+    ...node,
+    lane: compactLaneByOriginal.get(node.lane) ?? node.lane
+  }));
+}
+
+function findNearestReferencedAncestor(
   parentHashes: readonly string[],
   commitByHash: ReadonlyMap<string, RevisionGraphCommit>,
   nodeByHash: ReadonlyMap<string, RevisionGraphNode>
-): string[] {
+): string | undefined {
+  const firstParentAncestor = findFirstParentReferencedAncestor(parentHashes[0], commitByHash, nodeByHash);
+  if (firstParentAncestor) {
+    return firstParentAncestor;
+  }
+
   const queue = [...parentHashes];
   const visited = new Set<string>();
-  const found: string[] = [];
 
   while (queue.length > 0) {
     const hash = queue.shift();
@@ -264,8 +317,7 @@ function findNearestReferencedAncestors(
 
     visited.add(hash);
     if (nodeByHash.has(hash)) {
-      found.push(hash);
-      continue;
+      return hash;
     }
 
     const commit = commitByHash.get(hash);
@@ -276,7 +328,27 @@ function findNearestReferencedAncestors(
     queue.push(...commit.parents);
   }
 
-  return found;
+  return undefined;
+}
+
+function findFirstParentReferencedAncestor(
+  startHash: string | undefined,
+  commitByHash: ReadonlyMap<string, RevisionGraphCommit>,
+  nodeByHash: ReadonlyMap<string, RevisionGraphNode>
+): string | undefined {
+  const visited = new Set<string>();
+  let currentHash = startHash;
+
+  while (currentHash && !visited.has(currentHash)) {
+    visited.add(currentHash);
+    if (nodeByHash.has(currentHash)) {
+      return currentHash;
+    }
+
+    currentHash = commitByHash.get(currentHash)?.parents[0];
+  }
+
+  return undefined;
 }
 
 function sortRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
   filterRevisionGraphCommitsToAncestors,
   parseDecorationRefs,
@@ -76,6 +77,62 @@ test('builds a ref-centric graph scene with grouped labels and nearest ancestor 
   );
 });
 
+test('builds only one ancestor edge per ref node and prefers first-parent on ties', () => {
+  const scene = buildRevisionGraphScene([
+    { hash: 'm1', parents: ['a1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Left', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Right', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
+  ]);
+
+  assert.deepEqual(
+    scene.edges.map((edge) => [edge.from, edge.to]),
+    [
+      ['m1', 'a1']
+    ]
+  );
+});
+
+test('compacts visible lanes so hidden commit columns do not push refs far to the right', () => {
+  const scene = buildRevisionGraphScene([
+    { hash: 'z1', parents: ['a1', 'b1'], author: 'Ada', date: '2026-04-09', subject: 'Merge tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'a1', parents: ['c1', 'd1'], author: 'Ada', date: '2026-04-08', subject: 'Mainline merge', refs: [] },
+    { hash: 'b1', parents: ['e1'], author: 'Ada', date: '2026-04-07', subject: 'Side lane', refs: [] },
+    { hash: 'c1', parents: ['f1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline work', refs: [] },
+    { hash: 'e1', parents: ['g1'], author: 'Ada', date: '2026-04-05', subject: 'Secondary lane', refs: [] },
+    { hash: 'd1', parents: ['h1'], author: 'Ada', date: '2026-04-04', subject: 'Visible branch', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
+    { hash: 'f1', parents: ['root'], author: 'Ada', date: '2026-04-03', subject: 'Carry mainline', refs: [] },
+    { hash: 'g1', parents: ['root'], author: 'Ada', date: '2026-04-02', subject: 'Carry side lane', refs: [] },
+    { hash: 'h1', parents: ['root'], author: 'Ada', date: '2026-04-01', subject: 'Carry visible lane', refs: [] },
+    { hash: 'root', parents: [], author: 'Ada', date: '2026-03-31', subject: 'Release base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  assert.equal(scene.laneCount, 2);
+  assert.deepEqual(
+    scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane })),
+    [
+      { hash: 'z1', lane: 0 },
+      { hash: 'd1', lane: 1 },
+      { hash: 'root', lane: 0 }
+    ]
+  );
+});
+
+test('prefers a referenced ancestor found on the first-parent chain over a side-parent ref', () => {
+  const scene = buildRevisionGraphScene([
+    { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
+    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Previous release', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Merged topic', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
+  ]);
+
+  assert.deepEqual(
+    scene.edges.map((edge) => [edge.from, edge.to]),
+    [
+      ['m1', 'a1']
+    ]
+  );
+});
+
 test('filters the graph to a reference and its ancestor commits', () => {
   const commits = [
     { hash: 'a1', parents: ['b1', 'c1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [] },
@@ -90,4 +147,20 @@ test('filters the graph to a reference and its ancestor commits', () => {
     filtered.map((commit) => commit.hash),
     ['c1', 'd1']
   );
+});
+
+test('builds primary ancestor paths from first-parent history through non-referenced commits', () => {
+  const commits = [
+    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' as const }] },
+    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
+    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' as const }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' as const }] }
+  ];
+  const scene = buildRevisionGraphScene(commits);
+
+  assert.deepEqual(buildPrimaryAncestorPaths(commits, scene), {
+    m1: ['m1', 'b1'],
+    s1: ['s1', 'b1'],
+    b1: ['b1']
+  });
 });

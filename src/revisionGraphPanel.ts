@@ -13,6 +13,7 @@ import {
   syncCurrentHeadWithUpstream
 } from './refActions';
 import {
+  buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
   filterRevisionGraphCommitsToAncestors,
   RevisionGraphRef
@@ -33,6 +34,8 @@ import { REVISION_GRAPH_VIEW_ID, RevisionGraphAncestorFilter, RevisionGraphMessa
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 const GRAPH_COMMIT_LIMIT = 600;
+const GRAPH_COMMIT_LIMIT_STEPS = [600, 1200, 3000, 6000, 12000];
+const GRAPH_MIN_VISIBLE_NODES = 24;
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -229,11 +232,12 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     }
 
     try {
-      const commits = await loadRevisionGraphCommits(this.currentRepository, GRAPH_COMMIT_LIMIT);
+      const commits = await this.loadCommitsForGraph(this.currentRepository);
       const visibleCommits = this.ancestorFilter
         ? filterRevisionGraphCommitsToAncestors(commits, this.ancestorFilter.refName, this.ancestorFilter.refKind)
         : commits;
       const scene = buildRevisionGraphScene(visibleCommits.length > 0 ? visibleCommits : commits);
+      const primaryAncestorPaths = buildPrimaryAncestorPaths(commits, scene);
       const mergeBlockedTargets = await getMergeBlockedTargets(
         this.currentRepository,
         this.currentRepository.state.HEAD?.name,
@@ -249,12 +253,31 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         hasWorkspaceChanges(this.currentRepository),
         this.ancestorFilter,
         mergeBlockedTargets,
+        primaryAncestorPaths,
         this.autoArrangeOnNextRender
       );
       this.autoArrangeOnNextRender = false;
     } catch (error) {
       this.view.webview.html = renderErrorHtml(toErrorDetail(error));
     }
+  }
+
+  private async loadCommitsForGraph(repository: Repository) {
+    let selectedCommits = await loadRevisionGraphCommits(repository, GRAPH_COMMIT_LIMIT);
+
+    for (const limit of GRAPH_COMMIT_LIMIT_STEPS) {
+      const commits = limit === GRAPH_COMMIT_LIMIT
+        ? selectedCommits
+        : await loadRevisionGraphCommits(repository, limit);
+      const scene = buildRevisionGraphScene(commits);
+      selectedCommits = commits;
+
+      if (scene.nodes.length >= GRAPH_MIN_VISIBLE_NODES || commits.length < limit) {
+        break;
+      }
+    }
+
+    return selectedCommits;
   }
 
   private attachToRepositories(repositories: readonly Repository[]): void {

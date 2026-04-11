@@ -23,6 +23,7 @@ export function renderRevisionGraphHtml(
   isWorkspaceDirty: boolean,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
   mergeBlockedTargets: readonly string[],
+  primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>,
   autoArrangeOnInit: boolean
 ): string {
   const nonce = createNonce();
@@ -447,8 +448,14 @@ export function renderRevisionGraphHtml(
     const parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
     const childMap = buildDirectionalMap(graphEdges, 'to', 'from');
     const headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
+    const primaryAncestorPathsByHash = ${JSON.stringify(primaryAncestorPathsByHash)};
+    const sceneLayoutKey = ${JSON.stringify(
+      scene.nodes.map((node) => `${node.hash}:${node.row}:${node.lane}`).join('|')
+    )};
     const storedState = vscode.getState() || {};
-    const nodeOffsets = Object.assign({}, storedState.nodeOffsets || {});
+    const nodeOffsets = storedState.sceneLayoutKey === sceneLayoutKey
+      ? Object.assign({}, storedState.nodeOffsets || {})
+      : {};
     const baseCanvasWidth = ${width};
     const baseCanvasHeight = ${height};
     let currentZoom = 1;
@@ -672,7 +679,7 @@ export function renderRevisionGraphHtml(
     function syncRelationshipHighlights() {
       const anchorReference = selected[0] ? getReference(selected[0]) : undefined;
       const anchorHash = anchorReference ? anchorReference.hash : null;
-      const ancestorPath = anchorHash ? tracePrimaryPath(anchorHash, 'ancestor') : [];
+      const ancestorPath = anchorHash ? getPrimaryAncestorPath(anchorHash) : [];
       const descendantPath = anchorHash ? tracePrimaryPath(anchorHash, 'descendant') : [];
       const ancestorHashes = new Set(ancestorPath);
       const descendantHashes = new Set(descendantPath);
@@ -898,7 +905,7 @@ export function renderRevisionGraphHtml(
           normalizedOffsets[hash] = offset;
         }
       }
-      vscode.setState({ nodeOffsets: normalizedOffsets });
+      vscode.setState({ sceneLayoutKey, nodeOffsets: normalizedOffsets });
     }
 
     function autoArrangeLayout() {
@@ -907,7 +914,7 @@ export function renderRevisionGraphHtml(
       for (let pass = 0; pass < 8; pass += 1) {
         relaxPositions(positions, graphNodes, neighborMap, false);
         relaxPositions(positions, [...graphNodes].reverse(), neighborMap, true);
-        compactHorizontalSpread(positions);
+        compactHorizontalSpread(positions, neighborMap);
         resolveRowOverlaps(positions);
       }
       for (const node of graphNodes) {
@@ -968,6 +975,13 @@ export function renderRevisionGraphHtml(
         }
       }
       return distances;
+    }
+
+    function getPrimaryAncestorPath(startHash) {
+      const precomputedPath = primaryAncestorPathsByHash[startHash];
+      return Array.isArray(precomputedPath) && precomputedPath.length > 0
+        ? precomputedPath
+        : tracePrimaryPath(startHash, 'ancestor');
     }
 
     function tracePrimaryPath(startHash, direction) {
@@ -1061,8 +1075,12 @@ export function renderRevisionGraphHtml(
         if (neighbors.length === 0) {
           continue;
         }
+
+        const sameLaneNeighbors = neighbors.filter((hash) => graphNodeByHash.get(hash)?.lane === node.lane);
+        const effectiveNeighbors = sameLaneNeighbors.length > 0 ? sameLaneNeighbors : neighbors;
         const current = positions.get(node.hash) || node.defaultLeft;
-        const neighborAverage = neighbors.reduce((sum, hash) => sum + (positions.get(hash) || current), 0) / neighbors.length;
+        const neighborAverage =
+          effectiveNeighbors.reduce((sum, hash) => sum + (positions.get(hash) || current), 0) / effectiveNeighbors.length;
         const laneBias = node.defaultLeft + (reverseBias ? -10 : 10) * Math.sign(neighborAverage - node.defaultLeft);
         const target = neighborAverage * 0.38 + laneBias * 0.62;
         positions.set(node.hash, clampNodeLeft(node.hash, current * 0.45 + target * 0.55));
@@ -1101,16 +1119,25 @@ export function renderRevisionGraphHtml(
       }
     }
 
-    function compactHorizontalSpread(positions) {
+    function compactHorizontalSpread(positions, neighborMap) {
       if (graphNodes.length <= 1) {
         return;
       }
-      const anchorX = getAutoLayoutAnchorX(positions);
+      const components = buildConnectedComponents(neighborMap);
       const spreadFactor = graphNodes.length >= 40 ? 0.62 : graphNodes.length >= 20 ? 0.72 : 0.84;
-      for (const node of graphNodes) {
-        const current = positions.get(node.hash) || node.defaultLeft;
-        const compressed = anchorX + (current - anchorX) * spreadFactor;
-        positions.set(node.hash, clampNodeLeft(node.hash, compressed));
+
+      for (const component of components) {
+        const anchorX = getAutoLayoutAnchorX(positions, component);
+        for (const hash of component) {
+          const node = graphNodeByHash.get(hash);
+          if (!node) {
+            continue;
+          }
+
+          const current = positions.get(hash) || node.defaultLeft;
+          const compressed = anchorX + (current - anchorX) * spreadFactor;
+          positions.set(hash, clampNodeLeft(hash, compressed));
+        }
       }
     }
 
@@ -1125,14 +1152,57 @@ export function renderRevisionGraphHtml(
       return rows;
     }
 
-    function getAutoLayoutAnchorX(positions) {
-      if (headNodeHash && positions.has(headNodeHash)) {
+    function buildConnectedComponents(neighborMap) {
+      const components = [];
+      const visited = new Set();
+
+      for (const node of graphNodes) {
+        if (visited.has(node.hash)) {
+          continue;
+        }
+
+        const queue = [node.hash];
+        const component = [];
+        visited.add(node.hash);
+
+        while (queue.length > 0) {
+          const hash = queue.shift();
+          if (!hash) {
+            continue;
+          }
+
+          component.push(hash);
+          for (const neighbor of neighborMap.get(hash) || []) {
+            if (visited.has(neighbor)) {
+              continue;
+            }
+
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        }
+
+        components.push(component);
+      }
+
+      return components;
+    }
+
+    function getAutoLayoutAnchorX(positions, component) {
+      if (headNodeHash && component.includes(headNodeHash) && positions.has(headNodeHash)) {
         return positions.get(headNodeHash) || 0;
       }
-      if (graphNodes.length === 0) {
+      if (component.length === 0) {
         return 0;
       }
-      return graphNodes.reduce((sum, node) => sum + (positions.get(node.hash) || node.defaultLeft), 0) / graphNodes.length;
+      return component.reduce((sum, hash) => {
+        const node = graphNodeByHash.get(hash);
+        if (!node) {
+          return sum;
+        }
+
+        return sum + (positions.get(hash) || node.defaultLeft);
+      }, 0) / component.length;
     }
 
     function updateEdges(elements) {
