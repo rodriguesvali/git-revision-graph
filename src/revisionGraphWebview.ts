@@ -9,6 +9,10 @@ const NODE_HORIZONTAL_GAP = 28;
 const NODE_PADDING_X = 26;
 const GRAPH_PADDING_TOP = 88;
 const GRAPH_PADDING_BOTTOM = 24;
+const EDGE_VERTICAL_INSET = 6;
+const REF_LINE_HEIGHT = 31;
+const REF_LINE_DIVIDER_HEIGHT = 1;
+const NODE_SUMMARY_HEIGHT = 38;
 const VIEWPORT_PADDING_TOP = 18;
 const VIEWPORT_PADDING_RIGHT = 18;
 const VIEWPORT_PADDING_BOTTOM = 18;
@@ -33,7 +37,8 @@ export function renderRevisionGraphHtml(
     hash: node.hash,
     row: node.row,
     x: node.x,
-    width: getNodeWidth(node)
+    width: getNodeWidth(node),
+    height: getNodeHeight(node)
   }));
   const nodeLayoutsWithPosition = nodeLayouts.map((node) => ({
     ...node,
@@ -1355,11 +1360,10 @@ export function renderRevisionGraphHtml(
       for (const [hash] of nodeElements.entries()) {
         const left = getNodeLeft(hash);
         const top = getNodeTop(hash);
-        const element = nodeElements.get(hash);
         minX = Math.min(minX, left);
         maxX = Math.max(maxX, left + getNodeWidth(hash));
         minY = Math.min(minY, top);
-        maxY = Math.max(maxY, top + (element ? element.offsetHeight : 54));
+        maxY = Math.max(maxY, top + getNodeHeight(hash));
       }
       if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
         return { minX: 0, maxX: baseCanvasWidth, minY: 0, maxY: baseCanvasHeight };
@@ -1383,11 +1387,9 @@ export function renderRevisionGraphHtml(
       }
       const top = getNodeTop(headNodeHash);
       const left = getNodeLeft(headNodeHash);
-      const element = nodeElements.get(headNodeHash);
-      const height = element ? element.offsetHeight : 54;
       return {
         centerX: left + getNodeWidth(headNodeHash) / 2,
-        centerY: top + height / 2
+        centerY: top + getNodeHeight(headNodeHash) / 2
       };
     }
 
@@ -1407,11 +1409,11 @@ export function renderRevisionGraphHtml(
     }
 
     function getNodeSourceY(hash) {
-      return getNodeTop(hash) + 48;
+      return getNodeTop(hash) + getNodeHeight(hash) - ${EDGE_VERTICAL_INSET};
     }
 
     function getNodeTargetY(hash) {
-      return getNodeTop(hash) + 8;
+      return getNodeTop(hash) + ${EDGE_VERTICAL_INSET};
     }
 
     function getNodeLeft(hash) {
@@ -1445,6 +1447,15 @@ export function renderRevisionGraphHtml(
       }
       const node = graphNodeByHash.get(hash);
       return node ? node.width : ${NODE_MIN_WIDTH};
+    }
+
+    function getNodeHeight(hash) {
+      const element = nodeElements.get(hash);
+      if (element) {
+        return element.offsetHeight || Number(element.dataset.nodeHeight || 0) || ${REF_LINE_HEIGHT};
+      }
+      const node = graphNodeByHash.get(hash);
+      return node ? node.height : ${REF_LINE_HEIGHT};
     }
 
     function getMinimumGap(leftHash, rightHash) {
@@ -1498,6 +1509,7 @@ export function renderErrorHtml(message: string): string {
 function renderNode(node: RevisionGraphNode, width: number, x: number): string {
   const y = GRAPH_PADDING_TOP + node.row * ROW_HEIGHT;
   const nodeClass = getNodeClass(node);
+  const height = getNodeHeight(node);
   const refLines = node.refs
     .map((ref) => `<div class="ref-line kind-${escapeHtml(ref.kind)}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
     .join('');
@@ -1505,7 +1517,7 @@ function renderNode(node: RevisionGraphNode, width: number, x: number): string {
     ? `<div class="node-summary">${escapeHtml(formatNodeSummary(node))}</div>`
     : '';
 
-  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(formatNodeTitle(node))}">
+  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-node-height="${height}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(formatNodeTitle(node))}">
     <button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>
     ${refLines}
     ${summary}
@@ -1514,7 +1526,7 @@ function renderNode(node: RevisionGraphNode, width: number, x: number): string {
 
 function renderEdge(
   edge: RevisionGraphEdge,
-  nodeLayoutByHash: ReadonlyMap<string, { readonly row: number; readonly defaultLeft: number; readonly width: number }>
+  nodeLayoutByHash: ReadonlyMap<string, { readonly row: number; readonly defaultLeft: number; readonly width: number; readonly height: number }>
 ): string {
   const strokeWidth = 2.4;
   const marker = 'marker-end="url(#arrowhead)"';
@@ -1525,9 +1537,9 @@ function renderEdge(
   }
   const path = describeEdgePath(
     sourceNode.defaultLeft + sourceNode.width / 2,
-    GRAPH_PADDING_TOP + sourceNode.row * ROW_HEIGHT + 48,
+    GRAPH_PADDING_TOP + sourceNode.row * ROW_HEIGHT + sourceNode.height - EDGE_VERTICAL_INSET,
     targetNode.defaultLeft + targetNode.width / 2,
-    GRAPH_PADDING_TOP + targetNode.row * ROW_HEIGHT + 8
+    GRAPH_PADDING_TOP + targetNode.row * ROW_HEIGHT + EDGE_VERTICAL_INSET
   );
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
@@ -1551,6 +1563,14 @@ function getNodeWidth(node: RevisionGraphNode): number {
     NODE_MIN_WIDTH,
     NODE_MAX_WIDTH
   );
+}
+
+function getNodeHeight(node: RevisionGraphNode): number {
+  const refSectionHeight = node.refs.length > 0
+    ? node.refs.length * REF_LINE_HEIGHT + Math.max(0, node.refs.length - 1) * REF_LINE_DIVIDER_HEIGHT
+    : 0;
+  const summaryHeight = shouldRenderNodeSummary(node) ? NODE_SUMMARY_HEIGHT : 0;
+  return refSectionHeight + summaryHeight;
 }
 
 function formatNodeSummary(node: RevisionGraphNode): string {

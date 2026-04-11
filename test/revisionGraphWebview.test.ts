@@ -153,3 +153,48 @@ test('renders structural commits with a summary and active projection controls',
   assert.match(html, /id="showBranchingsToggle"[\s\S]*checked/);
   assert.doesNotMatch(html, /Ancestor Filter/);
 });
+
+test('anchors edges to the real height of single-ref cards', () => {
+  const scene = {
+    nodes: [
+      {
+        hash: 'top1',
+        refs: [{ name: 'origin/seen', kind: 'remote' as const }],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Top ref',
+        x: 0,
+        row: 0,
+        lane: 0
+      },
+      {
+        hash: 'bottom1',
+        refs: [{ name: 'origin/jch', kind: 'remote' as const }],
+        author: 'Ada',
+        date: '2026-04-07',
+        subject: 'Bottom ref',
+        x: 0,
+        row: 1,
+        lane: 0
+      }
+    ],
+    edges: [{ from: 'top1', to: 'bottom1' }],
+    laneCount: 1,
+    rowCount: 2
+  };
+
+  const html = renderRevisionGraphHtml(
+    'repo',
+    scene,
+    'main',
+    'origin/main',
+    false,
+    createDefaultRevisionGraphProjectionOptions(),
+    [],
+    { top1: ['top1'], bottom1: ['bottom1'] },
+    true
+  );
+
+  assert.match(html, /data-node-height="31"/);
+  assert.match(html, /data-edge-from="top1" data-edge-to="bottom1" d="M 116 113 C /);
+});
