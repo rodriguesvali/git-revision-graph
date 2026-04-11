@@ -17,6 +17,7 @@ import {
   buildRevisionGraphScene,
   projectAncestorDecoratedCommitGraph,
   projectDecoratedCommitGraph,
+  RevisionGraphScene,
   RevisionGraphRef
 } from './revisionGraphData';
 import {
@@ -259,7 +260,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
       const fallbackProjection = projection.nodes.length > 0
         ? projection
         : projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
-      const scene = buildRevisionGraphScene(snapshot.graph, fallbackProjection);
+      const scene = await buildRevisionGraphScene(snapshot.graph, fallbackProjection);
       const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
       const mergeBlockedTargets = await getMergeBlockedTargets(
         this.currentRepository,
@@ -293,10 +294,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
       const snapshot = limit === GRAPH_COMMIT_LIMIT
         ? selectedSnapshot
         : await loadRevisionGraphSnapshot(repository, limit, this.projectionOptions);
-      const scene = buildRevisionGraphScene(snapshot.graph, projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions));
+      const projection = projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
       selectedSnapshot = snapshot;
 
-      if (scene.nodes.length >= GRAPH_MIN_VISIBLE_NODES || snapshot.graph.orderedCommits.length < limit) {
+      if (projection.nodes.length >= GRAPH_MIN_VISIBLE_NODES || snapshot.graph.orderedCommits.length < limit) {
         break;
       }
     }
@@ -361,7 +362,7 @@ export { REVISION_GRAPH_VIEW_ID };
 async function getMergeBlockedTargets(
   repository: Repository,
   currentHeadName: string | undefined,
-  scene: ReturnType<typeof buildRevisionGraphScene>
+  scene: RevisionGraphScene
 ): Promise<string[]> {
   if (!currentHeadName) {
     return [];

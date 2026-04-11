@@ -1,7 +1,6 @@
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphProjectionOptions, RevisionGraphScene } from './revisionGraphData';
 import { RevisionGraphAncestorFilter } from './revisionGraphTypes';
 
-const LANE_WIDTH = 220;
 const ROW_HEIGHT = 140;
 const NODE_MIN_WIDTH = 180;
 const NODE_MAX_WIDTH = 420;
@@ -34,14 +33,12 @@ export function renderRevisionGraphHtml(
   const nodeLayouts = scene.nodes.map((node) => ({
     hash: node.hash,
     row: node.row,
-    lane: node.lane,
+    x: node.x,
     width: getNodeWidth(node)
   }));
-  const maxNodeWidth = nodeLayouts.reduce((max, node) => Math.max(max, node.width), NODE_MIN_WIDTH);
-  const laneSpan = Math.max(LANE_WIDTH, maxNodeWidth + NODE_HORIZONTAL_GAP);
   const nodeLayoutsWithPosition = nodeLayouts.map((node) => ({
     ...node,
-    defaultLeft: NODE_PADDING_X + node.lane * laneSpan
+    defaultLeft: NODE_PADDING_X + node.x
   }));
   const width = Math.max(
     880,
@@ -558,7 +555,7 @@ export function renderRevisionGraphHtml(
     const headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
     const primaryAncestorPathsByHash = ${JSON.stringify(primaryAncestorPathsByHash)};
     const sceneLayoutKey = ${JSON.stringify(
-      scene.nodes.map((node) => `${node.hash}:${node.row}:${node.lane}`).join('|')
+      scene.nodes.map((node) => `${node.hash}:${node.row}:${Math.round(node.x)}`).join('|')
     )};
     const storedState = vscode.getState() || {};
     const nodeOffsets = storedState.sceneLayoutKey === sceneLayoutKey
@@ -1577,17 +1574,20 @@ function renderNode(node: RevisionGraphNode, width: number, x: number): string {
 
 function renderEdge(
   edge: RevisionGraphEdge,
-  nodeLayoutByHash: ReadonlyMap<string, { readonly defaultLeft: number; readonly width: number }>
+  nodeLayoutByHash: ReadonlyMap<string, { readonly row: number; readonly defaultLeft: number; readonly width: number }>
 ): string {
   const strokeWidth = 2.4;
   const marker = 'marker-end="url(#arrowhead)"';
   const sourceNode = nodeLayoutByHash.get(edge.from);
   const targetNode = nodeLayoutByHash.get(edge.to);
+  if (!sourceNode || !targetNode) {
+    return '';
+  }
   const path = describeEdgePath(
-    (sourceNode?.defaultLeft ?? (NODE_PADDING_X + edge.fromLane * LANE_WIDTH)) + (sourceNode?.width ?? NODE_MIN_WIDTH) / 2,
-    NODE_PADDING_Y + edge.fromRow * ROW_HEIGHT + 48,
-    (targetNode?.defaultLeft ?? (NODE_PADDING_X + edge.toLane * LANE_WIDTH)) + (targetNode?.width ?? NODE_MIN_WIDTH) / 2,
-    NODE_PADDING_Y + edge.toRow * ROW_HEIGHT + 8
+    sourceNode.defaultLeft + sourceNode.width / 2,
+    NODE_PADDING_Y + sourceNode.row * ROW_HEIGHT + 48,
+    targetNode.defaultLeft + targetNode.width / 2,
+    NODE_PADDING_Y + targetNode.row * ROW_HEIGHT + 8
   );
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }

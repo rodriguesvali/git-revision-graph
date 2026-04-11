@@ -17,6 +17,7 @@ import {
   parseDecorationRefs,
   parseRevisionGraphLog
 } from './revisionGraph/source/graphGit';
+import { layoutProjectedGraphHorizontally } from './revisionGraph/layout/layeredLayout';
 
 export type {
   CommitGraph,
@@ -34,6 +35,7 @@ export interface RevisionGraphNode {
   readonly author: string;
   readonly date: string;
   readonly subject: string;
+  readonly x: number;
   readonly row: number;
   readonly lane: number;
 }
@@ -41,10 +43,6 @@ export interface RevisionGraphNode {
 export interface RevisionGraphEdge {
   readonly from: string;
   readonly to: string;
-  readonly fromRow: number;
-  readonly fromLane: number;
-  readonly toRow: number;
-  readonly toLane: number;
 }
 
 export interface RevisionGraphScene {
@@ -58,15 +56,16 @@ interface CommitLaneLayout {
   readonly hash: string;
   readonly row: number;
   readonly lane: number;
+  readonly x: number;
 }
 
-export function buildRevisionGraphScene(
+export async function buildRevisionGraphScene(
   source: CommitGraph | readonly ParsedRevisionGraphCommit[],
   projection?: ProjectedGraph
-): RevisionGraphScene {
+): Promise<RevisionGraphScene> {
   const graph = toCommitGraph(source);
   const activeProjection = projection ?? projectDecoratedCommitGraph(graph);
-  const commitLayout = layoutCommitLanes(graph.orderedCommits);
+  const commitLayout = await layoutCommitLanes(activeProjection);
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 
   const rawNodes = activeProjection.nodes.map<RevisionGraphNode>((node) => {
@@ -81,11 +80,12 @@ export function buildRevisionGraphScene(
       author: node.author,
       date: node.date,
       subject: node.subject,
+      x: layout.x,
       row: layout.row,
       lane: layout.lane
     };
   });
-  const nodes = compactNodeRows(compactNodeLanes(rawNodes));
+  const nodes = compactNodeLanes(rawNodes);
   const nodeByHash = new Map(nodes.map((node) => [node.hash, node] as const));
 
   const edges = activeProjection.edges
@@ -98,11 +98,7 @@ export function buildRevisionGraphScene(
 
       return {
         from: edge.from,
-        to: edge.to,
-        fromRow: fromNode.row,
-        fromLane: fromNode.lane,
-        toRow: toNode.row,
-        toLane: toNode.lane
+        to: edge.to
       };
     })
     .filter((edge): edge is RevisionGraphEdge => edge !== undefined);
@@ -169,36 +165,29 @@ function toParsedCommit(commit: CommitGraphCommit): ParsedRevisionGraphCommit {
   };
 }
 
-function layoutCommitLanes(commits: readonly CommitGraphCommit[]): CommitLaneLayout[] {
-  const nodes: CommitLaneLayout[] = [];
-  const activeLanes: Array<string | undefined> = [];
+async function layoutCommitLanes(projection: ProjectedGraph): Promise<CommitLaneLayout[]> {
+  const xByHash = await layoutProjectedGraphHorizontally(projection);
+  const orderedHashes = projection.nodes.map((node) => node.hash);
+  const fallbackXByHash = new Map(
+    orderedHashes.map((hash, index) => [hash, index * 220] as const)
+  );
+  const uniqueXs = [...new Set(
+    orderedHashes
+      .map((hash) => Math.round((xByHash.get(hash) ?? fallbackXByHash.get(hash) ?? 0) / 10) * 10)
+  )].sort((left, right) => left - right);
+  const laneByRoundedX = new Map(uniqueXs.map((x, index) => [x, index] as const));
 
-  for (const [row, commit] of commits.entries()) {
-    const existingLane = activeLanes.indexOf(commit.hash);
-    const lane = existingLane >= 0 ? existingLane : findAvailableLane(activeLanes);
+  return projection.nodes.map((node, row) => {
+    const x = xByHash.get(node.hash) ?? fallbackXByHash.get(node.hash) ?? 0;
+    const roundedX = Math.round(x / 10) * 10;
 
-    activeLanes[lane] = commit.parents[0];
-    for (const parent of commit.parents.slice(1)) {
-      const parentLane = activeLanes.indexOf(parent);
-      if (parentLane === -1) {
-        activeLanes[findAvailableLane(activeLanes)] = parent;
-      }
-    }
-
-    trimTrailingEmptyLanes(activeLanes);
-    nodes.push({ hash: commit.hash, row, lane });
-  }
-
-  return nodes;
-}
-
-function compactNodeRows(nodes: readonly RevisionGraphNode[]): RevisionGraphNode[] {
-  return [...nodes]
-    .sort((left, right) => left.row - right.row)
-    .map((node, row) => ({
-      ...node,
-      row
-    }));
+    return {
+      hash: node.hash,
+      row,
+      lane: laneByRoundedX.get(roundedX) ?? 0,
+      x
+    };
+  });
 }
 
 function compactNodeLanes(nodes: readonly RevisionGraphNode[]): RevisionGraphNode[] {
@@ -213,20 +202,4 @@ function compactNodeLanes(nodes: readonly RevisionGraphNode[]): RevisionGraphNod
     ...node,
     lane: compactLaneByOriginal.get(node.lane) ?? node.lane
   }));
-}
-
-function findAvailableLane(activeLanes: Array<string | undefined>): number {
-  const firstEmpty = activeLanes.findIndex((lane) => lane === undefined);
-  if (firstEmpty >= 0) {
-    return firstEmpty;
-  }
-
-  activeLanes.push(undefined);
-  return activeLanes.length - 1;
-}
-
-function trimTrailingEmptyLanes(activeLanes: Array<string | undefined>): void {
-  while (activeLanes.length > 0 && activeLanes.at(-1) === undefined) {
-    activeLanes.pop();
-  }
 }

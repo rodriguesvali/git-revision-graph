@@ -207,7 +207,7 @@ test('rewrites linear unlabeled commits on git-simplified graphs when tags are h
   );
 });
 
-test('builds a scene from the projected graph while preserving merge edges', () => {
+test('builds a scene from the projected graph while preserving merge edges', async () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
@@ -216,16 +216,17 @@ test('builds a scene from the projected graph while preserving merge edges', () 
   ]);
 
   const projection = projectDecoratedCommitGraph(graph);
-  const scene = buildRevisionGraphScene(graph, projection);
+  const scene = await buildRevisionGraphScene(graph, projection);
 
-  assert.equal(scene.laneCount, 2);
-  assert.deepEqual(
-    scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane, row: node.row })),
-    [
-      { hash: 'm1', lane: 0, row: 0 },
-      { hash: 'a1', lane: 0, row: 1 },
-      { hash: 'b1', lane: 1, row: 2 }
-    ]
+  assert.equal(scene.nodes.length, 3);
+  assert.deepEqual(scene.nodes.map((node) => ({ hash: node.hash, row: node.row })), [
+    { hash: 'm1', row: 0 },
+    { hash: 'a1', row: 1 },
+    { hash: 'b1', row: 2 }
+  ]);
+  assert.notEqual(
+    scene.nodes.find((node) => node.hash === 'a1')?.lane,
+    scene.nodes.find((node) => node.hash === 'b1')?.lane
   );
   assert.deepEqual(
     scene.edges.map((edge) => [edge.from, edge.to]),
@@ -339,7 +340,7 @@ test('can include unlabeled branch and merge commits in the projection', () => {
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['merge1', 'right1', 'split1', 'base1']);
 });
 
-test('builds primary ancestor paths from the full graph for the visible scene', () => {
+test('builds primary ancestor paths from the full graph for the visible scene', async () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
@@ -347,7 +348,7 @@ test('builds primary ancestor paths from the full graph for the visible scene', 
     { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
   const projection = projectDecoratedCommitGraph(graph);
-  const scene = buildRevisionGraphScene(graph, projection);
+  const scene = await buildRevisionGraphScene(graph, projection);
 
   assert.deepEqual(buildPrimaryAncestorPaths(graph, scene), {
     m1: ['m1', 'b1'],

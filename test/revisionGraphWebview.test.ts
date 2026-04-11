@@ -13,6 +13,7 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
         author: 'Ada',
         date: '2026-04-08',
         subject: 'Bootstrap',
+        x: 0,
         row: 0,
         lane: 0
       }
@@ -70,6 +71,7 @@ test('renders reference dividers only between consecutive refs', () => {
         author: 'Ada',
         date: '2026-04-08',
         subject: 'Single ref',
+        x: 0,
         row: 0,
         lane: 0
       },
@@ -82,6 +84,7 @@ test('renders reference dividers only between consecutive refs', () => {
         author: 'Ada',
         date: '2026-04-07',
         subject: 'Multi ref',
+        x: 0,
         row: 1,
         lane: 0
       }
@@ -118,6 +121,7 @@ test('renders structural commits with a summary and active projection controls',
         author: 'Ada',
         date: '2026-04-08',
         subject: 'Merge pivot',
+        x: 0,
         row: 0,
         lane: 0
       }
