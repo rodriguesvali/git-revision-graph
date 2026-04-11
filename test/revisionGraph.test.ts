@@ -10,7 +10,6 @@ import {
 import { buildCommitGraph, buildCommitGraphWithSimplification } from '../src/revisionGraph/model/commitGraph';
 import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGraph/model/commitGraphQueries';
 import {
-  projectAncestorDecoratedCommitGraph,
   projectDecoratedCommitGraph
 } from '../src/revisionGraph/projection/graphProjection';
 import { buildRevisionGraphGitLogArgs } from '../src/revisionGraph/source/graphGit';
@@ -250,25 +249,6 @@ test('can find commits by ref and collect their ancestor hashes from the full DA
 
   assert.deepEqual(startHashes, ['s1']);
   assert.deepEqual([...ancestorHashes], ['s1', 'b1']);
-});
-
-test('projects only decorated ancestor commits for ancestor filtering while keeping hidden commits structural', () => {
-  const graph = buildCommitGraph([
-    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
-    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
-    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
-    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
-  ]);
-
-  const projection = projectAncestorDecoratedCommitGraph(graph, 'origin/feature/demo', 'remote');
-
-  assert.deepEqual(projection.nodes.map((node) => node.hash), ['s1', 'b1']);
-  assert.deepEqual(
-    projection.edges.map((edge) => [edge.from, edge.to]),
-    [
-      ['s1', 'b1']
-    ]
-  );
 });
 
 test('can scope the projection to the current branch ancestry', () => {

@@ -1,5 +1,4 @@
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphProjectionOptions, RevisionGraphScene } from './revisionGraphData';
-import { RevisionGraphAncestorFilter } from './revisionGraphTypes';
 
 const ROW_HEIGHT = 140;
 const NODE_MIN_WIDTH = 180;
@@ -8,7 +7,8 @@ const NODE_CONTENT_CHAR_WIDTH = 8.2;
 const NODE_WIDTH_PADDING = 62;
 const NODE_HORIZONTAL_GAP = 28;
 const NODE_PADDING_X = 26;
-const NODE_PADDING_Y = 24;
+const GRAPH_PADDING_TOP = 88;
+const GRAPH_PADDING_BOTTOM = 24;
 const VIEWPORT_PADDING_TOP = 18;
 const VIEWPORT_PADDING_RIGHT = 18;
 const VIEWPORT_PADDING_BOTTOM = 18;
@@ -20,7 +20,6 @@ export function renderRevisionGraphHtml(
   currentHeadName: string | undefined,
   currentHeadUpstreamName: string | undefined,
   isWorkspaceDirty: boolean,
-  ancestorFilter: RevisionGraphAncestorFilter | undefined,
   projectionOptions: RevisionGraphProjectionOptions,
   mergeBlockedTargets: readonly string[],
   primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>,
@@ -44,7 +43,7 @@ export function renderRevisionGraphHtml(
     880,
     nodeLayoutsWithPosition.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
   );
-  const height = Math.max(480, scene.rowCount * ROW_HEIGHT + NODE_PADDING_Y * 2);
+  const height = Math.max(480, scene.rowCount * ROW_HEIGHT + GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM);
   const zoomLevels = [0.6, 0.8, 1, 1.25, 1.5];
   const nodeLayoutByHash = new Map(nodeLayoutsWithPosition.map((node) => [node.hash, node] as const));
   const referenceData = JSON.stringify(
@@ -422,23 +421,6 @@ export function renderRevisionGraphHtml(
     .view-controls input[type="checkbox"] {
       margin: 0;
     }
-    .view-controls .filter-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
-      background: color-mix(in srgb, var(--accent) 10%, transparent);
-      color: var(--text);
-      font-size: 12px;
-      line-height: 1.2;
-    }
-    .view-controls .filter-pill button {
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-    }
     .node-summary {
       padding: 10px 12px 12px;
       border-top: 1px solid rgba(0, 0, 0, 0.08);
@@ -478,12 +460,6 @@ export function renderRevisionGraphHtml(
       />
       <span>Show Branchings &amp; Merges</span>
     </label>
-    ${ancestorFilter ? `
-      <div class="filter-pill">
-        <span>Ancestor Filter: ${escapeHtml(ancestorFilter.refName)}</span>
-        <button id="clearAncestorFilterButton" type="button">Clear</button>
-      </div>
-    ` : ''}
   </div>
   <button
     class="workspace-led ${isWorkspaceDirty ? 'dirty' : 'clean'}"
@@ -521,7 +497,6 @@ export function renderRevisionGraphHtml(
     const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
     const currentHeadUpstreamName = ${JSON.stringify(currentHeadUpstreamName ?? null)};
     const isWorkspaceDirty = ${JSON.stringify(isWorkspaceDirty)};
-    const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
     const currentProjectionOptions = ${JSON.stringify(projectionOptions)};
     const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
@@ -544,7 +519,6 @@ export function renderRevisionGraphHtml(
     const scopeSelect = document.getElementById('scopeSelect');
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showBranchingsToggle = document.getElementById('showBranchingsToggle');
-    const clearAncestorFilterButton = document.getElementById('clearAncestorFilterButton');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
@@ -656,12 +630,6 @@ export function renderRevisionGraphHtml(
         }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...');
       });
     }
-    if (clearAncestorFilterButton) {
-      clearAncestorFilterButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
-      });
-    }
-
     viewport.addEventListener('mousedown', (event) => {
       if (event.button !== 0) {
         return;
@@ -850,10 +818,6 @@ export function renderRevisionGraphHtml(
       const compare = selected[1] ? getReference(selected[1]) : undefined;
       const isCurrentHead = target.kind === 'head' || (currentHeadName && target.name === currentHeadName);
       const canSyncCurrentHead = target.kind === 'head' && !!currentHeadUpstreamName;
-      const matchesActiveAncestorFilter =
-        !!activeAncestorFilter &&
-        activeAncestorFilter.refName === target.name &&
-        activeAncestorFilter.refKind === target.kind;
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -891,27 +855,6 @@ export function renderRevisionGraphHtml(
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
-        if (matchesActiveAncestorFilter) {
-          appendMenuItem('Clear Filter', () => {
-            postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
-          });
-        } else if (activeAncestorFilter) {
-          appendMenuItem('Filter Ancestors From This Ref', () => {
-            postMessageWithLoading({
-              type: 'filter-ancestor-refs',
-              refName: target.name,
-              refKind: target.kind
-            }, 'Filtering ancestors of ' + target.name + '...');
-          });
-        } else {
-          appendMenuItem('Filter Ancestors', () => {
-            postMessageWithLoading({
-              type: 'filter-ancestor-refs',
-              refName: target.name,
-              refKind: target.kind
-            }, 'Filtering ancestors of ' + target.name + '...');
-          });
-        }
         if (target.kind !== 'tag') {
           appendMenuItem('Checkout', () => {
             vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
@@ -941,11 +884,6 @@ export function renderRevisionGraphHtml(
               vscode.postMessage({ type: 'merge', refName: target.name });
             });
           }
-        }
-        if (activeAncestorFilter && !matchesActiveAncestorFilter) {
-          appendMenuItem('Show All References', () => {
-            postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
-          });
         }
         if (selected.length > 0) {
           appendMenuItem('Clear Selection', () => {
@@ -1558,12 +1496,14 @@ export function renderErrorHtml(message: string): string {
 }
 
 function renderNode(node: RevisionGraphNode, width: number, x: number): string {
-  const y = NODE_PADDING_Y + node.row * ROW_HEIGHT;
+  const y = GRAPH_PADDING_TOP + node.row * ROW_HEIGHT;
   const nodeClass = getNodeClass(node);
   const refLines = node.refs
     .map((ref) => `<div class="ref-line kind-${escapeHtml(ref.kind)}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
     .join('');
-  const summary = `<div class="node-summary">${escapeHtml(formatNodeSummary(node))}</div>`;
+  const summary = shouldRenderNodeSummary(node)
+    ? `<div class="node-summary">${escapeHtml(formatNodeSummary(node))}</div>`
+    : '';
 
   return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(formatNodeTitle(node))}">
     <button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>
@@ -1585,9 +1525,9 @@ function renderEdge(
   }
   const path = describeEdgePath(
     sourceNode.defaultLeft + sourceNode.width / 2,
-    NODE_PADDING_Y + sourceNode.row * ROW_HEIGHT + 48,
+    GRAPH_PADDING_TOP + sourceNode.row * ROW_HEIGHT + 48,
     targetNode.defaultLeft + targetNode.width / 2,
-    NODE_PADDING_Y + targetNode.row * ROW_HEIGHT + 8
+    GRAPH_PADDING_TOP + targetNode.row * ROW_HEIGHT + 8
   );
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
@@ -1620,6 +1560,10 @@ function formatNodeSummary(node: RevisionGraphNode): string {
   }
 
   return `${shortHash} ${node.subject}`;
+}
+
+function shouldRenderNodeSummary(node: RevisionGraphNode): boolean {
+  return node.refs.length === 0;
 }
 
 function formatNodeTitle(node: RevisionGraphNode): string {

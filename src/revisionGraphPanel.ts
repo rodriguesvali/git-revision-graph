@@ -15,7 +15,6 @@ import {
 import {
   buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
-  projectAncestorDecoratedCommitGraph,
   projectDecoratedCommitGraph,
   RevisionGraphScene,
   RevisionGraphRef
@@ -35,7 +34,6 @@ import {
 import {
   createDefaultRevisionGraphProjectionOptions,
   REVISION_GRAPH_VIEW_ID,
-  RevisionGraphAncestorFilter,
   RevisionGraphMessage
 } from './revisionGraphTypes';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
@@ -47,7 +45,6 @@ const GRAPH_MIN_VISIBLE_NODES = 24;
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
-  private ancestorFilter: RevisionGraphAncestorFilter | undefined;
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
   private autoArrangeOnNextRender = true;
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
@@ -110,18 +107,6 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           return;
         case 'choose-repository':
           this.setCurrentRepository(await pickRevisionGraphRepository(this.git, true));
-          await this.render();
-          return;
-        case 'filter-ancestor-refs':
-          this.ancestorFilter = {
-            refName: message.refName,
-            refKind: message.refKind
-          };
-          this.autoArrangeOnNextRender = true;
-          await this.render();
-          return;
-        case 'clear-ancestor-filter':
-          this.ancestorFilter = undefined;
           await this.render();
           return;
         case 'set-projection-options':
@@ -197,9 +182,6 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
               { refName: message.refName, label: message.refName, kind: message.refKind },
               this.actionServices
             );
-            if (this.ancestorFilter?.refName === message.refName && this.ancestorFilter.refKind === message.refKind) {
-              this.ancestorFilter = undefined;
-            }
             await this.render();
           }
           return;
@@ -249,18 +231,8 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
 
     try {
       const snapshot = await this.loadSnapshotForGraph(this.currentRepository);
-      const projection = this.ancestorFilter
-        ? projectAncestorDecoratedCommitGraph(
-          snapshot.graph,
-          this.ancestorFilter.refName,
-          this.ancestorFilter.refKind,
-          this.projectionOptions
-        )
-        : projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
-      const fallbackProjection = projection.nodes.length > 0
-        ? projection
-        : projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
-      const scene = await buildRevisionGraphScene(snapshot.graph, fallbackProjection);
+      const projection = projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
+      const scene = await buildRevisionGraphScene(snapshot.graph, projection);
       const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
       const mergeBlockedTargets = await getMergeBlockedTargets(
         this.currentRepository,
@@ -275,7 +247,6 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           ? formatUpstreamLabel(this.currentRepository.state.HEAD.upstream.remote, this.currentRepository.state.HEAD.upstream.name)
           : undefined,
         hasWorkspaceChanges(this.currentRepository),
-        this.ancestorFilter,
         this.projectionOptions,
         mergeBlockedTargets,
         primaryAncestorPaths,
@@ -348,7 +319,6 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
 
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
-      this.ancestorFilter = undefined;
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
       this.autoArrangeOnNextRender = true;
     }

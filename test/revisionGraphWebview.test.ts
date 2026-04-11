@@ -29,7 +29,6 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     'main',
     'origin/main',
     false,
-    undefined,
     createDefaultRevisionGraphProjectionOptions(),
     [],
     { a1: ['a1'] },
@@ -41,7 +40,6 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     'main',
     undefined,
     true,
-    undefined,
     createDefaultRevisionGraphProjectionOptions(),
     [],
     { a1: ['a1'] },
@@ -100,7 +98,6 @@ test('renders reference dividers only between consecutive refs', () => {
     'main',
     'origin/main',
     false,
-    undefined,
     createDefaultRevisionGraphProjectionOptions(),
     [],
     { single1: ['single1'], multi1: ['multi1'] },
@@ -110,6 +107,7 @@ test('renders reference dividers only between consecutive refs', () => {
   assert.match(html, /\.ref-line \+ \.ref-line \{\s*border-top: 1px solid rgba\(0, 0, 0, 0\.08\);/);
   assert.doesNotMatch(html, /\.ref-line \{\s*padding: 8px 12px; border-bottom:/);
   assert.doesNotMatch(html, /\.node \{\s*position: absolute; min-width: 180px; min-height: 54px;/);
+  assert.equal((html.match(/class="node-summary"/g) ?? []).length, 0);
 });
 
 test('renders structural commits with a summary and active projection controls', () => {
@@ -137,7 +135,6 @@ test('renders structural commits with a summary and active projection controls',
     'main',
     'origin/main',
     false,
-    { refName: 'main', refKind: 'head' },
     {
       refScope: 'current',
       showTags: false,
@@ -154,5 +151,5 @@ test('renders structural commits with a summary and active projection controls',
   assert.match(html, /<option value="current" selected>Current Branch<\/option>/);
   assert.match(html, /id="showTagsToggle" type="checkbox" /);
   assert.match(html, /id="showBranchingsToggle"[\s\S]*checked/);
-  assert.match(html, /Ancestor Filter: main/);
+  assert.doesNotMatch(html, /Ancestor Filter/);
 });

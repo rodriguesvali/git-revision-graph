@@ -6,7 +6,7 @@ import {
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from '../model/commitGraphTypes';
-import { collectAncestorHashes, findCommitHashesByRef } from '../model/commitGraphQueries';
+import { collectAncestorHashes } from '../model/commitGraphQueries';
 
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   refScope: 'all',
@@ -20,29 +20,6 @@ export function projectDecoratedCommitGraph(
 ): ProjectedGraph {
   const scopeHashes = getScopeHashes(graph, options);
   const visibleHashes = buildVisibleHashes(graph, scopeHashes, options);
-
-  return projectCommitGraph(graph, visibleHashes, options);
-}
-
-export function projectAncestorDecoratedCommitGraph(
-  graph: CommitGraph,
-  refName: string,
-  refKind?: RevisionGraphRef['kind'],
-  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
-): ProjectedGraph {
-  const startHashes = findCommitHashesByRef(graph, refName, refKind);
-  if (startHashes.length === 0) {
-    return projectCommitGraph(graph, new Set(), options);
-  }
-
-  const ancestorHashes = collectAncestorHashes(graph, startHashes);
-  const scopeHashes = getScopeHashes(graph, options);
-  const candidateHashes = new Set(
-    graph.orderedCommits
-      .filter((commit) => ancestorHashes.has(commit.hash) && scopeHashes.has(commit.hash))
-      .map((commit) => commit.hash)
-  );
-  const visibleHashes = buildVisibleHashes(graph, candidateHashes, options);
 
   return projectCommitGraph(graph, visibleHashes, options);
 }

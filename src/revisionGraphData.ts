@@ -1,15 +1,13 @@
 import { buildCommitGraph } from './revisionGraph/model/commitGraph';
-import { buildFirstParentVisiblePath, collectAncestorHashes, findCommitHashesByRef } from './revisionGraph/model/commitGraphQueries';
+import { buildFirstParentVisiblePath } from './revisionGraph/model/commitGraphQueries';
 import {
   CommitGraph,
-  CommitGraphCommit,
   ParsedRevisionGraphCommit,
   ProjectedGraph,
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from './revisionGraph/model/commitGraphTypes';
 import {
-  projectAncestorDecoratedCommitGraph,
   projectDecoratedCommitGraph
 } from './revisionGraph/projection/graphProjection';
 import {
@@ -27,7 +25,7 @@ export type {
   RevisionGraphRef
 };
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
-export { projectAncestorDecoratedCommitGraph, projectDecoratedCommitGraph };
+export { projectDecoratedCommitGraph };
 
 export interface RevisionGraphNode {
   readonly hash: string;
@@ -129,40 +127,12 @@ export function buildPrimaryAncestorPaths(
   return pathsByHash;
 }
 
-export function filterRevisionGraphCommitsToAncestors(
-  commits: readonly ParsedRevisionGraphCommit[],
-  refName: string,
-  refKind?: RevisionGraphRef['kind']
-): ParsedRevisionGraphCommit[] {
-  const graph = buildCommitGraph(commits);
-  const targetHashes = findCommitHashesByRef(graph, refName, refKind);
-  if (targetHashes.length === 0) {
-    return [];
-  }
-
-  const ancestorHashes = collectAncestorHashes(graph, targetHashes);
-  return graph.orderedCommits
-    .filter((commit) => !commit.isBoundary && ancestorHashes.has(commit.hash))
-    .map(toParsedCommit);
-}
-
 function toCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[]): CommitGraph {
   return isCommitGraph(source) ? source : buildCommitGraph(source);
 }
 
 function isCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[]): source is CommitGraph {
   return 'orderedCommits' in source && 'commitsByHash' in source;
-}
-
-function toParsedCommit(commit: CommitGraphCommit): ParsedRevisionGraphCommit {
-  return {
-    hash: commit.hash,
-    parents: commit.parents,
-    author: commit.author,
-    date: commit.date,
-    subject: commit.subject,
-    refs: commit.refs
-  };
 }
 
 async function layoutCommitLanes(projection: ProjectedGraph): Promise<CommitLaneLayout[]> {
