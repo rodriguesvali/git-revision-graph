@@ -1,4 +1,4 @@
-import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from './revisionGraphData';
+import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphProjectionOptions, RevisionGraphScene } from './revisionGraphData';
 import { RevisionGraphAncestorFilter } from './revisionGraphTypes';
 
 const LANE_WIDTH = 220;
@@ -22,6 +22,7 @@ export function renderRevisionGraphHtml(
   currentHeadUpstreamName: string | undefined,
   isWorkspaceDirty: boolean,
   ancestorFilter: RevisionGraphAncestorFilter | undefined,
+  projectionOptions: RevisionGraphProjectionOptions,
   mergeBlockedTargets: readonly string[],
   primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>,
   autoArrangeOnInit: boolean
@@ -382,12 +383,111 @@ export function renderRevisionGraphHtml(
         box-shadow:
           0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
           0 0 30px color-mix(in srgb, var(--workspace-dirty) 82%, transparent),
-          inset 0 1px 2px rgba(255, 255, 255, 0.32);
+        inset 0 1px 2px rgba(255, 255, 255, 0.32);
       }
+    }
+    .view-controls {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 70;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: min(calc(100vw - 108px), 860px);
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(4px);
+    }
+    .view-controls label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+    .view-controls .control-caption {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .view-controls select {
+      min-width: 152px;
+      padding-right: 28px;
+    }
+    .view-controls input[type="checkbox"] {
+      margin: 0;
+    }
+    .view-controls .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+    .view-controls .filter-pill button {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+    }
+    .node-summary {
+      padding: 10px 12px 12px;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 11px;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: color-mix(in srgb, var(--node-text-dark) 88%, black 12%);
+    }
+    .node-structural {
+      background: color-mix(in srgb, var(--panel) 88%, white 10%);
+      color: var(--node-text-dark);
     }
   </style>
 </head>
 <body>
+  <div class="view-controls" aria-label="Revision graph view controls">
+    <label for="scopeSelect">
+      <span class="control-caption">Scope</span>
+      <select id="scopeSelect">
+        <option value="all" ${projectionOptions.refScope === 'all' ? 'selected' : ''}>All Refs</option>
+        <option value="current" ${projectionOptions.refScope === 'current' ? 'selected' : ''}>Current Branch</option>
+        <option value="local" ${projectionOptions.refScope === 'local' ? 'selected' : ''}>Local Branches</option>
+      </select>
+    </label>
+    <label for="showTagsToggle">
+      <input id="showTagsToggle" type="checkbox" ${projectionOptions.showTags ? 'checked' : ''} />
+      <span>Show Tags</span>
+    </label>
+    <label for="showBranchingsToggle">
+      <input
+        id="showBranchingsToggle"
+        type="checkbox"
+        ${projectionOptions.showBranchingsAndMerges ? 'checked' : ''}
+      />
+      <span>Show Branchings &amp; Merges</span>
+    </label>
+    ${ancestorFilter ? `
+      <div class="filter-pill">
+        <span>Ancestor Filter: ${escapeHtml(ancestorFilter.refName)}</span>
+        <button id="clearAncestorFilterButton" type="button">Clear</button>
+      </div>
+    ` : ''}
+  </div>
   <button
     class="workspace-led ${isWorkspaceDirty ? 'dirty' : 'clean'}"
     id="workspaceLed"
@@ -425,6 +525,7 @@ export function renderRevisionGraphHtml(
     const currentHeadUpstreamName = ${JSON.stringify(currentHeadUpstreamName ?? null)};
     const isWorkspaceDirty = ${JSON.stringify(isWorkspaceDirty)};
     const activeAncestorFilter = ${JSON.stringify(ancestorFilter ?? null)};
+    const currentProjectionOptions = ${JSON.stringify(projectionOptions)};
     const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
     const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
     const zoomLevels = ${JSON.stringify(zoomLevels)};
@@ -443,6 +544,10 @@ export function renderRevisionGraphHtml(
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const workspaceLed = document.getElementById('workspaceLed');
+    const scopeSelect = document.getElementById('scopeSelect');
+    const showTagsToggle = document.getElementById('showTagsToggle');
+    const showBranchingsToggle = document.getElementById('showBranchingsToggle');
+    const clearAncestorFilterButton = document.getElementById('clearAncestorFilterButton');
     const nodeElements = new Map(
       Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
     );
@@ -528,6 +633,35 @@ export function renderRevisionGraphHtml(
     if (workspaceLed && isWorkspaceDirty) {
       workspaceLed.addEventListener('click', () => {
         vscode.postMessage({ type: 'open-source-control' });
+      });
+    }
+    if (scopeSelect) {
+      scopeSelect.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { refScope: scopeSelect.value }
+        }, 'Updating graph scope...');
+      });
+    }
+    if (showTagsToggle) {
+      showTagsToggle.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { showTags: showTagsToggle.checked }
+        }, showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...');
+      });
+    }
+    if (showBranchingsToggle) {
+      showBranchingsToggle.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { showBranchingsAndMerges: showBranchingsToggle.checked }
+        }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...');
+      });
+    }
+    if (clearAncestorFilterButton) {
+      clearAncestorFilterButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'clear-ancestor-filter' }, 'Loading all references...');
       });
     }
 
@@ -1432,10 +1566,12 @@ function renderNode(node: RevisionGraphNode, width: number, x: number): string {
   const refLines = node.refs
     .map((ref) => `<div class="ref-line kind-${escapeHtml(ref.kind)}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
     .join('');
+  const summary = `<div class="node-summary">${escapeHtml(formatNodeSummary(node))}</div>`;
 
-  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(node.refs.map((ref) => ref.name).join('\n'))}">
+  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(formatNodeTitle(node))}">
     <button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>
     ${refLines}
+    ${summary}
   </div>`;
 }
 
@@ -1457,6 +1593,7 @@ function renderEdge(
 }
 
 function getNodeClass(node: RevisionGraphNode): string {
+  if (node.refs.length === 0) return 'node-structural';
   const kinds = new Set(node.refs.map((ref) => ref.kind));
   if (kinds.size === 1 && kinds.has('head')) return 'node-head';
   if (kinds.size === 1 && kinds.has('tag')) return 'node-tag';
@@ -1466,12 +1603,33 @@ function getNodeClass(node: RevisionGraphNode): string {
 }
 
 function getNodeWidth(node: RevisionGraphNode): number {
-  const longestLabelLength = node.refs.reduce((max, ref) => Math.max(max, ref.name.length), 0);
+  const longestLabelLength = node.refs.length > 0
+    ? node.refs.reduce((max, ref) => Math.max(max, ref.name.length), 0)
+    : Math.min(48, formatNodeSummary(node).length);
   return clampNumber(
     Math.ceil(longestLabelLength * NODE_CONTENT_CHAR_WIDTH + NODE_WIDTH_PADDING),
     NODE_MIN_WIDTH,
     NODE_MAX_WIDTH
   );
+}
+
+function formatNodeSummary(node: RevisionGraphNode): string {
+  const shortHash = node.hash.slice(0, 8);
+  if (!node.subject) {
+    return shortHash;
+  }
+
+  return `${shortHash} ${node.subject}`;
+}
+
+function formatNodeTitle(node: RevisionGraphNode): string {
+  const refBlock = node.refs.length > 0
+    ? `Refs:\n${node.refs.map((ref) => ref.name).join('\n')}\n\n`
+    : '';
+  const author = node.author || 'Unknown author';
+  const date = node.date || 'Unknown date';
+  const subject = node.subject || 'Structural commit';
+  return `${refBlock}${node.hash}\n${subject}\n${author} on ${date}`;
 }
 
 function clampNumber(value: number, min: number, max: number): number {

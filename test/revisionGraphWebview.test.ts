@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { renderRevisionGraphHtml } from '../src/revisionGraphWebview';
+import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('renders the auto-arrange bootstrap flag for the webview', () => {
   const scene = {
@@ -21,8 +22,30 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     rowCount: 1
   };
 
-  const autoArrangeHtml = renderRevisionGraphHtml('repo', scene, 'main', 'origin/main', false, undefined, [], { a1: ['a1'] }, true);
-  const passiveHtml = renderRevisionGraphHtml('repo', scene, 'main', undefined, true, undefined, [], { a1: ['a1'] }, false);
+  const autoArrangeHtml = renderRevisionGraphHtml(
+    'repo',
+    scene,
+    'main',
+    'origin/main',
+    false,
+    undefined,
+    createDefaultRevisionGraphProjectionOptions(),
+    [],
+    { a1: ['a1'] },
+    true
+  );
+  const passiveHtml = renderRevisionGraphHtml(
+    'repo',
+    scene,
+    'main',
+    undefined,
+    true,
+    undefined,
+    createDefaultRevisionGraphProjectionOptions(),
+    [],
+    { a1: ['a1'] },
+    false
+  );
 
   assert.match(autoArrangeHtml, /const autoArrangeOnInit = true;/);
   assert.match(passiveHtml, /const autoArrangeOnInit = false;/);
@@ -34,6 +57,8 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
   assert.match(autoArrangeHtml, /title="Workspace clean: no pending changes\."?/);
   assert.match(passiveHtml, /title="Workspace dirty: click to open Source Control Changes\."?/);
   assert.match(passiveHtml, /const isWorkspaceDirty = true;/);
+  assert.match(autoArrangeHtml, /<select id="scopeSelect">/);
+  assert.match(autoArrangeHtml, /Show Branchings &amp; Merges/);
 });
 
 test('renders reference dividers only between consecutive refs', () => {
@@ -66,9 +91,64 @@ test('renders reference dividers only between consecutive refs', () => {
     rowCount: 2
   };
 
-  const html = renderRevisionGraphHtml('repo', scene, 'main', 'origin/main', false, undefined, [], { single1: ['single1'], multi1: ['multi1'] }, true);
+  const html = renderRevisionGraphHtml(
+    'repo',
+    scene,
+    'main',
+    'origin/main',
+    false,
+    undefined,
+    createDefaultRevisionGraphProjectionOptions(),
+    [],
+    { single1: ['single1'], multi1: ['multi1'] },
+    true
+  );
 
   assert.match(html, /\.ref-line \+ \.ref-line \{\s*border-top: 1px solid rgba\(0, 0, 0, 0\.08\);/);
   assert.doesNotMatch(html, /\.ref-line \{\s*padding: 8px 12px; border-bottom:/);
   assert.doesNotMatch(html, /\.node \{\s*position: absolute; min-width: 180px; min-height: 54px;/);
+});
+
+test('renders structural commits with a summary and active projection controls', () => {
+  const scene = {
+    nodes: [
+      {
+        hash: 'structural1',
+        refs: [],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Merge pivot',
+        row: 0,
+        lane: 0
+      }
+    ],
+    edges: [],
+    laneCount: 1,
+    rowCount: 1
+  };
+
+  const html = renderRevisionGraphHtml(
+    'repo',
+    scene,
+    'main',
+    'origin/main',
+    false,
+    { refName: 'main', refKind: 'head' },
+    {
+      refScope: 'current',
+      showTags: false,
+      showBranchingsAndMerges: true
+    },
+    [],
+    { structural1: ['structural1'] },
+    true
+  );
+
+  assert.match(html, /class="node node-structural"/);
+  assert.match(html, /Merge pivot/);
+  assert.match(html, /Ada on 2026-04-08/);
+  assert.match(html, /<option value="current" selected>Current Branch<\/option>/);
+  assert.match(html, /id="showTagsToggle" type="checkbox" /);
+  assert.match(html, /id="showBranchingsToggle"[\s\S]*checked/);
+  assert.match(html, /Ancestor Filter: main/);
 });

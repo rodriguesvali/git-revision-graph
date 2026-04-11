@@ -1,0 +1,362 @@
+import {
+  CommitGraph,
+  ProjectedGraph,
+  ProjectedGraphEdge,
+  ProjectedGraphNode,
+  RevisionGraphProjectionOptions,
+  RevisionGraphRef
+} from '../model/commitGraphTypes';
+import { collectAncestorHashes, findCommitHashesByRef } from '../model/commitGraphQueries';
+
+const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
+  refScope: 'all',
+  showTags: true,
+  showBranchingsAndMerges: false
+};
+
+export function projectDecoratedCommitGraph(
+  graph: CommitGraph,
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+): ProjectedGraph {
+  const scopeHashes = getScopeHashes(graph, options);
+  const visibleHashes = buildVisibleHashes(graph, scopeHashes, options);
+
+  return projectCommitGraph(graph, visibleHashes, options);
+}
+
+export function projectAncestorDecoratedCommitGraph(
+  graph: CommitGraph,
+  refName: string,
+  refKind?: RevisionGraphRef['kind'],
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+): ProjectedGraph {
+  const startHashes = findCommitHashesByRef(graph, refName, refKind);
+  if (startHashes.length === 0) {
+    return projectCommitGraph(graph, new Set(), options);
+  }
+
+  const ancestorHashes = collectAncestorHashes(graph, startHashes);
+  const scopeHashes = getScopeHashes(graph, options);
+  const candidateHashes = new Set(
+    graph.orderedCommits
+      .filter((commit) => ancestorHashes.has(commit.hash) && scopeHashes.has(commit.hash))
+      .map((commit) => commit.hash)
+  );
+  const visibleHashes = buildVisibleHashes(graph, candidateHashes, options);
+
+  return projectCommitGraph(graph, visibleHashes, options);
+}
+
+export function projectCommitGraph(
+  graph: CommitGraph,
+  visibleHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+): ProjectedGraph {
+  const nodes: ProjectedGraphNode[] = graph.orderedCommits
+    .filter((commit) => visibleHashes.has(commit.hash))
+    .map((commit) => ({
+      hash: commit.hash,
+      author: commit.author,
+      date: commit.date,
+      subject: commit.subject,
+      refs: filterRefs(commit.refs, options),
+      isBoundary: commit.isBoundary
+    }));
+
+  const edges: ProjectedGraphEdge[] = [];
+  const edgeKeys = new Set<string>();
+
+  for (const node of nodes) {
+    const commit = graph.commitsByHash.get(node.hash);
+    if (!commit) {
+      continue;
+    }
+
+    for (const parentHash of commit.parents) {
+      const target = findProjectedTarget(graph, parentHash, visibleHashes);
+      if (!target) {
+        continue;
+      }
+
+      const key = `${node.hash}->${target.to}`;
+      if (edgeKeys.has(key)) {
+        continue;
+      }
+
+      edgeKeys.add(key);
+      edges.push({
+        from: node.hash,
+        to: target.to,
+        through: target.through
+      });
+    }
+  }
+
+  return {
+    sourceGraph: graph,
+    nodes,
+    edges,
+    visibleHashes
+  };
+}
+
+function getScopeHashes(
+  graph: CommitGraph,
+  options: RevisionGraphProjectionOptions
+): Set<string> {
+  switch (options.refScope) {
+    case 'current': {
+      const headHashes = graph.orderedCommits
+        .filter((commit) => commit.refs.some((ref) => ref.kind === 'head'))
+        .map((commit) => commit.hash);
+      return headHashes.length > 0
+        ? collectAncestorHashes(graph, headHashes)
+        : new Set(graph.orderedCommits.map((commit) => commit.hash));
+    }
+    case 'local': {
+      const localBranchHashes = graph.orderedCommits
+        .filter((commit) => commit.refs.some((ref) => ref.kind === 'head' || ref.kind === 'branch'))
+        .map((commit) => commit.hash);
+      return localBranchHashes.length > 0
+        ? collectAncestorHashes(graph, localBranchHashes)
+        : new Set(graph.orderedCommits.map((commit) => commit.hash));
+    }
+    case 'all':
+      return new Set(graph.orderedCommits.map((commit) => commit.hash));
+  }
+}
+
+function buildVisibleHashes(
+  graph: CommitGraph,
+  candidateHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions
+): Set<string> {
+  if (graph.simplification === 'git-decoration') {
+    return buildVisibleHashesFromGitSimplifiedGraph(graph, candidateHashes, options);
+  }
+
+  const visibleHashes = new Set(
+    graph.orderedCommits
+      .filter((commit) => candidateHashes.has(commit.hash) && shouldDisplayCommit(commit, options))
+      .map((commit) => commit.hash)
+  );
+
+  if (options.showBranchingsAndMerges) {
+    return visibleHashes;
+  }
+
+  return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes);
+}
+
+function buildVisibleHashesFromGitSimplifiedGraph(
+  graph: CommitGraph,
+  candidateHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions
+): Set<string> {
+  const candidateCommits = graph.orderedCommits.filter(
+    (commit) => candidateHashes.has(commit.hash) && !commit.isBoundary
+  );
+  const visibleHashes = new Set(candidateCommits.map((commit) => commit.hash));
+
+  if (options.showTags && !options.showBranchingsAndMerges) {
+    return visibleHashes;
+  }
+
+  return rewriteGitSimplifiedVisibleHashes(candidateCommits, options);
+}
+
+function shouldDisplayCommit(
+  commit: CommitGraph['orderedCommits'][number],
+  options: RevisionGraphProjectionOptions
+): boolean {
+  if (filterRefs(commit.refs, options).length > 0) {
+    return true;
+  }
+
+  if (!options.showBranchingsAndMerges || commit.isBoundary) {
+    return false;
+  }
+
+  return commit.parents.length > 1 || commit.children.length > 1;
+}
+
+function filterRefs(
+  refs: readonly RevisionGraphRef[],
+  options: RevisionGraphProjectionOptions
+): RevisionGraphRef[] {
+  return options.showTags
+    ? [...refs]
+    : refs.filter((ref) => ref.kind !== 'tag');
+}
+
+function rewriteGitSimplifiedVisibleHashes(
+  commits: readonly CommitGraph['orderedCommits'][number][],
+  options: RevisionGraphProjectionOptions
+): Set<string> {
+  interface MutableVisibleCommit {
+    hash: string;
+    parents: string[];
+    refs: RevisionGraphRef[];
+  }
+
+  const mutableByHash = new Map<string, MutableVisibleCommit>(
+    commits.map((commit) => [
+      commit.hash,
+      {
+        hash: commit.hash,
+        parents: [...commit.parents],
+        refs: filterRefs(commit.refs, options)
+      }
+    ])
+  );
+  const childMap = new Map<string, string[]>();
+
+  for (const commit of mutableByHash.values()) {
+    for (const parentHash of commit.parents) {
+      const children = childMap.get(parentHash);
+      if (children) {
+        children.push(commit.hash);
+      } else {
+        childMap.set(parentHash, [commit.hash]);
+      }
+    }
+  }
+
+  const skipList = new Set<string>();
+
+  for (const commit of commits) {
+    const mutableCommit = mutableByHash.get(commit.hash);
+    if (!mutableCommit || mutableCommit.refs.length > 0) {
+      continue;
+    }
+
+    if (mutableCommit.parents.length !== 1) {
+      continue;
+    }
+
+    const childHashes = childMap.get(commit.hash);
+    if (!childHashes || childHashes.length !== 1) {
+      continue;
+    }
+
+    const child = mutableByHash.get(childHashes[0]);
+    if (!child || child.parents.length !== 1) {
+      continue;
+    }
+
+    skipList.add(commit.hash);
+    child.parents[0] = mutableCommit.parents[0];
+
+    const parentChildren = childMap.get(mutableCommit.parents[0]);
+    if (parentChildren) {
+      const index = parentChildren.indexOf(commit.hash);
+      if (index >= 0) {
+        parentChildren[index] = child.hash;
+      }
+    }
+
+    childMap.delete(commit.hash);
+  }
+
+  return new Set(commits.filter((commit) => !skipList.has(commit.hash)).map((commit) => commit.hash));
+}
+
+function expandVisibleHashesWithStructuralConnectors(
+  graph: CommitGraph,
+  candidateHashes: ReadonlySet<string>,
+  baseVisibleHashes: ReadonlySet<string>
+): Set<string> {
+  const visibleHashes = new Set(baseVisibleHashes);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (const hash of [...visibleHashes]) {
+      const commit = graph.commitsByHash.get(hash);
+      if (!commit || !candidateHashes.has(hash)) {
+        continue;
+      }
+
+      for (const parentHash of commit.parents) {
+        const connectorHash = findStructuralConnectorHash(graph, parentHash, candidateHashes, visibleHashes);
+        if (!connectorHash || visibleHashes.has(connectorHash)) {
+          continue;
+        }
+
+        visibleHashes.add(connectorHash);
+        changed = true;
+      }
+    }
+  }
+
+  return visibleHashes;
+}
+
+function findStructuralConnectorHash(
+  graph: CommitGraph,
+  startHash: string,
+  candidateHashes: ReadonlySet<string>,
+  visibleHashes: ReadonlySet<string>
+): string | undefined {
+  let currentHash: string | undefined = startHash;
+  const visited = new Set<string>();
+
+  while (currentHash && !visited.has(currentHash) && candidateHashes.has(currentHash)) {
+    if (visibleHashes.has(currentHash)) {
+      return undefined;
+    }
+
+    const commit = graph.commitsByHash.get(currentHash);
+    if (!commit) {
+      return undefined;
+    }
+
+    if (isStructuralConnectorCommit(commit)) {
+      return currentHash;
+    }
+
+    if (commit.parents.length === 0 || commit.isBoundary) {
+      return undefined;
+    }
+
+    visited.add(currentHash);
+    currentHash = commit.parents[0];
+  }
+
+  return undefined;
+}
+
+function isStructuralConnectorCommit(commit: CommitGraph['orderedCommits'][number]): boolean {
+  return commit.parents.length > 1 || commit.children.length > 1;
+}
+
+function findProjectedTarget(
+  graph: CommitGraph,
+  startHash: string,
+  visibleHashes: ReadonlySet<string>
+): { readonly to: string; readonly through: readonly string[] } | undefined {
+  const through: string[] = [];
+  let currentHash: string | undefined = startHash;
+  const visited = new Set<string>();
+
+  while (currentHash && !visited.has(currentHash)) {
+    if (visibleHashes.has(currentHash)) {
+      return { to: currentHash, through };
+    }
+
+    visited.add(currentHash);
+    const commit = graph.commitsByHash.get(currentHash);
+    if (!commit) {
+      return undefined;
+    }
+
+    through.push(currentHash);
+    if (commit.parents.length === 0) {
+      return undefined;
+    }
+
+    currentHash = commit.parents[0];
+  }
+
+  return undefined;
+}

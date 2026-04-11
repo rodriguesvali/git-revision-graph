@@ -4,10 +4,17 @@ import assert from 'node:assert/strict';
 import {
   buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
-  filterRevisionGraphCommitsToAncestors,
   parseDecorationRefs,
   parseRevisionGraphLog
 } from '../src/revisionGraphData';
+import { buildCommitGraph, buildCommitGraphWithSimplification } from '../src/revisionGraph/model/commitGraph';
+import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGraph/model/commitGraphQueries';
+import {
+  projectAncestorDecoratedCommitGraph,
+  projectDecoratedCommitGraph
+} from '../src/revisionGraph/projection/graphProjection';
+import { buildRevisionGraphGitLogArgs } from '../src/revisionGraph/source/graphGit';
+import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('parses git log output into revision graph commits', () => {
   const output = [
@@ -36,6 +43,44 @@ test('parses decoration labels by type', () => {
   ]);
 });
 
+test('builds git log args aligned with tortoisegit simplify-by-decoration defaults', () => {
+  assert.deepEqual(
+    buildRevisionGraphGitLogArgs(6000, createDefaultRevisionGraphProjectionOptions()),
+    [
+      'log',
+      '--all',
+      '--topo-order',
+      '--simplify-by-decoration',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=6000',
+      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+    ]
+  );
+});
+
+test('builds git log args that exclude tags and scope to local branches', () => {
+  assert.deepEqual(
+    buildRevisionGraphGitLogArgs(12000, {
+      refScope: 'local',
+      showTags: false,
+      showBranchingsAndMerges: true
+    }),
+    [
+      'log',
+      '--branches',
+      '--topo-order',
+      '--simplify-by-decoration',
+      '--sparse',
+      '--decorate=short',
+      '--decorate-refs-exclude=refs/tags/*',
+      '--date=short',
+      '--max-count=12000',
+      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+    ]
+  );
+});
+
 test('prefers repository ref kinds for branch names that contain slashes', () => {
   const commits = parseRevisionGraphLog(
     'aaa111\u001f\u001fAda\u001f2026-04-08\u001fFixes\u001fLatam/work/2026-010-Bugs, origin/main\u001e',
@@ -51,114 +96,260 @@ test('prefers repository ref kinds for branch names that contain slashes', () =>
   ]);
 });
 
-test('builds a ref-centric graph scene with grouped labels and nearest ancestor edges', () => {
-  const scene = buildRevisionGraphScene([
-    { hash: 'a1', parents: ['b1', 'c1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [] },
-    { hash: 'b1', parents: ['d1'], author: 'Ada', date: '2026-04-06', subject: 'Main', refs: [{ name: 'main', kind: 'head' }, { name: 'origin/main', kind: 'remote' }] },
-    { hash: 'c1', parents: ['d1'], author: 'Ada', date: '2026-04-05', subject: 'Feature', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
-    { hash: 'd1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Root', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+test('builds a commit graph with child links and boundary commits for missing parents', () => {
+  const graph = buildCommitGraph([
+    {
+      hash: 'a1',
+      parents: ['missing-parent'],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Tip',
+      refs: [{ name: 'main', kind: 'head' }]
+    }
   ]);
 
-  assert.equal(scene.laneCount, 2);
-  assert.deepEqual(
-    scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane, row: node.row, refs: node.refs.map((ref) => ref.name) })),
-    [
-      { hash: 'b1', lane: 0, row: 0, refs: ['main', 'origin/main'] },
-      { hash: 'c1', lane: 1, row: 1, refs: ['origin/feature/demo'] },
-      { hash: 'd1', lane: 0, row: 2, refs: ['v1.0.0'] }
-    ]
-  );
-  assert.deepEqual(
-    scene.edges.map((edge) => [edge.from, edge.to]),
-    [
-      ['b1', 'd1'],
-      ['c1', 'd1']
-    ]
-  );
+  assert.deepEqual(graph.orderedCommits.map((commit) => commit.hash), ['a1', 'missing-parent']);
+  assert.equal(graph.commitsByHash.get('a1')?.isBoundary, false);
+  assert.equal(graph.commitsByHash.get('missing-parent')?.isBoundary, true);
+  assert.deepEqual(graph.commitsByHash.get('missing-parent')?.children, ['a1']);
 });
 
-test('builds only one ancestor edge per ref node and prefers first-parent on ties', () => {
-  const scene = buildRevisionGraphScene([
-    { hash: 'm1', parents: ['a1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
-    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Left', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
-    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Right', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
-  ]);
-
-  assert.deepEqual(
-    scene.edges.map((edge) => [edge.from, edge.to]),
-    [
-      ['m1', 'a1']
-    ]
-  );
-});
-
-test('compacts visible lanes so hidden commit columns do not push refs far to the right', () => {
-  const scene = buildRevisionGraphScene([
-    { hash: 'z1', parents: ['a1', 'b1'], author: 'Ada', date: '2026-04-09', subject: 'Merge tip', refs: [{ name: 'main', kind: 'head' }] },
-    { hash: 'a1', parents: ['c1', 'd1'], author: 'Ada', date: '2026-04-08', subject: 'Mainline merge', refs: [] },
-    { hash: 'b1', parents: ['e1'], author: 'Ada', date: '2026-04-07', subject: 'Side lane', refs: [] },
-    { hash: 'c1', parents: ['f1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline work', refs: [] },
-    { hash: 'e1', parents: ['g1'], author: 'Ada', date: '2026-04-05', subject: 'Secondary lane', refs: [] },
-    { hash: 'd1', parents: ['h1'], author: 'Ada', date: '2026-04-04', subject: 'Visible branch', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
-    { hash: 'f1', parents: ['root'], author: 'Ada', date: '2026-04-03', subject: 'Carry mainline', refs: [] },
-    { hash: 'g1', parents: ['root'], author: 'Ada', date: '2026-04-02', subject: 'Carry side lane', refs: [] },
-    { hash: 'h1', parents: ['root'], author: 'Ada', date: '2026-04-01', subject: 'Carry visible lane', refs: [] },
-    { hash: 'root', parents: [], author: 'Ada', date: '2026-03-31', subject: 'Release base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
-  ]);
-
-  assert.equal(scene.laneCount, 2);
-  assert.deepEqual(
-    scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane })),
-    [
-      { hash: 'z1', lane: 0 },
-      { hash: 'd1', lane: 1 },
-      { hash: 'root', lane: 0 }
-    ]
-  );
-});
-
-test('prefers a referenced ancestor found on the first-parent chain over a side-parent ref', () => {
-  const scene = buildRevisionGraphScene([
+test('keeps all merge parents in the projected graph instead of collapsing to one referenced ancestor', () => {
+  const graph = buildCommitGraph([
     { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
-    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Previous release', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
-    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Merged topic', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
+    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Release', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
   ]);
 
+  const projection = projectDecoratedCommitGraph(graph);
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['m1', 'a1', 'b1']);
   assert.deepEqual(
-    scene.edges.map((edge) => [edge.from, edge.to]),
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
     [
-      ['m1', 'a1']
+      { from: 'm1', to: 'a1', through: ['x1'] },
+      { from: 'm1', to: 'b1', through: [] }
     ]
   );
 });
 
-test('filters the graph to a reference and its ancestor commits', () => {
-  const commits = [
-    { hash: 'a1', parents: ['b1', 'c1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [] },
-    { hash: 'b1', parents: ['d1'], author: 'Ada', date: '2026-04-06', subject: 'Main', refs: [{ name: 'main', kind: 'head' as const }] },
-    { hash: 'c1', parents: ['d1'], author: 'Ada', date: '2026-04-05', subject: 'Feature', refs: [{ name: 'origin/feature/demo', kind: 'remote' as const }] },
-    { hash: 'd1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Root', refs: [{ name: 'v1.0.0', kind: 'tag' as const }] }
-  ];
+test('promotes a hidden merge connector instead of fanning one edge out to multiple visible ancestors', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Hidden merge', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Topic tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
 
-  const filtered = filterRevisionGraphCommitsToAncestors(commits, 'origin/feature/demo', 'remote');
+  const projection = projectDecoratedCommitGraph(graph);
 
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
   assert.deepEqual(
-    filtered.map((commit) => commit.hash),
-    ['c1', 'd1']
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'head1', to: 'merge1', through: [] },
+      { from: 'merge1', to: 'base1', through: [] },
+      { from: 'merge1', to: 'topic1', through: [] },
+      { from: 'topic1', to: 'base1', through: [] }
+    ]
   );
 });
 
-test('builds primary ancestor paths from first-parent history through non-referenced commits', () => {
-  const commits = [
-    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' as const }] },
-    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
-    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' as const }] },
-    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' as const }] }
-  ];
-  const scene = buildRevisionGraphScene(commits);
+test('keeps sync merges visible so release tags reconnect to older release lines', () => {
+  const graph = buildCommitGraphWithSimplification([
+    { hash: 'rel2501', parents: ['sync2491'], author: 'Ada', date: '2026-04-08', subject: 'Git 2.50.1', refs: [{ name: 'v2.50.1', kind: 'tag' }] },
+    { hash: 'sync2491', parents: ['rel2500', 'rel2491'], author: 'Ada', date: '2026-04-07', subject: 'Sync with 2.49.1', refs: [] },
+    { hash: 'rel2500', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Git 2.50.0', refs: [{ name: 'v2.50.0', kind: 'tag' }] },
+    { hash: 'rel2491', parents: ['sync2482'], author: 'Ada', date: '2026-04-05', subject: 'Git 2.49.1', refs: [{ name: 'v2.49.1', kind: 'tag' }] },
+    { hash: 'sync2482', parents: ['rel2490', 'rel2482'], author: 'Ada', date: '2026-04-04', subject: 'Sync with 2.48.2', refs: [] },
+    { hash: 'rel2490', parents: [], author: 'Ada', date: '2026-04-03', subject: 'Git 2.49.0', refs: [{ name: 'v2.49.0', kind: 'tag' }] },
+    { hash: 'rel2482', parents: [], author: 'Ada', date: '2026-04-02', subject: 'Git 2.48.2', refs: [{ name: 'v2.48.2', kind: 'tag' }] }
+  ], 'git-decoration');
 
-  assert.deepEqual(buildPrimaryAncestorPaths(commits, scene), {
+  const projection = projectDecoratedCommitGraph(graph);
+
+  assert.deepEqual(
+    projection.nodes.map((node) => node.hash),
+    ['rel2501', 'sync2491', 'rel2500', 'rel2491', 'sync2482', 'rel2490', 'rel2482']
+  );
+  assert.deepEqual(
+    projection.edges.map((edge) => [edge.from, edge.to]),
+    [
+      ['rel2501', 'sync2491'],
+      ['sync2491', 'rel2500'],
+      ['sync2491', 'rel2491'],
+      ['rel2491', 'sync2482'],
+      ['sync2482', 'rel2490'],
+      ['sync2482', 'rel2482']
+    ]
+  );
+});
+
+test('rewrites linear unlabeled commits on git-simplified graphs when tags are hidden', () => {
+  const graph = buildCommitGraphWithSimplification([
+    { hash: 'head1', parents: ['mid1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'mid1', parents: ['branch1'], author: 'Ada', date: '2026-04-07', subject: 'Linear unlabeled', refs: [] },
+    { hash: 'branch1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Branch tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] }
+  ], 'git-decoration');
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showTags: false
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'branch1']);
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'head1', to: 'branch1', through: ['mid1'] }
+    ]
+  );
+});
+
+test('builds a scene from the projected graph while preserving merge edges', () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
+    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Release', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph);
+  const scene = buildRevisionGraphScene(graph, projection);
+
+  assert.equal(scene.laneCount, 2);
+  assert.deepEqual(
+    scene.nodes.map((node) => ({ hash: node.hash, lane: node.lane, row: node.row })),
+    [
+      { hash: 'm1', lane: 0, row: 0 },
+      { hash: 'a1', lane: 0, row: 1 },
+      { hash: 'b1', lane: 1, row: 2 }
+    ]
+  );
+  assert.deepEqual(
+    scene.edges.map((edge) => [edge.from, edge.to]),
+    [
+      ['m1', 'a1'],
+      ['m1', 'b1']
+    ]
+  );
+});
+
+test('can find commits by ref and collect their ancestor hashes from the full DAG', () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
+    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const startHashes = findCommitHashesByRef(graph, 'origin/feature/demo', 'remote');
+  const ancestorHashes = collectAncestorHashes(graph, startHashes);
+
+  assert.deepEqual(startHashes, ['s1']);
+  assert.deepEqual([...ancestorHashes], ['s1', 'b1']);
+});
+
+test('projects only decorated ancestor commits for ancestor filtering while keeping hidden commits structural', () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
+    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectAncestorDecoratedCommitGraph(graph, 'origin/feature/demo', 'remote');
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['s1', 'b1']);
+  assert.deepEqual(
+    projection.edges.map((edge) => [edge.from, edge.to]),
+    [
+      ['s1', 'b1']
+    ]
+  );
+});
+
+test('can scope the projection to the current branch ancestry', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'feature1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Feature head', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'current'
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'base1']);
+});
+
+test('can scope the projection to local branches', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'feature1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Feature head', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'remote1', parents: ['base1'], author: 'Ada', date: '2026-04-05', subject: 'Remote only', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'local'
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'feature1', 'base1']);
+});
+
+test('can hide tag refs and tag-only commits from the projection', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }, { name: 'v2.0.0', kind: 'tag' }] },
+    { hash: 'tagonly1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Release tag', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showTags: false
+  });
+
+  assert.deepEqual(
+    projection.nodes.map((node) => ({ hash: node.hash, refs: node.refs.map((ref) => ref.name) })),
+    [
+      { hash: 'head1', refs: ['main'] },
+      { hash: 'base1', refs: [] }
+    ]
+  );
+});
+
+test('can include unlabeled branch and merge commits in the projection', () => {
+  const graph = buildCommitGraph([
+    { hash: 'merge1', parents: ['left1', 'right1'], author: 'Ada', date: '2026-04-08', subject: 'Merge topic', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'left1', parents: ['split1'], author: 'Ada', date: '2026-04-07', subject: 'Left', refs: [] },
+    { hash: 'right1', parents: ['split1'], author: 'Ada', date: '2026-04-06', subject: 'Right', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'split1', parents: ['base1'], author: 'Ada', date: '2026-04-05', subject: 'Split point', refs: [] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['merge1', 'right1', 'split1', 'base1']);
+});
+
+test('builds primary ancestor paths from the full graph for the visible scene', () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
+    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+  const scene = buildRevisionGraphScene(graph, projection);
+
+  assert.deepEqual(buildPrimaryAncestorPaths(graph, scene), {
     m1: ['m1', 'b1'],
     s1: ['s1', 'b1'],
     b1: ['b1']

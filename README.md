@@ -125,6 +125,21 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - contributed view container and revision graph webview
   - commands and context menus
 
+- `docs/revision-graph-parity-plan.md`
+  - architectural review distilled into a phased plan for reproducing the TortoiseGit Revision Graph in VS Code
+  - target module boundaries, parity goals, and acceptance criteria
+
+## Architecture Plan
+
+The current redesign roadmap lives in [docs/revision-graph-parity-plan.md](docs/revision-graph-parity-plan.md).
+
+That document is the working reference for:
+
+- the architectural gap between the current prototype and TortoiseGit
+- the target commit-centric graph model
+- the phased migration plan toward functional parity
+- acceptance criteria for declaring the graph "faithful enough"
+
 ## Development Requirements
 
 To work on the extension locally, you need:

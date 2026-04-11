@@ -1,4 +1,4 @@
-import { RevisionGraphRef } from './revisionGraphData';
+import { RevisionGraphProjectionOptions, RevisionGraphRef } from './revisionGraphData';
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 
@@ -8,6 +8,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'choose-repository' }
   | { readonly type: 'filter-ancestor-refs'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'clear-ancestor-filter' }
+  | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
   | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'show-log'; readonly baseRefName: string; readonly compareRefName: string }
   | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
@@ -21,6 +22,14 @@ export type RevisionGraphMessage =
 export interface RevisionGraphAncestorFilter {
   readonly refName: string;
   readonly refKind: RevisionGraphRef['kind'];
+}
+
+export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProjectionOptions {
+  return {
+    refScope: 'all',
+    showTags: true,
+    showBranchingsAndMerges: false
+  };
 }
 
 export interface RevisionLogEntry {

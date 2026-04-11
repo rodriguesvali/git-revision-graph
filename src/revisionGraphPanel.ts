@@ -15,12 +15,13 @@ import {
 import {
   buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
-  filterRevisionGraphCommitsToAncestors,
+  projectAncestorDecoratedCommitGraph,
+  projectDecoratedCommitGraph,
   RevisionGraphRef
 } from './revisionGraphData';
 import {
   isRefAncestorOfHead,
-  loadRevisionGraphCommits,
+  loadRevisionGraphSnapshot,
   openUnifiedDiff,
   pickRevisionGraphRepository,
   showRevisionLog
@@ -30,17 +31,23 @@ import {
   renderErrorHtml,
   renderRevisionGraphHtml
 } from './revisionGraphWebview';
-import { REVISION_GRAPH_VIEW_ID, RevisionGraphAncestorFilter, RevisionGraphMessage } from './revisionGraphTypes';
+import {
+  createDefaultRevisionGraphProjectionOptions,
+  REVISION_GRAPH_VIEW_ID,
+  RevisionGraphAncestorFilter,
+  RevisionGraphMessage
+} from './revisionGraphTypes';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
-const GRAPH_COMMIT_LIMIT = 600;
-const GRAPH_COMMIT_LIMIT_STEPS = [600, 1200, 3000, 6000, 12000];
+const GRAPH_COMMIT_LIMIT = 6000;
+const GRAPH_COMMIT_LIMIT_STEPS = [6000, 12000];
 const GRAPH_MIN_VISIBLE_NODES = 24;
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
   private ancestorFilter: RevisionGraphAncestorFilter | undefined;
+  private projectionOptions = createDefaultRevisionGraphProjectionOptions();
   private autoArrangeOnNextRender = true;
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -114,6 +121,14 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           return;
         case 'clear-ancestor-filter':
           this.ancestorFilter = undefined;
+          await this.render();
+          return;
+        case 'set-projection-options':
+          this.projectionOptions = {
+            ...this.projectionOptions,
+            ...message.options
+          };
+          this.autoArrangeOnNextRender = true;
           await this.render();
           return;
         case 'compare-selected':
@@ -232,12 +247,20 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     }
 
     try {
-      const commits = await this.loadCommitsForGraph(this.currentRepository);
-      const visibleCommits = this.ancestorFilter
-        ? filterRevisionGraphCommitsToAncestors(commits, this.ancestorFilter.refName, this.ancestorFilter.refKind)
-        : commits;
-      const scene = buildRevisionGraphScene(visibleCommits.length > 0 ? visibleCommits : commits);
-      const primaryAncestorPaths = buildPrimaryAncestorPaths(commits, scene);
+      const snapshot = await this.loadSnapshotForGraph(this.currentRepository);
+      const projection = this.ancestorFilter
+        ? projectAncestorDecoratedCommitGraph(
+          snapshot.graph,
+          this.ancestorFilter.refName,
+          this.ancestorFilter.refKind,
+          this.projectionOptions
+        )
+        : projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
+      const fallbackProjection = projection.nodes.length > 0
+        ? projection
+        : projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions);
+      const scene = buildRevisionGraphScene(snapshot.graph, fallbackProjection);
+      const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
       const mergeBlockedTargets = await getMergeBlockedTargets(
         this.currentRepository,
         this.currentRepository.state.HEAD?.name,
@@ -252,6 +275,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
           : undefined,
         hasWorkspaceChanges(this.currentRepository),
         this.ancestorFilter,
+        this.projectionOptions,
         mergeBlockedTargets,
         primaryAncestorPaths,
         this.autoArrangeOnNextRender
@@ -262,22 +286,22 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     }
   }
 
-  private async loadCommitsForGraph(repository: Repository) {
-    let selectedCommits = await loadRevisionGraphCommits(repository, GRAPH_COMMIT_LIMIT);
+  private async loadSnapshotForGraph(repository: Repository) {
+    let selectedSnapshot = await loadRevisionGraphSnapshot(repository, GRAPH_COMMIT_LIMIT, this.projectionOptions);
 
     for (const limit of GRAPH_COMMIT_LIMIT_STEPS) {
-      const commits = limit === GRAPH_COMMIT_LIMIT
-        ? selectedCommits
-        : await loadRevisionGraphCommits(repository, limit);
-      const scene = buildRevisionGraphScene(commits);
-      selectedCommits = commits;
+      const snapshot = limit === GRAPH_COMMIT_LIMIT
+        ? selectedSnapshot
+        : await loadRevisionGraphSnapshot(repository, limit, this.projectionOptions);
+      const scene = buildRevisionGraphScene(snapshot.graph, projectDecoratedCommitGraph(snapshot.graph, this.projectionOptions));
+      selectedSnapshot = snapshot;
 
-      if (scene.nodes.length >= GRAPH_MIN_VISIBLE_NODES || commits.length < limit) {
+      if (scene.nodes.length >= GRAPH_MIN_VISIBLE_NODES || snapshot.graph.orderedCommits.length < limit) {
         break;
       }
     }
 
-    return selectedCommits;
+    return selectedSnapshot;
   }
 
   private attachToRepositories(repositories: readonly Repository[]): void {
@@ -324,6 +348,7 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.ancestorFilter = undefined;
+      this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
       this.autoArrangeOnNextRender = true;
     }
 

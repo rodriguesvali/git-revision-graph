@@ -3,8 +3,11 @@ import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
 import { toErrorDetail, toOperationError } from './errorDetail';
-import { API, Ref, RefType, Repository } from './git';
-import { getRevisionGraphGitFormat, parseRevisionGraphLog, RevisionGraphRef } from './revisionGraphData';
+import { API, Repository } from './git';
+import { RevisionGraphProjectionOptions } from './revisionGraphData';
+import { RevisionGraphSnapshot } from './revisionGraph/source/graphSnapshot';
+import { buildCommitGraphFromGitLog, buildRevisionGraphGitLogArgs } from './revisionGraph/source/graphGit';
+import { buildRevisionGraphRefKinds } from './revisionGraph/source/refIndex';
 import { sortRepositoriesByPath } from './repositorySelection';
 import { RevisionLogEntry } from './revisionGraphTypes';
 
@@ -14,26 +17,26 @@ interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
   readonly entry: RevisionLogEntry;
 }
 
-export async function loadRevisionGraphCommits(repository: Repository, limit: number) {
+export async function loadRevisionGraphSnapshot(
+  repository: Repository,
+  limit: number,
+  options: RevisionGraphProjectionOptions
+): Promise<RevisionGraphSnapshot> {
   const refKindsByName = buildRevisionGraphRefKinds(await repository.getRefs());
   const { stdout } = await execFile(
     'git',
-    [
-      'log',
-      '--all',
-      '--topo-order',
-      '--decorate=short',
-      '--date=short',
-      `--max-count=${limit}`,
-      `--pretty=format:${getRevisionGraphGitFormat()}`
-    ],
+    buildRevisionGraphGitLogArgs(limit, options),
     {
       cwd: repository.rootUri.fsPath,
       maxBuffer: 8 * 1024 * 1024
     }
   );
 
-  return parseRevisionGraphLog(stdout, refKindsByName);
+  return {
+    graph: buildCommitGraphFromGitLog(stdout, refKindsByName, 'git-decoration'),
+    loadedAt: Date.now(),
+    requestedLimit: limit
+  };
 }
 
 export async function pickRevisionGraphRepository(git: API, alwaysPrompt: boolean): Promise<Repository | undefined> {
@@ -149,57 +152,6 @@ export async function showRevisionLog(repository: Repository, left: string, righ
     await openCommitLogEntry(repository, picked.entry.hash);
   } catch (error) {
     await vscode.window.showErrorMessage(toOperationError('Could not show the revision log.', error));
-  }
-}
-
-function buildRevisionGraphRefKinds(refs: readonly Ref[]): Map<string, RevisionGraphRef['kind']> {
-  const refKindsByName = new Map<string, RevisionGraphRef['kind']>();
-
-  for (const ref of refs) {
-    const refName = getRefName(ref);
-    if (!refName) {
-      continue;
-    }
-
-    const nextKind = toRevisionGraphRefKind(ref.type);
-    const currentKind = refKindsByName.get(refName);
-    if (!currentKind || getRefKindPriority(nextKind) < getRefKindPriority(currentKind)) {
-      refKindsByName.set(refName, nextKind);
-    }
-  }
-
-  return refKindsByName;
-}
-
-function getRefName(ref: Ref): string {
-  if (ref.type === RefType.RemoteHead && ref.remote && ref.name) {
-    return ref.name.startsWith(`${ref.remote}/`) ? ref.name : `${ref.remote}/${ref.name}`;
-  }
-
-  return ref.name ?? '';
-}
-
-function toRevisionGraphRefKind(type: RefType): RevisionGraphRef['kind'] {
-  switch (type) {
-    case RefType.Head:
-      return 'branch';
-    case RefType.RemoteHead:
-      return 'remote';
-    case RefType.Tag:
-      return 'tag';
-  }
-}
-
-function getRefKindPriority(kind: RevisionGraphRef['kind']): number {
-  switch (kind) {
-    case 'head':
-      return 0;
-    case 'tag':
-      return 1;
-    case 'branch':
-      return 2;
-    case 'remote':
-      return 3;
   }
 }
 
