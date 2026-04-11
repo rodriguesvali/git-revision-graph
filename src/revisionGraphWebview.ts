@@ -140,7 +140,7 @@ export function renderRevisionGraphHtml(
     .scene-layer { position: absolute; width: ${width}px; height: ${height}px; transform-origin: top left; }
     svg { position: absolute; inset: 0; overflow: visible; }
     .node {
-      position: absolute; min-width: ${NODE_MIN_WIDTH}px; min-height: 54px; border-radius: 10px;
+      position: absolute; min-width: ${NODE_MIN_WIDTH}px; border-radius: 10px;
       border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
       color: var(--node-text-dark); cursor: inherit; user-select: none; overflow: hidden;
       transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, outline-color 120ms ease;
@@ -190,9 +190,12 @@ export function renderRevisionGraphHtml(
       opacity: 0.18;
     }
     .ref-line {
-      padding: 8px 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 8px 12px;
       font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; line-height: 1.25;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    }
+    .ref-line + .ref-line {
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
     }
     .ref-line.kind-head {
       background: color-mix(in srgb, var(--node-head) 92%, white 8%);
