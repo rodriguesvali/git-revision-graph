@@ -240,7 +240,6 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
         scene
       );
       this.view.webview.html = renderRevisionGraphHtml(
-        vscode.workspace.asRelativePath(this.currentRepository.rootUri, false),
         scene,
         this.currentRepository.state.HEAD?.name,
         this.currentRepository.state.HEAD?.upstream

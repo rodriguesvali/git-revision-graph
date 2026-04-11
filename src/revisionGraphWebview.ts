@@ -19,7 +19,6 @@ const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
 
 export function renderRevisionGraphHtml(
-  repositoryLabel: string,
   scene: RevisionGraphScene,
   currentHeadName: string | undefined,
   currentHeadUpstreamName: string | undefined,

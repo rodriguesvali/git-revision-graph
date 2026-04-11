@@ -1,4 +1,3 @@
-import { ChangeQuickPickItem } from './changePresentation';
 import { API, Ref, RefType, Repository } from './git';
 import { isReferenceNode, RefNode } from './refNodes';
 import {

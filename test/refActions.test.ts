@@ -76,9 +76,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     refreshController: {
       refresh() {
         counter.refreshCalls += 1;
-      },
-      updateViewMessage() {
-        counter.refreshCalls += 1;
       }
     },
     referenceManager: {
@@ -177,7 +174,7 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
     { name: 'main', upstream: 'origin/main' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('checkoutResolvedReference creates a branch from tags instead of checking them out directly', async () => {
@@ -199,7 +196,7 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
     { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('deleteResolvedReference uses the tag name in the delete confirmation label', async () => {
@@ -262,7 +259,7 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(harness.upstreamClears, ['release/2026-copy']);
   assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
@@ -287,7 +284,7 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
@@ -304,7 +301,7 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
     { remoteName: undefined, branchName: undefined, setUpstream: undefined }
   ]);
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('syncCurrentHeadWithUpstream reports when the current branch is already synchronized', async () => {
@@ -458,7 +455,7 @@ test('deleteResolvedReference deletes remote branches through the shared referen
     { remoteName: 'origin', branchName: 'feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('deleteResolvedReference refuses to delete remote HEAD aliases', async () => {
@@ -533,7 +530,7 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
     { name: 'feature/demo', force: true }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was force deleted.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('deleteResolvedReference surfaces git stderr details for local branch failures', async () => {

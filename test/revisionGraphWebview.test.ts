@@ -24,7 +24,6 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
   };
 
   const autoArrangeHtml = renderRevisionGraphHtml(
-    'repo',
     scene,
     'main',
     'origin/main',
@@ -35,7 +34,6 @@ test('renders the auto-arrange bootstrap flag for the webview', () => {
     true
   );
   const passiveHtml = renderRevisionGraphHtml(
-    'repo',
     scene,
     'main',
     undefined,
@@ -96,7 +94,6 @@ test('renders reference dividers only between consecutive refs', () => {
   };
 
   const html = renderRevisionGraphHtml(
-    'repo',
     scene,
     'main',
     'origin/main',
@@ -133,7 +130,6 @@ test('renders structural commits with a summary and active projection controls',
   };
 
   const html = renderRevisionGraphHtml(
-    'repo',
     scene,
     'main',
     'origin/main',
@@ -187,7 +183,6 @@ test('anchors edges to the real height of single-ref cards', () => {
   };
 
   const html = renderRevisionGraphHtml(
-    'repo',
     scene,
     'main',
     'origin/main',

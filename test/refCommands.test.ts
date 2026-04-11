@@ -59,9 +59,6 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     refreshController: {
       refresh() {
         counter.refreshCalls += 1;
-      },
-      updateViewMessage() {
-        counter.refreshCalls += 1;
       }
     },
     referenceManager: {
@@ -159,7 +156,7 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('checkoutReference creates a branch when the selected reference is a tag', async () => {
@@ -176,7 +173,7 @@ test('checkoutReference creates a branch when the selected reference is a tag', 
     { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
-  assert.equal(harness.refreshCalls, 2);
+  assert.equal(harness.refreshCalls, 1);
 });
 
 test('mergeReference prevents merging the current branch into itself', async () => {

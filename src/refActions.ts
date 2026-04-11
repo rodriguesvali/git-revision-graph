@@ -1,5 +1,5 @@
 import { ChangeQuickPickItem, toChangeQuickPickItems } from './changePresentation';
-import { hasGitErrorCode as matchesGitErrorCode, toErrorDetail, toOperationError } from './errorDetail';
+import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
 import { Branch, RefType, Repository } from './git';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
@@ -30,7 +30,6 @@ export interface DiffPresenter {
 
 export interface RefreshController {
   refresh(): void;
-  updateViewMessage(): void;
 }
 
 export interface ReferenceManager {
@@ -147,7 +146,6 @@ export async function checkoutResolvedReference(
     await repository.checkout(target.refName);
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
@@ -186,7 +184,6 @@ export async function createBranchFromResolvedReference(
         : `Branch ${branchName} was created and checked out from ${target.label}.`
     );
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
@@ -227,7 +224,6 @@ export async function syncCurrentHeadWithUpstream(
     }
 
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
@@ -271,7 +267,6 @@ export async function mergeResolvedReference(
 
     await repository.merge(target.refName);
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
@@ -307,7 +302,6 @@ export async function deleteResolvedReference(
       await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
       services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
       services.refreshController.refresh();
-      services.refreshController.updateViewMessage();
       return;
     }
 
@@ -323,7 +317,6 @@ export async function deleteResolvedReference(
       await repository.deleteTag(target.refName);
       services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
       services.refreshController.refresh();
-      services.refreshController.updateViewMessage();
       return;
     }
 
@@ -529,7 +522,6 @@ async function deleteLocalBranch(
     await repository.deleteBranch(target.refName, false);
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
   } catch (error) {
     if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
       throw error;
@@ -546,7 +538,6 @@ async function deleteLocalBranch(
     await repository.deleteBranch(target.refName, true);
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
     services.refreshController.refresh();
-    services.refreshController.updateViewMessage();
   }
 }
 

@@ -2,7 +2,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
-import { toErrorDetail, toOperationError } from './errorDetail';
+import { toOperationError } from './errorDetail';
 import { API, Repository } from './git';
 import { RevisionGraphProjectionOptions } from './revisionGraphData';
 import { RevisionGraphSnapshot } from './revisionGraph/source/graphSnapshot';

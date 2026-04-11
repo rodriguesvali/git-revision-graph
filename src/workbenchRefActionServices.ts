@@ -59,9 +59,6 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
     refreshController: {
       refresh() {
         refresh?.();
-      },
-      updateViewMessage() {
-        refresh?.();
       }
     },
     referenceManager: {
