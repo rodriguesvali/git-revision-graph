@@ -1,9 +1,9 @@
 import { Repository } from '../../git';
+import { execGit, execGitWithResult } from '../../gitExec';
 import { RevisionGraphProjectionOptions } from '../../revisionGraphData';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { buildCommitGraphFromGitLog, buildRevisionGraphGitLogArgs } from '../source/graphGit';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';
-import { execGit, execGitWithResult } from './gitExec';
 
 export async function loadRevisionGraphSnapshot(
   repository: Repository,

@@ -1,4 +1,5 @@
 import { Branch, Repository, RefType } from '../git';
+import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
 import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
 import { HeadSyncState, RefActionKind, RefActionServices } from './types';
 
@@ -41,10 +42,6 @@ export function getCurrentHeadSyncState(repository: Repository): HeadSyncState |
   };
 }
 
-export function formatUpstreamLabel(remoteName: string, refName: string): string {
-  return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
-}
-
 export function buildSyncResultMessage(syncState: HeadSyncState): string {
   if (syncState.behind > 0 && syncState.ahead > 0) {
     return `${syncState.branchName} was synchronized with ${syncState.upstreamLabel}.`;
@@ -74,19 +71,6 @@ export async function ensureWorkspaceReadyForMutation(
   }
 
   return true;
-}
-
-export function hasMergeConflicts(repository: Repository): boolean {
-  return repository.state.mergeChanges.length > 0;
-}
-
-export function hasWorkspaceChanges(repository: Repository): boolean {
-  return (
-    repository.state.mergeChanges.length > 0
-    || repository.state.indexChanges.length > 0
-    || repository.state.workingTreeChanges.length > 0
-    || repository.state.untrackedChanges.length > 0
-  );
 }
 
 export function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, repository: Repository): boolean {

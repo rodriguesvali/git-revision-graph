@@ -1,14 +1,11 @@
-import { execFile as execFileCallback } from 'node:child_process';
-import { promisify } from 'node:util';
 import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
+import { execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { RefActionServices } from './refActions';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
-
-const execFile = promisify(execFileCallback);
 
 export function createWorkbenchRefActionServices(refresh?: () => void): RefActionServices {
   return {
@@ -63,24 +60,10 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
     },
     referenceManager: {
       async deleteRemoteBranch(repository, remoteName, branchName) {
-        await execFile(
-          'git',
-          ['push', remoteName, '--delete', branchName],
-          {
-            cwd: repository.rootUri.fsPath,
-            maxBuffer: 8 * 1024 * 1024
-          }
-        );
+        await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', branchName]);
       },
       async unsetBranchUpstream(repository, branchName) {
-        await execFile(
-          'git',
-          ['branch', '--unset-upstream', branchName],
-          {
-            cwd: repository.rootUri.fsPath,
-            maxBuffer: 8 * 1024 * 1024
-          }
-        );
+        await execGitWithResult(repository.rootUri.fsPath, ['branch', '--unset-upstream', branchName]);
       }
     },
     ancestryInspector: {

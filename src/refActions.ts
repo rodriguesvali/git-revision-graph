@@ -1,12 +1,12 @@
 import { toChangeQuickPickItems } from './changePresentation';
 import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
 import { Repository } from './git';
+import { formatUpstreamLabel, hasMergeConflicts } from './gitState';
 import {
   buildDeleteBranchConfirmationMessage,
   buildForceDeleteBranchMessage,
   buildSyncResultMessage,
   ensureWorkspaceReadyForMutation,
-  formatUpstreamLabel,
   getCurrentHeadSyncState,
   getLocalBranchForDeletion,
   getSuggestedNewBranchName,
@@ -176,7 +176,7 @@ export async function syncCurrentHeadWithUpstream(
       return;
     }
 
-    if (repository.state.mergeChanges.length > 0) {
+    if (hasMergeConflicts(repository)) {
       services.ui.showWarningMessage('Resolve the current conflicts in Source Control before synchronizing the current branch.');
       await services.ui.showSourceControl();
       return;

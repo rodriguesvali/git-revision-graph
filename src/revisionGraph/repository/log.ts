@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
+import { execGit } from '../../gitExec';
 import { Repository } from '../../git';
 import { RevisionLogEntry } from '../../revisionGraphTypes';
-import { execGit } from './gitExec';
 
 interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
   readonly entry: RevisionLogEntry;
