@@ -43,6 +43,8 @@ test('preserves viewport and selection during metadata patches', () => {
   assert.match(html, /preserveViewport: !!patch\.preserveViewport/);
   assert.match(html, /function captureSelectionSnapshot\(\)/);
   assert.match(html, /function restoreSelectionSnapshot\(snapshot\)/);
+  assert.match(html, /function captureScenePlacementSnapshot\(\)/);
+  assert.match(html, /function restoreScenePlacementSnapshot\(snapshot\)/);
   assert.match(html, /function captureViewportSnapshot\(\)/);
   assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
 });

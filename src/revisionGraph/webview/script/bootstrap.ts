@@ -245,6 +245,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const selectionSnapshot = options.preserveSelection ? captureSelectionSnapshot() : [];
+      const scenePlacementSnapshot = options.preserveViewport ? captureScenePlacementSnapshot() : null;
       const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
       const previousSceneLayoutKey = sceneLayoutKey;
       currentState = nextState;
@@ -295,6 +296,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           autoArrangeLayout();
           centerGraphInViewport();
         } else if (viewportSnapshot) {
+          restoreScenePlacementSnapshot(scenePlacementSnapshot);
           restoreViewportSnapshot(viewportSnapshot);
         } else if (shouldRecenter) {
           centerGraphInViewport();
@@ -386,6 +388,27 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         sceneCenterX: ((viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT} + visibleWidth / 2) / currentZoom) - layoutOffsetX,
         sceneCenterY: ((viewport.scrollTop - ${VIEWPORT_PADDING_TOP} + visibleHeight / 2) / currentZoom) - layoutOffsetY
       };
+    }
+
+    function captureScenePlacementSnapshot() {
+      return {
+        layoutOffsetX,
+        layoutOffsetY
+      };
+    }
+
+    function restoreScenePlacementSnapshot(snapshot) {
+      if (!snapshot) {
+        return;
+      }
+
+      const canvasWidth = getCanvasWidth();
+      const canvasHeight = getCanvasHeight();
+      const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
+      const maxOffsetY = Math.max(0, canvasHeight - baseCanvasHeight);
+      layoutOffsetX = clamp(snapshot.layoutOffsetX, 0, maxOffsetX);
+      layoutOffsetY = clamp(snapshot.layoutOffsetY, 0, maxOffsetY);
+      sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
     }
 
     function restoreViewportSnapshot(snapshot) {
