@@ -19,8 +19,7 @@ import {
   createReferenceId,
   GRAPH_PADDING_BOTTOM,
   GRAPH_PADDING_TOP,
-  NODE_PADDING_X,
-  ROW_HEIGHT
+  NODE_PADDING_X
 } from '../webview/shared';
 import { formatUpstreamLabel, hasWorkspaceChanges } from '../../gitState';
 
@@ -205,7 +204,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
   );
   const baseCanvasHeight = Math.max(
     480,
-    scene.rowCount * ROW_HEIGHT + GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM
+    nodeLayouts.reduce((max, node) => Math.max(max, node.defaultTop + node.height + GRAPH_PADDING_BOTTOM), GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM)
   );
 
   return {

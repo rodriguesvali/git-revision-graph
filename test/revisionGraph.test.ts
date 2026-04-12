@@ -7,6 +7,7 @@ import {
   parseDecorationRefs,
   parseRevisionGraphLog
 } from '../src/revisionGraphData';
+import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { getMergeBlockedTargetsFromGraph } from '../src/revisionGraph/backend';
 import { buildCommitGraph, buildCommitGraphWithSimplification } from '../src/revisionGraph/model/commitGraph';
 import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGraph/model/commitGraphQueries';
@@ -257,6 +258,42 @@ test('gives distinct horizontal positions to wide visible branches in the same s
   assert.ok(rightNode);
   assert.notEqual(leftNode?.lane, rightNode?.lane);
   assert.notEqual(leftNode?.x, rightNode?.x);
+});
+
+test('adds vertical clearance when a card grows with many refs', async () => {
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['tag1'],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Current head',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' },
+        { name: 'origin/HEAD', kind: 'remote' },
+        { name: 'release/1.x', kind: 'branch' }
+      ]
+    },
+    {
+      hash: 'tag1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-07',
+      subject: 'Tagged release',
+      refs: [{ name: 'v22.0.0-next.7', kind: 'tag' }]
+    }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph);
+  const scene = await buildRevisionGraphScene(graph, projection);
+  const nodeLayouts = buildNodeLayouts(scene);
+  const headLayout = nodeLayouts.find((node) => node.hash === 'head1');
+  const tagLayout = nodeLayouts.find((node) => node.hash === 'tag1');
+
+  assert.ok(headLayout);
+  assert.ok(tagLayout);
+  assert.ok((tagLayout?.defaultTop ?? 0) > (headLayout?.defaultTop ?? 0) + (headLayout?.height ?? 0));
 });
 
 test('can find commits by ref and collect their ancestor hashes from the full DAG', () => {

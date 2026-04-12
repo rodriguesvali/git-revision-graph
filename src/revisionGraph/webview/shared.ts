@@ -14,6 +14,7 @@ export {
 } from '../layout/nodeSizing';
 
 export const ROW_HEIGHT = 140;
+export const ROW_VERTICAL_GAP = 48;
 export const NODE_HORIZONTAL_GAP = 28;
 export const NODE_PADDING_X = 26;
 export const GRAPH_PADDING_TOP = 88;
@@ -32,33 +33,70 @@ export type RevisionGraphNodeLayout = {
   readonly width: number;
   readonly height: number;
   readonly defaultLeft: number;
+  readonly defaultTop: number;
 };
 
 type EdgeLayoutNode = {
   readonly row: number;
   readonly defaultLeft: number;
+  readonly defaultTop: number;
   readonly width: number;
   readonly height: number;
 };
 
 export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGraphNodeLayout[] {
+  const dimensionsByHash = new Map(
+    scene.nodes.map((node) => [
+      node.hash,
+      {
+        width: getNodeWidth(node),
+        height: getNodeHeight(node)
+      }
+    ] as const)
+  );
+  const maxHeightByRow = new Map<number, number>();
+
+  for (const node of scene.nodes) {
+    const dimensions = dimensionsByHash.get(node.hash);
+    if (!dimensions) {
+      continue;
+    }
+    maxHeightByRow.set(node.row, Math.max(maxHeightByRow.get(node.row) ?? 0, dimensions.height));
+  }
+
+  const topByRow = new Map<number, number>();
+  let nextTop = GRAPH_PADDING_TOP;
+  for (let row = 0; row < scene.rowCount; row += 1) {
+    topByRow.set(row, nextTop);
+    nextTop += (maxHeightByRow.get(row) ?? 0) + ROW_VERTICAL_GAP;
+  }
+
   return scene.nodes.map((node) => {
-    const width = getNodeWidth(node);
-    const height = getNodeHeight(node);
+    const dimensions = dimensionsByHash.get(node.hash);
+    if (!dimensions) {
+      throw new Error(`Missing dimensions for commit ${node.hash}`);
+    }
     return {
       hash: node.hash,
       lane: node.lane,
       row: node.row,
       x: node.x,
-      width,
-      height,
-      defaultLeft: NODE_PADDING_X + node.x
+      width: dimensions.width,
+      height: dimensions.height,
+      defaultLeft: NODE_PADDING_X + node.x,
+      defaultTop: topByRow.get(node.row) ?? GRAPH_PADDING_TOP
     };
   });
 }
 
 export function renderNode(node: RevisionGraphNode, width: number, x: number): string {
-  const y = GRAPH_PADDING_TOP + node.row * ROW_HEIGHT;
+  const layout = buildNodeLayouts({
+    nodes: [node],
+    edges: [],
+    laneCount: Math.max(node.lane + 1, 1),
+    rowCount: Math.max(node.row + 1, 1)
+  })[0];
+  const y = layout.defaultTop;
   const nodeClass = getNodeClass(node);
   const height = getNodeHeight(node);
   const refLines = node.refs
@@ -88,9 +126,9 @@ export function renderEdge(
   }
   const path = describeEdgePath(
     sourceNode.defaultLeft + sourceNode.width / 2,
-    GRAPH_PADDING_TOP + sourceNode.row * ROW_HEIGHT + sourceNode.height - EDGE_VERTICAL_INSET,
+    sourceNode.defaultTop + sourceNode.height - EDGE_VERTICAL_INSET,
     targetNode.defaultLeft + targetNode.width / 2,
-    GRAPH_PADDING_TOP + targetNode.row * ROW_HEIGHT + EDGE_VERTICAL_INSET
+    targetNode.defaultTop + EDGE_VERTICAL_INSET
   );
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }

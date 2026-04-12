@@ -1,7 +1,5 @@
 import {
   EDGE_VERTICAL_INSET,
-  GRAPH_PADDING_TOP,
-  ROW_HEIGHT,
   VIEWPORT_PADDING_BOTTOM,
   VIEWPORT_PADDING_LEFT,
   VIEWPORT_PADDING_RIGHT,
@@ -635,7 +633,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (!layout) {
         return '';
       }
-      const y = ${GRAPH_PADDING_TOP} + node.row * ${ROW_HEIGHT};
+      const y = layout.defaultTop;
       const summary = node.refs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
         : '';
@@ -662,9 +660,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
       const path = describeEdgePath(
         sourceNode.defaultLeft + sourceNode.width / 2,
-        ${GRAPH_PADDING_TOP} + sourceNode.row * ${ROW_HEIGHT} + sourceNode.height - ${EDGE_VERTICAL_INSET},
+        sourceNode.defaultTop + sourceNode.height - ${EDGE_VERTICAL_INSET},
         targetNode.defaultLeft + targetNode.width / 2,
-        ${GRAPH_PADDING_TOP} + targetNode.row * ${ROW_HEIGHT} + ${EDGE_VERTICAL_INSET}
+        targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
       );
 
       return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
