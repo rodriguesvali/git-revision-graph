@@ -51,11 +51,46 @@ export function renderRevisionGraphStyles(): string {
       color: var(--text);
       border-radius: 8px;
       padding: 6px 10px;
+      transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease,
+        transform 80ms ease,
+        opacity 120ms ease;
     }
     button, select {
       cursor: pointer;
     }
-    button:disabled { opacity: 0.45; cursor: default; }
+    button:disabled,
+    select:disabled,
+    input:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    button:not(:disabled):hover,
+    select:not(:disabled):hover {
+      border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+      background: color-mix(in srgb, var(--panel-strong) 74%, var(--panel));
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    }
+    button:not(:disabled):active,
+    select:not(:disabled):active,
+    [data-pending="true"] {
+      transform: translateY(1px) scale(0.985);
+      border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+      background: color-mix(in srgb, var(--panel-strong) 86%, black 6%);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.22);
+    }
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
+      outline-offset: 2px;
+    }
+    [data-pending="true"] {
+      opacity: 0.7;
+      cursor: progress;
+    }
     input::placeholder {
       color: color-mix(in srgb, var(--muted) 88%, transparent);
     }

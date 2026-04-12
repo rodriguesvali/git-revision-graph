@@ -66,6 +66,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let searchQuery = '';
     let searchResultHashes = [];
     let activeSearchResultIndex = -1;
+    let toolbarBusy = false;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -83,7 +84,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         postMessageWithLoading({
           type: 'set-projection-options',
           options: { refScope: scopeSelect.value }
-        }, 'Updating graph scope...');
+        }, 'Updating graph scope...', scopeSelect);
       });
     }
     if (showTagsToggle) {
@@ -91,7 +92,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         postMessageWithLoading({
           type: 'set-projection-options',
           options: { showTags: showTagsToggle.checked }
-        }, showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...');
+        }, showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...', showTagsToggle);
       });
     }
     if (showBranchingsToggle) {
@@ -99,7 +100,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         postMessageWithLoading({
           type: 'set-projection-options',
           options: { showBranchingsAndMerges: showBranchingsToggle.checked }
-        }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...');
+        }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...', showBranchingsToggle);
       });
     }
     if (searchInput) {

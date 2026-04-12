@@ -96,13 +96,16 @@ export function renderRevisionGraphScriptInteractions(): string {
             : '0 results';
       }
       if (searchPrevButton) {
-        searchPrevButton.disabled = normalizedQuery.length === 0 || searchResultHashes.length < 2;
+        searchPrevButton.disabled = toolbarBusy || normalizedQuery.length === 0 || searchResultHashes.length < 2;
       }
       if (searchNextButton) {
-        searchNextButton.disabled = normalizedQuery.length === 0 || searchResultHashes.length < 2;
+        searchNextButton.disabled = toolbarBusy || normalizedQuery.length === 0 || searchResultHashes.length < 2;
       }
       if (searchClearButton) {
-        searchClearButton.disabled = normalizedQuery.length === 0;
+        searchClearButton.disabled = toolbarBusy || normalizedQuery.length === 0;
+      }
+      if (searchInput) {
+        searchInput.disabled = toolbarBusy;
       }
     }
 
@@ -326,28 +329,77 @@ export function renderRevisionGraphScriptInteractions(): string {
     function syncToolbarActions() {
       const canZoomIn = zoomLevels.some((value) => value > currentZoom);
       const canZoomOut = zoomLevels.some((value) => value < currentZoom);
+      if (scopeSelect) {
+        scopeSelect.disabled = toolbarBusy;
+      }
+      if (showTagsToggle) {
+        showTagsToggle.disabled = toolbarBusy;
+      }
+      if (showBranchingsToggle) {
+        showBranchingsToggle.disabled = toolbarBusy;
+      }
+      if (reorganizeButton) {
+        reorganizeButton.disabled = toolbarBusy;
+      }
       if (zoomInButton) {
-        zoomInButton.disabled = !canZoomIn;
+        zoomInButton.disabled = toolbarBusy || !canZoomIn;
       }
       if (zoomOutButton) {
-        zoomOutButton.disabled = !canZoomOut;
+        zoomOutButton.disabled = toolbarBusy || !canZoomOut;
       }
     }
 
-    function postMessageWithLoading(message, label) {
-      showLoading(label);
+    function setToolbarBusy(isBusy, pendingControl = null) {
+      toolbarBusy = isBusy;
+      const controls = [
+        scopeSelect,
+        showTagsToggle,
+        showBranchingsToggle,
+        searchInput,
+        searchPrevButton,
+        searchNextButton,
+        searchClearButton,
+        reorganizeButton,
+        zoomOutButton,
+        zoomInButton
+      ];
+      for (const control of controls) {
+        if (!control) {
+          continue;
+        }
+        if (!isBusy) {
+          control.removeAttribute('data-pending');
+          control.removeAttribute('aria-busy');
+        } else if (pendingControl === control) {
+          control.setAttribute('data-pending', 'true');
+          control.setAttribute('aria-busy', 'true');
+        } else {
+          control.removeAttribute('data-pending');
+          control.removeAttribute('aria-busy');
+        }
+      }
+      syncToolbarActions();
+      syncSearchUi();
+    }
+
+    function postMessageWithLoading(message, label, pendingControl = null) {
+      if (toolbarBusy) {
+        return;
+      }
+      showLoading(label, pendingControl);
       requestAnimationFrame(() => {
         vscode.postMessage(message);
       });
     }
 
-    function showLoading(label) {
+    function showLoading(label, pendingControl = null) {
       if (typeof label === 'string' && loadingMessage) {
         loadingMessage.textContent = label;
       }
       if (loadingOverlay) {
         loadingOverlay.setAttribute('aria-hidden', 'false');
       }
+      setToolbarBusy(true, pendingControl);
       document.body.classList.add('loading');
       document.body.setAttribute('aria-busy', 'true');
       closeContextMenu();
@@ -357,6 +409,7 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (loadingOverlay) {
         loadingOverlay.setAttribute('aria-hidden', 'true');
       }
+      setToolbarBusy(false);
       document.body.classList.remove('loading');
       document.body.removeAttribute('aria-busy');
     }

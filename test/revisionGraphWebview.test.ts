@@ -30,9 +30,11 @@ test('renders a persistent shell for the revision graph webview', () => {
 test('keeps loading and error primitives in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function showLoading\(label\)/);
+  assert.match(html, /function setToolbarBusy\(isBusy, pendingControl = null\)/);
+  assert.match(html, /function showLoading\(label, pendingControl = null\)/);
   assert.match(html, /function hideLoading\(\)/);
   assert.match(html, /function showError\(message\)/);
+  assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
 });
 
