@@ -1,20 +1,22 @@
 import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
-import { execGit } from '../../gitExec';
 import { Repository } from '../../git';
 import { RevisionLogEntry } from '../../revisionGraphTypes';
+import { RevisionGraphBackend } from '../backend';
 
 interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
   readonly entry: RevisionLogEntry;
 }
 
-export async function openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void> {
+export async function openUnifiedDiffDocument(
+  repository: Repository,
+  left: string,
+  right: string,
+  backend: RevisionGraphBackend
+): Promise<void> {
   try {
-    const stdout = await execGit(
-      repository.rootUri.fsPath,
-      ['diff', '--no-color', left, right]
-    );
+    const stdout = await backend.loadUnifiedDiff(repository, left, right);
 
     if (stdout.trim().length === 0) {
       void vscode.window.showInformationMessage(`No unified diff found between ${left.slice(0, 8)} and ${right.slice(0, 8)}.`);
@@ -34,12 +36,18 @@ export async function openUnifiedDiff(repository: Repository, left: string, righ
   }
 }
 
-export async function showRevisionLog(repository: Repository, left: string, right: string, limit: number): Promise<void> {
+export async function showRevisionLogQuickPick(
+  repository: Repository,
+  left: string,
+  right: string,
+  limit: number,
+  backend: RevisionGraphBackend
+): Promise<RevisionLogEntry | undefined> {
   try {
-    const entries = await loadRevisionLogEntries(repository.rootUri.fsPath, left, right, limit);
+    const entries = await backend.loadRevisionLog(repository, left, right, limit);
     if (entries.length === 0) {
       void vscode.window.showInformationMessage(`No commits found between ${left} and ${right}.`);
-      return;
+      return undefined;
     }
 
     const picked = await vscode.window.showQuickPick<RevisionLogQuickPickItem>(
@@ -58,21 +66,23 @@ export async function showRevisionLog(repository: Repository, left: string, righ
     );
 
     if (!picked) {
-      return;
+      return undefined;
     }
 
-    await openCommitLogEntry(repository, picked.entry.hash);
+    return picked.entry;
   } catch (error) {
     await vscode.window.showErrorMessage(toOperationError('Could not show the revision log.', error));
+    return undefined;
   }
 }
 
-async function openCommitLogEntry(repository: Repository, commitHash: string): Promise<void> {
+export async function openCommitDetails(
+  repository: Repository,
+  commitHash: string,
+  backend: RevisionGraphBackend
+): Promise<void> {
   try {
-    const stdout = await execGit(
-      repository.rootUri.fsPath,
-      ['show', '--stat', '--patch', '--format=fuller', '--no-color', commitHash]
-    );
+    const stdout = await backend.loadCommitDetails(repository, commitHash);
 
     const document = await vscode.workspace.openTextDocument({
       content: stdout,
@@ -85,39 +95,4 @@ async function openCommitLogEntry(repository: Repository, commitHash: string): P
   } catch (error) {
     await vscode.window.showErrorMessage(toOperationError('Could not open the selected commit.', error));
   }
-}
-
-async function loadRevisionLogEntries(
-  repositoryPath: string,
-  left: string,
-  right: string,
-  limit: number
-): Promise<RevisionLogEntry[]> {
-  const fieldSeparator = '\u001f';
-  const recordSeparator = '\u001e';
-  const stdout = await execGit(
-    repositoryPath,
-    [
-      'log',
-      '--date=short',
-      `--max-count=${limit}`,
-      `--pretty=format:%H${fieldSeparator}%h${fieldSeparator}%ad${fieldSeparator}%an${fieldSeparator}%s${recordSeparator}`,
-      `${left}..${right}`
-    ]
-  );
-
-  return stdout
-    .split(recordSeparator)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const [hash, shortHash, date, author, ...subjectParts] = line.split(fieldSeparator);
-      return {
-        hash,
-        shortHash,
-        date,
-        author,
-        subject: subjectParts.join(fieldSeparator)
-      };
-    });
 }

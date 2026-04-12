@@ -200,5 +200,13 @@ export function renderRevisionGraphScriptInteractions(): string {
       document.body.setAttribute('aria-busy', 'true');
       closeContextMenu();
     }
+
+    function hideLoading() {
+      if (loadingOverlay) {
+        loadingOverlay.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('loading');
+      document.body.removeAttribute('aria-busy');
+    }
   `;
 }

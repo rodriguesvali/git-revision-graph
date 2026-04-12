@@ -6,7 +6,10 @@ import {
   VIEWPORT_PADDING_TOP
 } from './shared';
 
-export function renderRevisionGraphStyles(width: number, height: number): string {
+const DEFAULT_CANVAS_WIDTH = 880;
+const DEFAULT_CANVAS_HEIGHT = 480;
+
+export function renderRevisionGraphStyles(): string {
   return `<style>
     :root {
       color-scheme: light dark;
@@ -66,9 +69,29 @@ export function renderRevisionGraphStyles(width: number, height: number): string
     body.node-dragging * {
       cursor: grabbing !important;
     }
-    .canvas { position: relative; width: ${width}px; height: ${height}px; transform-origin: top left; }
-    .scene-layer { position: absolute; width: ${width}px; height: ${height}px; transform-origin: top left; }
+    .canvas { position: relative; width: ${DEFAULT_CANVAS_WIDTH}px; height: ${DEFAULT_CANVAS_HEIGHT}px; transform-origin: top left; }
+    .scene-layer { position: absolute; width: ${DEFAULT_CANVAS_WIDTH}px; height: ${DEFAULT_CANVAS_HEIGHT}px; transform-origin: top left; }
     svg { position: absolute; inset: 0; overflow: visible; }
+    .node-layer { position: absolute; inset: 0; }
+    .status-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: min(420px, calc(100vw - 48px));
+      max-width: min(520px, calc(100vw - 48px));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+      color: var(--text);
+      z-index: 3;
+    }
+    .status-card[hidden] { display: none; }
+    .status-card.error {
+      border-color: color-mix(in srgb, #d62828 42%, var(--border));
+    }
     .node {
       position: absolute; min-width: ${NODE_MIN_WIDTH}px; border-radius: 10px;
       border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);

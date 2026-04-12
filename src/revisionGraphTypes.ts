@@ -1,4 +1,5 @@
-import { RevisionGraphProjectionOptions, RevisionGraphRef } from './revisionGraphData';
+import { RevisionGraphProjectionOptions, RevisionGraphRef, RevisionGraphScene } from './revisionGraphData';
+import { RevisionGraphNodeLayout } from './revisionGraph/webview/shared';
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 
@@ -16,6 +17,43 @@ export type RevisionGraphMessage =
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
+
+export interface RevisionGraphViewReference {
+  readonly id: string;
+  readonly hash: string;
+  readonly name: string;
+  readonly kind: RevisionGraphRef['kind'];
+  readonly title: string;
+}
+
+export interface RevisionGraphViewState {
+  readonly viewMode: 'ready' | 'empty';
+  readonly hasRepositories: boolean;
+  readonly repositoryPath: string | undefined;
+  readonly currentHeadName: string | undefined;
+  readonly currentHeadUpstreamName: string | undefined;
+  readonly isWorkspaceDirty: boolean;
+  readonly projectionOptions: RevisionGraphProjectionOptions;
+  readonly mergeBlockedTargets: readonly string[];
+  readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
+  readonly autoArrangeOnInit: boolean;
+  readonly scene: RevisionGraphScene;
+  readonly nodeLayouts: readonly RevisionGraphNodeLayout[];
+  readonly references: readonly RevisionGraphViewReference[];
+  readonly sceneLayoutKey: string;
+  readonly baseCanvasWidth: number;
+  readonly baseCanvasHeight: number;
+  readonly emptyMessage: string | undefined;
+  readonly loading: boolean;
+  readonly loadingLabel: string | undefined;
+  readonly errorMessage: string | undefined;
+}
+
+export type RevisionGraphViewHostMessage =
+  | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
+  | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }
+  | { readonly type: 'set-loading'; readonly label: string }
+  | { readonly type: 'set-error'; readonly message: string };
 
 export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProjectionOptions {
   return {

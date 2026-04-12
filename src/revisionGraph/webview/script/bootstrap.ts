@@ -1,42 +1,21 @@
+import {
+  EDGE_VERTICAL_INSET,
+  GRAPH_PADDING_TOP,
+  ROW_HEIGHT
+} from '../shared';
 import { RenderRevisionGraphScriptOptions } from './types';
 
-export function renderRevisionGraphScriptBootstrap({
-  references,
-  currentHeadName,
-  currentHeadUpstreamName,
-  isWorkspaceDirty,
-  projectionOptions,
-  autoArrangeOnInit,
-  mergeBlockedTargets,
-  zoomLevels,
-  graphNodes,
-  graphEdges,
-  primaryAncestorPathsByHash,
-  sceneLayoutKey,
-  baseCanvasWidth,
-  baseCanvasHeight
-}: RenderRevisionGraphScriptOptions): string {
+export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraphScriptOptions): string {
   return `
     const vscode = acquireVsCodeApi();
-    const references = ${JSON.stringify(references)};
-    const currentHeadName = ${JSON.stringify(currentHeadName ?? null)};
-    const currentHeadUpstreamName = ${JSON.stringify(currentHeadUpstreamName ?? null)};
-    const isWorkspaceDirty = ${JSON.stringify(isWorkspaceDirty)};
-    const currentProjectionOptions = ${JSON.stringify(projectionOptions)};
-    const autoArrangeOnInit = ${JSON.stringify(autoArrangeOnInit)};
-    const mergeBlockedTargets = new Set(${JSON.stringify(mergeBlockedTargets)});
-    const zoomLevels = ${JSON.stringify(zoomLevels)};
-    const graphNodes = ${JSON.stringify(graphNodes)};
-    const graphEdges = ${JSON.stringify(graphEdges)};
-    const selected = [];
-    const headReference =
-      references.find((ref) => ref.kind === 'head') ||
-      references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
-      null;
-    const headNodeHash = headReference ? headReference.hash : null;
+    const zoomLevels = [0.6, 0.8, 1, 1.25, 1.5];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
+    const graphSvg = document.getElementById('graphSvg');
+    const edgeLayer = document.getElementById('edgeLayer');
+    const nodeLayer = document.getElementById('nodeLayer');
+    const statusCard = document.getElementById('statusCard');
     const contextMenu = document.getElementById('contextMenu');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
@@ -47,89 +26,44 @@ export function renderRevisionGraphScriptBootstrap({
     const reorganizeButton = document.getElementById('reorganizeButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomInButton = document.getElementById('zoomInButton');
-    const nodeElements = new Map(
-      Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
-    );
-    const edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
-    const graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
-    const parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
-    const childMap = buildDirectionalMap(graphEdges, 'to', 'from');
-    const headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
-    const primaryAncestorPathsByHash = ${JSON.stringify(primaryAncestorPathsByHash)};
-    const sceneLayoutKey = ${JSON.stringify(sceneLayoutKey)};
-    const storedState = vscode.getState() || {};
-    const nodeOffsets = storedState.sceneLayoutKey === sceneLayoutKey
-      ? Object.assign({}, storedState.nodeOffsets || {})
-      : {};
-    const baseCanvasWidth = ${baseCanvasWidth};
-    const baseCanvasHeight = ${baseCanvasHeight};
+    let currentState = null;
+    let references = [];
+    let currentHeadName = null;
+    let currentHeadUpstreamName = null;
+    let isWorkspaceDirty = false;
+    let currentProjectionOptions = { refScope: 'all', showTags: true, showBranchingsAndMerges: false };
+    let mergeBlockedTargets = new Set();
+    let graphNodes = [];
+    let graphEdges = [];
+    let selected = [];
+    let headNodeHash = null;
+    let nodeElements = new Map();
+    let edgeElements = [];
+    let graphNodeByHash = new Map();
+    let parentMap = new Map();
+    let childMap = new Map();
+    let headDistanceByHash = new Map();
+    let primaryAncestorPathsByHash = {};
+    let sceneLayoutKey = 'empty';
+    let baseCanvasWidth = 880;
+    let baseCanvasHeight = 480;
     let currentZoom = 1;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;
     let dragState = null;
     let nodeDragState = null;
     let suppressNodeClick = false;
-    for (const element of document.querySelectorAll('[data-ref-id]')) {
-      element.addEventListener('click', (event) => {
-        if (suppressNodeClick) {
-          suppressNodeClick = false;
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        const refId = element.getAttribute('data-ref-id');
-        const additive = event.ctrlKey || event.metaKey;
-        if (!refId) return;
-        const existingIndex = selected.indexOf(refId);
-        if (!additive && selected.length === 1 && existingIndex === 0) {
-          selected.splice(0, selected.length);
-        } else if (!additive) {
-          selected.splice(0, selected.length, refId);
-        } else if (existingIndex >= 0) {
-          selected.splice(existingIndex, 1);
-        } else if (selected.length < 2) {
-          selected.push(refId);
-        } else {
-          selected.splice(0, selected.length, selected[1], refId);
-        }
-        closeContextMenu();
-        syncSelection();
-      });
-      element.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        const refId = element.getAttribute('data-ref-id');
-        if (!refId) return;
-        const target = getReference(refId);
-        if (!target) return;
-        openContextMenu(event.clientX, event.clientY, target);
-      });
-    }
-    for (const grip of document.querySelectorAll('[data-node-grip]')) {
-      grip.addEventListener('mousedown', (event) => {
-        if (event.button !== 0) {
-          return;
-        }
-        const node = grip.closest('[data-node-hash]');
-        const hash = node ? node.getAttribute('data-node-hash') : undefined;
-        if (!node || !hash) {
-          return;
-        }
-        nodeDragState = {
-          hash,
-          element: node,
-          startX: event.clientX,
-          startOffset: Number(nodeOffsets[hash] || 0)
-        };
-        document.body.classList.add('node-dragging');
-        node.classList.add('dragging');
-        closeContextMenu();
-        event.preventDefault();
-        event.stopPropagation();
-      });
-    }
-    if (workspaceLed && isWorkspaceDirty) {
+    let nodeOffsets = {};
+
+    window.addEventListener('message', (event) => {
+      handleHostMessage(event.data);
+    });
+
+    if (workspaceLed) {
       workspaceLed.addEventListener('click', () => {
-        vscode.postMessage({ type: 'open-source-control' });
+        if (isWorkspaceDirty) {
+          vscode.postMessage({ type: 'open-source-control' });
+        }
       });
     }
     if (scopeSelect) {
@@ -271,14 +205,344 @@ export function renderRevisionGraphScriptBootstrap({
         }
       }
     });
+
     setZoom(1);
-    applyNodeLayout(false);
-    syncSelection();
-    requestAnimationFrame(() => {
-      if (autoArrangeOnInit) {
-        autoArrangeLayout();
+    syncCanvasSize();
+    updateScenePlacement();
+    syncToolbarActions();
+
+    function handleHostMessage(message) {
+      if (!message || typeof message.type !== 'string') {
+        return;
       }
-      centerGraphInViewport();
-    });
+
+      switch (message.type) {
+        case 'init-state':
+          applyState(message.state, true);
+          return;
+        case 'update-state':
+          applyState(message.state, false);
+          return;
+        case 'set-loading':
+          showLoading(message.label);
+          return;
+        case 'set-error':
+          showError(message.message);
+          return;
+      }
+    }
+
+    function applyState(nextState, isInit) {
+      if (!nextState) {
+        return;
+      }
+
+      const previousSceneLayoutKey = sceneLayoutKey;
+      currentState = nextState;
+      currentHeadName = nextState.currentHeadName || null;
+      currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
+      isWorkspaceDirty = !!nextState.isWorkspaceDirty;
+      currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
+      mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
+      references = nextState.references || [];
+      graphNodes = nextState.nodeLayouts || [];
+      graphEdges = (nextState.scene && nextState.scene.edges) || [];
+      graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      primaryAncestorPathsByHash = nextState.primaryAncestorPathsByHash || {};
+      sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
+      baseCanvasWidth = nextState.baseCanvasWidth || 880;
+      baseCanvasHeight = nextState.baseCanvasHeight || 480;
+
+      const storedState = vscode.getState() || {};
+      if (previousSceneLayoutKey !== sceneLayoutKey) {
+        nodeOffsets = storedState.sceneLayoutKey === sceneLayoutKey
+          ? Object.assign({}, storedState.nodeOffsets || {})
+          : {};
+      }
+
+      const availableReferenceIds = new Set(references.map((ref) => ref.id));
+      selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
+
+      updateChrome(nextState);
+      renderScene(nextState);
+      hideLoading();
+      if (nextState.errorMessage) {
+        showError(nextState.errorMessage);
+      } else if (nextState.viewMode === 'empty') {
+        showStatus(nextState.emptyMessage || 'No revision graph available.', false);
+      } else {
+        hideStatus();
+      }
+
+      const shouldRecenter = isInit || previousSceneLayoutKey !== sceneLayoutKey;
+      applyNodeLayout(false);
+      syncSelection();
+      requestAnimationFrame(() => {
+        if (nextState.autoArrangeOnInit) {
+          autoArrangeLayout();
+        } else if (shouldRecenter) {
+          centerGraphInViewport();
+        }
+      });
+    }
+
+    function updateChrome(state) {
+      if (scopeSelect) {
+        scopeSelect.value = state.projectionOptions.refScope;
+      }
+      if (showTagsToggle) {
+        showTagsToggle.checked = !!state.projectionOptions.showTags;
+      }
+      if (showBranchingsToggle) {
+        showBranchingsToggle.checked = !!state.projectionOptions.showBranchingsAndMerges;
+      }
+      if (workspaceLed) {
+        const tooltip = state.isWorkspaceDirty
+          ? 'Workspace dirty: click to open Source Control Changes.'
+          : 'Workspace clean: no pending changes.';
+        workspaceLed.classList.toggle('dirty', !!state.isWorkspaceDirty);
+        workspaceLed.classList.toggle('clean', !state.isWorkspaceDirty);
+        workspaceLed.disabled = !state.isWorkspaceDirty;
+        workspaceLed.setAttribute('aria-label', tooltip);
+        workspaceLed.title = tooltip;
+      }
+    }
+
+    function renderScene(state) {
+      canvas.style.width = baseCanvasWidth + 'px';
+      canvas.style.height = baseCanvasHeight + 'px';
+      sceneLayer.style.width = baseCanvasWidth + 'px';
+      sceneLayer.style.height = baseCanvasHeight + 'px';
+      graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
+
+      if (state.viewMode !== 'ready') {
+        edgeLayer.innerHTML = '';
+        nodeLayer.innerHTML = '';
+        refreshGraphCaches();
+        syncCanvasSize();
+        updateScenePlacement();
+        return;
+      }
+
+      const sceneNodes = (state.scene && state.scene.nodes) || [];
+      const nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      edgeLayer.innerHTML = graphEdges
+        .map((edge) => renderEdgeMarkup(edge, nodeByHash))
+        .join('');
+      nodeLayer.innerHTML = sceneNodes
+        .map((node) => renderNodeMarkup(node, nodeByHash.get(node.hash)))
+        .join('');
+
+      refreshGraphCaches();
+      bindSceneEventHandlers();
+      syncCanvasSize();
+      updateScenePlacement();
+    }
+
+    function refreshGraphCaches() {
+      nodeElements = new Map(
+        Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
+      );
+      edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
+      const headReference =
+        references.find((ref) => ref.kind === 'head') ||
+        references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
+        null;
+      headNodeHash = headReference ? headReference.hash : null;
+      parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
+      childMap = buildDirectionalMap(graphEdges, 'to', 'from');
+      headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
+    }
+
+    function bindSceneEventHandlers() {
+      for (const element of document.querySelectorAll('[data-ref-id]')) {
+        element.addEventListener('click', (event) => {
+          if (suppressNodeClick) {
+            suppressNodeClick = false;
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+          }
+          const refId = element.getAttribute('data-ref-id');
+          const additive = event.ctrlKey || event.metaKey;
+          if (!refId) {
+            return;
+          }
+          const existingIndex = selected.indexOf(refId);
+          if (!additive && selected.length === 1 && existingIndex === 0) {
+            selected.splice(0, selected.length);
+          } else if (!additive) {
+            selected.splice(0, selected.length, refId);
+          } else if (existingIndex >= 0) {
+            selected.splice(existingIndex, 1);
+          } else if (selected.length < 2) {
+            selected.push(refId);
+          } else {
+            selected.splice(0, selected.length, selected[1], refId);
+          }
+          closeContextMenu();
+          syncSelection();
+        });
+        element.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          const refId = element.getAttribute('data-ref-id');
+          if (!refId) {
+            return;
+          }
+          const target = getReference(refId);
+          if (!target) {
+            return;
+          }
+          openContextMenu(event.clientX, event.clientY, target);
+        });
+      }
+
+      for (const grip of document.querySelectorAll('[data-node-grip]')) {
+        grip.addEventListener('mousedown', (event) => {
+          if (event.button !== 0) {
+            return;
+          }
+          const node = grip.closest('[data-node-hash]');
+          const hash = node ? node.getAttribute('data-node-hash') : undefined;
+          if (!node || !hash) {
+            return;
+          }
+          nodeDragState = {
+            hash,
+            element: node,
+            startX: event.clientX,
+            startOffset: Number(nodeOffsets[hash] || 0)
+          };
+          document.body.classList.add('node-dragging');
+          node.classList.add('dragging');
+          closeContextMenu();
+          event.preventDefault();
+          event.stopPropagation();
+        });
+      }
+    }
+
+    function renderNodeMarkup(node, layout) {
+      if (!layout) {
+        return '';
+      }
+      const y = ${GRAPH_PADDING_TOP} + node.row * ${ROW_HEIGHT};
+      const summary = node.refs.length === 0
+        ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
+        : '';
+      const refLines = node.refs
+        .map((ref) => {
+          const refId = createReferenceId(node.hash, ref.kind, ref.name);
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.name) + '<span class="base-suffix"> (Base)</span></div>';
+        })
+        .join('');
+
+      return '<div class="node ' + getNodeClass(node) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node)) + '">' +
+        '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
+        refLines +
+        summary +
+      '</div>';
+    }
+
+    function renderEdgeMarkup(edge, layoutByHash) {
+      const sourceNode = layoutByHash.get(edge.from);
+      const targetNode = layoutByHash.get(edge.to);
+      if (!sourceNode || !targetNode) {
+        return '';
+      }
+
+      const path = describeEdgePath(
+        sourceNode.defaultLeft + sourceNode.width / 2,
+        ${GRAPH_PADDING_TOP} + sourceNode.row * ${ROW_HEIGHT} + sourceNode.height - ${EDGE_VERTICAL_INSET},
+        targetNode.defaultLeft + targetNode.width / 2,
+        ${GRAPH_PADDING_TOP} + targetNode.row * ${ROW_HEIGHT} + ${EDGE_VERTICAL_INSET}
+      );
+
+      return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
+    }
+
+    function getNodeClass(node) {
+      if (node.refs.length === 0) {
+        return 'node-structural';
+      }
+
+      const kinds = new Set(node.refs.map((ref) => ref.kind));
+      if (kinds.size === 1 && kinds.has('head')) {
+        return 'node-head';
+      }
+      if (kinds.size === 1 && kinds.has('tag')) {
+        return 'node-tag';
+      }
+      if (kinds.size === 1 && kinds.has('remote')) {
+        return 'node-remote';
+      }
+      if (kinds.size === 1 && kinds.has('branch')) {
+        return 'node-branch';
+      }
+      return 'node-mixed';
+    }
+
+    function formatNodeSummary(node) {
+      const shortHash = node.hash.slice(0, 8);
+      return node.subject ? shortHash + ' ' + node.subject : shortHash;
+    }
+
+    function formatNodeTitle(node) {
+      const refBlock = node.refs.length > 0
+        ? 'Refs:\\n' + node.refs.map((ref) => ref.name).join('\\n') + '\\n\\n'
+        : '';
+      const author = node.author || 'Unknown author';
+      const date = node.date || 'Unknown date';
+      const subject = node.subject || 'Structural commit';
+      return refBlock + node.hash + '\\n' + subject + '\\n' + author + ' on ' + date;
+    }
+
+    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
+      const verticalSpan = Math.max(36, (targetY - sourceY) * 0.42);
+      const horizontalBias = Math.min(140, Math.max(28, Math.abs(targetX - sourceX) * 0.28));
+      const controlY1 = sourceY + verticalSpan;
+      const controlY2 = targetY - verticalSpan;
+      const controlX1 = targetX >= sourceX ? sourceX + horizontalBias : sourceX - horizontalBias;
+      const controlX2 = targetX >= sourceX ? targetX - horizontalBias : targetX + horizontalBias;
+      return 'M ' + sourceX + ' ' + sourceY + ' C ' + controlX1 + ' ' + controlY1 + ', ' + controlX2 + ' ' + controlY2 + ', ' + targetX + ' ' + targetY;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function createReferenceId(hash, kind, name) {
+      return hash + '::' + kind + '::' + name;
+    }
+
+    function showStatus(message, isError) {
+      if (!statusCard) {
+        return;
+      }
+      statusCard.textContent = message;
+      statusCard.hidden = false;
+      statusCard.classList.toggle('error', !!isError);
+    }
+
+    function hideStatus() {
+      if (!statusCard) {
+        return;
+      }
+      statusCard.hidden = true;
+      statusCard.classList.remove('error');
+      statusCard.textContent = '';
+    }
+
+    function showError(message) {
+      hideLoading();
+      edgeLayer.innerHTML = '';
+      nodeLayer.innerHTML = '';
+      refreshGraphCaches();
+      showStatus(message, true);
+    }
   `;
 }

@@ -7,6 +7,7 @@ import {
   parseDecorationRefs,
   parseRevisionGraphLog
 } from '../src/revisionGraphData';
+import { getMergeBlockedTargetsFromGraph } from '../src/revisionGraph/backend';
 import { buildCommitGraph, buildCommitGraphWithSimplification } from '../src/revisionGraph/model/commitGraph';
 import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGraph/model/commitGraphQueries';
 import {
@@ -249,6 +250,23 @@ test('can find commits by ref and collect their ancestor hashes from the full DA
 
   assert.deepEqual(startHashes, ['s1']);
   assert.deepEqual([...ancestorHashes], ['s1', 'b1']);
+});
+
+test('marks visible refs as merge-blocked when their tips are already in the HEAD ancestry', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['main1'], author: 'Ada', date: '2026-04-08', subject: 'HEAD', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'main1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Main line', refs: [{ name: 'release/1.x', kind: 'branch' }] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Topic line', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const blocked = getMergeBlockedTargetsFromGraph(graph, 'main', [
+    { kind: 'branch', name: 'release/1.x' },
+    { kind: 'remote', name: 'origin/topic/demo' },
+    { kind: 'tag', name: 'v1.0.0' }
+  ]);
+
+  assert.deepEqual(blocked, ['branch::release/1.x', 'tag::v1.0.0']);
 });
 
 test('can scope the projection to the current branch ancestry', () => {
