@@ -1,10 +1,15 @@
-import { Repository } from '../../git';
+import { Ref, RefType, Repository } from '../../git';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../backend';
 import {
   buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
-  projectDecoratedCommitGraph
+  CommitGraph,
+  projectDecoratedCommitGraph,
+  RevisionGraphRef,
+  RevisionGraphScene
 } from '../../revisionGraphData';
+import { findCommitHashesByRef } from '../model/commitGraphQueries';
+import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import {
   RevisionGraphViewReference,
   RevisionGraphViewState
@@ -19,6 +24,36 @@ import {
 } from '../webview/shared';
 import { formatUpstreamLabel, hasWorkspaceChanges } from '../../gitState';
 
+export interface ReadyRevisionGraphViewStateBundle {
+  readonly snapshot: RevisionGraphSnapshot;
+  readonly state: RevisionGraphViewState;
+}
+
+export async function buildReadyRevisionGraphViewStateBundle(
+  repository: Repository,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  autoArrangeOnInit: boolean,
+  backend: RevisionGraphBackend,
+  limitPolicy: RevisionGraphLimitPolicy,
+  signal?: AbortSignal
+): Promise<ReadyRevisionGraphViewStateBundle> {
+  throwIfAborted(signal);
+  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal);
+  const state = await buildReadyRevisionGraphViewStateFromSnapshot(
+    repository,
+    projectionOptions,
+    autoArrangeOnInit,
+    backend,
+    snapshot,
+    signal
+  );
+
+  return {
+    snapshot,
+    state
+  };
+}
+
 export async function buildReadyRevisionGraphViewState(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
@@ -27,64 +62,77 @@ export async function buildReadyRevisionGraphViewState(
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal
 ): Promise<RevisionGraphViewState> {
-  throwIfAborted(signal);
-  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal);
-  throwIfAborted(signal);
+  return (
+    await buildReadyRevisionGraphViewStateBundle(
+      repository,
+      projectionOptions,
+      autoArrangeOnInit,
+      backend,
+      limitPolicy,
+      signal
+    )
+  ).state;
+}
+
+export async function buildReadyRevisionGraphViewStateFromSnapshot(
+  repository: Repository,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  autoArrangeOnInit: boolean,
+  backend: RevisionGraphBackend,
+  snapshot: RevisionGraphSnapshot,
+  signal?: AbortSignal
+): Promise<RevisionGraphViewState> {
   const projection = projectDecoratedCommitGraph(snapshot.graph, projectionOptions);
   const scene = await buildRevisionGraphScene(snapshot.graph, projection);
-  throwIfAborted(signal);
-  const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
-  const nodeLayouts = buildNodeLayouts(scene);
-  const references = scene.nodes.flatMap((node) =>
-    node.refs.map<RevisionGraphViewReference>((ref) => ({
-      id: createReferenceId(node.hash, ref.kind, ref.name),
-      hash: node.hash,
-      name: ref.name,
-      kind: ref.kind,
-      title: ref.name
-    }))
-  );
-  const mergeBlockedTargets = await backend.getMergeBlockedTargets(
+  return buildReadyRevisionGraphViewStateFromParts(
     repository,
+    projectionOptions,
+    autoArrangeOnInit,
+    backend,
     snapshot,
-    repository.state.HEAD?.name,
-    references,
+    scene,
+    buildPrimaryAncestorPaths(snapshot.graph, scene),
     signal
   );
-  throwIfAborted(signal);
-  const baseCanvasWidth = Math.max(
-    880,
-    nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
-  );
-  const baseCanvasHeight = Math.max(
-    480,
-    scene.rowCount * ROW_HEIGHT + GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM
-  );
+}
 
-  return {
-    viewMode: 'ready',
-    hasRepositories: true,
-    repositoryPath: repository.rootUri.fsPath,
-    currentHeadName: repository.state.HEAD?.name,
-    currentHeadUpstreamName: repository.state.HEAD?.upstream
-      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
-      : undefined,
-    isWorkspaceDirty: hasWorkspaceChanges(repository),
-    projectionOptions,
-    mergeBlockedTargets,
-    primaryAncestorPathsByHash: primaryAncestorPaths,
-    autoArrangeOnInit,
-    scene,
-    nodeLayouts,
-    references,
-    sceneLayoutKey: scene.nodes.map((node) => `${node.hash}:${node.row}:${Math.round(node.x)}`).join('|'),
-    baseCanvasWidth,
-    baseCanvasHeight,
-    emptyMessage: undefined,
-    loading: false,
-    loadingLabel: undefined,
-    errorMessage: undefined
-  };
+export async function buildMetadataPatchedRevisionGraphViewState(
+  previousState: RevisionGraphViewState,
+  repository: Repository,
+  backend: RevisionGraphBackend,
+  snapshot: RevisionGraphSnapshot,
+  signal?: AbortSignal
+): Promise<RevisionGraphViewState | undefined> {
+  throwIfAborted(signal);
+  if (
+    previousState.viewMode !== 'ready' ||
+    previousState.repositoryPath !== repository.rootUri.fsPath
+  ) {
+    return undefined;
+  }
+
+  const patchedScene = patchSceneReferences(
+    previousState.scene,
+    snapshot.graph,
+    repository.state.refs,
+    repository.state.HEAD?.commit,
+    repository.state.HEAD?.name,
+    previousState.projectionOptions
+  );
+  if (!patchedScene) {
+    return undefined;
+  }
+
+  return buildReadyRevisionGraphViewStateFromParts(
+    repository,
+    previousState.projectionOptions,
+    false,
+    backend,
+    snapshot,
+    patchedScene,
+    previousState.primaryAncestorPathsByHash,
+    signal
+  );
 }
 
 function throwIfAborted(signal: AbortSignal | undefined): void {
@@ -128,4 +176,222 @@ export function buildEmptyRevisionGraphViewState(
     loadingLabel: undefined,
     errorMessage: undefined
   };
+}
+
+async function buildReadyRevisionGraphViewStateFromParts(
+  repository: Repository,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  autoArrangeOnInit: boolean,
+  backend: RevisionGraphBackend,
+  snapshot: RevisionGraphSnapshot,
+  scene: RevisionGraphScene,
+  primaryAncestorPaths: RevisionGraphViewState['primaryAncestorPathsByHash'],
+  signal?: AbortSignal
+): Promise<RevisionGraphViewState> {
+  throwIfAborted(signal);
+  const nodeLayouts = buildNodeLayouts(scene);
+  const references = buildViewReferences(scene);
+  const mergeBlockedTargets = await backend.getMergeBlockedTargets(
+    repository,
+    snapshot,
+    repository.state.HEAD?.name,
+    references,
+    signal
+  );
+  throwIfAborted(signal);
+  const baseCanvasWidth = Math.max(
+    880,
+    nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
+  );
+  const baseCanvasHeight = Math.max(
+    480,
+    scene.rowCount * ROW_HEIGHT + GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM
+  );
+
+  return {
+    viewMode: 'ready',
+    hasRepositories: true,
+    repositoryPath: repository.rootUri.fsPath,
+    currentHeadName: repository.state.HEAD?.name,
+    currentHeadUpstreamName: repository.state.HEAD?.upstream
+      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
+      : undefined,
+    isWorkspaceDirty: hasWorkspaceChanges(repository),
+    projectionOptions,
+    mergeBlockedTargets,
+    primaryAncestorPathsByHash: primaryAncestorPaths,
+    autoArrangeOnInit,
+    scene,
+    nodeLayouts,
+    references,
+    sceneLayoutKey: scene.nodes.map((node) => `${node.hash}:${node.row}:${Math.round(node.x)}`).join('|'),
+    baseCanvasWidth,
+    baseCanvasHeight,
+    emptyMessage: undefined,
+    loading: false,
+    loadingLabel: undefined,
+    errorMessage: undefined
+  };
+}
+
+function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewReference[] {
+  return scene.nodes.flatMap((node) =>
+    node.refs.map<RevisionGraphViewReference>((ref) => ({
+      id: createReferenceId(node.hash, ref.kind, ref.name),
+      hash: node.hash,
+      name: ref.name,
+      kind: ref.kind,
+      title: ref.name
+    }))
+  );
+}
+
+function patchSceneReferences(
+  scene: RevisionGraphScene,
+  graph: CommitGraph,
+  repositoryRefs: readonly Ref[],
+  currentHeadCommit: string | undefined,
+  currentHeadName: string | undefined,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): RevisionGraphScene | undefined {
+  const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
+  const refsByHash = new Map<string, RevisionGraphRef[]>();
+
+  for (const ref of repositoryRefs) {
+    const normalizedRef = normalizeRepositoryRef(ref, projectionOptions);
+    if (!normalizedRef) {
+      continue;
+    }
+
+    const hash = resolveVisibleRefHash(graph, visibleHashes, normalizedRef.name, normalizedRef.kind, ref.commit);
+    if (!hash) {
+      continue;
+    }
+
+    pushRef(refsByHash, hash, normalizedRef);
+  }
+
+  if (currentHeadName) {
+    const headHash = resolveVisibleHeadHash(graph, visibleHashes, currentHeadName, currentHeadCommit);
+    if (!headHash) {
+      return undefined;
+    }
+
+    pushRef(refsByHash, headHash, { name: currentHeadName, kind: 'head' });
+  }
+
+  return {
+    ...scene,
+    nodes: scene.nodes.map((node) => ({
+      ...node,
+      refs: sortRevisionGraphRefs(refsByHash.get(node.hash) ?? [])
+    }))
+  };
+}
+
+function resolveVisibleHeadHash(
+  graph: CommitGraph,
+  visibleHashes: ReadonlySet<string>,
+  currentHeadName: string,
+  currentHeadCommit: string | undefined
+): string | undefined {
+  return (
+    (currentHeadCommit && visibleHashes.has(currentHeadCommit) ? currentHeadCommit : undefined) ??
+    findFirstVisibleHash(findCommitHashesByRef(graph, currentHeadName, 'branch'), visibleHashes) ??
+    findFirstVisibleHash(findCommitHashesByRef(graph, currentHeadName, 'head'), visibleHashes)
+  );
+}
+
+function resolveVisibleRefHash(
+  graph: CommitGraph,
+  visibleHashes: ReadonlySet<string>,
+  refName: string,
+  refKind: RevisionGraphRef['kind'],
+  explicitCommit: string | undefined
+): string | undefined {
+  if (explicitCommit && visibleHashes.has(explicitCommit)) {
+    return explicitCommit;
+  }
+
+  const candidateKinds: RevisionGraphRef['kind'][] = refKind === 'branch'
+    ? ['branch', 'head']
+    : [refKind];
+
+  for (const candidateKind of candidateKinds) {
+    const visibleHash = findFirstVisibleHash(
+      findCommitHashesByRef(graph, refName, candidateKind),
+      visibleHashes
+    );
+    if (visibleHash) {
+      return visibleHash;
+    }
+  }
+
+  return undefined;
+}
+
+function findFirstVisibleHash(
+  hashes: readonly string[],
+  visibleHashes: ReadonlySet<string>
+): string | undefined {
+  return hashes.find((hash) => visibleHashes.has(hash));
+}
+
+function normalizeRepositoryRef(
+  ref: Ref,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): RevisionGraphRef | undefined {
+  const name = getNormalizedRefName(ref);
+  if (!name) {
+    return undefined;
+  }
+
+  switch (ref.type) {
+    case RefType.Head:
+      return { name, kind: 'branch' };
+    case RefType.RemoteHead:
+      return { name, kind: 'remote' };
+    case RefType.Tag:
+      return projectionOptions.showTags ? { name, kind: 'tag' } : undefined;
+  }
+}
+
+function getNormalizedRefName(ref: Ref): string {
+  if (ref.type === RefType.RemoteHead && ref.remote && ref.name) {
+    return ref.name.startsWith(`${ref.remote}/`) ? ref.name : `${ref.remote}/${ref.name}`;
+  }
+
+  return ref.name ?? '';
+}
+
+function pushRef(
+  refsByHash: Map<string, RevisionGraphRef[]>,
+  hash: string,
+  ref: RevisionGraphRef
+): void {
+  const existing = refsByHash.get(hash) ?? [];
+  if (!existing.some((entry) => entry.name === ref.name && entry.kind === ref.kind)) {
+    existing.push(ref);
+    refsByHash.set(hash, existing);
+  }
+}
+
+function sortRevisionGraphRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {
+  return [...refs].sort((left, right) => {
+    const priority = getRevisionGraphRefPriority(left.kind) - getRevisionGraphRefPriority(right.kind);
+    return priority !== 0 ? priority : left.name.localeCompare(right.name);
+  });
+}
+
+function getRevisionGraphRefPriority(kind: RevisionGraphRef['kind']): number {
+  switch (kind) {
+    case 'head':
+      return 0;
+    case 'tag':
+      return 1;
+    case 'branch':
+      return 2;
+    case 'remote':
+      return 3;
+  }
 }

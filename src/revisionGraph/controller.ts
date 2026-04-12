@@ -20,8 +20,13 @@ import { createWorkbenchRefActionServices } from '../workbenchRefActionServices'
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openCommitDetails, openUnifiedDiffDocument, showRevisionLogQuickPick } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
-import { buildEmptyRevisionGraphViewState, buildReadyRevisionGraphViewState } from './panel/state';
+import {
+  buildEmptyRevisionGraphViewState,
+  buildMetadataPatchedRevisionGraphViewState,
+  buildReadyRevisionGraphViewStateBundle
+} from './panel/state';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
+import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   createDefaultRevisionGraphProjectionOptions,
   RevisionGraphMessage,
@@ -76,6 +81,13 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   );
   private currentState: RevisionGraphViewState;
+  private currentSnapshot:
+    | {
+      readonly repositoryPath: string;
+      readonly snapshot: RevisionGraphSnapshot;
+    }
+    | undefined;
+  private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
 
   constructor(
     private readonly git: API,
@@ -171,6 +183,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const request = normalizeRefreshRequest(requestLike);
+    this.latestRefreshIntent = request.intent;
     registerPendingFollowUpRefresh(this.pendingFollowUpRefreshes, request);
 
     await this.renderCoordinator.schedule(
@@ -300,7 +313,26 @@ export class RevisionGraphController implements vscode.Disposable {
       return buildEmptyRevisionGraphViewState(this.git.repositories.length > 0, this.projectionOptions);
     }
 
-    const state = await buildReadyRevisionGraphViewState(
+    const currentSnapshot = this.currentSnapshot;
+    const canPatchMetadata =
+      this.latestRefreshIntent === 'metadata-patch' &&
+      this.currentState.viewMode === 'ready' &&
+      currentSnapshot?.repositoryPath === this.currentRepository.rootUri.fsPath;
+
+    if (canPatchMetadata) {
+      const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+        this.currentState,
+        this.currentRepository,
+        this.backend,
+        currentSnapshot.snapshot,
+        signal
+      );
+      if (patchedState) {
+        return patchedState;
+      }
+    }
+
+    const bundle = await buildReadyRevisionGraphViewStateBundle(
       this.currentRepository,
       this.projectionOptions,
       this.autoArrangeOnNextRender,
@@ -311,9 +343,13 @@ export class RevisionGraphController implements vscode.Disposable {
 
     if (requestId === this.renderCoordinator.getCurrentRequestId()) {
       this.autoArrangeOnNextRender = false;
+      this.currentSnapshot = {
+        repositoryPath: this.currentRepository.rootUri.fsPath,
+        snapshot: bundle.snapshot
+      };
     }
 
-    return state;
+    return bundle.state;
   }
 
   private attachToRepositories(repositories: readonly Repository[]): void {
@@ -369,6 +405,7 @@ export class RevisionGraphController implements vscode.Disposable {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
       this.autoArrangeOnNextRender = true;
+      this.currentSnapshot = undefined;
     }
 
     this.currentRepository = repository;
