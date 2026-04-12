@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
+import { RevisionGraphRefreshIntent } from '../src/revisionGraphRefresh';
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference, RefCommandServices } from '../src/refCommands';
 import { createApi, createChange, createHead, createRef, createRepository } from './fakes';
 
@@ -11,11 +12,12 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   readonly errorMessages: string[];
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly refreshCalls: number;
+  readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
 } {
   const infoMessages: string[] = [];
   const errorMessages: string[] = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
-  const counter = { refreshCalls: 0 };
+  const refreshIntents: RevisionGraphRefreshIntent[] = [];
 
   const services: RefCommandServices = {
     ui: {
@@ -57,8 +59,8 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       }
     },
     refreshController: {
-      refresh() {
-        counter.refreshCalls += 1;
+      refresh(intent) {
+        refreshIntents.push(intent ?? 'full-rebuild');
       }
     },
     referenceManager: {
@@ -80,8 +82,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     infoMessages,
     errorMessages,
     diffCalls,
+    refreshIntents,
     get refreshCalls() {
-      return counter.refreshCalls;
+      return refreshIntents.length;
     }
   };
 }
@@ -157,6 +160,7 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('checkoutReference creates a branch when the selected reference is a tag', async () => {
@@ -174,6 +178,7 @@ test('checkoutReference creates a branch when the selected reference is a tag', 
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('mergeReference prevents merging the current branch into itself', async () => {

@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { API } from './git';
 import { createRevisionGraphBackend, RevisionGraphBackend } from './revisionGraph/backend';
 import { RevisionGraphController } from './revisionGraph/controller';
+import { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
 import { REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -31,8 +32,8 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     await this.controller.chooseRepository();
   }
 
-  async refresh(): Promise<void> {
-    await this.controller.refresh();
+  async refresh(intent?: RevisionGraphRefreshIntent): Promise<void> {
+    await this.controller.refresh(intent);
   }
 }
 

@@ -1,5 +1,6 @@
 import { ChangeQuickPickItem } from '../changePresentation';
 import { Repository } from '../git';
+import { RevisionGraphRefreshIntent } from '../revisionGraphRefresh';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
 
@@ -28,7 +29,7 @@ export interface DiffPresenter {
 }
 
 export interface RefreshController {
-  refresh(): void;
+  refresh(intent?: RevisionGraphRefreshIntent): void;
 }
 
 export interface ReferenceManager {

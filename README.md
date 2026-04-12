@@ -233,6 +233,9 @@ Potential improvements after the MVP:
 
 - Add a persistent compare results view
 - Add search and filtering in the revision graph
+- Avoid full graph reloads for metadata-only local operations such as checkout and branch creation when the loaded commit window is unchanged
+- Preserve zoom, scroll, and selection context across lightweight refreshes
+- Add refresh profiling and caching for graph load, projection, and layout hot paths
 - Improve conflict-awareness before checkout and merge
 - Add tag creation and reference rename flows
 - Support richer branch metadata in the UI

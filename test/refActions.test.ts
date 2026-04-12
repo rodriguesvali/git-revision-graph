@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
+import { RevisionGraphRefreshIntent } from '../src/revisionGraphRefresh';
 import {
   createBranchFromResolvedReference,
   checkoutResolvedReference,
@@ -25,6 +26,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
   readonly refreshCalls: number;
+  readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
 } {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
@@ -33,7 +35,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
-  const counter = { refreshCalls: 0 };
+  const refreshIntents: RevisionGraphRefreshIntent[] = [];
   let sourceControlOpens = 0;
   const overrideConfirm = overrides.confirm;
 
@@ -75,8 +77,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       }
     },
     refreshController: {
-      refresh() {
-        counter.refreshCalls += 1;
+      refresh(intent) {
+        refreshIntents.push(intent ?? 'full-rebuild');
       }
     },
     referenceManager: {
@@ -109,8 +111,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     diffCalls,
     deletedRemoteBranches,
     upstreamClears,
+    refreshIntents,
     get refreshCalls() {
-      return counter.refreshCalls;
+      return refreshIntents.length;
     }
   };
 }
@@ -176,6 +179,7 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('checkoutResolvedReference creates a branch from tags instead of checking them out directly', async () => {
@@ -198,6 +202,7 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('deleteResolvedReference uses the tag name in the delete confirmation label', async () => {
@@ -276,6 +281,7 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
@@ -301,6 +307,7 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
@@ -318,6 +325,7 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   ]);
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('syncCurrentHeadWithUpstream reports when the current branch is already synchronized', async () => {
@@ -472,6 +480,7 @@ test('deleteResolvedReference deletes remote branches through the shared referen
   ]);
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('deleteResolvedReference refuses to delete remote HEAD aliases', async () => {

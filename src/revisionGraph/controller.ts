@@ -32,6 +32,7 @@ import { RevisionGraphRef } from '../revisionGraphData';
 import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
+import { getRefreshLoadingLabel, RevisionGraphRefreshIntent } from '../revisionGraphRefresh';
 
 export class RevisionGraphController implements vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -40,8 +41,8 @@ export class RevisionGraphController implements vscode.Disposable {
   private autoArrangeOnNextRender = true;
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly actionServices = createWorkbenchRefActionServices(() => {
-    void this.refresh();
+  private readonly actionServices = createWorkbenchRefActionServices((intent) => {
+    void this.refresh(intent);
   });
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
@@ -130,7 +131,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    await this.refresh();
+    await this.refresh('full-rebuild');
   }
 
   async open(): Promise<void> {
@@ -141,7 +142,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    await this.refresh();
+    await this.refresh('full-rebuild');
   }
 
   async chooseRepository(): Promise<void> {
@@ -154,13 +155,13 @@ export class RevisionGraphController implements vscode.Disposable {
     await this.open();
   }
 
-  async refresh(): Promise<void> {
+  async refresh(intent: RevisionGraphRefreshIntent = 'full-rebuild'): Promise<void> {
     if (!this.view) {
       return;
     }
 
     await this.renderCoordinator.schedule(
-      'Loading revision graph...',
+      getRefreshLoadingLabel(intent),
       async (requestId, signal) => this.buildNextState(requestId, signal)
     );
   }
@@ -168,7 +169,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private async handleMessage(message: RevisionGraphMessage): Promise<void> {
     switch (message.type) {
       case 'refresh':
-        await this.refresh();
+        await this.refresh('full-rebuild');
         return;
       case 'open-source-control':
         await this.actionServices.ui.showSourceControl();
@@ -182,7 +183,7 @@ export class RevisionGraphController implements vscode.Disposable {
 
           this.setCurrentRepository(pickedRepository);
         }
-        await this.refresh();
+        await this.refresh('full-rebuild');
         return;
       case 'set-projection-options':
         this.projectionOptions = {
@@ -190,7 +191,7 @@ export class RevisionGraphController implements vscode.Disposable {
           ...message.options
         };
         this.autoArrangeOnNextRender = true;
-        await this.refresh();
+        await this.refresh('projection-rebuild');
         return;
       case 'compare-selected':
         if (this.currentRepository) {
@@ -317,8 +318,8 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repoSubscriptions.set(
       key,
       vscode.Disposable.from(
-        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository)),
-        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository))
+        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository, 'full-rebuild')),
+        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'metadata-patch'))
       )
     );
   }
@@ -331,15 +332,18 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private handleRepositorySetChanged(): void {
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
-    void this.refresh();
+    void this.refresh('full-rebuild');
   }
 
-  private handleRepositoryStateChange(repository: Repository): void {
+  private handleRepositoryStateChange(
+    repository: Repository,
+    intent: RevisionGraphRefreshIntent
+  ): void {
     const previousRepository = this.currentRepository;
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
 
     if (isSameRepositoryPath(repository, this.currentRepository) || (!previousRepository && this.currentRepository)) {
-      void this.refresh();
+      void this.refresh(intent);
     }
   }
 

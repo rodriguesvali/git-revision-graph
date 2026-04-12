@@ -20,6 +20,7 @@ import {
   RefActionTarget,
   RefSelection
 } from './refActions/types';
+import { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
 
 export type {
   DiffPresenter,
@@ -32,6 +33,7 @@ export type {
   RefActionTarget,
   RefSelection
 } from './refActions/types';
+export type { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
 
 export async function compareResolvedRefs(
   repository: Repository,
@@ -91,6 +93,7 @@ export async function checkoutResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   try {
     if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
       services.ui.showInformationMessage(`${target.label} is already checked out.`);
@@ -116,7 +119,7 @@ export async function checkoutResolvedReference(
 
     await repository.checkout(target.refName);
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
@@ -127,6 +130,7 @@ export async function createBranchFromResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   try {
     if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
       return;
@@ -154,7 +158,7 @@ export async function createBranchFromResolvedReference(
         ? `Branch ${branchName} was created and checked out from ${branchCreation.upstreamRefName}.`
         : `Branch ${branchName} was created and checked out from ${target.label}.`
     );
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
@@ -164,6 +168,7 @@ export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const syncState = getCurrentHeadSyncState(repository);
     if (!syncState) {
@@ -194,7 +199,7 @@ export async function syncCurrentHeadWithUpstream(
       await repository.push();
     }
 
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
@@ -209,6 +214,7 @@ export async function mergeResolvedReference(
   target: RefSelection,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
     if (repository.state.HEAD?.name === target.refName) {
@@ -237,7 +243,7 @@ export async function mergeResolvedReference(
     }
 
     await repository.merge(target.refName);
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
@@ -298,6 +304,7 @@ async function deleteRemoteReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const remoteTarget = parseRemoteReferenceTarget(target.refName);
   if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
     services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
@@ -314,7 +321,7 @@ async function deleteRemoteReference(
 
   await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
   services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
-  services.refreshController.refresh();
+  services.refreshController.refresh(refreshIntent);
 }
 
 async function deleteTagReference(
@@ -322,6 +329,7 @@ async function deleteTagReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const confirmed = await services.ui.confirm({
     message: `Delete the Tag ${target.label}?`,
     confirmLabel: `Delete Tag: ${target.label}`
@@ -332,7 +340,7 @@ async function deleteTagReference(
 
   await repository.deleteTag(target.refName);
   services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
-  services.refreshController.refresh();
+  services.refreshController.refresh(refreshIntent);
 }
 
 async function deleteBranchReference(
@@ -340,6 +348,7 @@ async function deleteBranchReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const branch = await getLocalBranchForDeletion(repository, target.refName);
   const upstreamLabel = branch?.upstream
     ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
@@ -356,7 +365,7 @@ async function deleteBranchReference(
   try {
     await repository.deleteBranch(target.refName, false);
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
   } catch (error) {
     if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
       throw error;
@@ -372,6 +381,6 @@ async function deleteBranchReference(
 
     await repository.deleteBranch(target.refName, true);
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
-    services.refreshController.refresh();
+    services.refreshController.refresh(refreshIntent);
   }
 }

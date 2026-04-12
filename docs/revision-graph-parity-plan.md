@@ -66,6 +66,8 @@ The current extension is a useful prototype, but it is not yet a faithful revisi
 - Filtering is only ancestor-based and does not match the TortoiseGit model.
 - The overview/minimap behavior is not implemented.
 - The provider re-renders the full HTML for every refresh and most actions.
+- Local mutations such as checkout, branch creation, and ref updates still trigger a full graph rebuild even when only ref decorations or HEAD state changed.
+- Repository events are treated as generic refresh triggers instead of being classified into metadata-only updates versus topology-changing updates.
 
 ## Architectural Principles
 
@@ -78,6 +80,7 @@ The redesign should follow these rules:
 5. The extension host owns Git I/O and orchestration.
 6. The webview owns rendering and local interaction state.
 7. Native VS Code workflows should still be reused for diff, SCM, checkout, merge, and document opening whenever possible.
+8. Refresh strategy should distinguish topology changes from metadata-only mutations and prefer incremental updates when the loaded commit DAG is still valid.
 
 ## Target Architecture
 
@@ -108,6 +111,7 @@ Responsibility:
 - represent the complete commit DAG for the loaded snapshot
 - index commits by hash
 - track refs, HEAD, upstream, and worktree state
+- keep mutable ref and HEAD overlays separable from the immutable commit DAG when possible
 - support ancestry, descendant, and selection queries
 
 Suggested files:
@@ -195,6 +199,9 @@ Responsibility:
 
 - translate graph snapshots, projections, and layout output into webview payloads
 - keep repository lifecycle, refresh, and background loading outside the renderer
+- classify repository and command-side mutations by cost
+- support partial state patches for metadata-only updates
+- preserve selection, zoom, and viewport context across refreshes whenever possible
 
 Suggested files:
 
@@ -221,6 +228,51 @@ Suggested files:
 - `src/revisionGraph/webview/interaction.ts`
 
 The webview should stop inventing graph semantics from ref labels and should render the view model it receives.
+
+It should also be able to apply targeted updates for ref decorations, HEAD markers, selection, and viewport state without requiring a full scene reset every time.
+
+## Performance and Efficiency Track
+
+The parity work should include a first-class efficiency track, not just correctness and UX parity.
+
+Goals:
+
+- reduce unnecessary full graph rebuilds after local mutations
+- avoid re-running `git log`, projection, layout, and full webview state serialization when the commit DAG did not change
+- preserve viewport, zoom, and selection context during refreshes
+- make repository event handling proportional to the actual scope of change
+
+Key roadmap items:
+
+1. Introduce refresh intent classification.
+   - Separate mutations into:
+     - metadata-only updates such as local checkout, HEAD movement within the loaded graph, branch creation from an already loaded commit, upstream/ahead-behind updates, and ref decoration changes
+     - topology-affecting updates such as fetch introducing new commits, merge creating new commits, history widening, projection-option changes, and repository switching
+   - Use that classification to choose between patching the current state, recomputing projection/layout, or rebuilding from source.
+2. Add DAG reuse and snapshot signatures.
+   - Cache the loaded commit graph by repository plus graph-load parameters.
+   - Reuse the current DAG when refs or HEAD move but the loaded commit set is still valid.
+   - Track when a command or repository event invalidates only overlays versus the underlying graph source.
+3. Split immutable graph structure from mutable overlays.
+   - Keep commit nodes, parent/child edges, and layout anchors stable when possible.
+   - Recompute lightweight overlays for HEAD, branch/tag decorations, selection, conflict badges, and sync status separately.
+4. Add partial webview updates.
+   - Support host messages for patching refs, HEAD markers, selection, and viewport state without re-sending the full scene.
+   - Keep `init-state` for first paint and `update-state` for full recomputation, but add narrower update messages for hot paths.
+5. Preserve view context aggressively.
+   - Keep the active selection, scroll position, and zoom level across metadata-only updates.
+   - Re-center only when the selected commit disappears, the repository changes, or the user explicitly requests reorganization.
+6. Reduce duplicate refresh triggers.
+   - Avoid firing a generic refresh both from the action completion path and from the subsequent repository event when one classified update is enough.
+   - Coalesce bursts of repository events into one classified refresh decision.
+7. Measure cost before and after each optimization slice.
+   - Add timing instrumentation around graph load, projection, layout, serialization, and postMessage delivery.
+   - Log whether a refresh was metadata-only, projection-only, or full rebuild so regressions are visible.
+8. Optimize specific local workflows first.
+   - Checkout of an already loaded local branch should usually update HEAD and ref decorations without rebuilding the graph.
+   - Branch creation from an already loaded commit should usually add a local ref decoration and HEAD marker patch without reloading history.
+   - Sync/push flows that do not change the loaded commit window should prefer overlay updates plus ahead/behind recomputation.
+   - Repository state changes that only affect conflict badges or worktree cleanliness should not invalidate graph topology.
 
 ## Proposed Directory Shape
 
@@ -265,6 +317,7 @@ This can be introduced incrementally without deleting the current files on day o
 Goal:
 
 - protect the refactor with representative fixtures and behavior tests
+- establish performance baselines before changing refresh behavior
 
 Tasks:
 
@@ -277,10 +330,13 @@ Tasks:
   - detached HEAD / tag checkout flow
 - add golden tests for parsing and projection inputs
 - add a manual test matrix for parity against TortoiseGit screenshots or known repositories
+- add timing probes for graph load, projection, layout, and host-to-webview update cost
+- capture current refresh behavior for checkout, branch creation, merge, sync, and repository event bursts
 
 Exit criteria:
 
 - we can compare old and new graph snapshots from the same repo fixtures
+- we have a baseline for full refresh cost and hot-path mutation cost
 
 ### Phase 1: Replace the Data Model
 
@@ -314,11 +370,13 @@ Tasks:
 - implement branch/merge visibility toggles
 - implement current branch and local branches filters
 - implement revision range filtering
+- keep projection inputs stable enough to support projection reuse when only overlays change
 
 Exit criteria:
 
 - the same source DAG can drive multiple view modes
 - folding rules reconnect topology intentionally and predictably
+- metadata-only updates do not force projection recomputation
 
 ### Phase 3: Replace the Layout
 
@@ -350,11 +408,13 @@ Tasks:
 - show commit tooltip with date, author, subject, hash, and refs
 - make compare/log/unified diff operate from selected revisions
 - support compare against HEAD and worktree from a selected revision
+- preserve selection identity across metadata-only refreshes
 
 Exit criteria:
 
 - actions are revision-driven, not ref-label-driven
 - the node itself is the main click target
+- selection survives local ref and HEAD updates whenever the selected commit is still present
 
 ### Phase 5: Add Navigation Parity
 
@@ -368,6 +428,7 @@ Tasks:
 - add find by ref, hash, subject, message, and author
 - add keyboard navigation and refresh behavior
 - keep scroll/zoom centered around the active selection or HEAD
+- avoid viewport resets for metadata-only updates
 
 Exit criteria:
 
@@ -387,10 +448,12 @@ Tasks:
 - improve branch/tag/remote action grouping
 - preserve safe mutation checks for dirty worktrees and conflicts
 - support copy ref names and commit hash actions
+- classify workflow-side refreshes so local operations can patch the current graph instead of rebuilding it by default
 
 Exit criteria:
 
 - the graph feels like an operational tool, not just a visualizer
+- common local workflows no longer trigger unnecessary full graph reloads
 
 ## Acceptance Criteria
 
@@ -403,6 +466,7 @@ The implementation can be considered "architecturally on track" when all of thes
 - The layout engine is externalized and replaceable.
 - The overview/minimap is functional.
 - Filters are explicit graph view options, not one-off special cases.
+- Metadata-only mutations can update the visible graph without rebuilding the full source snapshot.
 
 The implementation can be considered "functionally close to TortoiseGit" when these are true:
 
@@ -411,6 +475,7 @@ The implementation can be considered "functionally close to TortoiseGit" when th
 - Users can filter the graph to current branch, local branches, or revision ranges.
 - Tags can be folded or expanded without corrupting ancestry.
 - Refresh, zoom, pan, and find feel native and predictable.
+- Local workflows such as checkout and branch creation do not reset the graph unnecessarily when the visible commit window is still valid.
 
 ## Risks and Mitigations
 
@@ -429,6 +494,14 @@ Mitigation:
 - separate source graph from visible scene
 - send only projected scene plus metadata needed for interaction
 - avoid embedding redundant HTML for every derived state
+
+### Risk: optimization logic becomes too ad hoc and breaks graph correctness
+
+Mitigation:
+
+- classify updates explicitly instead of scattering one-off shortcuts across command handlers
+- keep full rebuild as the fallback when a partial update cannot prove safety
+- test partial updates against the same fixture graphs used for full rebuild validation
 
 ### Risk: parity work drifts into a custom Git client
 
@@ -452,8 +525,239 @@ The highest-leverage next implementation slice is:
 2. Port current parsing into the new source/model split.
 3. Rework tests so they assert full DAG semantics before any layout logic.
 4. Add a small layout spike using `elkjs` on fixture graphs.
+5. Add refresh intent classification and instrument the cost of full rebuild versus metadata-only patch flows.
 
 That sequence reduces architecture risk before touching the UI too deeply.
+
+## 0.0.12 Performance Implementation Plan
+
+This release should take the first practical step toward efficient refreshes without waiting for the entire parity refactor to land.
+
+### Why this is the right first slice
+
+The current implementation already has the hooks needed to improve refresh efficiency, but they are wired in a coarse-grained way:
+
+- command-side workflows call a generic `refresh()` after successful local mutations
+- repository events such as `onDidChange` and `onDidCheckout` also trigger generic refreshes
+- `buildReadyRevisionGraphViewState(...)` always rebuilds snapshot, projection, scene, layout metadata, and derived reference lists
+- the host-to-webview protocol only distinguishes `init-state`, `update-state`, `set-loading`, and `set-error`
+
+That means a local checkout or branch creation can trigger more work than the user-visible change actually requires.
+
+### Release Objective
+
+For `0.0.12`, the concrete objective should be:
+
+- avoid unnecessary full graph rebuilds for metadata-only local operations when the loaded commit window still contains the relevant commit topology
+
+This is intentionally narrower than full incremental rendering. The release should optimize the hot local paths first and keep full rebuilds as a safe fallback.
+
+### Scope Boundaries
+
+In scope:
+
+- checkout to an already loaded local branch
+- branch creation from a commit already present in the loaded graph
+- HEAD and ref-decoration updates
+- selection, zoom, and scroll preservation across lightweight updates
+- event deduplication between explicit command refreshes and repository event refreshes
+- instrumentation that proves whether the change reduced work
+
+Out of scope for `0.0.12`:
+
+- general-purpose partial updates for every repository mutation
+- fetch-driven topology expansion
+- merge-created commits outside the currently loaded snapshot
+- replacing the current graph pipeline or layout engine
+- eliminating full refresh as a fallback
+
+### Proposed Technical Slices
+
+#### Slice A: Add refresh intent classification
+
+Goal:
+
+- stop treating every update as the same kind of refresh
+
+Implementation outline:
+
+- introduce a small refresh intent model in the controller layer, for example:
+  - `full-rebuild`
+  - `projection-rebuild`
+  - `metadata-patch`
+  - `overlay-patch`
+- tag command completions with the most likely intent instead of always calling a blind refresh
+- classify repository events before scheduling work
+
+Initial heuristics:
+
+- `checkout` of an existing local branch:
+  - default to `metadata-patch`
+- `createBranch` from a commit already visible in the current scene:
+  - default to `metadata-patch`
+- `sync-current-head`:
+  - start with `full-rebuild`, then relax later only if the visible commit window is unchanged
+- `merge`:
+  - keep `full-rebuild`
+- projection option changes or repository changes:
+  - `projection-rebuild` or `full-rebuild`
+
+Likely touchpoints:
+
+- `src/refActions.ts`
+- `src/refActions/types.ts`
+- `src/revisionGraph/controller.ts`
+
+#### Slice B: Deduplicate refresh triggers
+
+Goal:
+
+- avoid doing command-side refresh work and then repeating it when the repository event arrives
+
+Implementation outline:
+
+- add a short-lived controller-side mutation token or suppression window
+- when a known local command completes, record the expected repository effect
+- when the matching `onDidChange` or `onDidCheckout` arrives, coalesce it into the already scheduled classified update instead of scheduling a second full refresh
+
+Safety rule:
+
+- if the observed repository state does not match the expected mutation, fall back to full rebuild
+
+Likely touchpoints:
+
+- `src/revisionGraph/controller.ts`
+- `src/revisionGraph/renderCoordinator.ts`
+
+#### Slice C: Separate stable scene structure from mutable overlays
+
+Goal:
+
+- reuse the current visible scene when topology did not change
+
+Implementation outline:
+
+- treat these as mutable overlays:
+  - `currentHeadName`
+  - `currentHeadUpstreamName`
+  - `isWorkspaceDirty`
+  - `mergeBlockedTargets`
+  - ref labels bound to already visible commits
+- treat these as stable for metadata-only updates:
+  - `scene`
+  - `nodeLayouts`
+  - `sceneLayoutKey`
+  - canvas dimensions
+- add a helper that can derive a patched `RevisionGraphViewState` from the previous state plus current repository metadata
+
+Likely touchpoints:
+
+- `src/revisionGraphTypes.ts`
+- `src/revisionGraph/panel/state.ts`
+- `src/revisionGraph/backend.ts`
+
+#### Slice D: Add narrow host-to-webview patch messages
+
+Goal:
+
+- stop re-sending the full graph payload when only overlays changed
+
+Implementation outline:
+
+- extend the host message protocol with one or two narrow messages first, for example:
+  - `patch-metadata`
+  - `patch-selection-context`
+- keep the first version intentionally small:
+  - HEAD name
+  - upstream label
+  - workspace dirty flag
+  - merge-blocked target ids
+  - visible reference decorations
+- leave `update-state` in place as the fallback path
+
+Likely touchpoints:
+
+- `src/revisionGraphTypes.ts`
+- `src/revisionGraph/controller.ts`
+- `src/revisionGraph/webview/script/bootstrap.ts`
+
+#### Slice E: Preserve viewport and selection context
+
+Goal:
+
+- lightweight updates should feel visually stable
+
+Implementation outline:
+
+- keep selection identity keyed by commit hash or stable reference id when possible
+- preserve zoom and scroll on metadata-only patches
+- keep auto-center and auto-arrange disabled for metadata-only updates
+- only re-center when:
+  - the selected commit/reference is no longer visible
+  - the repository changed
+  - the user explicitly asked to reorganize or focus
+
+Likely touchpoints:
+
+- `src/revisionGraph/controller.ts`
+- `src/revisionGraph/webview/script/bootstrap.ts`
+- `src/revisionGraph/webview/script/interactions.ts`
+
+#### Slice F: Add instrumentation and success metrics
+
+Goal:
+
+- verify that the optimization actually reduces work
+
+Implementation outline:
+
+- measure and log:
+  - snapshot load time
+  - projection time
+  - scene/layout build time
+  - serialization/postMessage time
+  - total refresh duration
+- include the refresh intent in logs
+- count how often:
+  - a metadata patch succeeded
+  - a metadata patch escalated to full rebuild
+  - duplicate repository events were suppressed
+
+Success criteria for `0.0.12`:
+
+- checkout of an already loaded local branch no longer triggers a full graph rebuild in the common case
+- branch creation from an already visible commit no longer triggers a full graph rebuild in the common case
+- the graph preserves zoom/scroll/selection during those operations
+- all optimized paths still fall back safely to full rebuild when invariants fail
+
+### Current-Code Notes That Should Shape the Design
+
+These current implementation details matter for the first optimization slice:
+
+- `src/refActions.ts` currently ends successful mutations with `services.refreshController.refresh()`, which carries no intent or cost classification.
+- `src/revisionGraph/controller.ts` currently treats `repository.state.onDidChange(...)` and `repository.onDidCheckout(...)` as generic refresh sources.
+- `src/revisionGraph/panel/state.ts` currently rebuilds the full ready state in one path, which is clean but too coarse for metadata-only updates.
+- `src/revisionGraphTypes.ts` currently has no patch-oriented host messages.
+- `src/revisionGraph/backend.ts` already has snapshot caching, but the cache key includes current refs and HEAD metadata, which makes it too eager to invalidate for some metadata-only updates.
+
+### Suggested Milestone Order for the Release
+
+1. Add refresh intent types and thread them through command completions.
+2. Add controller-side deduplication for command-triggered repository events.
+3. Add a metadata-patch state builder that reuses the current scene.
+4. Add one narrow host message for metadata-only updates.
+5. Preserve selection/viewport for metadata-only updates.
+6. Add instrumentation and compare before/after timings on checkout and create-branch flows.
+
+### Suggested Test Matrix for the Release
+
+- checkout local branch already present in the visible graph
+- create branch from a commit already present in the visible graph
+- checkout remote/tag path that still creates a new local branch
+- merge path that must still use full rebuild
+- dirty worktree/conflict updates that only change status overlays
+- repository event burst after a local mutation
+- fallback to full rebuild when a ref points outside the current loaded graph window
 
 ## Non-Goals for the First Refactor Wave
 
