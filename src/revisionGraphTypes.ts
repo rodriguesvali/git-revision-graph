@@ -49,9 +49,26 @@ export interface RevisionGraphViewState {
   readonly errorMessage: string | undefined;
 }
 
+export interface RevisionGraphViewMetadataPatch {
+  readonly preserveSelection: boolean;
+  readonly preserveViewport: boolean;
+  readonly currentHeadName: string | undefined;
+  readonly currentHeadUpstreamName: string | undefined;
+  readonly isWorkspaceDirty: boolean;
+  readonly mergeBlockedTargets: readonly string[];
+  readonly autoArrangeOnInit: boolean;
+  readonly scene: RevisionGraphScene;
+  readonly nodeLayouts: readonly RevisionGraphNodeLayout[];
+  readonly references: readonly RevisionGraphViewReference[];
+  readonly sceneLayoutKey: string;
+  readonly baseCanvasWidth: number;
+  readonly baseCanvasHeight: number;
+}
+
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }
+  | { readonly type: 'patch-metadata'; readonly patch: RevisionGraphViewMetadataPatch }
   | { readonly type: 'set-loading'; readonly label: string }
   | { readonly type: 'set-error'; readonly message: string };
 

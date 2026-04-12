@@ -30,6 +30,7 @@ import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   createDefaultRevisionGraphProjectionOptions,
   RevisionGraphMessage,
+  RevisionGraphViewMetadataPatch,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -67,7 +68,16 @@ export class RevisionGraphController implements vscode.Disposable {
       });
     },
     (state) => {
+      const previousState = this.currentState;
       this.currentState = state;
+      if (this.shouldPostMetadataPatch(previousState, state)) {
+        this.postHostMessage({
+          type: 'patch-metadata',
+          patch: this.createMetadataPatch(state)
+        });
+        return;
+      }
+
       this.postHostMessage({
         type: 'update-state',
         state
@@ -413,5 +423,35 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
     void this.view?.webview.postMessage(message);
+  }
+
+  private shouldPostMetadataPatch(
+    previousState: RevisionGraphViewState,
+    nextState: RevisionGraphViewState
+  ): boolean {
+    return (
+      this.latestRefreshIntent === 'metadata-patch' &&
+      previousState.viewMode === 'ready' &&
+      nextState.viewMode === 'ready' &&
+      previousState.sceneLayoutKey === nextState.sceneLayoutKey
+    );
+  }
+
+  private createMetadataPatch(state: RevisionGraphViewState): RevisionGraphViewMetadataPatch {
+    return {
+      preserveSelection: true,
+      preserveViewport: true,
+      currentHeadName: state.currentHeadName,
+      currentHeadUpstreamName: state.currentHeadUpstreamName,
+      isWorkspaceDirty: state.isWorkspaceDirty,
+      mergeBlockedTargets: state.mergeBlockedTargets,
+      autoArrangeOnInit: state.autoArrangeOnInit,
+      scene: state.scene,
+      nodeLayouts: state.nodeLayouts,
+      references: state.references,
+      sceneLayoutKey: state.sceneLayoutKey,
+      baseCanvasWidth: state.baseCanvasWidth,
+      baseCanvasHeight: state.baseCanvasHeight
+    };
   }
 }

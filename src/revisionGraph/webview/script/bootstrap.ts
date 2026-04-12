@@ -1,7 +1,11 @@
 import {
   EDGE_VERTICAL_INSET,
   GRAPH_PADDING_TOP,
-  ROW_HEIGHT
+  ROW_HEIGHT,
+  VIEWPORT_PADDING_BOTTOM,
+  VIEWPORT_PADDING_LEFT,
+  VIEWPORT_PADDING_RIGHT,
+  VIEWPORT_PADDING_TOP
 } from '../shared';
 import { RenderRevisionGraphScriptOptions } from './types';
 
@@ -223,6 +227,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         case 'update-state':
           applyState(message.state, false);
           return;
+        case 'patch-metadata':
+          applyMetadataPatch(message.patch);
+          return;
         case 'set-loading':
           showLoading(message.label);
           return;
@@ -232,11 +239,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
     }
 
-    function applyState(nextState, isInit) {
+    function applyState(nextState, isInit, options = {}) {
       if (!nextState) {
         return;
       }
 
+      const selectionSnapshot = options.preserveSelection ? captureSelectionSnapshot() : [];
+      const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
       const previousSceneLayoutKey = sceneLayoutKey;
       currentState = nextState;
       currentHeadName = nextState.currentHeadName || null;
@@ -260,8 +269,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           : {};
       }
 
-      const availableReferenceIds = new Set(references.map((ref) => ref.id));
-      selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
+      if (options.preserveSelection) {
+        restoreSelectionSnapshot(selectionSnapshot);
+      } else {
+        const availableReferenceIds = new Set(references.map((ref) => ref.id));
+        selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
+      }
 
       updateChrome(nextState);
       renderScene(nextState);
@@ -274,17 +287,125 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         hideStatus();
       }
 
-      const shouldRecenter = isInit || previousSceneLayoutKey !== sceneLayoutKey;
+      const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
       applyNodeLayout(false);
       syncSelection();
       requestAnimationFrame(() => {
         if (nextState.autoArrangeOnInit) {
           autoArrangeLayout();
           centerGraphInViewport();
+        } else if (viewportSnapshot) {
+          restoreViewportSnapshot(viewportSnapshot);
         } else if (shouldRecenter) {
           centerGraphInViewport();
         }
       });
+    }
+
+    function applyMetadataPatch(patch) {
+      if (!patch || !currentState) {
+        return;
+      }
+
+      applyState(Object.assign({}, currentState, patch, {
+        loading: false,
+        loadingLabel: undefined,
+        errorMessage: undefined
+      }), false, {
+        preserveSelection: !!patch.preserveSelection,
+        preserveViewport: !!patch.preserveViewport
+      });
+    }
+
+    function captureSelectionSnapshot() {
+      return selected
+        .map((refId) => getReference(refId))
+        .filter((ref) => !!ref)
+        .slice(0, 2)
+        .map((ref) => ({
+          id: ref.id,
+          hash: ref.hash,
+          name: ref.name,
+          kind: ref.kind
+        }));
+    }
+
+    function restoreSelectionSnapshot(snapshot) {
+      const nextSelected = [];
+      const usedReferenceIds = new Set();
+      for (const entry of snapshot || []) {
+        const match = findSelectionMatch(entry, usedReferenceIds);
+        if (!match) {
+          continue;
+        }
+        usedReferenceIds.add(match.id);
+        nextSelected.push(match.id);
+      }
+      selected = nextSelected.slice(0, 2);
+    }
+
+    function findSelectionMatch(target, usedReferenceIds) {
+      if (!target) {
+        return null;
+      }
+
+      const exactMatch = references.find((ref) => ref.id === target.id && !usedReferenceIds.has(ref.id));
+      if (exactMatch) {
+        return exactMatch;
+      }
+
+      if (target.kind === 'head') {
+        const currentHead = references.find((ref) => ref.kind === 'head' && !usedReferenceIds.has(ref.id));
+        if (currentHead) {
+          return currentHead;
+        }
+      }
+
+      const matchPredicates = [
+        (ref) => ref.hash === target.hash && ref.name === target.name && ref.kind === target.kind,
+        (ref) => ref.name === target.name && ref.kind === target.kind,
+        (ref) => ref.hash === target.hash && ref.name === target.name,
+        (ref) => ref.name === target.name,
+        (ref) => ref.hash === target.hash
+      ];
+
+      for (const predicate of matchPredicates) {
+        const match = references.find((ref) => !usedReferenceIds.has(ref.id) && predicate(ref));
+        if (match) {
+          return match;
+        }
+      }
+
+      return null;
+    }
+
+    function captureViewportSnapshot() {
+      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
+      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      return {
+        sceneCenterX: ((viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT} + visibleWidth / 2) / currentZoom) - layoutOffsetX,
+        sceneCenterY: ((viewport.scrollTop - ${VIEWPORT_PADDING_TOP} + visibleHeight / 2) / currentZoom) - layoutOffsetY
+      };
+    }
+
+    function restoreViewportSnapshot(snapshot) {
+      if (!snapshot) {
+        return;
+      }
+
+      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
+      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const nextScrollLeft = Math.max(
+        0,
+        ${VIEWPORT_PADDING_LEFT} + (snapshot.sceneCenterX + layoutOffsetX) * currentZoom - visibleWidth / 2
+      );
+      const nextScrollTop = Math.max(
+        0,
+        ${VIEWPORT_PADDING_TOP} + (snapshot.sceneCenterY + layoutOffsetY) * currentZoom - visibleHeight / 2
+      );
+      viewport.scrollLeft = nextScrollLeft;
+      viewport.scrollTop = nextScrollTop;
+      syncMinimap();
     }
 
     function updateChrome(state) {
