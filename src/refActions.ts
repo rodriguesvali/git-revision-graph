@@ -1,61 +1,37 @@
-import { ChangeQuickPickItem, toChangeQuickPickItems } from './changePresentation';
+import { toChangeQuickPickItems } from './changePresentation';
 import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
-import { Branch, RefType, Repository } from './git';
+import { Repository } from './git';
+import {
+  buildDeleteBranchConfirmationMessage,
+  buildForceDeleteBranchMessage,
+  buildSyncResultMessage,
+  ensureWorkspaceReadyForMutation,
+  formatUpstreamLabel,
+  getCurrentHeadSyncState,
+  getLocalBranchForDeletion,
+  getSuggestedNewBranchName,
+  parseRemoteReferenceTarget,
+  resolveRemoteCheckoutTarget,
+  shouldRevealSourceControlAfterWorkspaceConflict
+} from './refActions/shared';
+import {
+  BranchCreationTarget,
+  RefActionServices,
+  RefActionTarget,
+  RefSelection
+} from './refActions/types';
 
-export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
-
-export interface RefSelection {
-  readonly refName: string;
-  readonly label: string;
-}
-
-export interface RefActionTarget extends RefSelection {
-  readonly kind: RefActionKind;
-}
-
-export interface RefActionUi {
-  pickChange(items: readonly ChangeQuickPickItem[], placeHolder: string): Promise<ChangeQuickPickItem | undefined>;
-  promptBranchName(options: { readonly prompt: string; readonly value: string }): Promise<string | undefined>;
-  confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
-  showInformationMessage(message: string): void;
-  showWarningMessage(message: string): void;
-  showErrorMessage(message: string): Promise<void>;
-  showSourceControl(): Promise<void>;
-}
-
-export interface DiffPresenter {
-  openBetweenRefs(repository: Repository, change: ChangeQuickPickItem['change'], leftRef: string, rightRef: string): Promise<void>;
-  openWithWorktree(repository: Repository, change: ChangeQuickPickItem['change'], ref: string): Promise<void>;
-}
-
-export interface RefreshController {
-  refresh(): void;
-}
-
-export interface ReferenceManager {
-  deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
-  unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
-}
-
-export interface AncestryInspector {
-  isRefAncestorOfHead(repository: Repository, refName: string, headRefName: string): Promise<boolean>;
-}
-
-export interface RefActionServices {
-  readonly ui: RefActionUi;
-  readonly diffPresenter: DiffPresenter;
-  readonly refreshController: RefreshController;
-  readonly referenceManager: ReferenceManager;
-  readonly ancestryInspector: AncestryInspector;
-  readonly formatPath: (fsPath: string) => string;
-}
-
-interface HeadSyncState {
-  readonly branchName: string;
-  readonly upstreamLabel: string;
-  readonly ahead: number;
-  readonly behind: number;
-}
+export type {
+  DiffPresenter,
+  RefreshController,
+  ReferenceManager,
+  AncestryInspector,
+  RefActionKind,
+  RefActionUi,
+  RefActionServices,
+  RefActionTarget,
+  RefSelection
+} from './refActions/types';
 
 export async function compareResolvedRefs(
   repository: Repository,
@@ -125,12 +101,7 @@ export async function checkoutResolvedReference(
       return;
     }
 
-    if (target.kind === 'remote') {
-      await createBranchFromResolvedReference(repository, target, services);
-      return;
-    }
-
-    if (target.kind === 'tag') {
+    if (target.kind === 'remote' || target.kind === 'tag') {
       await createBranchFromResolvedReference(repository, target, services);
       return;
     }
@@ -205,7 +176,7 @@ export async function syncCurrentHeadWithUpstream(
       return;
     }
 
-    if (hasMergeConflicts(repository)) {
+    if (repository.state.mergeChanges.length > 0) {
       services.ui.showWarningMessage('Resolve the current conflicts in Source Control before synchronizing the current branch.');
       await services.ui.showSourceControl();
       return;
@@ -285,112 +256,25 @@ export async function deleteResolvedReference(
 ): Promise<void> {
   try {
     if (target.kind === 'remote') {
-      const remoteTarget = parseRemoteDeletionTarget(target.refName);
-      if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
-        services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
-        return;
-      }
-
-      const confirmed = await services.ui.confirm({
-        message: `Delete the Remote Branch ${target.label}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
-        confirmLabel: 'Delete Remote Reference'
-      });
-      if (!confirmed) {
-        return;
-      }
-
-      await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
-      services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
-      services.refreshController.refresh();
+      await deleteRemoteReference(repository, target, services);
       return;
     }
 
     if (target.kind === 'tag') {
-      const confirmed = await services.ui.confirm({
-        message: `Delete the Tag ${target.label}?`,
-        confirmLabel: `Delete Tag: ${target.label}`
-      });
-      if (!confirmed) {
-        return;
-      }
-
-      await repository.deleteTag(target.refName);
-      services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
-      services.refreshController.refresh();
+      await deleteTagReference(repository, target, services);
       return;
     }
 
-    const branch = await getLocalBranchForDeletion(repository, target.refName);
-    const upstreamLabel = branch?.upstream
-      ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
-      : undefined;
-
-    const confirmed = await services.ui.confirm({
-      message: buildDeleteBranchConfirmationMessage(target.label, upstreamLabel),
-      confirmLabel: `Delete Branch: ${target.label}`
-    });
-    if (!confirmed) {
-      return;
-    }
-
-    await deleteLocalBranch(repository, target, upstreamLabel, services);
+    await deleteBranchReference(repository, target, services);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not delete the reference.', error));
   }
 }
 
-async function resolveRemoteCheckoutTarget(
-  repository: Repository,
-  refName: string
-): Promise<{
-  startPointRefName: string;
-  upstreamRefName: string | undefined;
-  suggestedLocalName: string;
-}> {
-  const remoteTarget = parseRemoteDeletionTarget(refName);
-  if (!remoteTarget || remoteTarget.branchName !== 'HEAD') {
-    return {
-      startPointRefName: refName,
-      upstreamRefName: refName,
-      suggestedLocalName: getSuggestedLocalBranchName(refName)
-    };
-  }
-
-  const refs = await repository.getRefs();
-  const symbolicRef = refs.find(
-    (ref) => ref.type === RefType.RemoteHead && ref.name === refName
-  );
-  const candidates = refs.filter(
-    (ref) =>
-      ref.type === RefType.RemoteHead &&
-      ref.name &&
-      ref.name.startsWith(`${remoteTarget.remoteName}/`) &&
-      ref.name !== refName
-  );
-
-  const upstreamRef =
-    candidates.find((ref) => ref.commit && symbolicRef?.commit && ref.commit === symbolicRef.commit) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/${repository.state.HEAD?.name}`) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/main`) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/master`) ??
-    candidates[0];
-
-  return {
-    startPointRefName: upstreamRef?.name ?? refName,
-    upstreamRefName: upstreamRef?.name,
-    suggestedLocalName: upstreamRef?.name ? getSuggestedLocalBranchName(upstreamRef.name) : ''
-  };
-}
-
 async function getBranchCreationTarget(
   repository: Repository,
   target: RefActionTarget
-): Promise<{
-  startPointRefName: string;
-  upstreamRefName: string | undefined;
-  suggestedLocalName: string;
-  prompt: string;
-}> {
+): Promise<BranchCreationTarget> {
   if (target.kind === 'remote') {
     const remoteCheckout = await resolveRemoteCheckoutTarget(repository, target.refName);
     return {
@@ -409,115 +293,66 @@ async function getBranchCreationTarget(
   };
 }
 
-function parseRemoteDeletionTarget(refName: string): { remoteName: string; branchName: string } | undefined {
-  const firstSlash = refName.indexOf('/');
-  if (firstSlash <= 0 || firstSlash === refName.length - 1) {
-    return undefined;
-  }
-
-  return {
-    remoteName: refName.slice(0, firstSlash),
-    branchName: refName.slice(firstSlash + 1)
-  };
-}
-
-function getSuggestedLocalBranchName(refName: string): string {
-  const firstSlash = refName.indexOf('/');
-  return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;
-}
-
-function getSuggestedNewBranchName(refName: string, kind: RefActionKind): string {
-  if (kind === 'head' || kind === 'branch') {
-    return `${refName}-copy`;
-  }
-
-  return refName;
-}
-
-function getCurrentHeadSyncState(repository: Repository): HeadSyncState | undefined {
-  const head = repository.state.HEAD;
-  if (!head?.name || !head.upstream) {
-    return undefined;
-  }
-
-  return {
-    branchName: head.name,
-    upstreamLabel: formatUpstreamLabel(head.upstream.remote, head.upstream.name),
-    ahead: head.ahead ?? 0,
-    behind: head.behind ?? 0
-  };
-}
-
-function formatUpstreamLabel(remoteName: string, refName: string): string {
-  return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
-}
-
-function buildSyncResultMessage(syncState: HeadSyncState): string {
-  if (syncState.behind > 0 && syncState.ahead > 0) {
-    return `${syncState.branchName} was synchronized with ${syncState.upstreamLabel}.`;
-  }
-
-  if (syncState.behind > 0) {
-    return `${syncState.branchName} was updated from ${syncState.upstreamLabel}.`;
-  }
-
-  return `${syncState.branchName} was pushed to ${syncState.upstreamLabel}.`;
-}
-
-async function ensureWorkspaceReadyForMutation(
-  repository: Repository,
-  operationDescription: string,
-  services: RefActionServices
-): Promise<boolean> {
-  if (hasMergeConflicts(repository)) {
-    services.ui.showWarningMessage(`Resolve the current conflicts in Source Control before ${operationDescription}.`);
-    await services.ui.showSourceControl();
-    return false;
-  }
-
-  if (hasWorkspaceChanges(repository)) {
-    services.ui.showWarningMessage(`The workspace must be clean before ${operationDescription}. Review, stash, or commit the current changes first.`);
-    return false;
-  }
-
-  return true;
-}
-
-function hasMergeConflicts(repository: Repository): boolean {
-  return repository.state.mergeChanges.length > 0;
-}
-
-function hasWorkspaceChanges(repository: Repository): boolean {
-  return (
-    repository.state.mergeChanges.length > 0
-    || repository.state.indexChanges.length > 0
-    || repository.state.workingTreeChanges.length > 0
-    || repository.state.untrackedChanges.length > 0
-  );
-}
-
-function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, repository: Repository): boolean {
-  return (
-    hasMergeConflicts(repository)
-    || matchesGitErrorCode(error, 'Conflict')
-    || matchesGitErrorCode(error, 'UnmergedChanges')
-  );
-}
-
-async function getLocalBranchForDeletion(repository: Repository, branchName: string): Promise<Branch | undefined> {
-  try {
-    return await repository.getBranch(branchName);
-  } catch {
-    return undefined;
-  }
-}
-
-async function deleteLocalBranch(
+async function deleteRemoteReference(
   repository: Repository,
   target: RefActionTarget,
-  upstreamLabel: string | undefined,
   services: RefActionServices
 ): Promise<void> {
+  const remoteTarget = parseRemoteReferenceTarget(target.refName);
+  if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
+    services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
+    return;
+  }
+
+  const confirmed = await services.ui.confirm({
+    message: `Delete the Remote Branch ${target.label}?\n\nThis will remove the branch from ${remoteTarget.remoteName} and may affect other collaborators.`,
+    confirmLabel: 'Delete Remote Reference'
+  });
+  if (!confirmed) {
+    return;
+  }
+
+  await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
+  services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
+  services.refreshController.refresh();
+}
+
+async function deleteTagReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<void> {
+  const confirmed = await services.ui.confirm({
+    message: `Delete the Tag ${target.label}?`,
+    confirmLabel: `Delete Tag: ${target.label}`
+  });
+  if (!confirmed) {
+    return;
+  }
+
+  await repository.deleteTag(target.refName);
+  services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
+  services.refreshController.refresh();
+}
+
+async function deleteBranchReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<void> {
+  const branch = await getLocalBranchForDeletion(repository, target.refName);
+  const upstreamLabel = branch?.upstream
+    ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
+    : undefined;
+
+  const confirmed = await services.ui.confirm({
+    message: buildDeleteBranchConfirmationMessage(target.label, upstreamLabel),
+    confirmLabel: `Delete Branch: ${target.label}`
+  });
+  if (!confirmed) {
+    return;
+  }
+
   try {
     await repository.deleteBranch(target.refName, false);
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
@@ -527,11 +362,11 @@ async function deleteLocalBranch(
       throw error;
     }
 
-    const confirmed = await services.ui.confirm({
+    const forceConfirmed = await services.ui.confirm({
       message: buildForceDeleteBranchMessage(target.label, upstreamLabel),
       confirmLabel: 'Force Delete'
     });
-    if (!confirmed) {
+    if (!forceConfirmed) {
       return;
     }
 
@@ -539,21 +374,4 @@ async function deleteLocalBranch(
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
     services.refreshController.refresh();
   }
-}
-
-function buildDeleteBranchConfirmationMessage(label: string, upstreamLabel: string | undefined): string {
-  if (!upstreamLabel) {
-    return `Delete the Branch ${label}?`;
-  }
-
-  return `Delete the Local Branch ${label}?\n\nThis removes only the local branch. The tracked remote branch ${upstreamLabel} will remain unchanged.`;
-}
-
-function buildForceDeleteBranchMessage(label: string, upstreamLabel: string | undefined): string {
-  const mergeBaseLabel = upstreamLabel ?? 'HEAD';
-  const remoteNotice = upstreamLabel
-    ? ` The tracked remote branch ${upstreamLabel} will remain unchanged.`
-    : '';
-
-  return `${label} is not fully merged into ${mergeBaseLabel}.\n\nForce delete the local branch anyway?${remoteNotice}`;
 }
