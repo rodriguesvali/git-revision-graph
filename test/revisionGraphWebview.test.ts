@@ -8,6 +8,12 @@ test('renders a persistent shell for the revision graph webview', () => {
 
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /Show Branchings &amp; Merges/);
+  assert.match(html, /id="searchInput"/);
+  assert.match(html, /Find in graph\.\.\./);
+  assert.match(html, /id="searchResultBadge"/);
+  assert.match(html, /id="searchPrevButton"/);
+  assert.match(html, /id="searchNextButton"/);
+  assert.match(html, /id="searchClearButton"/);
   assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
@@ -47,4 +53,22 @@ test('preserves viewport and selection during metadata patches', () => {
   assert.match(html, /function restoreScenePlacementSnapshot\(snapshot\)/);
   assert.match(html, /function captureViewportSnapshot\(\)/);
   assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
+});
+
+test('renders client-side graph search controls and runtime handlers', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /searchInput\.addEventListener\('input'/);
+  assert.match(html, /searchPrevButton\.addEventListener\('click'/);
+  assert.match(html, /searchNextButton\.addEventListener\('click'/);
+  assert.match(html, /searchClearButton\.addEventListener\('click'/);
+  assert.match(html, /function setSearchQuery\(nextQuery\)/);
+  assert.match(html, /function syncSearchResults\(options = \{\}\)/);
+  assert.match(html, /function syncSearchHighlights\(\)/);
+  assert.match(html, /function focusNextSearchResult\(\)/);
+  assert.match(html, /function focusPreviousSearchResult\(\)/);
+  assert.match(html, /function focusSearchInput\(selectText = false\)/);
+  assert.match(html, /event\.key\.toLowerCase\(\) === 'f'/);
+  assert.match(html, /currentState\.scene\.nodes/);
+  assert.match(html, /centerNodeInViewport\(activeHash\)/);
 });

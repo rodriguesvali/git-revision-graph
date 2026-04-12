@@ -27,6 +27,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const scopeSelect = document.getElementById('scopeSelect');
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showBranchingsToggle = document.getElementById('showBranchingsToggle');
+    const searchInput = document.getElementById('searchInput');
+    const searchResultBadge = document.getElementById('searchResultBadge');
+    const searchPrevButton = document.getElementById('searchPrevButton');
+    const searchNextButton = document.getElementById('searchNextButton');
+    const searchClearButton = document.getElementById('searchClearButton');
     const reorganizeButton = document.getElementById('reorganizeButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomInButton = document.getElementById('zoomInButton');
@@ -58,6 +63,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let nodeDragState = null;
     let suppressNodeClick = false;
     let nodeOffsets = {};
+    let searchQuery = '';
+    let searchResultHashes = [];
+    let activeSearchResultIndex = -1;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -92,6 +100,26 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           type: 'set-projection-options',
           options: { showBranchingsAndMerges: showBranchingsToggle.checked }
         }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...');
+      });
+    }
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        setSearchQuery(searchInput.value);
+      });
+    }
+    if (searchPrevButton) {
+      searchPrevButton.addEventListener('click', () => {
+        focusPreviousSearchResult();
+      });
+    }
+    if (searchNextButton) {
+      searchNextButton.addEventListener('click', () => {
+        focusNextSearchResult();
+      });
+    }
+    if (searchClearButton) {
+      searchClearButton.addEventListener('click', () => {
+        clearSearchQuery(true);
       });
     }
     if (reorganizeButton) {
@@ -182,6 +210,32 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
     });
     window.addEventListener('keydown', (event) => {
+      const isSearchInputFocused = document.activeElement === searchInput;
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        focusSearchInput(true);
+        return;
+      }
+      if (isSearchInputFocused) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            focusPreviousSearchResult();
+          } else {
+            focusNextSearchResult();
+          }
+          return;
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          if (getNormalizedSearchQuery().length > 0) {
+            clearSearchQuery(true);
+          } else {
+            searchInput.blur();
+          }
+          return;
+        }
+      }
       if (event.altKey && !event.ctrlKey && !event.metaKey) {
         if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') {
           event.preventDefault();
@@ -244,6 +298,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return;
       }
 
+      const previousRepositoryPath = currentState && currentState.repositoryPath ? currentState.repositoryPath : null;
       const selectionSnapshot = options.preserveSelection ? captureSelectionSnapshot() : [];
       const scenePlacementSnapshot = options.preserveViewport ? captureScenePlacementSnapshot() : null;
       const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
@@ -288,9 +343,17 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         hideStatus();
       }
 
+      const shouldResetSearch =
+        nextState.viewMode !== 'ready' ||
+        (!!previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null));
       const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
       applyNodeLayout(false);
       syncSelection();
+      if (shouldResetSearch) {
+        clearSearchQuery(false);
+      } else {
+        syncSearchResults({ preserveActiveHash: true, focusActive: false });
+      }
       requestAnimationFrame(() => {
         if (nextState.autoArrangeOnInit) {
           autoArrangeLayout();

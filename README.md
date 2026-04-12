@@ -20,7 +20,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 - Dedicated `GIT Revision Graph` Activity Bar container
 - `GIT Revision Graph` webview for recent commits across visible refs
-- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, and branching/merge visibility
+- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, branching/merge visibility, and in-graph search
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references, including changed files, unified diff, and revision log actions
 - Compare a selected reference against the current worktree
@@ -34,6 +34,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
 - Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
+- Client-side search across the loaded graph by branch, tag, hash, subject, and author
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 
@@ -56,7 +57,7 @@ Not included yet:
 
 - A persistent compare results view
 - Advanced merge conflict guidance
-- Rich search beyond the current graph scope and visibility controls
+- Rich search beyond the current loaded graph scope and visibility controls
 - Tag creation, reference rename, fetch, or general push workflows
 - Full-history graph rendering beyond the bounded recent-commit window
 

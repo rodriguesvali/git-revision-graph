@@ -263,6 +263,21 @@ export function renderRevisionGraphScriptLayout(): string {
       const displayedHeadAnchor = getDisplayedHeadAnchorBounds();
       const targetCenterX = displayedHeadAnchor ? displayedHeadAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
       const targetCenterY = displayedHeadAnchor ? displayedHeadAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
+      centerViewportOnPoint(targetCenterX, targetCenterY);
+    }
+
+    function centerNodeInViewport(hash) {
+      if (!hash || !nodeElements.has(hash)) {
+        return;
+      }
+
+      centerViewportOnPoint(
+        getNodeLeft(hash) + getNodeWidth(hash) / 2 + layoutOffsetX,
+        getNodeTop(hash) + getNodeHeight(hash) / 2 + layoutOffsetY
+      );
+    }
+
+    function centerViewportOnPoint(targetCenterX, targetCenterY) {
       const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
       const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
       viewport.scrollLeft = Math.max(

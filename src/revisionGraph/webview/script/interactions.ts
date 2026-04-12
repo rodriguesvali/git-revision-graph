@@ -32,7 +32,159 @@ export function renderRevisionGraphScriptInteractions(): string {
         element.classList.toggle('has-compare', selected.length === 2 && refId === selected[0]);
       }
       syncRelationshipHighlights();
+      syncSearchHighlights();
       syncMinimap();
+    }
+
+    function setSearchQuery(nextQuery) {
+      searchQuery = typeof nextQuery === 'string' ? nextQuery : '';
+      syncSearchResults({ preserveActiveHash: false, focusActive: true });
+    }
+
+    function clearSearchQuery(keepFocus = false) {
+      searchQuery = '';
+      syncSearchResults({ preserveActiveHash: false, focusActive: false });
+      if (keepFocus && searchInput) {
+        focusSearchInput(false);
+      }
+    }
+
+    function syncSearchResults(options = {}) {
+      const normalizedQuery = getNormalizedSearchQuery();
+      const previousActiveHash = options.preserveActiveHash ? getActiveSearchResultHash() : null;
+      if (!currentState || currentState.viewMode !== 'ready' || normalizedQuery.length === 0) {
+        searchResultHashes = [];
+        activeSearchResultIndex = -1;
+        syncSearchUi();
+        syncSearchHighlights();
+        return;
+      }
+
+      searchResultHashes = currentState.scene.nodes
+        .slice()
+        .sort((left, right) => left.row - right.row)
+        .filter((node) => nodeMatchesSearchQuery(node, normalizedQuery))
+        .map((node) => node.hash);
+
+      if (searchResultHashes.length === 0) {
+        activeSearchResultIndex = -1;
+      } else if (previousActiveHash) {
+        const preservedIndex = searchResultHashes.indexOf(previousActiveHash);
+        activeSearchResultIndex = preservedIndex >= 0 ? preservedIndex : 0;
+      } else {
+        activeSearchResultIndex = 0;
+      }
+
+      syncSearchUi();
+      syncSearchHighlights();
+      if (options.focusActive && activeSearchResultIndex >= 0) {
+        requestAnimationFrame(() => {
+          focusActiveSearchResult();
+        });
+      }
+    }
+
+    function syncSearchUi() {
+      const normalizedQuery = getNormalizedSearchQuery();
+      if (searchInput && searchInput.value !== searchQuery) {
+        searchInput.value = searchQuery;
+      }
+      if (searchResultBadge) {
+        searchResultBadge.textContent =
+          searchResultHashes.length > 0 && activeSearchResultIndex >= 0
+            ? (activeSearchResultIndex + 1) + '/' + searchResultHashes.length
+            : '0 results';
+      }
+      if (searchPrevButton) {
+        searchPrevButton.disabled = normalizedQuery.length === 0 || searchResultHashes.length < 2;
+      }
+      if (searchNextButton) {
+        searchNextButton.disabled = normalizedQuery.length === 0 || searchResultHashes.length < 2;
+      }
+      if (searchClearButton) {
+        searchClearButton.disabled = normalizedQuery.length === 0;
+      }
+    }
+
+    function syncSearchHighlights() {
+      const matchHashes = new Set(searchResultHashes);
+      const activeHash = getActiveSearchResultHash();
+      for (const [hash, element] of nodeElements.entries()) {
+        element.classList.toggle('search-match', matchHashes.has(hash));
+        element.classList.toggle('search-active', hash === activeHash);
+      }
+    }
+
+    function focusSearchInput(selectText = false) {
+      if (!searchInput) {
+        return;
+      }
+      searchInput.focus();
+      if (selectText && typeof searchInput.select === 'function') {
+        searchInput.select();
+      }
+    }
+
+    function focusNextSearchResult() {
+      if (searchResultHashes.length === 0) {
+        return;
+      }
+      setActiveSearchResultIndex(activeSearchResultIndex + 1, true);
+    }
+
+    function focusPreviousSearchResult() {
+      if (searchResultHashes.length === 0) {
+        return;
+      }
+      setActiveSearchResultIndex(activeSearchResultIndex - 1, true);
+    }
+
+    function setActiveSearchResultIndex(nextIndex, focusActive) {
+      if (searchResultHashes.length === 0) {
+        activeSearchResultIndex = -1;
+        syncSearchUi();
+        syncSearchHighlights();
+        return;
+      }
+
+      const normalizedIndex = ((nextIndex % searchResultHashes.length) + searchResultHashes.length) % searchResultHashes.length;
+      activeSearchResultIndex = normalizedIndex;
+      syncSearchUi();
+      syncSearchHighlights();
+      if (focusActive) {
+        focusActiveSearchResult();
+      }
+    }
+
+    function focusActiveSearchResult() {
+      const activeHash = getActiveSearchResultHash();
+      if (!activeHash) {
+        return;
+      }
+      centerNodeInViewport(activeHash);
+    }
+
+    function getActiveSearchResultHash() {
+      return activeSearchResultIndex >= 0 ? searchResultHashes[activeSearchResultIndex] || null : null;
+    }
+
+    function getNormalizedSearchQuery() {
+      return String(searchQuery || '').trim().toLowerCase();
+    }
+
+    function nodeMatchesSearchQuery(node, normalizedQuery) {
+      if (!normalizedQuery) {
+        return false;
+      }
+
+      const candidateValues = [
+        node.hash,
+        node.hash.slice(0, 8),
+        node.subject || '',
+        node.author || '',
+        ...node.refs.map((ref) => ref.name)
+      ];
+      return candidateValues.some((value) => String(value).toLowerCase().includes(normalizedQuery));
     }
 
     function syncRelationshipHighlights() {

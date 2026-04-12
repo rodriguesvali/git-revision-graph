@@ -32,6 +32,43 @@ export function renderRevisionGraphShellHtml(): string {
       <input id="showBranchingsToggle" type="checkbox" />
       <span>Show Branchings &amp; Merges</span>
     </label>
+    <div class="search-controls" aria-label="Search the loaded revision graph">
+      <label class="search-field" for="searchInput">
+        <span class="control-caption">Find</span>
+        <input
+          id="searchInput"
+          class="search-input"
+          type="text"
+          placeholder="Find in graph..."
+          aria-label="Find commits, branches, tags, and authors in the graph"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+      </label>
+      <span class="search-result-badge" id="searchResultBadge" aria-live="polite">0 results</span>
+      <button
+        id="searchPrevButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Previous Search Result (Shift+Enter)"
+        aria-label="Previous Search Result"
+      >&uarr;</button>
+      <button
+        id="searchNextButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Next Search Result (Enter)"
+        aria-label="Next Search Result"
+      >&darr;</button>
+      <button
+        id="searchClearButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Clear Search"
+        aria-label="Clear Search"
+      >&times;</button>
+    </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <button
         id="reorganizeButton"

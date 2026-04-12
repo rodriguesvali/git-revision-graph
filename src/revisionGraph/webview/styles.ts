@@ -45,15 +45,20 @@ export function renderRevisionGraphStyles(): string {
     body.loading {
       cursor: progress;
     }
-    button, select {
+    button, select, input {
       border: 1px solid var(--border);
       background: var(--panel);
       color: var(--text);
       border-radius: 8px;
       padding: 6px 10px;
+    }
+    button, select {
       cursor: pointer;
     }
     button:disabled { opacity: 0.45; cursor: default; }
+    input::placeholder {
+      color: color-mix(in srgb, var(--muted) 88%, transparent);
+    }
     .viewport {
       position: relative;
       height: 100vh;
@@ -119,6 +124,16 @@ export function renderRevisionGraphStyles(): string {
     }
     .node.related.ancestor-related.descendant-related {
       outline: 2px solid color-mix(in srgb, var(--accent) 58%, white 12%);
+    }
+    .node.search-match {
+      border-color: color-mix(in srgb, var(--accent) 34%, rgba(0, 0, 0, 0.18));
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16), 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    .node.search-active {
+      outline: 3px solid color-mix(in srgb, var(--accent) 88%, white 8%);
+      outline-offset: 2px;
+      border-color: color-mix(in srgb, var(--accent) 44%, rgba(0, 0, 0, 0.18));
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2), 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
     }
     .node-head { background: var(--node-head); color: white; }
     .node-branch { background: var(--node-branch); }
@@ -376,6 +391,44 @@ export function renderRevisionGraphStyles(): string {
     }
     .view-controls input[type="checkbox"] {
       margin: 0;
+    }
+    .view-controls .search-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1 1 320px;
+      min-width: min(100%, 280px);
+    }
+    .view-controls .search-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .view-controls .search-input {
+      min-width: 0;
+      width: min(100%, 320px);
+      flex: 1 1 auto;
+      height: 32px;
+      padding: 0 10px;
+      font-size: 12px;
+      line-height: 1;
+    }
+    .view-controls .search-result-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 68px;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--panel-strong) 76%, transparent);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
     }
     .view-controls .toolbar-actions {
       display: inline-flex;
