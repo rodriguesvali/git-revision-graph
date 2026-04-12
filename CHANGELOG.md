@@ -4,10 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## 0.0.11
 
-- Replaced fixed-buffer Git process execution with a streaming implementation so large diffs and commit views are less likely to fail in bigger repositories.
-- Fixed revision graph repository selection so canceling the picker keeps the current repository instead of clearing it or immediately reopening the prompt.
-- Hardened local branch and tag branch-creation flows so they no longer fail when Git reports that the new branch has no upstream configured.
-- Added cancellation-aware revision graph refreshes and bounded background graph capture to reduce stale work and extension-host memory pressure during rapid refreshes.
+This release focuses on stability and release readiness for the Revision Graph experience.
+
+### Highlights
+
+- Replaced fixed-buffer Git process execution with a streaming implementation so large diffs and commit views are more reliable in bigger repositories.
+- Fixed revision graph repository selection so canceling the picker in multi-repository workspaces keeps the current state without unexpectedly reopening the prompt.
+- Hardened local branch creation from existing branches and tags so the flow no longer fails when Git reports that the new branch has no upstream configured.
+- Updated the revision graph refresh pipeline to cancel stale renders and obsolete background Git work, improving responsiveness during rapid refreshes.
+- Added output bounds and extra safeguards around graph snapshot loading to reduce extension-host memory pressure in heavier repositories.
+
+### Quality
+
+- Added regression coverage for large Git output handling, Git error propagation, revision graph render cancelation, multi-repository open behavior, and branch creation edge cases.
+
+### Result
+
+- `0.0.11` delivers a more predictable and resilient Revision Graph experience, especially in larger repositories and multi-repository workspaces.
 
 ## 0.0.9
 

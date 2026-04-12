@@ -1,6 +1,6 @@
 # GIT Revision Graph
 
-GIT Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running common reference-based workflows from a dedicated view.
+GIT Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated view.
 
 It is built on top of the public API exposed by the built-in `vscode.git` extension and keeps the experience close to the native VS Code diff and Source Control workflows.
 
@@ -13,26 +13,26 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 - Visualize the Git revision graph and its references in a dedicated Activity Bar view
 - Group local branches, tags, and remote branches in a way that is easy to scan
-- Provide direct actions for compare, checkout, and merge workflows
+- Provide direct actions for compare, checkout, branch, merge, sync, and review workflows
 - Reuse VS Code's native Git and diff experience instead of re-implementing Git internals
 
 ## Current Features
 
 - Dedicated `GIT Revision Graph` Activity Bar container
-- `GIT Revision Graph` webview for recent commits across all refs
+- `GIT Revision Graph` webview for recent commits across visible refs
+- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, and branching/merge visibility
 - Curved graph connectors with graph centering inside the board for denser repositories
-- Compare between two references
-- Compare a reference against the current worktree
-- Checkout for branches, tags, and commits
+- Compare between two selected references, including changed files, unified diff, and revision log actions
+- Compare a selected reference against the current worktree
+- Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
+- Create a new local branch from a local branch, remote branch, or tag
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
-- Compare actions in the Revision Graph for changed files, unified diff, and commit log
-- Ancestor filtering from a selected reference in the Revision Graph
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
-- Automatic graph reorganization on the initial graph load and after applying ancestor filtering
+- Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
@@ -45,17 +45,19 @@ Included in the MVP:
 
 - Reference discovery through the built-in Git extension API
 - Webview-based graph navigation
-- Context menu actions
-- Command Palette access to the same actions
+- Toolbar and context menu actions inside the Revision Graph
+- Command Palette access to refresh, compare, compare-with-worktree, checkout, merge, open graph, and repository selection actions
 - File-level diff opening through the native VS Code diff editor
+- Unified diff and revision log viewing for selected references
+- Local branch creation and reference deletion flows from the Revision Graph
 - Revision graph rendering through a dedicated webview panel
 
 Not included yet:
 
 - A persistent compare results view
 - Advanced merge conflict guidance
-- Rich filtering and search beyond the current graph interactions
-- Reference creation, deletion, rename, fetch, or push flows
+- Rich search beyond the current graph scope and visibility controls
+- Tag creation, reference rename, fetch, or general push workflows
 - Full-history graph rendering beyond the bounded recent-commit window
 
 ## How It Works
@@ -69,9 +71,9 @@ At a high level:
 3. It loads references with `getRefs(...)`.
 4. It renders the active repository through a `WebviewViewProvider`.
 5. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
-6. It executes workflows such as compare, checkout, and merge by calling the Git API directly.
+6. It executes workflows such as compare, checkout, branch creation, merge, sync, and deletion by using the Git API where available.
 
-This approach keeps the extension lightweight for reference workflows. The revision graph view uses `git log` directly because the public `vscode.git` API does not expose enough commit graph data to render branch ancestry.
+This approach keeps the extension lightweight for reference workflows. The revision graph view uses targeted `git log`, `git diff`, and `git show` calls only where the public `vscode.git` API does not expose enough commit graph or textual history data.
 
 ## Project Structure
 
@@ -197,7 +199,7 @@ To use it:
 
 ## Commands
 
-The current extension contributes these commands:
+The current extension contributes these Command Palette commands:
 
 - `gitRefs.refresh`
 - `gitRefs.compareRefs`
@@ -207,7 +209,13 @@ The current extension contributes these commands:
 - `gitRefs.openRevisionGraph`
 - `gitRefs.chooseRevisionGraphRepository`
 
-These commands are available from the revision graph view and can also be triggered through the Command Palette.
+Additional actions are available directly inside the Revision Graph context menu:
+
+- Create a new branch from a selected reference
+- Delete a local branch, tag, or remote branch
+- Sync the current tracked `HEAD` branch with its upstream
+- Show the revision log between two selected references
+- Open the unified diff between two selected references
 
 ## Known Limitations
 
@@ -226,9 +234,9 @@ Potential improvements after the MVP:
 - Add a persistent compare results view
 - Add search and filtering in the revision graph
 - Improve conflict-awareness before checkout and merge
-- Add branch creation and tag creation flows
+- Add tag creation and reference rename flows
 - Support richer branch metadata in the UI
-- Expand the revision graph with zoom, minimap, and richer revision actions
+- Expand the revision graph with a real minimap and richer revision actions
 
 ## Validation Strategy
 
@@ -243,16 +251,19 @@ Use both automated and manual checks when changing command behavior:
 4. Exercise:
    - compare between two references
    - compare a reference with the worktree
-   - checkout of a local branch, tag, and remote branch
+   - create a new local branch from a local branch, tag, and remote branch
+   - checkout of a local branch and remote branch
+   - sync the current tracked `HEAD` branch with its upstream
    - merge of a selected reference into the current branch
    - open `GIT Revision Graph` from the `GIT Revision Graph` title bar
-   - Ctrl/Cmd-click two commits and compare them
-   - Ctrl/Cmd-click two commits and open `Show log`
-   - select one commit and compare it with the worktree
-   - select one commit and checkout it
-   - filter ancestor references from a selected reference and return to the full graph
+   - Ctrl/Cmd-click two references and compare them
+   - Ctrl/Cmd-click two references and open `Show Log` and `Unified Diff`
+   - select one reference and compare it with the worktree
+   - select one reference and create a branch from it
+   - delete a local branch, tag, and remote branch from the graph
+   - change scope and visibility options from the graph toolbar
 
-The extension continues to rely on the public API of the built-in `vscode.git` extension and does not shell out to `git` for its main product workflows.
+The extension continues to rely on the public API of the built-in `vscode.git` extension for repository and ref operations, and uses targeted `git` commands only for graph/history data that the API does not expose.
 
 ## License
 
