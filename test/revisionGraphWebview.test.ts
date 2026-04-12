@@ -28,3 +28,9 @@ test('keeps loading and error primitives in the shell runtime', () => {
   assert.match(html, /function showError\(message\)/);
   assert.match(html, /class="loading-overlay"/);
 });
+
+test('recenters after auto-arranging the initial graph state', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /if \(nextState\.autoArrangeOnInit\) \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);/);
+});

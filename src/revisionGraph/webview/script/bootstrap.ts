@@ -280,6 +280,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       requestAnimationFrame(() => {
         if (nextState.autoArrangeOnInit) {
           autoArrangeLayout();
+          centerGraphInViewport();
         } else if (shouldRecenter) {
           centerGraphInViewport();
         }
