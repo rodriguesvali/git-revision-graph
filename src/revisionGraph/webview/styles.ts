@@ -29,6 +29,8 @@ export function renderRevisionGraphStyles(): string {
       --node-text-dark: #181818;
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
+      --toolbar-top-offset: 14px;
+      --toolbar-safe-height: 108px;
     }
     * { box-sizing: border-box; }
     body {
@@ -98,7 +100,11 @@ export function renderRevisionGraphStyles(): string {
       position: relative;
       height: 100vh;
       overflow: auto;
-      padding: ${VIEWPORT_PADDING_TOP}px ${VIEWPORT_PADDING_RIGHT}px ${VIEWPORT_PADDING_BOTTOM}px ${VIEWPORT_PADDING_LEFT}px;
+      padding:
+        calc(var(--toolbar-safe-height) + ${VIEWPORT_PADDING_TOP}px)
+        ${VIEWPORT_PADDING_RIGHT}px
+        ${VIEWPORT_PADDING_BOTTOM}px
+        ${VIEWPORT_PADDING_LEFT}px;
       cursor: grab;
     }
     .viewport.dragging {
@@ -388,7 +394,7 @@ export function renderRevisionGraphStyles(): string {
     }
     .view-controls {
       position: fixed;
-      top: 14px;
+      top: var(--toolbar-top-offset);
       left: 14px;
       right: 14px;
       z-index: 70;
@@ -503,6 +509,16 @@ export function renderRevisionGraphStyles(): string {
       width: 12px;
       font-size: 15px;
       line-height: 1;
+    }
+    @media (max-width: 1100px) {
+      :root {
+        --toolbar-safe-height: 124px;
+      }
+    }
+    @media (max-width: 820px) {
+      :root {
+        --toolbar-safe-height: 156px;
+      }
     }
     .node-summary {
       padding: 10px 12px 12px;

@@ -1,18 +1,24 @@
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from '../../revisionGraphData';
+import {
+  estimateRevisionGraphNodeHeight,
+  estimateRevisionGraphNodeWidth
+} from '../layout/nodeSizing';
+export {
+  NODE_CONTENT_CHAR_WIDTH,
+  NODE_MAX_WIDTH,
+  NODE_MIN_WIDTH,
+  NODE_SUMMARY_HEIGHT,
+  NODE_WIDTH_PADDING,
+  REF_LINE_DIVIDER_HEIGHT,
+  REF_LINE_HEIGHT
+} from '../layout/nodeSizing';
 
 export const ROW_HEIGHT = 140;
-export const NODE_MIN_WIDTH = 180;
-export const NODE_MAX_WIDTH = 420;
-export const NODE_CONTENT_CHAR_WIDTH = 8.2;
-export const NODE_WIDTH_PADDING = 62;
 export const NODE_HORIZONTAL_GAP = 28;
 export const NODE_PADDING_X = 26;
 export const GRAPH_PADDING_TOP = 88;
 export const GRAPH_PADDING_BOTTOM = 24;
 export const EDGE_VERTICAL_INSET = 6;
-export const REF_LINE_HEIGHT = 31;
-export const REF_LINE_DIVIDER_HEIGHT = 1;
-export const NODE_SUMMARY_HEIGHT = 38;
 export const VIEWPORT_PADDING_TOP = 18;
 export const VIEWPORT_PADDING_RIGHT = 18;
 export const VIEWPORT_PADDING_BOTTOM = 18;
@@ -111,22 +117,11 @@ export function getNodeClass(node: RevisionGraphNode): string {
 }
 
 export function getNodeWidth(node: RevisionGraphNode): number {
-  const longestLabelLength = node.refs.length > 0
-    ? node.refs.reduce((max, ref) => Math.max(max, ref.name.length), 0)
-    : Math.min(48, formatNodeSummary(node).length);
-  return clampNumber(
-    Math.ceil(longestLabelLength * NODE_CONTENT_CHAR_WIDTH + NODE_WIDTH_PADDING),
-    NODE_MIN_WIDTH,
-    NODE_MAX_WIDTH
-  );
+  return estimateRevisionGraphNodeWidth(node);
 }
 
 export function getNodeHeight(node: RevisionGraphNode): number {
-  const refSectionHeight = node.refs.length > 0
-    ? node.refs.length * REF_LINE_HEIGHT + Math.max(0, node.refs.length - 1) * REF_LINE_DIVIDER_HEIGHT
-    : 0;
-  const summaryHeight = shouldRenderNodeSummary(node) ? NODE_SUMMARY_HEIGHT : 0;
-  return refSectionHeight + summaryHeight;
+  return estimateRevisionGraphNodeHeight(node);
 }
 
 export function formatNodeSummary(node: RevisionGraphNode): string {
@@ -150,10 +145,6 @@ export function formatNodeTitle(node: RevisionGraphNode): string {
   const date = node.date || 'Unknown date';
   const subject = node.subject || 'Structural commit';
   return `${refBlock}${node.hash}\n${subject}\n${author} on ${date}`;
-}
-
-export function clampNumber(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export function createNonce(): string {

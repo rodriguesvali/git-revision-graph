@@ -237,6 +237,28 @@ test('builds a scene from the projected graph while preserving merge edges', asy
   );
 });
 
+test('gives distinct horizontal positions to wide visible branches in the same scene', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'merge1', parents: ['left1', 'right1'], author: 'Ada', date: '2026-04-08', subject: 'Merge topic', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'left1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Left branch', refs: [{ name: 'release/2026/very-long-maintenance-branch-name', kind: 'branch' }] },
+    { hash: 'right1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Right branch', refs: [{ name: 'origin/teams/platform/feature/very-long-name', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
+  const scene = await buildRevisionGraphScene(graph, projection);
+  const leftNode = scene.nodes.find((node) => node.hash === 'left1');
+  const rightNode = scene.nodes.find((node) => node.hash === 'right1');
+
+  assert.ok(leftNode);
+  assert.ok(rightNode);
+  assert.notEqual(leftNode?.lane, rightNode?.lane);
+  assert.notEqual(leftNode?.x, rightNode?.x);
+});
+
 test('can find commits by ref and collect their ancestor hashes from the full DAG', () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },

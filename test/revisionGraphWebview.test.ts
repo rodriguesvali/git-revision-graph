@@ -27,6 +27,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'patch-metadata'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
+  assert.match(html, /--toolbar-safe-height: 108px/);
+  assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
 });
 
 test('keeps loading and error primitives in the shell runtime', () => {

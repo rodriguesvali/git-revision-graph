@@ -46,6 +46,8 @@ export function renderRevisionGraphScriptLayout(): string {
         compactHorizontalSpread(positions, neighborMap);
         resolveRowOverlaps(positions);
       }
+      expandHorizontalSpreadToViewport(positions, neighborMap);
+      resolveRowOverlaps(positions);
       for (const node of graphNodes) {
         const nextLeft = clampNodeLeft(node.hash, positions.get(node.hash) || node.defaultLeft);
         positions.set(node.hash, nextLeft);
@@ -125,7 +127,7 @@ export function renderRevisionGraphScriptLayout(): string {
         return;
       }
       const components = buildConnectedComponents(neighborMap);
-      const spreadFactor = graphNodes.length >= 40 ? 0.62 : graphNodes.length >= 20 ? 0.72 : 0.84;
+      const spreadFactor = graphNodes.length >= 40 ? 0.8 : graphNodes.length >= 20 ? 0.88 : 0.94;
 
       for (const component of components) {
         const anchorX = getAutoLayoutAnchorX(positions, component);
@@ -140,6 +142,63 @@ export function renderRevisionGraphScriptLayout(): string {
           positions.set(hash, clampNodeLeft(hash, compressed));
         }
       }
+    }
+
+    function expandHorizontalSpreadToViewport(positions, neighborMap) {
+      if (graphNodes.length <= 1) {
+        return;
+      }
+
+      const components = buildConnectedComponents(neighborMap);
+      const canvasWidth = getCanvasWidth();
+      for (const component of components) {
+        if (component.length <= 1) {
+          continue;
+        }
+
+        const ordered = [...component]
+          .map((hash) => graphNodeByHash.get(hash))
+          .filter((node) => !!node)
+          .sort((left, right) =>
+            (positions.get(left.hash) || left.defaultLeft) - (positions.get(right.hash) || right.defaultLeft) ||
+            left.defaultLeft - right.defaultLeft
+          );
+
+        if (ordered.length <= 1) {
+          continue;
+        }
+
+        const bounds = getPositionBounds(ordered, positions);
+        const usedWidth = bounds.maxX - bounds.minX;
+        const availableWidth = Math.max(0, canvasWidth - 24);
+        if (availableWidth <= usedWidth + 24) {
+          continue;
+        }
+
+        const anchorX = getAutoLayoutAnchorX(positions, component);
+        const extraWidth = Math.min(availableWidth - usedWidth, usedWidth * 0.42);
+        const expansionFactor = 1 + extraWidth / Math.max(1, usedWidth);
+
+        for (const node of ordered) {
+          const current = positions.get(node.hash) || node.defaultLeft;
+          const expanded = anchorX + (current - anchorX) * expansionFactor;
+          positions.set(node.hash, clampNodeLeft(node.hash, expanded));
+        }
+      }
+    }
+
+    function getPositionBounds(nodes, positions) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      for (const node of nodes) {
+        const left = positions.get(node.hash) || node.defaultLeft;
+        minX = Math.min(minX, left);
+        maxX = Math.max(maxX, left + getNodeWidth(node.hash));
+      }
+      if (!Number.isFinite(minX) || !Number.isFinite(maxX)) {
+        return { minX: 0, maxX: 0 };
+      }
+      return { minX, maxX };
     }
 
     function groupNodesByRow() {
