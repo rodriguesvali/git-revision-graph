@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.12
+
+### New Feature
+
+- **Reference Location Search (Toolbar)**  
+  Users can now define a reference location directly from the toolbar search box, making navigation faster and more intuitive. This enhancement streamlines workflows by allowing quick access to location-based context without leaving the main interface.
+
+### Improvements
+
+- Enhanced layout and organization of cards for better visual clarity and usability
+- Minor UI refinements to improve overall user experience
+
+### Fixes & Stability
+
+- General bug fixes to improve system stability
+- Performance optimizations across key components
+
 ## 0.0.11
 
 This release focuses on stability and release readiness for the Revision Graph experience.

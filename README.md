@@ -272,3 +272,9 @@ The extension continues to rely on the public API of the built-in `vscode.git` e
 ## License
 
 MIT
+
+## Credits
+
+This extension was inspired by and/or uses concepts from [TortoiseGit](https://tortoisegit.org/).
+
+TortoiseGit is an open-source Git client for Windows.
