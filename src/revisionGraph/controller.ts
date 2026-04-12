@@ -32,17 +32,27 @@ import { RevisionGraphRef } from '../revisionGraphData';
 import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
-import { getRefreshLoadingLabel, RevisionGraphRefreshIntent } from '../revisionGraphRefresh';
+import {
+  consumePendingFollowUpRefresh,
+  getRefreshLoadingLabel,
+  normalizeRefreshRequest,
+  PendingRevisionGraphFollowUpRefresh,
+  RevisionGraphRefreshIntent,
+  RevisionGraphRefreshRequestLike,
+  RevisionGraphRepositoryEventKind,
+  registerPendingFollowUpRefresh
+} from '../revisionGraphRefresh';
 
 export class RevisionGraphController implements vscode.Disposable {
   private view: vscode.WebviewView | undefined;
   private currentRepository: Repository | undefined;
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
   private autoArrangeOnNextRender = true;
+  private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly actionServices = createWorkbenchRefActionServices((intent) => {
-    void this.refresh(intent);
+  private readonly actionServices = createWorkbenchRefActionServices((request) => {
+    void this.refresh(request);
   });
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
@@ -155,13 +165,16 @@ export class RevisionGraphController implements vscode.Disposable {
     await this.open();
   }
 
-  async refresh(intent: RevisionGraphRefreshIntent = 'full-rebuild'): Promise<void> {
+  async refresh(requestLike: RevisionGraphRefreshRequestLike = 'full-rebuild'): Promise<void> {
     if (!this.view) {
       return;
     }
 
+    const request = normalizeRefreshRequest(requestLike);
+    registerPendingFollowUpRefresh(this.pendingFollowUpRefreshes, request);
+
     await this.renderCoordinator.schedule(
-      getRefreshLoadingLabel(intent),
+      getRefreshLoadingLabel(request.intent),
       async (requestId, signal) => this.buildNextState(requestId, signal)
     );
   }
@@ -318,8 +331,8 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repoSubscriptions.set(
       key,
       vscode.Disposable.from(
-        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository, 'full-rebuild')),
-        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'metadata-patch'))
+        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository, 'full-rebuild', 'state')),
+        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'metadata-patch', 'checkout'))
       )
     );
   }
@@ -337,12 +350,17 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private handleRepositoryStateChange(
     repository: Repository,
-    intent: RevisionGraphRefreshIntent
+    intent: RevisionGraphRefreshIntent,
+    eventKind: RevisionGraphRepositoryEventKind
   ): void {
     const previousRepository = this.currentRepository;
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
 
     if (isSameRepositoryPath(repository, this.currentRepository) || (!previousRepository && this.currentRepository)) {
+      if (consumePendingFollowUpRefresh(this.pendingFollowUpRefreshes, repository.rootUri.toString(), eventKind)) {
+        return;
+      }
+
       void this.refresh(intent);
     }
   }

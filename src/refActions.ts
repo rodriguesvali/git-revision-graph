@@ -20,7 +20,10 @@ import {
   RefActionTarget,
   RefSelection
 } from './refActions/types';
-import { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
+import {
+  createActionRefreshRequest,
+  RevisionGraphRefreshIntent
+} from './revisionGraphRefresh';
 
 export type {
   DiffPresenter,
@@ -119,7 +122,9 @@ export async function checkoutResolvedReference(
 
     await repository.checkout(target.refName);
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
@@ -158,7 +163,9 @@ export async function createBranchFromResolvedReference(
         ? `Branch ${branchName} was created and checked out from ${branchCreation.upstreamRefName}.`
         : `Branch ${branchName} was created and checked out from ${target.label}.`
     );
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
@@ -199,7 +206,9 @@ export async function syncCurrentHeadWithUpstream(
       await repository.push();
     }
 
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
@@ -243,7 +252,9 @@ export async function mergeResolvedReference(
     }
 
     await repository.merge(target.refName);
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
@@ -321,7 +332,9 @@ async function deleteRemoteReference(
 
   await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
   services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
-  services.refreshController.refresh(refreshIntent);
+  services.refreshController.refresh(
+    createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+  );
 }
 
 async function deleteTagReference(
@@ -340,7 +353,9 @@ async function deleteTagReference(
 
   await repository.deleteTag(target.refName);
   services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
-  services.refreshController.refresh(refreshIntent);
+  services.refreshController.refresh(
+    createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+  );
 }
 
 async function deleteBranchReference(
@@ -365,7 +380,9 @@ async function deleteBranchReference(
   try {
     await repository.deleteBranch(target.refName, false);
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
   } catch (error) {
     if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
       throw error;
@@ -381,6 +398,8 @@ async function deleteBranchReference(
 
     await repository.deleteBranch(target.refName, true);
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
-    services.refreshController.refresh(refreshIntent);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
   }
 }

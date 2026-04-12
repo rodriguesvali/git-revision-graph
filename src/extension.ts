@@ -6,7 +6,7 @@ import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } fr
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } from './refCommands';
 import { RefNode } from './refNodes';
 import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
-import { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
+import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -63,8 +63,8 @@ async function getGitApi(): Promise<API | undefined> {
 }
 
 function createCommandServices(revisionGraphProvider: RevisionGraphViewProvider): RefCommandServices {
-  const baseServices = createWorkbenchRefActionServices((intent?: RevisionGraphRefreshIntent) => {
-    void revisionGraphProvider.refresh(intent);
+  const baseServices = createWorkbenchRefActionServices((request?: RevisionGraphRefreshRequestLike) => {
+    void revisionGraphProvider.refresh(request);
   });
 
   return {

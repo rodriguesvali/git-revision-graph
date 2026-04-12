@@ -6,11 +6,11 @@ import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { RefActionServices } from './refActions';
 import { isMissingUpstreamConfigurationError } from './refActions/shared';
-import { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
+import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
 
 export function createWorkbenchRefActionServices(
-  refresh?: (intent?: RevisionGraphRefreshIntent) => void
+  refresh?: (request?: RevisionGraphRefreshRequestLike) => void
 ): RefActionServices {
   return {
     ui: {
@@ -58,8 +58,8 @@ export function createWorkbenchRefActionServices(
       }
     },
     refreshController: {
-      refresh(intent) {
-        refresh?.(intent);
+      refresh(request) {
+        refresh?.(request);
       }
     },
     referenceManager: {

@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
-import { RevisionGraphRefreshIntent } from '../src/revisionGraphRefresh';
+import {
+  normalizeRefreshRequest,
+  RevisionGraphRefreshIntent,
+  RevisionGraphRefreshRequest
+} from '../src/revisionGraphRefresh';
 import {
   createBranchFromResolvedReference,
   checkoutResolvedReference,
@@ -27,6 +31,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly upstreamClears: string[];
   readonly refreshCalls: number;
   readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
+  readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
 } {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
@@ -35,7 +40,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
-  const refreshIntents: RevisionGraphRefreshIntent[] = [];
+  const refreshRequests: RevisionGraphRefreshRequest[] = [];
   let sourceControlOpens = 0;
   const overrideConfirm = overrides.confirm;
 
@@ -77,8 +82,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       }
     },
     refreshController: {
-      refresh(intent) {
-        refreshIntents.push(intent ?? 'full-rebuild');
+      refresh(request) {
+        refreshRequests.push(normalizeRefreshRequest(request));
       }
     },
     referenceManager: {
@@ -111,9 +116,12 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     diffCalls,
     deletedRemoteBranches,
     upstreamClears,
-    refreshIntents,
+    refreshRequests,
+    get refreshIntents() {
+      return refreshRequests.map((request) => request.intent);
+    },
     get refreshCalls() {
-      return refreshIntents.length;
+      return refreshRequests.length;
     }
   };
 }
@@ -180,6 +188,11 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'metadata-patch',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
 });
 
 test('checkoutResolvedReference creates a branch from tags instead of checking them out directly', async () => {
@@ -326,6 +339,11 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
 });
 
 test('syncCurrentHeadWithUpstream reports when the current branch is already synchronized', async () => {
