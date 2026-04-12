@@ -25,7 +25,8 @@ export interface RevisionGraphBackend {
   loadGraphSnapshot(
     repository: Repository,
     options: RevisionGraphProjectionOptions,
-    limitPolicy: RevisionGraphLimitPolicy
+    limitPolicy: RevisionGraphLimitPolicy,
+    signal?: AbortSignal
   ): Promise<RevisionGraphSnapshot>;
   loadRevisionLog(
     repository: Repository,
@@ -39,11 +40,13 @@ export interface RevisionGraphBackend {
     repository: Repository,
     snapshot: RevisionGraphSnapshot,
     currentHeadName: string | undefined,
-    visibleReferences: readonly RevisionGraphViewReference[]
+    visibleReferences: readonly RevisionGraphViewReference[],
+    signal?: AbortSignal
   ): Promise<string[]>;
 }
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
+const GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 
 export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
   private readonly snapshotCache = new Map<string, {
@@ -54,8 +57,14 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
   async loadGraphSnapshot(
     repository: Repository,
     options: RevisionGraphProjectionOptions,
-    limitPolicy: RevisionGraphLimitPolicy
+    limitPolicy: RevisionGraphLimitPolicy,
+    signal?: AbortSignal
   ): Promise<RevisionGraphSnapshot> {
+    if (signal) {
+      return this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal);
+    }
+
+    pruneExpiredSnapshotCacheEntries(this.snapshotCache, Date.now());
     const cacheKey = buildSnapshotCacheKey(repository, options, limitPolicy);
     const now = Date.now();
     const cached = this.snapshotCache.get(cacheKey);
@@ -63,7 +72,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
       return cached.snapshotPromise;
     }
 
-    const snapshotPromise = this.loadGraphSnapshotInternal(repository, options, limitPolicy)
+    const snapshotPromise = this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal)
       .catch((error) => {
         this.snapshotCache.delete(cacheKey);
         throw error;
@@ -127,8 +136,10 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
     repository: Repository,
     snapshot: RevisionGraphSnapshot,
     currentHeadName: string | undefined,
-    visibleReferences: readonly RevisionGraphViewReference[]
+    visibleReferences: readonly RevisionGraphViewReference[],
+    signal?: AbortSignal
   ): Promise<string[]> {
+    throwIfAborted(signal);
     if (!currentHeadName) {
       return [];
     }
@@ -152,9 +163,14 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
     const fallbackResults = await Promise.all(
       unresolvedReferences.map(async (ref) => {
         try {
-          const isAncestor = await isRefAncestorOfHead(repository, ref.name, currentHeadName);
+          throwIfAborted(signal);
+          const isAncestor = await isRefAncestorOfHead(repository, ref.name, currentHeadName, signal);
           return isAncestor ? `${ref.kind}::${ref.name}` : undefined;
-        } catch {
+        } catch (error) {
+          if (isAbortError(error)) {
+            throw error;
+          }
+
           return undefined;
         }
       })
@@ -172,7 +188,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
   private async loadGraphSnapshotInternal(
     repository: Repository,
     options: RevisionGraphProjectionOptions,
-    limitPolicy: RevisionGraphLimitPolicy
+    limitPolicy: RevisionGraphLimitPolicy,
+    signal?: AbortSignal
   ): Promise<RevisionGraphSnapshot> {
     const limits = [
       limitPolicy.initialLimit,
@@ -181,7 +198,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
 
     let selectedSnapshot: RevisionGraphSnapshot | undefined;
     for (const limit of limits) {
-      const snapshot = await loadSnapshot(repository, limit, options);
+      throwIfAborted(signal);
+      const snapshot = await loadSnapshot(repository, limit, options, signal);
       selectedSnapshot = snapshot;
 
       if (snapshot.graph.orderedCommits.length < limit) {
@@ -194,7 +212,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
     }
 
     if (!selectedSnapshot) {
-      return loadSnapshot(repository, limitPolicy.initialLimit, options);
+      return loadSnapshot(repository, limitPolicy.initialLimit, options, signal);
     }
 
     return selectedSnapshot;
@@ -272,12 +290,18 @@ function buildSnapshotCacheKey(
 async function loadSnapshot(
   repository: Repository,
   limit: number,
-  options: RevisionGraphProjectionOptions
+  options: RevisionGraphProjectionOptions,
+  signal?: AbortSignal
 ): Promise<RevisionGraphSnapshot> {
+  throwIfAborted(signal);
   const refKindsByName = buildRevisionGraphRefKinds(await repository.getRefs());
   const stdout = await execGit(
     repository.rootUri.fsPath,
-    buildRevisionGraphGitLogArgs(limit, options)
+    buildRevisionGraphGitLogArgs(limit, options),
+    {
+      signal,
+      maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES
+    }
   );
 
   return {
@@ -285,4 +309,27 @@ async function loadSnapshot(
     loadedAt: Date.now(),
     requestedLimit: limit
   };
+}
+
+function pruneExpiredSnapshotCacheEntries<T extends { readonly createdAt: number }>(
+  cache: Map<string, T>,
+  now: number
+): void {
+  for (const [key, entry] of cache.entries()) {
+    if ((now - entry.createdAt) > SNAPSHOT_CACHE_TTL_MS) {
+      cache.delete(key);
+    }
+  }
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    const error = new Error('The revision graph load was aborted.');
+    error.name = 'AbortError';
+    throw error;
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }

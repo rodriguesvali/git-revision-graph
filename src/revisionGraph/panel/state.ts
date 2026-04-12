@@ -24,11 +24,15 @@ export async function buildReadyRevisionGraphViewState(
   projectionOptions: RevisionGraphViewState['projectionOptions'],
   autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
-  limitPolicy: RevisionGraphLimitPolicy
+  limitPolicy: RevisionGraphLimitPolicy,
+  signal?: AbortSignal
 ): Promise<RevisionGraphViewState> {
-  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy);
+  throwIfAborted(signal);
+  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal);
+  throwIfAborted(signal);
   const projection = projectDecoratedCommitGraph(snapshot.graph, projectionOptions);
   const scene = await buildRevisionGraphScene(snapshot.graph, projection);
+  throwIfAborted(signal);
   const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
   const nodeLayouts = buildNodeLayouts(scene);
   const references = scene.nodes.flatMap((node) =>
@@ -44,8 +48,10 @@ export async function buildReadyRevisionGraphViewState(
     repository,
     snapshot,
     repository.state.HEAD?.name,
-    references
+    references,
+    signal
   );
+  throwIfAborted(signal);
   const baseCanvasWidth = Math.max(
     880,
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
@@ -79,6 +85,14 @@ export async function buildReadyRevisionGraphViewState(
     loadingLabel: undefined,
     errorMessage: undefined
   };
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    const error = new Error('The revision graph load was aborted.');
+    error.name = 'AbortError';
+    throw error;
+  }
 }
 
 export function buildEmptyRevisionGraphViewState(

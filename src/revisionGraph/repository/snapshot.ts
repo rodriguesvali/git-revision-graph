@@ -26,12 +26,14 @@ export async function loadRevisionGraphSnapshot(
 export async function isRefAncestorOfHead(
   repository: Repository,
   refName: string,
-  headRefName: string
+  headRefName: string,
+  signal?: AbortSignal
 ): Promise<boolean> {
   try {
     await execGitWithResult(
       repository.rootUri.fsPath,
-      ['merge-base', '--is-ancestor', refName, headRefName]
+      ['merge-base', '--is-ancestor', refName, headRefName],
+      { signal }
     );
     return true;
   } catch (error) {

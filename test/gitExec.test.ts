@@ -18,6 +18,26 @@ async function createTemporaryRepository(): Promise<string> {
   return repositoryPath;
 }
 
+async function withFakeGitScript<T>(script: string, run: (repositoryPath: string) => Promise<T>): Promise<T> {
+  const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-fake-git-'));
+  const binDir = path.join(temporaryRoot, 'bin');
+  const repositoryPath = path.join(temporaryRoot, 'repo');
+  const gitPath = path.join(binDir, 'git');
+  const originalPath = process.env.PATH ?? '';
+
+  await fs.mkdir(binDir, { recursive: true });
+  await fs.mkdir(repositoryPath, { recursive: true });
+  await fs.writeFile(gitPath, script, { encoding: 'utf8', mode: 0o755 });
+  process.env.PATH = `${binDir}:${originalPath}`;
+
+  try {
+    return await run(repositoryPath);
+  } finally {
+    process.env.PATH = originalPath;
+    await fs.rm(temporaryRoot, { recursive: true, force: true });
+  }
+}
+
 test('execGit reads large git output without failing on a fixed maxBuffer', async () => {
   const repositoryPath = await createTemporaryRepository();
 
@@ -61,4 +81,44 @@ test('execGitWithResult preserves stderr and exit code for failing git commands'
   } finally {
     await fs.rm(repositoryPath, { recursive: true, force: true });
   }
+});
+
+test('execGit aborts an in-flight git process when the signal is cancelled', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+    async (repositoryPath) => {
+      const abortController = new AbortController();
+      const execution = execGit(repositoryPath, ['status'], { signal: abortController.signal });
+
+      setTimeout(() => {
+        abortController.abort();
+      }, 25);
+
+      await assert.rejects(
+        execution,
+        (error: unknown) => error instanceof Error && error.name === 'AbortError'
+      );
+    }
+  );
+});
+
+test('execGit stops when the captured output exceeds the configured limit', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\nprintf "1234567890"\n',
+    async (repositoryPath) => {
+      await assert.rejects(
+        execGit(repositoryPath, ['status'], { maxOutputBytes: 4 }),
+        (error: unknown) => {
+          assert.equal(typeof error, 'object');
+          assert.ok(error !== null);
+          const gitError = error as { message?: unknown; stdout?: unknown };
+          assert.equal(typeof gitError.message, 'string');
+          assert.match(gitError.message as string, /maximum captured output/i);
+          assert.equal(typeof gitError.stdout, 'string');
+          assert.equal(gitError.stdout, '');
+          return true;
+        }
+      );
+    }
+  );
 });

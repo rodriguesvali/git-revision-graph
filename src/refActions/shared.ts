@@ -81,6 +81,21 @@ export function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, 
   );
 }
 
+export function isMissingUpstreamConfigurationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const stderr = 'stderr' in error && typeof error.stderr === 'string'
+    ? error.stderr
+    : undefined;
+  if (!stderr) {
+    return false;
+  }
+
+  return stderr.toLowerCase().includes('has no upstream information');
+}
+
 export async function getLocalBranchForDeletion(repository: Repository, branchName: string): Promise<Branch | undefined> {
   try {
     return await repository.getBranch(branchName);

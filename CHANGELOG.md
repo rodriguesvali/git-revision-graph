@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 - Replaced fixed-buffer Git process execution with a streaming implementation so large diffs and commit views are less likely to fail in bigger repositories.
 - Fixed revision graph repository selection so canceling the picker keeps the current repository instead of clearing it or immediately reopening the prompt.
+- Hardened local branch and tag branch-creation flows so they no longer fail when Git reports that the new branch has no upstream configured.
+- Added cancellation-aware revision graph refreshes and bounded background graph capture to reduce stale work and extension-host memory pressure during rapid refreshes.
 
 ## 0.0.9
 

@@ -2,7 +2,11 @@ import * as vscode from 'vscode';
 
 import { API, Repository } from '../git';
 import { toErrorDetail } from '../errorDetail';
-import { isSameRepositoryPath, reconcileCurrentRepository } from '../repositorySelection';
+import {
+  isSameRepositoryPath,
+  reconcileCurrentRepository,
+  shouldPromptForGraphRepositoryOnOpen
+} from '../repositorySelection';
 import {
   createBranchFromResolvedReference,
   checkoutResolvedReference,
@@ -87,6 +91,8 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   dispose(): void {
+    this.renderCoordinator.cancel();
+
     for (const disposable of this.repoSubscriptions.values()) {
       disposable.dispose();
     }
@@ -105,6 +111,7 @@ export class RevisionGraphController implements vscode.Disposable {
 
     view.onDidDispose(() => {
       if (this.view === view) {
+        this.renderCoordinator.cancel();
         this.view = undefined;
       }
     });
@@ -127,9 +134,10 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   async open(): Promise<void> {
+    const hadResolvedView = !!this.view;
     await vscode.commands.executeCommand(`${REVISION_GRAPH_VIEW_ID}.focus`);
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
-    if (!this.currentRepository) {
+    if (shouldPromptForGraphRepositoryOnOpen(this.git.repositories, this.currentRepository, hadResolvedView)) {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
@@ -151,7 +159,10 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    await this.renderCoordinator.schedule('Loading revision graph...', async (requestId) => this.buildNextState(requestId));
+    await this.renderCoordinator.schedule(
+      'Loading revision graph...',
+      async (requestId, signal) => this.buildNextState(requestId, signal)
+    );
   }
 
   private async handleMessage(message: RevisionGraphMessage): Promise<void> {
@@ -263,7 +274,10 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   }
 
-  private async buildNextState(requestId: number): Promise<RevisionGraphViewState | undefined> {
+  private async buildNextState(
+    requestId: number,
+    signal: AbortSignal
+  ): Promise<RevisionGraphViewState | undefined> {
     if (!this.view) {
       return undefined;
     }
@@ -277,7 +291,8 @@ export class RevisionGraphController implements vscode.Disposable {
       this.projectionOptions,
       this.autoArrangeOnNextRender,
       this.backend,
-      this.limitPolicy
+      this.limitPolicy,
+      signal
     );
 
     if (requestId === this.renderCoordinator.getCurrentRequestId()) {

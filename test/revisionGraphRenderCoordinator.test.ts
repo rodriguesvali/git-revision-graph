@@ -80,3 +80,35 @@ test('coalesces bursts into one follow-up render while one is already in flight'
   assert.deepEqual(appliedResults, ['second']);
   assert.equal(invocation, 2);
 });
+
+test('aborts the in-flight render when a newer request arrives', async () => {
+  const appliedResults: string[] = [];
+  const coordinator = new RevisionGraphRenderCoordinator<string>(
+    () => {},
+    (result) => appliedResults.push(result),
+    () => assert.fail('did not expect an error')
+  );
+  let firstSignal: AbortSignal | undefined;
+
+  const firstSchedule = coordinator.schedule('Loading revision graph...', async (_requestId, signal) => {
+    firstSignal = signal;
+    await new Promise<void>((_resolve, reject) => {
+      signal.addEventListener(
+        'abort',
+        () => {
+          const error = new Error('aborted');
+          error.name = 'AbortError';
+          reject(error);
+        },
+        { once: true }
+      );
+    });
+    return 'stale';
+  });
+  const secondSchedule = coordinator.schedule('Loading revision graph...', async () => 'fresh');
+
+  await Promise.all([firstSchedule, secondSchedule]);
+
+  assert.equal(firstSignal?.aborted, true);
+  assert.deepEqual(appliedResults, ['fresh']);
+});

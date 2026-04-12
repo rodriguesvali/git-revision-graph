@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isSameRepositoryPath, reconcileCurrentRepository, sortRepositoriesByPath } from '../src/repositorySelection';
+import {
+  isSameRepositoryPath,
+  reconcileCurrentRepository,
+  shouldPromptForGraphRepositoryOnOpen,
+  sortRepositoriesByPath
+} from '../src/repositorySelection';
 import { createRepository } from './fakes';
 
 test('sorts repositories by path', () => {
@@ -50,6 +55,26 @@ test('clears the current repository when it disappears and multiple repositories
   const currentRepository = reconcileCurrentRepository([repoA, repoC], repoB);
 
   assert.equal(currentRepository, undefined);
+});
+
+test('skips the repository picker while opening the view for the first time', () => {
+  const repoA = createRepository({ root: '/workspace/a' });
+  const repoB = createRepository({ root: '/workspace/b' });
+
+  assert.equal(
+    shouldPromptForGraphRepositoryOnOpen([repoA, repoB], undefined, false),
+    false
+  );
+});
+
+test('prompts for a repository when reopening an already-resolved multi-repository view', () => {
+  const repoA = createRepository({ root: '/workspace/a' });
+  const repoB = createRepository({ root: '/workspace/b' });
+
+  assert.equal(
+    shouldPromptForGraphRepositoryOnOpen([repoA, repoB], undefined, true),
+    true
+  );
 });
 
 test('compares repository identity by path', () => {

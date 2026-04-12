@@ -5,6 +5,7 @@ import { execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { RefActionServices } from './refActions';
+import { isMissingUpstreamConfigurationError } from './refActions/shared';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
 
 export function createWorkbenchRefActionServices(refresh?: () => void): RefActionServices {
@@ -63,7 +64,13 @@ export function createWorkbenchRefActionServices(refresh?: () => void): RefActio
         await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', branchName]);
       },
       async unsetBranchUpstream(repository, branchName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['branch', '--unset-upstream', branchName]);
+        try {
+          await execGitWithResult(repository.rootUri.fsPath, ['branch', '--unset-upstream', branchName]);
+        } catch (error) {
+          if (!isMissingUpstreamConfigurationError(error)) {
+            throw error;
+          }
+        }
       }
     },
     ancestryInspector: {

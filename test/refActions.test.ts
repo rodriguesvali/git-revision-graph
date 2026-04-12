@@ -11,6 +11,7 @@ import {
   RefActionServices,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
+import { isMissingUpstreamConfigurationError } from '../src/refActions/shared';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
 function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
@@ -216,6 +217,21 @@ test('deleteResolvedReference uses the tag name in the delete confirmation label
   assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Tag: v1.2.3');
   assert.deepEqual(repository.calls.deleteTag, ['v1.2.3']);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.3 was deleted.');
+});
+
+test('recognizes the git error raised when clearing a missing upstream', () => {
+  assert.equal(
+    isMissingUpstreamConfigurationError({
+      stderr: "fatal: branch 'release/2026-copy' has no upstream information"
+    }),
+    true
+  );
+  assert.equal(
+    isMissingUpstreamConfigurationError({
+      stderr: 'fatal: some other git error'
+    }),
+    false
+  );
 });
 
 test('checkoutResolvedReference blocks workspace-changing operations while conflicts are unresolved', async () => {

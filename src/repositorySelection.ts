@@ -24,6 +24,18 @@ export function reconcileCurrentRepository<T extends RepositoryLike>(
   return repositories.length === 1 ? repositories[0] : undefined;
 }
 
+export function shouldPromptForGraphRepositoryOnOpen<T extends RepositoryLike>(
+  repositories: readonly T[],
+  currentRepository: T | undefined,
+  hadResolvedView: boolean
+): boolean {
+  return (
+    hadResolvedView
+    && repositories.length > 0
+    && reconcileCurrentRepository(repositories, currentRepository) === undefined
+  );
+}
+
 export function isSameRepositoryPath(
   left: RepositoryLike | undefined,
   right: RepositoryLike | undefined
