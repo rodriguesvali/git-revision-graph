@@ -337,10 +337,8 @@ export function renderRevisionGraphStyles(): string {
       cursor: grabbing;
     }
     .workspace-led {
-      position: fixed;
-      top: 14px;
-      right: 44px;
-      z-index: 70;
+      position: relative;
+      z-index: 1;
       width: 30px;
       height: 30px;
       padding: 0;
@@ -392,12 +390,14 @@ export function renderRevisionGraphStyles(): string {
       position: fixed;
       top: 14px;
       left: 14px;
+      right: 14px;
       z-index: 70;
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
-      max-width: min(calc(100vw - 108px), 860px);
+      width: auto;
+      max-width: none;
       padding: 10px 12px;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -412,6 +412,7 @@ export function renderRevisionGraphStyles(): string {
       color: var(--text);
       font-size: 12px;
       line-height: 1.2;
+      flex: 0 1 auto;
     }
     .view-controls .control-caption {
       color: var(--muted);
@@ -431,8 +432,8 @@ export function renderRevisionGraphStyles(): string {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      flex: 1 1 320px;
-      min-width: min(100%, 280px);
+      flex: 1 1 360px;
+      min-width: min(100%, 320px);
     }
     .view-controls .search-field {
       display: inline-flex;
@@ -470,6 +471,10 @@ export function renderRevisionGraphStyles(): string {
       align-items: center;
       gap: 6px;
       margin-left: auto;
+      flex: 0 0 auto;
+      max-width: 100%;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .view-controls .toolbar-button {
       display: inline-flex;

@@ -71,6 +71,14 @@ export function renderRevisionGraphShellHtml(): string {
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <button
+        class="workspace-led clean"
+        id="workspaceLed"
+        type="button"
+        disabled
+        aria-label="Workspace clean: no pending changes."
+        title="Workspace clean: no pending changes."
+      ></button>
+      <button
         id="reorganizeButton"
         class="toolbar-button"
         type="button"
@@ -96,14 +104,6 @@ export function renderRevisionGraphShellHtml(): string {
       >+</button>
     </div>
   </div>
-  <button
-    class="workspace-led clean"
-    id="workspaceLed"
-    type="button"
-    disabled
-    aria-label="Workspace clean: no pending changes."
-    title="Workspace clean: no pending changes."
-  ></button>
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <div class="scene-layer" id="sceneLayer">

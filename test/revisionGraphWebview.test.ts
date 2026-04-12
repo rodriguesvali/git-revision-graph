@@ -14,6 +14,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchPrevButton"/);
   assert.match(html, /id="searchNextButton"/);
   assert.match(html, /id="searchClearButton"/);
+  assert.match(html, /class="workspace-led clean"/);
+  assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+class="workspace-led clean"/);
   assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
