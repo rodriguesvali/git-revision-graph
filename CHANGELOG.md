@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.11
+
+- Replaced fixed-buffer Git process execution with a streaming implementation so large diffs and commit views are less likely to fail in bigger repositories.
+- Fixed revision graph repository selection so canceling the picker keeps the current repository instead of clearing it or immediately reopening the prompt.
+
 ## 0.0.9
 
 - Repositioned the workspace status LED 30px to the left for a cleaner top-right layout in the revision graph.

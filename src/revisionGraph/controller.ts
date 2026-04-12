@@ -137,7 +137,12 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   async chooseRepository(): Promise<void> {
-    this.setCurrentRepository(await pickRevisionGraphRepository(this.git, true));
+    const pickedRepository = await pickRevisionGraphRepository(this.git, true);
+    if (!pickedRepository) {
+      return;
+    }
+
+    this.setCurrentRepository(pickedRepository);
     await this.open();
   }
 
@@ -158,7 +163,14 @@ export class RevisionGraphController implements vscode.Disposable {
         await this.actionServices.ui.showSourceControl();
         return;
       case 'choose-repository':
-        this.setCurrentRepository(await pickRevisionGraphRepository(this.git, true));
+        {
+          const pickedRepository = await pickRevisionGraphRepository(this.git, true);
+          if (!pickedRepository) {
+            return;
+          }
+
+          this.setCurrentRepository(pickedRepository);
+        }
         await this.refresh();
         return;
       case 'set-projection-options':
