@@ -96,7 +96,7 @@ export async function checkoutResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
       services.ui.showInformationMessage(`${target.label} is already checked out.`);
@@ -135,7 +135,7 @@ export async function createBranchFromResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
       return;

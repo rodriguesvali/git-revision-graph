@@ -168,9 +168,9 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });
@@ -191,7 +191,7 @@ test('checkoutReference creates a branch when the selected reference is a tag', 
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('mergeReference prevents merging the current branch into itself', async () => {

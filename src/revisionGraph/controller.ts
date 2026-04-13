@@ -400,7 +400,7 @@ export class RevisionGraphController implements vscode.Disposable {
       key,
       vscode.Disposable.from(
         repository.state.onDidChange(() => this.handleRepositoryStateChange(repository, 'full-rebuild', 'state')),
-        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'metadata-patch', 'checkout'))
+        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout'))
       )
     );
   }

@@ -187,9 +187,9 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });
@@ -215,7 +215,7 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('deleteResolvedReference uses the tag name in the delete confirmation label', async () => {
@@ -294,7 +294,7 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
@@ -320,7 +320,7 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
