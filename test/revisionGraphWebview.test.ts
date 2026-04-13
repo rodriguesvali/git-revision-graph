@@ -28,6 +28,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'patch-metadata'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
+  assert.match(html, /--node-branch: #19d60f;/);
   assert.match(html, /--toolbar-safe-height: 108px/);
   assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
 });

@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Release planning for `0.0.13` started. New changes will be documented in this section as the cycle moves forward.
 - Improved the initial Revision Graph load so the webview shell appears immediately with explicit loading feedback instead of staying blank during heavier graph rebuilds.
 - Fixed checkout refresh behavior so branch switches no longer show an intermediate graph built from the previous snapshot before the rebuilt graph is ready.
+- Updated local branch references to use a green visual treatment so they stand apart more clearly from remote branches in the graph.
 
 ## 0.0.12
 

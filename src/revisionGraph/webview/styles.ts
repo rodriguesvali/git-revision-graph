@@ -21,7 +21,7 @@ export function renderRevisionGraphStyles(): string {
       --text: var(--vscode-editor-foreground);
       --accent: var(--vscode-focusBorder);
       --edge: color-mix(in srgb, var(--text) 55%, transparent);
-      --node-branch: #ffd79a;
+      --node-branch: #19d60f;
       --node-head: #d62828;
       --node-tag: #f7f300;
       --node-remote: #f6d8a8;
