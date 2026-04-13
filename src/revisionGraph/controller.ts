@@ -51,9 +51,12 @@ import {
 
 export class RevisionGraphController implements vscode.Disposable {
   private view: vscode.WebviewView | undefined;
+  private readonly viewDisposables: vscode.Disposable[] = [];
   private currentRepository: Repository | undefined;
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
   private autoArrangeOnNextRender = true;
+  private currentLoadingLabel: string | undefined;
+  private currentErrorMessage: string | undefined;
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
@@ -62,12 +65,22 @@ export class RevisionGraphController implements vscode.Disposable {
   });
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
+      this.currentLoadingLabel = label;
+      this.currentErrorMessage = undefined;
+      this.currentState = {
+        ...this.currentState,
+        loading: true,
+        loadingLabel: label,
+        errorMessage: undefined
+      };
       this.postHostMessage({
         type: 'set-loading',
         label
       });
     },
     (state) => {
+      this.currentLoadingLabel = undefined;
+      this.currentErrorMessage = undefined;
       const previousState = this.currentState;
       this.currentState = state;
       if (this.shouldPostMetadataPatch(previousState, state)) {
@@ -84,9 +97,17 @@ export class RevisionGraphController implements vscode.Disposable {
       });
     },
     (error) => {
+      this.currentLoadingLabel = undefined;
+      this.currentErrorMessage = toErrorDetail(error);
+      this.currentState = {
+        ...this.currentState,
+        loading: false,
+        loadingLabel: undefined,
+        errorMessage: this.currentErrorMessage
+      };
       this.postHostMessage({
         type: 'set-error',
-        message: toErrorDetail(error)
+        message: this.currentErrorMessage
       });
     }
   );
@@ -125,6 +146,7 @@ export class RevisionGraphController implements vscode.Disposable {
 
   dispose(): void {
     this.renderCoordinator.cancel();
+    this.disposeViewDisposables();
 
     for (const disposable of this.repoSubscriptions.values()) {
       disposable.dispose();
@@ -136,34 +158,31 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
+    this.disposeViewDisposables();
     this.view = view;
+    this.viewDisposables.push(
+      view.onDidDispose(() => {
+        if (this.view === view) {
+          this.renderCoordinator.cancel();
+          this.view = undefined;
+        }
+        this.disposeViewDisposables();
+      }),
+      view.webview.onDidReceiveMessage(async (message: RevisionGraphMessage) => {
+        await this.handleMessage(message);
+      })
+    );
     view.webview.options = {
       enableScripts: true
     };
     view.webview.html = renderRevisionGraphShellHtml();
-
-    view.onDidDispose(() => {
-      if (this.view === view) {
-        this.renderCoordinator.cancel();
-        this.view = undefined;
-      }
-    });
-
-    view.webview.onDidReceiveMessage(async (message: RevisionGraphMessage) => {
-      await this.handleMessage(message);
-    });
-
-    this.postHostMessage({
-      type: 'init-state',
-      state: this.currentState
-    });
 
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
     if (!this.currentRepository) {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    await this.refresh('full-rebuild');
+    void this.refresh('full-rebuild');
   }
 
   async open(): Promise<void> {
@@ -204,6 +223,9 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private async handleMessage(message: RevisionGraphMessage): Promise<void> {
     switch (message.type) {
+      case 'webview-ready':
+        this.rehydrateWebview();
+        return;
       case 'refresh':
         await this.refresh('full-rebuild');
         return;
@@ -423,6 +445,34 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
     void this.view?.webview.postMessage(message);
+  }
+
+  private rehydrateWebview(): void {
+    this.postHostMessage({
+      type: 'init-state',
+      state: this.currentState
+    });
+
+    if (this.currentLoadingLabel) {
+      this.postHostMessage({
+        type: 'set-loading',
+        label: this.currentLoadingLabel
+      });
+      return;
+    }
+
+    if (this.currentErrorMessage) {
+      this.postHostMessage({
+        type: 'set-error',
+        message: this.currentErrorMessage
+      });
+    }
+  }
+
+  private disposeViewDisposables(): void {
+    while (this.viewDisposables.length > 0) {
+      this.viewDisposables.pop()?.dispose();
+    }
   }
 
   private shouldPostMetadataPatch(

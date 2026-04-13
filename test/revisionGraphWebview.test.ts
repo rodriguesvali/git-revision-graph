@@ -22,6 +22,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="nodeLayer"/);
   assert.match(html, /id="statusCard"/);
   assert.match(html, /window\.addEventListener\('message'/);
+  assert.match(html, /vscode\.postMessage\(\{ type: 'webview-ready' \}\);/);
   assert.match(html, /case 'init-state'/);
   assert.match(html, /case 'update-state'/);
   assert.match(html, /case 'patch-metadata'/);
@@ -31,13 +32,26 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
 });
 
+test('rehydrates the webview after the shell is recreated', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(
+    html,
+    /window\.addEventListener\('message', \(event\) => \{\s*handleHostMessage\(event\.data\);\s*\}\);\s*vscode\.postMessage\(\{ type: 'webview-ready' \}\);/s
+  );
+});
+
 test('keeps loading and error primitives in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /<body class="loading" aria-busy="true">/);
+  assert.match(html, /id="loadingOverlay" aria-hidden="false"/);
+  assert.match(html, /Opening revision graph\.\.\./);
   assert.match(html, /function setToolbarBusy\(isBusy, pendingControl = null\)/);
   assert.match(html, /function showLoading\(label, pendingControl = null\)/);
   assert.match(html, /function hideLoading\(\)/);
   assert.match(html, /function showError\(message\)/);
+  assert.match(html, /if \(nextState\.loading\) \{\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s);
   assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
 });

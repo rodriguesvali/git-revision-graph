@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### In Progress
 
 - Release planning for `0.0.13` started. New changes will be documented in this section as the cycle moves forward.
+- Improved the initial Revision Graph load so the webview shell appears immediately with explicit loading feedback instead of staying blank during heavier graph rebuilds.
 
 ## 0.0.12
 

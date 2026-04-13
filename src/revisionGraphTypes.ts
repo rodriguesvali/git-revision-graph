@@ -4,6 +4,7 @@ import { RevisionGraphNodeLayout } from './revisionGraph/webview/shared';
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 
 export type RevisionGraphMessage =
+  | { readonly type: 'webview-ready' }
   | { readonly type: 'refresh' }
   | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }

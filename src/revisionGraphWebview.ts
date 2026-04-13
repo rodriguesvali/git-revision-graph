@@ -14,7 +14,7 @@ export function renderRevisionGraphShellHtml(): string {
   <title>GIT Revision Graph</title>
   ${renderRevisionGraphStyles()}
 </head>
-<body>
+<body class="loading" aria-busy="true">
   <div class="view-controls" aria-label="Revision graph view controls">
     <label for="scopeSelect">
       <span class="control-caption">Scope</span>
@@ -121,10 +121,10 @@ export function renderRevisionGraphShellHtml(): string {
     </div>
   </div>
   <div class="context-menu" id="contextMenu"></div>
-  <div class="loading-overlay" id="loadingOverlay" aria-hidden="true">
+  <div class="loading-overlay" id="loadingOverlay" aria-hidden="false">
     <div class="loading-card" role="status" aria-live="polite">
       <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="loading-message" id="loadingMessage">Loading revision graph...</div>
+      <div class="loading-message" id="loadingMessage">Opening revision graph...</div>
     </div>
   </div>
   ${renderRevisionGraphScript({ nonce })}

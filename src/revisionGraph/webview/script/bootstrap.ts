@@ -69,6 +69,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
     });
+    vscode.postMessage({ type: 'webview-ready' });
 
     if (workspaceLed) {
       workspaceLed.addEventListener('click', () => {
@@ -333,7 +334,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
       updateChrome(nextState);
       renderScene(nextState);
-      hideLoading();
+      if (nextState.loading) {
+        showLoading(nextState.loadingLabel || 'Loading revision graph...');
+      } else {
+        hideLoading();
+      }
       if (nextState.errorMessage) {
         showError(nextState.errorMessage);
       } else if (nextState.viewMode === 'empty') {
