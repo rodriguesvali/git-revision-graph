@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.13
+
+### In Progress
+
+- Release planning for `0.0.13` started. New changes will be documented in this section as the cycle moves forward.
+
 ## 0.0.12
 
 ### New Feature

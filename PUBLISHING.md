@@ -25,6 +25,13 @@ The generated `.vsix` can be installed in VS Code via `Extensions: Install from 
 
 ## Publish to Marketplace
 
+Current version already set in `package.json`:
+
+```bash
+npm test
+npm run publish:current
+```
+
 Patch release:
 
 ```bash
@@ -48,6 +55,7 @@ npm run publish:major
 
 ## Notes
 
-- `vsce publish` updates the extension version and, inside a Git repository, can create a version commit and tag.
-- The Marketplace does not allow user-provided SVGs as the extension icon in `package.json`. This project currently does not declare an extension icon yet.
+- `vsce publish` publishes the current version from `package.json` when no explicit version argument is provided.
+- `vsce publish <patch|minor|major>` updates the extension version and, inside a Git repository, can create a version commit and tag.
+- The Marketplace does not allow SVG files as the extension icon in `package.json`. This project uses `media/icon.png`.
 - Images referenced by `README.md` and `CHANGELOG.md` must use `https`.
