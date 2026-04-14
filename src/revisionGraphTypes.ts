@@ -6,6 +6,7 @@ export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 export type RevisionGraphMessage =
   | { readonly type: 'webview-ready' }
   | { readonly type: 'refresh' }
+  | { readonly type: 'fetch-current-repository' }
   | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }

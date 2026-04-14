@@ -39,6 +39,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('gitRefs.refresh', async () => {
       await revisionGraphProvider.refresh();
     }),
+    vscode.commands.registerCommand('gitRefs.fetchCurrentRepository', async () => {
+      await revisionGraphProvider.fetchCurrentRepository();
+    }),
     vscode.commands.registerCommand('gitRefs.compareRefs', async (node?: RefNode) => {
       await compareRefs(git, node, services);
     }),

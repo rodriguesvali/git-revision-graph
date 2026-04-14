@@ -34,6 +34,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     await this.controller.chooseRepository();
   }
 
+  async fetchCurrentRepository(): Promise<void> {
+    await this.controller.fetchCurrentRepository();
+  }
+
   async refresh(request?: RevisionGraphRefreshRequestLike): Promise<void> {
     await this.controller.refresh(request);
   }

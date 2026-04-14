@@ -32,6 +32,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const searchPrevButton = document.getElementById('searchPrevButton');
     const searchNextButton = document.getElementById('searchNextButton');
     const searchClearButton = document.getElementById('searchClearButton');
+    const fetchButton = document.getElementById('fetchButton');
     const reorganizeButton = document.getElementById('reorganizeButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomInButton = document.getElementById('zoomInButton');
@@ -145,6 +146,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (searchClearButton) {
       searchClearButton.addEventListener('click', () => {
         clearSearchQuery(true);
+      });
+    }
+    if (fetchButton) {
+      fetchButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching repository...', fetchButton);
       });
     }
 	    if (reorganizeButton) {

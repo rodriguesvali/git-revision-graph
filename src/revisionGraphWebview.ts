@@ -87,6 +87,16 @@ export function renderRevisionGraphShellHtml(): string {
         title="Workspace clean: no pending changes."
       ></button>
       <button
+        id="fetchButton"
+        class="toolbar-button"
+        type="button"
+        title="Fetch current repository"
+        aria-label="Fetch current repository"
+      >
+        <span class="button-icon">↓</span>
+        <span>Fetch</span>
+      </button>
+      <button
         id="reorganizeButton"
         class="toolbar-button"
         type="button"

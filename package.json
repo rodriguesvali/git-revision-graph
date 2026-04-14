@@ -70,6 +70,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "gitRefs.fetchCurrentRepository",
+        "title": "Fetch Current Repository",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "gitRefs.compareRefs",
         "title": "Compare References"
       },
@@ -109,9 +114,14 @@
           "group": "navigation"
         },
         {
-          "command": "gitRefs.chooseRevisionGraphRepository",
+          "command": "gitRefs.fetchCurrentRepository",
           "when": "view == gitRefs.revisionGraphView",
           "group": "navigation@2"
+        },
+        {
+          "command": "gitRefs.chooseRevisionGraphRepository",
+          "when": "view == gitRefs.revisionGraphView",
+          "group": "navigation@3"
         },
         {
           "command": "gitRefs.clearCompareResults",

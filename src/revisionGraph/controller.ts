@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import { API, Repository } from '../git';
 import { toErrorDetail } from '../errorDetail';
+import { execGitWithResult } from '../gitExec';
 import {
   isSameRepositoryPath,
   reconcileCurrentRepository,
@@ -225,6 +226,10 @@ export class RevisionGraphController implements vscode.Disposable {
     await this.open();
   }
 
+  async fetchCurrentRepository(): Promise<void> {
+    await this.runFetchCurrentRepository();
+  }
+
   async refresh(requestLike: RevisionGraphRefreshRequestLike = 'full-rebuild'): Promise<void> {
     if (!this.view) {
       return;
@@ -266,6 +271,9 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'refresh':
         await this.refresh('full-rebuild');
+        return;
+      case 'fetch-current-repository':
+        await this.runFetchCurrentRepository();
         return;
       case 'open-source-control':
         await this.actionServices.ui.showSourceControl();
@@ -420,6 +428,31 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     return bundle.state;
+  }
+
+  private async runFetchCurrentRepository(): Promise<void> {
+    if (!this.currentRepository) {
+      this.actionServices.ui.showInformationMessage('Choose a repository before fetching from the revision graph.');
+      this.postHostMessage({ type: 'update-state', state: this.currentState });
+      return;
+    }
+
+    try {
+      await execGitWithResult(this.currentRepository.rootUri.fsPath, ['fetch', '--prune']);
+      this.actionServices.ui.showInformationMessage(`Fetch completed for ${this.getCurrentRepositoryLabel()}.`);
+      await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
+    } catch (error) {
+      await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
+      this.postHostMessage({ type: 'update-state', state: this.currentState });
+    }
+  }
+
+  private getCurrentRepositoryLabel(): string {
+    if (!this.currentRepository) {
+      return 'the current repository';
+    }
+
+    return vscode.workspace.asRelativePath(this.currentRepository.rootUri, false) || this.currentRepository.rootUri.fsPath;
   }
 
   private attachToRepositories(repositories: readonly Repository[]): void {
