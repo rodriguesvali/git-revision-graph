@@ -100,7 +100,7 @@ export function renderRevisionGraphScriptLayout(): string {
 
 	        const width = getNodeWidth(node.hash);
 	        const anchorLeft = anchor - width / 2;
-	        const explicitFamily = getExplicitNodeFamily(node);
+	        const explicitFamily = getExplicitNodeFamily(node.hash);
 	        const weight = explicitFamily ? 0.78 : 0.48;
 	        positions.set(
 	          node.hash,
@@ -162,7 +162,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	      let queueIndex = 0;
 
 	      for (const node of graphNodes) {
-	        const explicitFamily = getExplicitNodeFamily(node);
+	        const explicitFamily = getExplicitNodeFamily(node.hash);
 	        if (!explicitFamily) {
 	          continue;
 	        }
@@ -223,7 +223,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	          continue;
 	        }
 
-	        const explicitFamily = getExplicitNodeFamily(node);
+	        const explicitFamily = getExplicitNodeFamily(node.hash);
 	        const center = node.defaultLeft + getNodeWidth(node.hash) / 2;
 	        const stats = familyStats.get(family) || {
 	          family,
@@ -278,8 +278,8 @@ export function renderRevisionGraphScriptLayout(): string {
 	      return anchors;
 	    }
 
-	    function getExplicitNodeFamily(node) {
-	      const reference = pickNodeFamilyReference(node.refs);
+	    function getExplicitNodeFamily(hash) {
+	      const reference = pickNodeFamilyReference(getSceneNodeRefs(hash));
 	      if (!reference) {
 	        return undefined;
 	      }
@@ -296,6 +296,11 @@ export function renderRevisionGraphScriptLayout(): string {
 	        case 'tag':
 	          return { key: 'tag:' + reference.name, priority: 4 };
 	      }
+	    }
+
+	    function getSceneNodeRefs(hash) {
+	      const sceneNode = sceneNodeByHash.get(hash);
+	      return sceneNode && Array.isArray(sceneNode.refs) ? sceneNode.refs : [];
 	    }
 
 	    function pickNodeFamilyReference(refs) {

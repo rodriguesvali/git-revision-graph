@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as vm from 'node:vm';
 
 import { renderRevisionGraphShellHtml } from '../src/revisionGraphWebview';
 
@@ -68,6 +69,83 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
 	);
 });
 
+test('reorganize button does not crash when clustering by ref families', async () => {
+  const runtime = createWebviewRuntime();
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: {
+      viewMode: 'ready',
+      hasRepositories: true,
+      repositoryPath: '/workspace/repo',
+      currentHeadName: 'main',
+      currentHeadUpstreamName: 'origin/main',
+      isWorkspaceDirty: false,
+      projectionOptions: { refScope: 'all', showTags: true, showBranchingsAndMerges: true },
+      mergeBlockedTargets: [],
+      primaryAncestorPathsByHash: {},
+      autoArrangeOnInit: false,
+      scene: {
+        nodes: [
+          {
+            hash: 'head1',
+            row: 0,
+            refs: [{ name: 'main', kind: 'head' }],
+            author: 'Ada',
+            date: '2026-04-08',
+            subject: 'Bootstrap'
+          },
+          {
+            hash: 'branch1',
+            row: 1,
+            refs: [{ name: 'feature/demo', kind: 'branch' }],
+            author: 'Ada',
+            date: '2026-04-09',
+            subject: 'Feature work'
+          },
+          {
+            hash: 'remote1',
+            row: 2,
+            refs: [{ name: 'origin/feature/demo', kind: 'remote' }],
+            author: 'Ada',
+            date: '2026-04-10',
+            subject: 'Remote update'
+          }
+        ],
+        edges: [
+          { from: 'head1', to: 'branch1' },
+          { from: 'branch1', to: 'remote1' }
+        ],
+        laneCount: 2,
+        rowCount: 3
+      },
+      nodeLayouts: [
+        { hash: 'head1', lane: 0, row: 0, x: 0, width: 120, height: 40, defaultLeft: 26, defaultTop: 88 },
+        { hash: 'branch1', lane: 1, row: 1, x: 180, width: 120, height: 40, defaultLeft: 206, defaultTop: 176 },
+        { hash: 'remote1', lane: 1, row: 2, x: 240, width: 120, height: 40, defaultLeft: 266, defaultTop: 264 }
+      ],
+      references: [
+        { id: 'head1::head::main', hash: 'head1', name: 'main', kind: 'head' },
+        { id: 'branch1::branch::feature/demo', hash: 'branch1', name: 'feature/demo', kind: 'branch' },
+        { id: 'remote1::remote::origin/feature/demo', hash: 'remote1', name: 'origin/feature/demo', kind: 'remote' }
+      ],
+      sceneLayoutKey: 'head1:0:0|branch1:1:180|remote1:2:240',
+      baseCanvasWidth: 900,
+      baseCanvasHeight: 500,
+      emptyMessage: undefined,
+      loading: false,
+      loadingLabel: undefined,
+      errorMessage: undefined
+    }
+  });
+
+  const reorganize = runtime.elements.get('reorganizeButton')?.listeners.click?.[0];
+  assert.ok(reorganize);
+  await assert.doesNotReject(async () => {
+    await reorganize();
+  });
+});
+
 test('renders checkout menu actions with the destination branch name', () => {
   const html = renderRevisionGraphShellHtml();
 
@@ -92,7 +170,8 @@ test('includes ref-aware reorganize helpers for Tortoise-like branch clustering'
 	assert.match(html, /function autoArrangeTortoiseLayout\(\)/);
 	assert.match(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
 	assert.match(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
-	assert.match(html, /function getExplicitNodeFamily\(node\)/);
+	assert.match(html, /function getExplicitNodeFamily\(hash\)/);
+	assert.match(html, /function getSceneNodeRefs\(hash\)/);
 	assert.match(html, /function enqueueFamilyCandidate\(queue, candidate, startIndex\)/);
 	assert.match(html, /function yieldForTortoiseLayout\(shouldYield\)/);
 });
@@ -133,3 +212,148 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /currentState\.scene\.nodes/);
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
 });
+
+function createWebviewRuntime() {
+  const html = renderRevisionGraphShellHtml();
+  const match = html.match(/<script nonce="[^"]+">([\s\S]*)<\/script>/);
+  assert.ok(match, 'expected webview script in rendered HTML');
+  const script = match[1];
+
+  class MockElement {
+    readonly listeners: Record<string, Array<(...args: any[]) => unknown>> = {};
+    readonly style = { width: '', height: '', left: '', top: '', transform: '' };
+    readonly dataset: Record<string, string> = {};
+    readonly classList = {
+      add: () => {},
+      remove: () => {},
+      toggle: () => {},
+      contains: () => false
+    };
+    readonly attributes = new Map<string, string>();
+    innerHTML = '';
+    hidden = false;
+    disabled = false;
+    textContent = '';
+    title = '';
+    offsetWidth = 120;
+    offsetHeight = 40;
+    clientWidth = 1200;
+    clientHeight = 800;
+    scrollLeft = 0;
+    scrollTop = 0;
+
+    constructor(readonly id: string) {}
+
+    addEventListener(type: string, listener: (...args: any[]) => unknown): void {
+      if (!this.listeners[type]) {
+        this.listeners[type] = [];
+      }
+      this.listeners[type].push(listener);
+    }
+
+    setAttribute(name: string, value: string): void {
+      this.attributes.set(name, value);
+    }
+
+    removeAttribute(name: string): void {
+      this.attributes.delete(name);
+    }
+
+    getAttribute(name: string): string | null {
+      return this.attributes.get(name) ?? null;
+    }
+
+    contains(): boolean {
+      return false;
+    }
+
+    focus(): void {}
+
+    blur(): void {}
+
+    select(): void {}
+
+    closest(): null {
+      return null;
+    }
+  }
+
+  const ids = [
+    'viewport',
+    'canvas',
+    'sceneLayer',
+    'graphSvg',
+    'edgeLayer',
+    'nodeLayer',
+    'statusCard',
+    'contextMenu',
+    'loadingOverlay',
+    'loadingMessage',
+    'workspaceLed',
+    'scopeSelect',
+    'showTagsToggle',
+    'showBranchingsToggle',
+    'searchInput',
+    'searchResultBadge',
+    'searchPrevButton',
+    'searchNextButton',
+    'searchClearButton',
+    'reorganizeButton',
+    'zoomOutButton',
+    'zoomInButton'
+  ] as const;
+  const elements = new Map<string, MockElement>(ids.map((id) => [id, new MockElement(id)]));
+  const document = {
+    body: {
+      classList: {
+        add: () => {},
+        remove: () => {},
+        toggle: () => {}
+      },
+      setAttribute: () => {},
+      removeAttribute: () => {}
+    },
+    activeElement: null,
+    getElementById(id: string) {
+      return elements.get(id) ?? null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    createElement(tagName: string) {
+      return new MockElement(tagName);
+    }
+  };
+  const windowObject = {
+    addEventListener: () => {}
+  };
+  const vscodeState: Record<string, unknown> = {};
+  const context = {
+    console,
+    window: windowObject,
+    document,
+    requestAnimationFrame: (callback: (timestamp: number) => void) => {
+      callback(0);
+      return 1;
+    },
+    acquireVsCodeApi: () => ({
+      postMessage: () => {},
+      setState: (value: Record<string, unknown>) => {
+        Object.assign(vscodeState, value);
+      },
+      getState: () => vscodeState
+    }),
+    setTimeout,
+    clearTimeout,
+    Map,
+    Set
+  } as Record<string, unknown>;
+
+  vm.createContext(context);
+  vm.runInContext(script, context);
+
+  return {
+    context: context as Record<string, any>,
+    elements
+  };
+}

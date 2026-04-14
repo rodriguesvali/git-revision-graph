@@ -45,6 +45,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let selected = [];
     let headNodeHash = null;
     let nodeElements = new Map();
+    let sceneNodeByHash = new Map();
     let edgeElements = [];
     let graphNodeByHash = new Map();
     let parentMap = new Map();
@@ -532,6 +533,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (state.viewMode !== 'ready') {
         edgeLayer.innerHTML = '';
         nodeLayer.innerHTML = '';
+        sceneNodeByHash = new Map();
         refreshGraphCaches();
         syncCanvasSize();
         updateScenePlacement();
@@ -539,6 +541,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const sceneNodes = (state.scene && state.scene.nodes) || [];
+      sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
       const nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       edgeLayer.innerHTML = graphEdges
         .map((edge) => renderEdgeMarkup(edge, nodeByHash))
