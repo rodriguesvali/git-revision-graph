@@ -4,22 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## 0.0.13
 
-### In Progress
+### Highlights
 
-- Release planning for `0.0.13` started. New changes will be documented in this section as the cycle moves forward.
-- Improved the initial Revision Graph load so the webview shell appears immediately with explicit loading feedback instead of staying blank during heavier graph rebuilds.
-- Fixed checkout refresh behavior so branch switches no longer show an intermediate graph built from the previous snapshot before the rebuilt graph is ready.
-- Updated local branch references to use a green visual treatment so they stand apart more clearly from remote branches in the graph.
-- Fixed checkout-triggered refresh deduplication so repository events raised during branch switches do not race the explicit refresh and make the graph feel like it loaded twice.
-- Reduced redundant full rebuilds when the Revision Graph view opens so activation and first focus are less likely to show the same loading cycle twice.
-- Filtered redundant repository-event rebuilds after checkout when the visible graph metadata already matches the current repository state, reducing duplicate loading cycles without changing the rendered result.
-- Skipped repository-set refreshes that do not change the selected repository or empty-state availability, preventing the activation path from reloading the same graph twice.
-- Added explicit loading feedback when reorganizing the graph layout so slower client-side rearrangements no longer feel unresponsive.
-- Made checkout actions show the destination reference name directly in the UI, including the graph context menu and confirmation button label.
-- Hid the checkout action for the current local HEAD branch so the graph context menu no longer offers a no-op branch switch.
-- Started a TortoiseGit-inspired visual refinement pass by flattening the graph styling, compacting structural commits, and straightening edge rendering.
-- Added stash-aware graph refs and tightened ref grouping so HEAD no longer duplicates the same local branch line and supplemental refs stay organized more like the TortoiseGit reference.
-- Added a ref-aware Reorganize mode that clusters visible nodes by branch family around the current HEAD, pushing manual layout closer to the TortoiseGit-style branch spread without changing the default initial layout.
+- Improved Revision Graph loading so the webview shell appears immediately with explicit feedback instead of staying blank during heavier graph rebuilds.
+- Hardened graph refresh behavior during activation and checkout so the view no longer shows stale intermediate states or repeated loading cycles.
+- Continued the TortoiseGit-inspired refinement pass with flatter cards, straighter edges, stash-aware refs, and a smarter `Reorganize` layout.
+
+### UX & Visual
+
+- Local branch refs now use a vivid green treatment so they stand apart more clearly from remote branches.
+- Checkout actions now show the destination reference name directly in the UI, including the graph context menu and confirmation button label.
+- The checkout action is hidden for the current local `HEAD` branch so the context menu no longer offers a no-op branch switch.
+- Added explicit loading feedback while reorganizing the graph layout, and improved client-side layout responsiveness for larger graphs.
+- Tightened ref grouping so `HEAD` no longer duplicates the same local branch line, and stash refs render as first-class graph labels.
+
+### Stability
+
+- Fixed checkout refresh sequencing so branch switches no longer render a graph based on the previous snapshot before the rebuilt graph is ready.
+- Reduced redundant graph rebuilds when the view opens, when the active repository set changes, and when repository events race explicit refresh requests.
+- Hardened controller-side follow-up refresh suppression so canceled or failed renders do not accidentally suppress legitimate repository events.
+
+### Quality
+
+- Added regression coverage around refresh coordination, reorganize behavior, checkout flows, stash-aware refs, and release-path UI updates.
 
 ## 0.0.12
 
