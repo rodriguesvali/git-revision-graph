@@ -1,3 +1,5 @@
+export type RevisionGraphRenderScheduleOutcome = 'applied' | 'discarded' | 'failed';
+
 export class RevisionGraphRenderCoordinator<TResult> {
   private pendingRender = false;
   private drainPromise: Promise<void> | undefined;
@@ -5,6 +7,7 @@ export class RevisionGraphRenderCoordinator<TResult> {
   private latestLoadingLabel = '';
   private latestBuild: ((requestId: number, signal: AbortSignal) => Promise<TResult | undefined>) | undefined;
   private activeAbortController: AbortController | undefined;
+  private readonly requestOutcomes = new Map<number, RevisionGraphRenderScheduleOutcome>();
 
   constructor(
     private readonly onLoading: (label: string) => void,
@@ -15,9 +18,10 @@ export class RevisionGraphRenderCoordinator<TResult> {
   async schedule(
     loadingLabel: string,
     build: (requestId: number, signal: AbortSignal) => Promise<TResult | undefined>
-  ): Promise<void> {
+  ): Promise<RevisionGraphRenderScheduleOutcome> {
     this.pendingRender = true;
     this.latestRequestedId += 1;
+    const requestId = this.latestRequestedId;
     this.latestLoadingLabel = loadingLabel;
     this.latestBuild = build;
     this.activeAbortController?.abort();
@@ -29,6 +33,9 @@ export class RevisionGraphRenderCoordinator<TResult> {
     }
 
     await this.drainPromise;
+    const outcome = this.requestOutcomes.get(requestId) ?? 'discarded';
+    this.requestOutcomes.delete(requestId);
+    return outcome;
   }
 
   getCurrentRequestId(): number {
@@ -57,15 +64,19 @@ export class RevisionGraphRenderCoordinator<TResult> {
       try {
         const result = await build(requestId, abortController.signal);
         if (result === undefined || requestId !== this.latestRequestedId) {
+          this.requestOutcomes.set(requestId, 'discarded');
           continue;
         }
 
+        this.requestOutcomes.set(requestId, 'applied');
         this.onResult(result);
       } catch (error) {
         if (requestId !== this.latestRequestedId || isAbortError(error)) {
+          this.requestOutcomes.set(requestId, 'discarded');
           continue;
         }
 
+        this.requestOutcomes.set(requestId, 'failed');
         this.onError(error);
       } finally {
         if (this.activeAbortController === abortController) {

@@ -228,7 +228,11 @@ export function renderRevisionGraphScriptInteractions(): string {
     function openContextMenu(clientX, clientY, target) {
       const base = selected[0] ? getReference(selected[0]) : undefined;
       const compare = selected[1] ? getReference(selected[1]) : undefined;
-      const isCurrentHead = target.kind === 'head' || (currentHeadName && target.name === currentHeadName);
+	      const isCurrentHead = target.kind === 'head' || (
+	        target.kind === 'branch'
+	        && !!currentHeadName
+	        && target.name === currentHeadName
+	      );
       const canSyncCurrentHead = target.kind === 'head' && !!currentHeadUpstreamName;
       const hasComparisonSelection =
         selected.length === 2 &&
@@ -394,20 +398,26 @@ export function renderRevisionGraphScriptInteractions(): string {
 	      });
 	    }
 
-	    function runWithLoading(label, work, pendingControl = null) {
+	    function waitForNextFrame() {
+	      return new Promise((resolve) => {
+	        requestAnimationFrame(() => {
+	          resolve();
+	        });
+	      });
+	    }
+
+	    async function runWithLoading(label, work, pendingControl = null) {
 	      if (toolbarBusy) {
 	        return;
 	      }
 	      showLoading(label, pendingControl);
-	      requestAnimationFrame(() => {
-	        try {
-	          work();
-	        } finally {
-	          requestAnimationFrame(() => {
-	            hideLoading();
-	          });
-	        }
-	      });
+	      await waitForNextFrame();
+	      try {
+	        await work();
+	      } finally {
+	        await waitForNextFrame();
+	        hideLoading();
+	      }
 	    }
 
 	    function showLoading(label, pendingControl = null) {

@@ -228,12 +228,15 @@ export class RevisionGraphController implements vscode.Disposable {
 
     const request = this.resolveRefreshRequest(requestLike);
     this.latestRefreshIntent = request.intent;
-    this.prepareRefresh(request);
+    const preparedRefresh = this.prepareRefresh(request);
 
-    await this.renderCoordinator.schedule(
+    const outcome = await this.renderCoordinator.schedule(
       getRefreshLoadingLabel(request.intent),
       async (requestId, signal) => this.buildNextState(requestId, signal)
     );
+    if (outcome !== 'applied') {
+      preparedRefresh?.cancel();
+    }
   }
 
   prepareRefresh(requestLike: RevisionGraphRefreshRequestLike) {

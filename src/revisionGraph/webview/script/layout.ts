@@ -56,7 +56,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	      applyNodeLayout();
 	    }
 
-	    function autoArrangeTortoiseLayout() {
+	    async function autoArrangeTortoiseLayout() {
 	      const neighborMap = buildNeighborMap();
 	      const familyAssignments = buildNodeFamilyAssignments(neighborMap);
 	      const familyAnchors = buildFamilyAnchorMap(familyAssignments);
@@ -65,17 +65,23 @@ export function renderRevisionGraphScriptLayout(): string {
 	        return;
 	      }
 
+	      const shouldYield = graphNodes.length >= 24 || graphEdges.length >= 32;
 	      const positions = new Map(graphNodes.map((node) => [node.hash, node.defaultLeft]));
 	      seedTortoisePositions(positions, familyAssignments, familyAnchors);
+	      await yieldForTortoiseLayout(shouldYield);
 	      for (let pass = 0; pass < 6; pass += 1) {
 	        relaxTortoisePositions(positions, graphNodes, neighborMap, familyAssignments, familyAnchors);
 	        relaxTortoisePositions(positions, [...graphNodes].reverse(), neighborMap, familyAssignments, familyAnchors);
 	        pullFamiliesTowardAnchors(positions, familyAssignments, familyAnchors, 0.18);
 	        resolveRowOverlaps(positions);
+	        if (pass === 1 || pass === 3) {
+	          await yieldForTortoiseLayout(shouldYield);
+	        }
 	      }
 
 	      pullFamiliesTowardAnchors(positions, familyAssignments, familyAnchors, 0.5);
 	      resolveRowOverlaps(positions);
+	      await yieldForTortoiseLayout(shouldYield);
 	      for (const node of graphNodes) {
 	        const nextLeft = clampNodeLeft(node.hash, positions.get(node.hash) || node.defaultLeft);
 	        positions.set(node.hash, nextLeft);
@@ -153,6 +159,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	      const explicitFamilyByHash = new Map();
 	      const bestCandidateByHash = new Map();
 	      const queue = [];
+	      let queueIndex = 0;
 
 	      for (const node of graphNodes) {
 	        const explicitFamily = getExplicitNodeFamily(node);
@@ -169,13 +176,12 @@ export function renderRevisionGraphScriptLayout(): string {
 	        };
 	        explicitFamilyByHash.set(node.hash, explicitFamily.key);
 	        bestCandidateByHash.set(node.hash, seed);
-	        queue.push(seed);
+	        enqueueFamilyCandidate(queue, seed, queueIndex);
 	      }
 
-	      queue.sort(compareFamilyCandidates);
-
-	      while (queue.length > 0) {
-	        const current = queue.shift();
+	      while (queueIndex < queue.length) {
+	        const current = queue[queueIndex];
+	        queueIndex += 1;
 	        if (!current) {
 	          continue;
 	        }
@@ -199,8 +205,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	          }
 
 	          bestCandidateByHash.set(neighborHash, candidate);
-	          queue.push(candidate);
-	          queue.sort(compareFamilyCandidates);
+	          enqueueFamilyCandidate(queue, candidate, queueIndex);
 	        }
 	      }
 
@@ -313,6 +318,27 @@ export function renderRevisionGraphScriptLayout(): string {
 	    function computeFamilySpacing() {
 	      const maxWidth = graphNodes.reduce((max, node) => Math.max(max, getNodeWidth(node.hash)), 0);
 	      return clamp(maxWidth + 56, 168, 252);
+	    }
+
+	    function yieldForTortoiseLayout(shouldYield) {
+	      if (!shouldYield || typeof waitForNextFrame !== 'function') {
+	        return Promise.resolve();
+	      }
+	      return waitForNextFrame();
+	    }
+
+	    function enqueueFamilyCandidate(queue, candidate, startIndex) {
+	      let low = startIndex;
+	      let high = queue.length;
+	      while (low < high) {
+	        const mid = Math.floor((low + high) / 2);
+	        if (compareFamilyCandidates(candidate, queue[mid]) < 0) {
+	          high = mid;
+	        } else {
+	          low = mid + 1;
+	        }
+	      }
+	      queue.splice(low, 0, candidate);
 	    }
 
 	    function compareFamilyCandidates(left, right) {

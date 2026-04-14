@@ -62,15 +62,19 @@ test('keeps loading and error primitives in the shell runtime', () => {
 test('shows loading feedback while reorganizing the graph layout client-side', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(
-    html,
-    /reorganizeButton\.addEventListener\('click', \(\) => \{\s*runWithLoading\('Reorganizing graph layout\.\.\.', \(\) => \{\s*autoArrangeTortoiseLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
-  );
+	assert.match(
+	  html,
+	  /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*await autoArrangeTortoiseLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
+	);
 });
 
 test('renders checkout menu actions with the destination branch name', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(
+    html,
+    /const isCurrentHead = target\.kind === 'head' \|\| \(\s*target\.kind === 'branch'\s*&& !!currentHeadName\s*&& target\.name === currentHeadName\s*\);/s
+  );
   assert.match(html, /if \(target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
 });
 
@@ -85,10 +89,12 @@ test('renders straighter edges and compact structural node styling in the shell 
 test('includes ref-aware reorganize helpers for Tortoise-like branch clustering', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function autoArrangeTortoiseLayout\(\)/);
-  assert.match(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
-  assert.match(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
-  assert.match(html, /function getExplicitNodeFamily\(node\)/);
+	assert.match(html, /function autoArrangeTortoiseLayout\(\)/);
+	assert.match(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
+	assert.match(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
+	assert.match(html, /function getExplicitNodeFamily\(node\)/);
+	assert.match(html, /function enqueueFamilyCandidate\(queue, candidate, startIndex\)/);
+	assert.match(html, /function yieldForTortoiseLayout\(shouldYield\)/);
 });
 
 test('recenters after auto-arranging the initial graph state', () => {

@@ -123,9 +123,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       });
     }
 	    if (reorganizeButton) {
-	      reorganizeButton.addEventListener('click', () => {
-	        runWithLoading('Reorganizing graph layout...', () => {
-	          autoArrangeTortoiseLayout();
+	      reorganizeButton.addEventListener('click', async () => {
+	        await runWithLoading('Reorganizing graph layout...', async () => {
+	          await autoArrangeTortoiseLayout();
 	          centerGraphInViewport();
 	        }, reorganizeButton);
 	      });

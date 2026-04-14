@@ -42,10 +42,12 @@ test('discards obsolete render results when a newer request supersedes them', as
   first.resolve('stale');
   await Promise.resolve();
   second.resolve('fresh');
-  await Promise.all([firstSchedule, secondSchedule]);
+  const [firstOutcome, secondOutcome] = await Promise.all([firstSchedule, secondSchedule]);
 
   assert.deepEqual(appliedResults, ['fresh']);
   assert.equal(loadingLabels.length, 2);
+  assert.equal(firstOutcome, 'discarded');
+  assert.equal(secondOutcome, 'applied');
 });
 
 test('coalesces bursts into one follow-up render while one is already in flight', async () => {
@@ -75,10 +77,13 @@ test('coalesces bursts into one follow-up render while one is already in flight'
   first.resolve('first');
   await Promise.resolve();
   second.resolve('second');
-  await Promise.all([scheduleA, scheduleB, scheduleC]);
+  const [outcomeA, outcomeB, outcomeC] = await Promise.all([scheduleA, scheduleB, scheduleC]);
 
   assert.deepEqual(appliedResults, ['second']);
   assert.equal(invocation, 2);
+  assert.equal(outcomeA, 'discarded');
+  assert.equal(outcomeB, 'discarded');
+  assert.equal(outcomeC, 'applied');
 });
 
 test('aborts the in-flight render when a newer request arrives', async () => {
@@ -107,8 +112,28 @@ test('aborts the in-flight render when a newer request arrives', async () => {
   });
   const secondSchedule = coordinator.schedule('Loading revision graph...', async () => 'fresh');
 
-  await Promise.all([firstSchedule, secondSchedule]);
+  const [firstOutcome, secondOutcome] = await Promise.all([firstSchedule, secondSchedule]);
 
   assert.equal(firstSignal?.aborted, true);
   assert.deepEqual(appliedResults, ['fresh']);
+  assert.equal(firstOutcome, 'discarded');
+  assert.equal(secondOutcome, 'applied');
+});
+
+test('reports failed when the latest render throws', async () => {
+  const appliedResults: string[] = [];
+  const receivedErrors: unknown[] = [];
+  const coordinator = new RevisionGraphRenderCoordinator<string>(
+    () => {},
+    (result) => appliedResults.push(result),
+    (error) => receivedErrors.push(error)
+  );
+
+  const outcome = await coordinator.schedule('Loading revision graph...', async () => {
+    throw new Error('boom');
+  });
+
+  assert.equal(outcome, 'failed');
+  assert.deepEqual(appliedResults, []);
+  assert.equal(receivedErrors.length, 1);
 });
