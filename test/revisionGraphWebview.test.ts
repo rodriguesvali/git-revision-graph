@@ -64,7 +64,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
 
   assert.match(
     html,
-    /reorganizeButton\.addEventListener\('click', \(\) => \{\s*runWithLoading\('Reorganizing graph layout\.\.\.', \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
+    /reorganizeButton\.addEventListener\('click', \(\) => \{\s*runWithLoading\('Reorganizing graph layout\.\.\.', \(\) => \{\s*autoArrangeTortoiseLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
   );
 });
 
@@ -80,6 +80,15 @@ test('renders straighter edges and compact structural node styling in the shell 
   assert.match(html, /stroke-width="1\.8"/);
   assert.match(html, /return 'M ' \+ sourceX \+ ' ' \+ sourceY \+ ' L ' \+ targetX \+ ' ' \+ targetY;/);
   assert.match(html, /min-width: 78px;/);
+});
+
+test('includes ref-aware reorganize helpers for Tortoise-like branch clustering', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function autoArrangeTortoiseLayout\(\)/);
+  assert.match(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
+  assert.match(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
+  assert.match(html, /function getExplicitNodeFamily\(node\)/);
 });
 
 test('recenters after auto-arranging the initial graph state', () => {

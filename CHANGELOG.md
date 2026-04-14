@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Hid the checkout action for the current local HEAD branch so the graph context menu no longer offers a no-op branch switch.
 - Started a TortoiseGit-inspired visual refinement pass by flattening the graph styling, compacting structural commits, and straightening edge rendering.
 - Added stash-aware graph refs and tightened ref grouping so HEAD no longer duplicates the same local branch line and supplemental refs stay organized more like the TortoiseGit reference.
+- Added a ref-aware Reorganize mode that clusters visible nodes by branch family around the current HEAD, pushing manual layout closer to the TortoiseGit-style branch spread without changing the default initial layout.
 
 ## 0.0.12
 

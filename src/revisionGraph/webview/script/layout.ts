@@ -37,9 +37,9 @@ export function renderRevisionGraphScriptLayout(): string {
       vscode.setState({ sceneLayoutKey, nodeOffsets: normalizedOffsets });
     }
 
-    function autoArrangeLayout() {
-      const positions = new Map(graphNodes.map((node) => [node.hash, node.defaultLeft]));
-      const neighborMap = buildNeighborMap();
+	    function autoArrangeLayout() {
+	      const positions = new Map(graphNodes.map((node) => [node.hash, node.defaultLeft]));
+	      const neighborMap = buildNeighborMap();
       for (let pass = 0; pass < 8; pass += 1) {
         relaxPositions(positions, graphNodes, neighborMap, false);
         relaxPositions(positions, [...graphNodes].reverse(), neighborMap, true);
@@ -52,12 +52,301 @@ export function renderRevisionGraphScriptLayout(): string {
         const nextLeft = clampNodeLeft(node.hash, positions.get(node.hash) || node.defaultLeft);
         positions.set(node.hash, nextLeft);
         nodeOffsets[node.hash] = nextLeft - node.defaultLeft;
-      }
-      applyNodeLayout();
-    }
+	      }
+	      applyNodeLayout();
+	    }
 
-    function buildNeighborMap() {
-      const map = new Map();
+	    function autoArrangeTortoiseLayout() {
+	      const neighborMap = buildNeighborMap();
+	      const familyAssignments = buildNodeFamilyAssignments(neighborMap);
+	      const familyAnchors = buildFamilyAnchorMap(familyAssignments);
+	      if (familyAnchors.size === 0) {
+	        autoArrangeLayout();
+	        return;
+	      }
+
+	      const positions = new Map(graphNodes.map((node) => [node.hash, node.defaultLeft]));
+	      seedTortoisePositions(positions, familyAssignments, familyAnchors);
+	      for (let pass = 0; pass < 6; pass += 1) {
+	        relaxTortoisePositions(positions, graphNodes, neighborMap, familyAssignments, familyAnchors);
+	        relaxTortoisePositions(positions, [...graphNodes].reverse(), neighborMap, familyAssignments, familyAnchors);
+	        pullFamiliesTowardAnchors(positions, familyAssignments, familyAnchors, 0.18);
+	        resolveRowOverlaps(positions);
+	      }
+
+	      pullFamiliesTowardAnchors(positions, familyAssignments, familyAnchors, 0.5);
+	      resolveRowOverlaps(positions);
+	      for (const node of graphNodes) {
+	        const nextLeft = clampNodeLeft(node.hash, positions.get(node.hash) || node.defaultLeft);
+	        positions.set(node.hash, nextLeft);
+	        nodeOffsets[node.hash] = nextLeft - node.defaultLeft;
+	      }
+	      applyNodeLayout();
+	    }
+
+	    function seedTortoisePositions(positions, familyAssignments, familyAnchors) {
+	      for (const node of graphNodes) {
+	        const family = familyAssignments.get(node.hash);
+	        const anchor = family ? familyAnchors.get(family) : undefined;
+	        if (anchor === undefined) {
+	          continue;
+	        }
+
+	        const width = getNodeWidth(node.hash);
+	        const anchorLeft = anchor - width / 2;
+	        const explicitFamily = getExplicitNodeFamily(node);
+	        const weight = explicitFamily ? 0.78 : 0.48;
+	        positions.set(
+	          node.hash,
+	          clampNodeLeft(node.hash, node.defaultLeft * (1 - weight) + anchorLeft * weight)
+	        );
+	      }
+	    }
+
+	    function relaxTortoisePositions(positions, nodes, neighborMap, familyAssignments, familyAnchors) {
+	      for (const node of nodes) {
+	        const neighbors = neighborMap.get(node.hash) || [];
+	        const currentLeft = positions.get(node.hash) || node.defaultLeft;
+	        const nodeWidth = getNodeWidth(node.hash);
+	        const currentCenter = currentLeft + nodeWidth / 2;
+	        const defaultCenter = node.defaultLeft + nodeWidth / 2;
+	        const family = familyAssignments.get(node.hash);
+	        const familyAnchor = family ? familyAnchors.get(family) : undefined;
+	        const sameFamilyNeighbors = family
+	          ? neighbors.filter((hash) => familyAssignments.get(hash) === family)
+	          : [];
+	        const effectiveNeighbors = sameFamilyNeighbors.length > 0 ? sameFamilyNeighbors : neighbors;
+	        const neighborCenter = effectiveNeighbors.length > 0
+	          ? effectiveNeighbors.reduce((sum, hash) => sum + ((positions.get(hash) || getDefaultNodeLeft(hash)) + getNodeWidth(hash) / 2), 0) / effectiveNeighbors.length
+	          : currentCenter;
+	        const familyBias = familyAnchor === undefined
+	          ? defaultCenter
+	          : effectiveNeighbors.length > 0
+	            ? familyAnchor * 0.64 + neighborCenter * 0.36
+	            : familyAnchor;
+	        const targetCenter = effectiveNeighbors.length > 0
+	          ? neighborCenter * 0.48 + familyBias * 0.42 + defaultCenter * 0.1
+	          : familyBias * 0.82 + defaultCenter * 0.18;
+	        const targetLeft = targetCenter - nodeWidth / 2;
+	        positions.set(node.hash, clampNodeLeft(node.hash, currentLeft * 0.28 + targetLeft * 0.72));
+	      }
+	    }
+
+	    function pullFamiliesTowardAnchors(positions, familyAssignments, familyAnchors, weight) {
+	      for (const node of graphNodes) {
+	        const family = familyAssignments.get(node.hash);
+	        const anchor = family ? familyAnchors.get(family) : undefined;
+	        if (anchor === undefined) {
+	          continue;
+	        }
+
+	        const currentLeft = positions.get(node.hash) || node.defaultLeft;
+	        const anchorLeft = anchor - getNodeWidth(node.hash) / 2;
+	        positions.set(
+	          node.hash,
+	          clampNodeLeft(node.hash, currentLeft * (1 - weight) + anchorLeft * weight)
+	        );
+	      }
+	    }
+
+	    function buildNodeFamilyAssignments(neighborMap) {
+	      const explicitFamilyByHash = new Map();
+	      const bestCandidateByHash = new Map();
+	      const queue = [];
+
+	      for (const node of graphNodes) {
+	        const explicitFamily = getExplicitNodeFamily(node);
+	        if (!explicitFamily) {
+	          continue;
+	        }
+
+	        const seed = {
+	          hash: node.hash,
+	          family: explicitFamily.key,
+	          distance: 0,
+	          priority: explicitFamily.priority,
+	          sourceRow: node.row
+	        };
+	        explicitFamilyByHash.set(node.hash, explicitFamily.key);
+	        bestCandidateByHash.set(node.hash, seed);
+	        queue.push(seed);
+	      }
+
+	      queue.sort(compareFamilyCandidates);
+
+	      while (queue.length > 0) {
+	        const current = queue.shift();
+	        if (!current) {
+	          continue;
+	        }
+
+	        for (const neighborHash of neighborMap.get(current.hash) || []) {
+	          const explicitFamily = explicitFamilyByHash.get(neighborHash);
+	          if (explicitFamily && explicitFamily !== current.family) {
+	            continue;
+	          }
+
+	          const candidate = {
+	            hash: neighborHash,
+	            family: current.family,
+	            distance: current.distance + 1,
+	            priority: current.priority,
+	            sourceRow: current.sourceRow
+	          };
+	          const currentBest = bestCandidateByHash.get(neighborHash);
+	          if (currentBest && !isBetterFamilyCandidate(candidate, currentBest)) {
+	            continue;
+	          }
+
+	          bestCandidateByHash.set(neighborHash, candidate);
+	          queue.push(candidate);
+	          queue.sort(compareFamilyCandidates);
+	        }
+	      }
+
+	      return new Map([...bestCandidateByHash.entries()].map(([hash, candidate]) => [hash, candidate.family]));
+	    }
+
+	    function buildFamilyAnchorMap(familyAssignments) {
+	      const familyStats = new Map();
+	      let totalCenter = 0;
+	      let totalCount = 0;
+
+	      for (const node of graphNodes) {
+	        const family = familyAssignments.get(node.hash);
+	        if (!family) {
+	          continue;
+	        }
+
+	        const explicitFamily = getExplicitNodeFamily(node);
+	        const center = node.defaultLeft + getNodeWidth(node.hash) / 2;
+	        const stats = familyStats.get(family) || {
+	          family,
+	          priority: explicitFamily ? explicitFamily.priority : 99,
+	          totalCenter: 0,
+	          count: 0
+	        };
+	        stats.priority = explicitFamily ? Math.min(stats.priority, explicitFamily.priority) : stats.priority;
+	        stats.totalCenter += center;
+	        stats.count += 1;
+	        familyStats.set(family, stats);
+	        totalCenter += center;
+	        totalCount += 1;
+	      }
+
+	      if (familyStats.size === 0) {
+	        return new Map();
+	      }
+
+	      const orderedFamilies = [...familyStats.values()]
+	        .map((stats) => ({
+	          ...stats,
+	          averageCenter: stats.count > 0 ? stats.totalCenter / stats.count : 0
+	        }))
+	        .sort((left, right) =>
+	          left.averageCenter - right.averageCenter ||
+	          left.priority - right.priority ||
+	          left.family.localeCompare(right.family)
+	        );
+
+	      const headFamily = currentHeadName
+	        ? 'branch:' + currentHeadName
+	        : headNodeHash
+	          ? familyAssignments.get(headNodeHash)
+	          : undefined;
+	      const headIndex = headFamily
+	        ? orderedFamilies.findIndex((stats) => stats.family === headFamily)
+	        : -1;
+	      const anchorCenter = headFamily && headIndex >= 0
+	        ? orderedFamilies[headIndex].averageCenter
+	        : totalCount > 0
+	          ? totalCenter / totalCount
+	          : getCanvasWidth() / 2;
+	      const spacing = computeFamilySpacing();
+	      const normalizedHeadIndex = headIndex >= 0 ? headIndex : Math.floor(orderedFamilies.length / 2);
+	      const anchors = new Map();
+
+	      for (const [index, stats] of orderedFamilies.entries()) {
+	        anchors.set(stats.family, anchorCenter + (index - normalizedHeadIndex) * spacing);
+	      }
+
+	      return anchors;
+	    }
+
+	    function getExplicitNodeFamily(node) {
+	      const reference = pickNodeFamilyReference(node.refs);
+	      if (!reference) {
+	        return undefined;
+	      }
+
+	      switch (reference.kind) {
+	        case 'head':
+	          return { key: 'branch:' + reference.name, priority: 0 };
+	        case 'branch':
+	          return { key: 'branch:' + reference.name, priority: 1 };
+	        case 'remote':
+	          return { key: 'branch:' + getRemoteFamilyName(reference.name), priority: 2 };
+	        case 'stash':
+	          return { key: 'stash:stash', priority: 3 };
+	        case 'tag':
+	          return { key: 'tag:' + reference.name, priority: 4 };
+	      }
+	    }
+
+	    function pickNodeFamilyReference(refs) {
+	      return refs.find((ref) => ref.kind === 'head' || ref.kind === 'branch')
+	        || refs.find((ref) => ref.kind === 'remote')
+	        || refs.find((ref) => ref.kind === 'stash')
+	        || refs.find((ref) => ref.kind === 'tag');
+	    }
+
+	    function getRemoteFamilyName(refName) {
+	      const slashIndex = refName.indexOf('/');
+	      if (slashIndex < 0 || slashIndex === refName.length - 1) {
+	        return refName;
+	      }
+
+	      const suffix = refName.slice(slashIndex + 1);
+	      return suffix === 'HEAD' ? refName : suffix;
+	    }
+
+	    function computeFamilySpacing() {
+	      const maxWidth = graphNodes.reduce((max, node) => Math.max(max, getNodeWidth(node.hash)), 0);
+	      return clamp(maxWidth + 56, 168, 252);
+	    }
+
+	    function compareFamilyCandidates(left, right) {
+	      return left.distance - right.distance
+	        || left.priority - right.priority
+	        || left.sourceRow - right.sourceRow
+	        || left.family.localeCompare(right.family);
+	    }
+
+	    function isBetterFamilyCandidate(candidate, currentBest) {
+	      const targetRow = graphNodeByHash.get(candidate.hash)?.row || 0;
+	      const candidateRowDistance = Math.abs(candidate.sourceRow - targetRow);
+	      const currentRowDistance = Math.abs(currentBest.sourceRow - targetRow);
+	      return candidate.distance < currentBest.distance
+	        || (
+	          candidate.distance === currentBest.distance
+	          && (
+	            candidate.priority < currentBest.priority
+	            || (
+	              candidate.priority === currentBest.priority
+	              && (
+	                candidateRowDistance < currentRowDistance
+	                || (
+	                  candidateRowDistance === currentRowDistance
+	                  && candidate.family.localeCompare(currentBest.family) < 0
+	                )
+	              )
+	            )
+	          )
+	        );
+	    }
+
+	    function buildNeighborMap() {
+	      const map = new Map();
       for (const node of graphNodes) {
         map.set(node.hash, []);
       }
@@ -276,19 +565,13 @@ export function renderRevisionGraphScriptLayout(): string {
       }
     }
 
-    function buildEdgePath(fromHash, toHash) {
-      const sourceX = getNodeCenterX(fromHash);
-      const sourceY = getNodeSourceY(fromHash);
-      const targetX = getNodeCenterX(toHash);
-      const targetY = getNodeTargetY(toHash);
-      const verticalSpan = Math.max(36, (targetY - sourceY) * 0.42);
-      const horizontalBias = Math.min(140, Math.max(28, Math.abs(targetX - sourceX) * 0.28));
-      const controlY1 = sourceY + verticalSpan;
-      const controlY2 = targetY - verticalSpan;
-      const controlX1 = targetX >= sourceX ? sourceX + horizontalBias : sourceX - horizontalBias;
-      const controlX2 = targetX >= sourceX ? targetX - horizontalBias : targetX + horizontalBias;
-      return 'M ' + sourceX + ' ' + sourceY + ' C ' + controlX1 + ' ' + controlY1 + ', ' + controlX2 + ' ' + controlY2 + ', ' + targetX + ' ' + targetY;
-    }
+	    function buildEdgePath(fromHash, toHash) {
+	      const sourceX = getNodeCenterX(fromHash);
+	      const sourceY = getNodeSourceY(fromHash);
+	      const targetX = getNodeCenterX(toHash);
+	      const targetY = getNodeTargetY(toHash);
+	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
+	    }
 
     function syncCanvasSize() {
       const availableWidth = Math.max(

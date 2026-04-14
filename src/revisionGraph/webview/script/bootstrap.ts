@@ -125,7 +125,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 	    if (reorganizeButton) {
 	      reorganizeButton.addEventListener('click', () => {
 	        runWithLoading('Reorganizing graph layout...', () => {
-	          autoArrangeLayout();
+	          autoArrangeTortoiseLayout();
 	          centerGraphInViewport();
 	        }, reorganizeButton);
 	      });
