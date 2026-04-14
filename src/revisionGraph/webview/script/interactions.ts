@@ -382,20 +382,36 @@ export function renderRevisionGraphScriptInteractions(): string {
       syncSearchUi();
     }
 
-    function postMessageWithLoading(message, label, pendingControl = null) {
-      if (toolbarBusy) {
-        return;
-      }
-      showLoading(label, pendingControl);
+	    function postMessageWithLoading(message, label, pendingControl = null) {
+	      if (toolbarBusy) {
+	        return;
+	      }
+	      showLoading(label, pendingControl);
       requestAnimationFrame(() => {
         vscode.postMessage(message);
-      });
-    }
+	      });
+	    }
 
-    function showLoading(label, pendingControl = null) {
-      if (typeof label === 'string' && loadingMessage) {
-        loadingMessage.textContent = label;
-      }
+	    function runWithLoading(label, work, pendingControl = null) {
+	      if (toolbarBusy) {
+	        return;
+	      }
+	      showLoading(label, pendingControl);
+	      requestAnimationFrame(() => {
+	        try {
+	          work();
+	        } finally {
+	          requestAnimationFrame(() => {
+	            hideLoading();
+	          });
+	        }
+	      });
+	    }
+
+	    function showLoading(label, pendingControl = null) {
+	      if (typeof label === 'string' && loadingMessage) {
+	        loadingMessage.textContent = label;
+	      }
       if (loadingOverlay) {
         loadingOverlay.setAttribute('aria-hidden', 'false');
       }

@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Reduced redundant full rebuilds when the Revision Graph view opens so activation and first focus are less likely to show the same loading cycle twice.
 - Filtered redundant repository-event rebuilds after checkout when the visible graph metadata already matches the current repository state, reducing duplicate loading cycles without changing the rendered result.
 - Skipped repository-set refreshes that do not change the selected repository or empty-state availability, preventing the activation path from reloading the same graph twice.
+- Added explicit loading feedback when reorganizing the graph layout so slower client-side rearrangements no longer feel unresponsive.
 
 ## 0.0.12
 

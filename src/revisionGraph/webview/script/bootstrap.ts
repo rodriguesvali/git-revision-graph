@@ -122,12 +122,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         clearSearchQuery(true);
       });
     }
-    if (reorganizeButton) {
-      reorganizeButton.addEventListener('click', () => {
-        autoArrangeLayout();
-        centerGraphInViewport();
-      });
-    }
+	    if (reorganizeButton) {
+	      reorganizeButton.addEventListener('click', () => {
+	        runWithLoading('Reorganizing graph layout...', () => {
+	          autoArrangeLayout();
+	          centerGraphInViewport();
+	        }, reorganizeButton);
+	      });
+	    }
     if (zoomOutButton) {
       zoomOutButton.addEventListener('click', () => {
         zoomOut();
