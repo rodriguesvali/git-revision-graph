@@ -341,6 +341,12 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;
       }
+      if (showRemoteBranchesToggle) {
+        showRemoteBranchesToggle.disabled = toolbarBusy;
+      }
+      if (showStashesToggle) {
+        showStashesToggle.disabled = toolbarBusy;
+      }
       if (showBranchingsToggle) {
         showBranchingsToggle.disabled = toolbarBusy;
       }
@@ -360,6 +366,8 @@ export function renderRevisionGraphScriptInteractions(): string {
       const controls = [
         scopeSelect,
         showTagsToggle,
+        showRemoteBranchesToggle,
+        showStashesToggle,
         showBranchingsToggle,
         searchInput,
         searchPrevButton,

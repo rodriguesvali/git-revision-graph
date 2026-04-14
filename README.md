@@ -20,7 +20,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 - Dedicated `GIT Revision Graph` Activity Bar container
 - `GIT Revision Graph` webview for recent commits across visible refs
-- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, branching/merge visibility, and in-graph search
+- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, remote branch visibility, stash visibility, branching/merge visibility, and in-graph search
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references, including changed files, unified diff, and revision log actions
 - Compare a selected reference against the current worktree
@@ -57,7 +57,7 @@ Not included yet:
 
 - A persistent compare results view
 - Advanced merge conflict guidance
-- Rich search beyond the current loaded graph scope and visibility controls
+- Rich search beyond the current loaded graph scope, plus more advanced ref and revision-range filtering
 - Tag creation, reference rename, fetch, or general push workflows
 - Full-history graph rendering beyond the bounded recent-commit window
 
@@ -233,7 +233,7 @@ Additional actions are available directly inside the Revision Graph context menu
 Potential improvements after the MVP:
 
 - Add a persistent compare results view
-- Add search and filtering in the revision graph
+- Add revision-range filtering and saved graph filter combinations
 - Avoid full graph reloads for metadata-only local operations such as checkout and branch creation when the loaded commit window is unchanged
 - Preserve zoom, scroll, and selection context across lightweight refreshes
 - Add refresh profiling and caching for graph load, projection, and layout hot paths

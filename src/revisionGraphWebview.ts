@@ -28,6 +28,14 @@ export function renderRevisionGraphShellHtml(): string {
       <input id="showTagsToggle" type="checkbox" />
       <span>Show Tags</span>
     </label>
+    <label for="showRemoteBranchesToggle">
+      <input id="showRemoteBranchesToggle" type="checkbox" />
+      <span>Show Remote Branches</span>
+    </label>
+    <label for="showStashesToggle">
+      <input id="showStashesToggle" type="checkbox" />
+      <span>Show Stash</span>
+    </label>
     <label for="showBranchingsToggle">
       <input id="showBranchingsToggle" type="checkbox" />
       <span>Show Branchings &amp; Merges</span>

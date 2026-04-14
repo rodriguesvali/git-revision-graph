@@ -11,6 +11,8 @@ import { collectAncestorHashes } from '../model/commitGraphQueries';
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   refScope: 'all',
   showTags: true,
+  showRemoteBranches: true,
+  showStashes: true,
   showBranchingsAndMerges: false
 };
 
@@ -161,9 +163,19 @@ function filterRefs(
   refs: readonly RevisionGraphRef[],
   options: RevisionGraphProjectionOptions
 ): RevisionGraphRef[] {
-  return options.showTags
-    ? [...refs]
-    : refs.filter((ref) => ref.kind !== 'tag');
+  return refs.filter((ref) => {
+    if (ref.kind === 'tag' && !options.showTags) {
+      return false;
+    }
+    if (ref.kind === 'remote' && !options.showRemoteBranches) {
+      return false;
+    }
+    if (ref.kind === 'stash' && !options.showStashes) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 function rewriteGitSimplifiedVisibleHashes(

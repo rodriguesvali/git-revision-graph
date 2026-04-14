@@ -109,6 +109,12 @@ export function buildRevisionGraphGitLogArgs(
   if (!options.showTags) {
     args.push('--decorate-refs-exclude=refs/tags/*');
   }
+  if (!options.showRemoteBranches) {
+    args.push('--decorate-refs-exclude=refs/remotes/*');
+  }
+  if (!options.showStashes) {
+    args.push('--decorate-refs-exclude=refs/stash');
+  }
 
   args.push(
     '--date=short',

@@ -26,6 +26,8 @@ export interface CommitGraph {
 export interface RevisionGraphProjectionOptions {
   readonly refScope: 'all' | 'current' | 'local';
   readonly showTags: boolean;
+  readonly showRemoteBranches: boolean;
+  readonly showStashes: boolean;
   readonly showBranchingsAndMerges: boolean;
 }
 

@@ -24,6 +24,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const workspaceLed = document.getElementById('workspaceLed');
     const scopeSelect = document.getElementById('scopeSelect');
     const showTagsToggle = document.getElementById('showTagsToggle');
+    const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
+    const showStashesToggle = document.getElementById('showStashesToggle');
     const showBranchingsToggle = document.getElementById('showBranchingsToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
@@ -38,7 +40,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let currentHeadName = null;
     let currentHeadUpstreamName = null;
     let isWorkspaceDirty = false;
-    let currentProjectionOptions = { refScope: 'all', showTags: true, showBranchingsAndMerges: false };
+    let currentProjectionOptions = {
+      refScope: 'all',
+      showTags: true,
+      showRemoteBranches: true,
+      showStashes: true,
+      showBranchingsAndMerges: false
+    };
     let mergeBlockedTargets = new Set();
     let graphNodes = [];
     let graphEdges = [];
@@ -93,6 +101,22 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           type: 'set-projection-options',
           options: { showTags: showTagsToggle.checked }
         }, showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...', showTagsToggle);
+      });
+    }
+    if (showRemoteBranchesToggle) {
+      showRemoteBranchesToggle.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { showRemoteBranches: showRemoteBranchesToggle.checked }
+        }, showRemoteBranchesToggle.checked ? 'Showing remote branches...' : 'Hiding remote branches...', showRemoteBranchesToggle);
+      });
+    }
+    if (showStashesToggle) {
+      showStashesToggle.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { showStashes: showStashesToggle.checked }
+        }, showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
       });
     }
     if (showBranchingsToggle) {
@@ -507,6 +531,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showTagsToggle) {
         showTagsToggle.checked = !!state.projectionOptions.showTags;
+      }
+      if (showRemoteBranchesToggle) {
+        showRemoteBranchesToggle.checked = !!state.projectionOptions.showRemoteBranches;
+      }
+      if (showStashesToggle) {
+        showStashesToggle.checked = !!state.projectionOptions.showStashes;
       }
       if (showBranchingsToggle) {
         showBranchingsToggle.checked = !!state.projectionOptions.showBranchingsAndMerges;

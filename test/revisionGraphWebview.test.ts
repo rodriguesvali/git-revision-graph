@@ -9,6 +9,10 @@ test('renders a persistent shell for the revision graph webview', () => {
 
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /Show Branchings &amp; Merges/);
+  assert.match(html, /id="showRemoteBranchesToggle"/);
+  assert.match(html, /Show Remote Branches/);
+  assert.match(html, /id="showStashesToggle"/);
+  assert.match(html, /Show Stash/);
   assert.match(html, /id="searchInput"/);
   assert.match(html, /Find in graph\.\.\./);
   assert.match(html, /id="searchResultBadge"/);
@@ -81,7 +85,13 @@ test('reorganize button does not crash when clustering by ref families', async (
       currentHeadName: 'main',
       currentHeadUpstreamName: 'origin/main',
       isWorkspaceDirty: false,
-      projectionOptions: { refScope: 'all', showTags: true, showBranchingsAndMerges: true },
+      projectionOptions: {
+        refScope: 'all',
+        showTags: true,
+        showRemoteBranches: true,
+        showStashes: true,
+        showBranchingsAndMerges: true
+      },
       mergeBlockedTargets: [],
       primaryAncestorPathsByHash: {},
       autoArrangeOnInit: false,
@@ -199,6 +209,8 @@ test('renders client-side graph search controls and runtime handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /searchInput\.addEventListener\('input'/);
+  assert.match(html, /showRemoteBranchesToggle\.addEventListener\('change'/);
+  assert.match(html, /showStashesToggle\.addEventListener\('change'/);
   assert.match(html, /searchPrevButton\.addEventListener\('click'/);
   assert.match(html, /searchNextButton\.addEventListener\('click'/);
   assert.match(html, /searchClearButton\.addEventListener\('click'/);
@@ -292,6 +304,8 @@ function createWebviewRuntime() {
     'workspaceLed',
     'scopeSelect',
     'showTagsToggle',
+    'showRemoteBranchesToggle',
+    'showStashesToggle',
     'showBranchingsToggle',
     'searchInput',
     'searchResultBadge',

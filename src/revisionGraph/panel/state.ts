@@ -318,7 +318,7 @@ function patchSceneReferences(
   projectionOptions: RevisionGraphViewState['projectionOptions']
 ): RevisionGraphScene | undefined {
   const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
-  const refsByHash = seedSupplementalRefsByHash(scene);
+  const refsByHash = seedSupplementalRefsByHash(scene, projectionOptions);
 
   for (const ref of repositoryRefs) {
     const normalizedRef = normalizeRepositoryRef(ref, projectionOptions);
@@ -413,7 +413,7 @@ function normalizeRepositoryRef(
     case RefType.Head:
       return { name, kind: 'branch' };
     case RefType.RemoteHead:
-      return { name, kind: 'remote' };
+      return projectionOptions.showRemoteBranches ? { name, kind: 'remote' } : undefined;
     case RefType.Tag:
       return projectionOptions.showTags ? { name, kind: 'tag' } : undefined;
   }
@@ -467,11 +467,14 @@ function getRevisionGraphRefPriority(kind: RevisionGraphRef['kind']): number {
   }
 }
 
-function seedSupplementalRefsByHash(scene: RevisionGraphScene): Map<string, RevisionGraphRef[]> {
+function seedSupplementalRefsByHash(
+  scene: RevisionGraphScene,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): Map<string, RevisionGraphRef[]> {
   const refsByHash = new Map<string, RevisionGraphRef[]>();
 
   for (const node of scene.nodes) {
-    const supplementalRefs = node.refs.filter((ref) => ref.kind === 'stash');
+    const supplementalRefs = node.refs.filter((ref) => ref.kind === 'stash' && projectionOptions.showStashes);
     if (supplementalRefs.length > 0) {
       refsByHash.set(node.hash, [...supplementalRefs]);
     }

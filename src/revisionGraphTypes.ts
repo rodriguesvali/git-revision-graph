@@ -77,6 +77,8 @@ export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProj
   return {
     refScope: 'all',
     showTags: true,
+    showRemoteBranches: true,
+    showStashes: true,
     showBranchingsAndMerges: false
   };
 }

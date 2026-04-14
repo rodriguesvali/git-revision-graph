@@ -66,6 +66,8 @@ test('builds git log args that exclude tags and scope to local branches', () => 
     buildRevisionGraphGitLogArgs(12000, {
       refScope: 'local',
       showTags: false,
+      showRemoteBranches: false,
+      showStashes: false,
       showBranchingsAndMerges: true
     }),
     [
@@ -76,6 +78,8 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       '--sparse',
       '--decorate=short',
       '--decorate-refs-exclude=refs/tags/*',
+      '--decorate-refs-exclude=refs/remotes/*',
+      '--decorate-refs-exclude=refs/stash',
       '--date=short',
       '--max-count=12000',
       '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
@@ -370,6 +374,54 @@ test('can hide tag refs and tag-only commits from the projection', () => {
   const projection = projectDecoratedCommitGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     showTags: false
+  });
+
+  assert.deepEqual(
+    projection.nodes.map((node) => ({ hash: node.hash, refs: node.refs.map((ref) => ref.name) })),
+    [
+      { hash: 'head1', refs: ['main'] },
+      { hash: 'base1', refs: [] }
+    ]
+  );
+});
+
+test('can hide remote refs and stash refs from the projection', () => {
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-07',
+      subject: 'Current head',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' },
+        { name: 'stash', kind: 'stash' }
+      ]
+    },
+    {
+      hash: 'remote1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-06',
+      subject: 'Remote only',
+      refs: [{ name: 'origin/topic/demo', kind: 'remote' }]
+    },
+    {
+      hash: 'stash1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-05',
+      subject: 'Stash entry',
+      refs: [{ name: 'stash', kind: 'stash' }]
+    },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showRemoteBranches: false,
+    showStashes: false
   });
 
   assert.deepEqual(
