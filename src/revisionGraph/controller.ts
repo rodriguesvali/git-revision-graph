@@ -15,6 +15,7 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   mergeResolvedReference,
+  CompareResultsPresenter,
   RefActionKind,
   syncCurrentHeadWithUpstream
 } from '../refActions';
@@ -66,14 +67,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly actionServices = createWorkbenchRefActionServices(
-    (request) => {
-      void this.refresh(request);
-    },
-    (request) => {
-      return this.prepareRefresh(request);
-    }
-  );
+  private readonly actionServices: ReturnType<typeof createWorkbenchRefActionServices>;
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
       this.currentLoadingLabel = label;
@@ -134,8 +128,18 @@ export class RevisionGraphController implements vscode.Disposable {
   constructor(
     private readonly git: API,
     private readonly backend: RevisionGraphBackend,
+    compareResultsPresenter: CompareResultsPresenter,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY
   ) {
+    this.actionServices = createWorkbenchRefActionServices(
+      (request) => {
+        void this.refresh(request);
+      },
+      (request) => {
+        return this.prepareRefresh(request);
+      },
+      compareResultsPresenter
+    );
     this.currentRepository = reconcileCurrentRepository(git.repositories, undefined);
     this.currentState = buildEmptyRevisionGraphViewState(
       git.repositories.length > 0,

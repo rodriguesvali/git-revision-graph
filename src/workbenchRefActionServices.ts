@@ -11,7 +11,8 @@ import { isRefAncestorOfHead } from './revisionGraphRepository';
 
 export function createWorkbenchRefActionServices(
   refresh?: (request?: RevisionGraphRefreshRequestLike) => void,
-  prepare?: (request?: RevisionGraphRefreshRequestLike) => PreparedRefreshHandle | undefined
+  prepare?: (request?: RevisionGraphRefreshRequestLike) => PreparedRefreshHandle | undefined,
+  compareResultsPresenter?: RefActionServices['compareResultsPresenter']
 ): RefActionServices {
   return {
     ui: {
@@ -57,6 +58,11 @@ export function createWorkbenchRefActionServices(
       async openWithWorktree(repository, change, ref) {
         await openChangeDiffWithWorktree(repository, change, ref);
       }
+    },
+    compareResultsPresenter: compareResultsPresenter ?? {
+      async showBetweenRefs() {},
+      async showWithWorktree() {},
+      async clear() {}
     },
     refreshController: {
       prepare(request) {
@@ -110,7 +116,7 @@ function buildEmptyUri(filePath: string): vscode.Uri {
   });
 }
 
-async function openChangeDiffBetweenRefs(
+export async function openChangeDiffBetweenRefs(
   repository: Repository,
   change: Change,
   leftRef: string,
@@ -127,7 +133,7 @@ async function openChangeDiffBetweenRefs(
   await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
 }
 
-async function openChangeDiffWithWorktree(
+export async function openChangeDiffWithWorktree(
   repository: Repository,
   change: Change,
   ref: string

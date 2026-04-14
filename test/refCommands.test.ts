@@ -15,6 +15,8 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   readonly infoMessages: string[];
   readonly errorMessages: string[];
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
+  readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
+  readonly compareResultsClears: number;
   readonly refreshCalls: number;
   readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
   readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
@@ -22,6 +24,8 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   const infoMessages: string[] = [];
   const errorMessages: string[] = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
+  const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
+  let compareResultsClears = 0;
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
 
   const services: RefCommandServices = {
@@ -63,6 +67,26 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
         diffCalls.push({ kind: 'worktree', refA: ref });
       }
     },
+    compareResultsPresenter: {
+      async showBetweenRefs(_repository, left, right, changes) {
+        compareResultsCalls.push({
+          kind: 'between',
+          refA: left.refName,
+          refB: right.refName,
+          changeCount: changes.length
+        });
+      },
+      async showWithWorktree(_repository, target, changes) {
+        compareResultsCalls.push({
+          kind: 'worktree',
+          refA: target.refName,
+          changeCount: changes.length
+        });
+      },
+      async clear() {
+        compareResultsClears += 1;
+      }
+    },
     refreshController: {
       prepare(_request) {
         return undefined;
@@ -90,6 +114,10 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     infoMessages,
     errorMessages,
     diffCalls,
+    compareResultsCalls,
+    get compareResultsClears() {
+      return compareResultsClears;
+    },
     refreshRequests,
     get refreshIntents() {
       return refreshRequests.map((request) => request.intent);
@@ -100,7 +128,7 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   };
 }
 
-test('compareRefs resolves multi-repo workspaces and opens a diff for the picked change', async () => {
+test('compareRefs resolves multi-repo workspaces and populates the persistent compare results view', async () => {
   const repoA = createRepository({ root: '/workspace/a' });
   const repoB = createRepository({
     root: '/workspace/b',
@@ -111,7 +139,7 @@ test('compareRefs resolves multi-repo workspaces and opens a diff for the picked
     diffBetween: [createChange({ uriPath: '/workspace/b/src/file.ts', status: Status.MODIFIED })]
   });
   const api = createApi([repoA, repoB]);
-  const { services, diffCalls } = createServices({
+  const { services, diffCalls, compareResultsCalls } = createServices({
     async pickRepository(items) {
       return items[1].repository;
     },
@@ -122,7 +150,10 @@ test('compareRefs resolves multi-repo workspaces and opens a diff for the picked
 
   await compareRefs(api, undefined, services);
 
-  assert.deepEqual(diffCalls, [{ kind: 'between', refA: 'main', refB: 'v1.0.0' }]);
+  assert.deepEqual(diffCalls, []);
+  assert.deepEqual(compareResultsCalls, [
+    { kind: 'between', refA: 'main', refB: 'v1.0.0', changeCount: 1 }
+  ]);
 });
 
 test('compareWithWorktree reports when there are no changes', async () => {
@@ -131,12 +162,13 @@ test('compareWithWorktree reports when there are no changes', async () => {
     refs: [createRef({ type: RefType.Head, name: 'main' })],
     diffWith: []
   });
-  const { services, infoMessages, diffCalls } = createServices();
+  const harness = createServices();
 
-  await compareWithWorktree(createApi([repository]), undefined, services);
+  await compareWithWorktree(createApi([repository]), undefined, harness.services);
 
-  assert.deepEqual(diffCalls, []);
-  assert.equal(infoMessages[0], 'The worktree is already aligned with main.');
+  assert.deepEqual(harness.diffCalls, []);
+  assert.equal(harness.compareResultsClears, 1);
+  assert.equal(harness.infoMessages[0], 'The worktree is already aligned with main.');
 });
 
 test('checkoutReference short-circuits when the selected branch is already current', async () => {

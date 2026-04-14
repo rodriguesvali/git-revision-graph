@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { CompareResultsPresenter } from './refActions';
 import { API } from './git';
 import { createRevisionGraphBackend, RevisionGraphBackend } from './revisionGraph/backend';
 import { RevisionGraphController } from './revisionGraph/controller';
@@ -11,9 +12,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
 
   constructor(
     git: API,
+    compareResultsPresenter: CompareResultsPresenter,
     backend: RevisionGraphBackend = createRevisionGraphBackend()
   ) {
-    this.controller = new RevisionGraphController(git, backend);
+    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter);
   }
 
   dispose(): void {

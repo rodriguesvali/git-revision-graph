@@ -19,11 +19,12 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 ## Current Features
 
 - Dedicated `GIT Revision Graph` Activity Bar container
-- `GIT Revision Graph` webview for recent commits across visible refs
+- `Graph` view for recent commits across visible refs
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, remote branch visibility, stash visibility, branching/merge visibility, and in-graph search
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references, including changed files, unified diff, and revision log actions
 - Compare a selected reference against the current worktree
+- Persistent `Compare Results` view for reviewing changed files across ref-to-ref and ref-to-worktree comparisons
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Create a new local branch from a local branch, remote branch, or tag
@@ -55,7 +56,6 @@ Included in the MVP:
 
 Not included yet:
 
-- A persistent compare results view
 - Advanced merge conflict guidance
 - Rich search beyond the current loaded graph scope, plus more advanced ref and revision-range filtering
 - Tag creation, reference rename, fetch, or general push workflows
@@ -179,7 +179,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `GIT Revision Graph` view from the Activity Bar.
+5. Use the `Graph` view inside the `GIT Revision Graph` Activity Bar container.
 
 ## Dev Container
 
@@ -218,9 +218,10 @@ Additional actions are available directly inside the Revision Graph context menu
 - Show the revision log between two selected references
 - Open the unified diff between two selected references
 
+The Activity Bar container also includes a persistent `Compare Results` view that keeps the latest compare session available for multi-file review.
+
 ## Known Limitations
 
-- Compare results are presented through a Quick Pick of changed files rather than a dedicated persistent results panel.
 - Merge conflict resolution is delegated to the standard Source Control experience in VS Code.
 - Remote branch deletion uses an explicit confirmation because it affects the remote repository and collaborators.
 - Binary files or unusual encodings may not render nicely in content-based diffs.
@@ -232,7 +233,6 @@ Additional actions are available directly inside the Revision Graph context menu
 
 Potential improvements after the MVP:
 
-- Add a persistent compare results view
 - Add revision-range filtering and saved graph filter combinations
 - Avoid full graph reloads for metadata-only local operations such as checkout and branch creation when the loaded commit window is unchanged
 - Preserve zoom, scroll, and selection context across lightweight refreshes

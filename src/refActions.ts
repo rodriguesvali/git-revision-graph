@@ -1,4 +1,3 @@
-import { toChangeQuickPickItems } from './changePresentation';
 import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
 import { Repository } from './git';
 import { formatUpstreamLabel, hasMergeConflicts } from './gitState';
@@ -26,6 +25,7 @@ import {
 } from './revisionGraphRefresh';
 
 export type {
+  CompareResultsPresenter,
   DiffPresenter,
   PreparedRefreshHandle,
   RefreshController,
@@ -48,19 +48,11 @@ export async function compareResolvedRefs(
   try {
     const changes = await repository.diffBetween(left.refName, right.refName);
     if (changes.length === 0) {
+      await services.compareResultsPresenter.clear();
       services.ui.showInformationMessage(`No differences found between ${left.label} and ${right.label}.`);
       return;
     }
-
-    const pickedChange = await services.ui.pickChange(
-      toChangeQuickPickItems(changes, services.formatPath),
-      `Changed files between ${left.label} and ${right.label}`
-    );
-    if (!pickedChange) {
-      return;
-    }
-
-    await services.diffPresenter.openBetweenRefs(repository, pickedChange.change, left.refName, right.refName);
+    await services.compareResultsPresenter.showBetweenRefs(repository, left, right, changes);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not compare references.', error));
   }
@@ -74,19 +66,11 @@ export async function compareResolvedRefWithWorktree(
   try {
     const changes = await repository.diffWith(target.refName);
     if (changes.length === 0) {
+      await services.compareResultsPresenter.clear();
       services.ui.showInformationMessage(`The worktree is already aligned with ${target.label}.`);
       return;
     }
-
-    const pickedChange = await services.ui.pickChange(
-      toChangeQuickPickItems(changes, services.formatPath),
-      `Changed files between ${target.label} and the worktree`
-    );
-    if (!pickedChange) {
-      return;
-    }
-
-    await services.diffPresenter.openWithWorktree(repository, pickedChange.change, target.refName);
+    await services.compareResultsPresenter.showWithWorktree(repository, target, changes);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not compare the reference with the worktree.', error));
   }

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { COMPARE_RESULTS_VIEW_ID, CompareResultsViewProvider } from './compareResultsView';
 import { RefCommandServices } from './refCommands';
 import { API, GitExtension } from './git';
 import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } from './refContentProvider';
@@ -18,10 +19,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  const revisionGraphProvider = new RevisionGraphViewProvider(git);
-  const services = createCommandServices(revisionGraphProvider);
+  const compareResultsProvider = new CompareResultsViewProvider();
+  const compareResultsView = vscode.window.createTreeView(COMPARE_RESULTS_VIEW_ID, {
+    treeDataProvider: compareResultsProvider,
+    showCollapseAll: false
+  });
+  compareResultsProvider.attachView(compareResultsView);
+
+  const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider);
+  const services = createCommandServices(revisionGraphProvider, compareResultsProvider);
 
   context.subscriptions.push(
+    compareResultsProvider,
+    compareResultsView,
     revisionGraphProvider,
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
@@ -46,6 +56,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.chooseRevisionGraphRepository', async () => {
       await revisionGraphProvider.chooseRepository();
+    }),
+    vscode.commands.registerCommand('gitRefs.openCompareResult', async (item) => {
+      await compareResultsProvider.openItem(item);
+    }),
+    vscode.commands.registerCommand('gitRefs.clearCompareResults', async () => {
+      await compareResultsProvider.clear();
     })
   );
 }
@@ -62,14 +78,18 @@ async function getGitApi(): Promise<API | undefined> {
   return gitExtension.getAPI(1);
 }
 
-function createCommandServices(revisionGraphProvider: RevisionGraphViewProvider): RefCommandServices {
+function createCommandServices(
+  revisionGraphProvider: RevisionGraphViewProvider,
+  compareResultsProvider: CompareResultsViewProvider
+): RefCommandServices {
   const baseServices = createWorkbenchRefActionServices(
     (request?: RevisionGraphRefreshRequestLike) => {
       void revisionGraphProvider.refresh(request);
     },
     (request?: RevisionGraphRefreshRequestLike) => {
       return revisionGraphProvider.prepareRefresh(request);
-    }
+    },
+    compareResultsProvider
   );
 
   return {

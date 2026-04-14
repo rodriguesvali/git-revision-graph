@@ -52,9 +52,14 @@
       "gitRefs": [
         {
           "id": "gitRefs.revisionGraphView",
-          "name": "GIT Revision Graph",
+          "name": "Graph",
           "type": "webview",
           "icon": "media/git-refs.svg"
+        },
+        {
+          "id": "gitRefs.compareResultsView",
+          "name": "Compare Results",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -89,6 +94,11 @@
         "command": "gitRefs.chooseRevisionGraphRepository",
         "title": "Choose GIT Revision Graph Repository",
         "icon": "$(repo)"
+      },
+      {
+        "command": "gitRefs.clearCompareResults",
+        "title": "Clear Compare Results",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
@@ -102,6 +112,11 @@
           "command": "gitRefs.chooseRevisionGraphRepository",
           "when": "view == gitRefs.revisionGraphView",
           "group": "navigation@2"
+        },
+        {
+          "command": "gitRefs.clearCompareResults",
+          "when": "view == gitRefs.compareResultsView",
+          "group": "navigation"
         }
       ]
     }

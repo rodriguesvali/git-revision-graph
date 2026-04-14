@@ -28,6 +28,21 @@ export interface DiffPresenter {
   openWithWorktree(repository: Repository, change: ChangeQuickPickItem['change'], ref: string): Promise<void>;
 }
 
+export interface CompareResultsPresenter {
+  showBetweenRefs(
+    repository: Repository,
+    left: RefSelection,
+    right: RefSelection,
+    changes: readonly ChangeQuickPickItem['change'][]
+  ): Promise<void>;
+  showWithWorktree(
+    repository: Repository,
+    target: RefSelection,
+    changes: readonly ChangeQuickPickItem['change'][]
+  ): Promise<void>;
+  clear(): Promise<void>;
+}
+
 export interface PreparedRefreshHandle {
   cancel(): void;
 }
@@ -49,6 +64,7 @@ export interface AncestryInspector {
 export interface RefActionServices {
   readonly ui: RefActionUi;
   readonly diffPresenter: DiffPresenter;
+  readonly compareResultsPresenter: CompareResultsPresenter;
   readonly refreshController: RefreshController;
   readonly referenceManager: ReferenceManager;
   readonly ancestryInspector: AncestryInspector;
