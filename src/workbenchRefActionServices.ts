@@ -4,13 +4,14 @@ import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresent
 import { execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
-import { RefActionServices } from './refActions';
+import { PreparedRefreshHandle, RefActionServices } from './refActions';
 import { isMissingUpstreamConfigurationError } from './refActions/shared';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
 
 export function createWorkbenchRefActionServices(
-  refresh?: (request?: RevisionGraphRefreshRequestLike) => void
+  refresh?: (request?: RevisionGraphRefreshRequestLike) => void,
+  prepare?: (request?: RevisionGraphRefreshRequestLike) => PreparedRefreshHandle | undefined
 ): RefActionServices {
   return {
     ui: {
@@ -58,6 +59,9 @@ export function createWorkbenchRefActionServices(
       }
     },
     refreshController: {
+      prepare(request) {
+        return prepare?.(request);
+      },
       refresh(request) {
         refresh?.(request);
       }

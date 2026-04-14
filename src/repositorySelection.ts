@@ -36,6 +36,18 @@ export function shouldPromptForGraphRepositoryOnOpen<T extends RepositoryLike>(
   );
 }
 
+export function shouldRefreshGraphForRepositorySetChange<T extends RepositoryLike>(
+  previousRepository: T | undefined,
+  nextRepository: T | undefined,
+  previousHasRepositories: boolean,
+  nextHasRepositories: boolean
+): boolean {
+  return (
+    previousHasRepositories !== nextHasRepositories
+    || !isSameRepositoryPath(previousRepository, nextRepository)
+  );
+}
+
 export function isSameRepositoryPath(
   left: RepositoryLike | undefined,
   right: RepositoryLike | undefined

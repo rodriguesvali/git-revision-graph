@@ -28,7 +28,12 @@ export interface DiffPresenter {
   openWithWorktree(repository: Repository, change: ChangeQuickPickItem['change'], ref: string): Promise<void>;
 }
 
+export interface PreparedRefreshHandle {
+  cancel(): void;
+}
+
 export interface RefreshController {
+  prepare(request?: RevisionGraphRefreshRequestLike): PreparedRefreshHandle | undefined;
   refresh(request?: RevisionGraphRefreshRequestLike): void;
 }
 

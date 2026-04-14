@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - Improved the initial Revision Graph load so the webview shell appears immediately with explicit loading feedback instead of staying blank during heavier graph rebuilds.
 - Fixed checkout refresh behavior so branch switches no longer show an intermediate graph built from the previous snapshot before the rebuilt graph is ready.
 - Updated local branch references to use a green visual treatment so they stand apart more clearly from remote branches in the graph.
+- Fixed checkout-triggered refresh deduplication so repository events raised during branch switches do not race the explicit refresh and make the graph feel like it loaded twice.
+- Reduced redundant full rebuilds when the Revision Graph view opens so activation and first focus are less likely to show the same loading cycle twice.
+- Filtered redundant repository-event rebuilds after checkout when the visible graph metadata already matches the current repository state, reducing duplicate loading cycles without changing the rendered result.
+- Skipped repository-set refreshes that do not change the selected repository or empty-state availability, preventing the activation path from reloading the same graph twice.
 
 ## 0.0.12
 

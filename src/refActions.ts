@@ -27,6 +27,7 @@ import {
 
 export type {
   DiffPresenter,
+  PreparedRefreshHandle,
   RefreshController,
   ReferenceManager,
   AncestryInspector,
@@ -97,6 +98,10 @@ export async function checkoutResolvedReference(
   services: RefActionServices
 ): Promise<void> {
   const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshRequest = createActionRefreshRequest(refreshIntent, repository.rootUri.toString());
+  let preparedRefresh:
+    | ReturnType<RefActionServices['refreshController']['prepare']>
+    | undefined;
   try {
     if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
       services.ui.showInformationMessage(`${target.label} is already checked out.`);
@@ -120,12 +125,12 @@ export async function checkoutResolvedReference(
       return;
     }
 
+    preparedRefresh = services.refreshController.prepare(refreshRequest);
     await repository.checkout(target.refName);
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(refreshRequest);
   } catch (error) {
+    preparedRefresh?.cancel();
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
 }
@@ -136,6 +141,10 @@ export async function createBranchFromResolvedReference(
   services: RefActionServices
 ): Promise<void> {
   const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshRequest = createActionRefreshRequest(refreshIntent, repository.rootUri.toString());
+  let preparedRefresh:
+    | ReturnType<RefActionServices['refreshController']['prepare']>
+    | undefined;
   try {
     if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
       return;
@@ -151,6 +160,7 @@ export async function createBranchFromResolvedReference(
       return;
     }
 
+    preparedRefresh = services.refreshController.prepare(refreshRequest);
     await repository.createBranch(branchName, true, branchCreation.startPointRefName);
     if (branchCreation.upstreamRefName) {
       await repository.setBranchUpstream(branchName, branchCreation.upstreamRefName);
@@ -163,10 +173,9 @@ export async function createBranchFromResolvedReference(
         ? `Branch ${branchName} was created and checked out from ${branchCreation.upstreamRefName}.`
         : `Branch ${branchName} was created and checked out from ${target.label}.`
     );
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(refreshRequest);
   } catch (error) {
+    preparedRefresh?.cancel();
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
 }

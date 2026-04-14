@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
   createActionRefreshRequest,
+  createRepositoryRefreshRequest,
   getDefaultFollowUpEventsForIntent,
   normalizeRefreshRequest,
   registerPendingFollowUpRefresh
@@ -21,6 +23,20 @@ test('createActionRefreshRequest attaches the default follow-up repository event
   assert.deepEqual(getDefaultFollowUpEventsForIntent('projection-rebuild'), []);
 });
 
+test('createRepositoryRefreshRequest attaches follow-up suppression only when a repository path is available', () => {
+  assert.deepEqual(
+    createRepositoryRefreshRequest('full-rebuild', '/workspace/repo'),
+    {
+      intent: 'full-rebuild',
+      repositoryPath: '/workspace/repo',
+      followUpEvents: ['state', 'checkout']
+    }
+  );
+  assert.deepEqual(createRepositoryRefreshRequest('full-rebuild'), {
+    intent: 'full-rebuild'
+  });
+});
+
 test('registerPendingFollowUpRefresh suppresses matching event bursts within the suppression window', () => {
   const pending = new Map();
   registerPendingFollowUpRefresh(
@@ -33,6 +49,20 @@ test('registerPendingFollowUpRefresh suppresses matching event bursts within the
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 400), true);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), true);
+});
+
+test('cancelPendingFollowUpRefresh removes a prepared suppression entry', () => {
+  const pending = new Map();
+  const preparedRefresh = registerPendingFollowUpRefresh(
+    pending,
+    createActionRefreshRequest('full-rebuild', '/workspace/repo'),
+    100
+  );
+
+  assert.ok(preparedRefresh);
+  cancelPendingFollowUpRefresh(pending, preparedRefresh!);
+
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), false);
 });
 
 test('consumePendingFollowUpRefresh expires old suppressions and ignores other repositories', () => {

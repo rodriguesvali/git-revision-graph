@@ -64,6 +64,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       }
     },
     refreshController: {
+      prepare(_request) {
+        return undefined;
+      },
       refresh(request) {
         refreshRequests.push(normalizeRefreshRequest(request));
       }

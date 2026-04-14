@@ -29,6 +29,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
+  readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
+  readonly canceledPrepareRequests: readonly RevisionGraphRefreshRequest[];
   readonly refreshCalls: number;
   readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
   readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
@@ -40,6 +42,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
+  const prepareRequests: RevisionGraphRefreshRequest[] = [];
+  const canceledPrepareRequests: RevisionGraphRefreshRequest[] = [];
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
   let sourceControlOpens = 0;
   const overrideConfirm = overrides.confirm;
@@ -82,6 +86,15 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       }
     },
     refreshController: {
+      prepare(request) {
+        const normalizedRequest = normalizeRefreshRequest(request);
+        prepareRequests.push(normalizedRequest);
+        return {
+          cancel() {
+            canceledPrepareRequests.push(normalizedRequest);
+          }
+        };
+      },
       refresh(request) {
         refreshRequests.push(normalizeRefreshRequest(request));
       }
@@ -116,6 +129,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     diffCalls,
     deletedRemoteBranches,
     upstreamClears,
+    prepareRequests,
+    canceledPrepareRequests,
     refreshRequests,
     get refreshIntents() {
       return refreshRequests.map((request) => request.intent);
@@ -186,6 +201,7 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
     { name: 'main', upstream: 'origin/main' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
+  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
@@ -214,6 +230,7 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
     { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
+  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
@@ -272,6 +289,58 @@ test('checkoutResolvedReference blocks workspace-changing operations while confl
   assert.equal(harness.sourceControlOpens, 1);
 });
 
+test('checkoutResolvedReference prepares follow-up refresh suppression before checkout events can fire', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices();
+
+  repository.checkout = async (treeish: string) => {
+    repository.calls.checkout.push(treeish);
+    assert.equal(harness.prepareRequests.length, 1);
+    assert.deepEqual(harness.prepareRequests[0], {
+      intent: 'full-rebuild',
+      repositoryPath: '/workspace/repo',
+      followUpEvents: ['state', 'checkout']
+    });
+  };
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.checkout, ['release/2026']);
+  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
+  assert.deepEqual(harness.canceledPrepareRequests, []);
+  assert.equal(harness.refreshCalls, 1);
+});
+
+test('checkoutResolvedReference cancels a prepared refresh when checkout fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices();
+  repository.checkout = async () => {
+    throw new Error('boom');
+  };
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.equal(harness.refreshCalls, 0);
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+  assert.match(harness.errorMessages[0] ?? '', /Could not check out the reference/);
+});
+
 test('createBranchFromResolvedReference creates a new branch from a local branch reference', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -293,6 +362,7 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(harness.upstreamClears, ['release/2026-copy']);
   assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
+  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
@@ -319,8 +389,31 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
+  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+});
+
+test('createBranchFromResolvedReference cancels a prepared refresh when branch creation fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices();
+  repository.createBranch = async () => {
+    throw new Error('boom');
+  };
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.equal(harness.refreshCalls, 0);
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+  assert.match(harness.errorMessages[0] ?? '', /Could not create the branch/);
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {

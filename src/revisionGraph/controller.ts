@@ -5,6 +5,7 @@ import { toErrorDetail } from '../errorDetail';
 import {
   isSameRepositoryPath,
   reconcileCurrentRepository,
+  shouldRefreshGraphForRepositorySetChange,
   shouldPromptForGraphRepositoryOnOpen
 } from '../repositorySelection';
 import {
@@ -21,8 +22,10 @@ import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openCommitDetails, openUnifiedDiffDocument, showRevisionLogQuickPick } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
+  buildMetadataPatchedRevisionGraphViewFingerprint,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
+  buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
@@ -39,10 +42,13 @@ import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import {
+  cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
+  createRepositoryRefreshRequest,
   getRefreshLoadingLabel,
   normalizeRefreshRequest,
   PendingRevisionGraphFollowUpRefresh,
+  RevisionGraphRefreshRequest,
   RevisionGraphRefreshIntent,
   RevisionGraphRefreshRequestLike,
   RevisionGraphRepositoryEventKind,
@@ -57,12 +63,17 @@ export class RevisionGraphController implements vscode.Disposable {
   private autoArrangeOnNextRender = true;
   private currentLoadingLabel: string | undefined;
   private currentErrorMessage: string | undefined;
-  private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh>();
+  private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly actionServices = createWorkbenchRefActionServices((request) => {
-    void this.refresh(request);
-  });
+  private readonly actionServices = createWorkbenchRefActionServices(
+    (request) => {
+      void this.refresh(request);
+    },
+    (request) => {
+      return this.prepareRefresh(request);
+    }
+  );
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
       this.currentLoadingLabel = label;
@@ -182,7 +193,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    void this.refresh('full-rebuild');
+    void this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
   }
 
   async open(): Promise<void> {
@@ -193,7 +204,11 @@ export class RevisionGraphController implements vscode.Disposable {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    await this.refresh('full-rebuild');
+    if (!hadResolvedView && this.view) {
+      return;
+    }
+
+    await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
   }
 
   async chooseRepository(): Promise<void> {
@@ -211,14 +226,30 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    const request = normalizeRefreshRequest(requestLike);
+    const request = this.resolveRefreshRequest(requestLike);
     this.latestRefreshIntent = request.intent;
-    registerPendingFollowUpRefresh(this.pendingFollowUpRefreshes, request);
+    this.prepareRefresh(request);
 
     await this.renderCoordinator.schedule(
       getRefreshLoadingLabel(request.intent),
       async (requestId, signal) => this.buildNextState(requestId, signal)
     );
+  }
+
+  prepareRefresh(requestLike: RevisionGraphRefreshRequestLike) {
+    const preparedRefresh = registerPendingFollowUpRefresh(
+      this.pendingFollowUpRefreshes,
+      this.resolveRefreshRequest(requestLike)
+    );
+    if (!preparedRefresh) {
+      return undefined;
+    }
+
+    return {
+      cancel: () => {
+        cancelPendingFollowUpRefresh(this.pendingFollowUpRefreshes, preparedRefresh);
+      }
+    };
   }
 
   private async handleMessage(message: RevisionGraphMessage): Promise<void> {
@@ -399,8 +430,12 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repoSubscriptions.set(
       key,
       vscode.Disposable.from(
-        repository.state.onDidChange(() => this.handleRepositoryStateChange(repository, 'full-rebuild', 'state')),
-        repository.onDidCheckout(() => this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout'))
+        repository.state.onDidChange(() => {
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'state');
+        }),
+        repository.onDidCheckout(() => {
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout');
+        })
       )
     );
   }
@@ -412,15 +447,29 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private handleRepositorySetChanged(): void {
-    this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
-    void this.refresh('full-rebuild');
+    const previousRepository = this.currentRepository;
+    const previousHasRepositories = this.currentState.hasRepositories;
+    const nextRepository = reconcileCurrentRepository(this.git.repositories, this.currentRepository);
+    this.setCurrentRepository(nextRepository);
+    if (
+      !shouldRefreshGraphForRepositorySetChange(
+        previousRepository,
+        nextRepository,
+        previousHasRepositories,
+        this.git.repositories.length > 0
+      )
+    ) {
+      return;
+    }
+
+    void this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
   }
 
-  private handleRepositoryStateChange(
+  private async handleRepositoryStateChange(
     repository: Repository,
     intent: RevisionGraphRefreshIntent,
     eventKind: RevisionGraphRepositoryEventKind
-  ): void {
+  ): Promise<void> {
     const previousRepository = this.currentRepository;
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
 
@@ -429,7 +478,11 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
-      void this.refresh(intent);
+      if (this.isRedundantRepositoryRefresh(repository, intent)) {
+        return;
+      }
+
+      await this.refresh(this.createCurrentRepositoryRefreshRequest(intent));
     }
   }
 
@@ -441,6 +494,54 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     this.currentRepository = repository;
+  }
+
+  private createCurrentRepositoryRefreshRequest(intent: RevisionGraphRefreshIntent) {
+    return createRepositoryRefreshRequest(intent, this.currentRepository?.rootUri.toString());
+  }
+
+  private resolveRefreshRequest(requestLike: RevisionGraphRefreshRequestLike): RevisionGraphRefreshRequest {
+    const request = normalizeRefreshRequest(requestLike);
+    if (request.repositoryPath || !this.currentRepository) {
+      return request;
+    }
+
+    const enrichedRequest = createRepositoryRefreshRequest(
+      request.intent,
+      this.currentRepository.rootUri.toString()
+    );
+
+    return {
+      ...enrichedRequest,
+      ...request,
+      repositoryPath: enrichedRequest.repositoryPath,
+      followUpEvents: request.followUpEvents ?? enrichedRequest.followUpEvents
+    };
+  }
+
+  private isRedundantRepositoryRefresh(
+    repository: Repository,
+    intent: RevisionGraphRefreshIntent
+  ): boolean {
+    if (
+      intent !== 'full-rebuild'
+      || this.currentState.viewMode !== 'ready'
+      || !isSameRepositoryPath(repository, this.currentRepository)
+      || this.currentSnapshot?.repositoryPath !== repository.rootUri.fsPath
+    ) {
+      return false;
+    }
+
+    const fingerprint = buildMetadataPatchedRevisionGraphViewFingerprint(
+      this.currentState,
+      repository,
+      this.currentSnapshot.snapshot
+    );
+    if (!fingerprint) {
+      return false;
+    }
+
+    return fingerprint === buildRevisionGraphViewFingerprint(this.currentState);
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {

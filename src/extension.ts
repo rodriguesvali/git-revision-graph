@@ -63,9 +63,14 @@ async function getGitApi(): Promise<API | undefined> {
 }
 
 function createCommandServices(revisionGraphProvider: RevisionGraphViewProvider): RefCommandServices {
-  const baseServices = createWorkbenchRefActionServices((request?: RevisionGraphRefreshRequestLike) => {
-    void revisionGraphProvider.refresh(request);
-  });
+  const baseServices = createWorkbenchRefActionServices(
+    (request?: RevisionGraphRefreshRequestLike) => {
+      void revisionGraphProvider.refresh(request);
+    },
+    (request?: RevisionGraphRefreshRequestLike) => {
+      return revisionGraphProvider.prepareRefresh(request);
+    }
+  );
 
   return {
     ...baseServices,

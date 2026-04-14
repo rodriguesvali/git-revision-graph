@@ -134,6 +134,70 @@ export async function buildMetadataPatchedRevisionGraphViewState(
   );
 }
 
+export function buildMetadataPatchedRevisionGraphViewFingerprint(
+  previousState: RevisionGraphViewState,
+  repository: Repository,
+  snapshot: RevisionGraphSnapshot
+): string | undefined {
+  if (
+    previousState.viewMode !== 'ready' ||
+    previousState.repositoryPath !== repository.rootUri.fsPath
+  ) {
+    return undefined;
+  }
+
+  const patchedScene = patchSceneReferences(
+    previousState.scene,
+    snapshot.graph,
+    repository.state.refs,
+    repository.state.HEAD?.commit,
+    repository.state.HEAD?.name,
+    previousState.projectionOptions
+  );
+  if (!patchedScene) {
+    return undefined;
+  }
+
+  const references = buildViewReferences(patchedScene);
+
+  return buildRevisionGraphViewFingerprint({
+    repositoryPath: repository.rootUri.fsPath,
+    currentHeadName: repository.state.HEAD?.name,
+    currentHeadUpstreamName: repository.state.HEAD?.upstream
+      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
+      : undefined,
+    isWorkspaceDirty: hasWorkspaceChanges(repository),
+    sceneLayoutKey: previousState.sceneLayoutKey,
+    references
+  });
+}
+
+export function buildRevisionGraphViewFingerprint(
+  state: Pick<
+    RevisionGraphViewState,
+    | 'repositoryPath'
+    | 'currentHeadName'
+    | 'currentHeadUpstreamName'
+    | 'isWorkspaceDirty'
+    | 'sceneLayoutKey'
+    | 'references'
+  >
+): string {
+  return JSON.stringify({
+    repositoryPath: state.repositoryPath,
+    currentHeadName: state.currentHeadName,
+    currentHeadUpstreamName: state.currentHeadUpstreamName,
+    isWorkspaceDirty: state.isWorkspaceDirty,
+    sceneLayoutKey: state.sceneLayoutKey,
+    references: state.references.map((reference) => ({
+      id: reference.id,
+      hash: reference.hash,
+      name: reference.name,
+      kind: reference.kind
+    }))
+  });
+}
+
 function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted) {
     const error = new Error('The revision graph load was aborted.');

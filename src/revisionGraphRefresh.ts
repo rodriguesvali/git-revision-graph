@@ -18,11 +18,18 @@ export type RevisionGraphRefreshRequestLike =
   | undefined;
 
 export interface PendingRevisionGraphFollowUpRefresh {
+  readonly id: number;
   readonly expiresAt: number;
-  readonly remainingEventKinds: Set<RevisionGraphRepositoryEventKind>;
+  readonly eventKinds: ReadonlySet<RevisionGraphRepositoryEventKind>;
+}
+
+export interface PreparedPendingRevisionGraphRefresh {
+  readonly repositoryPath: string;
+  readonly id: number;
 }
 
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 1500;
+let nextPendingFollowUpRefreshId = 0;
 
 export function getRefreshLoadingLabel(intent: RevisionGraphRefreshIntent): string {
   switch (intent) {
@@ -61,6 +68,17 @@ export function createActionRefreshRequest(
   };
 }
 
+export function createRepositoryRefreshRequest(
+  intent: RevisionGraphRefreshIntent,
+  repositoryPath?: string
+): RevisionGraphRefreshRequest {
+  if (!repositoryPath) {
+    return { intent };
+  }
+
+  return createActionRefreshRequest(intent, repositoryPath);
+}
+
 export function getDefaultFollowUpEventsForIntent(
   intent: RevisionGraphRefreshIntent
 ): readonly RevisionGraphRepositoryEventKind[] {
@@ -75,39 +93,71 @@ export function getDefaultFollowUpEventsForIntent(
 }
 
 export function registerPendingFollowUpRefresh(
-  pendingRefreshes: Map<string, PendingRevisionGraphFollowUpRefresh>,
+  pendingRefreshes: Map<string, PendingRevisionGraphFollowUpRefresh[]>,
   request: RevisionGraphRefreshRequest,
   now = Date.now()
-): void {
+): PreparedPendingRevisionGraphRefresh | undefined {
   if (!request.repositoryPath || !request.followUpEvents || request.followUpEvents.length === 0) {
+    return undefined;
+  }
+
+  const repositoryPath = request.repositoryPath;
+  const activeEntries = getActivePendingFollowUpRefreshes(pendingRefreshes.get(repositoryPath), now);
+  const entry: PendingRevisionGraphFollowUpRefresh = {
+    id: ++nextPendingFollowUpRefreshId,
+    expiresAt: now + FOLLOW_UP_SUPPRESSION_WINDOW_MS,
+    eventKinds: new Set(request.followUpEvents)
+  };
+  activeEntries.push(entry);
+  pendingRefreshes.set(repositoryPath, activeEntries);
+
+  return {
+    repositoryPath,
+    id: entry.id
+  };
+}
+
+export function cancelPendingFollowUpRefresh(
+  pendingRefreshes: Map<string, PendingRevisionGraphFollowUpRefresh[]>,
+  preparedRefresh: PreparedPendingRevisionGraphRefresh
+): void {
+  const activeEntries = getActivePendingFollowUpRefreshes(
+    pendingRefreshes.get(preparedRefresh.repositoryPath),
+    Date.now()
+  ).filter((entry) => entry.id !== preparedRefresh.id);
+
+  if (activeEntries.length === 0) {
+    pendingRefreshes.delete(preparedRefresh.repositoryPath);
     return;
   }
 
-  pendingRefreshes.set(request.repositoryPath, {
-    expiresAt: now + FOLLOW_UP_SUPPRESSION_WINDOW_MS,
-    remainingEventKinds: new Set(request.followUpEvents)
-  });
+  pendingRefreshes.set(preparedRefresh.repositoryPath, activeEntries);
 }
 
 export function consumePendingFollowUpRefresh(
-  pendingRefreshes: Map<string, PendingRevisionGraphFollowUpRefresh>,
+  pendingRefreshes: Map<string, PendingRevisionGraphFollowUpRefresh[]>,
   repositoryPath: string,
   eventKind: RevisionGraphRepositoryEventKind,
   now = Date.now()
 ): boolean {
-  const pending = pendingRefreshes.get(repositoryPath);
-  if (!pending) {
-    return false;
-  }
-
-  if (pending.expiresAt < now) {
+  const activeEntries = getActivePendingFollowUpRefreshes(pendingRefreshes.get(repositoryPath), now);
+  if (activeEntries.length === 0) {
     pendingRefreshes.delete(repositoryPath);
     return false;
   }
 
-  if (!pending.remainingEventKinds.has(eventKind)) {
-    return false;
+  pendingRefreshes.set(repositoryPath, activeEntries);
+
+  return activeEntries.some((entry) => entry.eventKinds.has(eventKind));
+}
+
+function getActivePendingFollowUpRefreshes(
+  entries: readonly PendingRevisionGraphFollowUpRefresh[] | undefined,
+  now: number
+): PendingRevisionGraphFollowUpRefresh[] {
+  if (!entries || entries.length === 0) {
+    return [];
   }
 
-  return true;
+  return entries.filter((entry) => entry.expiresAt >= now);
 }

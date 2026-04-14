@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   isSameRepositoryPath,
   reconcileCurrentRepository,
+  shouldRefreshGraphForRepositorySetChange,
   shouldPromptForGraphRepositoryOnOpen,
   sortRepositoriesByPath
 } from '../src/repositorySelection';
@@ -73,6 +74,38 @@ test('prompts for a repository when reopening an already-resolved multi-reposito
 
   assert.equal(
     shouldPromptForGraphRepositoryOnOpen([repoA, repoB], undefined, true),
+    true
+  );
+});
+
+test('skips a graph refresh when repository set changes do not affect the selected repository or empty state', () => {
+  const repoA = createRepository({ root: '/workspace/a' });
+  const repoAReplacement = createRepository({ root: '/workspace/a' });
+
+  assert.equal(
+    shouldRefreshGraphForRepositorySetChange(repoA, repoAReplacement, true, true),
+    false
+  );
+  assert.equal(
+    shouldRefreshGraphForRepositorySetChange(undefined, undefined, true, true),
+    false
+  );
+});
+
+test('refreshes the graph when repository selection or repository availability changes', () => {
+  const repoA = createRepository({ root: '/workspace/a' });
+  const repoB = createRepository({ root: '/workspace/b' });
+
+  assert.equal(
+    shouldRefreshGraphForRepositorySetChange(repoA, repoB, true, true),
+    true
+  );
+  assert.equal(
+    shouldRefreshGraphForRepositorySetChange(undefined, repoA, false, true),
+    true
+  );
+  assert.equal(
+    shouldRefreshGraphForRepositorySetChange(repoA, undefined, true, false),
     true
   );
 });
