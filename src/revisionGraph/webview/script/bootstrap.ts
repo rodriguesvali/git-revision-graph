@@ -672,8 +672,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
       );
 
-      return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
-    }
+	      return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
+	    }
 
     function getNodeClass(node) {
       if (node.refs.length === 0) {
@@ -696,10 +696,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return 'node-mixed';
     }
 
-    function formatNodeSummary(node) {
-      const shortHash = node.hash.slice(0, 8);
-      return node.subject ? shortHash + ' ' + node.subject : shortHash;
-    }
+	    function formatNodeSummary(node) {
+	      return node.hash.slice(0, 8);
+	    }
 
     function formatNodeTitle(node) {
       const refBlock = node.refs.length > 0
@@ -711,15 +710,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return refBlock + node.hash + '\\n' + subject + '\\n' + author + ' on ' + date;
     }
 
-    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
-      const verticalSpan = Math.max(36, (targetY - sourceY) * 0.42);
-      const horizontalBias = Math.min(140, Math.max(28, Math.abs(targetX - sourceX) * 0.28));
-      const controlY1 = sourceY + verticalSpan;
-      const controlY2 = targetY - verticalSpan;
-      const controlX1 = targetX >= sourceX ? sourceX + horizontalBias : sourceX - horizontalBias;
-      const controlX2 = targetX >= sourceX ? targetX - horizontalBias : targetX + horizontalBias;
-      return 'M ' + sourceX + ' ' + sourceY + ' C ' + controlX1 + ' ' + controlY1 + ', ' + controlX2 + ' ' + controlY2 + ', ' + targetX + ' ' + targetY;
-    }
+	    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
+	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
+	    }
 
     function escapeHtml(value) {
       return String(value)

@@ -73,6 +73,14 @@ test('renders checkout menu actions with the destination branch name', () => {
   assert.match(html, /if \(target\.kind !== 'tag' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
 });
 
+test('renders straighter edges and compact structural node styling in the shell runtime', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /stroke-width="1\.8"/);
+  assert.match(html, /return 'M ' \+ sourceX \+ ' ' \+ sourceY \+ ' L ' \+ targetX \+ ' ' \+ targetY;/);
+  assert.match(html, /min-width: 78px;/);
+});
+
 test('recenters after auto-arranging the initial graph state', () => {
   const html = renderRevisionGraphShellHtml();
 

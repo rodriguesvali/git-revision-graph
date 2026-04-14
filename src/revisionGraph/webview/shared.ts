@@ -8,6 +8,8 @@ export {
   NODE_MAX_WIDTH,
   NODE_MIN_WIDTH,
   NODE_SUMMARY_HEIGHT,
+  STRUCTURAL_NODE_MAX_WIDTH,
+  STRUCTURAL_NODE_MIN_WIDTH,
   NODE_WIDTH_PADDING,
   REF_LINE_DIVIDER_HEIGHT,
   REF_LINE_HEIGHT
@@ -117,7 +119,7 @@ export function renderEdge(
   edge: RevisionGraphEdge,
   nodeLayoutByHash: ReadonlyMap<string, EdgeLayoutNode>
 ): string {
-  const strokeWidth = 2.4;
+  const strokeWidth = 1.8;
   const marker = 'marker-end="url(#arrowhead)"';
   const sourceNode = nodeLayoutByHash.get(edge.from);
   const targetNode = nodeLayoutByHash.get(edge.to);
@@ -163,12 +165,7 @@ export function getNodeHeight(node: RevisionGraphNode): number {
 }
 
 export function formatNodeSummary(node: RevisionGraphNode): string {
-  const shortHash = node.hash.slice(0, 8);
-  if (!node.subject) {
-    return shortHash;
-  }
-
-  return `${shortHash} ${node.subject}`;
+  return node.hash.slice(0, 8);
 }
 
 export function shouldRenderNodeSummary(node: RevisionGraphNode): boolean {
@@ -198,11 +195,5 @@ export function createReferenceId(hash: string, kind: string, name: string): str
 }
 
 export function describeEdgePath(sourceX: number, sourceY: number, targetX: number, targetY: number): string {
-  const verticalSpan = Math.max(36, (targetY - sourceY) * 0.42);
-  const horizontalBias = Math.min(140, Math.max(28, Math.abs(targetX - sourceX) * 0.28));
-  const controlY1 = sourceY + verticalSpan;
-  const controlY2 = targetY - verticalSpan;
-  const controlX1 = targetX >= sourceX ? sourceX + horizontalBias : sourceX - horizontalBias;
-  const controlX2 = targetX >= sourceX ? targetX - horizontalBias : targetX + horizontalBias;
-  return `M ${sourceX} ${sourceY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${targetX} ${targetY}`;
+  return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
 }

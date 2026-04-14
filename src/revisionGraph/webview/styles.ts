@@ -1,5 +1,6 @@
 import {
   NODE_MIN_WIDTH,
+  STRUCTURAL_NODE_MIN_WIDTH,
   VIEWPORT_PADDING_BOTTOM,
   VIEWPORT_PADDING_LEFT,
   VIEWPORT_PADDING_RIGHT,
@@ -14,18 +15,18 @@ export function renderRevisionGraphStyles(): string {
     :root {
       color-scheme: light dark;
       --bg: var(--vscode-editor-background);
-      --panel: color-mix(in srgb, var(--vscode-editor-background) 92%, var(--vscode-sideBar-background));
-      --panel-strong: color-mix(in srgb, var(--panel) 80%, black 6%);
+      --panel: color-mix(in srgb, var(--vscode-editor-background) 95%, white 5%);
+      --panel-strong: color-mix(in srgb, var(--panel) 92%, black 8%);
       --border: var(--vscode-panel-border);
       --muted: var(--vscode-descriptionForeground);
       --text: var(--vscode-editor-foreground);
       --accent: var(--vscode-focusBorder);
-      --edge: color-mix(in srgb, var(--text) 55%, transparent);
+      --edge: color-mix(in srgb, var(--text) 84%, black 12%);
       --node-branch: #19d60f;
       --node-head: #d62828;
       --node-tag: #f7f300;
       --node-remote: #f6d8a8;
-      --node-mixed: color-mix(in srgb, var(--panel) 94%, white 6%);
+      --node-mixed: color-mix(in srgb, var(--panel) 98%, white 2%);
       --node-text-dark: #181818;
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
@@ -37,9 +38,8 @@ export function renderRevisionGraphStyles(): string {
       margin: 0;
       color: var(--text);
       background:
-        linear-gradient(90deg, color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px) 0 0/44px 44px,
-        linear-gradient(color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px) 0 0/44px 44px,
-        radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 28%),
+        linear-gradient(90deg, color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px) 0 0/52px 52px,
+        linear-gradient(color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px) 0 0/52px 52px,
         var(--bg);
       font-family: var(--vscode-font-family);
       overflow: hidden;
@@ -73,7 +73,7 @@ export function renderRevisionGraphStyles(): string {
     select:not(:disabled):hover {
       border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
       background: color-mix(in srgb, var(--panel-strong) 74%, var(--panel));
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
     button:not(:disabled):active,
     select:not(:disabled):active,
@@ -127,10 +127,10 @@ export function renderRevisionGraphStyles(): string {
       min-width: min(420px, calc(100vw - 48px));
       max-width: min(520px, calc(100vw - 48px));
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 10px;
       padding: 18px 20px;
       background: color-mix(in srgb, var(--panel) 94%, var(--bg));
-      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
       color: var(--text);
       z-index: 3;
     }
@@ -139,23 +139,22 @@ export function renderRevisionGraphStyles(): string {
       border-color: color-mix(in srgb, #d62828 42%, var(--border));
     }
     .node {
-      position: absolute; min-width: ${NODE_MIN_WIDTH}px; border-radius: 10px;
-      border: 1px solid rgba(0, 0, 0, 0.18); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.12);
+      position: absolute; min-width: ${NODE_MIN_WIDTH}px; border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.22); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
       color: var(--node-text-dark); cursor: inherit; user-select: none; overflow: hidden;
-      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, outline-color 120ms ease;
+      transition: box-shadow 120ms ease, border-color 120ms ease, outline-color 120ms ease;
     }
     .viewport.dragging .node { cursor: grabbing; }
-    .node:hover { transform: translateY(-1px); }
     .node.selected {
-      outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent);
+      outline: 2px solid color-mix(in srgb, var(--accent) 66%, transparent);
       outline-offset: 1px;
       border-color: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.18));
-      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
     }
     .node.related {
       outline-offset: 1px;
       border-color: color-mix(in srgb, var(--accent) 28%, rgba(0, 0, 0, 0.18));
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15), 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
     }
     .node.related.ancestor-related {
       outline: 2px solid color-mix(in srgb, var(--accent) 46%, var(--text) 18%);
@@ -168,13 +167,13 @@ export function renderRevisionGraphStyles(): string {
     }
     .node.search-match {
       border-color: color-mix(in srgb, var(--accent) 34%, rgba(0, 0, 0, 0.18));
-      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16), 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
     }
     .node.search-active {
-      outline: 3px solid color-mix(in srgb, var(--accent) 88%, white 8%);
-      outline-offset: 2px;
+      outline: 2px solid color-mix(in srgb, var(--accent) 88%, white 8%);
+      outline-offset: 1px;
       border-color: color-mix(in srgb, var(--accent) 44%, rgba(0, 0, 0, 0.18));
-      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2), 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
     }
     .node-head { background: var(--node-head); color: white; }
     .node-branch { background: var(--node-branch); }
@@ -183,10 +182,11 @@ export function renderRevisionGraphStyles(): string {
     .node-mixed { background: var(--node-mixed); }
     .graph-edge {
       transition: stroke 120ms ease, stroke-width 120ms ease, opacity 120ms ease;
+      opacity: 0.96;
     }
     .graph-edge.related {
       stroke: color-mix(in srgb, var(--accent) 66%, white 10%);
-      stroke-width: 3.4;
+      stroke-width: 2.6;
       opacity: 1;
     }
     .graph-edge.related.ancestor-path {
@@ -199,8 +199,8 @@ export function renderRevisionGraphStyles(): string {
       opacity: 0.18;
     }
     .ref-line {
-      padding: 8px 12px;
-      font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; line-height: 1.25;
+      padding: 6px 10px;
+      font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; line-height: 1.15;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
     }
     .ref-line + .ref-line {
@@ -275,9 +275,9 @@ export function renderRevisionGraphStyles(): string {
       gap: 12px;
       padding: 14px 16px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       background: color-mix(in srgb, var(--panel) 94%, var(--bg));
-      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
     }
     .loading-spinner {
       width: 18px;
@@ -298,18 +298,17 @@ export function renderRevisionGraphStyles(): string {
       to { transform: rotate(360deg); }
     }
     .node.dragging {
-      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
-      transform: translateY(-1px);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
     }
     .node-grip {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 22px;
-      height: 22px;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
       border: 1px solid rgba(0, 0, 0, 0.12);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.18);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.08);
       color: inherit;
       display: flex;
       align-items: center;
@@ -320,6 +319,8 @@ export function renderRevisionGraphStyles(): string {
       appearance: none;
       -webkit-appearance: none;
       z-index: 2;
+      opacity: 0;
+      transition: opacity 120ms ease, background 120ms ease;
     }
     .node-grip::before {
       content: '';
@@ -335,8 +336,13 @@ export function renderRevisionGraphStyles(): string {
         -3px 4px 0 currentColor,
         3px 4px 0 currentColor;
     }
+    .node:hover .node-grip,
+    .node.selected .node-grip,
+    .node.dragging .node-grip {
+      opacity: 1;
+    }
     .node-grip:hover {
-      background: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.16);
     }
     .node-grip:active,
     .node.dragging .node-grip {
@@ -406,10 +412,10 @@ export function renderRevisionGraphStyles(): string {
       max-width: none;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       background: color-mix(in srgb, var(--panel) 94%, var(--bg));
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
-      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+      backdrop-filter: blur(2px);
     }
     .view-controls label {
       display: inline-flex;
@@ -521,19 +527,24 @@ export function renderRevisionGraphStyles(): string {
       }
     }
     .node-summary {
-      padding: 10px 12px 12px;
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 5px 10px 6px;
       font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 11px;
-      line-height: 1.35;
+      font-size: 10.5px;
+      line-height: 1.15;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       color: color-mix(in srgb, var(--node-text-dark) 88%, black 12%);
+      font-weight: 600;
     }
     .node-structural {
-      background: color-mix(in srgb, var(--panel) 88%, white 10%);
+      min-width: ${STRUCTURAL_NODE_MIN_WIDTH}px;
+      background: color-mix(in srgb, var(--panel) 92%, #c6ccd8 8%);
       color: var(--node-text-dark);
+    }
+    .node-structural .node-summary {
+      border-top: 0;
+      padding-right: 24px;
     }
   </style>`;
 }

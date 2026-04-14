@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - Added explicit loading feedback when reorganizing the graph layout so slower client-side rearrangements no longer feel unresponsive.
 - Made checkout actions show the destination reference name directly in the UI, including the graph context menu and confirmation button label.
 - Hid the checkout action for the current local HEAD branch so the graph context menu no longer offers a no-op branch switch.
+- Started a TortoiseGit-inspired visual refinement pass by flattening the graph styling, compacting structural commits, and straightening edge rendering.
 
 ## 0.0.12
 
