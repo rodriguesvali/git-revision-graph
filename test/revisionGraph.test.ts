@@ -36,8 +36,9 @@ test('parses git log output into revision graph commits', () => {
 });
 
 test('parses decoration labels by type', () => {
-  assert.deepEqual(parseDecorationRefs('HEAD -> main, tag: v2.0.0, origin/feature/demo, release'), [
+  assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, release'), [
     { name: 'main', kind: 'head' },
+    { name: 'stash', kind: 'stash' },
     { name: 'v2.0.0', kind: 'tag' },
     { name: 'origin/feature/demo', kind: 'remote' },
     { name: 'release', kind: 'branch' }

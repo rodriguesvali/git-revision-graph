@@ -1,6 +1,6 @@
 export interface RevisionGraphRef {
   readonly name: string;
-  readonly kind: 'head' | 'branch' | 'remote' | 'tag';
+  readonly kind: 'head' | 'branch' | 'remote' | 'stash' | 'tag';
 }
 
 export interface ParsedRevisionGraphCommit {

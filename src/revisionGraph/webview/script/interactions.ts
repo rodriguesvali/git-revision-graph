@@ -267,7 +267,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
-	        if (target.kind !== 'tag' && !isCurrentHead) {
+	        if (target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
 	          appendMenuItem('Checkout to: ' + target.name, () => {
 	            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
 	          });
@@ -277,13 +277,15 @@ export function renderRevisionGraphScriptInteractions(): string {
             vscode.postMessage({ type: 'sync-current-head' });
           });
         }
-        appendMenuItem('Create New Branch', () => {
-          vscode.postMessage({ type: 'create-branch', refName: target.name, refKind: target.kind });
-        });
-        if (!isCurrentHead) {
-          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
-            const deleteLabel = target.kind === 'tag'
-              ? 'Delete Tag: ' + target.name
+	        if (target.kind !== 'stash') {
+	          appendMenuItem('Create New Branch', () => {
+	            vscode.postMessage({ type: 'create-branch', refName: target.name, refKind: target.kind });
+	          });
+	        }
+	        if (!isCurrentHead && target.kind !== 'stash') {
+	          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
+	            const deleteLabel = target.kind === 'tag'
+	              ? 'Delete Tag: ' + target.name
               : target.kind === 'remote'
                 ? 'Delete Remote Branch: ' + target.name
                 : 'Delete Branch: ' + target.name;

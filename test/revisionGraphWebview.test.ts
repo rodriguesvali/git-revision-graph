@@ -29,6 +29,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
+  assert.match(html, /--node-stash: #8c8f97;/);
   assert.match(html, /--toolbar-safe-height: 108px/);
   assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
 });
@@ -70,7 +71,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
 test('renders checkout menu actions with the destination branch name', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /if \(target\.kind !== 'tag' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
+  assert.match(html, /if \(target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
 });
 
 test('renders straighter edges and compact structural node styling in the shell runtime', () => {

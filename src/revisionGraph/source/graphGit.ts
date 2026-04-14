@@ -55,11 +55,15 @@ export function parseDecorationRefs(
         return { name: label.slice('HEAD -> '.length), kind: 'head' };
       }
 
-      if (label.startsWith('tag: ')) {
-        return { name: label.slice('tag: '.length), kind: 'tag' };
-      }
+	      if (label.startsWith('tag: ')) {
+	        return { name: label.slice('tag: '.length), kind: 'tag' };
+	      }
 
-      const knownKind = refKindsByName?.get(label);
+	      if (label === 'refs/stash' || label === 'stash') {
+	        return { name: 'stash', kind: 'stash' };
+	      }
+
+	      const knownKind = refKindsByName?.get(label);
       if (knownKind) {
         return { name: label, kind: knownKind };
       }

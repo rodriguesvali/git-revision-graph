@@ -64,7 +64,8 @@ function sortRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {
     head: 0,
     branch: 1,
     remote: 2,
-    tag: 3
+    stash: 3,
+    tag: 4
   };
 
   return [...refs].sort((left, right) => {

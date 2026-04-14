@@ -150,6 +150,9 @@ export function getNodeClass(node: RevisionGraphNode): string {
   if (kinds.size === 1 && kinds.has('remote')) {
     return 'node-remote';
   }
+  if (kinds.size === 1 && kinds.has('stash')) {
+    return 'node-stash';
+  }
   if (kinds.size === 1 && kinds.has('branch')) {
     return 'node-branch';
   }

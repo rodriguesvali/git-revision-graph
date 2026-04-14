@@ -687,12 +687,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (kinds.size === 1 && kinds.has('tag')) {
         return 'node-tag';
       }
-      if (kinds.size === 1 && kinds.has('remote')) {
-        return 'node-remote';
-      }
-      if (kinds.size === 1 && kinds.has('branch')) {
-        return 'node-branch';
-      }
+	      if (kinds.size === 1 && kinds.has('remote')) {
+	        return 'node-remote';
+	      }
+	      if (kinds.size === 1 && kinds.has('stash')) {
+	        return 'node-stash';
+	      }
+	      if (kinds.size === 1 && kinds.has('branch')) {
+	        return 'node-branch';
+	      }
       return 'node-mixed';
     }
 

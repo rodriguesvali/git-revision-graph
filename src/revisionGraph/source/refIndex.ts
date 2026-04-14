@@ -43,11 +43,13 @@ function getRefKindPriority(kind: RevisionGraphRef['kind']): number {
   switch (kind) {
     case 'head':
       return 0;
-    case 'tag':
-      return 1;
     case 'branch':
-      return 2;
+      return 1;
     case 'remote':
+      return 2;
+    case 'stash':
       return 3;
+    case 'tag':
+      return 4;
   }
 }

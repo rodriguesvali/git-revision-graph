@@ -111,7 +111,8 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
       subject: 'Bootstrap',
       refs: [
         { name: 'main', kind: 'head' },
-        { name: 'origin/main', kind: 'remote' }
+        { name: 'origin/main', kind: 'remote' },
+        { name: 'stash', kind: 'stash' }
       ]
     }
   ]);
@@ -178,8 +179,8 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
     patchedState?.scene.nodes[0]?.refs,
     [
       { name: 'release/2026', kind: 'head' },
-      { name: 'release/2026', kind: 'branch' },
-      { name: 'origin/main', kind: 'remote' }
+      { name: 'origin/main', kind: 'remote' },
+      { name: 'stash', kind: 'stash' }
     ]
   );
 });

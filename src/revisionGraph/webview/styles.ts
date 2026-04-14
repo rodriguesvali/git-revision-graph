@@ -26,6 +26,7 @@ export function renderRevisionGraphStyles(): string {
       --node-head: #d62828;
       --node-tag: #f7f300;
       --node-remote: #f6d8a8;
+      --node-stash: #8c8f97;
       --node-mixed: color-mix(in srgb, var(--panel) 98%, white 2%);
       --node-text-dark: #181818;
       --workspace-clean: #2dff63;
@@ -179,6 +180,7 @@ export function renderRevisionGraphStyles(): string {
     .node-branch { background: var(--node-branch); }
     .node-tag { background: var(--node-tag); }
     .node-remote { background: var(--node-remote); }
+    .node-stash { background: var(--node-stash); color: white; }
     .node-mixed { background: var(--node-mixed); }
     .graph-edge {
       transition: stroke 120ms ease, stroke-width 120ms ease, opacity 120ms ease;
@@ -220,6 +222,11 @@ export function renderRevisionGraphStyles(): string {
     }
     .ref-line.kind-remote {
       background: color-mix(in srgb, var(--node-remote) 88%, white 12%);
+    }
+    .ref-line.kind-stash {
+      background: color-mix(in srgb, var(--node-stash) 92%, white 8%);
+      color: white;
+      font-weight: 700;
     }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
