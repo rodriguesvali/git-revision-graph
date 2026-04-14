@@ -67,6 +67,12 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
   );
 });
 
+test('renders checkout menu actions with the destination branch name', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /if \(target\.kind !== 'tag' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
+});
+
 test('recenters after auto-arranging the initial graph state', () => {
   const html = renderRevisionGraphShellHtml();
 

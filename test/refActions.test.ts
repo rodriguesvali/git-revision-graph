@@ -177,6 +177,26 @@ test('checkoutResolvedReference keeps current branch behavior consistent across 
   assert.equal(harness.refreshCalls, 0);
 });
 
+test('checkoutResolvedReference uses the destination branch name in the confirmation action label', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests[0], {
+    message: 'Check out release/2026?',
+    confirmLabel: 'Checkout to: release/2026'
+  });
+});
+
 test('checkoutResolvedReference resolves remote HEAD to a concrete upstream branch', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

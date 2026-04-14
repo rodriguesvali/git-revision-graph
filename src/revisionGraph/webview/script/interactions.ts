@@ -267,11 +267,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
         });
-        if (target.kind !== 'tag') {
-          appendMenuItem('Checkout', () => {
-            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-          });
-        }
+	        if (target.kind !== 'tag' && !isCurrentHead) {
+	          appendMenuItem('Checkout to: ' + target.name, () => {
+	            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+	          });
+	        }
         if (canSyncCurrentHead) {
           appendMenuItem('Sync with ' + currentHeadUpstreamName, () => {
             vscode.postMessage({ type: 'sync-current-head' });

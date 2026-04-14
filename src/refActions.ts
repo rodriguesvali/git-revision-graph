@@ -119,7 +119,7 @@ export async function checkoutResolvedReference(
 
     const confirmed = await services.ui.confirm({
       message: `Check out ${target.label}?`,
-      confirmLabel: 'Checkout'
+      confirmLabel: `Checkout to: ${target.label}`
     });
     if (!confirmed) {
       return;

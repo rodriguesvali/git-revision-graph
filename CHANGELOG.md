@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 - Filtered redundant repository-event rebuilds after checkout when the visible graph metadata already matches the current repository state, reducing duplicate loading cycles without changing the rendered result.
 - Skipped repository-set refreshes that do not change the selected repository or empty-state availability, preventing the activation path from reloading the same graph twice.
 - Added explicit loading feedback when reorganizing the graph layout so slower client-side rearrangements no longer feel unresponsive.
+- Made checkout actions show the destination reference name directly in the UI, including the graph context menu and confirmation button label.
+- Hid the checkout action for the current local HEAD branch so the graph context menu no longer offers a no-op branch switch.
 
 ## 0.0.12
 
