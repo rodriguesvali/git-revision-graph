@@ -153,14 +153,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching repository...', fetchButton);
       });
     }
-	    if (reorganizeButton) {
-	      reorganizeButton.addEventListener('click', async () => {
-	        await runWithLoading('Reorganizing graph layout...', async () => {
-	          await autoArrangeTortoiseLayout();
-	          centerGraphInViewport();
-	        }, reorganizeButton);
-	      });
-	    }
+    if (reorganizeButton) {
+      reorganizeButton.addEventListener('click', async () => {
+        await runWithLoading('Reorganizing graph layout...', async () => {
+          autoArrangeLayout();
+          centerGraphInViewport();
+        }, reorganizeButton);
+      });
+    }
     if (zoomOutButton) {
       zoomOutButton.addEventListener('click', () => {
         zoomOut();

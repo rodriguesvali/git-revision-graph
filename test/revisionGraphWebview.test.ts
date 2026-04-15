@@ -73,9 +73,9 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
   const html = renderRevisionGraphShellHtml();
 
   assert.match(
-	  html,
-	  /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*await autoArrangeTortoiseLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
-	);
+    html,
+    /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
+  );
   assert.match(
     html,
     /fetchButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'fetch-current-repository' \}, 'Fetching repository\.\.\.', fetchButton\);/s
@@ -183,16 +183,13 @@ test('renders straighter edges and compact structural node styling in the shell 
   assert.match(html, /min-width: 78px;/);
 });
 
-test('includes ref-aware reorganize helpers for Tortoise-like branch clustering', () => {
+test('keeps a single auto-arrange layout routine in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
-	assert.match(html, /function autoArrangeTortoiseLayout\(\)/);
-	assert.match(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
-	assert.match(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
-	assert.match(html, /function getExplicitNodeFamily\(hash\)/);
-	assert.match(html, /function getSceneNodeRefs\(hash\)/);
-	assert.match(html, /function enqueueFamilyCandidate\(queue, candidate, startIndex\)/);
-	assert.match(html, /function yieldForTortoiseLayout\(shouldYield\)/);
+  assert.match(html, /function autoArrangeLayout\(\)/);
+  assert.doesNotMatch(html, /function autoArrangeTortoiseLayout\(\)/);
+  assert.doesNotMatch(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
+  assert.doesNotMatch(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
 });
 
 test('recenters after auto-arranging the initial graph state', () => {
