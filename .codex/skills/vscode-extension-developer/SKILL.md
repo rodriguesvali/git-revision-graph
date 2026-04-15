@@ -11,7 +11,7 @@ Use native VS Code extension patterns first, but preserve the active architectur
 
 Prefer the built-in `vscode.git` API for repository state, refs, checkout, merge, and diff workflows. In this repository, targeted `git` commands are also part of the intended design for commit-graph and textual history data that the public API does not expose well, so do not remove or replace those paths unless the task specifically calls for it.
 
-When the task targets this repository, read `references/project-map.md` before making non-trivial changes.
+When the task targets this repository, read the skill reference `references/project-map.md` before making non-trivial changes.
 
 When you need up-to-date documentation for VS Code APIs, extension manifests, or current extension guidance, use `context7` before relying on memory.
 
@@ -23,6 +23,7 @@ When you need up-to-date documentation for VS Code APIs, extension manifests, or
 2. Inspect the runtime entrypoints.
    - Read `src/extension.ts` for activation, registrations, and command wiring.
    - Read `src/revisionGraphPanel.ts` and `src/revisionGraph/controller.ts` for the active revision-graph view lifecycle, repository synchronization, and webview message handling.
+   - Read `src/compareResultsView.ts` when the task touches compare flows, compare presentation, or view wiring.
    - Read `src/refActions.ts` and `src/workbenchRefActionServices.ts` for compare, checkout, branch, sync, merge, deletion, and native VS Code UX adapters.
    - Read `src/git.ts` for the subset of the `vscode.git` API this project relies on.
 3. Preserve native extension ergonomics.
@@ -70,8 +71,9 @@ When you need up-to-date documentation for VS Code APIs, extension manifests, or
   - Open a Git repository in the host window
   - Exercise the affected command from the `GIT Revision Graph` view or Command Palette
   - Verify graph loading, repository switching, scope/filter toggles, and refresh behavior if those areas changed
+  - Verify `Compare Results` view population and file opening if compare flows changed
   - Verify diff, checkout, branch creation, sync, merge, and deletion flows if those areas changed
 
 ## Project References
 
-- Read `references/project-map.md` for repository-specific architecture, current commands, and validation notes.
+- Read `references/project-map.md` for repository-specific architecture, current views, commands, and validation notes.

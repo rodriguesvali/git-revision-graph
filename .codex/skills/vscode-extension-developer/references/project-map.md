@@ -18,6 +18,9 @@ This repository is a VS Code extension named `GIT Revision Graph`. Its active pr
 - `src/revisionGraphPanel.ts`
   - Thin `WebviewViewProvider` wrapper for the revision graph view
   - Public entrypoints used by activation and command wiring
+- `src/compareResultsView.ts`
+  - Tree view provider for persistent compare results
+  - Compare result file opening and view messaging
 - `src/revisionGraph/controller.ts`
   - Active revision graph controller and repository event handling
   - Webview state lifecycle and message routing
@@ -46,14 +49,19 @@ This repository is a VS Code extension named `GIT Revision Graph`. Its active pr
 
 - Activity Bar container: `gitRefs`
 - Active view: `gitRefs.revisionGraphView`
+- Secondary view: `gitRefs.compareResultsView`
 - Contributed commands:
   - `gitRefs.refresh`
+  - `gitRefs.fetchCurrentRepository`
   - `gitRefs.compareRefs`
   - `gitRefs.compareWithWorktree`
   - `gitRefs.checkout`
   - `gitRefs.merge`
   - `gitRefs.openRevisionGraph`
   - `gitRefs.chooseRevisionGraphRepository`
+  - `gitRefs.clearCompareResults`
+- Internal commands wired at activation:
+  - `gitRefs.openCompareResult`
 - Primary graph actions exposed inside the webview:
   - compare selected refs
   - compare selected ref with worktree
@@ -87,7 +95,7 @@ The current implementation uses a dedicated webview surface for graph navigation
 - Automated tests cover pure helpers, repository selection, ref actions, graph state shaping, render coordination, and the persistent webview shell.
 - Manual Extension Development Host validation is still needed for end-to-end integration with the real `vscode.git` extension and workbench UX.
 - Graph behavior is spread across `src/revisionGraph/controller.ts`, `src/revisionGraph/backend.ts`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/webview/script/*`, so larger changes should preserve those boundaries unless simplification is part of the task.
-- Compare results currently surface through a `QuickPick`, not a persistent results view.
+- Compare results already persist in a dedicated tree view, but the review workflow is still intentionally lightweight.
 - UX around merge conflicts and detached/tag workflows is intentionally minimal.
 - The revision graph still renders a bounded recent-commit window rather than the full repository history.
 
@@ -96,4 +104,5 @@ The current implementation uses a dedicated webview surface for graph navigation
 - Minimum validation: `npm run build`
 - For command, graph, or UX changes, run `npm test`.
 - For command or UX changes, manually test in an Extension Development Host.
+- If compare flows changed, verify the `Compare Results` view updates and opens diffs correctly.
 - If changing manifest contributions, verify the command IDs and view IDs still match code registrations exactly.
