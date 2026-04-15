@@ -48,6 +48,9 @@ export function renderRevisionGraphStyles(): string {
     body.loading {
       cursor: progress;
     }
+    body.loading-subtle {
+      cursor: progress;
+    }
     button, select, input {
       border: 1px solid var(--border);
       background: var(--panel);
@@ -274,6 +277,19 @@ export function renderRevisionGraphStyles(): string {
       opacity: 1;
       pointer-events: auto;
     }
+    body.loading-subtle .loading-overlay {
+      opacity: 1;
+      pointer-events: none;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding:
+        calc(var(--toolbar-safe-height) + 22px)
+        24px
+        24px
+        24px;
+      background: transparent;
+      backdrop-filter: none;
+    }
     .loading-card {
       min-width: 240px;
       max-width: min(360px, calc(100vw - 48px));
@@ -285,6 +301,17 @@ export function renderRevisionGraphStyles(): string {
       border-radius: 10px;
       background: color-mix(in srgb, var(--panel) 94%, var(--bg));
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+    }
+    .loading-overlay[data-mode="subtle"] .loading-card {
+      min-width: auto;
+      max-width: min(320px, calc(100vw - 48px));
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+    }
+    .loading-overlay[data-mode="subtle"] .loading-message {
+      font-size: 12px;
     }
     .loading-spinner {
       width: 18px;

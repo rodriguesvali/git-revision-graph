@@ -150,7 +150,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (fetchButton) {
       fetchButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching repository...', fetchButton);
+        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching repository...', fetchButton, 'subtle');
       });
     }
 	    if (reorganizeButton) {
@@ -318,7 +318,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           applyMetadataPatch(message.patch);
           return;
         case 'set-loading':
-          showLoading(message.label);
+          showLoading(message.label, null, message.mode || 'blocking');
           return;
         case 'set-error':
           showError(message.message);
@@ -368,7 +368,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       updateChrome(nextState);
       renderScene(nextState);
       if (nextState.loading) {
-        showLoading(nextState.loadingLabel || 'Loading revision graph...');
+        showLoading(nextState.loadingLabel || 'Loading revision graph...', null, 'blocking');
       } else {
         hideLoading();
       }

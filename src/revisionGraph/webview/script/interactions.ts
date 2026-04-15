@@ -400,11 +400,11 @@ export function renderRevisionGraphScriptInteractions(): string {
       syncSearchUi();
     }
 
-	    function postMessageWithLoading(message, label, pendingControl = null) {
+	    function postMessageWithLoading(message, label, pendingControl = null, mode = 'blocking') {
 	      if (toolbarBusy) {
 	        return;
 	      }
-	      showLoading(label, pendingControl);
+	      showLoading(label, pendingControl, mode);
       requestAnimationFrame(() => {
         vscode.postMessage(message);
 	      });
@@ -418,11 +418,11 @@ export function renderRevisionGraphScriptInteractions(): string {
 	      });
 	    }
 
-	    async function runWithLoading(label, work, pendingControl = null) {
+	    async function runWithLoading(label, work, pendingControl = null, mode = 'blocking') {
 	      if (toolbarBusy) {
 	        return;
 	      }
-	      showLoading(label, pendingControl);
+	      showLoading(label, pendingControl, mode);
 	      await waitForNextFrame();
 	      try {
 	        await work();
@@ -432,25 +432,33 @@ export function renderRevisionGraphScriptInteractions(): string {
 	      }
 	    }
 
-	    function showLoading(label, pendingControl = null) {
+	    function showLoading(label, pendingControl = null, mode = 'blocking') {
 	      if (typeof label === 'string' && loadingMessage) {
 	        loadingMessage.textContent = label;
 	      }
       if (loadingOverlay) {
         loadingOverlay.setAttribute('aria-hidden', 'false');
+        loadingOverlay.setAttribute('data-mode', mode);
       }
       setToolbarBusy(true, pendingControl);
-      document.body.classList.add('loading');
-      document.body.setAttribute('aria-busy', 'true');
+      document.body.classList.remove('loading', 'loading-subtle');
+      if (mode === 'subtle') {
+        document.body.classList.add('loading-subtle');
+        document.body.removeAttribute('aria-busy');
+      } else {
+        document.body.classList.add('loading');
+        document.body.setAttribute('aria-busy', 'true');
+      }
       closeContextMenu();
     }
 
     function hideLoading() {
       if (loadingOverlay) {
         loadingOverlay.setAttribute('aria-hidden', 'true');
+        loadingOverlay.removeAttribute('data-mode');
       }
       setToolbarBusy(false);
-      document.body.classList.remove('loading');
+      document.body.classList.remove('loading', 'loading-subtle');
       document.body.removeAttribute('aria-busy');
     }
   `;

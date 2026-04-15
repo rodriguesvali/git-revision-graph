@@ -272,14 +272,8 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
     { name: 'main', upstream: 'origin/main' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch main was created and checked out from origin/main.');
-  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
-  assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
-  assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'full-rebuild',
-    repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
-  });
+  assert.deepEqual(harness.prepareRequests, []);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('checkoutResolvedReference creates a branch from tags instead of checking them out directly', async () => {
@@ -301,9 +295,8 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
     { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
-  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
-  assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.prepareRequests, []);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('deleteResolvedReference uses the tag name in the delete confirmation label', async () => {
@@ -360,7 +353,7 @@ test('checkoutResolvedReference blocks workspace-changing operations while confl
   assert.equal(harness.sourceControlOpens, 1);
 });
 
-test('checkoutResolvedReference prepares follow-up refresh suppression before checkout events can fire', async () => {
+test('checkoutResolvedReference relies on repository listeners instead of issuing an explicit graph refresh', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('main'),
@@ -370,12 +363,7 @@ test('checkoutResolvedReference prepares follow-up refresh suppression before ch
 
   repository.checkout = async (treeish: string) => {
     repository.calls.checkout.push(treeish);
-    assert.equal(harness.prepareRequests.length, 1);
-    assert.deepEqual(harness.prepareRequests[0], {
-      intent: 'full-rebuild',
-      repositoryPath: '/workspace/repo',
-      followUpEvents: ['state', 'checkout']
-    });
+    assert.equal(harness.prepareRequests.length, 0);
   };
 
   await checkoutResolvedReference(
@@ -385,9 +373,9 @@ test('checkoutResolvedReference prepares follow-up refresh suppression before ch
   );
 
   assert.deepEqual(repository.calls.checkout, ['release/2026']);
-  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
+  assert.deepEqual(harness.prepareRequests, []);
   assert.deepEqual(harness.canceledPrepareRequests, []);
-  assert.equal(harness.refreshCalls, 1);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('checkoutResolvedReference cancels a prepared refresh when checkout fails', async () => {
@@ -408,7 +396,7 @@ test('checkoutResolvedReference cancels a prepared refresh when checkout fails',
   );
 
   assert.equal(harness.refreshCalls, 0);
-  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+  assert.deepEqual(harness.canceledPrepareRequests, []);
   assert.match(harness.errorMessages[0] ?? '', /Could not check out the reference/);
 });
 
@@ -433,9 +421,8 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.deepEqual(harness.upstreamClears, ['release/2026-copy']);
   assert.deepEqual(repository.calls.setBranchUpstream, []);
   assert.equal(harness.infoMessages[0], 'Branch release/2026-copy was created and checked out from release/2026.');
-  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
-  assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.prepareRequests, []);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
@@ -460,9 +447,8 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
-  assert.deepEqual(harness.prepareRequests, [harness.refreshRequests[0]]);
-  assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.prepareRequests, []);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('createBranchFromResolvedReference cancels a prepared refresh when branch creation fails', async () => {
@@ -483,7 +469,7 @@ test('createBranchFromResolvedReference cancels a prepared refresh when branch c
   );
 
   assert.equal(harness.refreshCalls, 0);
-  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+  assert.deepEqual(harness.canceledPrepareRequests, []);
   assert.match(harness.errorMessages[0] ?? '', /Could not create the branch/);
 });
 
@@ -502,9 +488,9 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   ]);
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'full-rebuild',
+    intent: 'metadata-patch',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });
@@ -662,7 +648,7 @@ test('deleteResolvedReference deletes remote branches through the shared referen
   ]);
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
 });
 
 test('deleteResolvedReference refuses to delete remote HEAD aliases', async () => {

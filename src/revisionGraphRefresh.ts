@@ -28,7 +28,7 @@ export interface PreparedPendingRevisionGraphRefresh {
   readonly id: number;
 }
 
-const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 1500;
+const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;
 let nextPendingFollowUpRefreshId = 0;
 
 export function getRefreshLoadingLabel(intent: RevisionGraphRefreshIntent): string {
@@ -40,6 +40,17 @@ export function getRefreshLoadingLabel(intent: RevisionGraphRefreshIntent): stri
       return 'Updating revision graph...';
     case 'full-rebuild':
       return 'Loading revision graph...';
+  }
+}
+
+export function getRefreshLoadingMode(intent: RevisionGraphRefreshIntent): 'blocking' | 'subtle' {
+  switch (intent) {
+    case 'metadata-patch':
+    case 'overlay-patch':
+      return 'subtle';
+    case 'projection-rebuild':
+    case 'full-rebuild':
+      return 'blocking';
   }
 }
 
@@ -146,9 +157,34 @@ export function consumePendingFollowUpRefresh(
     return false;
   }
 
-  pendingRefreshes.set(repositoryPath, activeEntries);
+  let consumed = false;
+  const remainingEntries: PendingRevisionGraphFollowUpRefresh[] = [];
+  for (const entry of activeEntries) {
+    if (!consumed && entry.eventKinds.has(eventKind)) {
+      const remainingKinds = new Set(entry.eventKinds);
+      remainingKinds.delete(eventKind);
+      consumed = true;
+      if (remainingKinds.size > 0) {
+        remainingEntries.push({
+          ...entry,
+          eventKinds: remainingKinds
+        });
+      }
+      continue;
+    }
 
-  return activeEntries.some((entry) => entry.eventKinds.has(eventKind));
+    if (entry.eventKinds.size > 0) {
+      remainingEntries.push(entry);
+    }
+  }
+
+  if (remainingEntries.length === 0) {
+    pendingRefreshes.delete(repositoryPath);
+  } else {
+    pendingRefreshes.set(repositoryPath, remainingEntries);
+  }
+
+  return consumed;
 }
 
 function getActivePendingFollowUpRefreshes(

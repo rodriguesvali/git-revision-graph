@@ -81,11 +81,6 @@ export async function checkoutResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
-  const refreshRequest = createActionRefreshRequest(refreshIntent, repository.rootUri.toString());
-  let preparedRefresh:
-    | ReturnType<RefActionServices['refreshController']['prepare']>
-    | undefined;
   try {
     if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
       services.ui.showInformationMessage(`${target.label} is already checked out.`);
@@ -109,12 +104,9 @@ export async function checkoutResolvedReference(
       return;
     }
 
-    preparedRefresh = services.refreshController.prepare(refreshRequest);
     await repository.checkout(target.refName);
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
-    services.refreshController.refresh(refreshRequest);
   } catch (error) {
-    preparedRefresh?.cancel();
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
   }
 }
@@ -124,11 +116,6 @@ export async function createBranchFromResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
-  const refreshRequest = createActionRefreshRequest(refreshIntent, repository.rootUri.toString());
-  let preparedRefresh:
-    | ReturnType<RefActionServices['refreshController']['prepare']>
-    | undefined;
   try {
     if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
       return;
@@ -144,7 +131,6 @@ export async function createBranchFromResolvedReference(
       return;
     }
 
-    preparedRefresh = services.refreshController.prepare(refreshRequest);
     await repository.createBranch(branchName, true, branchCreation.startPointRefName);
     if (branchCreation.upstreamRefName) {
       await repository.setBranchUpstream(branchName, branchCreation.upstreamRefName);
@@ -157,9 +143,7 @@ export async function createBranchFromResolvedReference(
         ? `Branch ${branchName} was created and checked out from ${branchCreation.upstreamRefName}.`
         : `Branch ${branchName} was created and checked out from ${target.label}.`
     );
-    services.refreshController.refresh(refreshRequest);
   } catch (error) {
-    preparedRefresh?.cancel();
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
 }
@@ -168,7 +152,7 @@ export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   try {
     const syncState = getCurrentHeadSyncState(repository);
     if (!syncState) {
@@ -216,7 +200,7 @@ export async function mergeResolvedReference(
   target: RefSelection,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   try {
     const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
     if (repository.state.HEAD?.name === target.refName) {
@@ -308,7 +292,7 @@ async function deleteRemoteReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   const remoteTarget = parseRemoteReferenceTarget(target.refName);
   if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
     services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
@@ -335,7 +319,7 @@ async function deleteTagReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   const confirmed = await services.ui.confirm({
     message: `Delete the Tag ${target.label}?`,
     confirmLabel: `Delete Tag: ${target.label}`
@@ -356,7 +340,7 @@ async function deleteBranchReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   const branch = await getLocalBranchForDeletion(repository, target.refName);
   const upstreamLabel = branch?.upstream
     ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)

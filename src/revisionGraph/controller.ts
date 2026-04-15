@@ -28,6 +28,7 @@ import {
   buildMetadataPatchedRevisionGraphViewFingerprint,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
+  canPreserveRevisionGraphContext,
   buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
@@ -48,6 +49,7 @@ import {
   consumePendingFollowUpRefresh,
   createRepositoryRefreshRequest,
   getRefreshLoadingLabel,
+  getRefreshLoadingMode,
   normalizeRefreshRequest,
   PendingRevisionGraphFollowUpRefresh,
   RevisionGraphRefreshRequest,
@@ -64,6 +66,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
   private autoArrangeOnNextRender = true;
   private currentLoadingLabel: string | undefined;
+  private currentLoadingMode: 'blocking' | 'subtle' | undefined;
   private currentErrorMessage: string | undefined;
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
@@ -71,7 +74,13 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly actionServices: ReturnType<typeof createWorkbenchRefActionServices>;
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
+      const nextLoadingMode = getRefreshLoadingMode(this.latestRefreshIntent);
+      const shouldPostLoading =
+        !this.currentState.loading
+        || this.currentLoadingLabel !== label
+        || this.currentLoadingMode !== nextLoadingMode;
       this.currentLoadingLabel = label;
+      this.currentLoadingMode = nextLoadingMode;
       this.currentErrorMessage = undefined;
       this.currentState = {
         ...this.currentState,
@@ -79,13 +88,17 @@ export class RevisionGraphController implements vscode.Disposable {
         loadingLabel: label,
         errorMessage: undefined
       };
-      this.postHostMessage({
-        type: 'set-loading',
-        label
-      });
+      if (shouldPostLoading) {
+        this.postHostMessage({
+          type: 'set-loading',
+          label,
+          mode: this.currentLoadingMode
+        });
+      }
     },
     (state) => {
       this.currentLoadingLabel = undefined;
+      this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
       const previousState = this.currentState;
       this.currentState = state;
@@ -104,6 +117,7 @@ export class RevisionGraphController implements vscode.Disposable {
     },
     (error) => {
       this.currentLoadingLabel = undefined;
+      this.currentLoadingMode = undefined;
       this.currentErrorMessage = toErrorDetail(error);
       this.currentState = {
         ...this.currentState,
@@ -440,7 +454,7 @@ export class RevisionGraphController implements vscode.Disposable {
     try {
       await execGitWithResult(this.currentRepository.rootUri.fsPath, ['fetch', '--prune']);
       this.actionServices.ui.showInformationMessage(`Fetch completed for ${this.getCurrentRepositoryLabel()}.`);
-      await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
+      await this.refresh(this.createCurrentRepositoryRefreshRequest('metadata-patch'));
     } catch (error) {
       await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
       this.postHostMessage({ type: 'update-state', state: this.currentState });
@@ -471,10 +485,10 @@ export class RevisionGraphController implements vscode.Disposable {
       key,
       vscode.Disposable.from(
         repository.state.onDidChange(() => {
-          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'state');
+          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'state');
         }),
         repository.onDidCheckout(() => {
-          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout');
+          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'checkout');
         })
       )
     );
@@ -564,7 +578,7 @@ export class RevisionGraphController implements vscode.Disposable {
     intent: RevisionGraphRefreshIntent
   ): boolean {
     if (
-      intent !== 'full-rebuild'
+      (intent !== 'full-rebuild' && intent !== 'metadata-patch')
       || this.currentState.viewMode !== 'ready'
       || !isSameRepositoryPath(repository, this.currentRepository)
       || this.currentSnapshot?.repositoryPath !== repository.rootUri.fsPath
@@ -597,7 +611,8 @@ export class RevisionGraphController implements vscode.Disposable {
     if (this.currentLoadingLabel) {
       this.postHostMessage({
         type: 'set-loading',
-        label: this.currentLoadingLabel
+        label: this.currentLoadingLabel,
+        mode: this.currentLoadingMode
       });
       return;
     }
@@ -620,12 +635,7 @@ export class RevisionGraphController implements vscode.Disposable {
     previousState: RevisionGraphViewState,
     nextState: RevisionGraphViewState
   ): boolean {
-    return (
-      this.latestRefreshIntent === 'metadata-patch' &&
-      previousState.viewMode === 'ready' &&
-      nextState.viewMode === 'ready' &&
-      previousState.sceneLayoutKey === nextState.sceneLayoutKey
-    );
+    return canPreserveRevisionGraphContext(previousState, nextState);
   }
 
   private createMetadataPatch(state: RevisionGraphViewState): RevisionGraphViewMetadataPatch {
@@ -635,7 +645,9 @@ export class RevisionGraphController implements vscode.Disposable {
       currentHeadName: state.currentHeadName,
       currentHeadUpstreamName: state.currentHeadUpstreamName,
       isWorkspaceDirty: state.isWorkspaceDirty,
+      projectionOptions: state.projectionOptions,
       mergeBlockedTargets: state.mergeBlockedTargets,
+      primaryAncestorPathsByHash: state.primaryAncestorPathsByHash,
       autoArrangeOnInit: state.autoArrangeOnInit,
       scene: state.scene,
       nodeLayouts: state.nodeLayouts,

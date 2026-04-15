@@ -110,10 +110,11 @@ export async function buildMetadataPatchedRevisionGraphViewState(
     return undefined;
   }
 
+  const repositoryRefs = await loadRepositoryRefs(repository, signal);
   const patchedScene = patchSceneReferences(
     previousState.scene,
     snapshot.graph,
-    repository.state.refs,
+    repositoryRefs,
     repository.state.HEAD?.commit,
     repository.state.HEAD?.name,
     previousState.projectionOptions
@@ -198,11 +199,38 @@ export function buildRevisionGraphViewFingerprint(
   });
 }
 
+export function canPreserveRevisionGraphContext(
+  previousState: RevisionGraphViewState,
+  nextState: RevisionGraphViewState
+): boolean {
+  return (
+    previousState.viewMode === 'ready' &&
+    nextState.viewMode === 'ready' &&
+    !!previousState.repositoryPath &&
+    previousState.repositoryPath === nextState.repositoryPath &&
+    previousState.sceneLayoutKey === nextState.sceneLayoutKey
+  );
+}
+
 function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted) {
     const error = new Error('The revision graph load was aborted.');
     error.name = 'AbortError';
     throw error;
+  }
+}
+
+async function loadRepositoryRefs(
+  repository: Repository,
+  signal: AbortSignal | undefined
+): Promise<readonly Ref[]> {
+  throwIfAborted(signal);
+  try {
+    const refs = await repository.getRefs();
+    throwIfAborted(signal);
+    return refs;
+  } catch {
+    return repository.state.refs;
   }
 }
 

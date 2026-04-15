@@ -5,8 +5,11 @@ import { RefType } from '../src/git';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../src/revisionGraph/backend';
 import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import {
+  buildMetadataPatchedRevisionGraphViewFingerprint,
+  canPreserveRevisionGraphContext,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
+  buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewState
 } from '../src/revisionGraph/panel/state';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
@@ -182,5 +185,223 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
       { name: 'origin/main', kind: 'remote' },
       { name: 'stash', kind: 'stash' }
     ]
+  );
+});
+
+test('metadata patches load the complete repository refs instead of relying only on repository.state.refs', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+    ]
+  });
+  repository.getRefs = async () => [
+    createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+    createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' }),
+    createRef({ type: RefType.Tag, name: 'v1.0.0', commit: 'head1' })
+  ];
+
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' },
+        { name: 'v1.0.0', kind: 'tag' }
+      ]
+    }
+  ]);
+  const snapshot = {
+    graph,
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return snapshot;
+    },
+    async loadRevisionLog() {
+      return [];
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const initialState = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+
+  const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+    initialState,
+    repository,
+    backend,
+    snapshot
+  );
+
+  assert.ok(patchedState);
+  assert.deepEqual(
+    patchedState?.scene.nodes[0]?.refs,
+    [
+      { name: 'main', kind: 'head' },
+      { name: 'origin/main', kind: 'remote' },
+      { name: 'v1.0.0', kind: 'tag' }
+    ]
+  );
+});
+
+test('recognizes when a ready-state refresh can preserve the current graph context', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' }
+      ]
+    }
+  ]);
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async loadRevisionLog() {
+      return [];
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const initialState = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+  const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+    initialState,
+    repository,
+    backend,
+    {
+      graph,
+      loadedAt: Date.now(),
+      requestedLimit: 6000
+    }
+  );
+
+  assert.ok(patchedState);
+  assert.equal(canPreserveRevisionGraphContext(initialState, patchedState), true);
+  assert.equal(
+    canPreserveRevisionGraphContext(
+      initialState,
+      {
+        ...patchedState,
+        repositoryPath: '/workspace/other',
+        sceneLayoutKey: patchedState.sceneLayoutKey
+      }
+    ),
+    false
+  );
+});
+
+test('patched metadata fingerprints match the already-applied ready state when nothing else changed', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' }
+      ]
+    }
+  ]);
+  const snapshot = {
+    graph,
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return snapshot;
+    },
+    async loadRevisionLog() {
+      return [];
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const readyState = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+  const patchedFingerprint = buildMetadataPatchedRevisionGraphViewFingerprint(
+    readyState,
+    repository,
+    snapshot
+  );
+
+  assert.equal(
+    patchedFingerprint,
+    buildRevisionGraphViewFingerprint(readyState)
   );
 });

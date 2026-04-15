@@ -57,7 +57,9 @@ export interface RevisionGraphViewMetadataPatch {
   readonly currentHeadName: string | undefined;
   readonly currentHeadUpstreamName: string | undefined;
   readonly isWorkspaceDirty: boolean;
+  readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
+  readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
   readonly autoArrangeOnInit: boolean;
   readonly scene: RevisionGraphScene;
   readonly nodeLayouts: readonly RevisionGraphNodeLayout[];
@@ -71,7 +73,7 @@ export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'patch-metadata'; readonly patch: RevisionGraphViewMetadataPatch }
-  | { readonly type: 'set-loading'; readonly label: string }
+  | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
 
 export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProjectionOptions {

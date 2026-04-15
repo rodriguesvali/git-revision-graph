@@ -57,22 +57,29 @@ test('keeps loading and error primitives in the shell runtime', () => {
   assert.match(html, /id="loadingOverlay" aria-hidden="false"/);
   assert.match(html, /Opening revision graph\.\.\./);
   assert.match(html, /function setToolbarBusy\(isBusy, pendingControl = null\)/);
-  assert.match(html, /function showLoading\(label, pendingControl = null\)/);
-  assert.match(html, /function runWithLoading\(label, work, pendingControl = null\)/);
+  assert.match(html, /function showLoading\(label, pendingControl = null, mode = 'blocking'\)/);
+  assert.match(html, /function runWithLoading\(label, work, pendingControl = null, mode = 'blocking'\)/);
   assert.match(html, /function hideLoading\(\)/);
   assert.match(html, /function showError\(message\)/);
-  assert.match(html, /if \(nextState\.loading\) \{\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s);
+  assert.match(html, /if \(nextState\.loading\) \{\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.', null, 'blocking'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s);
   assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
+  assert.match(html, /body\.classList\.remove\('loading', 'loading-subtle'\);/);
+  assert.match(html, /loadingOverlay\.setAttribute\('data-mode', mode\);/);
+  assert.match(html, /body\.loading-subtle \.loading-overlay/);
 });
 
 test('shows loading feedback while reorganizing the graph layout client-side', () => {
   const html = renderRevisionGraphShellHtml();
 
-	assert.match(
+  assert.match(
 	  html,
 	  /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*await autoArrangeTortoiseLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
 	);
+  assert.match(
+    html,
+    /fetchButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'fetch-current-repository' \}, 'Fetching repository\.\.\.', fetchButton, 'subtle'\);/s
+  );
 });
 
 test('reorganize button does not crash when clustering by ref families', async () => {

@@ -46,9 +46,9 @@ test('registerPendingFollowUpRefresh suppresses matching event bursts within the
   );
 
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), false);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 400), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), false);
 });
 
 test('cancelPendingFollowUpRefresh removes a prepared suppression entry', () => {
@@ -74,7 +74,7 @@ test('consumePendingFollowUpRefresh expires old suppressions and ignores other r
   );
 
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/other', 'state', 200), false);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 1700), false);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 5200), false);
 });
 
 test('normalizeRefreshRequest preserves object requests and defaults missing requests to full rebuild', () => {
