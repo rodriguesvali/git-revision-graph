@@ -1,7 +1,6 @@
-import * as path from 'node:path';
 import * as vscode from 'vscode';
 
-import { getStatusLabel, getTargetUri } from './changePresentation';
+import { getRepositoryRelativeChangePath, getStatusLabel, getTargetUri } from './changePresentation';
 import { Change, Repository } from './git';
 import { RefSelection } from './refActions';
 import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
@@ -169,12 +168,11 @@ function buildCompareResultItems(
 ): CompareResultItem[] {
   return [...changes]
     .map<CompareResultItem>((change) => {
-      const targetUri = getTargetUri(change);
-      const relativePath = vscode.workspace.asRelativePath(targetUri, false);
+      const relativePath = getRepositoryRelativeChangePath(repository.rootUri.fsPath, change);
       return {
         repository,
         change,
-        label: path.basename(targetUri.fsPath),
+        label: relativePath,
         description: relativePath,
         detail: getStatusLabel(change.status),
         leftRef,

@@ -21,6 +21,24 @@ export function getRightUri(change: Change): Change['uri'] {
   return change.renameUri ?? change.uri;
 }
 
+export function getRepositoryRelativeChangePath(
+  repositoryRootPath: string,
+  change: Change
+): string {
+  const fileUri = getTargetUri(change);
+  const relativePath = path.relative(repositoryRootPath, fileUri.fsPath);
+  if (
+    relativePath &&
+    relativePath !== '..' &&
+    !relativePath.startsWith(`..${path.sep}`) &&
+    !path.isAbsolute(relativePath)
+  ) {
+    return relativePath;
+  }
+
+  return fileUri.fsPath;
+}
+
 export function isAddition(status: Status): boolean {
   return status === Status.INDEX_ADDED || status === Status.UNTRACKED;
 }

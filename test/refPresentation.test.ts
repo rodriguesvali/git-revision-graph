@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
 import { getReferenceDescription, getReferenceHandle, getReferenceShortLabel, getReferenceTooltip, getSuggestedLocalBranchName } from '../src/refPresentation';
-import { getStatusLabel, toChangeQuickPickItems } from '../src/changePresentation';
+import { getRepositoryRelativeChangePath, getStatusLabel, toChangeQuickPickItems } from '../src/changePresentation';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
 test('formats current branch description with ahead/behind counters', () => {
@@ -54,4 +54,18 @@ test('maps status labels consistently', () => {
   assert.equal(getStatusLabel(Status.DELETED), 'Deleted');
   assert.equal(getStatusLabel(Status.MODIFIED), 'Modified');
   assert.equal(getStatusLabel(Status.BOTH_ADDED), 'Changed');
+});
+
+test('builds repository-relative change paths from the target file location', () => {
+  assert.equal(
+    getRepositoryRelativeChangePath(
+      '/workspace/repo',
+      createChange({
+        uriPath: '/workspace/repo/docs/release/notes.md',
+        renamePath: '/workspace/repo/docs/release/notes-v2.md',
+        status: Status.INDEX_RENAMED
+      })
+    ),
+    'docs/release/notes-v2.md'
+  );
 });
