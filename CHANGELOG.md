@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.14
+
+### Highlights
+
+- Added richer graph filtering so remote branches and stash refs can be shown or hidden directly from the toolbar alongside the existing scope, tags, and branch/merge controls.
+- Added a persistent `Compare Results` view so branch-to-branch and branch-to-worktree comparisons stay available while reviewing multiple files.
+- Added `Fetch` for the active repository directly from the graph view so remote refs can be refreshed without leaving the extension.
+
+### Workflow & UX
+
+- Compare result entries now prioritize the full repository-relative path, making large compare lists easier to scan when many files share the same name.
+- The primary graph view is now labeled `Graph`, reducing title repetition inside the `GIT Revision Graph` container.
+- The graph refresh flow now preserves viewport and selection more predictably after rebuilds when the effective layout is unchanged.
+- Initial graph organization and manual `Reorganize` now use the same layout routine, keeping the graph presentation consistent.
+
+### Stability
+
+- Tightened refresh policy around mutating Git operations so `fetch`, `sync`, `merge`, and delete flows rebuild the graph safely instead of relying on optimistic metadata-only patches.
+- Unified metadata patch fingerprinting with the same complete ref source used by the applied patch, preventing missing tag or remote decorations after lighter updates.
+- Restored burst suppression for follow-up repository events while keeping abort handling explicit, improving refresh consistency during activation and repository churn.
+
+### Quality
+
+- Expanded regression coverage for compare presentation, refresh coordination, metadata patch correctness, loading modes, and graph layout behavior.
+
 ## 0.0.13
 
 ### Highlights
