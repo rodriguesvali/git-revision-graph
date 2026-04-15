@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.15
+
+### In Progress
+
+- Refreshed the extension artwork by adding a new SVG source asset and updating the packaged PNG icon.
+
+### Planned Focus
+
+- Define the final `0.0.15` scope around graph navigation, release workflows, and daily-driver UX polish.
+
 ## 0.0.14
 
 ### Highlights
