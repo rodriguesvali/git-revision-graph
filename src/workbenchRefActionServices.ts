@@ -1,7 +1,9 @@
+import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
-import { execGitWithResult } from './gitExec';
+import { buildCompareResultRestorePlan } from './compareResultRestore';
+import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { PreparedRefreshHandle, RefActionServices } from './refActions';
@@ -147,4 +149,40 @@ export async function openChangeDiffWithWorktree(
   const title = `${ref} <-> worktree • ${vscode.workspace.asRelativePath(vscode.Uri.file(rightPath), false)}`;
 
   await vscode.commands.executeCommand('vscode.diff', leftUri, rightUri, title);
+}
+
+export async function restoreWorktreeChangeFromRef(
+  repository: Repository,
+  change: Change,
+  ref: string
+): Promise<void> {
+  const plan = buildCompareResultRestorePlan(change);
+
+  for (const action of plan) {
+    switch (action.kind) {
+      case 'delete':
+        await deleteFileIfPresent(vscode.Uri.file(action.targetPath));
+        break;
+      case 'write-ref': {
+        const relativePath = path.relative(repository.rootUri.fsPath, action.refPath);
+        const gitPath = relativePath.split(path.sep).join('/');
+        const { stdout } = await execGitBinaryWithResult(repository.rootUri.fsPath, ['show', `${ref}:${gitPath}`]);
+        const targetUri = vscode.Uri.file(action.targetPath);
+        await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.dirname(action.targetPath)));
+        await vscode.workspace.fs.writeFile(targetUri, stdout);
+        break;
+      }
+    }
+  }
+}
+
+async function deleteFileIfPresent(uri: vscode.Uri): Promise<void> {
+  try {
+    await vscode.workspace.fs.delete(uri, { recursive: false, useTrash: false });
+  } catch (error) {
+    const fileError = error as { readonly code?: string };
+    if (fileError.code !== 'FileNotFound') {
+      throw error;
+    }
+  }
 }

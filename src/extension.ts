@@ -63,6 +63,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('gitRefs.openCompareResult', async (item) => {
       await compareResultsProvider.openItem(item);
     }),
+    vscode.commands.registerCommand('gitRefs.compareResultCompareWithBase', async (item) => {
+      await compareResultsProvider.compareWithBase(item);
+    }),
+    vscode.commands.registerCommand('gitRefs.compareResultCompareWithWorktree', async (item) => {
+      await compareResultsProvider.compareWithWorktree(item);
+    }),
+    vscode.commands.registerCommand('gitRefs.compareResultRevertToThis', async (item) => {
+      await compareResultsProvider.revertToItem(item);
+    }),
     vscode.commands.registerCommand('gitRefs.clearCompareResults', async () => {
       await compareResultsProvider.clear();
     })

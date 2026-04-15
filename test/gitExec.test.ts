@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import { execGit, execGitWithResult } from '../src/gitExec';
+import { execGit, execGitBinaryWithResult, execGitWithResult } from '../src/gitExec';
 
 const execFile = promisify(execFileCallback);
 
@@ -118,6 +118,60 @@ test('execGit stops when the captured output exceeds the configured limit', asyn
           assert.equal(gitError.stdout, '');
           return true;
         }
+      );
+    }
+  );
+});
+
+test('execGitBinaryWithResult preserves arbitrary stdout bytes', async () => {
+  await withFakeGitScript(
+    "#!/bin/sh\nprintf '\\377\\000ABC'\n",
+    async (repositoryPath) => {
+      const result = await execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin']);
+
+      assert.deepEqual([...result.stdout], [255, 0, 65, 66, 67]);
+      assert.equal(result.stderr, '');
+    }
+  );
+});
+
+test('execGitBinaryWithResult preserves stderr and exit code for failing commands', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\nprintf "boom\\n" >&2\nexit 9\n',
+    async (repositoryPath) => {
+      await assert.rejects(
+        execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin']),
+        (error: unknown) => {
+          assert.equal(typeof error, 'object');
+          assert.ok(error !== null);
+          const gitError = error as { code?: unknown; stderr?: unknown; stdout?: unknown };
+          assert.equal(gitError.code, 9);
+          assert.equal(gitError.stderr, 'boom\n');
+          assert.ok(Buffer.isBuffer(gitError.stdout));
+          assert.equal((gitError.stdout as Buffer).length, 0);
+          return true;
+        }
+      );
+    }
+  );
+});
+
+test('execGitBinaryWithResult aborts an in-flight git process when the signal is cancelled', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+    async (repositoryPath) => {
+      const abortController = new AbortController();
+      const execution = execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin'], {
+        signal: abortController.signal
+      });
+
+      setTimeout(() => {
+        abortController.abort();
+      }, 25);
+
+      await assert.rejects(
+        execution,
+        (error: unknown) => error instanceof Error && error.name === 'AbortError'
       );
     }
   );

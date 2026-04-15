@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### In Progress
 
 - Refreshed the extension artwork by adding a new SVG source asset and updating the packaged PNG icon.
+- Added context actions for compare result files to reopen the base diff, compare a result against the worktree, and restore worktree files to the selected revision.
 
 ### Planned Focus
 

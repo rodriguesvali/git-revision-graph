@@ -44,7 +44,7 @@
         {
           "id": "gitRefs",
           "title": "GIT Revision Graph",
-          "icon": "media/git-refs.svg"
+          "icon": "media/icon-source.svg"
         }
       ]
     },
@@ -54,7 +54,7 @@
           "id": "gitRefs.revisionGraphView",
           "name": "Graph",
           "type": "webview",
-          "icon": "media/git-refs.svg"
+          "icon": "media/icon-source.svg"
         },
         {
           "id": "gitRefs.compareResultsView",
@@ -104,6 +104,18 @@
         "command": "gitRefs.clearCompareResults",
         "title": "Clear Compare Results",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "gitRefs.compareResultCompareWithBase",
+        "title": "Compare with Base"
+      },
+      {
+        "command": "gitRefs.compareResultCompareWithWorktree",
+        "title": "Compare with Worktree"
+      },
+      {
+        "command": "gitRefs.compareResultRevertToThis",
+        "title": "Revert to This"
       }
     ],
     "menus": {
@@ -127,6 +139,28 @@
           "command": "gitRefs.clearCompareResults",
           "when": "view == gitRefs.compareResultsView",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gitRefs.compareResultCompareWithBase",
+          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-between-file",
+          "group": "compare@1"
+        },
+        {
+          "command": "gitRefs.compareResultCompareWithBase",
+          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
+          "group": "compare@1"
+        },
+        {
+          "command": "gitRefs.compareResultCompareWithWorktree",
+          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
+          "group": "compare@2"
+        },
+        {
+          "command": "gitRefs.compareResultRevertToThis",
+          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
+          "group": "compare@3"
         }
       ]
     }

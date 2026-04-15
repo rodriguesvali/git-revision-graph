@@ -1,40 +1,25 @@
 import * as vscode from 'vscode';
 
-import { getRepositoryRelativeChangePath, getStatusLabel, getTargetUri } from './changePresentation';
-import { Change, Repository } from './git';
-import { RefSelection } from './refActions';
-import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
+import { getTargetUri } from './changePresentation';
+import { toOperationError } from './errorDetail';
+import type { Change, Repository } from './git';
+import {
+  applyCompareResultsWorktreeRefresh,
+  buildCompareResultItems,
+  buildCompareResultsMessage,
+  CompareResultItem,
+  CompareResultsState,
+  getCompareResultContextValue,
+  shouldOpenCompareResultOnClick
+} from './compareResultsShared';
+import type { RefSelection } from './refActions';
+import {
+  openChangeDiffBetweenRefs,
+  openChangeDiffWithWorktree,
+  restoreWorktreeChangeFromRef
+} from './workbenchRefActionServices';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
-
-type CompareResultsState =
-  | {
-    readonly kind: 'empty';
-  }
-  | {
-    readonly kind: 'between';
-    readonly repository: Repository;
-    readonly left: RefSelection;
-    readonly right: RefSelection;
-    readonly changes: readonly Change[];
-  }
-  | {
-    readonly kind: 'worktree';
-    readonly repository: Repository;
-    readonly target: RefSelection;
-    readonly changes: readonly Change[];
-  };
-
-type CompareResultItem = {
-  readonly repository: Repository;
-  readonly change: Change;
-  readonly label: string;
-  readonly description: string;
-  readonly detail: string;
-  readonly leftRef: string | undefined;
-  readonly rightRef: string | undefined;
-  readonly worktreeRef: string | undefined;
-};
 
 export class CompareResultsViewProvider implements vscode.TreeDataProvider<CompareResultItem>, vscode.Disposable {
   private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<CompareResultItem | undefined | void>();
@@ -94,12 +79,14 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
     treeItem.description = element.detail;
     treeItem.tooltip = `${element.description}\n${element.detail}`;
     treeItem.resourceUri = getTargetUri(element.change);
-    treeItem.command = {
-      command: 'gitRefs.openCompareResult',
-      title: 'Open Compare Result',
-      arguments: [element]
-    };
-    treeItem.contextValue = 'compare-result-file';
+    if (shouldOpenCompareResultOnClick(element)) {
+      treeItem.command = {
+        command: 'gitRefs.openCompareResult',
+        title: 'Open Compare Result',
+        arguments: [element]
+      };
+    }
+    treeItem.contextValue = getCompareResultContextValue(element);
     return treeItem;
   }
 
@@ -117,6 +104,7 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
           this.state.changes,
           this.state.left.refName,
           this.state.right.refName,
+          undefined,
           undefined
         );
       case 'worktree':
@@ -125,7 +113,8 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
           this.state.changes,
           undefined,
           undefined,
-          this.state.target.refName
+          this.state.target.refName,
+          this.state.target.label
         );
     }
   }
@@ -138,6 +127,42 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
 
     if (item.worktreeRef) {
       await openChangeDiffWithWorktree(item.repository, item.change, item.worktreeRef);
+    }
+  }
+
+  async compareWithBase(item: CompareResultItem): Promise<void> {
+    await this.openItem(item);
+  }
+
+  async compareWithWorktree(item: CompareResultItem): Promise<void> {
+    if (!item.worktreeRef) {
+      return;
+    }
+
+    await openChangeDiffWithWorktree(item.repository, item.change, item.worktreeRef);
+  }
+
+  async revertToItem(item: CompareResultItem): Promise<void> {
+    if (!item.worktreeRef) {
+      return;
+    }
+
+    const confirmation = await vscode.window.showWarningMessage(
+      `Restore ${item.label} in the worktree to match ${item.worktreeLabel ?? item.worktreeRef}?`,
+      { modal: true },
+      'Revert to This'
+    );
+    if (confirmation !== 'Revert to This') {
+      return;
+    }
+
+    try {
+      await restoreWorktreeChangeFromRef(item.repository, item.change, item.worktreeRef);
+      await this.refreshWorktreeComparison(item.repository, item.worktreeRef);
+    } catch (error) {
+      await vscode.window.showErrorMessage(
+        toOperationError('Could not revert the file to the selected revision.', error)
+      );
     }
   }
 
@@ -157,43 +182,19 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
   private async focus(): Promise<void> {
     await vscode.commands.executeCommand(`${COMPARE_RESULTS_VIEW_ID}.focus`);
   }
-}
 
-function buildCompareResultItems(
-  repository: Repository,
-  changes: readonly Change[],
-  leftRef: string | undefined,
-  rightRef: string | undefined,
-  worktreeRef: string | undefined
-): CompareResultItem[] {
-  return [...changes]
-    .map<CompareResultItem>((change) => {
-      const relativePath = getRepositoryRelativeChangePath(repository.rootUri.fsPath, change);
-      return {
-        repository,
-        change,
-        label: relativePath,
-        description: relativePath,
-        detail: getStatusLabel(change.status),
-        leftRef,
-        rightRef,
-        worktreeRef
-      };
-    })
-    .sort((left, right) => left.description.localeCompare(right.description));
-}
+  private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {
+    const changes = await repository.diffWith(refName);
+    const outcome = applyCompareResultsWorktreeRefresh(this.state, repository, refName, changes);
+    if (!outcome) {
+      return;
+    }
 
-function buildCompareResultsMessage(state: CompareResultsState): string {
-  switch (state.kind) {
-    case 'empty':
-      return 'Run a compare from the revision graph or Command Palette to keep the changed files here.';
-    case 'between':
-      return `${state.left.label} <-> ${state.right.label} • ${formatFileCount(state.changes.length)}`;
-    case 'worktree':
-      return `${state.target.label} <-> worktree • ${formatFileCount(state.changes.length)}`;
+    this.state = outcome.nextState;
+    this.refresh();
+
+    if (outcome.infoMessage) {
+      void vscode.window.showInformationMessage(outcome.infoMessage);
+    }
   }
-}
-
-function formatFileCount(count: number): string {
-  return count === 1 ? '1 file changed' : `${count} files changed`;
 }
