@@ -152,7 +152,7 @@ export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const syncState = getCurrentHeadSyncState(repository);
     if (!syncState) {
@@ -200,7 +200,7 @@ export async function mergeResolvedReference(
   target: RefSelection,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
     if (repository.state.HEAD?.name === target.refName) {
@@ -292,7 +292,7 @@ async function deleteRemoteReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const remoteTarget = parseRemoteReferenceTarget(target.refName);
   if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
     services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
@@ -319,7 +319,7 @@ async function deleteTagReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const confirmed = await services.ui.confirm({
     message: `Delete the Tag ${target.label}?`,
     confirmLabel: `Delete Tag: ${target.label}`
@@ -340,7 +340,7 @@ async function deleteBranchReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const branch = await getLocalBranchForDeletion(repository, target.refName);
   const upstreamLabel = branch?.upstream
     ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)

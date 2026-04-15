@@ -454,7 +454,7 @@ export class RevisionGraphController implements vscode.Disposable {
     try {
       await execGitWithResult(this.currentRepository.rootUri.fsPath, ['fetch', '--prune']);
       this.actionServices.ui.showInformationMessage(`Fetch completed for ${this.getCurrentRepositoryLabel()}.`);
-      await this.refresh(this.createCurrentRepositoryRefreshRequest('metadata-patch'));
+      await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
     } catch (error) {
       await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
       this.postHostMessage({ type: 'update-state', state: this.currentState });
@@ -485,10 +485,10 @@ export class RevisionGraphController implements vscode.Disposable {
       key,
       vscode.Disposable.from(
         repository.state.onDidChange(() => {
-          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'state');
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'state');
         }),
         repository.onDidCheckout(() => {
-          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'checkout');
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout');
         })
       )
     );
@@ -532,7 +532,7 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
-      if (this.isRedundantRepositoryRefresh(repository, intent)) {
+      if (await this.isRedundantRepositoryRefresh(repository, intent)) {
         return;
       }
 
@@ -573,10 +573,10 @@ export class RevisionGraphController implements vscode.Disposable {
     };
   }
 
-  private isRedundantRepositoryRefresh(
+  private async isRedundantRepositoryRefresh(
     repository: Repository,
     intent: RevisionGraphRefreshIntent
-  ): boolean {
+  ): Promise<boolean> {
     if (
       (intent !== 'full-rebuild' && intent !== 'metadata-patch')
       || this.currentState.viewMode !== 'ready'
@@ -586,7 +586,7 @@ export class RevisionGraphController implements vscode.Disposable {
       return false;
     }
 
-    const fingerprint = buildMetadataPatchedRevisionGraphViewFingerprint(
+    const fingerprint = await buildMetadataPatchedRevisionGraphViewFingerprint(
       this.currentState,
       repository,
       this.currentSnapshot.snapshot

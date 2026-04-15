@@ -265,6 +265,95 @@ test('metadata patches load the complete repository refs instead of relying only
   );
 });
 
+test('metadata patch ref loading rethrows abort errors instead of silently falling back', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+  });
+  repository.getRefs = async () => {
+    const error = new Error('aborted');
+    error.name = 'AbortError';
+    throw error;
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      throw new Error('not used');
+    },
+    async loadRevisionLog() {
+      return [];
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+  const readyState = await buildReadyRevisionGraphViewState(
+    createRepository({
+      root: '/workspace/repo',
+      head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+      refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+    }),
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    {
+      async loadGraphSnapshot() {
+        return {
+          graph: buildCommitGraph([
+            {
+              hash: 'head1',
+              parents: [],
+              author: 'Ada',
+              date: '2026-04-08',
+              subject: 'Bootstrap',
+              refs: [{ name: 'main', kind: 'head' }]
+            }
+          ]),
+          loadedAt: Date.now(),
+          requestedLimit: 6000
+        };
+      },
+      async loadRevisionLog() {
+        return [];
+      },
+      async loadUnifiedDiff() {
+        return '';
+      },
+      async loadCommitDetails() {
+        return '';
+      },
+      async getMergeBlockedTargets() {
+        return [];
+      }
+    },
+    LIMIT_POLICY
+  );
+  const snapshot = {
+    graph: buildCommitGraph([
+      {
+        hash: 'head1',
+        parents: [],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Bootstrap',
+        refs: [{ name: 'main', kind: 'head' }]
+      }
+    ]),
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+
+  await assert.rejects(
+    buildMetadataPatchedRevisionGraphViewState(readyState, repository, backend, snapshot),
+    /aborted/
+  );
+});
+
 test('recognizes when a ready-state refresh can preserve the current graph context', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -394,7 +483,7 @@ test('patched metadata fingerprints match the already-applied ready state when n
     backend,
     LIMIT_POLICY
   );
-  const patchedFingerprint = buildMetadataPatchedRevisionGraphViewFingerprint(
+  const patchedFingerprint = await buildMetadataPatchedRevisionGraphViewFingerprint(
     readyState,
     repository,
     snapshot
@@ -403,5 +492,89 @@ test('patched metadata fingerprints match the already-applied ready state when n
   assert.equal(
     patchedFingerprint,
     buildRevisionGraphViewFingerprint(readyState)
+  );
+});
+
+test('metadata patch fingerprints use the same complete ref set as the applied patch state', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+  });
+  repository.getRefs = async () => [
+    createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+    createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' }),
+    createRef({ type: RefType.Tag, name: 'v1.0.0', commit: 'head1' })
+  ];
+  const snapshot = {
+    graph: buildCommitGraph([
+      {
+        hash: 'head1',
+        parents: [],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Bootstrap',
+        refs: [
+          { name: 'main', kind: 'head' },
+          { name: 'origin/main', kind: 'remote' },
+          { name: 'v1.0.0', kind: 'tag' }
+        ]
+      }
+    ]),
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return snapshot;
+    },
+    async loadRevisionLog() {
+      return [];
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const readyState = await buildReadyRevisionGraphViewState(
+    createRepository({
+      root: '/workspace/repo',
+      head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+      refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+    }),
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+  const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+    readyState,
+    repository,
+    backend,
+    snapshot
+  );
+  const fingerprint = await buildMetadataPatchedRevisionGraphViewFingerprint(
+    readyState,
+    repository,
+    snapshot
+  );
+
+  assert.ok(patchedState);
+  assert.equal(
+    fingerprint,
+    buildRevisionGraphViewFingerprint({
+      repositoryPath: patchedState!.repositoryPath,
+      currentHeadName: patchedState!.currentHeadName,
+      currentHeadUpstreamName: patchedState!.currentHeadUpstreamName,
+      isWorkspaceDirty: patchedState!.isWorkspaceDirty,
+      sceneLayoutKey: patchedState!.sceneLayoutKey,
+      references: patchedState!.references
+    })
   );
 });

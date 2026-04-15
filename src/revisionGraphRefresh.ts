@@ -157,34 +157,8 @@ export function consumePendingFollowUpRefresh(
     return false;
   }
 
-  let consumed = false;
-  const remainingEntries: PendingRevisionGraphFollowUpRefresh[] = [];
-  for (const entry of activeEntries) {
-    if (!consumed && entry.eventKinds.has(eventKind)) {
-      const remainingKinds = new Set(entry.eventKinds);
-      remainingKinds.delete(eventKind);
-      consumed = true;
-      if (remainingKinds.size > 0) {
-        remainingEntries.push({
-          ...entry,
-          eventKinds: remainingKinds
-        });
-      }
-      continue;
-    }
-
-    if (entry.eventKinds.size > 0) {
-      remainingEntries.push(entry);
-    }
-  }
-
-  if (remainingEntries.length === 0) {
-    pendingRefreshes.delete(repositoryPath);
-  } else {
-    pendingRefreshes.set(repositoryPath, remainingEntries);
-  }
-
-  return consumed;
+  pendingRefreshes.set(repositoryPath, activeEntries);
+  return activeEntries.some((entry) => entry.eventKinds.has(eventKind));
 }
 
 function getActivePendingFollowUpRefreshes(

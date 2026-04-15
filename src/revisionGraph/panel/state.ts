@@ -135,11 +135,12 @@ export async function buildMetadataPatchedRevisionGraphViewState(
   );
 }
 
-export function buildMetadataPatchedRevisionGraphViewFingerprint(
+export async function buildMetadataPatchedRevisionGraphViewFingerprint(
   previousState: RevisionGraphViewState,
   repository: Repository,
-  snapshot: RevisionGraphSnapshot
-): string | undefined {
+  snapshot: RevisionGraphSnapshot,
+  signal?: AbortSignal
+): Promise<string | undefined> {
   if (
     previousState.viewMode !== 'ready' ||
     previousState.repositoryPath !== repository.rootUri.fsPath
@@ -147,10 +148,11 @@ export function buildMetadataPatchedRevisionGraphViewFingerprint(
     return undefined;
   }
 
+  const repositoryRefs = await loadRepositoryRefs(repository, signal);
   const patchedScene = patchSceneReferences(
     previousState.scene,
     snapshot.graph,
-    repository.state.refs,
+    repositoryRefs,
     repository.state.HEAD?.commit,
     repository.state.HEAD?.name,
     previousState.projectionOptions
@@ -229,9 +231,16 @@ async function loadRepositoryRefs(
     const refs = await repository.getRefs();
     throwIfAborted(signal);
     return refs;
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     return repository.state.refs;
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 export function buildEmptyRevisionGraphViewState(

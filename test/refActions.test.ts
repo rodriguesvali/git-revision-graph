@@ -316,6 +316,7 @@ test('deleteResolvedReference uses the tag name in the delete confirmation label
   assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Tag: v1.2.3');
   assert.deepEqual(repository.calls.deleteTag, ['v1.2.3']);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.3 was deleted.');
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('recognizes the git error raised when clearing a missing upstream', () => {
@@ -488,9 +489,9 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   ]);
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });
@@ -648,7 +649,7 @@ test('deleteResolvedReference deletes remote branches through the shared referen
   ]);
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
   assert.equal(harness.refreshCalls, 1);
-  assert.deepEqual(harness.refreshIntents, ['metadata-patch']);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('deleteResolvedReference refuses to delete remote HEAD aliases', async () => {
@@ -687,6 +688,7 @@ test('deleteResolvedReference explains that deleting a tracked local branch leav
   assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Branch: feature/demo');
   assert.deepEqual(repository.calls.deleteBranch, [{ name: 'feature/demo', force: false }]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was deleted.');
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('deleteResolvedReference offers force delete when a tracked branch is not fully merged into its upstream', async () => {
@@ -724,6 +726,7 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was force deleted.');
   assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
 test('deleteResolvedReference surfaces git stderr details for local branch failures', async () => {
