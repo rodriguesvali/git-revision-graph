@@ -10,12 +10,23 @@ export type RevisionGraphMessage =
   | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
-  | { readonly type: 'compare-selected'; readonly baseRefName: string; readonly compareRefName: string }
-  | { readonly type: 'show-log'; readonly baseRefName: string; readonly compareRefName: string }
-  | { readonly type: 'open-unified-diff'; readonly baseRefName: string; readonly compareRefName: string }
-  | { readonly type: 'compare-with-worktree'; readonly refName: string }
+  | {
+    readonly type: 'compare-selected';
+    readonly baseRevision: string;
+    readonly baseLabel: string;
+    readonly compareRevision: string;
+    readonly compareLabel: string;
+  }
+  | { readonly type: 'show-log'; readonly baseRevision: string; readonly compareRevision: string }
+  | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
+  | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
-  | { readonly type: 'create-branch'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
+  | {
+    readonly type: 'create-branch';
+    readonly revision: string;
+    readonly label: string;
+    readonly refKind: RevisionGraphRef['kind'] | 'commit';
+  }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };

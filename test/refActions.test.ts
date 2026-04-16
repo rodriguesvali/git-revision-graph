@@ -426,6 +426,27 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.equal(harness.refreshCalls, 0);
 });
 
+test('createBranchFromResolvedReference creates a new branch from an unreferenced commit hash', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: '1234567890abcdef', label: '12345678', kind: 'commit' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'commit-12345678', checkout: true, ref: '1234567890abcdef' }
+  ]);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.deepEqual(harness.upstreamClears, ['commit-12345678']);
+  assert.equal(harness.infoMessages[0], 'Branch commit-12345678 was created and checked out from 12345678.');
+});
+
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

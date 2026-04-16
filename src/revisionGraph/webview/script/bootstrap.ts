@@ -421,14 +421,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function captureSelectionSnapshot() {
       return selected
-        .map((refId) => getReference(refId))
-        .filter((ref) => !!ref)
+        .map((selectionId) => getSelectionTarget(selectionId))
+        .filter((target) => !!target)
         .slice(0, 2)
-        .map((ref) => ({
-          id: ref.id,
-          hash: ref.hash,
-          name: ref.name,
-          kind: ref.kind
+        .map((target) => ({
+          id: target.id,
+          hash: target.hash,
+          revision: target.revision,
+          label: target.label,
+          kind: target.kind
         }));
     }
 
@@ -451,28 +452,29 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return null;
       }
 
-      const exactMatch = references.find((ref) => ref.id === target.id && !usedReferenceIds.has(ref.id));
+      const selectableTargets = getSelectableTargets();
+      const exactMatch = selectableTargets.find((ref) => ref.id === target.id && !usedReferenceIds.has(ref.id));
       if (exactMatch) {
         return exactMatch;
       }
 
       if (target.kind === 'head') {
-        const currentHead = references.find((ref) => ref.kind === 'head' && !usedReferenceIds.has(ref.id));
+        const currentHead = selectableTargets.find((ref) => ref.kind === 'head' && !usedReferenceIds.has(ref.id));
         if (currentHead) {
           return currentHead;
         }
       }
 
       const matchPredicates = [
-        (ref) => ref.hash === target.hash && ref.name === target.name && ref.kind === target.kind,
-        (ref) => ref.name === target.name && ref.kind === target.kind,
-        (ref) => ref.hash === target.hash && ref.name === target.name,
-        (ref) => ref.name === target.name,
+        (ref) => ref.hash === target.hash && ref.revision === target.revision && ref.kind === target.kind,
+        (ref) => ref.revision === target.revision && ref.kind === target.kind,
+        (ref) => ref.hash === target.hash && ref.revision === target.revision,
+        (ref) => ref.revision === target.revision,
         (ref) => ref.hash === target.hash
       ];
 
       for (const predicate of matchPredicates) {
-        const match = references.find((ref) => !usedReferenceIds.has(ref.id) && predicate(ref));
+        const match = selectableTargets.find((ref) => !usedReferenceIds.has(ref.id) && predicate(ref));
         if (match) {
           return match;
         }
@@ -617,22 +619,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
             return;
           }
           const refId = element.getAttribute('data-ref-id');
-          const additive = event.ctrlKey || event.metaKey;
           if (!refId) {
             return;
           }
-          const existingIndex = selected.indexOf(refId);
-          if (!additive && selected.length === 1 && existingIndex === 0) {
-            selected.splice(0, selected.length);
-          } else if (!additive) {
-            selected.splice(0, selected.length, refId);
-          } else if (existingIndex >= 0) {
-            selected.splice(existingIndex, 1);
-          } else if (selected.length < 2) {
-            selected.push(refId);
-          } else {
-            selected.splice(0, selected.length, selected[1], refId);
-          }
+          toggleSelection(refId, event.ctrlKey || event.metaKey);
           closeContextMenu();
           syncSelection();
         });
@@ -642,10 +632,34 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           if (!refId) {
             return;
           }
-          const target = getReference(refId);
+          const target = getSelectionTarget(refId);
           if (!target) {
             return;
           }
+          openContextMenu(event.clientX, event.clientY, target);
+        });
+      }
+
+      for (const element of document.querySelectorAll('[data-node-hash]')) {
+        const hash = element.getAttribute('data-node-hash');
+        const target = hash ? getStructuralNodeTarget(hash) : null;
+        if (!hash || !target) {
+          continue;
+        }
+        element.addEventListener('click', (event) => {
+          if (suppressNodeClick || isNodeGripEvent(event)) {
+            suppressNodeClick = false;
+            return;
+          }
+          toggleSelection(target.id, event.ctrlKey || event.metaKey);
+          closeContextMenu();
+          syncSelection();
+        });
+        element.addEventListener('contextmenu', (event) => {
+          if (isNodeGripEvent(event)) {
+            return;
+          }
+          event.preventDefault();
           openContextMenu(event.clientX, event.clientY, target);
         });
       }
@@ -683,6 +697,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const summary = node.refs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
         : '';
+      const structuralBaseBadge = node.refs.length === 0
+        ? '<span class="node-base-badge">(Base)</span>'
+        : '';
       const refLines = node.refs
         .map((ref) => {
           const refId = createReferenceId(node.hash, ref.kind, ref.name);
@@ -694,6 +711,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
         refLines +
         summary +
+        structuralBaseBadge +
       '</div>';
     }
 
@@ -766,6 +784,93 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function createReferenceId(hash, kind, name) {
       return hash + '::' + kind + '::' + name;
+    }
+
+    function createCommitSelectionId(hash) {
+      return 'commit::' + hash;
+    }
+
+    function getSelectionTarget(selectionId) {
+      if (!selectionId) {
+        return null;
+      }
+
+      if (selectionId.startsWith('commit::')) {
+        const hash = selectionId.slice('commit::'.length);
+        const node = sceneNodeByHash.get(hash);
+        if (!node || node.refs.length > 0) {
+          return null;
+        }
+        return {
+          id: selectionId,
+          hash,
+          name: hash,
+          revision: hash,
+          label: hash.slice(0, 8),
+          kind: 'commit'
+        };
+      }
+
+      const reference = getReference(selectionId);
+      if (!reference) {
+        return null;
+      }
+
+      return {
+        id: reference.id,
+        hash: reference.hash,
+        name: reference.name,
+        revision: reference.name,
+        label: reference.name,
+        kind: reference.kind
+      };
+    }
+
+    function getSelectableTargets() {
+      const refTargets = references.map((reference) => ({
+        id: reference.id,
+        hash: reference.hash,
+        name: reference.name,
+        revision: reference.name,
+        label: reference.name,
+        kind: reference.kind
+      }));
+      const commitTargets = Array.from(sceneNodeByHash.values())
+        .filter((node) => node.refs.length === 0)
+        .map((node) => ({
+          id: createCommitSelectionId(node.hash),
+          hash: node.hash,
+          name: node.hash,
+          revision: node.hash,
+          label: node.hash.slice(0, 8),
+          kind: 'commit'
+        }));
+
+      return [...refTargets, ...commitTargets];
+    }
+
+    function getStructuralNodeTarget(hash) {
+      return getSelectionTarget(createCommitSelectionId(hash));
+    }
+
+    function toggleSelection(selectionId, additive) {
+      const existingIndex = selected.indexOf(selectionId);
+      if (!additive && selected.length === 1 && existingIndex === 0) {
+        selected.splice(0, selected.length);
+      } else if (!additive) {
+        selected.splice(0, selected.length, selectionId);
+      } else if (existingIndex >= 0) {
+        selected.splice(existingIndex, 1);
+      } else if (selected.length < 2) {
+        selected.push(selectionId);
+      } else {
+        selected.splice(0, selected.length, selected[1], selectionId);
+      }
+    }
+
+    function isNodeGripEvent(event) {
+      const target = event.target;
+      return !!(target && typeof target.closest === 'function' && target.closest('[data-node-grip]'));
     }
 
     function showStatus(message, isError) {

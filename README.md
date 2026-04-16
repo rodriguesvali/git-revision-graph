@@ -23,12 +23,12 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, remote branch visibility, stash visibility, branching/merge visibility, and in-graph search
 - Fetch the active repository directly from the graph toolbar and Command Palette
 - Curved graph connectors with graph centering inside the board for denser repositories
-- Compare between two selected references, including changed files, unified diff, and revision log actions
-- Compare a selected reference against the current worktree
+- Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
+- Compare a selected reference or unreferenced commit against the current worktree
 - Persistent `Compare Results` view for reviewing changed files across ref-to-ref and ref-to-worktree comparisons, including context actions to compare with base, compare with worktree, and restore worktree files to the selected ref
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
-- Create a new local branch from a local branch, remote branch, or tag
+- Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them

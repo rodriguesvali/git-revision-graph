@@ -315,8 +315,8 @@ export class RevisionGraphController implements vscode.Disposable {
         if (this.currentRepository) {
           await compareResolvedRefs(
             this.currentRepository,
-            { refName: message.baseRefName, label: message.baseRefName },
-            { refName: message.compareRefName, label: message.compareRefName },
+            { refName: message.baseRevision, label: message.baseLabel },
+            { refName: message.compareRevision, label: message.compareLabel },
             this.actionServices
           );
         }
@@ -325,8 +325,8 @@ export class RevisionGraphController implements vscode.Disposable {
         if (this.currentRepository) {
           const picked = await showRevisionLogQuickPick(
             this.currentRepository,
-            message.baseRefName,
-            message.compareRefName,
+            message.baseRevision,
+            message.compareRevision,
             this.limitPolicy.initialLimit,
             this.backend
           );
@@ -337,14 +337,19 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'open-unified-diff':
         if (this.currentRepository) {
-          await openUnifiedDiffDocument(this.currentRepository, message.baseRefName, message.compareRefName, this.backend);
+          await openUnifiedDiffDocument(
+            this.currentRepository,
+            message.baseRevision,
+            message.compareRevision,
+            this.backend
+          );
         }
         return;
       case 'compare-with-worktree':
         if (this.currentRepository) {
           await compareResolvedRefWithWorktree(
             this.currentRepository,
-            { refName: message.refName, label: message.refName },
+            { refName: message.revision, label: message.label },
             this.actionServices
           );
         }
@@ -362,7 +367,7 @@ export class RevisionGraphController implements vscode.Disposable {
         if (this.currentRepository) {
 	          await createBranchFromResolvedReference(
 	            this.currentRepository,
-	            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
+	            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
 	            this.actionServices
 	          );
         }

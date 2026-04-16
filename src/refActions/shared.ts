@@ -21,6 +21,10 @@ export function getSuggestedLocalBranchName(refName: string): string {
 }
 
 export function getSuggestedNewBranchName(refName: string, kind: RefActionKind): string {
+  if (kind === 'commit') {
+    return `commit-${refName.slice(0, 8)}`;
+  }
+
   if (kind === 'head' || kind === 'branch') {
     return `${refName}-copy`;
   }

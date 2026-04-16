@@ -2,7 +2,7 @@ import { ChangeQuickPickItem } from '../changePresentation';
 import { Repository } from '../git';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 
-export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag';
+export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'commit';
 
 export interface RefSelection {
   readonly refName: string;

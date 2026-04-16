@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Refreshed the extension artwork by adding a new SVG source asset and updating the packaged PNG icon.
 - Added context actions for compare result files to reopen the base diff, compare a result against the worktree, and restore worktree files to the selected revision.
+- Added graph actions for visible unreferenced commits so they can be compared directly and used as branch starting points without creating a temporary ref first.
 
 ### Planned Focus
 

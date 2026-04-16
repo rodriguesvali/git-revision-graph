@@ -25,11 +25,18 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function syncSelection() {
+      const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
+      const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
       for (const element of document.querySelectorAll('[data-ref-id]')) {
         const refId = element.getAttribute('data-ref-id');
         element.classList.toggle('base', refId === selected[0]);
         element.classList.toggle('compare', refId === selected[1]);
         element.classList.toggle('has-compare', selected.length === 2 && refId === selected[0]);
+      }
+      for (const [hash, element] of nodeElements.entries()) {
+        element.classList.toggle('base-target', !!baseTarget && baseTarget.hash === hash);
+        element.classList.toggle('has-compare', selected.length === 2 && !!baseTarget && baseTarget.hash === hash);
+        element.classList.toggle('compare-target', !!compareTarget && compareTarget.hash === hash);
       }
       syncRelationshipHighlights();
       syncSearchHighlights();
@@ -191,8 +198,26 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function syncRelationshipHighlights() {
-      const anchorReference = selected[0] ? getReference(selected[0]) : undefined;
-      const anchorHash = anchorReference ? anchorReference.hash : null;
+      const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : undefined;
+      const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : undefined;
+
+      if (baseTarget && compareTarget) {
+        const selectedHashes = new Set(
+          [baseTarget.hash, compareTarget.hash].filter((hash) => typeof hash === 'string' && hash.length > 0)
+        );
+
+        for (const [hash, element] of nodeElements.entries()) {
+          element.classList.toggle('selected', selectedHashes.has(hash));
+          element.classList.remove('related', 'ancestor-related', 'descendant-related');
+        }
+
+        for (const element of edgeElements) {
+          element.classList.remove('related', 'ancestor-path', 'descendant-path', 'muted');
+        }
+        return;
+      }
+
+      const anchorHash = baseTarget ? baseTarget.hash : null;
       const ancestorPath = anchorHash ? getPrimaryAncestorPath(anchorHash) : [];
       const descendantPath = anchorHash ? tracePrimaryPath(anchorHash, 'descendant') : [];
       const ancestorHashes = new Set(ancestorPath);
@@ -226,8 +251,9 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function openContextMenu(clientX, clientY, target) {
-      const base = selected[0] ? getReference(selected[0]) : undefined;
-      const compare = selected[1] ? getReference(selected[1]) : undefined;
+      const base = selected[0] ? getSelectionTarget(selected[0]) : undefined;
+      const compare = selected[1] ? getSelectionTarget(selected[1]) : undefined;
+      const targetLabel = target.label || target.name;
 	      const isCurrentHead = target.kind === 'head' || (
 	        target.kind === 'branch'
 	        && !!currentHeadName
@@ -245,22 +271,24 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Compare', () => {
           vscode.postMessage({
             type: 'compare-selected',
-            baseRefName: base.name,
-            compareRefName: compare.name
+            baseRevision: base.revision,
+            baseLabel: base.label,
+            compareRevision: compare.revision,
+            compareLabel: compare.label
           });
         });
         appendMenuItem('Show Log', () => {
           vscode.postMessage({
             type: 'show-log',
-            baseRefName: base.name,
-            compareRefName: compare.name
+            baseRevision: base.revision,
+            compareRevision: compare.revision
           });
         });
         appendMenuItem('Unified Diff', () => {
           vscode.postMessage({
             type: 'open-unified-diff',
-            baseRefName: base.name,
-            compareRefName: compare.name
+            baseRevision: base.revision,
+            compareRevision: compare.revision
           });
         });
         appendMenuItem('Clear Selection', () => {
@@ -269,10 +297,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         });
       } else {
         appendMenuItem('Compare With Worktree', () => {
-          vscode.postMessage({ type: 'compare-with-worktree', refName: target.name });
+          vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
         });
-	        if (target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
-	          appendMenuItem('Checkout to: ' + target.name, () => {
+	        if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
+	          appendMenuItem('Checkout to: ' + targetLabel, () => {
 	            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
 	          });
 	        }
@@ -283,16 +311,21 @@ export function renderRevisionGraphScriptInteractions(): string {
         }
 	        if (target.kind !== 'stash') {
 	          appendMenuItem('Create New Branch', () => {
-	            vscode.postMessage({ type: 'create-branch', refName: target.name, refKind: target.kind });
+	            vscode.postMessage({
+                type: 'create-branch',
+                revision: target.revision,
+                label: target.label,
+                refKind: target.kind
+              });
 	          });
 	        }
-	        if (!isCurrentHead && target.kind !== 'stash') {
+	        if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
 	          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
 	            const deleteLabel = target.kind === 'tag'
-	              ? 'Delete Tag: ' + target.name
+	              ? 'Delete Tag: ' + targetLabel
               : target.kind === 'remote'
-                ? 'Delete Remote Branch: ' + target.name
-                : 'Delete Branch: ' + target.name;
+                ? 'Delete Remote Branch: ' + targetLabel
+                : 'Delete Branch: ' + targetLabel;
             appendMenuItem(deleteLabel, () => {
               vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
             });

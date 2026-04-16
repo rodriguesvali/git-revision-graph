@@ -172,7 +172,37 @@ test('renders checkout menu actions with the destination branch name', () => {
     html,
     /const isCurrentHead = target\.kind === 'head' \|\| \(\s*target\.kind === 'branch'\s*&& !!currentHeadName\s*&& target\.name === currentHeadName\s*\);/s
   );
-  assert.match(html, /if \(target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ target\.name, \(\) => \{/s);
+  assert.match(html, /if \(target\.kind !== 'commit' && target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ targetLabel, \(\) => \{/s);
+});
+
+test('renders structural commit actions for compare and branch creation', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function createCommitSelectionId\(hash\) \{/);
+  assert.match(html, /function getStructuralNodeTarget\(hash\) \{/);
+  assert.match(html, /type: 'compare-with-worktree', revision: target\.revision, label: target\.label/);
+  assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
+  assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
+  assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
+  assert.match(html, /\.node-structural\.base-target\.has-compare \.node-base-badge/);
+  assert.match(html, /right: -8px;/);
+  assert.match(html, /transform: translate\(100%, -50%\);/);
+  assert.match(html, /overflow: visible;/);
+});
+
+test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /if \(baseTarget && compareTarget\) \{/);
+  assert.match(html, /const selectedHashes = new Set\(/);
+  assert.match(html, /element\.classList\.toggle\('selected', selectedHashes\.has\(hash\)\);/);
+  assert.match(html, /element\.classList\.remove\('related', 'ancestor-related', 'descendant-related'\);/);
+  assert.match(html, /element\.classList\.remove\('related', 'ancestor-path', 'descendant-path', 'muted'\);/);
+  assert.match(html, /const ancestorPath = anchorHash \? getPrimaryAncestorPath\(anchorHash\) : \[\];/);
+  assert.match(html, /element\.classList\.toggle\('selected', anchorHash === hash\);/);
+  assert.match(html, /element\.classList\.toggle\('related', !!anchorHash && anchorHash !== hash && relatedHashes\.has\(hash\)\);/);
+  assert.match(html, /element\.classList\.toggle\('muted', !!anchorHash && !isRelated\);/);
 });
 
 test('renders straighter edges and compact structural node styling in the shell runtime', () => {

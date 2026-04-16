@@ -179,6 +179,10 @@ export function renderRevisionGraphStyles(): string {
       border-color: color-mix(in srgb, var(--accent) 44%, rgba(0, 0, 0, 0.18));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
     }
+    .node.compare-target {
+      outline: 2px dashed color-mix(in srgb, var(--accent) 48%, rgba(0, 0, 0, 0.18));
+      outline-offset: 1px;
+    }
     .node-head { background: var(--node-head); color: white; }
     .node-branch { background: var(--node-branch); }
     .node-tag { background: var(--node-tag); }
@@ -571,10 +575,31 @@ export function renderRevisionGraphStyles(): string {
       color: color-mix(in srgb, var(--node-text-dark) 88%, black 12%);
       font-weight: 600;
     }
+    .node-base-badge {
+      display: none;
+      position: absolute;
+      top: 50%;
+      right: -8px;
+      transform: translate(100%, -50%);
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 28%, white 72%);
+      color: color-mix(in srgb, var(--text) 82%, black 18%);
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 700;
+      pointer-events: none;
+    }
     .node-structural {
       min-width: ${STRUCTURAL_NODE_MIN_WIDTH}px;
       background: color-mix(in srgb, var(--panel) 92%, #c6ccd8 8%);
       color: var(--node-text-dark);
+      cursor: pointer;
+      overflow: visible;
+    }
+    .node-structural.base-target.has-compare .node-base-badge {
+      display: inline-flex;
     }
     .node-structural .node-summary {
       border-top: 0;
