@@ -14,6 +14,16 @@ All notable changes to this project will be documented in this file.
 
 - Define the final `0.0.15` scope around graph navigation, release workflows, and daily-driver UX polish.
 
+## 0.0.16
+
+### In Progress
+
+- Started the next graph-focused release after the recent compare, commit-action, and selection UX refinements.
+
+### Planned Focus
+
+- Continue improving graph interaction quality, especially around commit selection, visual clarity, and low-friction daily review workflows.
+
 ## 0.0.14
 
 ### Highlights
