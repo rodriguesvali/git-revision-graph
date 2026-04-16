@@ -4,9 +4,7 @@ import assert from 'node:assert/strict';
 import {
   applyCompareResultsWorktreeRefresh,
   buildCompareResultItems,
-  buildCompareResultsMessage,
-  getCompareResultContextValue,
-  shouldOpenCompareResultOnClick
+  buildCompareResultsMessage
 } from '../src/compareResultsShared';
 import { createChange, createRepository } from './fakes';
 import { Status } from '../src/git';
@@ -24,8 +22,7 @@ test('buildCompareResultItems marks ref-to-ref entries with the between context 
 
   assert.equal(items.length, 1);
   assert.equal(items[0].label, 'src/b.ts');
-  assert.equal(getCompareResultContextValue(items[0]), 'compare-result-between-file');
-  assert.equal(shouldOpenCompareResultOnClick(items[0]), true);
+  assert.match(items[0].id, /^src\/b\.ts::Modified::main::release\/2026::$/);
 });
 
 test('buildCompareResultItems marks worktree entries with the worktree context value', () => {
@@ -41,8 +38,7 @@ test('buildCompareResultItems marks worktree entries with the worktree context v
 
   assert.equal(items.length, 1);
   assert.equal(items[0].worktreeLabel, 'main');
-  assert.equal(getCompareResultContextValue(items[0]), 'compare-result-worktree-file');
-  assert.equal(shouldOpenCompareResultOnClick(items[0]), false);
+  assert.match(items[0].id, /^src\/a\.ts::Modified::::::main$/);
 });
 
 test('applyCompareResultsWorktreeRefresh clears the view state when the worktree becomes aligned', () => {

@@ -25,7 +25,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
-- Persistent `Compare Results` view for reviewing changed files across ref-to-ref and ref-to-worktree comparisons, including context actions to compare with base, compare with worktree, and restore worktree files to the selected ref
+- On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
@@ -220,7 +220,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Show the revision log between two selected references
 - Open the unified diff between two selected references
 
-The Activity Bar container also includes a persistent `Compare Results` view that keeps the latest compare session available for multi-file review.
+The Activity Bar container also includes an on-demand `Compare Results` view that appears when a compare produces results, keeps the latest compare session available for multi-file review, and can be closed without clearing the stored result immediately.
 
 ## Known Limitations
 

@@ -40,7 +40,6 @@ export interface CompareResultsPresenter {
     target: RefSelection,
     changes: readonly ChangeQuickPickItem['change'][]
   ): Promise<void>;
-  clear(): Promise<void>;
 }
 
 export interface PreparedRefreshHandle {

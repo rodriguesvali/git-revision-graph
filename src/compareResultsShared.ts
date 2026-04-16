@@ -21,6 +21,7 @@ export type CompareResultsState =
   };
 
 export interface CompareResultItem {
+  readonly id: string;
   readonly repository: Repository;
   readonly change: Change;
   readonly label: string;
@@ -44,6 +45,13 @@ export function buildCompareResultItems(
     .map<CompareResultItem>((change) => {
       const relativePath = getRepositoryRelativeChangePath(repository.rootUri.fsPath, change);
       return {
+        id: [
+          relativePath,
+          getStatusLabel(change.status),
+          leftRef ?? '',
+          rightRef ?? '',
+          worktreeRef ?? ''
+        ].join('::'),
         repository,
         change,
         label: relativePath,
@@ -67,14 +75,6 @@ export function buildCompareResultsMessage(state: CompareResultsState): string {
     case 'worktree':
       return `${state.target.label} <-> worktree • ${formatFileCount(state.changes.length)}`;
   }
-}
-
-export function getCompareResultContextValue(item: CompareResultItem): string {
-  return item.worktreeRef ? 'compare-result-worktree-file' : 'compare-result-between-file';
-}
-
-export function shouldOpenCompareResultOnClick(item: CompareResultItem): boolean {
-  return !item.worktreeRef;
 }
 
 export interface CompareResultsWorktreeRefreshOutcome {

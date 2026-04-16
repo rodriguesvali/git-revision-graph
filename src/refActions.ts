@@ -48,7 +48,6 @@ export async function compareResolvedRefs(
   try {
     const changes = await repository.diffBetween(left.refName, right.refName);
     if (changes.length === 0) {
-      await services.compareResultsPresenter.clear();
       services.ui.showInformationMessage(`No differences found between ${left.label} and ${right.label}.`);
       return;
     }
@@ -66,7 +65,6 @@ export async function compareResolvedRefWithWorktree(
   try {
     const changes = await repository.diffWith(target.refName);
     if (changes.length === 0) {
-      await services.compareResultsPresenter.clear();
       services.ui.showInformationMessage(`The worktree is already aligned with ${target.label}.`);
       return;
     }

@@ -9,65 +9,41 @@ type MenuContribution = {
   readonly group?: string;
 };
 
-test('package manifest contributes compare result context commands', () => {
+test('package manifest keeps the hide compare results command contribution', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
       readonly commands: Array<{ readonly command: string }>;
-      readonly menus: {
-        readonly ['view/item/context']: MenuContribution[];
-      };
     };
   };
 
   assert.ok(
-    manifest.contributes.commands.some((command) => command.command === 'gitRefs.compareResultCompareWithBase')
+    manifest.contributes.commands.some((command) => command.command === 'gitRefs.hideCompareResults')
   );
-  assert.ok(
-    manifest.contributes.commands.some((command) => command.command === 'gitRefs.compareResultCompareWithWorktree')
-  );
-  assert.ok(
-    manifest.contributes.commands.some((command) => command.command === 'gitRefs.compareResultRevertToThis')
-  );
+});
 
-  const itemMenus = manifest.contributes.menus['view/item/context'];
+test('package manifest contributes compare results as an on-demand webview with a hide action', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly views: {
+        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
+      };
+      readonly menus: {
+        readonly ['view/title']: MenuContribution[];
+      };
+    };
+  };
+
+  const compareResultsView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.compareResultsView');
+  assert.equal(compareResultsView?.type, 'webview');
+  assert.equal(compareResultsView?.when, 'gitRefs.compareResultsVisible');
+
+  const titleMenus = manifest.contributes.menus['view/title'];
   assert.ok(
-    itemMenus.some(
+    titleMenus.some(
       (menu) =>
-        menu.command === 'gitRefs.compareResultCompareWithBase'
-        && menu.when === 'view == gitRefs.compareResultsView && viewItem == compare-result-between-file'
-        && menu.group === 'compare@1'
-    )
-  );
-  assert.equal(
-    itemMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.compareResultCompareWithWorktree'
-        && menu.when === 'view == gitRefs.compareResultsView && viewItem == compare-result-between-file'
-    ),
-    false
-  );
-  assert.ok(
-    itemMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.compareResultCompareWithBase'
-        && menu.when === 'view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file'
-        && menu.group === 'compare@1'
-    )
-  );
-  assert.ok(
-    itemMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.compareResultCompareWithWorktree'
-        && menu.when === 'view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file'
-        && menu.group === 'compare@2'
-    )
-  );
-  assert.ok(
-    itemMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.compareResultRevertToThis'
-        && menu.when === 'view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file'
-        && menu.group === 'compare@3'
+        menu.command === 'gitRefs.hideCompareResults'
+        && menu.when === 'view == gitRefs.compareResultsView'
+        && menu.group === 'navigation'
     )
   );
 });

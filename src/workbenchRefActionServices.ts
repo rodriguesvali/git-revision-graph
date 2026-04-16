@@ -63,8 +63,7 @@ export function createWorkbenchRefActionServices(
     },
     compareResultsPresenter: compareResultsPresenter ?? {
       async showBetweenRefs() {},
-      async showWithWorktree() {},
-      async clear() {}
+      async showWithWorktree() {}
     },
     refreshController: {
       prepare(request) {

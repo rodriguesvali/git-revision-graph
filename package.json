@@ -59,7 +59,9 @@
         {
           "id": "gitRefs.compareResultsView",
           "name": "Compare Results",
-          "visibility": "collapsed"
+          "type": "webview",
+          "visibility": "collapsed",
+          "when": "gitRefs.compareResultsVisible"
         }
       ]
     },
@@ -101,21 +103,9 @@
         "icon": "$(repo)"
       },
       {
-        "command": "gitRefs.clearCompareResults",
-        "title": "Clear Compare Results",
-        "icon": "$(clear-all)"
-      },
-      {
-        "command": "gitRefs.compareResultCompareWithBase",
-        "title": "Compare with Base"
-      },
-      {
-        "command": "gitRefs.compareResultCompareWithWorktree",
-        "title": "Compare with Worktree"
-      },
-      {
-        "command": "gitRefs.compareResultRevertToThis",
-        "title": "Revert to This"
+        "command": "gitRefs.hideCompareResults",
+        "title": "Hide Compare Results",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -136,31 +126,9 @@
           "group": "navigation@3"
         },
         {
-          "command": "gitRefs.clearCompareResults",
+          "command": "gitRefs.hideCompareResults",
           "when": "view == gitRefs.compareResultsView",
           "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "gitRefs.compareResultCompareWithBase",
-          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-between-file",
-          "group": "compare@1"
-        },
-        {
-          "command": "gitRefs.compareResultCompareWithBase",
-          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
-          "group": "compare@1"
-        },
-        {
-          "command": "gitRefs.compareResultCompareWithWorktree",
-          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
-          "group": "compare@2"
-        },
-        {
-          "command": "gitRefs.compareResultRevertToThis",
-          "when": "view == gitRefs.compareResultsView && viewItem == compare-result-worktree-file",
-          "group": "compare@3"
         }
       ]
     }

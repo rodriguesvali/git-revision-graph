@@ -20,19 +20,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   const compareResultsProvider = new CompareResultsViewProvider();
-  const compareResultsView = vscode.window.createTreeView(COMPARE_RESULTS_VIEW_ID, {
-    treeDataProvider: compareResultsProvider,
-    showCollapseAll: false
-  });
-  compareResultsProvider.attachView(compareResultsView);
-
+  await compareResultsProvider.initialize();
   const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider);
   const services = createCommandServices(revisionGraphProvider, compareResultsProvider);
 
   context.subscriptions.push(
     compareResultsProvider,
-    compareResultsView,
     revisionGraphProvider,
+    vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
@@ -60,20 +55,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('gitRefs.chooseRevisionGraphRepository', async () => {
       await revisionGraphProvider.chooseRepository();
     }),
-    vscode.commands.registerCommand('gitRefs.openCompareResult', async (item) => {
-      await compareResultsProvider.openItem(item);
-    }),
-    vscode.commands.registerCommand('gitRefs.compareResultCompareWithBase', async (item) => {
-      await compareResultsProvider.compareWithBase(item);
-    }),
-    vscode.commands.registerCommand('gitRefs.compareResultCompareWithWorktree', async (item) => {
-      await compareResultsProvider.compareWithWorktree(item);
-    }),
-    vscode.commands.registerCommand('gitRefs.compareResultRevertToThis', async (item) => {
-      await compareResultsProvider.revertToItem(item);
-    }),
-    vscode.commands.registerCommand('gitRefs.clearCompareResults', async () => {
-      await compareResultsProvider.clear();
+    vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
+      await compareResultsProvider.hide();
     })
   );
 }

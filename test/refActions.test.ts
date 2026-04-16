@@ -29,7 +29,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
-  readonly compareResultsClears: number;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -44,7 +43,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
-  let compareResultsClears = 0;
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -105,9 +103,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
           refA: target.refName,
           changeCount: changes.length
         });
-      },
-      async clear() {
-        compareResultsClears += 1;
       }
     },
     refreshController: {
@@ -153,9 +148,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     confirmRequests,
     diffCalls,
     compareResultsCalls,
-    get compareResultsClears() {
-      return compareResultsClears;
-    },
     deletedRemoteBranches,
     upstreamClears,
     prepareRequests,

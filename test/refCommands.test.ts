@@ -16,7 +16,6 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   readonly errorMessages: string[];
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
-  readonly compareResultsClears: number;
   readonly refreshCalls: number;
   readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
   readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
@@ -25,7 +24,6 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   const errorMessages: string[] = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
-  let compareResultsClears = 0;
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
 
   const services: RefCommandServices = {
@@ -82,9 +80,6 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
           refA: target.refName,
           changeCount: changes.length
         });
-      },
-      async clear() {
-        compareResultsClears += 1;
       }
     },
     refreshController: {
@@ -115,9 +110,6 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     errorMessages,
     diffCalls,
     compareResultsCalls,
-    get compareResultsClears() {
-      return compareResultsClears;
-    },
     refreshRequests,
     get refreshIntents() {
       return refreshRequests.map((request) => request.intent);
@@ -167,7 +159,6 @@ test('compareWithWorktree reports when there are no changes', async () => {
   await compareWithWorktree(createApi([repository]), undefined, harness.services);
 
   assert.deepEqual(harness.diffCalls, []);
-  assert.equal(harness.compareResultsClears, 1);
   assert.equal(harness.infoMessages[0], 'The worktree is already aligned with main.');
 });
 

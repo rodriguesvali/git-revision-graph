@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-import { getTargetUri } from './changePresentation';
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
 import {
@@ -8,10 +7,9 @@ import {
   buildCompareResultItems,
   buildCompareResultsMessage,
   CompareResultItem,
-  CompareResultsState,
-  getCompareResultContextValue,
-  shouldOpenCompareResultOnClick
+  CompareResultsState
 } from './compareResultsShared';
+import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
 import type { RefSelection } from './refActions';
 import {
   openChangeDiffBetweenRefs,
@@ -20,21 +18,47 @@ import {
 } from './workbenchRefActionServices';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
+export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
 
-export class CompareResultsViewProvider implements vscode.TreeDataProvider<CompareResultItem>, vscode.Disposable {
-  private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<CompareResultItem | undefined | void>();
-  readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
+type CompareResultsWebviewMessage =
+  | { readonly type: 'ready' }
+  | { readonly type: 'base'; readonly itemId: string }
+  | { readonly type: 'worktree'; readonly itemId: string }
+  | { readonly type: 'revert'; readonly itemId: string };
 
+export class CompareResultsViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
-  private view: vscode.TreeView<CompareResultItem> | undefined;
+  private view: vscode.WebviewView | undefined;
+  private readonly viewDisposables: vscode.Disposable[] = [];
+  private isVisible: boolean | undefined;
 
-  attachView(view: vscode.TreeView<CompareResultItem>): void {
-    this.view = view;
-    this.syncViewState();
+  async initialize(): Promise<void> {
+    await this.updateVisibility(false);
   }
 
   dispose(): void {
-    this.onDidChangeTreeDataEmitter.dispose();
+    this.disposeViewDisposables();
+  }
+
+  async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
+    this.disposeViewDisposables();
+    this.view = view;
+    view.webview.options = {
+      enableScripts: true
+    };
+    view.webview.html = renderCompareResultsWebviewHtml();
+    this.viewDisposables.push(
+      view.onDidDispose(() => {
+        if (this.view === view) {
+          this.view = undefined;
+        }
+        this.disposeViewDisposables();
+      }),
+      view.webview.onDidReceiveMessage(async (message: CompareResultsWebviewMessage) => {
+        await this.handleMessage(message);
+      })
+    );
+    this.postState();
   }
 
   async showBetweenRefs(
@@ -50,6 +74,7 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
       right,
       changes: [...changes]
     };
+    await this.updateVisibility(true);
     this.refresh();
     await this.focus();
   }
@@ -65,58 +90,15 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
       target,
       changes: [...changes]
     };
+    await this.updateVisibility(true);
     this.refresh();
     await this.focus();
   }
 
-  async clear(): Promise<void> {
+  async hide(): Promise<void> {
     this.state = { kind: 'empty' };
     this.refresh();
-  }
-
-  getTreeItem(element: CompareResultItem): vscode.TreeItem {
-    const treeItem = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
-    treeItem.description = element.detail;
-    treeItem.tooltip = `${element.description}\n${element.detail}`;
-    treeItem.resourceUri = getTargetUri(element.change);
-    if (shouldOpenCompareResultOnClick(element)) {
-      treeItem.command = {
-        command: 'gitRefs.openCompareResult',
-        title: 'Open Compare Result',
-        arguments: [element]
-      };
-    }
-    treeItem.contextValue = getCompareResultContextValue(element);
-    return treeItem;
-  }
-
-  getChildren(element?: CompareResultItem): CompareResultItem[] {
-    if (element) {
-      return [];
-    }
-
-    switch (this.state.kind) {
-      case 'empty':
-        return [];
-      case 'between':
-        return buildCompareResultItems(
-          this.state.repository,
-          this.state.changes,
-          this.state.left.refName,
-          this.state.right.refName,
-          undefined,
-          undefined
-        );
-      case 'worktree':
-        return buildCompareResultItems(
-          this.state.repository,
-          this.state.changes,
-          undefined,
-          undefined,
-          this.state.target.refName,
-          this.state.target.label
-        );
-    }
+    await this.updateVisibility(false);
   }
 
   async openItem(item: CompareResultItem): Promise<void> {
@@ -167,20 +149,112 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
   }
 
   private refresh(): void {
-    this.syncViewState();
-    this.onDidChangeTreeDataEmitter.fire();
+    this.postState();
   }
 
-  private syncViewState(): void {
+  private postState(): void {
     if (!this.view) {
       return;
     }
 
-    this.view.message = buildCompareResultsMessage(this.state);
+    void this.view.webview.postMessage({
+      type: 'state',
+      state: this.createWebviewState()
+    });
+  }
+
+  private createWebviewState(): CompareResultsWebviewState {
+    if (this.state.kind === 'empty') {
+      return {
+        kind: 'empty',
+        summary: '',
+        emptyMessage: buildCompareResultsMessage(this.state),
+        items: []
+      };
+    }
+
+    return {
+      kind: 'results',
+      summary: buildCompareResultsMessage(this.state),
+      items: this.getItems().map((item) => this.toWebviewItem(item))
+    };
+  }
+
+  private toWebviewItem(item: CompareResultItem): CompareResultsWebviewItem {
+    return {
+      id: item.id,
+      path: item.label,
+      status: item.detail,
+      leftRef: item.leftRef,
+      rightRef: item.rightRef,
+      worktreeRef: item.worktreeRef,
+      worktreeLabel: item.worktreeLabel
+    };
+  }
+
+  private getItems(): CompareResultItem[] {
+    switch (this.state.kind) {
+      case 'empty':
+        return [];
+      case 'between':
+        return buildCompareResultItems(
+          this.state.repository,
+          this.state.changes,
+          this.state.left.refName,
+          this.state.right.refName,
+          undefined,
+          undefined
+        );
+      case 'worktree':
+        return buildCompareResultItems(
+          this.state.repository,
+          this.state.changes,
+          undefined,
+          undefined,
+          this.state.target.refName,
+          this.state.target.label
+        );
+    }
   }
 
   private async focus(): Promise<void> {
     await vscode.commands.executeCommand(`${COMPARE_RESULTS_VIEW_ID}.focus`);
+  }
+
+  private async handleMessage(message: CompareResultsWebviewMessage): Promise<void> {
+    switch (message.type) {
+      case 'ready':
+        this.postState();
+        return;
+      case 'base':
+        {
+          const item = this.findItem(message.itemId);
+          if (item) {
+            await this.compareWithBase(item);
+          }
+        }
+        return;
+      case 'worktree':
+        {
+          const item = this.findItem(message.itemId);
+          if (item) {
+            await this.compareWithWorktree(item);
+          }
+        }
+        return;
+      case 'revert':
+        {
+          const item = this.findItem(message.itemId);
+          if (item) {
+            await this.revertToItem(item);
+          }
+        }
+        return;
+    }
+  }
+
+  private findItem(itemId: string): CompareResultItem | undefined {
+    return this.getItems().find((item) => item.id === itemId);
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {
@@ -191,10 +265,33 @@ export class CompareResultsViewProvider implements vscode.TreeDataProvider<Compa
     }
 
     this.state = outcome.nextState;
+    if (this.state.kind === 'empty') {
+      this.refresh();
+      await this.updateVisibility(false);
+      if (outcome.infoMessage) {
+        void vscode.window.showInformationMessage(outcome.infoMessage);
+      }
+      return;
+    }
     this.refresh();
 
     if (outcome.infoMessage) {
       void vscode.window.showInformationMessage(outcome.infoMessage);
     }
+  }
+
+  private disposeViewDisposables(): void {
+    while (this.viewDisposables.length > 0) {
+      this.viewDisposables.pop()?.dispose();
+    }
+  }
+
+  private async updateVisibility(visible: boolean): Promise<void> {
+    if (this.isVisible === visible) {
+      return;
+    }
+
+    this.isVisible = visible;
+    await vscode.commands.executeCommand('setContext', COMPARE_RESULTS_VISIBLE_CONTEXT, visible);
   }
 }
