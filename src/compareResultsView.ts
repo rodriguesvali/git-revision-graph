@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
@@ -23,6 +24,8 @@ export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
 type CompareResultsWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'base'; readonly itemId: string }
+  | { readonly type: 'copyFileName'; readonly itemId: string }
+  | { readonly type: 'copyFullPath'; readonly itemId: string }
   | { readonly type: 'worktree'; readonly itemId: string }
   | { readonly type: 'revert'; readonly itemId: string };
 
@@ -184,6 +187,7 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     return {
       id: item.id,
       path: item.label,
+      fullPath: item.change.renameUri?.fsPath ?? item.change.uri.fsPath,
       status: item.detail,
       leftRef: item.leftRef,
       rightRef: item.rightRef,
@@ -231,6 +235,22 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
           const item = this.findItem(message.itemId);
           if (item) {
             await this.compareWithBase(item);
+          }
+        }
+        return;
+      case 'copyFileName':
+        {
+          const item = this.findItem(message.itemId);
+          if (item) {
+            await vscode.env.clipboard.writeText(path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath));
+          }
+        }
+        return;
+      case 'copyFullPath':
+        {
+          const item = this.findItem(message.itemId);
+          if (item) {
+            await vscode.env.clipboard.writeText(item.change.renameUri?.fsPath ?? item.change.uri.fsPath);
           }
         }
         return;

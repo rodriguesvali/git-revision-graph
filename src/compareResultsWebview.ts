@@ -3,6 +3,7 @@ import { createNonce } from './revisionGraph/webview/shared';
 export interface CompareResultsWebviewItem {
   readonly id: string;
   readonly path: string;
+  readonly fullPath: string;
   readonly status: string;
   readonly leftRef: string | undefined;
   readonly rightRef: string | undefined;
@@ -195,6 +196,56 @@ export function renderCompareResultsWebviewHtml(): string {
       outline: none;
       background: var(--vscode-list-hoverBackground);
     }
+    .context-menu-group {
+      position: relative;
+    }
+    .context-menu-parent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 7px;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: default;
+      font-size: 12px;
+    }
+    .context-menu-parent:hover,
+    .context-menu-parent:focus-visible,
+    .context-menu-group:focus-within > .context-menu-parent {
+      outline: none;
+      background: var(--vscode-list-hoverBackground);
+    }
+    .context-menu-chevron {
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+    .context-submenu {
+      position: absolute;
+      top: -6px;
+      left: calc(100% + 6px);
+      min-width: 170px;
+      padding: 6px;
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, transparent));
+      border-radius: 10px;
+      color: inherit;
+      background: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--vscode-widget-shadow, #000) 60%, transparent);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-4px);
+      transition: opacity 90ms ease, transform 90ms ease;
+    }
+    .context-menu-group:hover > .context-submenu,
+    .context-menu-group:focus-within > .context-submenu {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
   </style>
 </head>
 <body>
@@ -380,6 +431,7 @@ export function renderCompareResultsWebviewHtml(): string {
       return items.filter((item) => {
         const candidateValues = [
           item.path,
+          item.fullPath,
           item.status,
           item.leftRef,
           item.rightRef,
@@ -409,6 +461,14 @@ export function renderCompareResultsWebviewHtml(): string {
         actions.push({ action: 'revert', label: 'Revert to This' });
       }
 
+      actions.push({
+        label: 'Copy to Clipboard',
+        submenu: [
+          { action: 'copyFileName', label: 'File Name' },
+          { action: 'copyFullPath', label: 'Full Path' }
+        ]
+      });
+
       return actions;
     }
 
@@ -426,9 +486,24 @@ export function renderCompareResultsWebviewHtml(): string {
       }
 
       contextMenuItemId = itemId;
-      contextMenu.innerHTML = actions.map((entry) =>
-        '<button class="context-menu-button" type="button" data-menu-action="' + escapeHtml(entry.action) + '">' + escapeHtml(entry.label) + '</button>'
-      ).join('');
+      contextMenu.innerHTML = actions.map((entry) => {
+        if (entry.submenu) {
+          return ''
+            + '<div class="context-menu-group">'
+            + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="' + escapeHtml(entry.label) + '">'
+            + '    <span>' + escapeHtml(entry.label) + '</span>'
+            + '    <span class="context-menu-chevron">›</span>'
+            + '  </div>'
+            + '  <div class="context-submenu" role="menu" aria-label="' + escapeHtml(entry.label) + '">'
+            + entry.submenu.map((child) =>
+              '<button class="context-menu-button" type="button" data-menu-action="' + escapeHtml(child.action) + '">' + escapeHtml(child.label) + '</button>'
+            ).join('')
+            + '  </div>'
+            + '</div>';
+        }
+
+        return '<button class="context-menu-button" type="button" data-menu-action="' + escapeHtml(entry.action) + '">' + escapeHtml(entry.label) + '</button>';
+      }).join('');
       contextMenu.hidden = false;
       contextMenu.style.left = '0px';
       contextMenu.style.top = '0px';

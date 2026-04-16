@@ -26,9 +26,15 @@ test('renders compare result actions through a context menu in the webview', () 
   assert.match(html, /Press Shift\+F10 or Enter for actions\./);
   assert.match(html, /function openContextMenuForElement\(itemId, element\)/);
   assert.match(html, /Compare with Base/);
+  assert.match(html, /Copy to Clipboard/);
+  assert.match(html, /File Name/);
+  assert.match(html, /Full Path/);
   assert.match(html, /Compare with Worktree/);
   assert.match(html, /Revert to This/);
+  assert.match(html, /context-menu-group/);
+  assert.match(html, /context-submenu/);
   assert.match(html, /function openContextMenu\(itemId, x, y\)/);
   assert.match(html, /function postAction\(type, itemId\)/);
   assert.match(html, /vscode\.postMessage\(\{ type, itemId \}\)/);
+  assert.match(html, /item\.fullPath/);
 });
