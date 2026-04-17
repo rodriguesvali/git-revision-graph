@@ -78,7 +78,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
   );
   assert.match(
     html,
-    /fetchButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'fetch-current-repository' \}, 'Fetching repository\.\.\.', fetchButton\);/s
+    /fetchButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(\{ type: 'fetch-current-repository' \}\);/s
   );
 });
 

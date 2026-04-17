@@ -35,6 +35,12 @@ import {
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
+  buildRevisionGraphFetchArgs,
+  createRevisionGraphFetchOptionItems,
+  formatRevisionGraphFetchSuccessMessage,
+  RevisionGraphFetchOption
+} from './fetchOptions';
+import {
   createDefaultRevisionGraphProjectionOptions,
   RevisionGraphMessage,
   RevisionGraphViewMetadataPatch,
@@ -461,14 +467,36 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
+    const selectedOptions = await this.pickFetchOptions();
+    if (!selectedOptions) {
+      this.postHostMessage({ type: 'update-state', state: this.currentState });
+      return;
+    }
+
     try {
-      await execGitWithResult(this.currentRepository.rootUri.fsPath, ['fetch', '--prune']);
-      this.actionServices.ui.showInformationMessage(`Fetch completed for ${this.getCurrentRepositoryLabel()}.`);
+      await execGitWithResult(
+        this.currentRepository.rootUri.fsPath,
+        buildRevisionGraphFetchArgs(selectedOptions)
+      );
+      this.actionServices.ui.showInformationMessage(
+        formatRevisionGraphFetchSuccessMessage(this.getCurrentRepositoryLabel(), selectedOptions)
+      );
       await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
     } catch (error) {
       await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
       this.postHostMessage({ type: 'update-state', state: this.currentState });
     }
+  }
+
+  private async pickFetchOptions(): Promise<RevisionGraphFetchOption[] | undefined> {
+    const pickedOptions = await vscode.window.showQuickPick(createRevisionGraphFetchOptionItems(), {
+      canPickMany: true,
+      title: 'Fetch Options',
+      placeHolder: 'Choose optional flags for the current repository fetch',
+      ignoreFocusOut: true
+    });
+
+    return pickedOptions?.map((option) => option.id);
   }
 
   private getCurrentRepositoryLabel(): string {

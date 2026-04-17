@@ -150,7 +150,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (fetchButton) {
       fetchButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching repository...', fetchButton);
+        vscode.postMessage({ type: 'fetch-current-repository' });
       });
     }
     if (reorganizeButton) {

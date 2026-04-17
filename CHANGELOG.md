@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Moved file actions inside `Compare Results` from inline buttons to a right-click context menu, reducing visual noise in large compare lists.
 - Replaced the static `Graph` title with a dynamic `Branch: <name>` header that follows the active `HEAD` branch.
 - Added `Copy Commit Hash` to the graph context menu for any commit node, whether it carries a visible ref or not.
+- Updated `Fetch` so each run can opt into `Prune` and `Tags` before contacting the remote.
 
 ### Planned Focus
 
