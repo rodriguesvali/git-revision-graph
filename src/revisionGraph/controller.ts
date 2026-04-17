@@ -44,6 +44,7 @@ import {
 import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
+import { getRevisionGraphViewTitle } from './viewTitle';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -190,6 +191,7 @@ export class RevisionGraphController implements vscode.Disposable {
   async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
     this.disposeViewDisposables();
     this.view = view;
+    this.syncViewTitle();
     this.viewDisposables.push(
       view.onDidDispose(() => {
         if (this.view === view) {
@@ -553,6 +555,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     this.currentRepository = repository;
+    this.syncViewTitle();
   }
 
   private createCurrentRepositoryRefreshRequest(intent: RevisionGraphRefreshIntent) {
@@ -661,5 +664,13 @@ export class RevisionGraphController implements vscode.Disposable {
       baseCanvasWidth: state.baseCanvasWidth,
       baseCanvasHeight: state.baseCanvasHeight
     };
+  }
+
+  private syncViewTitle(): void {
+    if (!this.view) {
+      return;
+    }
+
+    this.view.title = getRevisionGraphViewTitle(this.currentRepository);
   }
 }

@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Reworked `Compare Results` into a dedicated webview so the file list now has a fixed inline filter box above the results, along with inline compare and restore actions.
 - `Compare Results` now stays hidden until a compare produces results, and the title action now closes the view instead of clearing the file list explicitly.
 - Moved file actions inside `Compare Results` from inline buttons to a right-click context menu, reducing visual noise in large compare lists.
+- Replaced the static `Graph` title with a dynamic `Branch: <name>` header that follows the active `HEAD` branch.
 
 ### Planned Focus
 

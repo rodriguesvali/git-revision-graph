@@ -19,7 +19,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 ## Current Features
 
 - Dedicated `GIT Revision Graph` Activity Bar container
-- `Graph` view for recent commits across visible refs
+- Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, remote branch visibility, stash visibility, branching/merge visibility, and in-graph search
 - Fetch the active repository directly from the graph toolbar and Command Palette
 - Curved graph connectors with graph centering inside the board for denser repositories
