@@ -141,9 +141,7 @@ export function renderCompareResultsWebviewHtml(): string {
       background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 45%, var(--vscode-list-hoverBackground));
     }
     .row:focus-visible {
-      outline: 1px solid var(--vscode-focusBorder);
-      outline-offset: 1px;
-      border-color: var(--vscode-focusBorder);
+      outline: none;
       background: color-mix(in srgb, var(--vscode-list-focusOutline) 18%, var(--vscode-list-hoverBackground));
     }
     .file-entry {
