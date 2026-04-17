@@ -26,6 +26,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
+- Graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit

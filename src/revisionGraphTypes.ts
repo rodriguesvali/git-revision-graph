@@ -20,6 +20,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'show-log'; readonly baseRevision: string; readonly compareRevision: string }
   | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
   | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
+  | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | {
     readonly type: 'create-branch';

@@ -291,6 +291,9 @@ export function renderRevisionGraphScriptInteractions(): string {
             compareRevision: compare.revision
           });
         });
+        appendMenuItem('Copy Commit Hash', () => {
+          vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });
+        });
         appendMenuItem('Clear Selection', () => {
           selected.splice(0, selected.length);
           syncSelection();
@@ -298,6 +301,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       } else {
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
+        });
+        appendMenuItem('Copy Commit Hash', () => {
+          vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });
         });
 	        if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
 	          appendMenuItem('Checkout to: ' + targetLabel, () => {
