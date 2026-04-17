@@ -24,8 +24,8 @@ export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
 type CompareResultsWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'base'; readonly itemId: string }
-  | { readonly type: 'copyFileName'; readonly itemId: string }
-  | { readonly type: 'copyFullPath'; readonly itemId: string }
+  | { readonly type: 'copyFileName'; readonly itemIds: readonly string[] }
+  | { readonly type: 'copyFullPath'; readonly itemIds: readonly string[] }
   | { readonly type: 'worktree'; readonly itemId: string }
   | { readonly type: 'revert'; readonly itemId: string };
 
@@ -240,17 +240,21 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
         return;
       case 'copyFileName':
         {
-          const item = this.findItem(message.itemId);
-          if (item) {
-            await vscode.env.clipboard.writeText(path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath));
+          const items = this.findItems(message.itemIds);
+          if (items.length > 0) {
+            await vscode.env.clipboard.writeText(
+              items.map((item) => path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath)).join('\n')
+            );
           }
         }
         return;
       case 'copyFullPath':
         {
-          const item = this.findItem(message.itemId);
-          if (item) {
-            await vscode.env.clipboard.writeText(item.change.renameUri?.fsPath ?? item.change.uri.fsPath);
+          const items = this.findItems(message.itemIds);
+          if (items.length > 0) {
+            await vscode.env.clipboard.writeText(
+              items.map((item) => item.change.renameUri?.fsPath ?? item.change.uri.fsPath).join('\n')
+            );
           }
         }
         return;
@@ -275,6 +279,11 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
 
   private findItem(itemId: string): CompareResultItem | undefined {
     return this.getItems().find((item) => item.id === itemId);
+  }
+
+  private findItems(itemIds: readonly string[]): CompareResultItem[] {
+    const selectedIds = new Set(itemIds);
+    return this.getItems().filter((item) => selectedIds.has(item.id));
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {

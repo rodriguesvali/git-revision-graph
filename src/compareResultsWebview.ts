@@ -136,6 +136,10 @@ export function renderCompareResultsWebviewHtml(): string {
       border-color: color-mix(in srgb, var(--vscode-focusBorder) 45%, transparent);
       background: color-mix(in srgb, var(--vscode-list-hoverBackground) 55%, transparent);
     }
+    .row[data-selected="true"] {
+      border-color: color-mix(in srgb, var(--vscode-focusBorder) 85%, transparent);
+      background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 45%, var(--vscode-list-hoverBackground));
+    }
     .row:focus-visible {
       outline: 1px solid var(--vscode-focusBorder);
       outline-offset: 1px;
@@ -287,12 +291,17 @@ export function renderCompareResultsWebviewHtml(): string {
       emptyMessage: 'Run a compare from the revision graph or Command Palette to keep the changed files here.',
       items: []
     };
-    let contextMenuItemId = undefined;
+    let selectedItemIds = [];
+    let selectionAnchorItemId = undefined;
+    let contextMenuItemIds = [];
 
     window.addEventListener('message', (event) => {
       const message = event.data;
       if (message && message.type === 'state') {
         currentState = message.state;
+        searchInput.value = '';
+        selectedItemIds = [];
+        selectionAnchorItemId = undefined;
         closeContextMenu();
         render();
       }
@@ -310,6 +319,19 @@ export function renderCompareResultsWebviewHtml(): string {
       searchInput.focus();
     });
 
+    content.addEventListener('click', (event) => {
+      const target = event.target?.closest?.('[data-item-id]');
+      const itemId = target?.getAttribute('data-item-id');
+      if (!itemId) {
+        return;
+      }
+
+      closeContextMenu();
+      updateSelection(itemId, event);
+      render();
+      focusItem(itemId);
+    });
+
     content.addEventListener('contextmenu', (event) => {
       const target = event.target?.closest?.('[data-item-id]');
       const itemId = target?.getAttribute('data-item-id');
@@ -319,13 +341,25 @@ export function renderCompareResultsWebviewHtml(): string {
       }
 
       event.preventDefault();
-      openContextMenu(itemId, event.clientX, event.clientY);
+      updateContextMenuSelection(itemId, event);
+      render();
+      openContextMenu(getSelectionForContextMenu(itemId), event.clientX, event.clientY);
     });
 
     content.addEventListener('keydown', (event) => {
       const target = event.target?.closest?.('[data-item-id]');
       const itemId = target?.getAttribute('data-item-id');
       if (!itemId) {
+        return;
+      }
+
+      const shouldExtendSelection =
+        event.shiftKey
+        && (event.key === 'ArrowDown' || event.key === 'ArrowUp');
+
+      if (shouldExtendSelection) {
+        event.preventDefault();
+        extendSelectionWithArrow(itemId, event.key === 'ArrowDown' ? 1 : -1);
         return;
       }
 
@@ -340,18 +374,28 @@ export function renderCompareResultsWebviewHtml(): string {
       }
 
       event.preventDefault();
-      openContextMenuForElement(itemId, target);
+      if (!selectedItemIds.includes(itemId)) {
+        selectedItemIds = [itemId];
+        selectionAnchorItemId = itemId;
+        render();
+      }
+      openContextMenuForElement(getSelectionForContextMenu(itemId), target);
     });
 
     contextMenu.addEventListener('click', (event) => {
       const action = event.target?.closest?.('[data-menu-action]')?.getAttribute('data-menu-action');
-      if (!action || !contextMenuItemId) {
+      if (!action || contextMenuItemIds.length === 0) {
         return;
       }
 
-      const itemId = contextMenuItemId;
+      const itemIds = [...contextMenuItemIds];
       closeContextMenu();
-      postAction(action, itemId);
+      if (action === 'copyFileName' || action === 'copyFullPath') {
+        postMultiAction(action, itemIds);
+        return;
+      }
+
+      postSingleAction(action, itemIds[0]);
     });
 
     window.addEventListener('click', (event) => {
@@ -362,6 +406,17 @@ export function renderCompareResultsWebviewHtml(): string {
 
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
+        if (!contextMenu.hidden) {
+          closeContextMenu();
+          return;
+        }
+
+        if (selectedItemIds.length > 0) {
+          selectedItemIds = [];
+          selectionAnchorItemId = undefined;
+          render();
+        }
+
         closeContextMenu();
       }
     });
@@ -380,15 +435,15 @@ export function renderCompareResultsWebviewHtml(): string {
 
     function render() {
       const filterQuery = normalizeQuery(searchInput.value);
-      const filteredItems = filterItems(currentState.items, filterQuery);
+      const filteredItems = getFilteredItems(filterQuery);
       const totalCount = currentState.items.length;
-      const visibleCount = filteredItems.length;
+      const selectedCount = selectedItemIds.length;
 
       summary.textContent = currentState.summary;
-      countBadge.textContent = String(visibleCount);
+      countBadge.textContent = totalCount + '/' + selectedCount;
       countBadge.title = filterQuery
-        ? visibleCount + ' of ' + totalCount + ' files shown'
-        : visibleCount + ' files';
+        ? totalCount + ' files, ' + selectedCount + ' selected, ' + filteredItems.length + ' visible after filtering'
+        : totalCount + ' files, ' + selectedCount + ' selected';
       clearSearchButton.disabled = filterQuery.length === 0;
 
       if (currentState.kind === 'empty') {
@@ -401,18 +456,21 @@ export function renderCompareResultsWebviewHtml(): string {
         return;
       }
 
-      content.innerHTML = '<div class="list">' + filteredItems.map((item) => {
+      content.innerHTML = '<div class="list" role="listbox" aria-multiselectable="true">' + filteredItems.map((item) => {
         const secondaryLabel = item.worktreeRef
           ? (item.worktreeLabel || item.worktreeRef) + ' <-> worktree'
           : item.leftRef + ' <-> ' + item.rightRef;
+        const isSelected = selectedItemIds.includes(item.id);
 
         return ''
           + '<div'
           + ' class="row"'
           + ' data-item-id="' + escapeHtml(item.id) + '"'
+          + ' data-selected="' + (isSelected ? 'true' : 'false') + '"'
           + ' tabindex="0"'
-          + ' role="button"'
+          + ' role="option"'
           + ' aria-haspopup="menu"'
+          + ' aria-selected="' + (isSelected ? 'true' : 'false') + '"'
           + ' aria-label="' + escapeHtml(item.path + '. ' + item.status + '. ' + secondaryLabel + '. Press Shift+F10 or Enter for actions.') + '"'
           + '>'
           + '  <div class="file-entry" data-item-id="' + escapeHtml(item.id) + '">'
@@ -421,6 +479,14 @@ export function renderCompareResultsWebviewHtml(): string {
           + '  </div>'
           + '</div>';
       }).join('') + '</div>';
+    }
+
+    function getFilteredItems(query) {
+      return filterItems(currentState.items, query);
+    }
+
+    function getVisibleItemIds() {
+      return getFilteredItems(normalizeQuery(searchInput.value)).map((item) => item.id);
     }
 
     function filterItems(items, query) {
@@ -451,7 +517,20 @@ export function renderCompareResultsWebviewHtml(): string {
       return currentState.items.find((item) => item.id === itemId);
     }
 
-    function getMenuActions(item) {
+    function getMenuActions(items) {
+      if (items.length > 1) {
+        return [
+          {
+            label: 'Copy to Clipboard',
+            submenu: [
+              { action: 'copyFileName', label: 'File Name' },
+              { action: 'copyFullPath', label: 'Full Path' }
+            ]
+          }
+        ];
+      }
+
+      const item = items[0];
       const actions = [
         { action: 'base', label: 'Compare with Base' }
       ];
@@ -472,20 +551,94 @@ export function renderCompareResultsWebviewHtml(): string {
       return actions;
     }
 
-    function openContextMenu(itemId, x, y) {
+    function updateSelection(itemId, event) {
+      const isToggleSelection = event.ctrlKey || event.metaKey;
+      const isRangeSelection = event.shiftKey;
+      const currentSelection = new Set(selectedItemIds);
+
+      if (isRangeSelection && selectionAnchorItemId) {
+        const visibleItemIds = getVisibleItemIds();
+        const startIndex = visibleItemIds.indexOf(selectionAnchorItemId);
+        const endIndex = visibleItemIds.indexOf(itemId);
+        if (startIndex >= 0 && endIndex >= 0) {
+          const [from, to] = startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+          selectedItemIds = visibleItemIds.slice(from, to + 1);
+          return;
+        }
+      }
+
+      if (isToggleSelection) {
+        if (currentSelection.has(itemId)) {
+          currentSelection.delete(itemId);
+        } else {
+          currentSelection.add(itemId);
+        }
+        selectedItemIds = currentState.items
+          .map((item) => item.id)
+          .filter((id) => currentSelection.has(id));
+        selectionAnchorItemId = itemId;
+        return;
+      }
+
+      selectedItemIds = [itemId];
+      selectionAnchorItemId = itemId;
+    }
+
+    function extendSelectionWithArrow(itemId, direction) {
+      const visibleItemIds = getVisibleItemIds();
+      const currentIndex = visibleItemIds.indexOf(itemId);
+      if (currentIndex < 0) {
+        return;
+      }
+
+      const targetIndex = currentIndex + direction;
+      if (targetIndex < 0 || targetIndex >= visibleItemIds.length) {
+        return;
+      }
+
+      if (!selectionAnchorItemId || !visibleItemIds.includes(selectionAnchorItemId)) {
+        selectionAnchorItemId = itemId;
+      }
+
+      const targetItemId = visibleItemIds[targetIndex];
+      const anchorIndex = visibleItemIds.indexOf(selectionAnchorItemId);
+      const [from, to] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+      selectedItemIds = visibleItemIds.slice(from, to + 1);
+      render();
+      focusItem(targetItemId);
+    }
+
+    function updateContextMenuSelection(itemId, event) {
+      if (selectedItemIds.includes(itemId) && selectedItemIds.length > 1 && !(event.ctrlKey || event.metaKey || event.shiftKey)) {
+        return;
+      }
+
+      selectedItemIds = [itemId];
+      selectionAnchorItemId = itemId;
+    }
+
+    function getSelectionForContextMenu(itemId) {
+      if (selectedItemIds.includes(itemId) && selectedItemIds.length > 0) {
+        return currentState.items.filter((item) => selectedItemIds.includes(item.id));
+      }
+
       const item = getItemById(itemId);
-      if (!item) {
+      return item ? [item] : [];
+    }
+
+    function openContextMenu(items, x, y) {
+      if (items.length === 0) {
         closeContextMenu();
         return;
       }
 
-      const actions = getMenuActions(item);
+      const actions = getMenuActions(items);
       if (actions.length === 0) {
         closeContextMenu();
         return;
       }
 
-      contextMenuItemId = itemId;
+      contextMenuItemIds = items.map((item) => item.id);
       contextMenu.innerHTML = actions.map((entry) => {
         if (entry.submenu) {
           return ''
@@ -518,19 +671,32 @@ export function renderCompareResultsWebviewHtml(): string {
       contextMenu.querySelector('.context-menu-button')?.focus();
     }
 
-    function openContextMenuForElement(itemId, element) {
+    function openContextMenuForElement(items, element) {
       const rect = element.getBoundingClientRect();
-      openContextMenu(itemId, rect.left + Math.min(24, rect.width / 2), rect.top + Math.min(16, rect.height / 2));
+      openContextMenu(items, rect.left + Math.min(24, rect.width / 2), rect.top + Math.min(16, rect.height / 2));
     }
 
     function closeContextMenu() {
       contextMenu.hidden = true;
-      contextMenuItemId = undefined;
+      contextMenuItemIds = [];
       contextMenu.innerHTML = '';
     }
 
-    function postAction(type, itemId) {
+    function focusItem(itemId) {
+      for (const row of content.querySelectorAll('.row[data-item-id]')) {
+        if (row.getAttribute('data-item-id') === itemId) {
+          row.focus();
+          break;
+        }
+      }
+    }
+
+    function postSingleAction(type, itemId) {
       vscode.postMessage({ type, itemId });
+    }
+
+    function postMultiAction(type, itemIds) {
+      vscode.postMessage({ type, itemIds });
     }
 
     function escapeHtml(value) {
