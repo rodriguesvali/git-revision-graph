@@ -264,7 +264,12 @@ export function renderRevisionGraphScriptInteractions(): string {
         selected.length === 2 &&
         base &&
         compare &&
-        (base.id === target.id || compare.id === target.id);
+        (
+          base.id === target.id
+          || compare.id === target.id
+          || base.hash === target.hash
+          || compare.hash === target.hash
+        );
 
       contextMenu.innerHTML = '';
       if (hasComparisonSelection) {

@@ -61,7 +61,10 @@ test('keeps loading and error primitives in the shell runtime', () => {
   assert.match(html, /function runWithLoading\(label, work, pendingControl = null, mode = 'blocking'\)/);
   assert.match(html, /function hideLoading\(\)/);
   assert.match(html, /function showError\(message\)/);
-  assert.match(html, /if \(nextState\.loading\) \{\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.', null, 'blocking'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s);
+  assert.match(
+    html,
+    /if \(nextState\.loading\) \{\s*hideStatus\(\);\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.', null, 'blocking'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s
+  );
   assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
   assert.match(html, /body\.classList\.remove\('loading', 'loading-subtle'\);/);
@@ -182,6 +185,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function getStructuralNodeTarget\(hash\) \{/);
   assert.match(html, /type: 'show-log',\s*source: \{\s*kind: 'target',\s*revision: target\.revision,\s*label: target\.label/s);
   assert.match(html, /type: 'show-log',\s*source: \{\s*kind: 'range',\s*baseRevision: base\.revision,\s*baseLabel: base\.label,\s*compareRevision: compare\.revision,\s*compareLabel: compare\.label/s);
+  assert.match(html, /base\.hash === target\.hash/);
+  assert.match(html, /compare\.hash === target\.hash/);
   assert.match(html, /type: 'compare-with-worktree', revision: target\.revision, label: target\.label/);
   assert.match(html, /appendMenuItem\('Copy Commit Hash', \(\) => \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash: target\.hash \}\);/s);
   assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);

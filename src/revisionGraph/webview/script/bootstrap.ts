@@ -368,15 +368,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       updateChrome(nextState);
       renderScene(nextState);
       if (nextState.loading) {
+        hideStatus();
         showLoading(nextState.loadingLabel || 'Loading revision graph...', null, 'blocking');
       } else {
         hideLoading();
       }
       if (nextState.errorMessage) {
         showError(nextState.errorMessage);
-      } else if (nextState.viewMode === 'empty') {
+      } else if (!nextState.loading && nextState.viewMode === 'empty') {
         showStatus(nextState.emptyMessage || 'No revision graph available.', false);
-      } else {
+      } else if (!nextState.loading) {
         hideStatus();
       }
 
