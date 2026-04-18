@@ -150,10 +150,12 @@ export function renderRevisionGraphStyles(): string {
     }
     .viewport.dragging .node { cursor: grabbing; }
     .node.selected {
-      outline: 2px solid color-mix(in srgb, var(--accent) 66%, transparent);
-      outline-offset: 1px;
-      border-color: color-mix(in srgb, var(--accent) 42%, rgba(0, 0, 0, 0.18));
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+      outline: 3px solid color-mix(in srgb, var(--accent) 88%, white 10%);
+      outline-offset: 2px;
+      border-color: color-mix(in srgb, var(--accent) 62%, rgba(0, 0, 0, 0.18));
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent),
+        0 8px 20px rgba(0, 0, 0, 0.24);
     }
     .node.related {
       outline-offset: 1px;
@@ -180,8 +182,18 @@ export function renderRevisionGraphStyles(): string {
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
     }
     .node.compare-target {
-      outline: 2px dashed color-mix(in srgb, var(--accent) 48%, rgba(0, 0, 0, 0.18));
-      outline-offset: 1px;
+      outline: 3px dashed color-mix(in srgb, var(--accent) 82%, white 8%);
+      outline-offset: 2px;
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent),
+        0 8px 18px rgba(0, 0, 0, 0.2);
+    }
+    .node.selected.compare-target {
+      outline-style: solid;
+      outline-color: color-mix(in srgb, var(--accent) 92%, white 14%);
+      box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent),
+        0 10px 22px rgba(0, 0, 0, 0.26);
     }
     .node-head { background: var(--node-head); color: white; }
     .node-branch { background: var(--node-branch); }
@@ -376,8 +388,14 @@ export function renderRevisionGraphStyles(): string {
     }
     .node:hover .node-grip,
     .node.selected .node-grip,
+    .node.compare-target .node-grip,
     .node.dragging .node-grip {
       opacity: 1;
+    }
+    .node.selected .node-grip,
+    .node.compare-target .node-grip {
+      background: color-mix(in srgb, var(--accent) 16%, rgba(255, 255, 255, 0.08));
+      border-color: color-mix(in srgb, var(--accent) 34%, rgba(0, 0, 0, 0.12));
     }
     .node-grip:hover {
       background: rgba(255, 255, 255, 0.16);
