@@ -11,7 +11,11 @@ export function renderShowLogWebviewHtml(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Show Log</title>
   <style>
-    :root { color-scheme: var(--vscode-color-scheme); }
+    :root {
+      color-scheme: var(--vscode-color-scheme);
+      --show-log-row-hover: color-mix(in srgb, var(--vscode-list-hoverBackground) 68%, transparent);
+      --show-log-row-active: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 22%, transparent);
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -33,9 +37,14 @@ export function renderShowLogWebviewHtml(): string {
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      padding: 10px 12px;
+      padding: 10px 12px 11px;
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
-      background: var(--vscode-sideBar-background);
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--vscode-sideBar-background) 96%, transparent),
+          var(--vscode-sideBar-background)
+        );
     }
     .summary {
       min-width: 0;
@@ -44,6 +53,7 @@ export function renderShowLogWebviewHtml(): string {
       white-space: nowrap;
       font-size: 12px;
       font-weight: 600;
+      letter-spacing: 0.01em;
     }
     .loading-chip {
       display: none;
@@ -60,7 +70,8 @@ export function renderShowLogWebviewHtml(): string {
     .content {
       display: flex;
       flex-direction: column;
-      padding: 8px 0 16px;
+      gap: 0;
+      padding: 6px 0 18px;
     }
     .status-card,
     .empty-state {
@@ -76,59 +87,94 @@ export function renderShowLogWebviewHtml(): string {
       color: var(--vscode-errorForeground);
       border-color: color-mix(in srgb, var(--vscode-errorForeground) 45%, transparent);
     }
+    .commit-list {
+      position: relative;
+    }
+    .commit-entry {
+      position: relative;
+    }
     .commit-row {
       display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 8px;
-      padding: 3px 12px 3px 8px;
+      grid-template-columns: 1fr;
+      gap: 0;
+      margin: 0;
+      padding: 0 8px 0 0;
+      border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 32%, transparent);
       cursor: pointer;
       user-select: none;
+      min-height: 28px;
+    }
+    .commit-row:first-of-type {
+      border-top: 0;
     }
     .commit-row:hover {
-      background: color-mix(in srgb, var(--vscode-list-hoverBackground) 75%, transparent);
+      background: color-mix(in srgb, var(--show-log-row-hover) 70%, transparent);
     }
     .commit-row[data-expanded="true"] {
-      background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 26%, transparent);
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--show-log-row-active) 94%, transparent) 0 2px,
+          transparent 2px 100%
+        ),
+        color-mix(in srgb, var(--show-log-row-active) 18%, transparent);
     }
     .commit-row:focus-visible {
       outline: none;
-      background: color-mix(in srgb, var(--vscode-list-focusOutline) 18%, transparent);
-    }
-    .commit-graph {
-      width: 56px;
-      min-height: 28px;
-      overflow: visible;
+      background: color-mix(in srgb, var(--vscode-list-focusOutline) 10%, var(--show-log-row-hover));
     }
     .commit-main {
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       justify-content: center;
-      padding: 3px 0;
+      padding: 4px 0 4px;
     }
-    .commit-subject-row {
+    .commit-headline {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 6px;
       min-width: 0;
+      white-space: nowrap;
     }
     .commit-subject {
+      flex: 1 1 0;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 12.5px;
+      line-height: 1.2;
+      font-weight: 500;
     }
     .commit-hash {
       flex-shrink: 0;
       font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 11px;
+      font-size: 10px;
+      letter-spacing: 0.03em;
       color: var(--vscode-descriptionForeground);
+      opacity: 0.86;
+    }
+    .commit-author-inline {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+      color: var(--vscode-descriptionForeground);
+      opacity: 0.82;
+    }
+    .commit-secondary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
     }
     .refs {
-      display: inline-flex;
+      display: flex;
       gap: 4px;
       flex-wrap: wrap;
       min-width: 0;
@@ -137,38 +183,41 @@ export function renderShowLogWebviewHtml(): string {
       display: inline-flex;
       align-items: center;
       max-width: 180px;
-      padding: 1px 6px;
+      padding: 0 5px 1px;
       border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--vscode-badge-background) 16%, transparent);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 8px;
+      font-weight: 600;
       color: var(--vscode-badge-foreground);
-      background: color-mix(in srgb, var(--vscode-badge-background) 78%, transparent);
+      background: color-mix(in srgb, var(--vscode-badge-background) 22%, transparent);
     }
     .commit-meta {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
-      font-size: 11px;
+      font-size: 10px;
+      line-height: 1.2;
       color: var(--vscode-descriptionForeground);
+      opacity: 0.68;
     }
     .commit-files {
       display: flex;
       flex-direction: column;
-      gap: 1px;
-      margin: 0 12px 4px 56px;
-      padding: 4px 0 0 20px;
-      border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+      gap: 0;
+      margin: 0 12px 4px 12px;
+      padding: 0 0 0 12px;
+      border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
     }
     .file-row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 6px 8px;
-      border-radius: 8px;
-      cursor: pointer;
+      padding: 4px 8px 4px 0;
+      border-radius: 6px;
+      cursor: context-menu;
     }
     .file-row:hover,
     .file-row:focus-visible {
@@ -180,14 +229,14 @@ export function renderShowLogWebviewHtml(): string {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-family: var(--vscode-editor-font-family, monospace);
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 400;
     }
     .file-status {
       flex-shrink: 0;
       font-size: 11px;
       color: var(--vscode-descriptionForeground);
+      opacity: 0.9;
     }
     .load-more {
       margin: 10px 12px 0;
@@ -217,7 +266,7 @@ export function renderShowLogWebviewHtml(): string {
       box-shadow: 0 10px 24px color-mix(in srgb, var(--vscode-widget-shadow, #000) 60%, transparent);
     }
     .context-menu[hidden] { display: none; }
-    .context-button {
+    .context-menu-button {
       display: block;
       width: 100%;
       padding: 7px 10px;
@@ -229,10 +278,60 @@ export function renderShowLogWebviewHtml(): string {
       cursor: pointer;
       font-size: 12px;
     }
-    .context-button:hover,
-    .context-button:focus-visible {
+    .context-menu-button:hover,
+    .context-menu-button:focus-visible {
       outline: none;
       background: var(--vscode-list-hoverBackground);
+    }
+    .context-menu-group {
+      position: relative;
+    }
+    .context-menu-parent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 7px;
+      color: inherit;
+      background: transparent;
+      text-align: left;
+      cursor: default;
+      font-size: 12px;
+    }
+    .context-menu-parent:hover,
+    .context-menu-parent:focus-visible,
+    .context-menu-group:focus-within > .context-menu-parent {
+      outline: none;
+      background: var(--vscode-list-hoverBackground);
+    }
+    .context-menu-chevron {
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+    .context-submenu {
+      position: absolute;
+      top: -6px;
+      left: calc(100% + 6px);
+      min-width: 170px;
+      padding: 6px;
+      border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, transparent));
+      border-radius: 10px;
+      color: inherit;
+      background: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--vscode-widget-shadow, #000) 60%, transparent);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-4px);
+      transition: opacity 90ms ease, transform 90ms ease;
+    }
+    .context-menu-group:hover > .context-submenu,
+    .context-menu-group:focus-within > .context-submenu {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
     }
   </style>
 </head>
@@ -248,7 +347,7 @@ export function renderShowLogWebviewHtml(): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     let currentState = null;
-    let contextCommitHash = null;
+    let contextMenuState = null;
     const summary = document.getElementById('summary');
     const content = document.getElementById('content');
     const loadingChip = document.getElementById('loadingChip');
@@ -280,12 +379,7 @@ export function renderShowLogWebviewHtml(): string {
       if (state.commits.length === 0 && state.emptyMessage) {
         sections.push('<div class="empty-state">' + escapeHtml(state.emptyMessage) + '</div>');
       } else {
-        for (const commit of state.commits) {
-          sections.push(renderCommit(commit));
-          if (commit.expanded) {
-            sections.push(renderCommitFiles(commit));
-          }
-        }
+        sections.push(renderCommitList(state.commits));
       }
       if (state.hasMore) {
         sections.push(
@@ -297,23 +391,38 @@ export function renderShowLogWebviewHtml(): string {
       content.innerHTML = sections.join('');
     }
 
+    function renderCommitList(commits) {
+      return ''
+        + '<div class="commit-list">'
+        + commits.map((commit) => ''
+          + '<div class="commit-entry">'
+          + renderCommit(commit)
+          + (commit.expanded ? renderCommitFiles(commit) : '')
+          + '</div>'
+        ).join('')
+        + '</div>';
+    }
+
     function renderCommit(commit) {
       return ''
         + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '">'
-        + '  <svg class="commit-graph" viewBox="0 0 56 28" aria-hidden="true">' + renderTopology(commit.topology) + '</svg>'
         + '  <div class="commit-main">'
-        + '    <div class="commit-subject-row">'
+        + '    <div class="commit-headline">'
         + '      <span class="commit-hash">' + escapeHtml(commit.shortHash) + '</span>'
         + '      <span class="commit-subject">' + escapeHtml(commit.subject) + '</span>'
-        + (commit.refs.length > 0
-          ? '      <span class="refs">' + commit.refs.map((ref) => '<span class="ref-badge">' + escapeHtml(ref) + '</span>').join('') + '</span>'
+        + '      <span class="commit-author-inline">' + escapeHtml(commit.author) + '</span>'
+        + '    </div>'
+        + ((commit.refs.length > 0 || commit.date || commit.stats)
+          ? '    <div class="commit-secondary">'
+            + (commit.refs.length > 0
+              ? '      <div class="refs">' + commit.refs.map((ref) => '<span class="ref-badge">' + escapeHtml(ref) + '</span>').join('') + '</div>'
+              : '')
+            + '      <div class="commit-meta">'
+            + (commit.date ? '        <span>' + escapeHtml(commit.date) + '</span>' : '')
+            + (commit.stats ? '        <span>' + escapeHtml(commit.stats) + '</span>' : '')
+            + '      </div>'
+            + '    </div>'
           : '')
-        + '    </div>'
-        + '    <div class="commit-meta">'
-        + '      <span>' + escapeHtml(commit.author) + '</span>'
-        + '      <span>' + escapeHtml(commit.date) + '</span>'
-        + (commit.stats ? '      <span>' + escapeHtml(commit.stats) + '</span>' : '')
-        + '    </div>'
         + '  </div>'
         + '</div>';
     }
@@ -331,43 +440,12 @@ export function renderShowLogWebviewHtml(): string {
       return ''
         + '<div class="commit-files">'
         + commit.changes.map((change) => ''
-          + '<div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '">'
+          + '<div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Press Shift+F10 or Enter for actions.') + '">'
           + '  <span class="file-path">' + escapeHtml(change.path) + '</span>'
           + '  <span class="file-status">' + escapeHtml(change.status) + '</span>'
           + '</div>'
         ).join('')
         + '</div>';
-    }
-
-    function renderTopology(topology) {
-      const laneGap = 12;
-      const xOffset = 10;
-      const topY = 0;
-      const centerY = 14;
-      const bottomY = 28;
-      const activeLanes = new Set([...(topology.activeBefore || []), ...(topology.activeAfter || []), topology.lane]);
-      const pieces = [];
-      for (const lane of activeLanes) {
-        const x = xOffset + lane * laneGap;
-        const hasTop = (topology.activeBefore || []).includes(lane);
-        const hasBottom = (topology.activeAfter || []).includes(lane);
-        if (hasTop) {
-          pieces.push('<line x1="' + x + '" y1="' + topY + '" x2="' + x + '" y2="' + centerY + '" stroke="var(--vscode-descriptionForeground)" stroke-width="1.1" opacity="0.55" />');
-        }
-        if (hasBottom) {
-          pieces.push('<line x1="' + x + '" y1="' + centerY + '" x2="' + x + '" y2="' + bottomY + '" stroke="var(--vscode-descriptionForeground)" stroke-width="1.1" opacity="0.55" />');
-        }
-      }
-      const commitX = xOffset + topology.lane * laneGap;
-      for (const parentLane of topology.parentLanes || []) {
-        if (parentLane === topology.lane) {
-          continue;
-        }
-        const parentX = xOffset + parentLane * laneGap;
-        pieces.push('<path d="M ' + commitX + ' 14 C ' + commitX + ' 18, ' + parentX + ' 18, ' + parentX + ' 22" fill="none" stroke="var(--vscode-descriptionForeground)" stroke-width="1.1" opacity="0.65" />');
-      }
-      pieces.push('<circle cx="' + commitX + '" cy="' + centerY + '" r="4" fill="var(--vscode-list-activeSelectionBackground, var(--vscode-focusBorder))" stroke="var(--vscode-sideBar-background)" stroke-width="1.4" />');
-      return pieces.join('');
     }
 
     function escapeHtml(value) {
@@ -380,21 +458,62 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function handleContextMenu(commitHash, clientX, clientY) {
-      contextCommitHash = commitHash;
+      contextMenuState = { kind: 'commit', commitHash };
       if (!contextMenu) {
         return;
       }
-      contextMenu.innerHTML = '<button class="context-button" type="button" id="openCommitDetailsButton">Open Commit Details</button>';
+      contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>';
+      showContextMenuAt(clientX, clientY);
+    }
+
+    function openFileContextMenu(commitHash, changeId, clientX, clientY) {
+      contextMenuState = { kind: 'file', commitHash, changeId };
+      if (!contextMenu) {
+        return;
+      }
+      contextMenu.innerHTML = ''
+        + '<button class="context-menu-button" type="button" data-menu-action="openFile">Open Diff</button>'
+        + '<div class="context-menu-group">'
+        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy to Clipboard">'
+        + '    <span>Copy to Clipboard</span>'
+        + '    <span class="context-menu-chevron">›</span>'
+        + '  </div>'
+        + '  <div class="context-submenu" role="menu" aria-label="Copy to Clipboard">'
+        + '    <button class="context-menu-button" type="button" data-menu-action="copyFileName">File Name</button>'
+        + '    <button class="context-menu-button" type="button" data-menu-action="copyFullPath">Full Path</button>'
+        + '  </div>'
+        + '</div>';
+      showContextMenuAt(clientX, clientY);
+    }
+
+    function openFileContextMenuForElement(commitHash, changeId, element) {
+      const rect = element.getBoundingClientRect();
+      openFileContextMenu(
+        commitHash,
+        changeId,
+        rect.left + Math.min(24, rect.width / 2),
+        rect.top + Math.min(16, rect.height / 2)
+      );
+    }
+
+    function showContextMenuAt(clientX, clientY) {
       contextMenu.hidden = false;
-      contextMenu.style.left = clientX + 'px';
-      contextMenu.style.top = clientY + 'px';
+      contextMenu.style.left = '0px';
+      contextMenu.style.top = '0px';
+      const rect = contextMenu.getBoundingClientRect();
+      const margin = 8;
+      const left = Math.min(clientX, window.innerWidth - rect.width - margin);
+      const top = Math.min(clientY, window.innerHeight - rect.height - margin);
+      contextMenu.style.left = Math.max(margin, left) + 'px';
+      contextMenu.style.top = Math.max(margin, top) + 'px';
+      contextMenu.querySelector('.context-menu-button')?.focus();
     }
 
     function closeContextMenu() {
       if (!contextMenu) {
         return;
       }
-      contextCommitHash = null;
+      contextMenuState = null;
       contextMenu.hidden = true;
       contextMenu.innerHTML = '';
     }
@@ -411,11 +530,8 @@ export function renderShowLogWebviewHtml(): string {
       }
       const fileRow = target.closest('[data-change-id]');
       if (fileRow instanceof HTMLElement) {
-        vscode.postMessage({
-          type: 'openFile',
-          commitHash: fileRow.getAttribute('data-commit-hash') || '',
-          changeId: fileRow.getAttribute('data-change-id') || ''
-        });
+        closeContextMenu();
+        fileRow.focus();
         return;
       }
       const commitRow = target.closest('[data-commit-hash]');
@@ -436,11 +552,20 @@ export function renderShowLogWebviewHtml(): string {
       }
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-change-id]')) {
         event.preventDefault();
-        vscode.postMessage({
-          type: 'openFile',
-          commitHash: target.getAttribute('data-commit-hash') || '',
-          changeId: target.getAttribute('data-change-id') || ''
-        });
+        openFileContextMenuForElement(
+          target.getAttribute('data-commit-hash') || '',
+          target.getAttribute('data-change-id') || '',
+          target
+        );
+        return;
+      }
+      if (target.matches('[data-change-id]') && (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) {
+        event.preventDefault();
+        openFileContextMenuForElement(
+          target.getAttribute('data-commit-hash') || '',
+          target.getAttribute('data-change-id') || '',
+          target
+        );
         return;
       }
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
@@ -461,6 +586,17 @@ export function renderShowLogWebviewHtml(): string {
       if (!(target instanceof HTMLElement)) {
         return;
       }
+      const fileRow = target.closest('[data-change-id]');
+      if (fileRow instanceof HTMLElement) {
+        event.preventDefault();
+        openFileContextMenu(
+          fileRow.getAttribute('data-commit-hash') || '',
+          fileRow.getAttribute('data-change-id') || '',
+          event.clientX,
+          event.clientY
+        );
+        return;
+      }
       const commitRow = target.closest('[data-commit-hash]');
       if (!(commitRow instanceof HTMLElement)) {
         return;
@@ -469,16 +605,35 @@ export function renderShowLogWebviewHtml(): string {
       handleContextMenu(commitRow.getAttribute('data-commit-hash') || '', event.clientX, event.clientY);
     });
 
-    document.addEventListener('click', (event) => {
-      const target = event.target;
-      if (target instanceof HTMLElement && contextMenu && contextMenu.contains(target)) {
-        if (target.id === 'openCommitDetailsButton' && contextCommitHash) {
-          vscode.postMessage({ type: 'openCommitDetails', commitHash: contextCommitHash });
-          closeContextMenu();
+    contextMenu.addEventListener('click', (event) => {
+      const action = event.target?.closest?.('[data-menu-action]')?.getAttribute('data-menu-action');
+      if (!action || !contextMenuState) {
+        return;
+      }
+
+      const state = contextMenuState;
+      closeContextMenu();
+
+      if (state.kind === 'commit') {
+        if (action === 'openCommitDetails') {
+          vscode.postMessage({ type: 'openCommitDetails', commitHash: state.commitHash });
         }
         return;
       }
-      closeContextMenu();
+
+      if (action === 'openFile' || action === 'copyFileName' || action === 'copyFullPath') {
+        vscode.postMessage({
+          type: action,
+          commitHash: state.commitHash,
+          changeId: state.changeId
+        });
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!contextMenu.hidden && !event.target?.closest?.('#contextMenu')) {
+        closeContextMenu();
+      }
     });
 
     window.addEventListener('message', (event) => {

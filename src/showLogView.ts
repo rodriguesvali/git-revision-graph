@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
-import type { Repository } from './git';
+import type { Change, Repository } from './git';
 import { openChangeDiffBetweenRefs } from './workbenchRefActionServices';
 import type { RevisionGraphBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
@@ -23,6 +24,8 @@ type ShowLogWebviewMessage =
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'loadMore' }
   | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
+  | { readonly type: 'copyFileName'; readonly commitHash: string; readonly changeId: string }
+  | { readonly type: 'copyFullPath'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'openCommitDetails'; readonly commitHash: string };
 
 export interface ShowLogPresenter {
@@ -136,6 +139,12 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'openFile':
         await this.openFileChange(message.commitHash, message.changeId);
+        return;
+      case 'copyFileName':
+        await this.copyFileName(message.commitHash, message.changeId);
+        return;
+      case 'copyFullPath':
+        await this.copyFullPath(message.commitHash, message.changeId);
         return;
       case 'openCommitDetails':
         await this.openCommitDetails(message.commitHash);
@@ -267,26 +276,60 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   }
 
   private async openFileChange(commitHash: string, changeId: string): Promise<void> {
+    const change = this.findChange(commitHash, changeId);
+    if (!change) {
+      return;
+    }
+
     const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
     if (!repository) {
-      return;
-    }
-
-    const match = /^.+:(\d+)$/.exec(changeId);
-    const index = match ? Number(match[1]) : -1;
-    if (!Number.isInteger(index) || index < 0) {
-      return;
-    }
-
-    const changes = this.state.cachedChanges[commitHash];
-    const change = changes?.[index];
-    if (!change) {
       return;
     }
 
     const entry = this.state.entries.find((item) => item.hash === commitHash);
     const parentHash = entry?.parentHashes[0] ?? EMPTY_TREE_HASH;
     await openChangeDiffBetweenRefs(repository, change, parentHash, commitHash);
+  }
+
+  private async copyFileName(commitHash: string, changeId: string): Promise<void> {
+    const change = this.findChange(commitHash, changeId);
+    if (!change) {
+      return;
+    }
+
+    await vscode.env.clipboard.writeText(
+      path.basename(change.renameUri?.fsPath ?? change.uri.fsPath)
+    );
+  }
+
+  private async copyFullPath(commitHash: string, changeId: string): Promise<void> {
+    const change = this.findChange(commitHash, changeId);
+    if (!change) {
+      return;
+    }
+
+    await vscode.env.clipboard.writeText(change.renameUri?.fsPath ?? change.uri.fsPath);
+  }
+
+  private findChange(commitHash: string, changeId: string): Change | undefined {
+    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    if (!repository) {
+      return undefined;
+    }
+
+    const match = /^.+:(\d+)$/.exec(changeId);
+    const index = match ? Number(match[1]) : -1;
+    if (!Number.isInteger(index) || index < 0) {
+      return undefined;
+    }
+
+    const changes = this.state.cachedChanges[commitHash];
+    const change = changes?.[index];
+    if (!change) {
+      return undefined;
+    }
+
+    return change;
   }
 
   private async openCommitDetails(commitHash: string): Promise<void> {
