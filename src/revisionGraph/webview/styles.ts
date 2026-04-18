@@ -249,8 +249,6 @@ export function renderRevisionGraphStyles(): string {
     }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
-    .base-suffix { display: none; }
-    .ref-line.base.has-compare .base-suffix { display: inline; }
     .context-menu {
       position: fixed;
       z-index: 60;
@@ -597,17 +595,22 @@ export function renderRevisionGraphStyles(): string {
       display: none;
       position: absolute;
       top: 50%;
-      right: -8px;
+      right: -10px;
       transform: translate(100%, -50%);
       align-items: center;
-      padding: 2px 6px;
+      padding: 3px 8px;
       border-radius: 999px;
       background: color-mix(in srgb, var(--accent) 28%, white 72%);
       color: color-mix(in srgb, var(--text) 82%, black 18%);
-      font-size: 9px;
-      line-height: 1;
+      font-size: 10.5px;
+      line-height: 1.1;
       font-weight: 700;
+      letter-spacing: 0.01em;
       pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    }
+    .node.base-target.has-compare {
+      overflow: visible;
     }
     .node-structural {
       min-width: ${STRUCTURAL_NODE_MIN_WIDTH}px;
@@ -616,7 +619,7 @@ export function renderRevisionGraphStyles(): string {
       cursor: pointer;
       overflow: visible;
     }
-    .node-structural.base-target.has-compare .node-base-badge {
+    .node.base-target.has-compare .node-base-badge {
       display: inline-flex;
     }
     .node-structural .node-summary {

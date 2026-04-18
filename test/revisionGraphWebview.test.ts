@@ -193,10 +193,10 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
-  assert.match(html, /\.node-structural\.base-target\.has-compare \.node-base-badge/);
-  assert.match(html, /right: -8px;/);
+  assert.match(html, /\.node\.base-target\.has-compare \.node-base-badge/);
+  assert.match(html, /right: -10px;/);
   assert.match(html, /transform: translate\(100%, -50%\);/);
-  assert.match(html, /overflow: visible;/);
+  assert.doesNotMatch(html, /base-suffix/);
 });
 
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {

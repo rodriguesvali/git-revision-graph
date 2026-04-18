@@ -698,13 +698,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const summary = node.refs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
         : '';
-      const structuralBaseBadge = node.refs.length === 0
-        ? '<span class="node-base-badge">(Base)</span>'
-        : '';
+      const baseBadge = '<span class="node-base-badge">(Base)</span>';
       const refLines = node.refs
         .map((ref) => {
           const refId = createReferenceId(node.hash, ref.kind, ref.name);
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.name) + '<span class="base-suffix"> (Base)</span></div>';
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.name) + '</div>';
         })
         .join('');
 
@@ -712,7 +710,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
         refLines +
         summary +
-        structuralBaseBadge +
+        baseBadge +
       '</div>';
     }
 
