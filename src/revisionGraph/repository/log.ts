@@ -2,12 +2,7 @@ import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
 import { Repository } from '../../git';
-import { RevisionLogEntry } from '../../revisionGraphTypes';
 import { RevisionGraphBackend } from '../backend';
-
-interface RevisionLogQuickPickItem extends vscode.QuickPickItem {
-  readonly entry: RevisionLogEntry;
-}
 
 export async function openUnifiedDiffDocument(
   repository: Repository,
@@ -33,46 +28,6 @@ export async function openUnifiedDiffDocument(
     });
   } catch (error) {
     await vscode.window.showErrorMessage(toOperationError('Could not open the unified diff.', error));
-  }
-}
-
-export async function showRevisionLogQuickPick(
-  repository: Repository,
-  left: string,
-  right: string,
-  limit: number,
-  backend: RevisionGraphBackend
-): Promise<RevisionLogEntry | undefined> {
-  try {
-    const entries = await backend.loadRevisionLog(repository, left, right, limit);
-    if (entries.length === 0) {
-      void vscode.window.showInformationMessage(`No commits found between ${left} and ${right}.`);
-      return undefined;
-    }
-
-    const picked = await vscode.window.showQuickPick<RevisionLogQuickPickItem>(
-      entries.map((entry) => ({
-        label: `${entry.shortHash} ${entry.subject}`,
-        description: `${entry.author} on ${entry.date}`,
-        detail: entry.hash,
-        entry
-      })),
-      {
-        title: 'Show Log',
-        placeHolder: `Commits in ${left}..${right}`,
-        matchOnDescription: true,
-        matchOnDetail: true
-      }
-    );
-
-    if (!picked) {
-      return undefined;
-    }
-
-    return picked.entry;
-  } catch (error) {
-    await vscode.window.showErrorMessage(toOperationError('Could not show the revision log.', error));
-    return undefined;
   }
 }
 

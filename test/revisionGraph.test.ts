@@ -14,7 +14,11 @@ import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGra
 import {
   projectDecoratedCommitGraph
 } from '../src/revisionGraph/projection/graphProjection';
-import { buildRevisionGraphGitLogArgs } from '../src/revisionGraph/source/graphGit';
+import {
+  buildRevisionGraphGitLogArgs,
+  buildRevisionLogGitArgs,
+  parseRevisionLogEntries
+} from '../src/revisionGraph/source/graphGit';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('parses git log output into revision graph commits', () => {
@@ -85,6 +89,82 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
     ]
   );
+});
+
+test('builds show log git args for a target revision', () => {
+  assert.deepEqual(
+    buildRevisionLogGitArgs(
+      {
+        kind: 'target',
+        revision: 'feature/demo',
+        label: 'feature/demo'
+      },
+      51,
+      100
+    ),
+    [
+      'log',
+      '--topo-order',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=51',
+      '--skip=100',
+      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--shortstat',
+      'feature/demo'
+    ]
+  );
+});
+
+test('builds show log git args for a revision range', () => {
+  assert.deepEqual(
+    buildRevisionLogGitArgs(
+      {
+        kind: 'range',
+        baseRevision: 'main',
+        baseLabel: 'main',
+        compareRevision: 'feature/demo',
+        compareLabel: 'feature/demo'
+      },
+      51
+    ),
+    [
+      'log',
+      '--topo-order',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=51',
+      '--skip=0',
+      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--shortstat',
+      'main..feature/demo'
+    ]
+  );
+});
+
+test('parses show log entries with refs and short stats', () => {
+  const output = [
+    '\u001eaaa111\u001fbbb222 ccc333\u001fAda\u001f2026-04-17\u001fHEAD -> main, origin/main, tag: v0.0.17\u001fAdd show log\u001fBody line 1\nBody line 2\n 3 files changed, 11 insertions(+), 2 deletions(-)\u001e',
+    '\u001ebbb222\u001f\u001fLinus\u001f2026-04-16\u001forigin/topic/demo\u001fBootstrap\u001f\u001e'
+  ].join('');
+
+  const entries = parseRevisionLogEntries(output);
+
+  assert.equal(entries.length, 2);
+  assert.deepEqual(entries[0].parentHashes, ['bbb222', 'ccc333']);
+  assert.equal(entries[0].subject, 'Add show log');
+  assert.equal(entries[0].message, 'Add show log\n\nBody line 1\nBody line 2');
+  assert.deepEqual(entries[0].references, [
+    { name: 'main', kind: 'head' },
+    { name: 'origin/main', kind: 'remote' },
+    { name: 'v0.0.17', kind: 'tag' }
+  ]);
+  assert.deepEqual(entries[0].shortStat, {
+    files: 3,
+    insertions: 11,
+    deletions: 2
+  });
+  assert.equal(entries[1].shortStat, undefined);
 });
 
 test('prefers repository ref kinds for branch names that contain slashes', () => {

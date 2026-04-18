@@ -62,6 +62,13 @@
           "type": "webview",
           "visibility": "collapsed",
           "when": "gitRefs.compareResultsVisible"
+        },
+        {
+          "id": "gitRefs.showLogView",
+          "name": "Show Log",
+          "type": "webview",
+          "visibility": "collapsed",
+          "when": "gitRefs.showLogVisible"
         }
       ]
     },
@@ -106,6 +113,11 @@
         "command": "gitRefs.hideCompareResults",
         "title": "Hide Compare Results",
         "icon": "$(close)"
+      },
+      {
+        "command": "gitRefs.hideShowLog",
+        "title": "Hide Show Log",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -128,6 +140,11 @@
         {
           "command": "gitRefs.hideCompareResults",
           "when": "view == gitRefs.compareResultsView",
+          "group": "navigation"
+        },
+        {
+          "command": "gitRefs.hideShowLog",
+          "when": "view == gitRefs.showLogView",
           "group": "navigation"
         }
       ]

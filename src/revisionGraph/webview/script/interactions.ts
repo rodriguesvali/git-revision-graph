@@ -280,8 +280,13 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Show Log', () => {
           vscode.postMessage({
             type: 'show-log',
-            baseRevision: base.revision,
-            compareRevision: compare.revision
+            source: {
+              kind: 'range',
+              baseRevision: base.revision,
+              baseLabel: base.label,
+              compareRevision: compare.revision,
+              compareLabel: compare.label
+            }
           });
         });
         appendMenuItem('Unified Diff', () => {
@@ -301,6 +306,16 @@ export function renderRevisionGraphScriptInteractions(): string {
       } else {
         appendMenuItem('Compare With Worktree', () => {
           vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
+        });
+        appendMenuItem('Show Log', () => {
+          vscode.postMessage({
+            type: 'show-log',
+            source: {
+              kind: 'target',
+              revision: target.revision,
+              label: target.label
+            }
+          });
         });
         appendMenuItem('Copy Commit Hash', () => {
           vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });

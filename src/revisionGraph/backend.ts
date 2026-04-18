@@ -1,6 +1,6 @@
 import { execGit } from '../gitExec';
 import { Repository } from '../git';
-import { RevisionLogEntry, RevisionGraphViewReference } from '../revisionGraphTypes';
+import { RevisionLogEntry, RevisionLogSource, RevisionGraphViewReference } from '../revisionGraphTypes';
 import {
   CommitGraph,
   RevisionGraphProjectionOptions
@@ -11,7 +11,9 @@ import { buildRevisionGraphRefKinds } from './source/refIndex';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   buildCommitGraphFromGitLog,
-  buildRevisionGraphGitLogArgs
+  buildRevisionGraphGitLogArgs,
+  buildRevisionLogGitArgs,
+  parseRevisionLogEntries
 } from './source/graphGit';
 import { isRefAncestorOfHead } from './repository/snapshot';
 
@@ -30,10 +32,13 @@ export interface RevisionGraphBackend {
   ): Promise<RevisionGraphSnapshot>;
   loadRevisionLog(
     repository: Repository,
-    left: string,
-    right: string,
-    limit: number
-  ): Promise<RevisionLogEntry[]>;
+    source: RevisionLogSource,
+    limit: number,
+    skip?: number
+  ): Promise<{
+    readonly entries: readonly RevisionLogEntry[];
+    readonly hasMore: boolean;
+  }>;
   loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string>;
   loadCommitDetails(repository: Repository, commitHash: string): Promise<string>;
   getMergeBlockedTargets(
@@ -45,10 +50,19 @@ export interface RevisionGraphBackend {
   ): Promise<string[]>;
 }
 
+export interface ShowLogBackend {
+  loadRevisionLogChanges(
+    repository: Repository,
+    commitHash: string,
+    parentHash?: string
+  ): Promise<readonly import('../git').Change[]>;
+}
+
 const SNAPSHOT_CACHE_TTL_MS = 500;
 const GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
+const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
-export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
+export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLogBackend {
   private readonly snapshotCache = new Map<string, {
     readonly createdAt: number;
     readonly snapshotPromise: Promise<RevisionGraphSnapshot>;
@@ -88,37 +102,32 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
 
   async loadRevisionLog(
     repository: Repository,
-    left: string,
-    right: string,
-    limit: number
-  ): Promise<RevisionLogEntry[]> {
-    const fieldSeparator = '\u001f';
-    const recordSeparator = '\u001e';
+    source: RevisionLogSource,
+    limit: number,
+    skip = 0
+  ): Promise<{
+    readonly entries: readonly RevisionLogEntry[];
+    readonly hasMore: boolean;
+  }> {
+    const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const stdout = await execGit(
       repository.rootUri.fsPath,
-      [
-        'log',
-        '--date=short',
-        `--max-count=${limit}`,
-        `--pretty=format:%H${fieldSeparator}%h${fieldSeparator}%ad${fieldSeparator}%an${fieldSeparator}%s${recordSeparator}`,
-        `${left}..${right}`
-      ]
+      buildRevisionLogGitArgs(source, limit + 1, skip)
     );
+    const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
 
-    return stdout
-      .split(recordSeparator)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line) => {
-        const [hash, shortHash, date, author, ...subjectParts] = line.split(fieldSeparator);
-        return {
-          hash,
-          shortHash,
-          date,
-          author,
-          subject: subjectParts.join(fieldSeparator)
-        };
-      });
+    return {
+      entries: parsedEntries.slice(0, limit),
+      hasMore: parsedEntries.length > limit
+    };
+  }
+
+  async loadRevisionLogChanges(
+    repository: Repository,
+    commitHash: string,
+    parentHash?: string
+  ): Promise<readonly import('../git').Change[]> {
+    return repository.diffBetween(parentHash ?? EMPTY_TREE_HASH, commitHash);
   }
 
   async loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string> {
@@ -219,7 +228,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend {
   }
 }
 
-export function createRevisionGraphBackend(): RevisionGraphBackend {
+export function createRevisionGraphBackend(): RevisionGraphBackend & ShowLogBackend {
   return new DefaultRevisionGraphBackend();
 }
 

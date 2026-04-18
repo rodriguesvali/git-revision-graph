@@ -52,7 +52,7 @@ test('builds a serializable ready state for the persistent webview shell', async
       };
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -129,7 +129,7 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
       return snapshot;
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -226,7 +226,7 @@ test('metadata patches load the complete repository refs instead of relying only
       return snapshot;
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -281,7 +281,7 @@ test('metadata patch ref loading rethrows abort errors instead of silently falli
       throw new Error('not used');
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -319,7 +319,7 @@ test('metadata patch ref loading rethrows abort errors instead of silently falli
         };
       },
       async loadRevisionLog() {
-        return [];
+        return { entries: [], hasMore: false };
       },
       async loadUnifiedDiff() {
         return '';
@@ -385,7 +385,7 @@ test('recognizes when a ready-state refresh can preserve the current graph conte
       };
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -463,7 +463,7 @@ test('patched metadata fingerprints match the already-applied ready state when n
       return snapshot;
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';
@@ -529,7 +529,7 @@ test('metadata patch fingerprints use the same complete ref set as the applied p
       return snapshot;
     },
     async loadRevisionLog() {
-      return [];
+      return { entries: [], hasMore: false };
     },
     async loadUnifiedDiff() {
       return '';

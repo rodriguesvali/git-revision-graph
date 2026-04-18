@@ -2,6 +2,21 @@ import { RevisionGraphProjectionOptions, RevisionGraphRef, RevisionGraphScene } 
 import { RevisionGraphNodeLayout } from './revisionGraph/webview/shared';
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
+export const SHOW_LOG_VIEW_ID = 'gitRefs.showLogView';
+
+export type RevisionLogSource =
+  | {
+    readonly kind: 'target';
+    readonly revision: string;
+    readonly label: string;
+  }
+  | {
+    readonly kind: 'range';
+    readonly baseRevision: string;
+    readonly baseLabel: string;
+    readonly compareRevision: string;
+    readonly compareLabel: string;
+  };
 
 export type RevisionGraphMessage =
   | { readonly type: 'webview-ready' }
@@ -17,7 +32,7 @@ export type RevisionGraphMessage =
     readonly compareRevision: string;
     readonly compareLabel: string;
   }
-  | { readonly type: 'show-log'; readonly baseRevision: string; readonly compareRevision: string }
+  | { readonly type: 'show-log'; readonly source: RevisionLogSource }
   | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
   | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
   | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
@@ -104,4 +119,14 @@ export interface RevisionLogEntry {
   readonly author: string;
   readonly date: string;
   readonly subject: string;
+  readonly message: string;
+  readonly parentHashes: readonly string[];
+  readonly references: readonly RevisionGraphRef[];
+  readonly shortStat:
+    | {
+      readonly files: number;
+      readonly insertions: number;
+      readonly deletions: number;
+    }
+    | undefined;
 }

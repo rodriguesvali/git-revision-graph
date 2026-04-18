@@ -6,8 +6,11 @@ import { API, GitExtension } from './git';
 import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } from './refContentProvider';
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } from './refCommands';
 import { RefNode } from './refNodes';
+import { createRevisionGraphBackend } from './revisionGraph/backend';
+import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
+import { ShowLogViewProvider } from './showLogView';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -21,13 +24,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const compareResultsProvider = new CompareResultsViewProvider();
   await compareResultsProvider.initialize();
-  const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider);
+  const backend = createRevisionGraphBackend();
+  const showLogProvider = new ShowLogViewProvider(backend);
+  await showLogProvider.initialize();
+  const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider, showLogProvider, backend);
   const services = createCommandServices(revisionGraphProvider, compareResultsProvider);
 
   context.subscriptions.push(
     compareResultsProvider,
+    showLogProvider,
     revisionGraphProvider,
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
+    vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
@@ -57,6 +65,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
       await compareResultsProvider.hide();
+    }),
+    vscode.commands.registerCommand('gitRefs.hideShowLog', async () => {
+      await showLogProvider.hide();
     })
   );
 }

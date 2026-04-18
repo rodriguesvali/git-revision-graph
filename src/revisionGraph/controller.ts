@@ -22,7 +22,7 @@ import {
 } from '../refActions';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
-import { openCommitDetails, openUnifiedDiffDocument, showRevisionLogQuickPick } from './repository/log';
+import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
   buildMetadataPatchedRevisionGraphViewFingerprint,
@@ -51,6 +51,7 @@ import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
+import { ShowLogPresenter } from '../showLogView';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -151,6 +152,7 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly git: API,
     private readonly backend: RevisionGraphBackend,
     compareResultsPresenter: CompareResultsPresenter,
+    private readonly showLogPresenter: ShowLogPresenter,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY
   ) {
     this.actionServices = createWorkbenchRefActionServices(
@@ -331,16 +333,7 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'show-log':
         if (this.currentRepository) {
-          const picked = await showRevisionLogQuickPick(
-            this.currentRepository,
-            message.baseRevision,
-            message.compareRevision,
-            this.limitPolicy.initialLimit,
-            this.backend
-          );
-          if (picked) {
-            await openCommitDetails(this.currentRepository, picked.hash, this.backend);
-          }
+          await this.showLogPresenter.showSource(this.currentRepository, message.source);
         }
         return;
       case 'open-unified-diff':

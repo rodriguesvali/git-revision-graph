@@ -6,6 +6,7 @@ import { createRevisionGraphBackend, RevisionGraphBackend } from './revisionGrap
 import { RevisionGraphController } from './revisionGraph/controller';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
+import { ShowLogPresenter } from './showLogView';
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private readonly controller: RevisionGraphController;
@@ -13,9 +14,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   constructor(
     git: API,
     compareResultsPresenter: CompareResultsPresenter,
+    showLogPresenter: ShowLogPresenter,
     backend: RevisionGraphBackend = createRevisionGraphBackend()
   ) {
-    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter);
+    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter);
   }
 
   dispose(): void {

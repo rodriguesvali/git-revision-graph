@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Started the next release after the recent graph workflow, compare-review, and workbench polish work landed in `0.0.16`.
 - Opened a new planning window for follow-up refinement around graph ergonomics, compare review flow, and extension-surface consistency.
+- Added an on-demand `Show Log` view inspired by the Source Control Graph so selected refs, commits, and `base..compare` pairs can be reviewed in a dense log with inline changed files.
 
 ### Planned Focus
 

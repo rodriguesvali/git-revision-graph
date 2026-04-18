@@ -26,6 +26,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
+- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
 - Graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
@@ -218,10 +219,13 @@ Additional actions are available directly inside the Revision Graph context menu
 - Create a new branch from a selected reference
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream
-- Show the revision log between two selected references
+- Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
-The Activity Bar container also includes an on-demand `Compare Results` view that appears when a compare produces results, keeps the latest compare session available for multi-file review, and can be closed without clearing the stored result immediately.
+The Activity Bar container also includes two on-demand secondary views:
+
+- `Compare Results`, which appears when a compare produces results and keeps the latest compare session available for multi-file review
+- `Show Log`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline
 
 ## Known Limitations
 

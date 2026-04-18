@@ -48,6 +48,37 @@ test('package manifest contributes compare results as an on-demand webview with 
   );
 });
 
+test('package manifest contributes show log as an on-demand webview with a hide action', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly views: {
+        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
+      };
+      readonly menus: {
+        readonly ['view/title']: MenuContribution[];
+      };
+      readonly commands: Array<{ readonly command: string }>;
+    };
+  };
+
+  const showLogView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.showLogView');
+  assert.equal(showLogView?.type, 'webview');
+  assert.equal(showLogView?.when, 'gitRefs.showLogVisible');
+  assert.ok(
+    manifest.contributes.commands.some((command) => command.command === 'gitRefs.hideShowLog')
+  );
+
+  const titleMenus = manifest.contributes.menus['view/title'];
+  assert.ok(
+    titleMenus.some(
+      (menu) =>
+        menu.command === 'gitRefs.hideShowLog'
+        && menu.when === 'view == gitRefs.showLogView'
+        && menu.group === 'navigation'
+    )
+  );
+});
+
 test('package manifest icon paths point to files that exist', () => {
   const manifestPath = path.join(process.cwd(), 'package.json');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
