@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.17
+
+### In Progress
+
+- Started the next release after the recent graph workflow, compare-review, and workbench polish work landed in `0.0.16`.
+- Opened a new planning window for follow-up refinement around graph ergonomics, compare review flow, and extension-surface consistency.
+
+### Planned Focus
+
+- Define the final `0.0.17` scope around stabilizing the latest interaction improvements while continuing to reduce friction in the graph and compare workflows.
+
 ## 0.0.15
 
 ### In Progress
