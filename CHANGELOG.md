@@ -4,43 +4,46 @@ All notable changes to this project will be documented in this file.
 
 ## 0.0.17
 
-### In Progress
+### Highlights
 
-- Started the next release after the recent graph workflow, compare-review, and workbench polish work landed in `0.0.16`.
-- Opened a new planning window for follow-up refinement around graph ergonomics, compare review flow, and extension-surface consistency.
-- Added an on-demand `Show Log` view inspired by the Source Control Graph so selected refs, commits, and `base..compare` pairs can be reviewed in a dense log with inline changed files.
+- Added an on-demand `Show Log` view so selected refs, commits, and `base..compare` pairs can be reviewed in a denser history surface without leaving the extension.
+- Added automatic paging to `Show Log`, replacing the manual `Load More` step with end-of-scroll loading for longer histories.
+- Expanded `Show Log` file review actions with context-menu support, including `Open Diff`, `Compare with Worktree`, and clipboard helpers for file name and full path.
 
-### Planned Focus
+### Workflow & UX
 
-- Define the final `0.0.17` scope around stabilizing the latest interaction improvements while continuing to reduce friction in the graph and compare workflows.
-
-## 0.0.15
-
-### In Progress
-
-- Refreshed the extension artwork by adding a new SVG source asset and updating the packaged PNG icon.
-- Added context actions for compare result files to reopen the base diff, compare a result against the worktree, and restore worktree files to the selected revision.
-- Added graph actions for visible unreferenced commits so they can be compared directly and used as branch starting points without creating a temporary ref first.
-
-### Planned Focus
-
-- Define the final `0.0.15` scope around graph navigation, release workflows, and daily-driver UX polish.
+- `Show Log` now supports both single-target history and explicit `base -> compare` range review, with clearer summaries that identify the comparison base directly in the header.
+- The `Show Log` graph column now behaves like a real lane column: it can be widened by the user, hides overflowed lanes instead of scaling them, and keeps lane continuity during inline file expansion.
+- Graph selection feedback is stronger, including more visible dual-selection highlighting and a larger external `(Base)` badge shared by referenced and unreferenced nodes.
+- The revision graph loading overlay no longer leaves stale status text blurred underneath while a blocking refresh is in progress.
 
 ## 0.0.16
 
-### In Progress
+### Highlights
 
 - Started the next graph-focused release after the recent compare, commit-action, and selection UX refinements.
-- Reworked `Compare Results` into a dedicated webview so the file list now has a fixed inline filter box above the results, along with inline compare and restore actions.
+- Reworked `Compare Results` into a dedicated webview so the file list now has a fixed inline filter box above the results, along with context-menu compare and restore actions.
 - `Compare Results` now stays hidden until a compare produces results, and the title action now closes the view instead of clearing the file list explicitly.
 - Moved file actions inside `Compare Results` from inline buttons to a right-click context menu, reducing visual noise in large compare lists.
 - Replaced the static `Graph` title with a dynamic `Branch: <name>` header that follows the active `HEAD` branch.
 - Added `Copy Commit Hash` to the graph context menu for any commit node, whether it carries a visible ref or not.
 - Updated `Fetch` so each run can opt into `Prune` and `Tags` before contacting the remote.
 
-### Planned Focus
+### Workflow & UX
 
 - Continue improving graph interaction quality, especially around commit selection, visual clarity, and low-friction daily review workflows.
+
+## 0.0.15
+
+### Highlights
+
+- Refreshed the extension artwork by adding a new SVG source asset and updating the packaged PNG icon.
+- Added context actions for compare result files to reopen the base diff, compare a result against the worktree, and restore worktree files to the selected revision.
+- Added graph actions for visible unreferenced commits so they can be compared directly and used as branch starting points without creating a temporary ref first.
+
+### Workflow & UX
+
+- Defined the release around graph navigation, release workflows, and daily-driver UX polish.
 
 ## 0.0.14
 
