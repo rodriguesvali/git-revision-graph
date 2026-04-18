@@ -5,6 +5,7 @@ export interface ShowLogLaneRow {
   readonly nodeLane: number;
   readonly continuingLanes: readonly number[];
   readonly secondaryParentLanes: readonly number[];
+  readonly mergeStartLanes: readonly number[];
   readonly colorByLane: Readonly<Record<number, number>>;
 }
 
@@ -60,6 +61,7 @@ export function buildShowLogLaneRows(entries: readonly RevisionLogEntry[]): Map<
 
     const activeAfter = listActiveLanes(nextActive);
     const continuingLanes = [...new Set([...activeBefore, ...activeAfter, nodeLane])].sort((left, right) => left - right);
+    const mergeStartLanes = secondaryParentLanes.filter((lane) => !activeBefore.includes(lane));
     const laneCount = Math.max(nodeLane, ...continuingLanes, ...secondaryParentLanes, 0) + 1;
     const colorByLane = buildColorByLaneMap(laneColors, continuingLanes, secondaryParentLanes, nodeLane, nodeColorIndex);
 
@@ -68,6 +70,7 @@ export function buildShowLogLaneRows(entries: readonly RevisionLogEntry[]): Map<
       nodeLane,
       continuingLanes,
       secondaryParentLanes,
+      mergeStartLanes,
       colorByLane
     });
 

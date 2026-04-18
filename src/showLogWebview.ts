@@ -691,6 +691,9 @@ export function renderShowLogWebviewHtml(): string {
       const lineParts = [];
 
       for (const lane of topology.continuingLanes) {
+        if (topology.mergeStartLanes.includes(lane)) {
+          continue;
+        }
         const color = getLaneColor(topology.colorByLane[lane]);
         const x = laneX(lane, laneSpacing);
         lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');

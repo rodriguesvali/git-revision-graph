@@ -66,5 +66,6 @@ test('allocates an extra lane for merge parents', () => {
   assert.equal(mergeRow.nodeLane, 0);
   assert.equal(mergeRow.laneCount >= 2, true);
   assert.deepEqual(mergeRow.secondaryParentLanes, [1]);
+  assert.deepEqual(mergeRow.mergeStartLanes, [1]);
   assert.equal(typeof mergeRow.colorByLane[1], 'number');
 });
