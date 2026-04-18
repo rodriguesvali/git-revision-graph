@@ -36,11 +36,13 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /Load More/);
   assert.match(html, /Open Commit Details/);
   assert.match(html, /Open Diff/);
+  assert.match(html, /Compare with Worktree/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /context-menu-group/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /type: 'toggleCommit', commitHash:/);
   assert.match(html, /data-menu-action="openFile"/);
+  assert.match(html, /data-menu-action="compareWithWorktree"/);
   assert.match(html, /type: action,\s*commitHash: state\.commitHash,\s*changeId: state\.changeId/s);
   assert.match(html, /type: 'openCommitDetails', commitHash: state\.commitHash/);
   assert.doesNotMatch(html, /vscode\.postMessage\(\{\s*type: 'openFile',\s*commitHash: fileRow/s);

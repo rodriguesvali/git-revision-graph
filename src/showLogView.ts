@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
-import { openChangeDiffBetweenRefs } from './workbenchRefActionServices';
+import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
 import type { RevisionGraphBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
 import type { RevisionLogSource } from './revisionGraphTypes';
@@ -25,6 +25,7 @@ type ShowLogWebviewMessage =
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'loadMore' }
   | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
+  | { readonly type: 'compareWithWorktree'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'copyFileName'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'copyFullPath'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'openCommitDetails'; readonly commitHash: string };
@@ -150,6 +151,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'openFile':
         await this.openFileChange(message.commitHash, message.changeId);
+        return;
+      case 'compareWithWorktree':
+        await this.compareFileChangeWithWorktree(message.commitHash, message.changeId);
         return;
       case 'copyFileName':
         await this.copyFileName(message.commitHash, message.changeId);
@@ -366,6 +370,20 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     const entry = this.state.entries.find((item) => item.hash === commitHash);
     const parentHash = entry?.parentHashes[0] ?? EMPTY_TREE_HASH;
     await openChangeDiffBetweenRefs(repository, change, parentHash, commitHash);
+  }
+
+  private async compareFileChangeWithWorktree(commitHash: string, changeId: string): Promise<void> {
+    const change = this.findChange(commitHash, changeId);
+    if (!change) {
+      return;
+    }
+
+    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    if (!repository) {
+      return;
+    }
+
+    await openChangeDiffWithWorktree(repository, change, commitHash);
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
