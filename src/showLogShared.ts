@@ -1,11 +1,13 @@
 import { getRepositoryRelativeChangePath, getStatusLabel } from './changePresentation';
 import type { Change, Repository } from './git';
 import type { RevisionLogEntry, RevisionLogSource } from './revisionGraphTypes';
+import { buildShowLogLaneRows, type ShowLogLaneRow } from './showLog/showLogLanes';
 
 export interface ShowLogState {
   readonly kind: 'hidden' | 'visible';
   readonly repository: Repository | undefined;
   readonly source: RevisionLogSource | undefined;
+  readonly showAllBranches: boolean;
   readonly entries: readonly RevisionLogEntry[];
   readonly hasMore: boolean;
   readonly loading: boolean;
@@ -15,14 +17,6 @@ export interface ShowLogState {
   readonly loadingCommitHash: string | undefined;
   readonly expandedCommitError: string | undefined;
   readonly cachedChanges: Readonly<Record<string, readonly Change[]>>;
-}
-
-export interface ShowLogTopology {
-  readonly lane: number;
-  readonly laneCount: number;
-  readonly activeBefore: readonly number[];
-  readonly activeAfter: readonly number[];
-  readonly parentLanes: readonly number[];
 }
 
 export interface ShowLogWebviewChangeItem {
@@ -39,7 +33,7 @@ export interface ShowLogWebviewCommitItem {
   readonly date: string;
   readonly refs: readonly string[];
   readonly stats: string | undefined;
-  readonly topology: ShowLogTopology;
+  readonly topology: ShowLogLaneRow;
   readonly expanded: boolean;
   readonly loadingChanges: boolean;
   readonly changeError: string | undefined;
@@ -51,6 +45,8 @@ export interface ShowLogWebviewState {
   readonly loading: boolean;
   readonly loadingMore: boolean;
   readonly summary: string;
+  readonly showAllBranches: boolean;
+  readonly canToggleAllBranches: boolean;
   readonly emptyMessage: string | undefined;
   readonly errorMessage: string | undefined;
   readonly commits: readonly ShowLogWebviewCommitItem[];
@@ -62,6 +58,7 @@ export function createHiddenShowLogState(): ShowLogState {
     kind: 'hidden',
     repository: undefined,
     source: undefined,
+    showAllBranches: false,
     entries: [],
     hasMore: false,
     loading: false,
@@ -125,6 +122,8 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       loading: false,
       loadingMore: false,
       summary: '',
+      showAllBranches: false,
+      canToggleAllBranches: false,
       emptyMessage: buildShowLogEmptyMessage(state),
       errorMessage: undefined,
       commits: [],
@@ -132,13 +131,15 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     };
   }
 
-  const topologyByHash = buildShowLogTopology(state.entries);
+  const topologyByHash = buildShowLogLaneRows(state.entries);
 
   return {
     kind: 'visible',
     loading: state.loading,
     loadingMore: state.loadingMore,
     summary: buildShowLogSummary(state.source, state.entries.length, state.hasMore),
+    showAllBranches: state.showAllBranches,
+    canToggleAllBranches: state.source?.kind === 'target',
     emptyMessage: state.entries.length === 0 ? buildShowLogEmptyMessage(state) : undefined,
     errorMessage: state.errorMessage,
     commits: state.entries.map((entry) => {
@@ -152,11 +153,11 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
         refs: entry.references.map((ref) => formatShowLogRef(ref.name, ref.kind)),
         stats: formatShortStat(entry.shortStat),
         topology: topologyByHash.get(entry.hash) ?? {
-          lane: 0,
           laneCount: 1,
-          activeBefore: [],
-          activeAfter: [],
-          parentLanes: []
+          nodeLane: 0,
+          continuingLanes: [0],
+          secondaryParentLanes: [],
+          colorByLane: { 0: 0 }
         },
         expanded: state.expandedCommitHash === entry.hash,
         loadingChanges: state.loadingCommitHash === entry.hash,
@@ -199,63 +200,4 @@ function formatShortStat(shortStat: RevisionLogEntry['shortStat']): string | und
   }
 
   return parts.join(' • ');
-}
-
-function buildShowLogTopology(entries: readonly RevisionLogEntry[]): Map<string, ShowLogTopology> {
-  const topologyByHash = new Map<string, ShowLogTopology>();
-  const activeLanes: Array<string | undefined> = [];
-
-  for (const entry of entries) {
-    let lane = activeLanes.indexOf(entry.hash);
-    if (lane < 0) {
-      lane = firstEmptyLane(activeLanes);
-      if (lane === -1) {
-        lane = activeLanes.length;
-      }
-    }
-
-    const activeBefore = activeLanes
-      .map((value, index) => (value ? index : -1))
-      .filter((index) => index >= 0);
-    const nextActive = [...activeLanes];
-    nextActive[lane] = undefined;
-
-    const parentLanes: number[] = [];
-    if (entry.parentHashes.length > 0) {
-      nextActive[lane] = entry.parentHashes[0];
-      parentLanes.push(lane);
-
-      for (const parentHash of entry.parentHashes.slice(1)) {
-        let parentLane = nextActive.indexOf(parentHash);
-        if (parentLane < 0) {
-          parentLane = firstEmptyLane(nextActive);
-          if (parentLane === -1) {
-            parentLane = nextActive.length;
-          }
-          nextActive[parentLane] = parentHash;
-        }
-        parentLanes.push(parentLane);
-      }
-    }
-
-    const activeAfter = nextActive
-      .map((value, index) => (value ? index : -1))
-      .filter((index) => index >= 0);
-    const highestLane = Math.max(lane, ...activeBefore, ...activeAfter, ...parentLanes, 0);
-    topologyByHash.set(entry.hash, {
-      lane,
-      laneCount: highestLane + 1,
-      activeBefore,
-      activeAfter,
-      parentLanes
-    });
-
-    activeLanes.splice(0, activeLanes.length, ...nextActive);
-  }
-
-  return topologyByHash;
-}
-
-function firstEmptyLane(lanes: readonly (string | undefined)[]): number {
-  return lanes.findIndex((value) => !value);
 }

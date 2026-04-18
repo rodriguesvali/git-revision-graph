@@ -3,11 +3,35 @@ import assert from 'node:assert/strict';
 
 import { renderShowLogWebviewHtml } from '../src/showLogWebview';
 
-test('renders a compact show log webview shell with inline commit details support', () => {
+test('renders a table-like show log webview shell with graph column and inline commit details support', () => {
   const html = renderShowLogWebviewHtml();
 
   assert.match(html, /<title>Show Log<\/title>/);
+  assert.match(html, /class="table-header"/);
+  assert.match(html, /graph-header-label">Graph<\/span>/);
+  assert.match(html, /Show All Branches/);
+  assert.match(html, /id="showAllBranchesToggle"/);
+  assert.match(html, /id="graphResizer"/);
   assert.match(html, /class="commit-row"/);
+  assert.match(html, /data-selected="/);
+  assert.match(html, /class="graph-cell"/);
+  assert.match(html, /class="commit-files-graph"/);
+  assert.match(html, /class="commit-files-list"/);
+  assert.match(html, /function renderTopology\(topology\)/);
+  assert.match(html, /function renderContinuationTopology\(topology\)/);
+  assert.match(html, /const LANE_COLORS = \[/);
+  assert.match(html, /const GRAPH_LANE_SPACING = 10;/);
+  assert.match(html, /const GRAPH_LEFT_INSET = 8;/);
+  assert.match(html, /const GRAPH_RIGHT_PADDING = 6;/);
+  assert.match(html, /const width = getGraphContentWidth\(topology\.laneCount, laneSpacing\);/);
+  assert.match(html, /function getGraphContentWidth\(laneCount, laneSpacing\)/);
+  assert.match(html, /<svg class="graph-svg" width="/);
+  assert.match(html, /function applyGraphColumnWidth\(width\)/);
+  assert.match(html, /selectedCommitHash = persistedUiState\.selectedCommitHash \|\| null/);
+  assert.match(html, /function persistUiState\(\)/);
+  assert.match(html, /vscode\.setState\(/);
+  assert.match(html, /document\.addEventListener\('pointerdown'/);
+  assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);
   assert.match(html, /class="commit-files"/);
   assert.match(html, /Load More/);
   assert.match(html, /Open Commit Details/);
@@ -20,7 +44,4 @@ test('renders a compact show log webview shell with inline commit details suppor
   assert.match(html, /type: action,\s*commitHash: state\.commitHash,\s*changeId: state\.changeId/s);
   assert.match(html, /type: 'openCommitDetails', commitHash: state\.commitHash/);
   assert.doesNotMatch(html, /vscode\.postMessage\(\{\s*type: 'openFile',\s*commitHash: fileRow/s);
-  assert.doesNotMatch(html, /class="graph-layer"/);
-  assert.doesNotMatch(html, /function renderGraphLayer\(\)/);
-  assert.doesNotMatch(html, /function renderTopology\(/);
 });

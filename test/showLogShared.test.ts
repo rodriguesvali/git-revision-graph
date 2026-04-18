@@ -25,12 +25,13 @@ test('builds show log summaries for target and range sources', () => {
   );
 });
 
-test('builds expanded show log webview commits with inline file changes and topology', () => {
+test('builds expanded show log webview commits with inline file changes and lane topology', () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const state = {
     kind: 'visible' as const,
     repository,
     source: { kind: 'target' as const, revision: 'main', label: 'main' },
+    showAllBranches: false,
     entries: [
       {
         hash: 'a'.repeat(40),
@@ -73,10 +74,15 @@ test('builds expanded show log webview commits with inline file changes and topo
 
   assert.equal(webviewState.kind, 'visible');
   assert.equal(webviewState.summary, 'main • 2 commits');
+  assert.equal(webviewState.showAllBranches, false);
+  assert.equal(webviewState.canToggleAllBranches, true);
   assert.equal(webviewState.commits[0]?.expanded, true);
   assert.equal(webviewState.commits[0]?.changes[0]?.path, 'src/demo.ts');
   assert.equal(webviewState.commits[0]?.changes[0]?.status, 'Modified');
-  assert.deepEqual(webviewState.commits[0]?.topology.parentLanes, [0]);
+  assert.equal(webviewState.commits[0]?.topology.nodeLane, 0);
+  assert.deepEqual(webviewState.commits[0]?.topology.continuingLanes, [0]);
+  assert.deepEqual(webviewState.commits[0]?.topology.secondaryParentLanes, []);
+  assert.equal(webviewState.commits[0]?.topology.colorByLane[0], 0);
   assert.deepEqual(webviewState.commits[0]?.refs, ['HEAD → main']);
 });
 

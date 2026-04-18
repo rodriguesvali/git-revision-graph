@@ -111,7 +111,34 @@ test('builds show log git args for a target revision', () => {
       '--skip=100',
       '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
       '--shortstat',
+      '--first-parent',
       'feature/demo'
+    ]
+  );
+});
+
+test('builds show log git args for a target revision with all branches enabled', () => {
+  assert.deepEqual(
+    buildRevisionLogGitArgs(
+      {
+        kind: 'target',
+        revision: 'feature/demo',
+        label: 'feature/demo'
+      },
+      51,
+      0,
+      true
+    ),
+    [
+      'log',
+      '--topo-order',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=51',
+      '--skip=0',
+      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--shortstat',
+      '--all'
     ]
   );
 });

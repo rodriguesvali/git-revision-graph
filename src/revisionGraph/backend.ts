@@ -34,7 +34,8 @@ export interface RevisionGraphBackend {
     repository: Repository,
     source: RevisionLogSource,
     limit: number,
-    skip?: number
+    skip?: number,
+    showAllBranches?: boolean
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
@@ -104,7 +105,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     repository: Repository,
     source: RevisionLogSource,
     limit: number,
-    skip = 0
+    skip = 0,
+    showAllBranches = source.kind === 'range'
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
@@ -112,7 +114,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const stdout = await execGit(
       repository.rootUri.fsPath,
-      buildRevisionLogGitArgs(source, limit + 1, skip)
+      buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches)
     );
     const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
 

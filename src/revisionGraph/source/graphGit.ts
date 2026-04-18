@@ -129,7 +129,8 @@ export function buildRevisionGraphGitLogArgs(
 export function buildRevisionLogGitArgs(
   source: RevisionLogSource,
   limit: number,
-  skip = 0
+  skip = 0,
+  showAllBranches = source.kind === 'range'
 ): string[] {
   const args = [
     'log',
@@ -144,7 +145,12 @@ export function buildRevisionLogGitArgs(
 
   switch (source.kind) {
     case 'target':
-      args.push(source.revision);
+      if (showAllBranches) {
+        args.push('--all');
+      } else {
+        args.push('--first-parent');
+        args.push(source.revision);
+      }
       break;
     case 'range':
       args.push(`${source.baseRevision}..${source.compareRevision}`);

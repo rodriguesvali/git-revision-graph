@@ -14,7 +14,11 @@ export function renderShowLogWebviewHtml(): string {
     :root {
       color-scheme: var(--vscode-color-scheme);
       --show-log-row-hover: color-mix(in srgb, var(--vscode-list-hoverBackground) 68%, transparent);
-      --show-log-row-active: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 22%, transparent);
+      --show-log-row-active: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 18%, transparent);
+      --show-log-graph-width: 64px;
+      --show-log-author-width: 132px;
+      --show-log-date-width: 84px;
+      --show-log-resizer-hit-width: 8px;
     }
     * { box-sizing: border-box; }
     body {
@@ -32,10 +36,10 @@ export function renderShowLogWebviewHtml(): string {
     .toolbar {
       position: sticky;
       top: 0;
-      z-index: 2;
+      z-index: 3;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       padding: 10px 12px 11px;
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
@@ -55,6 +59,30 @@ export function renderShowLogWebviewHtml(): string {
       font-weight: 600;
       letter-spacing: 0.01em;
     }
+    .toolbar-main {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex: 1 1 auto;
+    }
+    .toolbar-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      user-select: none;
+      white-space: nowrap;
+    }
+    .toolbar-toggle[hidden] {
+      display: none;
+    }
+    .toolbar-toggle input {
+      margin: 0;
+    }
     .loading-chip {
       display: none;
       flex-shrink: 0;
@@ -71,11 +99,11 @@ export function renderShowLogWebviewHtml(): string {
       display: flex;
       flex-direction: column;
       gap: 0;
-      padding: 6px 0 18px;
+      padding: 0 0 14px;
     }
     .status-card,
     .empty-state {
-      margin: 8px 12px 0;
+      margin: 10px 12px 0;
       padding: 10px 12px;
       border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
       border-radius: 10px;
@@ -87,25 +115,103 @@ export function renderShowLogWebviewHtml(): string {
       color: var(--vscode-errorForeground);
       border-color: color-mix(in srgb, var(--vscode-errorForeground) 45%, transparent);
     }
-    .commit-list {
+    .table-header {
+      position: sticky;
+      top: 40px;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: var(--show-log-graph-width) minmax(0, 1fr) var(--show-log-author-width) var(--show-log-date-width);
+      gap: 0;
+      padding: 5px 12px 4px;
+      border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
+      color: var(--vscode-descriptionForeground);
+      background: color-mix(in srgb, var(--vscode-sideBar-background) 94%, transparent);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.82;
+    }
+    .header-cell {
       position: relative;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .header-cell.graph {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 0;
+      overflow: visible;
+    }
+    .graph-header-label {
+      padding-left: 0;
+    }
+    .graph-resizer {
+      position: absolute;
+      top: -4px;
+      right: calc(var(--show-log-resizer-hit-width) * -0.5);
+      width: var(--show-log-resizer-hit-width);
+      height: calc(100% + 8px);
+      cursor: col-resize;
+      touch-action: none;
+    }
+    .graph-resizer::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      left: 50%;
+      width: 1px;
+      background: color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
+      transform: translateX(-50%);
+      opacity: 0.55;
+      transition: opacity 90ms ease, background 90ms ease;
+    }
+    .graph-resizer:hover::before,
+    .graph-resizer:focus-visible::before,
+    body[data-resizing-graph="true"] .graph-resizer::before {
+      opacity: 0.9;
+      background: var(--vscode-focusBorder);
+    }
+    .graph-resizer:focus-visible {
+      outline: none;
+    }
+    .commit-list {
+      display: flex;
+      flex-direction: column;
     }
     .commit-entry {
       position: relative;
     }
+    .commit-entry[data-selected="true"] {
+      background: color-mix(in srgb, var(--show-log-row-active) 22%, transparent);
+    }
     .commit-row {
+      position: relative;
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: var(--show-log-graph-width) minmax(0, 1fr) var(--show-log-author-width) var(--show-log-date-width);
+      grid-template-areas:
+        'graph subject author date'
+        'graph files files files';
       gap: 0;
-      margin: 0;
-      padding: 0 8px 0 0;
-      border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 32%, transparent);
+      align-items: stretch;
+      min-height: 30px;
+      padding: 0 12px;
       cursor: pointer;
       user-select: none;
-      min-height: 28px;
     }
-    .commit-row:first-of-type {
-      border-top: 0;
+    .commit-entry + .commit-entry .commit-row::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: calc(12px + var(--show-log-graph-width));
+      right: 0;
+      height: 1px;
+      background: color-mix(in srgb, var(--vscode-panel-border) 32%, transparent);
     }
     .commit-row:hover {
       background: color-mix(in srgb, var(--show-log-row-hover) 70%, transparent);
@@ -114,64 +220,135 @@ export function renderShowLogWebviewHtml(): string {
       background:
         linear-gradient(
           90deg,
-          color-mix(in srgb, var(--show-log-row-active) 94%, transparent) 0 2px,
+          color-mix(in srgb, var(--show-log-row-active) 96%, transparent) 0 2px,
           transparent 2px 100%
         ),
-        color-mix(in srgb, var(--show-log-row-active) 18%, transparent);
+        color-mix(in srgb, var(--show-log-row-active) 16%, transparent);
     }
     .commit-row:focus-visible {
       outline: none;
       background: color-mix(in srgb, var(--vscode-list-focusOutline) 10%, var(--show-log-row-hover));
     }
-    .commit-main {
+    .graph-cell {
+      grid-area: graph;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+    }
+    .graph-stack {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-height: 30px;
+    }
+    .graph-main {
+      display: flex;
+      min-height: 30px;
+      overflow: hidden;
+    }
+    .graph-continuation {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .graph-svg {
+      flex: none;
+      width: auto;
+      height: 100%;
+      min-height: 30px;
+      display: block;
+      overflow: visible;
+    }
+    .graph-line {
+      fill: none;
+      stroke-width: 1.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.88;
+    }
+    .graph-node-ring {
+      fill: var(--vscode-sideBar-background);
+      stroke-width: 1.35;
+    }
+    .graph-node-core {
+      fill: var(--vscode-sideBar-background);
+      opacity: 0.92;
+    }
+    .subject-cell,
+    .author-cell,
+    .date-cell {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+    }
+    .subject-cell {
+      grid-area: subject;
+      padding: 3px 12px 3px 0;
+    }
+    .author-cell,
+    .date-cell {
+      padding: 3px 10px 3px 0;
+      color: var(--vscode-descriptionForeground);
+      font-size: 10.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.82;
+    }
+    .author-cell {
+      grid-area: author;
+      justify-content: flex-start;
+    }
+    .date-cell {
+      grid-area: date;
+      justify-content: flex-end;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.72;
+    }
+    .subject-stack {
       min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 1px;
-      justify-content: center;
-      padding: 4px 0 4px;
     }
-    .commit-headline {
+    .subject-line {
       display: flex;
       align-items: baseline;
       gap: 6px;
       min-width: 0;
       white-space: nowrap;
     }
-    .commit-subject {
-      flex: 1 1 0;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 12.5px;
-      line-height: 1.2;
-      font-weight: 500;
-    }
     .commit-hash {
       flex-shrink: 0;
       font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 10px;
+      font-size: 9.5px;
       letter-spacing: 0.03em;
       color: var(--vscode-descriptionForeground);
-      opacity: 0.86;
+      opacity: 0.7;
     }
-    .commit-author-inline {
-      flex: 0 1 auto;
+    .commit-subject {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 10px;
-      color: var(--vscode-descriptionForeground);
-      opacity: 0.82;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 480;
     }
-    .commit-secondary {
+    .subject-meta {
       display: flex;
       align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+      gap: 5px;
       min-width: 0;
+      flex-wrap: wrap;
+      color: var(--vscode-descriptionForeground);
+      font-size: 9.5px;
+      line-height: 1.15;
+      opacity: 0.68;
     }
     .refs {
       display: flex;
@@ -182,40 +359,47 @@ export function renderShowLogWebviewHtml(): string {
     .ref-badge {
       display: inline-flex;
       align-items: center;
-      max-width: 180px;
-      padding: 0 5px 1px;
+      max-width: 144px;
+      padding: 0 5px;
       border-radius: 999px;
       border: 1px solid color-mix(in srgb, var(--vscode-badge-background) 16%, transparent);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 8px;
+      font-size: 7.5px;
       font-weight: 600;
       color: var(--vscode-badge-foreground);
-      background: color-mix(in srgb, var(--vscode-badge-background) 22%, transparent);
+      background: color-mix(in srgb, var(--vscode-badge-background) 18%, transparent);
     }
-    .commit-meta {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      font-size: 10px;
-      line-height: 1.2;
-      color: var(--vscode-descriptionForeground);
-      opacity: 0.68;
+    .stats {
+      white-space: nowrap;
+      opacity: 0.88;
     }
     .commit-files {
+      grid-area: files;
+      min-width: 0;
+    }
+    .commit-files-graph {
+      height: 100%;
+      overflow: hidden;
+    }
+    .commit-files-graph .graph-svg {
+      height: 100%;
+      min-height: 34px;
+      opacity: 0.9;
+    }
+    .commit-files-list {
       display: flex;
       flex-direction: column;
       gap: 0;
-      margin: 0 12px 4px 12px;
-      padding: 0 0 0 12px;
+      padding: 0 0 5px 12px;
       border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
     }
     .file-row {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 4px 8px 4px 0;
+      padding: 3px 8px 3px 0;
       border-radius: 6px;
       cursor: context-menu;
     }
@@ -229,17 +413,17 @@ export function renderShowLogWebviewHtml(): string {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 400;
     }
     .file-status {
       flex-shrink: 0;
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--vscode-descriptionForeground);
       opacity: 0.9;
     }
     .load-more {
-      margin: 10px 12px 0;
+      margin: 8px 12px 0;
       padding: 8px 10px;
       border: 1px solid var(--vscode-button-border, transparent);
       border-radius: 8px;
@@ -338,7 +522,13 @@ export function renderShowLogWebviewHtml(): string {
 <body>
   <div class="shell">
     <div class="toolbar">
-      <div class="summary" id="summary"></div>
+      <div class="toolbar-main">
+        <div class="summary" id="summary"></div>
+        <label class="toolbar-toggle" id="showAllBranchesControl" hidden>
+          <input type="checkbox" id="showAllBranchesToggle" />
+          <span>Show All Branches</span>
+        </label>
+      </div>
       <div class="loading-chip" id="loadingChip" data-visible="false">Loading</div>
     </div>
     <div class="content" id="content"></div>
@@ -352,6 +542,20 @@ export function renderShowLogWebviewHtml(): string {
     const content = document.getElementById('content');
     const loadingChip = document.getElementById('loadingChip');
     const contextMenu = document.getElementById('contextMenu');
+    const showAllBranchesControl = document.getElementById('showAllBranchesControl');
+    const showAllBranchesToggle = document.getElementById('showAllBranchesToggle');
+    const LANE_COLORS = ['#5bbaf9', '#d87cff', '#ffd24d', '#52d273', '#ff7db8', '#ff9b5e', '#8fd6c9'];
+    const GRAPH_WIDTH_KEY = 'showLogGraphWidth';
+    const MIN_GRAPH_WIDTH = 42;
+    const GRAPH_LANE_SPACING = 10;
+    const GRAPH_LEFT_INSET = 8;
+    const GRAPH_RIGHT_PADDING = 6;
+    const persistedUiState = vscode.getState() || {};
+    let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
+    let resizeState = null;
+    let selectedCommitHash = persistedUiState.selectedCommitHash || null;
+
+    applyGraphColumnWidth(graphWidth);
 
     function render() {
       if (!summary || !content || !loadingChip) {
@@ -362,6 +566,8 @@ export function renderShowLogWebviewHtml(): string {
         loading: false,
         loadingMore: false,
         summary: '',
+        showAllBranches: false,
+        canToggleAllBranches: false,
         emptyMessage: 'Use Show Log from the graph context menu to load a commit stack or range here.',
         errorMessage: undefined,
         commits: [],
@@ -371,6 +577,11 @@ export function renderShowLogWebviewHtml(): string {
       summary.textContent = state.summary || 'Show Log';
       loadingChip.dataset.visible = state.loading || state.loadingMore ? 'true' : 'false';
       loadingChip.textContent = state.loadingMore ? 'Loading More' : 'Loading';
+      if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
+        showAllBranchesControl.hidden = !state.canToggleAllBranches;
+        showAllBranchesToggle.checked = !!state.showAllBranches;
+        showAllBranchesToggle.disabled = !!state.loading || !!state.loadingMore;
+      }
 
       const sections = [];
       if (state.errorMessage) {
@@ -379,6 +590,7 @@ export function renderShowLogWebviewHtml(): string {
       if (state.commits.length === 0 && state.emptyMessage) {
         sections.push('<div class="empty-state">' + escapeHtml(state.emptyMessage) + '</div>');
       } else {
+        sections.push(renderTableHeader());
         sections.push(renderCommitList(state.commits));
       }
       if (state.hasMore) {
@@ -391,13 +603,25 @@ export function renderShowLogWebviewHtml(): string {
       content.innerHTML = sections.join('');
     }
 
+    function renderTableHeader() {
+      return ''
+        + '<div class="table-header">'
+        + '  <div class="header-cell graph">'
+        + '    <span class="graph-header-label">Graph</span>'
+        + '    <div class="graph-resizer" id="graphResizer" role="separator" tabindex="0" aria-label="Resize graph column" aria-orientation="vertical"></div>'
+        + '  </div>'
+        + '  <div class="header-cell">Message</div>'
+        + '  <div class="header-cell">Author</div>'
+        + '  <div class="header-cell">Date</div>'
+        + '</div>';
+    }
+
     function renderCommitList(commits) {
       return ''
         + '<div class="commit-list">'
         + commits.map((commit) => ''
-          + '<div class="commit-entry">'
+          + '<div class="commit-entry" data-selected="' + (selectedCommitHash === commit.hash ? 'true' : 'false') + '">'
           + renderCommit(commit)
-          + (commit.expanded ? renderCommitFiles(commit) : '')
           + '</div>'
         ).join('')
         + '</div>';
@@ -406,45 +630,179 @@ export function renderShowLogWebviewHtml(): string {
     function renderCommit(commit) {
       return ''
         + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '">'
-        + '  <div class="commit-main">'
-        + '    <div class="commit-headline">'
-        + '      <span class="commit-hash">' + escapeHtml(commit.shortHash) + '</span>'
-        + '      <span class="commit-subject">' + escapeHtml(commit.subject) + '</span>'
-        + '      <span class="commit-author-inline">' + escapeHtml(commit.author) + '</span>'
-        + '    </div>'
-        + ((commit.refs.length > 0 || commit.date || commit.stats)
-          ? '    <div class="commit-secondary">'
-            + (commit.refs.length > 0
-              ? '      <div class="refs">' + commit.refs.map((ref) => '<span class="ref-badge">' + escapeHtml(ref) + '</span>').join('') + '</div>'
-              : '')
-            + '      <div class="commit-meta">'
-            + (commit.date ? '        <span>' + escapeHtml(commit.date) + '</span>' : '')
-            + (commit.stats ? '        <span>' + escapeHtml(commit.stats) + '</span>' : '')
-            + '      </div>'
-            + '    </div>'
+        + '  <div class="graph-cell">'
+        + '    <div class="graph-stack">'
+        + '      <div class="graph-main">' + renderTopology(commit.topology) + '</div>'
+        + (commit.expanded
+          ? '      <div class="graph-continuation"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>'
           : '')
+        + '    </div>'
         + '  </div>'
+        + '  <div class="subject-cell">'
+        + '    <div class="subject-stack">'
+        + '      <div class="subject-line">'
+        + '        <span class="commit-hash">' + escapeHtml(commit.shortHash) + '</span>'
+        + '        <span class="commit-subject">' + escapeHtml(commit.subject) + '</span>'
+        + '      </div>'
+        + ((commit.refs.length > 0 || commit.stats)
+          ? '      <div class="subject-meta">'
+            + (commit.refs.length > 0
+              ? '        <div class="refs">' + commit.refs.map((ref) => '<span class="ref-badge">' + escapeHtml(ref) + '</span>').join('') + '</div>'
+              : '')
+            + (commit.stats ? '        <span class="stats">' + escapeHtml(commit.stats) + '</span>' : '')
+            + '      </div>'
+          : '')
+        + '    </div>'
+        + '  </div>'
+        + '  <div class="author-cell">' + escapeHtml(commit.author) + '</div>'
+        + '  <div class="date-cell">' + escapeHtml(commit.date) + '</div>'
+        + (commit.expanded ? renderCommitFiles(commit) : '')
         + '</div>';
+    }
+
+    function renderTopology(topology) {
+      const laneSpacing = GRAPH_LANE_SPACING;
+      const width = getGraphContentWidth(topology.laneCount, laneSpacing);
+      const height = 34;
+      const centerY = 15;
+      const topY = -2;
+      const bottomY = 32;
+      const lineParts = [];
+
+      for (const lane of topology.continuingLanes) {
+        const color = getLaneColor(topology.colorByLane[lane]);
+        const x = laneX(lane, laneSpacing);
+        lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
+      }
+
+      for (const lane of topology.secondaryParentLanes) {
+        const color = getLaneColor(topology.colorByLane[lane]);
+        const startX = laneX(topology.nodeLane, laneSpacing);
+        const endX = laneX(lane, laneSpacing);
+        const controlY = centerY + 4;
+        const controlX = startX + ((endX - startX) * 0.58);
+        lineParts.push(
+          '<path class="graph-line" d="M ' + startX + ' ' + centerY
+          + ' C ' + startX + ' ' + controlY + ', ' + controlX + ' ' + controlY + ', ' + endX + ' ' + bottomY
+          + '" stroke="' + color + '" />'
+        );
+      }
+
+      const nodeColor = getLaneColor(topology.colorByLane[topology.nodeLane]);
+      const nodeX = laneX(topology.nodeLane, laneSpacing);
+      lineParts.push('<circle class="graph-node-ring" cx="' + nodeX + '" cy="' + centerY + '" r="3.65" stroke="' + nodeColor + '" />');
+      lineParts.push('<circle class="graph-node-core" cx="' + nodeX + '" cy="' + centerY + '" r="1.45" fill="' + nodeColor + '" />');
+
+      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -2 ' + width + ' ' + height + '" aria-hidden="true">' + lineParts.join('') + '</svg>';
+    }
+
+    function renderContinuationTopology(topology) {
+      const laneSpacing = GRAPH_LANE_SPACING;
+      const width = getGraphContentWidth(topology.laneCount, laneSpacing);
+      const height = 42;
+      const topY = -6;
+      const bottomY = 36;
+      const lineParts = [];
+
+      for (const lane of topology.continuingLanes) {
+        const color = getLaneColor(topology.colorByLane[lane]);
+        const x = laneX(lane, laneSpacing);
+        lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
+      }
+
+      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -6 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
+    }
+
+    function laneX(lane, laneSpacing) {
+      return GRAPH_LEFT_INSET + lane * laneSpacing;
+    }
+
+    function getGraphContentWidth(laneCount, laneSpacing) {
+      return GRAPH_LEFT_INSET + GRAPH_RIGHT_PADDING + (Math.max(laneCount - 1, 0) * laneSpacing) + 8;
+    }
+
+    function getLaneColor(colorIndex) {
+      return LANE_COLORS[Math.abs(colorIndex || 0) % LANE_COLORS.length];
+    }
+
+    function normalizeGraphWidth(value) {
+      const numericValue = Number(value);
+      if (!Number.isFinite(numericValue)) {
+        return 64;
+      }
+      return Math.max(MIN_GRAPH_WIDTH, Math.round(numericValue));
+    }
+
+    function applyGraphColumnWidth(width) {
+      graphWidth = normalizeGraphWidth(width);
+      document.documentElement.style.setProperty('--show-log-graph-width', graphWidth + 'px');
+    }
+
+    function persistGraphColumnWidth() {
+      const existingState = vscode.getState() || {};
+      vscode.setState({
+        ...existingState,
+        [GRAPH_WIDTH_KEY]: graphWidth,
+        selectedCommitHash
+      });
+    }
+
+    function persistUiState() {
+      const existingState = vscode.getState() || {};
+      vscode.setState({
+        ...existingState,
+        [GRAPH_WIDTH_KEY]: graphWidth,
+        selectedCommitHash
+      });
+    }
+
+    function startGraphResize(clientX) {
+      resizeState = {
+        startX: clientX,
+        startWidth: graphWidth
+      };
+      document.body.dataset.resizingGraph = 'true';
+    }
+
+    function updateGraphResize(clientX) {
+      if (!resizeState) {
+        return;
+      }
+      applyGraphColumnWidth(resizeState.startWidth + (clientX - resizeState.startX));
+    }
+
+    function stopGraphResize() {
+      if (!resizeState) {
+        return;
+      }
+      resizeState = null;
+      delete document.body.dataset.resizingGraph;
+      persistGraphColumnWidth();
     }
 
     function renderCommitFiles(commit) {
       if (commit.loadingChanges) {
-        return '<div class="commit-files"><div class="status-card">Loading changed files...</div></div>';
+        return ''
+          + '<div class="commit-files"><div class="commit-files-list"><div class="status-card">Loading changed files...</div></div></div>';
       }
       if (commit.changeError) {
-        return '<div class="commit-files"><div class="status-card error">' + escapeHtml(commit.changeError) + '</div></div>';
+        return ''
+          + '<div class="commit-files"><div class="commit-files-list"><div class="status-card error">' + escapeHtml(commit.changeError) + '</div></div></div>';
       }
       if (!commit.changes.length) {
-        return '<div class="commit-files"><div class="status-card">No changed files found for this commit.</div></div>';
+        return ''
+          + '<div class="commit-files"><div class="commit-files-list"><div class="status-card">No changed files found for this commit.</div></div></div>';
       }
       return ''
         + '<div class="commit-files">'
+        + '  <div class="commit-files-list">'
         + commit.changes.map((change) => ''
-          + '<div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Press Shift+F10 or Enter for actions.') + '">'
-          + '  <span class="file-path">' + escapeHtml(change.path) + '</span>'
-          + '  <span class="file-status">' + escapeHtml(change.status) + '</span>'
-          + '</div>'
+          + '    <div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Press Shift+F10 or Enter for actions.') + '">'
+          + '      <span class="file-path">' + escapeHtml(change.path) + '</span>'
+          + '      <span class="file-status">' + escapeHtml(change.status) + '</span>'
+          + '    </div>'
         ).join('')
+        + '  </div>'
         + '</div>';
     }
 
@@ -523,6 +881,9 @@ export function renderShowLogWebviewHtml(): string {
       if (!(target instanceof HTMLElement)) {
         return;
       }
+      if (target.closest('#graphResizer')) {
+        return;
+      }
       const loadMoreButton = target.closest('#loadMoreButton');
       if (loadMoreButton) {
         vscode.postMessage({ type: 'loadMore' });
@@ -536,6 +897,9 @@ export function renderShowLogWebviewHtml(): string {
       }
       const commitRow = target.closest('[data-commit-hash]');
       if (commitRow instanceof HTMLElement) {
+        selectedCommitHash = commitRow.getAttribute('data-commit-hash') || null;
+        persistUiState();
+        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash: commitRow.getAttribute('data-commit-hash') || '' });
       }
     });
@@ -545,8 +909,25 @@ export function renderShowLogWebviewHtml(): string {
       if (!(target instanceof HTMLElement)) {
         return;
       }
+      if (target.id === 'graphResizer') {
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          applyGraphColumnWidth(graphWidth - 8);
+          persistGraphColumnWidth();
+          return;
+        }
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          applyGraphColumnWidth(graphWidth + 8);
+          persistGraphColumnWidth();
+          return;
+        }
+      }
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-commit-hash]')) {
         event.preventDefault();
+        selectedCommitHash = target.getAttribute('data-commit-hash') || null;
+        persistUiState();
+        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash: target.getAttribute('data-commit-hash') || '' });
         return;
       }
@@ -584,6 +965,10 @@ export function renderShowLogWebviewHtml(): string {
     content.addEventListener('contextmenu', (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      if (target.closest('#graphResizer')) {
+        event.preventDefault();
         return;
       }
       const fileRow = target.closest('[data-change-id]');
@@ -634,6 +1019,36 @@ export function renderShowLogWebviewHtml(): string {
       if (!contextMenu.hidden && !event.target?.closest?.('#contextMenu')) {
         closeContextMenu();
       }
+    });
+
+    showAllBranchesToggle?.addEventListener('change', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) {
+        return;
+      }
+      vscode.postMessage({ type: 'toggleShowAllBranches', value: target.checked });
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.closest('#graphResizer')) {
+        return;
+      }
+      event.preventDefault();
+      target.setPointerCapture?.(event.pointerId);
+      startGraphResize(event.clientX);
+    });
+
+    document.addEventListener('pointermove', (event) => {
+      updateGraphResize(event.clientX);
+    });
+
+    document.addEventListener('pointerup', () => {
+      stopGraphResize();
+    });
+
+    document.addEventListener('pointercancel', () => {
+      stopGraphResize();
     });
 
     window.addEventListener('message', (event) => {

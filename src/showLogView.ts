@@ -21,6 +21,7 @@ const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
+  | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'loadMore' }
   | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
@@ -77,6 +78,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       kind: 'visible',
       repository,
       source,
+      showAllBranches: source.kind === 'range',
       entries: [],
       hasMore: false,
       loading: true,
@@ -92,7 +94,13 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     await this.focus();
 
     try {
-      const result = await this.backend.loadRevisionLog(repository, source, SHOW_LOG_PAGE_SIZE, 0);
+      const result = await this.backend.loadRevisionLog(
+        repository,
+        source,
+        SHOW_LOG_PAGE_SIZE,
+        0,
+        this.state.showAllBranches
+      );
       if (requestId !== this.loadRequestId) {
         return;
       }
@@ -133,6 +141,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'toggleCommit':
         await this.toggleCommit(message.commitHash);
+        return;
+      case 'toggleShowAllBranches':
+        await this.toggleShowAllBranches(message.value);
         return;
       case 'loadMore':
         await this.loadMore();
@@ -227,6 +238,71 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
   }
 
+  private async toggleShowAllBranches(value: boolean): Promise<void> {
+    if (this.state.kind !== 'visible' || this.state.source?.kind !== 'target' || this.state.loading || this.state.loadingMore) {
+      return;
+    }
+
+    if (this.state.showAllBranches === value) {
+      return;
+    }
+
+    const repository = this.state.repository;
+    const source = this.state.source;
+    if (!repository || !source) {
+      return;
+    }
+
+    const requestId = ++this.loadRequestId;
+    this.expandRequestId += 1;
+    this.state = {
+      ...this.state,
+      showAllBranches: value,
+      loading: true,
+      loadingMore: false,
+      errorMessage: undefined,
+      entries: [],
+      hasMore: false,
+      expandedCommitHash: undefined,
+      loadingCommitHash: undefined,
+      expandedCommitError: undefined,
+      cachedChanges: {}
+    };
+    this.postState();
+
+    try {
+      const result = await this.backend.loadRevisionLog(
+        repository,
+        source,
+        SHOW_LOG_PAGE_SIZE,
+        0,
+        value
+      );
+      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        loading: false,
+        entries: [...result.entries],
+        hasMore: result.hasMore
+      };
+      this.postState();
+    } catch (error) {
+      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        loading: false,
+        errorMessage: toOperationError('Could not update the log scope.', error)
+      };
+      this.postState();
+    }
+  }
+
   private async loadMore(): Promise<void> {
     if (this.state.kind !== 'visible' || this.state.loading || this.state.loadingMore || !this.state.repository || !this.state.source || !this.state.hasMore) {
       return;
@@ -248,7 +324,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         repository,
         source,
         SHOW_LOG_PAGE_SIZE,
-        skip
+        skip,
+        this.state.showAllBranches
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
