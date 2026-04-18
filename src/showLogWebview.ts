@@ -51,6 +51,7 @@ export function renderShowLogWebviewHtml(): string {
         );
     }
     .summary {
+      flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -59,11 +60,22 @@ export function renderShowLogWebviewHtml(): string {
       font-weight: 600;
       letter-spacing: 0.01em;
     }
+    .summary-count {
+      flex: 0 0 auto;
+      margin-left: auto;
+      padding-left: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--vscode-descriptionForeground);
+      white-space: nowrap;
+      text-align: right;
+    }
     .toolbar-main {
       min-width: 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 14px;
       flex: 1 1 auto;
     }
@@ -550,6 +562,7 @@ export function renderShowLogWebviewHtml(): string {
     <div class="toolbar">
       <div class="toolbar-main">
         <div class="summary" id="summary"></div>
+        <div class="summary-count" id="summaryCount"></div>
         <label class="toolbar-toggle" id="showAllBranchesControl" hidden>
           <input type="checkbox" id="showAllBranchesToggle" />
           <span>Show All Branches</span>
@@ -565,6 +578,7 @@ export function renderShowLogWebviewHtml(): string {
     let currentState = null;
     let contextMenuState = null;
     const summary = document.getElementById('summary');
+    const summaryCount = document.getElementById('summaryCount');
     const content = document.getElementById('content');
     const loadingChip = document.getElementById('loadingChip');
     const contextMenu = document.getElementById('contextMenu');
@@ -585,7 +599,7 @@ export function renderShowLogWebviewHtml(): string {
     applyGraphColumnWidth(graphWidth);
 
     function render() {
-      if (!summary || !content || !loadingChip) {
+      if (!summary || !summaryCount || !content || !loadingChip) {
         return;
       }
       const state = currentState || {
@@ -593,6 +607,7 @@ export function renderShowLogWebviewHtml(): string {
         loading: false,
         loadingMore: false,
         summary: '',
+        summaryCount: '',
         showAllBranches: false,
         canToggleAllBranches: false,
         emptyMessage: 'Use Show Log from the graph context menu to load a commit stack or range here.',
@@ -602,6 +617,7 @@ export function renderShowLogWebviewHtml(): string {
       };
 
       summary.textContent = state.summary || 'Show Log';
+      summaryCount.textContent = state.summaryCount || '';
       loadingChip.dataset.visible = state.loading ? 'true' : 'false';
       loadingChip.textContent = 'Loading';
       if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {

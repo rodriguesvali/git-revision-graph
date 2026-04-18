@@ -2,27 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createChange, createRepository } from './fakes';
-import { buildShowLogSummary, buildShowLogWebviewState, createHiddenShowLogState } from '../src/showLogShared';
+import { buildShowLogCommitLabel, getShowLogSourceLabel, buildShowLogWebviewState, createHiddenShowLogState } from '../src/showLogShared';
 
 test('builds show log summaries for target and range sources', () => {
   assert.equal(
-    buildShowLogSummary({ kind: 'target', revision: 'main', label: 'main' }, 50, true),
-    'main • 50+ commits'
+    getShowLogSourceLabel({ kind: 'target', revision: 'main', label: 'main' }),
+    'main'
   );
   assert.equal(
-    buildShowLogSummary(
+    getShowLogSourceLabel(
       {
         kind: 'range',
         baseRevision: 'main',
         baseLabel: 'main',
         compareRevision: 'feature/demo',
         compareLabel: 'feature/demo'
-      },
-      7,
-      false
+      }
     ),
-    'main..feature/demo • 7 commits'
+    'Base: main -> Compare: feature/demo'
   );
+  assert.equal(buildShowLogCommitLabel(50, true), '50+ commits');
+  assert.equal(buildShowLogCommitLabel(1, false), '1 commit');
 });
 
 test('builds expanded show log webview commits with inline file changes and lane topology', () => {
@@ -73,7 +73,8 @@ test('builds expanded show log webview commits with inline file changes and lane
   const webviewState = buildShowLogWebviewState(state);
 
   assert.equal(webviewState.kind, 'visible');
-  assert.equal(webviewState.summary, 'main • 2 commits');
+  assert.equal(webviewState.summary, 'main');
+  assert.equal(webviewState.summaryCount, '2 commits');
   assert.equal(webviewState.showAllBranches, false);
   assert.equal(webviewState.canToggleAllBranches, true);
   assert.equal(webviewState.commits[0]?.expanded, true);
@@ -86,10 +87,65 @@ test('builds expanded show log webview commits with inline file changes and lane
   assert.deepEqual(webviewState.commits[0]?.refs, ['HEAD → main']);
 });
 
+test('updates the summary count when more commits are appended', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const baseState = {
+    kind: 'visible' as const,
+    repository,
+    source: { kind: 'range' as const, baseRevision: 'origin/jch', baseLabel: 'origin/jch', compareRevision: 'origin/seen', compareLabel: 'origin/seen' },
+    showAllBranches: false,
+    entries: [
+      {
+        hash: 'a'.repeat(40),
+        shortHash: 'aaaaaaa',
+        author: 'Ada',
+        date: '2026-04-18',
+        subject: 'Commit A',
+        message: 'Commit A',
+        parentHashes: [],
+        references: [],
+        shortStat: undefined
+      }
+    ],
+    hasMore: true,
+    loading: false,
+    loadingMore: false,
+    errorMessage: undefined,
+    expandedCommitHash: undefined,
+    loadingCommitHash: undefined,
+    expandedCommitError: undefined,
+    cachedChanges: {}
+  };
+
+  const initial = buildShowLogWebviewState(baseState);
+  const afterLoadMore = buildShowLogWebviewState({
+    ...baseState,
+    entries: [
+      ...baseState.entries,
+      {
+        hash: 'b'.repeat(40),
+        shortHash: 'bbbbbbb',
+        author: 'Linus',
+        date: '2026-04-17',
+        subject: 'Commit B',
+        message: 'Commit B',
+        parentHashes: ['a'.repeat(40)],
+        references: [],
+        shortStat: undefined
+      }
+    ]
+  });
+
+  assert.equal(initial.summary, 'Base: origin/jch -> Compare: origin/seen');
+  assert.equal(initial.summaryCount, '1+ commits');
+  assert.equal(afterLoadMore.summaryCount, '2+ commits');
+});
+
 test('keeps a hidden default state before any show log request', () => {
   const state = buildShowLogWebviewState(createHiddenShowLogState());
 
   assert.equal(state.kind, 'hidden');
   assert.equal(state.commits.length, 0);
+  assert.equal(state.summaryCount, '');
   assert.match(state.emptyMessage ?? '', /Show Log/);
 });

@@ -45,6 +45,7 @@ export interface ShowLogWebviewState {
   readonly loading: boolean;
   readonly loadingMore: boolean;
   readonly summary: string;
+  readonly summaryCount: string;
   readonly showAllBranches: boolean;
   readonly canToggleAllBranches: boolean;
   readonly emptyMessage: string | undefined;
@@ -80,22 +81,12 @@ export function getShowLogSourceLabel(source: RevisionLogSource | undefined): st
     case 'target':
       return source.label;
     case 'range':
-      return `${source.baseLabel}..${source.compareLabel}`;
+      return `Base: ${source.baseLabel} -> Compare: ${source.compareLabel}`;
   }
 }
 
-export function buildShowLogSummary(
-  source: RevisionLogSource | undefined,
-  commitCount: number,
-  hasMore: boolean
-): string {
-  const sourceLabel = getShowLogSourceLabel(source);
-  if (!sourceLabel) {
-    return '';
-  }
-
-  const commitLabel = `${commitCount}${hasMore ? '+' : ''} commit${commitCount === 1 && !hasMore ? '' : 's'}`;
-  return `${sourceLabel} • ${commitLabel}`;
+export function buildShowLogCommitLabel(commitCount: number, hasMore: boolean): string {
+  return `${commitCount}${hasMore ? '+' : ''} commit${commitCount === 1 && !hasMore ? '' : 's'}`;
 }
 
 export function buildShowLogEmptyMessage(state: ShowLogState): string | undefined {
@@ -122,6 +113,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       loading: false,
       loadingMore: false,
       summary: '',
+      summaryCount: '',
       showAllBranches: false,
       canToggleAllBranches: false,
       emptyMessage: buildShowLogEmptyMessage(state),
@@ -137,7 +129,8 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     kind: 'visible',
     loading: state.loading,
     loadingMore: state.loadingMore,
-    summary: buildShowLogSummary(state.source, state.entries.length, state.hasMore),
+    summary: getShowLogSourceLabel(state.source),
+    summaryCount: buildShowLogCommitLabel(state.entries.length, state.hasMore),
     showAllBranches: state.showAllBranches,
     canToggleAllBranches: state.source?.kind === 'target',
     emptyMessage: state.entries.length === 0 ? buildShowLogEmptyMessage(state) : undefined,

@@ -8,6 +8,7 @@ test('renders a table-like show log webview shell with graph column and inline c
 
   assert.match(html, /<title>Show Log<\/title>/);
   assert.match(html, /class="table-header"/);
+  assert.match(html, /class="summary-count" id="summaryCount"/);
   assert.match(html, /graph-header-label">Graph<\/span>/);
   assert.match(html, /Show All Branches/);
   assert.match(html, /id="showAllBranchesToggle"/);
