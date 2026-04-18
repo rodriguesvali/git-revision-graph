@@ -251,9 +251,19 @@ export function renderShowLogWebviewHtml(): string {
       overflow: hidden;
     }
     .graph-continuation {
+      display: flex;
       flex: 1 1 auto;
+      flex-direction: column;
       min-height: 0;
       overflow: hidden;
+    }
+    .graph-continuation-row {
+      display: flex;
+      min-height: 24px;
+      overflow: hidden;
+    }
+    .graph-continuation-row.status {
+      min-height: 34px;
     }
     .graph-svg {
       flex: none;
@@ -388,6 +398,12 @@ export function renderShowLogWebviewHtml(): string {
       min-height: 34px;
       opacity: 0.9;
     }
+    .graph-continuation-row .commit-files-graph .graph-svg {
+      min-height: 24px;
+    }
+    .graph-continuation-row.status .commit-files-graph .graph-svg {
+      min-height: 34px;
+    }
     .commit-files-list {
       display: flex;
       flex-direction: column;
@@ -395,10 +411,15 @@ export function renderShowLogWebviewHtml(): string {
       padding: 0 0 5px 12px;
       border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
     }
+    .commit-files-list .status-card {
+      margin: 0;
+    }
     .file-row {
       display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
+      min-height: 24px;
       padding: 3px 8px 3px 0;
       border-radius: 6px;
       cursor: context-menu;
@@ -634,7 +655,7 @@ export function renderShowLogWebviewHtml(): string {
         + '    <div class="graph-stack">'
         + '      <div class="graph-main">' + renderTopology(commit.topology) + '</div>'
         + (commit.expanded
-          ? '      <div class="graph-continuation"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>'
+          ? '      <div class="graph-continuation">' + renderContinuationRows(commit) + '</div>'
           : '')
         + '    </div>'
         + '  </div>'
@@ -699,9 +720,9 @@ export function renderShowLogWebviewHtml(): string {
     function renderContinuationTopology(topology) {
       const laneSpacing = GRAPH_LANE_SPACING;
       const width = getGraphContentWidth(topology.laneCount, laneSpacing);
-      const height = 42;
-      const topY = -6;
-      const bottomY = 36;
+      const height = 28;
+      const topY = -2;
+      const bottomY = 26;
       const lineParts = [];
 
       for (const lane of topology.continuingLanes) {
@@ -710,7 +731,17 @@ export function renderShowLogWebviewHtml(): string {
         lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
       }
 
-      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -6 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
+      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -2 ' + width + ' ' + height + '" aria-hidden="true">' + lineParts.join('') + '</svg>';
+    }
+
+    function renderContinuationRows(commit) {
+      if (commit.loadingChanges || commit.changeError || !commit.changes.length) {
+        return '<div class="graph-continuation-row status"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>';
+      }
+
+      return commit.changes.map(() =>
+        '<div class="graph-continuation-row"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>'
+      ).join('');
     }
 
     function laneX(lane, laneSpacing) {
