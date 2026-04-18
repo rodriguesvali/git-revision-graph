@@ -444,20 +444,25 @@ export function renderShowLogWebviewHtml(): string {
       opacity: 0.9;
     }
     .load-more {
+      position: relative;
       margin: 8px 12px 0;
-      padding: 8px 10px;
-      border: 1px solid var(--vscode-button-border, transparent);
-      border-radius: 8px;
-      color: var(--vscode-button-foreground);
-      background: var(--vscode-button-background);
-      cursor: pointer;
+      min-height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      text-align: center;
     }
-    .load-more:hover:not(:disabled) {
-      background: var(--vscode-button-hoverBackground);
-    }
-    .load-more:disabled {
-      cursor: default;
-      opacity: 0.7;
+    .load-more-sentinel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
     .context-menu {
       position: fixed;
@@ -575,6 +580,7 @@ export function renderShowLogWebviewHtml(): string {
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
     let resizeState = null;
     let selectedCommitHash = persistedUiState.selectedCommitHash || null;
+    let loadMoreObserver = null;
 
     applyGraphColumnWidth(graphWidth);
 
@@ -596,8 +602,8 @@ export function renderShowLogWebviewHtml(): string {
       };
 
       summary.textContent = state.summary || 'Show Log';
-      loadingChip.dataset.visible = state.loading || state.loadingMore ? 'true' : 'false';
-      loadingChip.textContent = state.loadingMore ? 'Loading More' : 'Loading';
+      loadingChip.dataset.visible = state.loading ? 'true' : 'false';
+      loadingChip.textContent = 'Loading';
       if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
         showAllBranchesControl.hidden = !state.canToggleAllBranches;
         showAllBranchesToggle.checked = !!state.showAllBranches;
@@ -616,12 +622,14 @@ export function renderShowLogWebviewHtml(): string {
       }
       if (state.hasMore) {
         sections.push(
-          '<button class="load-more" id="loadMoreButton" type="button"' + (state.loadingMore ? ' disabled' : '') + '>'
-          + (state.loadingMore ? 'Loading more commits...' : 'Load More')
-          + '</button>'
+          '<div class="load-more" aria-live="polite">'
+          + (state.loadingMore ? 'Loading more commits...' : '')
+          + '<div class="load-more-sentinel" id="loadMoreSentinel" aria-hidden="true"></div>'
+          + '</div>'
         );
       }
       content.innerHTML = sections.join('');
+      syncLoadMoreObserver();
     }
 
     function renderTableHeader() {
@@ -911,17 +919,64 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = '';
     }
 
+    function requestAutoLoadMore() {
+      const state = currentState;
+      if (!state || state.kind !== 'visible' || state.loading || state.loadingMore || !state.hasMore) {
+        return;
+      }
+      vscode.postMessage({ type: 'loadMore' });
+    }
+
+    function syncLoadMoreObserver() {
+      if (loadMoreObserver) {
+        loadMoreObserver.disconnect();
+      }
+
+      const sentinel = document.getElementById('loadMoreSentinel');
+      if (!sentinel) {
+        loadMoreObserver = null;
+        return;
+      }
+
+      if (typeof IntersectionObserver !== 'function') {
+        loadMoreObserver = null;
+        return;
+      }
+
+      loadMoreObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            requestAutoLoadMore();
+            break;
+          }
+        }
+      }, {
+        root: null,
+        rootMargin: '0px 0px 160px 0px',
+        threshold: 0
+      });
+
+      loadMoreObserver.observe(sentinel);
+    }
+
+    function maybeLoadMoreFromScroll() {
+      const state = currentState;
+      if (!state || state.kind !== 'visible' || state.loading || state.loadingMore || !state.hasMore) {
+        return;
+      }
+
+      const remaining = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+      if (remaining <= 160) {
+        requestAutoLoadMore();
+      }
+    }
+
     content.addEventListener('click', (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
       }
       if (target.closest('#graphResizer')) {
-        return;
-      }
-      const loadMoreButton = target.closest('#loadMoreButton');
-      if (loadMoreButton) {
-        vscode.postMessage({ type: 'loadMore' });
         return;
       }
       const fileRow = target.closest('[data-change-id]');
@@ -1084,6 +1139,14 @@ export function renderShowLogWebviewHtml(): string {
 
     document.addEventListener('pointercancel', () => {
       stopGraphResize();
+    });
+
+    window.addEventListener('scroll', () => {
+      maybeLoadMoreFromScroll();
+    }, { passive: true });
+
+    window.addEventListener('resize', () => {
+      maybeLoadMoreFromScroll();
     });
 
     window.addEventListener('message', (event) => {

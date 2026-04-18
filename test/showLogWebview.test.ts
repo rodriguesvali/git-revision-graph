@@ -33,7 +33,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /document\.addEventListener\('pointerdown'/);
   assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);
   assert.match(html, /class="commit-files"/);
-  assert.match(html, /Load More/);
+  assert.match(html, /id="loadMoreSentinel"/);
+  assert.match(html, /IntersectionObserver/);
+  assert.match(html, /type: 'loadMore'/);
   assert.match(html, /Open Commit Details/);
   assert.match(html, /Open Diff/);
   assert.match(html, /Compare with Worktree/);
@@ -45,5 +47,6 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /data-menu-action="compareWithWorktree"/);
   assert.match(html, /type: action,\s*commitHash: state\.commitHash,\s*changeId: state\.changeId/s);
   assert.match(html, /type: 'openCommitDetails', commitHash: state\.commitHash/);
+  assert.doesNotMatch(html, /id="loadMoreButton"/);
   assert.doesNotMatch(html, /vscode\.postMessage\(\{\s*type: 'openFile',\s*commitHash: fileRow/s);
 });
