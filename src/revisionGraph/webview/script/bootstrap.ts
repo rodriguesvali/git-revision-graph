@@ -75,6 +75,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let searchResultHashes = [];
     let activeSearchResultIndex = -1;
     let toolbarBusy = false;
+    let knownRemoteTagNames = new Set();
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -317,6 +318,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         case 'patch-metadata':
           applyMetadataPatch(message.patch);
           return;
+        case 'set-remote-tag-state':
+          setRemoteTagState(message.tagName, !!message.isPublished);
+          return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');
           return;
@@ -418,6 +422,18 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         preserveSelection: !!patch.preserveSelection,
         preserveViewport: !!patch.preserveViewport
       });
+    }
+
+    function setRemoteTagState(tagName, isPublished) {
+      if (!tagName) {
+        return;
+      }
+
+      if (isPublished) {
+        knownRemoteTagNames.add(tagName);
+      } else {
+        knownRemoteTagNames.delete(tagName);
+      }
     }
 
     function captureSelectionSnapshot() {

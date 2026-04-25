@@ -15,6 +15,7 @@ import {
   checkoutResolvedReference,
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
+  deleteRemoteTagResolvedReference,
   deleteResolvedReference,
   mergeResolvedReference,
   pushTagResolvedReference,
@@ -396,11 +397,26 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'push-tag':
         if (this.currentRepository) {
-          await pushTagResolvedReference(
+          const pushed = await pushTagResolvedReference(
             this.currentRepository,
             { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
             this.actionServices
           );
+          if (pushed) {
+            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, isPublished: true });
+          }
+        }
+        return;
+      case 'delete-remote-tag':
+        if (this.currentRepository) {
+          const deleted = await deleteRemoteTagResolvedReference(
+            this.currentRepository,
+            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
+          if (deleted) {
+            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, isPublished: false });
+          }
         }
         return;
       case 'sync-current-head':

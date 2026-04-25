@@ -50,6 +50,7 @@ export type RevisionGraphMessage =
     readonly refKind: RevisionGraphRef['kind'] | 'commit';
   }
   | { readonly type: 'push-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
+  | { readonly type: 'delete-remote-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
@@ -107,6 +108,7 @@ export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'patch-metadata'; readonly patch: RevisionGraphViewMetadataPatch }
+  | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly isPublished: boolean }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
 

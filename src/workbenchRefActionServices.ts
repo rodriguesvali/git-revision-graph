@@ -101,6 +101,9 @@ export function createWorkbenchRefActionServices(
       async pushTag(repository, remoteName, tagName) {
         await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, tagName]);
       },
+      async deleteRemoteTag(repository, remoteName, tagName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', tagName]);
+      },
       async deleteRemoteBranch(repository, remoteName, branchName) {
         await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', branchName]);
       },

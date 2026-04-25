@@ -57,6 +57,7 @@ export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
   getRemoteNames(repository: Repository): Promise<readonly string[]>;
   pushTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
+  deleteRemoteTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
   unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
 }

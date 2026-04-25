@@ -14,6 +14,7 @@ import {
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
+  deleteRemoteTagResolvedReference,
   mergeResolvedReference,
   pushTagResolvedReference,
   RefActionServices,
@@ -33,6 +34,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
+  readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -49,6 +51,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
+  const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -141,6 +144,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async pushTag(_repository, remoteName, tagName) {
         pushedTags.push({ remoteName, tagName });
       },
+      async deleteRemoteTag(_repository, remoteName, tagName) {
+        deletedRemoteTags.push({ remoteName, tagName });
+      },
       async deleteRemoteBranch(_repository, remoteName, branchName) {
         deletedRemoteBranches.push({ remoteName, branchName });
       },
@@ -171,6 +177,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     compareResultsCalls,
     createdTags,
     pushedTags,
+    deletedRemoteTags,
     deletedRemoteBranches,
     upstreamClears,
     prepareRequests,
@@ -821,6 +828,161 @@ test('pushTagResolvedReference surfaces push failures', async () => {
 
   assert.deepEqual(harness.pushedTags, []);
   assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
+});
+
+test('deleteRemoteTagResolvedReference deletes a tag from the only configured remote', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Delete tag v1.2.0 from origin?\n\nThis removes the tag from the remote repository for everyone. The local tag will remain unchanged.',
+      confirmLabel: 'Delete Remote Tag: v1.2.0'
+    }
+  ]);
+  assert.deepEqual(harness.deletedRemoteTags, [
+    { remoteName: 'origin', tagName: 'v1.2.0' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was deleted from origin.');
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('deleteRemoteTagResolvedReference lets users choose when multiple remotes exist', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async pickRemoteName(items, placeHolder) {
+      assert.deepEqual(items, ['origin', 'upstream']);
+      assert.equal(placeHolder, 'Choose a remote to delete the tag from');
+      return 'upstream';
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, [
+    { remoteName: 'upstream', tagName: 'v1.2.0' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was deleted from upstream.');
+});
+
+test('deleteRemoteTagResolvedReference does nothing when remote selection is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async pickRemoteName() {
+      return undefined;
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('deleteRemoteTagResolvedReference reports when no remotes are configured', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.getRemoteNames = async () => [];
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.equal(harness.infoMessages[0], 'No Git remote is configured for this repository.');
+});
+
+test('deleteRemoteTagResolvedReference does nothing when confirmation is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async confirm() {
+      return false;
+    }
+  });
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('deleteRemoteTagResolvedReference blocks remote tag deletion while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before deleting a remote tag.');
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.deleteRemoteTag = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: 'remote ref does not exist'
+    });
+  };
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. remote ref does not exist');
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {

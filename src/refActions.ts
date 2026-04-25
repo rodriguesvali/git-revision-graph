@@ -197,22 +197,22 @@ export async function pushTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
   services: RefActionServices
-): Promise<void> {
+): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
       services.ui.showInformationMessage(`${target.label} is not a local tag.`);
-      return;
+      return false;
     }
 
     if (hasMergeConflicts(repository)) {
       services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing a tag.');
       await services.ui.showSourceControl();
-      return;
+      return false;
     }
 
     const remoteName = await pickTagPushRemote(repository, services);
     if (!remoteName) {
-      return;
+      return false;
     }
 
     const confirmed = await services.ui.confirm({
@@ -220,13 +220,54 @@ export async function pushTagResolvedReference(
       confirmLabel: `Push Tag: ${target.label}`
     });
     if (!confirmed) {
-      return;
+      return false;
     }
 
     await services.referenceManager.pushTag(repository, remoteName, target.refName);
     services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
+    return true;
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
+    return false;
+  }
+}
+
+export async function deleteRemoteTagResolvedReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<boolean> {
+  try {
+    if (target.kind !== 'tag') {
+      services.ui.showInformationMessage(`${target.label} is not a local tag.`);
+      return false;
+    }
+
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before deleting a remote tag.');
+      await services.ui.showSourceControl();
+      return false;
+    }
+
+    const remoteName = await pickTagRemote(repository, services, 'Choose a remote to delete the tag from');
+    if (!remoteName) {
+      return false;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: `Delete tag ${target.label} from ${remoteName}?\n\nThis removes the tag from the remote repository for everyone. The local tag will remain unchanged.`,
+      confirmLabel: `Delete Remote Tag: ${target.label}`
+    });
+    if (!confirmed) {
+      return false;
+    }
+
+    await services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName);
+    services.ui.showInformationMessage(`Tag ${target.label} was deleted from ${remoteName}.`);
+    return true;
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not delete the remote tag.', error));
+    return false;
   }
 }
 
@@ -373,6 +414,14 @@ async function pickTagPushRemote(
   repository: Repository,
   services: RefActionServices
 ): Promise<string | undefined> {
+  return pickTagRemote(repository, services, 'Choose a remote for the tag push');
+}
+
+async function pickTagRemote(
+  repository: Repository,
+  services: RefActionServices,
+  placeHolder: string
+): Promise<string | undefined> {
   const remoteNames = await services.referenceManager.getRemoteNames(repository);
   if (remoteNames.length === 0) {
     services.ui.showInformationMessage('No Git remote is configured for this repository.');
@@ -383,7 +432,7 @@ async function pickTagPushRemote(
     return remoteNames[0];
   }
 
-  return services.ui.pickRemoteName(remoteNames, 'Choose a remote for the tag push');
+  return services.ui.pickRemoteName(remoteNames, placeHolder);
 }
 
 async function deleteRemoteReference(

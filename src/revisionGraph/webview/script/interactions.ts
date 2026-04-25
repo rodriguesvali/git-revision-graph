@@ -354,14 +354,25 @@ export function renderRevisionGraphScriptInteractions(): string {
           });
         }
         if (target.kind === 'tag') {
-          appendMenuItem('Push Tag to Remote', () => {
-            vscode.postMessage({
-              type: 'push-tag',
-              refName: target.name,
-              label: target.label,
-              refKind: target.kind
+          if (knownRemoteTagNames.has(target.name)) {
+            appendMenuItem('Delete Remote Tag', () => {
+              vscode.postMessage({
+                type: 'delete-remote-tag',
+                refName: target.name,
+                label: target.label,
+                refKind: target.kind
+              });
             });
-          });
+          } else {
+            appendMenuItem('Push Tag to Remote', () => {
+              vscode.postMessage({
+                type: 'push-tag',
+                refName: target.name,
+                label: target.label,
+                refKind: target.kind
+              });
+            });
+          }
         }
         if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
           if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
