@@ -830,6 +830,37 @@ test('pushTagResolvedReference surfaces push failures', async () => {
   assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
 });
 
+test('pushTagResolvedReference opens Source Control when Git authentication needs an interactive prompt', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.pushTag = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+      exitCode: 128
+    });
+  };
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.equal(harness.sourceControlOpens, 1);
+  assert.match(
+    harness.errorMessages[0],
+    /Git authentication is unavailable for this operation/
+  );
+  assert.match(
+    harness.errorMessages[0],
+    /Git: Push Tags/
+  );
+});
+
 test('deleteRemoteTagResolvedReference deletes a tag from the only configured remote', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

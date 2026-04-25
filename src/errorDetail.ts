@@ -31,6 +31,26 @@ export function toOperationError(message: string, error: unknown): string {
   return `${message} ${toErrorDetail(error)}`;
 }
 
+export function isNonInteractiveGitAuthenticationError(error: unknown): boolean {
+  const gitError = asGitLikeError(error);
+  const text = [
+    normalizeErrorText(gitError?.stderr),
+    normalizeErrorText(gitError?.message),
+    normalizePrimitiveError(error)
+  ]
+    .filter((value): value is string => !!value)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    text.includes('could not read username')
+    || text.includes('could not read password')
+  ) && (
+    text.includes('terminal prompts disabled')
+    || text.includes('no such device or address')
+  );
+}
+
 export function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
   if (!error || typeof error !== 'object') {
     return false;

@@ -1,4 +1,9 @@
-import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
+import {
+  hasGitErrorCode as matchesGitErrorCode,
+  isNonInteractiveGitAuthenticationError,
+  toErrorDetail,
+  toOperationError
+} from './errorDetail';
 import { RefType, Repository } from './git';
 import { formatUpstreamLabel, hasMergeConflicts } from './gitState';
 import {
@@ -227,7 +232,15 @@ export async function pushTagResolvedReference(
     services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
     return true;
   } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
+    if (isNonInteractiveGitAuthenticationError(error)) {
+      await services.ui.showErrorMessage(
+        'Could not push the tag. Git authentication is unavailable for this operation. ' +
+        `Open Source Control and run "Git: Push Tags", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
+      );
+      await services.ui.showSourceControl();
+    } else {
+      await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
+    }
     return false;
   }
 }

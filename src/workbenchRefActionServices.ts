@@ -8,6 +8,7 @@ import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { PreparedRefreshHandle, RefActionServices } from './refActions';
 import { isMissingUpstreamConfigurationError } from './refActions/shared';
+import { buildTagPushRefspec } from './refActions/tagRefspec';
 import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
@@ -99,7 +100,7 @@ export function createWorkbenchRefActionServices(
           .filter((remoteName) => remoteName.length > 0);
       },
       async pushTag(repository, remoteName, tagName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, tagName]);
+        await repository.push(remoteName, buildTagPushRefspec(tagName), false);
       },
       async deleteRemoteTag(repository, remoteName, tagName) {
         await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', tagName]);

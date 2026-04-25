@@ -3,23 +3,19 @@
 ## Version / Change Set
 Current package baseline: `0.0.19`.
 
-Target release: `0.0.19`.
+Target release: `0.0.20`.
 
 Planned publishable change set:
 
-- Tag creation from the Revision Graph context menu for graph-selected references and visible commits.
-- Tag push from the Revision Graph context menu for local tags, with remote selection and explicit confirmation.
-- Remote tag deletion from the Revision Graph context menu for local tags, with remote selection and explicit destructive confirmation.
-- Tag-name validation and duplicate local tag detection before tag creation.
+- Correct tag push from the Revision Graph so the selected tag is pushed through the VS Code Git repository API with a fully qualified tag refspec, avoiding the direct non-interactive CLI push that can fail to prompt for GitHub credentials.
 
 Do not bump versions or publish without explicit human approval.
 
-Version bump to `0.0.19` was explicitly approved and applied to `package.json` and `package-lock.json`.
+Version bump to `0.0.20` has not been applied yet.
 
 Planning references:
 
-- `docs/release-0.0.19-prioritization.md`
-- `project-context/2.build/features/0.0.19-tag-creation-from-graph.md`
+- `project-context/2.build/features/0.0.20-tag-push-vscode-api.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -29,16 +25,15 @@ Planning references:
 Current verification:
 
 - `npm run build` passed.
-- `npm test` passed with 171 tests.
-- `npm run package:vsix` passed and generated `git-revision-graph-0.0.19.vsix`.
-- Manual Extension Development Host validation for the tag create, push, contextual push/delete toggle, and remote delete flows was completed by the user.
+- `npm test` passed with 174 tests.
+- Pending for `0.0.20`: manual Extension Development Host validation of `Push Tag to Remote`.
 
 Release preparation status:
 
-- Source release readiness is prepared for `0.0.19`.
-- Version bump to `0.0.19` is complete.
-- VSIX packaging is complete: `git-revision-graph-0.0.19.vsix`.
-- Marketplace publishing remains pending explicit approval.
+- Source release readiness is prepared for `0.0.20`.
+- Version bump to `0.0.20` is not complete.
+- VSIX packaging is not complete for `0.0.20`.
+- Marketplace publishing is not complete for `0.0.20`.
 
 ## Deployment Steps
 Release commands available in `package.json`:
