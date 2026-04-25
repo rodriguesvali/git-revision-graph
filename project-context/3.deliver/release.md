@@ -3,15 +3,18 @@
 ## Version / Change Set
 Current package baseline: `0.0.18`.
 
-Next publishable change set:
+Target release: `0.0.19`.
 
-- Revision graph refresh efficiency: reuse clean snapshots for projection rebuilds and metadata-only repository events, with fallback to full rebuild when the graph snapshot is stale.
-- Activity Bar icon sizing: scale the contributed SVG artwork by about 30% for stronger visual weight.
-- Test command reliability: keep `npm test` aligned with the flat compiled test layout.
+Planned publishable change set:
+
+- Tag creation from the Revision Graph context menu for graph-selected references and visible commits.
 
 Do not bump versions or publish without explicit human approval.
 
-Version bump to `0.0.18` was explicitly approved and applied to `package.json` and `package-lock.json`.
+Planning references:
+
+- `docs/release-0.0.19-prioritization.md`
+- `project-context/2.build/features/0.0.19-tag-creation-from-graph.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -20,10 +23,9 @@ Version bump to `0.0.18` was explicitly approved and applied to `package.json` a
 
 Current verification:
 
-- `npm run build` passed.
-- `npm test` passed with 147 tests.
+- Pending for `0.0.19`.
 
-Manual Extension Development Host validation remains pending.
+Manual Extension Development Host validation remains pending for `0.0.19`.
 
 ## Deployment Steps
 Release commands available in `package.json`:
