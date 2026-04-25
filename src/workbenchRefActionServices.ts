@@ -32,6 +32,13 @@ export function createWorkbenchRefActionServices(
           validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
         });
       },
+      async promptTagName(options) {
+        return vscode.window.showInputBox({
+          prompt: options.prompt,
+          value: options.value,
+          validateInput: (value) => (value.trim().length === 0 ? 'Enter a tag name.' : undefined)
+        });
+      },
       async confirm(options) {
         const confirmation = await vscode.window.showWarningMessage(
           options.message,
@@ -74,6 +81,9 @@ export function createWorkbenchRefActionServices(
       }
     },
     referenceManager: {
+      async createTag(repository, tagName, refName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['tag', tagName, refName]);
+      },
       async deleteRemoteBranch(repository, remoteName, branchName) {
         await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', branchName]);
       },

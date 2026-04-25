@@ -325,30 +325,38 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Copy Commit Hash', () => {
           vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });
         });
-	        if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
-	          appendMenuItem('Checkout to: ' + targetLabel, () => {
-	            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-	          });
-	        }
+        if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
+          appendMenuItem('Checkout to: ' + targetLabel, () => {
+            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+          });
+        }
         if (canSyncCurrentHead) {
           appendMenuItem('Sync with ' + currentHeadUpstreamName, () => {
             vscode.postMessage({ type: 'sync-current-head' });
           });
         }
-	        if (target.kind !== 'stash') {
-	          appendMenuItem('Create New Branch', () => {
-	            vscode.postMessage({
-                type: 'create-branch',
-                revision: target.revision,
-                label: target.label,
-                refKind: target.kind
-              });
-	          });
-	        }
-	        if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
-	          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
-	            const deleteLabel = target.kind === 'tag'
-	              ? 'Delete Tag: ' + targetLabel
+        if (target.kind !== 'stash') {
+          appendMenuItem('Create New Branch', () => {
+            vscode.postMessage({
+              type: 'create-branch',
+              revision: target.revision,
+              label: target.label,
+              refKind: target.kind
+            });
+          });
+          appendMenuItem('Create Tag', () => {
+            vscode.postMessage({
+              type: 'create-tag',
+              revision: target.revision,
+              label: target.label,
+              refKind: target.kind
+            });
+          });
+        }
+        if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
+          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
+            const deleteLabel = target.kind === 'tag'
+              ? 'Delete Tag: ' + targetLabel
               : target.kind === 'remote'
                 ? 'Delete Remote Branch: ' + targetLabel
                 : 'Delete Branch: ' + targetLabel;

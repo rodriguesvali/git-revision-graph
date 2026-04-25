@@ -190,6 +190,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /type: 'compare-with-worktree', revision: target\.revision, label: target\.label/);
   assert.match(html, /appendMenuItem\('Copy Commit Hash', \(\) => \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash: target\.hash \}\);/s);
   assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /appendMenuItem\('Create Tag', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);

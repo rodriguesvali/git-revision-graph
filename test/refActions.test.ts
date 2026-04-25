@@ -9,6 +9,7 @@ import {
 } from '../src/revisionGraphRefresh';
 import {
   createBranchFromResolvedReference,
+  createTagFromResolvedReference,
   checkoutResolvedReference,
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
@@ -29,6 +30,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
+  readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -43,6 +45,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
+  const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -58,6 +61,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async promptBranchName(options) {
         return options.value;
+      },
+      async promptTagName() {
+        return 'v1.0.0';
       },
       async confirm(options) {
         confirmRequests.push(options);
@@ -120,6 +126,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       }
     },
     referenceManager: {
+      async createTag(_repository, tagName, refName) {
+        createdTags.push({ tagName, refName });
+      },
       async deleteRemoteBranch(_repository, remoteName, branchName) {
         deletedRemoteBranches.push({ remoteName, branchName });
       },
@@ -148,6 +157,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     confirmRequests,
     diffCalls,
     compareResultsCalls,
+    createdTags,
     deletedRemoteBranches,
     upstreamClears,
     prepareRequests,
@@ -485,6 +495,120 @@ test('createBranchFromResolvedReference cancels a prepared refresh when branch c
   assert.equal(harness.refreshCalls, 0);
   assert.deepEqual(harness.canceledPrepareRequests, []);
   assert.match(harness.errorMessages[0] ?? '', /Could not create the branch/);
+});
+
+test('createTagFromResolvedReference creates a local tag from a branch reference', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async promptTagName(options) {
+      assert.equal(options.prompt, 'Create a New Tag from release/2026');
+      return 'v1.2.0';
+    }
+  });
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, [
+    { tagName: 'v1.2.0', refName: 'release/2026' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was created from release/2026.');
+  assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+});
+
+test('createTagFromResolvedReference creates a local tag from an unreferenced commit hash', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async promptTagName() {
+      return 'v1.2.1';
+    }
+  });
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: '1234567890abcdef', label: '12345678', kind: 'commit' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, [
+    { tagName: 'v1.2.1', refName: '1234567890abcdef' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.1 was created from 12345678.');
+  assert.equal(harness.refreshCalls, 1);
+});
+
+test('createTagFromResolvedReference does nothing when tag name entry is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async promptTagName() {
+      return undefined;
+    }
+  });
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, []);
+  assert.deepEqual(harness.infoMessages, []);
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('createTagFromResolvedReference blocks tag creation while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before creating a new tag.');
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('createTagFromResolvedReference surfaces tag creation failures', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.createTag = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: "fatal: tag 'v1.0.0' already exists"
+    });
+  };
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, []);
+  assert.equal(harness.refreshCalls, 0);
+  assert.equal(harness.errorMessages[0], "Could not create the tag. fatal: tag 'v1.0.0' already exists");
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {

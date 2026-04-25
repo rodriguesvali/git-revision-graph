@@ -8,8 +8,8 @@ The release should stay small enough to validate confidently while closing a vis
 
 ## Proposed Focus
 
-- Tag creation from graph-selected references and visible commits
-  Let users create a tag from the same graph context menu where they already compare, branch, checkout, merge, and delete refs.
+- Lightweight local tag creation from graph-selected references and visible commits
+  Let users create a local tag from the same graph context menu where they already compare, branch, checkout, merge, and delete refs.
 
 ## User Value
 

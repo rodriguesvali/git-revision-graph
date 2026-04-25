@@ -11,6 +11,7 @@ import {
 } from '../repositorySelection';
 import {
   createBranchFromResolvedReference,
+  createTagFromResolvedReference,
   checkoutResolvedReference,
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
@@ -367,20 +368,29 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'checkout':
         if (this.currentRepository) {
-	          await checkoutResolvedReference(
-	            this.currentRepository,
-	            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-	            this.actionServices
-	          );
+          await checkoutResolvedReference(
+            this.currentRepository,
+            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
         }
         return;
       case 'create-branch':
         if (this.currentRepository) {
-	          await createBranchFromResolvedReference(
-	            this.currentRepository,
-	            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
-	            this.actionServices
-	          );
+          await createBranchFromResolvedReference(
+            this.currentRepository,
+            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
+        }
+        return;
+      case 'create-tag':
+        if (this.currentRepository) {
+          await createTagFromResolvedReference(
+            this.currentRepository,
+            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
         }
         return;
       case 'sync-current-head':
@@ -390,11 +400,11 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'delete':
         if (this.currentRepository) {
-	          await deleteResolvedReference(
-	            this.currentRepository,
-	            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-	            this.actionServices
-	          );
+          await deleteResolvedReference(
+            this.currentRepository,
+            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
         }
         return;
       case 'merge':

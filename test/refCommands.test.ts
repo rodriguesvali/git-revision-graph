@@ -40,6 +40,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       async promptBranchName(options) {
         return options.value;
       },
+      async promptTagName() {
+        return 'v1.0.0';
+      },
       async confirm() {
         return true;
       },
@@ -91,6 +94,7 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       }
     },
     referenceManager: {
+      async createTag() {},
       async deleteRemoteBranch() {},
       async unsetBranchUpstream() {}
     },

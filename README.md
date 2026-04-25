@@ -31,6 +31,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
+- Create a local tag from a branch, tag, remote branch, or visible unreferenced commit
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
@@ -61,7 +62,7 @@ Not included yet:
 
 - Advanced merge conflict guidance
 - Rich search beyond the current loaded graph scope, plus more advanced ref and revision-range filtering
-- Tag creation, reference rename, fetch, or general push workflows
+- Reference rename, tag push, or general push workflows
 - Full-history graph rendering beyond the bounded recent-commit window
 
 ## How It Works
@@ -217,6 +218,7 @@ The current extension contributes these Command Palette commands:
 Additional actions are available directly inside the Revision Graph context menu:
 
 - Create a new branch from a selected reference
+- Create a local tag from a selected reference or visible commit
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream
 - Show a compact log for a selected target or a selected `base..compare` pair
@@ -245,7 +247,7 @@ Potential improvements after the MVP:
 - Preserve zoom, scroll, and selection context across lightweight refreshes
 - Add refresh profiling and caching for graph load, projection, and layout hot paths
 - Improve conflict-awareness before checkout and merge
-- Add tag creation and reference rename flows
+- Add tag push and reference rename flows
 - Support richer branch metadata in the UI
 - Expand the revision graph with a real minimap and richer revision actions
 
@@ -271,6 +273,7 @@ Use both automated and manual checks when changing command behavior:
    - Ctrl/Cmd-click two references and open `Show Log` and `Unified Diff`
    - select one reference and compare it with the worktree
    - select one reference and create a branch from it
+   - select one reference and create a local tag from it
    - delete a local branch, tag, and remote branch from the graph
    - change scope and visibility options from the graph toolbar
 

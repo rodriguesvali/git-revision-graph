@@ -146,6 +146,37 @@ export async function createBranchFromResolvedReference(
   }
 }
 
+export async function createTagFromResolvedReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  try {
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before creating a new tag.');
+      await services.ui.showSourceControl();
+      return;
+    }
+
+    const tagName = await services.ui.promptTagName({
+      prompt: `Create a New Tag from ${target.label}`
+    });
+
+    if (!tagName) {
+      return;
+    }
+
+    await services.referenceManager.createTag(repository, tagName, target.refName);
+    services.ui.showInformationMessage(`Tag ${tagName} was created from ${target.label}.`);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not create the tag.', error));
+  }
+}
+
 export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices

@@ -23,7 +23,8 @@ Planning references:
 
 Current verification:
 
-- Pending for `0.0.19`.
+- `npm run build` passed.
+- `npm test` passed with 152 tests.
 
 Manual Extension Development Host validation remains pending for `0.0.19`.
 
