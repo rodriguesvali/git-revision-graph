@@ -1,7 +1,7 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.19`.
+Current package baseline: `0.0.20`.
 
 Target release: `0.0.20`.
 
@@ -11,7 +11,7 @@ Planned publishable change set:
 
 Do not bump versions or publish without explicit human approval.
 
-Version bump to `0.0.20` has not been applied yet.
+Version bump to `0.0.20` was approved by the release-close request and applied to `package.json` and `package-lock.json`.
 
 Planning references:
 
@@ -26,13 +26,14 @@ Current verification:
 
 - `npm run build` passed.
 - `npm test` passed with 174 tests.
+- `npm run package:vsix` passed and generated `git-revision-graph-0.0.20.vsix`.
 - Pending for `0.0.20`: manual Extension Development Host validation of `Push Tag to Remote`.
 
 Release preparation status:
 
 - Source release readiness is prepared for `0.0.20`.
-- Version bump to `0.0.20` is not complete.
-- VSIX packaging is not complete for `0.0.20`.
+- Version bump to `0.0.20` is complete.
+- VSIX packaging is complete: `git-revision-graph-0.0.20.vsix`.
 - Marketplace publishing is not complete for `0.0.20`.
 
 ## Deployment Steps
