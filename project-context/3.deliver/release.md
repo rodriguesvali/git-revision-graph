@@ -1,7 +1,7 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.17`.
+Current package baseline: `0.0.18`.
 
 Next publishable change set:
 
@@ -10,6 +10,8 @@ Next publishable change set:
 - Test command reliability: keep `npm test` aligned with the flat compiled test layout.
 
 Do not bump versions or publish without explicit human approval.
+
+Version bump to `0.0.18` was explicitly approved and applied to `package.json` and `package-lock.json`.
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
