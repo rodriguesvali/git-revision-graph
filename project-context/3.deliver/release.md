@@ -1,7 +1,7 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.18`.
+Current package baseline: `0.0.19`.
 
 Target release: `0.0.19`.
 
@@ -13,6 +13,8 @@ Planned publishable change set:
 - Tag-name validation and duplicate local tag detection before tag creation.
 
 Do not bump versions or publish without explicit human approval.
+
+Version bump to `0.0.19` was explicitly approved and applied to `package.json` and `package-lock.json`.
 
 Planning references:
 
@@ -28,8 +30,15 @@ Current verification:
 
 - `npm run build` passed.
 - `npm test` passed with 171 tests.
+- `npm run package:vsix` passed and generated `git-revision-graph-0.0.19.vsix`.
+- Manual Extension Development Host validation for the tag create, push, contextual push/delete toggle, and remote delete flows was completed by the user.
 
-Manual Extension Development Host validation remains pending for `0.0.19`.
+Release preparation status:
+
+- Source release readiness is prepared for `0.0.19`.
+- Version bump to `0.0.19` is complete.
+- VSIX packaging is complete: `git-revision-graph-0.0.19.vsix`.
+- Marketplace publishing remains pending explicit approval.
 
 ## Deployment Steps
 Release commands available in `package.json`:
