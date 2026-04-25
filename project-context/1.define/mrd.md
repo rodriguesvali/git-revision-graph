@@ -32,6 +32,7 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - `package.json`
 - `docs/revision-graph-parity-plan.md`
 - `docs/release-0.0.14-prioritization.md` through `docs/release-0.0.17-prioritization.md`
+- `project-context/3.deliver/release.md`
 
 ## Assumptions
 - The project remains a published VS Code extension.
@@ -39,5 +40,5 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - AAMAD should guide feature and release work without slowing small bug fixes.
 
 ## Open Questions
-- Which feature should anchor the next planned release after `0.0.17`?
+- Which feature should anchor the next planned release after the current package baseline?
 - Should the next feature release be treated as patch or minor version work?

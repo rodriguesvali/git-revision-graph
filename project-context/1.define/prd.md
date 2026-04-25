@@ -32,7 +32,7 @@ The extension is already published and feature-rich enough that new work can aff
 - Release-bound work must update `project-context/3.deliver/release.md`.
 
 ## Acceptance Criteria
-- AAMAD artifacts identify the current baseline as published package version `0.0.17`.
+- AAMAD artifacts identify the current baseline from `package.json` and release readiness state from `project-context/3.deliver/release.md`.
 - Feature work has a corresponding artifact under `project-context/2.build/features/` or a justified note in the relevant build area file.
 - Verification commands are recorded for each meaningful change.
 - Release work cannot proceed to publish or version bump without explicit human approval.

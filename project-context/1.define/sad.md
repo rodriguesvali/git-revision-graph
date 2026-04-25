@@ -70,7 +70,7 @@ Keep the extension architecture intact:
 - `docs/revision-graph-parity-plan.md`
 
 ## Assumptions
-- Current published baseline is `0.0.17`.
+- Current package baseline is read from `package.json`; release readiness state is tracked in `project-context/3.deliver/release.md`.
 - New features will continue to use the existing extension host plus webview architecture unless explicitly approved otherwise.
 
 ## Open Questions

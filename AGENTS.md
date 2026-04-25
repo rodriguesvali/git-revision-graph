@@ -10,7 +10,7 @@ This is a published VS Code extension. Apply AAMAD as lightweight product and re
 ### Project Baseline
 
 - Product: `GIT Revision Graph`, a VS Code extension for browsing Git revision graphs and running compare, checkout, branch, merge, sync, delete, diff, and log workflows.
-- Current package baseline: `package.json` version `0.0.17`.
+- Current package baseline: read from `package.json`; release notes and readiness state live in `project-context/3.deliver/release.md`.
 - Stack: TypeScript, npm, VS Code extension API, built-in `vscode.git` extension API, targeted `git` CLI calls, and webview-based UI.
 - Package manager: npm with `package-lock.json`.
 - Primary verification commands: `npm run build` and `npm test`.
