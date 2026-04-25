@@ -8,6 +8,7 @@ import {
   createRepositoryRefreshRequest,
   getDefaultFollowUpEventsForIntent,
   normalizeRefreshRequest,
+  RevisionGraphSnapshotReloadSemaphore,
   registerPendingFollowUpRefresh
 } from '../src/revisionGraphRefresh';
 
@@ -83,4 +84,22 @@ test('normalizeRefreshRequest preserves object requests and defaults missing req
   assert.deepEqual(normalizeRefreshRequest(undefined), { intent: 'full-rebuild' });
   assert.deepEqual(normalizeRefreshRequest('projection-rebuild'), { intent: 'projection-rebuild' });
   assert.equal(normalizeRefreshRequest(request), request);
+});
+
+test('RevisionGraphSnapshotReloadSemaphore tracks when a repository snapshot can be reused', () => {
+  const semaphore = new RevisionGraphSnapshotReloadSemaphore();
+
+  assert.equal(semaphore.requiresReload('/workspace/repo'), true);
+  assert.equal(semaphore.canReuseSnapshot('/workspace/repo'), false);
+
+  semaphore.markReloadComplete('/workspace/repo');
+
+  assert.equal(semaphore.requiresReload('/workspace/repo'), false);
+  assert.equal(semaphore.canReuseSnapshot('/workspace/repo'), true);
+  assert.equal(semaphore.canReuseSnapshot('/workspace/other'), false);
+  assert.equal(semaphore.requiresReload(undefined), true);
+
+  semaphore.markReloadRequired();
+
+  assert.equal(semaphore.requiresReload('/workspace/repo'), true);
 });

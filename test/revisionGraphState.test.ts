@@ -265,6 +265,71 @@ test('metadata patches load the complete repository refs instead of relying only
   );
 });
 
+test('metadata patches decline refs whose tips are missing from the current snapshot', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+    refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+  });
+  repository.getRefs = async () => [
+    createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+    createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head2' })
+  ];
+
+  const snapshot = {
+    graph: buildCommitGraph([
+      {
+        hash: 'head1',
+        parents: [],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Bootstrap',
+        refs: [{ name: 'main', kind: 'head' }]
+      }
+    ]),
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return snapshot;
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const initialState = await buildReadyRevisionGraphViewState(
+    createRepository({
+      root: '/workspace/repo',
+      head: createHead('main', 0, 0, { remote: 'origin', name: 'main' }),
+      refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+    }),
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+
+  const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+    initialState,
+    repository,
+    backend,
+    snapshot
+  );
+
+  assert.equal(patchedState, undefined);
+});
+
 test('metadata patch ref loading rethrows abort errors instead of silently falling back', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

@@ -365,7 +365,7 @@ function patchSceneReferences(
 
     const hash = resolveVisibleRefHash(graph, visibleHashes, normalizedRef.name, normalizedRef.kind, ref.commit);
     if (!hash) {
-      continue;
+      return undefined;
     }
 
     pushRef(refsByHash, hash, normalizedRef);

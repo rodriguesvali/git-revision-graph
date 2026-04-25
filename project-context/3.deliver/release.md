@@ -3,12 +3,25 @@
 ## Version / Change Set
 Current package baseline: `0.0.17`.
 
-Use this file to track the next publishable change set. Do not bump versions or publish without explicit human approval.
+Next publishable change set:
+
+- Revision graph refresh efficiency: reuse clean snapshots for projection rebuilds and metadata-only repository events, with fallback to full rebuild when the graph snapshot is stale.
+- Activity Bar icon sizing: scale the contributed SVG artwork by about 30% for stronger visual weight.
+- Test command reliability: keep `npm test` aligned with the flat compiled test layout.
+
+Do not bump versions or publish without explicit human approval.
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
 - Required for behavior, command, graph, controller, Git workflow, or user-visible changes: `npm test`.
 - Recommended for release candidates: manual Extension Development Host smoke test.
+
+Current verification:
+
+- `npm run build` passed.
+- `npm test` passed with 147 tests.
+
+Manual Extension Development Host validation remains pending.
 
 ## Deployment Steps
 Release commands available in `package.json`:

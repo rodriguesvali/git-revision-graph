@@ -28,6 +28,26 @@ export interface PreparedPendingRevisionGraphRefresh {
   readonly id: number;
 }
 
+export class RevisionGraphSnapshotReloadSemaphore {
+  private reusableRepositoryPath: string | undefined;
+
+  markReloadRequired(): void {
+    this.reusableRepositoryPath = undefined;
+  }
+
+  markReloadComplete(repositoryPath: string): void {
+    this.reusableRepositoryPath = repositoryPath;
+  }
+
+  canReuseSnapshot(repositoryPath: string | undefined): boolean {
+    return !!repositoryPath && this.reusableRepositoryPath === repositoryPath;
+  }
+
+  requiresReload(repositoryPath: string | undefined): boolean {
+    return !this.canReuseSnapshot(repositoryPath);
+  }
+}
+
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;
 let nextPendingFollowUpRefreshId = 0;
 
