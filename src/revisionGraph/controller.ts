@@ -17,6 +17,7 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   mergeResolvedReference,
+  pushTagResolvedReference,
   CompareResultsPresenter,
   RefActionKind,
   syncCurrentHeadWithUpstream
@@ -389,6 +390,15 @@ export class RevisionGraphController implements vscode.Disposable {
           await createTagFromResolvedReference(
             this.currentRepository,
             { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
+        }
+        return;
+      case 'push-tag':
+        if (this.currentRepository) {
+          await pushTagResolvedReference(
+            this.currentRepository,
+            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
             this.actionServices
           );
         }

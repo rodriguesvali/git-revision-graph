@@ -15,6 +15,7 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   mergeResolvedReference,
+  pushTagResolvedReference,
   RefActionServices,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
@@ -31,6 +32,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
+  readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -46,6 +48,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
+  const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -57,6 +60,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const services: RefActionServices = {
     ui: {
       async pickChange(items) {
+        return items[0];
+      },
+      async pickRemoteName(items) {
         return items[0];
       },
       async promptBranchName(options) {
@@ -129,6 +135,12 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async createTag(_repository, tagName, refName) {
         createdTags.push({ tagName, refName });
       },
+      async getRemoteNames() {
+        return ['origin'];
+      },
+      async pushTag(_repository, remoteName, tagName) {
+        pushedTags.push({ remoteName, tagName });
+      },
       async deleteRemoteBranch(_repository, remoteName, branchName) {
         deletedRemoteBranches.push({ remoteName, branchName });
       },
@@ -158,6 +170,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     diffCalls,
     compareResultsCalls,
     createdTags,
+    pushedTags,
     deletedRemoteBranches,
     upstreamClears,
     prepareRequests,
@@ -609,6 +622,158 @@ test('createTagFromResolvedReference surfaces tag creation failures', async () =
   assert.deepEqual(harness.createdTags, []);
   assert.equal(harness.refreshCalls, 0);
   assert.equal(harness.errorMessages[0], "Could not create the tag. fatal: tag 'v1.0.0' already exists");
+});
+
+test('pushTagResolvedReference pushes a local tag to the only configured remote', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, [
+    { message: 'Push tag v1.2.0 to origin?', confirmLabel: 'Push Tag: v1.2.0' }
+  ]);
+  assert.deepEqual(harness.pushedTags, [
+    { remoteName: 'origin', tagName: 'v1.2.0' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was pushed to origin.');
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('pushTagResolvedReference lets users choose when multiple remotes exist', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async pickRemoteName(items, placeHolder) {
+      assert.deepEqual(items, ['origin', 'upstream']);
+      assert.equal(placeHolder, 'Choose a remote for the tag push');
+      return 'upstream';
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, [
+    { remoteName: 'upstream', tagName: 'v1.2.0' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was pushed to upstream.');
+});
+
+test('pushTagResolvedReference does nothing when remote selection is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async pickRemoteName() {
+      return undefined;
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('pushTagResolvedReference reports when no remotes are configured', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.getRemoteNames = async () => [];
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.equal(harness.infoMessages[0], 'No Git remote is configured for this repository.');
+});
+
+test('pushTagResolvedReference does nothing when confirmation is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async confirm() {
+      return false;
+    }
+  });
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('pushTagResolvedReference blocks tag push while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before pushing a tag.');
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('pushTagResolvedReference surfaces push failures', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.pushTag = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: 'remote rejected'
+    });
+  };
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {

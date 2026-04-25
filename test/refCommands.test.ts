@@ -37,6 +37,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       async pickChange(items) {
         return items[0];
       },
+      async pickRemoteName(items) {
+        return items[0];
+      },
       async promptBranchName(options) {
         return options.value;
       },
@@ -95,6 +98,10 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     },
     referenceManager: {
       async createTag() {},
+      async getRemoteNames() {
+        return ['origin'];
+      },
+      async pushTag() {},
       async deleteRemoteBranch() {},
       async unsetBranchUpstream() {}
     },

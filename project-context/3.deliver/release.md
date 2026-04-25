@@ -8,6 +8,7 @@ Target release: `0.0.19`.
 Planned publishable change set:
 
 - Tag creation from the Revision Graph context menu for graph-selected references and visible commits.
+- Tag push from the Revision Graph context menu for local tags, with remote selection and explicit confirmation.
 
 Do not bump versions or publish without explicit human approval.
 
@@ -24,7 +25,7 @@ Planning references:
 Current verification:
 
 - `npm run build` passed.
-- `npm test` passed with 152 tests.
+- `npm test` passed with 159 tests.
 
 Manual Extension Development Host validation remains pending for `0.0.19`.
 

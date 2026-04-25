@@ -15,6 +15,7 @@ export interface RefActionTarget extends RefSelection {
 
 export interface RefActionUi {
   pickChange(items: readonly ChangeQuickPickItem[], placeHolder: string): Promise<ChangeQuickPickItem | undefined>;
+  pickRemoteName(items: readonly string[], placeHolder: string): Promise<string | undefined>;
   promptBranchName(options: { readonly prompt: string; readonly value: string }): Promise<string | undefined>;
   promptTagName(options: { readonly prompt: string; readonly value?: string }): Promise<string | undefined>;
   confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
@@ -54,6 +55,8 @@ export interface RefreshController {
 
 export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
+  getRemoteNames(repository: Repository): Promise<readonly string[]>;
+  pushTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
   unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
 }

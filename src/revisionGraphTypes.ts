@@ -49,6 +49,7 @@ export type RevisionGraphMessage =
     readonly label: string;
     readonly refKind: RevisionGraphRef['kind'] | 'commit';
   }
+  | { readonly type: 'push-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };

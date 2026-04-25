@@ -177,6 +177,43 @@ export async function createTagFromResolvedReference(
   }
 }
 
+export async function pushTagResolvedReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<void> {
+  try {
+    if (target.kind !== 'tag') {
+      services.ui.showInformationMessage(`${target.label} is not a local tag.`);
+      return;
+    }
+
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing a tag.');
+      await services.ui.showSourceControl();
+      return;
+    }
+
+    const remoteName = await pickTagPushRemote(repository, services);
+    if (!remoteName) {
+      return;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: `Push tag ${target.label} to ${remoteName}?`,
+      confirmLabel: `Push Tag: ${target.label}`
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    await services.referenceManager.pushTag(repository, remoteName, target.refName);
+    services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
+  }
+}
+
 export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
@@ -314,6 +351,23 @@ async function getBranchCreationTarget(
     suggestedLocalName: getSuggestedNewBranchName(target.refName, target.kind),
     prompt: `Create a New Local Branch from ${target.label}`
   };
+}
+
+async function pickTagPushRemote(
+  repository: Repository,
+  services: RefActionServices
+): Promise<string | undefined> {
+  const remoteNames = await services.referenceManager.getRemoteNames(repository);
+  if (remoteNames.length === 0) {
+    services.ui.showInformationMessage('No Git remote is configured for this repository.');
+    return undefined;
+  }
+
+  if (remoteNames.length === 1) {
+    return remoteNames[0];
+  }
+
+  return services.ui.pickRemoteName(remoteNames, 'Choose a remote for the tag push');
 }
 
 async function deleteRemoteReference(
