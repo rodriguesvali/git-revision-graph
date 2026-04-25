@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.18
+
+### Highlights
+
+- Improved revision graph refresh efficiency by reusing clean graph snapshots for projection-only changes instead of reloading Git history unnecessarily.
+- Added a snapshot reload semaphore so repository state and checkout events can patch metadata first, falling back to a full rebuild only when the graph snapshot is stale.
+- Strengthened the Activity Bar icon by scaling the contributed SVG artwork by about 30% inside its existing 24px icon box.
+
+### Quality
+
+- Added regression coverage for snapshot reload gating and metadata patch fallback when refs point to commits missing from the current snapshot.
+- Fixed the `npm test` script to match the repository's flat compiled test layout without relying on shell-specific glob expansion.
+
 ## 0.0.17
 
 ### Highlights
