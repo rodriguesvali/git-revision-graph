@@ -8,6 +8,7 @@ import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { PreparedRefreshHandle, RefActionServices } from './refActions';
 import { isMissingUpstreamConfigurationError } from './refActions/shared';
+import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
 
@@ -42,7 +43,7 @@ export function createWorkbenchRefActionServices(
         return vscode.window.showInputBox({
           prompt: options.prompt,
           value: options.value,
-          validateInput: (value) => (value.trim().length === 0 ? 'Enter a tag name.' : undefined)
+          validateInput: (value) => validateGitTagName(value, options.existingTagNames)
         });
       },
       async confirm(options) {

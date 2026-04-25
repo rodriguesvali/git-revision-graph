@@ -14,11 +14,15 @@ The release should stay small enough to validate confidently while closing a vis
 - Local tag push to a selected remote
   Let users publish a local tag from the graph without introducing a broad push workflow.
 
+- Tag name validation and duplicate detection
+  Catch invalid or already-existing local tag names before running Git commands.
+
 ## User Value
 
 - Users can mark release points without leaving the graph.
 - Users can publish release tags to a remote with an explicit confirmation.
 - Users can tag a selected branch, existing tag target, remote ref, or visible unreferenced commit.
+- Users get faster feedback when a tag name is invalid or already exists locally.
 - The workflow rounds out the existing tag story, which already includes tag display, tag filtering, tag checkout via local branch creation, and tag deletion.
 
 ## Scope Guardrails

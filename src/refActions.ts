@@ -1,5 +1,5 @@
 import { hasGitErrorCode as matchesGitErrorCode, toOperationError } from './errorDetail';
-import { Repository } from './git';
+import { RefType, Repository } from './git';
 import { formatUpstreamLabel, hasMergeConflicts } from './gitState';
 import {
   buildDeleteBranchConfirmationMessage,
@@ -13,6 +13,7 @@ import {
   resolveRemoteCheckoutTarget,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './refActions/shared';
+import { validateGitTagName } from './refActions/tagValidation';
 import {
   BranchCreationTarget,
   RefActionServices,
@@ -159,11 +160,19 @@ export async function createTagFromResolvedReference(
       return;
     }
 
+    const existingTagNames = await getLocalTagNames(repository);
     const tagName = await services.ui.promptTagName({
-      prompt: `Create a New Tag from ${target.label}`
+      prompt: `Create a New Tag from ${target.label}`,
+      existingTagNames
     });
 
     if (!tagName) {
+      return;
+    }
+
+    const validationMessage = validateGitTagName(tagName, existingTagNames);
+    if (validationMessage) {
+      await services.ui.showErrorMessage(`Could not create the tag. ${validationMessage}`);
       return;
     }
 
@@ -175,6 +184,13 @@ export async function createTagFromResolvedReference(
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the tag.', error));
   }
+}
+
+async function getLocalTagNames(repository: Repository): Promise<readonly string[]> {
+  const refs = await repository.getRefs();
+  return refs
+    .filter((ref) => ref.type === RefType.Tag && !!ref.name)
+    .map((ref) => ref.name as string);
 }
 
 export async function pushTagResolvedReference(

@@ -513,11 +513,13 @@ test('createBranchFromResolvedReference cancels a prepared refresh when branch c
 test('createTagFromResolvedReference creates a local tag from a branch reference', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
-    head: createHead('main')
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Tag, name: 'v1.1.0' })]
   });
   const harness = createServices({
     async promptTagName(options) {
       assert.equal(options.prompt, 'Create a New Tag from release/2026');
+      assert.deepEqual(options.existingTagNames, ['v1.1.0']);
       return 'v1.2.0';
     }
   });
@@ -558,6 +560,51 @@ test('createTagFromResolvedReference creates a local tag from an unreferenced co
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.1 was created from 12345678.');
   assert.equal(harness.refreshCalls, 1);
+});
+
+test('createTagFromResolvedReference rejects duplicate local tag names before creating a tag', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Tag, name: 'v1.2.0' })]
+  });
+  const harness = createServices({
+    async promptTagName() {
+      return 'v1.2.0';
+    }
+  });
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, []);
+  assert.equal(harness.refreshCalls, 0);
+  assert.equal(harness.errorMessages[0], 'Could not create the tag. Tag v1.2.0 already exists.');
+});
+
+test('createTagFromResolvedReference rejects invalid tag names before creating a tag', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices({
+    async promptTagName() {
+      return 'release candidate';
+    }
+  });
+
+  await createTagFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.createdTags, []);
+  assert.equal(harness.refreshCalls, 0);
+  assert.equal(harness.errorMessages[0], 'Could not create the tag. Tag names cannot contain spaces, control characters, or Git ref separators.');
 });
 
 test('createTagFromResolvedReference does nothing when tag name entry is canceled', async () => {

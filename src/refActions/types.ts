@@ -17,7 +17,7 @@ export interface RefActionUi {
   pickChange(items: readonly ChangeQuickPickItem[], placeHolder: string): Promise<ChangeQuickPickItem | undefined>;
   pickRemoteName(items: readonly string[], placeHolder: string): Promise<string | undefined>;
   promptBranchName(options: { readonly prompt: string; readonly value: string }): Promise<string | undefined>;
-  promptTagName(options: { readonly prompt: string; readonly value?: string }): Promise<string | undefined>;
+  promptTagName(options: { readonly prompt: string; readonly value?: string; readonly existingTagNames?: readonly string[] }): Promise<string | undefined>;
   confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
   showInformationMessage(message: string): void;
   showWarningMessage(message: string): void;

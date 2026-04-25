@@ -9,6 +9,7 @@ Planned publishable change set:
 
 - Tag creation from the Revision Graph context menu for graph-selected references and visible commits.
 - Tag push from the Revision Graph context menu for local tags, with remote selection and explicit confirmation.
+- Tag-name validation and duplicate local tag detection before tag creation.
 
 Do not bump versions or publish without explicit human approval.
 
@@ -25,7 +26,7 @@ Planning references:
 Current verification:
 
 - `npm run build` passed.
-- `npm test` passed with 159 tests.
+- `npm test` passed with 164 tests.
 
 Manual Extension Development Host validation remains pending for `0.0.19`.
 
