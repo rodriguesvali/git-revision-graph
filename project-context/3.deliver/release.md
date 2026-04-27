@@ -1,7 +1,7 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.21`.
+Current package baseline: `0.0.22`.
 
 Target release: `0.0.22`.
 
@@ -9,9 +9,9 @@ Planned publishable change set:
 
 - Refine graph UX with grouped graph context menus, compact view options, minimap navigation, copy-hash feedback, actionable repository empty states, and on-demand remote-tag action resolution.
 
-Do not bump versions or publish without explicit human approval.
+Do not publish without explicit human approval.
 
-Version bump to `0.0.22` has not been approved or applied.
+Version bump to `0.0.22` was approved and applied.
 
 Planning references:
 
@@ -26,6 +26,7 @@ Planning references:
 Current verification:
 
 - Source implementation for the planned `0.0.22` UX polish is complete.
+- Publication notes for `0.0.22` were added to `CHANGELOG.md`.
 - `npm run build` passed.
 - `npm test` passed with 186 tests.
 - Manual Extension Development Host validation for the `0.0.22` UX polish is not complete.
@@ -33,7 +34,8 @@ Current verification:
 Release preparation status:
 
 - Source release readiness is complete for the planned `0.0.22` UX polish.
-- Version bump to `0.0.22` is not complete.
+- Version bump to `0.0.22` is complete.
+- Release notes for `0.0.22` are complete.
 - VSIX packaging is not complete for `0.0.22`.
 - Marketplace publishing is not complete for `0.0.22`.
 
@@ -64,7 +66,6 @@ Rollback options depend on Marketplace state:
 ## Approvals
 Human approval is required before:
 
-- Version bumps.
 - VSIX release packaging.
 - Marketplace publishing.
 - Any destructive Git or repository history operation.

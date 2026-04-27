@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.22
+
+### Highlights
+
+- Polished the Revision Graph experience with cleaner grouped context menus, destructive-action separation, and reduced visual density in the toolbar.
+- Added a real graph minimap for larger repositories, including proportional rendering, viewport bounds, click/drag navigation, internal scrolling, and dedicated minimap zoom controls.
+- Moved lower-frequency graph visibility toggles into a compact `View` options menu while keeping scope, search, fetch, layout, and zoom actions available from the toolbar.
+
+### Workflow & UX
+
+- Copying a commit hash now shows native VS Code feedback.
+- Empty repository states now provide an actionable `Choose Repository` path when a workspace has available repositories.
+- Mouse-opened context menus no longer show a misleading initial focus highlight.
+- The minimap is tuned for tall repositories, avoids the graph scrollbars, and keeps the graph viewport scrollbars aligned with the map edges.
+- Published tags now resolve remote tag state on demand so the graph offers remote deletion instead of a misleading `Push Tag to Remote` action.
+
+### Quality
+
+- Added and updated webview coverage for grouped menus, compact view options, minimap navigation, minimap zoom controls, remote tag action resolution, empty-state recovery, and viewport preservation.
+
 ## 0.0.21
 
 ### Highlights
