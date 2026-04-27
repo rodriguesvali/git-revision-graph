@@ -254,12 +254,18 @@ export function renderRevisionGraphScriptInteractions(): string {
       const base = selected[0] ? getSelectionTarget(selected[0]) : undefined;
       const compare = selected[1] ? getSelectionTarget(selected[1]) : undefined;
       const targetLabel = target.label || target.name;
-	      const isCurrentHead = target.kind === 'head' || (
-	        target.kind === 'branch'
-	        && !!currentHeadName
-	        && target.name === currentHeadName
-	      );
-      const canSyncCurrentHead = target.kind === 'head' && !!currentHeadUpstreamName;
+      const isCurrentHead = target.kind === 'head' || (
+        target.kind === 'branch'
+        && !!currentHeadName
+        && target.name === currentHeadName
+      );
+      const canSyncCurrentHead =
+        target.kind === 'head' &&
+        !!currentHeadUpstreamName &&
+        publishedLocalBranchNames.has(target.name);
+      const canPublishBranch =
+        (target.kind === 'head' || target.kind === 'branch') &&
+        !publishedLocalBranchNames.has(target.name);
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -333,6 +339,16 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (canSyncCurrentHead) {
           appendMenuItem('Sync with ' + currentHeadUpstreamName, () => {
             vscode.postMessage({ type: 'sync-current-head' });
+          });
+        }
+        if (canPublishBranch) {
+          appendMenuItem('Publish Branch to Remote', () => {
+            vscode.postMessage({
+              type: 'publish-branch',
+              refName: target.name,
+              label: target.label,
+              refKind: target.kind
+            });
           });
         }
         if (target.kind !== 'stash') {

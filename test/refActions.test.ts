@@ -16,6 +16,7 @@ import {
   deleteResolvedReference,
   deleteRemoteTagResolvedReference,
   mergeResolvedReference,
+  publishLocalBranchResolvedReference,
   pushTagResolvedReference,
   RefActionServices,
   syncCurrentHeadWithUpstream
@@ -1016,6 +1017,195 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
   assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. remote ref does not exist');
 });
 
+test('publishLocalBranchResolvedReference publishes the current branch and sets upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo')
+  });
+  const harness = createServices();
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Publish branch feature/demo to origin?',
+      confirmLabel: 'Publish Branch: feature/demo'
+    }
+  ]);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: 'origin', branchName: 'feature/demo', setUpstream: true }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was published to origin/feature/demo.');
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+});
+
+test('publishLocalBranchResolvedReference lets users choose when multiple remotes exist', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.Head, name: 'feature/demo' })]
+  });
+  const harness = createServices({
+    async pickRemoteName(items, placeHolder) {
+      assert.deepEqual(items, ['origin', 'upstream']);
+      assert.equal(placeHolder, 'Choose a remote for the branch publish');
+      return 'upstream';
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: 'upstream', branchName: 'feature/demo', setUpstream: true }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was published to upstream/feature/demo.');
+});
+
+test('publishLocalBranchResolvedReference reports when the branch already tracks a remote', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo', 1, 0, { remote: 'origin', name: 'feature/demo' })
+  });
+  const harness = createServices();
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.equal(
+    harness.infoMessages[0],
+    'feature/demo already tracks origin/feature/demo. Use Sync to update the remote branch.'
+  );
+});
+
+test('publishLocalBranchResolvedReference publishes a branch with inherited upstream tracking', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('teste01', 0, 0, { remote: 'origin', name: 'auth_version' })
+  });
+  const harness = createServices();
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'teste01', label: 'teste01', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Publish branch teste01 to origin?\n\nIt currently tracks origin/auth_version. Publishing will update upstream tracking to origin/teste01.',
+      confirmLabel: 'Publish Branch: teste01'
+    }
+  ]);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: 'origin', branchName: 'teste01', setUpstream: true }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch teste01 was published to origin/teste01.');
+  assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+});
+
+test('publishLocalBranchResolvedReference does nothing when remote selection is canceled', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo')
+  });
+  const harness = createServices({
+    async pickRemoteName() {
+      return undefined;
+    }
+  });
+  harness.services.referenceManager.getRemoteNames = async () => ['origin', 'upstream'];
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('publishLocalBranchResolvedReference reports when no remotes are configured', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.getRemoteNames = async () => [];
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(harness.infoMessages[0], 'No Git remote is configured for this repository.');
+});
+
+test('publishLocalBranchResolvedReference blocks branch publish while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo'),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before publishing a branch.');
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('publishLocalBranchResolvedReference opens Source Control when Git authentication needs an interactive prompt', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo')
+  });
+  const harness = createServices();
+  repository.push = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+      exitCode: 128
+    });
+  };
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.equal(harness.sourceControlOpens, 1);
+  assert.match(
+    harness.errorMessages[0],
+    /Git authentication is unavailable for this operation/
+  );
+  assert.match(
+    harness.errorMessages[0],
+    /Git: Publish Branch/
+  );
+});
+
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -1066,6 +1256,23 @@ test('syncCurrentHeadWithUpstream refuses when the current branch has no upstrea
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(harness.infoMessages[0], 'The current branch is not tracking a remote branch.');
+});
+
+test('syncCurrentHeadWithUpstream refuses inherited upstream tracking for a newly branched HEAD', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('teste01', 1, 0, { remote: 'origin', name: 'auth_version_copy' })
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(
+    harness.infoMessages[0],
+    'teste01 is tracking origin/auth_version_copy. Publish the branch to update upstream tracking before synchronizing.'
+  );
 });
 
 test('syncCurrentHeadWithUpstream blocks pull-based sync while the workspace is dirty', async () => {

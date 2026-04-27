@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.21
+
+### Highlights
+
+- Added `Publish Branch to Remote` to the Revision Graph context menu for local branches.
+- Publishing a local branch now lets users choose a remote, confirms the push, and configures upstream tracking through the VS Code Git API.
+- Branches with inherited or mismatched upstream tracking can be published to their matching remote branch, with confirmation text explaining the tracking update.
+
+### Workflow & UX
+
+- The publish action is hidden once a local branch already tracks its matching remote branch.
+- `Sync` is only offered when the current branch tracks the matching remote branch, preventing accidental sync with an inherited upstream from the source branch.
+- Local branches created from local refs or commits continue to clear inherited upstream tracking, while local branches created from remote refs keep intentional tracking.
+
+### Quality
+
+- Added regression coverage for local branch publish, inherited upstream handling, publish action visibility, sync action visibility, and graph state metadata.
+
 ## 0.0.18
 
 ### Highlights

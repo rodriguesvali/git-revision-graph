@@ -51,6 +51,7 @@ export type RevisionGraphMessage =
   }
   | { readonly type: 'push-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'delete-remote-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
+  | { readonly type: 'publish-branch'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
@@ -69,6 +70,7 @@ export interface RevisionGraphViewState {
   readonly repositoryPath: string | undefined;
   readonly currentHeadName: string | undefined;
   readonly currentHeadUpstreamName: string | undefined;
+  readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
@@ -91,6 +93,7 @@ export interface RevisionGraphViewMetadataPatch {
   readonly preserveViewport: boolean;
   readonly currentHeadName: string | undefined;
   readonly currentHeadUpstreamName: string | undefined;
+  readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];

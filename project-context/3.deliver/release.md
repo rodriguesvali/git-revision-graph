@@ -1,21 +1,21 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.20`.
+Current package baseline: `0.0.21`.
 
-Target release: `0.0.20`.
+Target release: `0.0.21`.
 
 Planned publishable change set:
 
-- Correct tag push from the Revision Graph so the selected tag is pushed through the VS Code Git repository API with a fully qualified tag refspec, avoiding the direct non-interactive CLI push that can fail to prompt for GitHub credentials.
+- Allow users to publish a local branch to a chosen remote from `GIT Revision Graph`, configuring upstream tracking when possible.
 
 Do not bump versions or publish without explicit human approval.
 
-Version bump to `0.0.20` was approved by the release-close request and applied to `package.json` and `package-lock.json`.
+Version bump to `0.0.21` was approved by the release preparation request and applied to `package.json` and `package-lock.json`.
 
 Planning references:
 
-- `project-context/2.build/features/0.0.20-tag-push-vscode-api.md`
+- `project-context/2.build/features/0.0.21-publish-local-branch.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -24,17 +24,17 @@ Planning references:
 
 Current verification:
 
+- Source implementation for `0.0.21` is complete.
 - `npm run build` passed.
-- `npm test` passed with 174 tests.
-- `npm run package:vsix` passed and generated `git-revision-graph-0.0.20.vsix`.
-- Pending for `0.0.20`: manual Extension Development Host validation of `Push Tag to Remote`.
+- `npm test` passed with 184 tests.
+- Manual Extension Development Host validation of local branch publish passed per maintainer smoke test.
 
 Release preparation status:
 
-- Source release readiness is prepared for `0.0.20`.
-- Version bump to `0.0.20` is complete.
-- VSIX packaging is complete: `git-revision-graph-0.0.20.vsix`.
-- Marketplace publishing is not complete for `0.0.20`.
+- Source release readiness is complete for `0.0.21`.
+- Version bump to `0.0.21` is complete.
+- VSIX packaging is not complete for `0.0.21`.
+- Marketplace publishing is not complete for `0.0.21`.
 
 ## Deployment Steps
 Release commands available in `package.json`:

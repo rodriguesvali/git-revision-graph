@@ -5,7 +5,7 @@ import {
   toOperationError
 } from './errorDetail';
 import { RefType, Repository } from './git';
-import { formatUpstreamLabel, hasMergeConflicts } from './gitState';
+import { formatUpstreamLabel, hasMergeConflicts, isBranchTrackingMatchingUpstream } from './gitState';
 import {
   buildDeleteBranchConfirmationMessage,
   buildForceDeleteBranchMessage,
@@ -262,7 +262,7 @@ export async function deleteRemoteTagResolvedReference(
       return false;
     }
 
-    const remoteName = await pickTagRemote(repository, services, 'Choose a remote to delete the tag from');
+    const remoteName = await pickRemote(repository, services, 'Choose a remote to delete the tag from');
     if (!remoteName) {
       return false;
     }
@@ -284,12 +284,95 @@ export async function deleteRemoteTagResolvedReference(
   }
 }
 
+export async function publishLocalBranchResolvedReference(
+  repository: Repository,
+  target: RefActionTarget,
+  services: RefActionServices
+): Promise<boolean> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  try {
+    if (target.kind !== 'head' && target.kind !== 'branch') {
+      services.ui.showInformationMessage(`${target.label} is not a local branch.`);
+      return false;
+    }
+
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before publishing a branch.');
+      await services.ui.showSourceControl();
+      return false;
+    }
+
+    const branch = await repository.getBranch(target.refName);
+    const upstreamLabel = branch.upstream
+      ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
+      : undefined;
+    if (branch.upstream && isBranchTrackingMatchingUpstream(target.refName, branch.upstream)) {
+      services.ui.showInformationMessage(
+        `${target.label} already tracks ${upstreamLabel}. Use Sync to update the remote branch.`
+      );
+      return false;
+    }
+
+    const remoteName = await pickRemote(repository, services, 'Choose a remote for the branch publish');
+    if (!remoteName) {
+      return false;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: buildPublishBranchConfirmationMessage(target.label, remoteName, upstreamLabel),
+      confirmLabel: `Publish Branch: ${target.label}`
+    });
+    if (!confirmed) {
+      return false;
+    }
+
+    await repository.push(remoteName, target.refName, true);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+    services.ui.showInformationMessage(`Branch ${target.label} was published to ${remoteName}/${target.refName}.`);
+    return true;
+  } catch (error) {
+    if (isNonInteractiveGitAuthenticationError(error)) {
+      await services.ui.showErrorMessage(
+        'Could not publish the branch. Git authentication is unavailable for this operation. ' +
+        `Open Source Control and run "Git: Publish Branch", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
+      );
+      await services.ui.showSourceControl();
+    } else {
+      await services.ui.showErrorMessage(toOperationError('Could not publish the branch.', error));
+    }
+    return false;
+  }
+}
+
+function buildPublishBranchConfirmationMessage(
+  branchName: string,
+  remoteName: string,
+  currentUpstreamLabel: string | undefined
+): string {
+  const targetUpstreamLabel = formatUpstreamLabel(remoteName, branchName);
+  if (!currentUpstreamLabel) {
+    return `Publish branch ${branchName} to ${remoteName}?`;
+  }
+
+  return `Publish branch ${branchName} to ${remoteName}?\n\nIt currently tracks ${currentUpstreamLabel}. Publishing will update upstream tracking to ${targetUpstreamLabel}.`;
+}
+
 export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
   const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
+    const head = repository.state.HEAD;
+    if (head?.name && head.upstream && !isBranchTrackingMatchingUpstream(head.name, head.upstream)) {
+      services.ui.showInformationMessage(
+        `${head.name} is tracking ${formatUpstreamLabel(head.upstream.remote, head.upstream.name)}. Publish the branch to update upstream tracking before synchronizing.`
+      );
+      return;
+    }
+
     const syncState = getCurrentHeadSyncState(repository);
     if (!syncState) {
       services.ui.showInformationMessage('The current branch is not tracking a remote branch.');
@@ -427,10 +510,10 @@ async function pickTagPushRemote(
   repository: Repository,
   services: RefActionServices
 ): Promise<string | undefined> {
-  return pickTagRemote(repository, services, 'Choose a remote for the tag push');
+  return pickRemote(repository, services, 'Choose a remote for the tag push');
 }
 
-async function pickTagRemote(
+async function pickRemote(
   repository: Repository,
   services: RefActionServices,
   placeHolder: string

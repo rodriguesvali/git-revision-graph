@@ -18,6 +18,7 @@ import {
   deleteRemoteTagResolvedReference,
   deleteResolvedReference,
   mergeResolvedReference,
+  publishLocalBranchResolvedReference,
   pushTagResolvedReference,
   CompareResultsPresenter,
   RefActionKind,
@@ -419,6 +420,15 @@ export class RevisionGraphController implements vscode.Disposable {
           }
         }
         return;
+      case 'publish-branch':
+        if (this.currentRepository) {
+          await publishLocalBranchResolvedReference(
+            this.currentRepository,
+            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
+            this.actionServices
+          );
+        }
+        return;
       case 'sync-current-head':
         if (this.currentRepository) {
           await syncCurrentHeadWithUpstream(this.currentRepository, this.actionServices);
@@ -743,6 +753,7 @@ export class RevisionGraphController implements vscode.Disposable {
       preserveViewport: true,
       currentHeadName: state.currentHeadName,
       currentHeadUpstreamName: state.currentHeadUpstreamName,
+      publishedLocalBranchNames: state.publishedLocalBranchNames,
       isWorkspaceDirty: state.isWorkspaceDirty,
       projectionOptions: state.projectionOptions,
       mergeBlockedTargets: state.mergeBlockedTargets,

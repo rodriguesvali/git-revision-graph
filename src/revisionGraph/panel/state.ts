@@ -1,4 +1,4 @@
-import { Ref, RefType, Repository } from '../../git';
+import { Branch, Ref, RefType, Repository } from '../../git';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../backend';
 import {
   buildPrimaryAncestorPaths,
@@ -21,7 +21,7 @@ import {
   GRAPH_PADDING_TOP,
   NODE_PADDING_X
 } from '../webview/shared';
-import { formatUpstreamLabel, hasWorkspaceChanges } from '../../gitState';
+import { formatUpstreamLabel, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
 
 export interface ReadyRevisionGraphViewStateBundle {
   readonly snapshot: RevisionGraphSnapshot;
@@ -169,6 +169,7 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
     currentHeadUpstreamName: repository.state.HEAD?.upstream
       ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
       : undefined,
+    publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     sceneLayoutKey: previousState.sceneLayoutKey,
     references
@@ -181,6 +182,7 @@ export function buildRevisionGraphViewFingerprint(
     | 'repositoryPath'
     | 'currentHeadName'
     | 'currentHeadUpstreamName'
+    | 'publishedLocalBranchNames'
     | 'isWorkspaceDirty'
     | 'sceneLayoutKey'
     | 'references'
@@ -190,6 +192,7 @@ export function buildRevisionGraphViewFingerprint(
     repositoryPath: state.repositoryPath,
     currentHeadName: state.currentHeadName,
     currentHeadUpstreamName: state.currentHeadUpstreamName,
+    publishedLocalBranchNames: [...state.publishedLocalBranchNames].sort(),
     isWorkspaceDirty: state.isWorkspaceDirty,
     sceneLayoutKey: state.sceneLayoutKey,
     references: state.references.map((reference) => ({
@@ -253,6 +256,7 @@ export function buildEmptyRevisionGraphViewState(
     repositoryPath: undefined,
     currentHeadName: undefined,
     currentHeadUpstreamName: undefined,
+    publishedLocalBranchNames: [],
     isWorkspaceDirty: false,
     projectionOptions,
     mergeBlockedTargets: [],
@@ -316,6 +320,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     currentHeadUpstreamName: repository.state.HEAD?.upstream
       ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
       : undefined,
+    publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     projectionOptions,
     mergeBlockedTargets,
@@ -332,6 +337,24 @@ async function buildReadyRevisionGraphViewStateFromParts(
     loadingLabel: undefined,
     errorMessage: undefined
   };
+}
+
+function getPublishedLocalBranchNames(repository: Repository): readonly string[] {
+  const branchesByName = new Map<string, Branch>();
+  for (const ref of repository.state.refs) {
+    if (ref.type === RefType.Head && ref.name) {
+      branchesByName.set(ref.name, ref as Branch);
+    }
+  }
+
+  if (repository.state.HEAD?.name) {
+    branchesByName.set(repository.state.HEAD.name, repository.state.HEAD);
+  }
+
+  return [...branchesByName.values()]
+    .filter(isPublishedLocalBranch)
+    .map((branch) => branch.name as string)
+    .sort();
 }
 
 function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewReference[] {

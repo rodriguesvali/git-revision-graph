@@ -76,6 +76,7 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.viewMode, 'ready');
   assert.equal(state.currentHeadName, 'main');
   assert.equal(state.currentHeadUpstreamName, 'origin/main');
+  assert.deepEqual(state.publishedLocalBranchNames, ['main']);
   assert.equal(state.autoArrangeOnInit, true);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
@@ -89,9 +90,66 @@ test('builds the empty state without rebuilding the shell', () => {
 
   assert.equal(state.viewMode, 'empty');
   assert.equal(state.hasRepositories, true);
+  assert.deepEqual(state.publishedLocalBranchNames, []);
   assert.match(state.emptyMessage ?? '', /Choose a repository/);
   assert.equal(state.scene.nodes.length, 0);
   assert.equal(state.references.length, 0);
+});
+
+test('does not mark branches with inherited upstream tracking as published', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('teste01', 0, 0, { remote: 'origin', name: 'auth_version_copy' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'teste01' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/auth_version_copy' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Branch from auth version',
+      refs: [
+        { name: 'teste01', kind: 'head' },
+        { name: 'origin/auth_version_copy', kind: 'remote' }
+      ]
+    }
+  ]);
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+
+  assert.equal(state.currentHeadUpstreamName, 'origin/auth_version_copy');
+  assert.deepEqual(state.publishedLocalBranchNames, []);
 });
 
 test('patches visible refs and head metadata without rebuilding the scene topology', async () => {
@@ -637,6 +695,7 @@ test('metadata patch fingerprints use the same complete ref set as the applied p
       repositoryPath: patchedState!.repositoryPath,
       currentHeadName: patchedState!.currentHeadName,
       currentHeadUpstreamName: patchedState!.currentHeadUpstreamName,
+      publishedLocalBranchNames: patchedState!.publishedLocalBranchNames,
       isWorkspaceDirty: patchedState!.isWorkspaceDirty,
       sceneLayoutKey: patchedState!.sceneLayoutKey,
       references: patchedState!.references

@@ -96,6 +96,7 @@ test('reorganize button does not crash when clustering by ref families', async (
       repositoryPath: '/workspace/repo',
       currentHeadName: 'main',
       currentHeadUpstreamName: 'origin/main',
+      publishedLocalBranchNames: ['main'],
       isWorkspaceDirty: false,
       projectionOptions: {
         refScope: 'all',
@@ -191,6 +192,11 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /appendMenuItem\('Copy Commit Hash', \(\) => \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash: target\.hash \}\);/s);
   assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /appendMenuItem\('Create Tag', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
+  assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
+  assert.match(html, /const canSyncCurrentHead =\s*target\.kind === 'head' &&\s*!!currentHeadUpstreamName &&\s*publishedLocalBranchNames\.has\(target\.name\);/s);
+  assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
+  assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuItem\('Publish Branch to Remote', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'publish-branch',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /let knownRemoteTagNames = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, !!message\.isPublished\);/);
   assert.match(html, /if \(target\.kind === 'tag'\) \{\s*if \(knownRemoteTagNames\.has\(target\.name\)\) \{\s*appendMenuItem\('Delete Remote Tag'/s);
