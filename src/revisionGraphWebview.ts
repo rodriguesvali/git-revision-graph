@@ -24,22 +24,38 @@ export function renderRevisionGraphShellHtml(): string {
         <option value="local">Local Branches</option>
       </select>
     </label>
-    <label for="showTagsToggle">
-      <input id="showTagsToggle" type="checkbox" />
-      <span>Show Tags</span>
-    </label>
-    <label for="showRemoteBranchesToggle">
-      <input id="showRemoteBranchesToggle" type="checkbox" />
-      <span>Show Remote Branches</span>
-    </label>
-    <label for="showStashesToggle">
-      <input id="showStashesToggle" type="checkbox" />
-      <span>Show Stash</span>
-    </label>
-    <label for="showBranchingsToggle">
-      <input id="showBranchingsToggle" type="checkbox" />
-      <span>Show Branchings &amp; Merges</span>
-    </label>
+    <div class="view-options" id="viewOptions">
+      <button
+        id="viewOptionsButton"
+        class="toolbar-button"
+        type="button"
+        title="Show graph view options"
+        aria-label="Show graph view options"
+        aria-expanded="false"
+        aria-controls="viewOptionsMenu"
+      >
+        <span class="button-icon">&#9776;</span>
+        <span>View</span>
+      </button>
+      <div class="view-options-menu" id="viewOptionsMenu" role="menu" aria-label="Graph view options" hidden>
+        <label for="showTagsToggle">
+          <input id="showTagsToggle" type="checkbox" />
+          <span>Show Tags</span>
+        </label>
+        <label for="showRemoteBranchesToggle">
+          <input id="showRemoteBranchesToggle" type="checkbox" />
+          <span>Show Remote Branches</span>
+        </label>
+        <label for="showStashesToggle">
+          <input id="showStashesToggle" type="checkbox" />
+          <span>Show Stash</span>
+        </label>
+        <label for="showBranchingsToggle">
+          <input id="showBranchingsToggle" type="checkbox" />
+          <span>Show Branchings &amp; Merges</span>
+        </label>
+      </div>
+    </div>
     <div class="search-controls" aria-label="Search the loaded revision graph">
       <label class="search-field" for="searchInput">
         <span class="control-caption">Find</span>
@@ -122,6 +138,7 @@ export function renderRevisionGraphShellHtml(): string {
       >+</button>
     </div>
   </div>
+  <div class="selection-action-bar" id="selectionActionBar" hidden aria-live="polite"></div>
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <div class="scene-layer" id="sceneLayer">
@@ -134,7 +151,10 @@ export function renderRevisionGraphShellHtml(): string {
           <g id="edgeLayer"></g>
         </svg>
         <div class="node-layer" id="nodeLayer"></div>
-        <div class="status-card" id="statusCard" hidden></div>
+        <div class="status-card" id="statusCard" hidden>
+          <div class="status-message" id="statusMessage"></div>
+          <button class="status-action" id="statusActionButton" type="button" hidden></button>
+        </div>
       </div>
     </div>
   </div>

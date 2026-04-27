@@ -8,6 +8,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /<select id="scopeSelect">/);
+  assert.match(html, /id="viewOptionsButton"/);
+  assert.match(html, /id="viewOptionsMenu"/);
   assert.match(html, /Show Branchings &amp; Merges/);
   assert.match(html, /id="showRemoteBranchesToggle"/);
   assert.match(html, /Show Remote Branches/);
@@ -28,6 +30,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="edgeLayer"/);
   assert.match(html, /id="nodeLayer"/);
   assert.match(html, /id="statusCard"/);
+  assert.match(html, /id="statusMessage"/);
+  assert.match(html, /id="statusActionButton"/);
+  assert.match(html, /id="selectionActionBar"/);
   assert.match(html, /window\.addEventListener\('message'/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'webview-ready' \}\);/);
   assert.match(html, /case 'init-state'/);
@@ -37,7 +42,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
   assert.match(html, /--node-stash: #8c8f97;/);
-  assert.match(html, /--toolbar-safe-height: 108px/);
+  assert.match(html, /--toolbar-safe-height: 92px/);
   assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
 });
 
@@ -176,7 +181,7 @@ test('renders checkout menu actions with the destination branch name', () => {
     html,
     /const isCurrentHead = target\.kind === 'head' \|\| \(\s*target\.kind === 'branch'\s*&& !!currentHeadName\s*&& target\.name === currentHeadName\s*\);/s
   );
-  assert.match(html, /if \(target\.kind !== 'commit' && target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuItem\('Checkout to: ' \+ targetLabel, \(\) => \{/s);
+  assert.match(html, /if \(target\.kind !== 'commit' && target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuSection\('Branch Operations'\);\s*appendMenuItem\('Checkout to: ' \+ targetLabel, \(\) => postCheckout\(target\)\);/s);
 });
 
 test('renders structural commit actions for compare and branch creation', () => {
@@ -184,24 +189,24 @@ test('renders structural commit actions for compare and branch creation', () => 
 
   assert.match(html, /function createCommitSelectionId\(hash\) \{/);
   assert.match(html, /function getStructuralNodeTarget\(hash\) \{/);
-  assert.match(html, /type: 'show-log',\s*source: \{\s*kind: 'target',\s*revision: target\.revision,\s*label: target\.label/s);
-  assert.match(html, /type: 'show-log',\s*source: \{\s*kind: 'range',\s*baseRevision: base\.revision,\s*baseLabel: base\.label,\s*compareRevision: compare\.revision,\s*compareLabel: compare\.label/s);
+  assert.match(html, /function postShowLogTarget\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'show-log',\s*source: \{\s*kind: 'target',\s*revision: target\.revision,\s*label: target\.label/s);
+  assert.match(html, /function postShowLogRange\(base, compare\) \{\s*vscode\.postMessage\(\{\s*type: 'show-log',\s*source: \{\s*kind: 'range',\s*baseRevision: base\.revision,\s*baseLabel: base\.label,\s*compareRevision: compare\.revision,\s*compareLabel: compare\.label/s);
   assert.match(html, /base\.hash === target\.hash/);
   assert.match(html, /compare\.hash === target\.hash/);
-  assert.match(html, /type: 'compare-with-worktree', revision: target\.revision, label: target\.label/);
-  assert.match(html, /appendMenuItem\('Copy Commit Hash', \(\) => \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash: target\.hash \}\);/s);
+  assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(\{ type: 'compare-with-worktree', revision: target\.revision, label: target\.label \}\);/s);
+  assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash \}\);/s);
   assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
-  assert.match(html, /appendMenuItem\('Create Tag', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
   assert.match(html, /const canSyncCurrentHead =\s*target\.kind === 'head' &&\s*!!currentHeadUpstreamName &&\s*publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
-  assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuItem\('Publish Branch to Remote', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'publish-branch',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let knownRemoteTagNames = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, !!message\.isPublished\);/);
-  assert.match(html, /if \(target\.kind === 'tag'\) \{\s*if \(knownRemoteTagNames\.has\(target\.name\)\) \{\s*appendMenuItem\('Delete Remote Tag'/s);
-  assert.match(html, /} else \{\s*appendMenuItem\('Push Tag to Remote', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'push-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
-  assert.match(html, /appendMenuItem\('Delete Remote Tag', \(\) => \{\s*vscode\.postMessage\(\{\s*type: 'delete-remote-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /if \(target\.kind === 'tag'\) \{\s*if \(knownRemoteTagNames\.has\(target\.name\)\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
+  assert.match(html, /} else \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
+  assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'delete-remote-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
@@ -209,6 +214,22 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /right: -10px;/);
   assert.match(html, /transform: translate\(100%, -50%\);/);
   assert.doesNotMatch(html, /base-suffix/);
+});
+
+test('renders visible selection actions and grouped graph context menus', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function syncSelectionActions\(\)/);
+  assert.match(html, /selectionActionBar\.hidden = false/);
+  assert.match(html, /appendSelectionAction\('Compare', \(\) => postCompareSelected\(base, compare\), \{ primary: true \}\);/);
+  assert.match(html, /appendSelectionAction\('Compare Worktree', \(\) => postCompareWithWorktree\(base\), \{ primary: true \}\);/);
+  assert.match(html, /appendSelectionAction\('Unified Diff', \(\) => postUnifiedDiff\(base, compare\)\);/);
+  assert.match(html, /function appendMenuSection\(label\)/);
+  assert.doesNotMatch(html, /context-section-label/);
+  assert.match(html, /context-separator/);
+  assert.match(html, /appendMenuSection\('Destructive'\);/);
+  assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
+  assert.match(html, /placeContextMenu\(clientX, clientY\);/);
 });
 
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
@@ -355,11 +376,17 @@ function createWebviewRuntime() {
     'edgeLayer',
     'nodeLayer',
     'statusCard',
+    'statusMessage',
+    'statusActionButton',
     'contextMenu',
+    'selectionActionBar',
     'loadingOverlay',
     'loadingMessage',
     'workspaceLed',
     'scopeSelect',
+    'viewOptions',
+    'viewOptionsButton',
+    'viewOptionsMenu',
     'showTagsToggle',
     'showRemoteBranchesToggle',
     'showStashesToggle',

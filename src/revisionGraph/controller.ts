@@ -317,6 +317,7 @@ export class RevisionGraphController implements vscode.Disposable {
         {
           const pickedRepository = await pickRevisionGraphRepository(this.git, true);
           if (!pickedRepository) {
+            this.postHostMessage({ type: 'update-state', state: this.currentState });
             return;
           }
 
@@ -368,6 +369,7 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'copy-commit-hash':
         await vscode.env.clipboard.writeText(message.commitHash);
+        this.actionServices.ui.showInformationMessage(`Copied commit ${message.commitHash.slice(0, 8)}.`);
         return;
       case 'checkout':
         if (this.currentRepository) {

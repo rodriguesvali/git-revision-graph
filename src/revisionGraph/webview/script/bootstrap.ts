@@ -18,11 +18,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const edgeLayer = document.getElementById('edgeLayer');
     const nodeLayer = document.getElementById('nodeLayer');
     const statusCard = document.getElementById('statusCard');
+    const statusMessage = document.getElementById('statusMessage');
+    const statusActionButton = document.getElementById('statusActionButton');
     const contextMenu = document.getElementById('contextMenu');
+    const selectionActionBar = document.getElementById('selectionActionBar');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const workspaceLed = document.getElementById('workspaceLed');
     const scopeSelect = document.getElementById('scopeSelect');
+    const viewOptionsButton = document.getElementById('viewOptionsButton');
+    const viewOptionsMenu = document.getElementById('viewOptionsMenu');
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
@@ -96,6 +101,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           type: 'set-projection-options',
           options: { refScope: scopeSelect.value }
         }, 'Updating graph scope...', scopeSelect);
+      });
+    }
+    if (viewOptionsButton) {
+      viewOptionsButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleViewOptionsMenu();
       });
     }
     if (showTagsToggle) {
@@ -175,6 +186,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         centerGraphInViewport();
       });
     }
+    if (statusActionButton) {
+      statusActionButton.addEventListener('click', () => {
+        if (statusActionButton.dataset.action === 'choose-repository') {
+          postMessageWithLoading({ type: 'choose-repository' }, 'Choosing repository...', statusActionButton);
+        }
+      });
+    }
     viewport.addEventListener('mousedown', (event) => {
       if (event.button !== 0) {
         return;
@@ -243,6 +261,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (!contextMenu.contains(event.target)) {
         closeContextMenu();
       }
+      if (
+        viewOptionsMenu &&
+        !viewOptionsMenu.hidden &&
+        !viewOptionsMenu.contains(event.target) &&
+        !(viewOptionsButton && viewOptionsButton.contains(event.target))
+      ) {
+        closeViewOptionsMenu();
+      }
     });
     window.addEventListener('keydown', (event) => {
       const isSearchInputFocused = document.activeElement === searchInput;
@@ -290,6 +316,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (event.key === 'Escape') {
         closeContextMenu();
+        closeViewOptionsMenu();
         if (nodeDragState) {
           document.body.classList.remove('node-dragging');
           nodeDragState.element.classList.remove('dragging');
@@ -382,7 +409,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (nextState.errorMessage) {
         showError(nextState.errorMessage);
       } else if (!nextState.loading && nextState.viewMode === 'empty') {
-        showStatus(nextState.emptyMessage || 'No revision graph available.', false);
+        showStatus(
+          nextState.emptyMessage || 'No revision graph available.',
+          false,
+          nextState.hasRepositories ? { action: 'choose-repository', label: 'Choose Repository' } : null
+        );
       } else if (!nextState.loading) {
         hideStatus();
       }
@@ -393,6 +424,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
       applyNodeLayout(false);
       syncSelection();
+      syncSelectionActions();
       if (shouldResetSearch) {
         clearSearchQuery(false);
       } else {
@@ -578,6 +610,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         workspaceLed.setAttribute('aria-label', tooltip);
         workspaceLed.title = tooltip;
       }
+      syncViewOptionsButton();
     }
 
     function renderScene(state) {
@@ -890,13 +923,26 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return !!(target && typeof target.closest === 'function' && target.closest('[data-node-grip]'));
     }
 
-    function showStatus(message, isError) {
+    function showStatus(message, isError, action = null) {
       if (!statusCard) {
         return;
       }
-      statusCard.textContent = message;
+      if (statusMessage) {
+        statusMessage.textContent = message;
+      }
       statusCard.hidden = false;
       statusCard.classList.toggle('error', !!isError);
+      if (statusActionButton) {
+        if (action) {
+          statusActionButton.hidden = false;
+          statusActionButton.textContent = action.label;
+          statusActionButton.dataset.action = action.action;
+        } else {
+          statusActionButton.hidden = true;
+          statusActionButton.textContent = '';
+          delete statusActionButton.dataset.action;
+        }
+      }
     }
 
     function hideStatus() {
@@ -905,7 +951,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       statusCard.hidden = true;
       statusCard.classList.remove('error');
-      statusCard.textContent = '';
+      if (statusMessage) {
+        statusMessage.textContent = '';
+      }
+      if (statusActionButton) {
+        statusActionButton.hidden = true;
+        statusActionButton.textContent = '';
+        delete statusActionButton.dataset.action;
+      }
     }
 
     function showError(message) {

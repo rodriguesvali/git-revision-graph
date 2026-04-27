@@ -32,7 +32,7 @@ export function renderRevisionGraphStyles(): string {
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
       --toolbar-top-offset: 14px;
-      --toolbar-safe-height: 108px;
+      --toolbar-safe-height: 92px;
     }
     * { box-sizing: border-box; }
     body {
@@ -137,10 +137,28 @@ export function renderRevisionGraphStyles(): string {
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
       color: var(--text);
       z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
     }
     .status-card[hidden] { display: none; }
     .status-card.error {
       border-color: color-mix(in srgb, #d62828 42%, var(--border));
+    }
+    .status-message {
+      line-height: 1.45;
+    }
+    .status-action {
+      min-height: 30px;
+      border-radius: 7px;
+      padding: 5px 10px;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: var(--vscode-button-border, transparent);
+    }
+    .status-action:hover {
+      background: var(--vscode-button-hoverBackground);
     }
     .node {
       position: absolute; min-width: ${NODE_MIN_WIDTH}px; border-radius: 6px;
@@ -271,8 +289,19 @@ export function renderRevisionGraphStyles(): string {
       padding: 8px 10px;
       cursor: pointer;
     }
+    .context-item.primary {
+      font-weight: 700;
+    }
+    .context-item.destructive {
+      color: var(--vscode-errorForeground);
+    }
     .context-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .context-item:disabled { opacity: 0.45; cursor: default; }
+    .context-separator {
+      height: 1px;
+      margin: 6px 4px;
+      background: color-mix(in srgb, var(--border) 72%, transparent);
+    }
     .loading-overlay {
       position: fixed;
       inset: 0;
@@ -494,6 +523,33 @@ export function renderRevisionGraphStyles(): string {
     .view-controls input[type="checkbox"] {
       margin: 0;
     }
+    .view-options {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+    }
+    .view-options-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      z-index: 80;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+    }
+    .view-options-menu[hidden] {
+      display: none;
+    }
+    .view-options-menu label {
+      justify-content: flex-start;
+      width: 100%;
+    }
     .view-controls .search-controls {
       display: inline-flex;
       align-items: center;
@@ -570,14 +626,62 @@ export function renderRevisionGraphStyles(): string {
       font-size: 15px;
       line-height: 1;
     }
+    .selection-action-bar {
+      position: fixed;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      z-index: 66;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      max-width: calc(100vw - 28px);
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(2px);
+    }
+    .selection-action-bar[hidden] {
+      display: none;
+    }
+    .selection-summary {
+      min-width: 0;
+      max-width: min(360px, 100%);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .selection-action {
+      min-height: 30px;
+      padding: 5px 9px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .selection-action.primary {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: var(--vscode-button-border, transparent);
+    }
+    .selection-action.primary:hover {
+      background: var(--vscode-button-hoverBackground);
+    }
     @media (max-width: 1100px) {
       :root {
-        --toolbar-safe-height: 124px;
+        --toolbar-safe-height: 108px;
       }
     }
     @media (max-width: 820px) {
       :root {
-        --toolbar-safe-height: 156px;
+        --toolbar-safe-height: 132px;
       }
     }
     .node-summary {

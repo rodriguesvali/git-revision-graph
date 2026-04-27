@@ -20,14 +20,15 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 - Dedicated `GIT Revision Graph` Activity Bar container
 - Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
-- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), tag visibility, remote branch visibility, stash visibility, branching/merge visibility, and in-graph search
+- Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar and Command Palette, with optional `Prune` and `Tags` flags per run
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
+- Visible selection action bar for one-target and two-target graph workflows, including compare, log, diff, branch, tag, copy hash, and clear-selection actions
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
 - On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
-- Graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
+- Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
@@ -43,6 +44,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
 - Client-side search across the loaded graph by branch, tag, hash, subject, and author
+- Actionable empty state for choosing a repository when a multi-repository workspace needs an explicit graph target
 - Automatic refresh when repository state changes
 - Multi-repository workspace support
 

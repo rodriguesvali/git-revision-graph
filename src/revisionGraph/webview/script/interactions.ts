@@ -40,6 +40,7 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       syncRelationshipHighlights();
       syncSearchHighlights();
+      syncSelectionActions();
       syncMinimap();
     }
 
@@ -279,115 +280,47 @@ export function renderRevisionGraphScriptInteractions(): string {
 
       contextMenu.innerHTML = '';
       if (hasComparisonSelection) {
-        appendMenuItem('Compare', () => {
-          vscode.postMessage({
-            type: 'compare-selected',
-            baseRevision: base.revision,
-            baseLabel: base.label,
-            compareRevision: compare.revision,
-            compareLabel: compare.label
-          });
-        });
-        appendMenuItem('Show Log', () => {
-          vscode.postMessage({
-            type: 'show-log',
-            source: {
-              kind: 'range',
-              baseRevision: base.revision,
-              baseLabel: base.label,
-              compareRevision: compare.revision,
-              compareLabel: compare.label
-            }
-          });
-        });
-        appendMenuItem('Unified Diff', () => {
-          vscode.postMessage({
-            type: 'open-unified-diff',
-            baseRevision: base.revision,
-            compareRevision: compare.revision
-          });
-        });
-        appendMenuItem('Copy Commit Hash', () => {
-          vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });
-        });
+        appendMenuSection('Compare');
+        appendMenuItem('Compare', () => postCompareSelected(base, compare), { primary: true });
+        appendMenuItem('Show Log', () => postShowLogRange(base, compare));
+        appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
+        appendMenuSection('Inspect');
+        appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        appendMenuSection('Selection');
         appendMenuItem('Clear Selection', () => {
           selected.splice(0, selected.length);
           syncSelection();
         });
       } else {
-        appendMenuItem('Compare With Worktree', () => {
-          vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
-        });
-        appendMenuItem('Show Log', () => {
-          vscode.postMessage({
-            type: 'show-log',
-            source: {
-              kind: 'target',
-              revision: target.revision,
-              label: target.label
-            }
-          });
-        });
-        appendMenuItem('Copy Commit Hash', () => {
-          vscode.postMessage({ type: 'copy-commit-hash', commitHash: target.hash });
-        });
+        appendMenuSection('Inspect');
+        appendMenuItem('Show Log', () => postShowLogTarget(target));
+        appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        appendMenuSection('Compare');
+        appendMenuItem('Compare With Worktree', () => postCompareWithWorktree(target));
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
-          appendMenuItem('Checkout to: ' + targetLabel, () => {
-            vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
-          });
+          appendMenuSection('Branch Operations');
+          appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
         }
         if (canSyncCurrentHead) {
-          appendMenuItem('Sync with ' + currentHeadUpstreamName, () => {
-            vscode.postMessage({ type: 'sync-current-head' });
-          });
+          appendMenuSection('Branch Operations');
+          appendMenuItem('Sync with ' + currentHeadUpstreamName, () => postSyncCurrentHead());
         }
         if (canPublishBranch) {
-          appendMenuItem('Publish Branch to Remote', () => {
-            vscode.postMessage({
-              type: 'publish-branch',
-              refName: target.name,
-              label: target.label,
-              refKind: target.kind
-            });
-          });
+          appendMenuSection('Create And Publish');
+          appendMenuItem('Publish Branch to Remote', () => postPublishBranch(target));
         }
         if (target.kind !== 'stash') {
-          appendMenuItem('Create New Branch', () => {
-            vscode.postMessage({
-              type: 'create-branch',
-              revision: target.revision,
-              label: target.label,
-              refKind: target.kind
-            });
-          });
-          appendMenuItem('Create Tag', () => {
-            vscode.postMessage({
-              type: 'create-tag',
-              revision: target.revision,
-              label: target.label,
-              refKind: target.kind
-            });
-          });
+          appendMenuSection('Create And Publish');
+          appendMenuItem('Create New Branch', () => postCreateBranch(target));
+          appendMenuItem('Create Tag', () => postCreateTag(target));
         }
         if (target.kind === 'tag') {
           if (knownRemoteTagNames.has(target.name)) {
-            appendMenuItem('Delete Remote Tag', () => {
-              vscode.postMessage({
-                type: 'delete-remote-tag',
-                refName: target.name,
-                label: target.label,
-                refKind: target.kind
-              });
-            });
+            appendMenuSection('Destructive');
+            appendMenuItem('Delete Remote Tag', () => postDeleteRemoteTag(target), { destructive: true });
           } else {
-            appendMenuItem('Push Tag to Remote', () => {
-              vscode.postMessage({
-                type: 'push-tag',
-                refName: target.name,
-                label: target.label,
-                refKind: target.kind
-              });
-            });
+            appendMenuSection('Create And Publish');
+            appendMenuItem('Push Tag to Remote', () => postPushTag(target));
           }
         }
         if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
@@ -397,33 +330,51 @@ export function renderRevisionGraphScriptInteractions(): string {
               : target.kind === 'remote'
                 ? 'Delete Remote Branch: ' + targetLabel
                 : 'Delete Branch: ' + targetLabel;
-            appendMenuItem(deleteLabel, () => {
-              vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
-            });
+            appendMenuSection('Destructive');
+            appendMenuItem(deleteLabel, () => postDelete(target), { destructive: true });
           }
           if (!mergeBlockedTargets.has(target.kind + '::' + target.name)) {
-            appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => {
-              vscode.postMessage({ type: 'merge', refName: target.name });
-            });
+            appendMenuSection('Branch Operations');
+            appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => postMerge(target));
           }
         }
         if (selected.length > 0) {
+          appendMenuSection('Selection');
           appendMenuItem('Clear Selection', () => {
             selected.splice(0, selected.length);
             syncSelection();
           });
         }
       }
-      contextMenu.style.left = clientX + 'px';
-      contextMenu.style.top = clientY + 'px';
       contextMenu.classList.add('open');
+      placeContextMenu(clientX, clientY);
+      contextMenu.querySelector('.context-item')?.focus();
     }
 
-    function appendMenuItem(label, onClick, disabled = false) {
+    function appendMenuSection(label) {
+      if (!contextMenu || contextMenu.dataset.currentSection === label) {
+        return;
+      }
+      contextMenu.dataset.currentSection = label;
+      if (contextMenu.children.length > 0) {
+        const separator = document.createElement('div');
+        separator.className = 'context-separator';
+        separator.setAttribute('role', 'separator');
+        contextMenu.appendChild(separator);
+      }
+    }
+
+    function appendMenuItem(label, onClick, options = {}) {
       const button = document.createElement('button');
       button.className = 'context-item';
+      if (options.primary) {
+        button.classList.add('primary');
+      }
+      if (options.destructive) {
+        button.classList.add('destructive');
+      }
       button.textContent = label;
-      button.disabled = disabled;
+      button.disabled = !!options.disabled;
       button.addEventListener('click', () => {
         onClick();
         closeContextMenu();
@@ -431,9 +382,229 @@ export function renderRevisionGraphScriptInteractions(): string {
       contextMenu.appendChild(button);
     }
 
+    function placeContextMenu(clientX, clientY) {
+      const margin = 8;
+      contextMenu.style.left = '0px';
+      contextMenu.style.top = '0px';
+      const rect = typeof contextMenu.getBoundingClientRect === 'function'
+        ? contextMenu.getBoundingClientRect()
+        : { width: 260, height: 320 };
+      const width = rect.width || 260;
+      const height = rect.height || 320;
+      const windowWidth = window.innerWidth || 1024;
+      const windowHeight = window.innerHeight || 768;
+      const maxLeft = Math.max(margin, windowWidth - width - margin);
+      const maxTop = Math.max(margin, windowHeight - height - margin);
+      contextMenu.style.left = Math.min(Math.max(margin, clientX), maxLeft) + 'px';
+      contextMenu.style.top = Math.min(Math.max(margin, clientY), maxTop) + 'px';
+    }
+
     function closeContextMenu() {
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
+      delete contextMenu.dataset.currentSection;
+    }
+
+    function toggleViewOptionsMenu() {
+      if (!viewOptionsMenu || !viewOptionsButton) {
+        return;
+      }
+      const shouldOpen = viewOptionsMenu.hidden;
+      viewOptionsMenu.hidden = !shouldOpen;
+      viewOptionsButton.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      closeContextMenu();
+    }
+
+    function closeViewOptionsMenu() {
+      if (!viewOptionsMenu || !viewOptionsButton) {
+        return;
+      }
+      viewOptionsMenu.hidden = true;
+      viewOptionsButton.setAttribute('aria-expanded', 'false');
+    }
+
+    function syncViewOptionsButton() {
+      if (!viewOptionsButton) {
+        return;
+      }
+      const visibleOptions = [
+        currentProjectionOptions.showTags ? 'tags' : null,
+        currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
+        currentProjectionOptions.showStashes ? 'stash' : null,
+        currentProjectionOptions.showBranchingsAndMerges ? 'branching/merge commits' : null
+      ].filter(Boolean);
+      viewOptionsButton.title = visibleOptions.length > 0
+        ? 'View options: showing ' + visibleOptions.join(', ')
+        : 'View options: refs only';
+    }
+
+    function syncSelectionActions() {
+      if (!selectionActionBar) {
+        return;
+      }
+
+      const base = selected[0] ? getSelectionTarget(selected[0]) : null;
+      const compare = selected[1] ? getSelectionTarget(selected[1]) : null;
+      selectionActionBar.innerHTML = '';
+
+      if (!base) {
+        selectionActionBar.hidden = true;
+        return;
+      }
+
+      selectionActionBar.hidden = false;
+      const summary = document.createElement('span');
+      summary.className = 'selection-summary';
+      summary.textContent = compare
+        ? 'Compare ' + base.label + ' -> ' + compare.label
+        : base.label;
+      selectionActionBar.appendChild(summary);
+
+      if (compare) {
+        appendSelectionAction('Compare', () => postCompareSelected(base, compare), { primary: true });
+        appendSelectionAction('Show Log', () => postShowLogRange(base, compare));
+        appendSelectionAction('Unified Diff', () => postUnifiedDiff(base, compare));
+        appendSelectionAction('Copy Hash', () => postCopyCommitHash(compare.hash));
+      } else {
+        appendSelectionAction('Compare Worktree', () => postCompareWithWorktree(base), { primary: true });
+        appendSelectionAction('Show Log', () => postShowLogTarget(base));
+        appendSelectionAction('Copy Hash', () => postCopyCommitHash(base.hash));
+        if (base.kind !== 'stash') {
+          appendSelectionAction('Branch', () => postCreateBranch(base));
+          appendSelectionAction('Tag', () => postCreateTag(base));
+        }
+      }
+
+      appendSelectionAction('Clear', () => {
+        selected.splice(0, selected.length);
+        syncSelection();
+      });
+    }
+
+    function appendSelectionAction(label, onClick, options = {}) {
+      const button = document.createElement('button');
+      button.className = 'selection-action';
+      if (options.primary) {
+        button.classList.add('primary');
+      }
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', () => {
+        onClick();
+        closeContextMenu();
+      });
+      selectionActionBar.appendChild(button);
+    }
+
+    function postCompareSelected(base, compare) {
+      vscode.postMessage({
+        type: 'compare-selected',
+        baseRevision: base.revision,
+        baseLabel: base.label,
+        compareRevision: compare.revision,
+        compareLabel: compare.label
+      });
+    }
+
+    function postShowLogRange(base, compare) {
+      vscode.postMessage({
+        type: 'show-log',
+        source: {
+          kind: 'range',
+          baseRevision: base.revision,
+          baseLabel: base.label,
+          compareRevision: compare.revision,
+          compareLabel: compare.label
+        }
+      });
+    }
+
+    function postUnifiedDiff(base, compare) {
+      vscode.postMessage({
+        type: 'open-unified-diff',
+        baseRevision: base.revision,
+        compareRevision: compare.revision
+      });
+    }
+
+    function postShowLogTarget(target) {
+      vscode.postMessage({
+        type: 'show-log',
+        source: {
+          kind: 'target',
+          revision: target.revision,
+          label: target.label
+        }
+      });
+    }
+
+    function postCompareWithWorktree(target) {
+      vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
+    }
+
+    function postCopyCommitHash(commitHash) {
+      vscode.postMessage({ type: 'copy-commit-hash', commitHash });
+    }
+
+    function postCheckout(target) {
+      vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+    }
+
+    function postSyncCurrentHead() {
+      vscode.postMessage({ type: 'sync-current-head' });
+    }
+
+    function postPublishBranch(target) {
+      vscode.postMessage({
+        type: 'publish-branch',
+        refName: target.name,
+        label: target.label,
+        refKind: target.kind
+      });
+    }
+
+    function postCreateBranch(target) {
+      vscode.postMessage({
+        type: 'create-branch',
+        revision: target.revision,
+        label: target.label,
+        refKind: target.kind
+      });
+    }
+
+    function postCreateTag(target) {
+      vscode.postMessage({
+        type: 'create-tag',
+        revision: target.revision,
+        label: target.label,
+        refKind: target.kind
+      });
+    }
+
+    function postPushTag(target) {
+      vscode.postMessage({
+        type: 'push-tag',
+        refName: target.name,
+        label: target.label,
+        refKind: target.kind
+      });
+    }
+
+    function postDeleteRemoteTag(target) {
+      vscode.postMessage({
+        type: 'delete-remote-tag',
+        refName: target.name,
+        label: target.label,
+        refKind: target.kind
+      });
+    }
+
+    function postDelete(target) {
+      vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
+    }
+
+    function postMerge(target) {
+      vscode.postMessage({ type: 'merge', refName: target.name });
     }
 
     function syncToolbarActions() {
@@ -441,6 +612,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canZoomOut = zoomLevels.some((value) => value < currentZoom);
       if (scopeSelect) {
         scopeSelect.disabled = toolbarBusy;
+      }
+      if (viewOptionsButton) {
+        viewOptionsButton.disabled = toolbarBusy;
       }
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;
@@ -472,6 +646,7 @@ export function renderRevisionGraphScriptInteractions(): string {
       toolbarBusy = isBusy;
       const controls = [
         scopeSelect,
+        viewOptionsButton,
         showTagsToggle,
         showRemoteBranchesToggle,
         showStashesToggle,
@@ -483,7 +658,8 @@ export function renderRevisionGraphScriptInteractions(): string {
         fetchButton,
         reorganizeButton,
         zoomOutButton,
-        zoomInButton
+        zoomInButton,
+        statusActionButton
       ];
       for (const control of controls) {
         if (!control) {
@@ -545,6 +721,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         loadingOverlay.setAttribute('data-mode', mode);
       }
       setToolbarBusy(true, pendingControl);
+      closeViewOptionsMenu();
       document.body.classList.remove('loading', 'loading-subtle');
       if (mode === 'subtle') {
         document.body.classList.add('loading-subtle');
