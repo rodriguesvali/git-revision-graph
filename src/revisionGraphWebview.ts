@@ -138,7 +138,21 @@ export function renderRevisionGraphShellHtml(): string {
       >+</button>
     </div>
   </div>
-  <div class="selection-action-bar" id="selectionActionBar" hidden aria-live="polite"></div>
+  <div
+    class="graph-minimap"
+    id="graphMinimap"
+    role="button"
+    tabindex="0"
+    title="Click or drag to navigate the graph overview"
+    aria-label="Graph overview. Click or drag to navigate."
+    hidden
+  >
+    <svg id="minimapSvg" viewBox="0 0 180 240" aria-hidden="true">
+      <g id="minimapEdgeLayer"></g>
+      <g id="minimapNodeLayer"></g>
+      <rect id="minimapViewport" class="minimap-viewport" x="0" y="0" width="0" height="0"></rect>
+    </svg>
+  </div>
   <div class="viewport" id="viewport">
     <div class="canvas" id="canvas">
       <div class="scene-layer" id="sceneLayer">

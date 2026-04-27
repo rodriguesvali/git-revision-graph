@@ -626,57 +626,64 @@ export function renderRevisionGraphStyles(): string {
       font-size: 15px;
       line-height: 1;
     }
-    .selection-action-bar {
+    .graph-minimap {
       position: fixed;
-      left: 14px;
       right: 14px;
-      bottom: 14px;
-      z-index: 66;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-      max-width: calc(100vw - 28px);
-      padding: 8px 10px;
+      bottom: 68px;
+      z-index: 64;
+      width: 180px;
+      height: 240px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      overflow: auto;
+      cursor: pointer;
       backdrop-filter: blur(2px);
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--accent) 52%, transparent) transparent;
     }
-    .selection-action-bar[hidden] {
+    .graph-minimap[hidden] {
       display: none;
     }
-    .selection-summary {
-      min-width: 0;
-      max-width: min(360px, 100%);
+    .graph-minimap:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
+      outline-offset: 2px;
+    }
+    .graph-minimap svg {
+      position: static;
+      display: block;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding-right: 4px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
     }
-    .selection-action {
-      min-height: 30px;
-      padding: 5px 9px;
-      border-radius: 7px;
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1;
+    .minimap-edge {
+      stroke: color-mix(in srgb, var(--text) 50%, transparent);
+      stroke-width: 1;
+      stroke-linecap: round;
+      opacity: 0.56;
     }
-    .selection-action.primary {
-      background: var(--vscode-button-background);
-      color: var(--vscode-button-foreground);
-      border-color: var(--vscode-button-border, transparent);
+    .minimap-node {
+      fill: color-mix(in srgb, var(--accent) 68%, var(--panel));
+      opacity: 0.82;
     }
-    .selection-action.primary:hover {
-      background: var(--vscode-button-hoverBackground);
+    .minimap-node.head {
+      fill: var(--node-head);
+      opacity: 0.92;
+    }
+    .minimap-viewport {
+      fill: color-mix(in srgb, var(--accent) 16%, transparent);
+      stroke: color-mix(in srgb, var(--accent) 86%, white 8%);
+      stroke-width: 1.5;
+      vector-effect: non-scaling-stroke;
     }
     @media (max-width: 1100px) {
       :root {
         --toolbar-safe-height: 108px;
+      }
+    }
+    @media (max-width: 620px) {
+      .graph-minimap {
+        width: 140px;
+        height: 184px;
       }
     }
     @media (max-width: 820px) {

@@ -20,27 +20,13 @@ The release should avoid adding a new Git mutation workflow by default. The prod
 - The graph context menu is now feature-rich, but it is a flat list with no grouping, separators, keyboard focus handling, or destructive-action emphasis.
 - Two-reference selection is powerful but too hidden. The user must know to Ctrl/Cmd-click, then right-click one of the selected items to reveal compare, log, and unified diff.
 - The compare results and show log webviews have more mature context-menu structure than the primary graph menu, including submenu patterns and keyboard-oriented affordances.
-- The revision graph has a `syncMinimap()` hook but no real minimap/overview implementation yet.
+- The revision graph had a `syncMinimap()` hook but no real minimap/overview implementation before this polish pass.
 - Copying a commit hash from the graph is silent, while most Git workflows use native VS Code messages for completion or failure.
 - Empty graph states are text-only even when the next action is obvious, such as choosing a repository.
 
 ## Recommended Scope
 
-### 1. Selection Action Bar
-
-Add a compact, persistent selection/action strip in the graph view when one or two revisions are selected.
-
-For one selected target, expose high-frequency actions such as compare with worktree, show log, create branch, create tag, copy hash, and clear selection.
-
-For two selected targets, expose compare, show log, unified diff, copy hash, and clear selection. Keep the context menu, but stop making it the only discoverable path.
-
-Why it matters:
-
-- Makes the current selection model visible.
-- Reduces dependence on hidden right-click flows.
-- Turns compare/log/diff into obvious graph workflows.
-
-### 2. Graph Context Menu Polish
+### 1. Graph Context Menu Polish
 
 Refactor the primary graph context menu into grouped sections:
 
@@ -59,7 +45,7 @@ Why it matters:
 - Destructive operations become easier to distinguish.
 - The graph menu catches up to the compare/log webview menu quality.
 
-### 3. Toolbar Density Reduction
+### 2. Toolbar Density Reduction
 
 Keep search first-class, but move lower-frequency visibility toggles into a compact view-options control.
 
@@ -76,7 +62,7 @@ Why it matters:
 - Users need search and action controls more often than every visibility toggle.
 - The graph itself should remain the dominant surface.
 
-### 4. Feedback And Empty-State Polish
+### 3. Feedback And Empty-State Polish
 
 Add small feedback improvements:
 
@@ -91,13 +77,15 @@ Why it matters:
 - Empty states should invite the next action instead of only describing it.
 - The user should never wonder whether a click was accepted.
 
-## Stretch Candidate
-
-### Real Minimap / Overview
+### 4. Real Minimap / Overview
 
 Implement the documented overview target by replacing the current empty `syncMinimap()` hook with a small minimap that shows graph bounds, the viewport rectangle, and click/drag navigation.
 
-This is high-value UX, but it is likely larger than the rest of the polish work. Treat it as a stretch item unless the maintainer wants `0.0.22` to center on navigation.
+Why it matters:
+
+- Larger graphs need orientation as much as cleaner actions.
+- The minimap makes pan and zoom state visible.
+- Click/drag navigation reduces the need for long manual scrolling.
 
 ## Out Of Scope By Default
 
@@ -111,16 +99,16 @@ This is high-value UX, but it is likely larger than the rest of the polish work.
 
 `0.0.22` should position itself as the release that makes the graph easier and safer to use:
 
-- clearer selected-revision actions
 - calmer graph menus
 - less crowded toolbar
+- easier large-graph navigation
 - more reassuring feedback
 
 ## Acceptance Criteria
 
-- A user can discover compare, log, and diff actions from the visible selected state without relying on right-click.
 - Graph context menu actions are grouped and destructive actions are visually separated.
 - The toolbar remains usable in narrow VS Code sidebars without crowding the graph as much as the current version.
+- The minimap shows graph shape, viewport bounds, and supports click/drag navigation.
 - Copy hash and obvious empty-state actions provide visible feedback.
 - Existing compare, checkout, branch, tag, publish, sync, merge, delete, diff, log, search, refresh, repository selection, and multi-repository behavior remain unchanged.
 
@@ -132,9 +120,9 @@ This is high-value UX, but it is likely larger than the rest of the polish work.
   - Open a workspace with no Git repository and verify the empty state.
   - Open a workspace with one repository and verify toolbar layout at narrow and wide sidebars.
   - Open a workspace with multiple repositories and verify repository selection still works.
-  - Select one graph target and verify the visible action surface and context menu.
-  - Select two graph targets and verify compare, show log, unified diff, and clear selection.
+  - Select one graph target and verify the grouped context menu.
+  - Select two graph targets and verify compare, show log, unified diff, and clear selection from the grouped context menu.
+  - Navigate a larger graph with the minimap by clicking and dragging the overview.
   - Verify destructive menu items remain confirmed by native VS Code dialogs.
   - Verify copy commit hash gives feedback and writes the expected hash.
   - Verify compare results and show log views still open and operate normally.
-

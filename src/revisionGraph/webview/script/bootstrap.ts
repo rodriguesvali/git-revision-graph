@@ -21,7 +21,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const statusMessage = document.getElementById('statusMessage');
     const statusActionButton = document.getElementById('statusActionButton');
     const contextMenu = document.getElementById('contextMenu');
-    const selectionActionBar = document.getElementById('selectionActionBar');
+    const graphMinimap = document.getElementById('graphMinimap');
+    const minimapSvg = document.getElementById('minimapSvg');
+    const minimapEdgeLayer = document.getElementById('minimapEdgeLayer');
+    const minimapNodeLayer = document.getElementById('minimapNodeLayer');
+    const minimapViewport = document.getElementById('minimapViewport');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const workspaceLed = document.getElementById('workspaceLed');
@@ -82,6 +86,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let activeSearchResultIndex = -1;
     let toolbarBusy = false;
     let knownRemoteTagNames = new Set();
+    let minimapDragState = null;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -193,6 +198,24 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         }
       });
     }
+    if (graphMinimap) {
+      graphMinimap.addEventListener('mousedown', (event) => {
+        if (event.button !== 0) {
+          return;
+        }
+        minimapDragState = { active: true };
+        centerViewportFromMinimapEvent(event);
+        closeContextMenu();
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      graphMinimap.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          centerGraphInViewport();
+        }
+      });
+    }
     viewport.addEventListener('mousedown', (event) => {
       if (event.button !== 0) {
         return;
@@ -217,6 +240,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       closeContextMenu();
     });
     window.addEventListener('mousemove', (event) => {
+      if (minimapDragState) {
+        centerViewportFromMinimapEvent(event);
+        return;
+      }
       if (nodeDragState) {
         const defaultLeft = getDefaultNodeLeft(nodeDragState.hash);
         const rawOffset = nodeDragState.startOffset + (event.clientX - nodeDragState.startX) / currentZoom;
@@ -238,6 +265,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncMinimap();
     });
     window.addEventListener('mouseup', () => {
+      if (minimapDragState) {
+        minimapDragState = null;
+      }
       if (nodeDragState) {
         document.body.classList.remove('node-dragging');
         nodeDragState.element.classList.remove('dragging');
@@ -424,7 +454,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
       applyNodeLayout(false);
       syncSelection();
-      syncSelectionActions();
       if (shouldResetSearch) {
         clearSearchQuery(false);
       } else {

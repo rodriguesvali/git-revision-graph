@@ -32,7 +32,10 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="statusCard"/);
   assert.match(html, /id="statusMessage"/);
   assert.match(html, /id="statusActionButton"/);
-  assert.match(html, /id="selectionActionBar"/);
+  assert.match(html, /id="graphMinimap"/);
+  assert.match(html, /id="minimapEdgeLayer"/);
+  assert.match(html, /id="minimapNodeLayer"/);
+  assert.match(html, /id="minimapViewport"/);
   assert.match(html, /window\.addEventListener\('message'/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'webview-ready' \}\);/);
   assert.match(html, /case 'init-state'/);
@@ -216,20 +219,39 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.doesNotMatch(html, /base-suffix/);
 });
 
-test('renders visible selection actions and grouped graph context menus', () => {
+test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function syncSelectionActions\(\)/);
-  assert.match(html, /selectionActionBar\.hidden = false/);
-  assert.match(html, /appendSelectionAction\('Compare', \(\) => postCompareSelected\(base, compare\), \{ primary: true \}\);/);
-  assert.match(html, /appendSelectionAction\('Compare Worktree', \(\) => postCompareWithWorktree\(base\), \{ primary: true \}\);/);
-  assert.match(html, /appendSelectionAction\('Unified Diff', \(\) => postUnifiedDiff\(base, compare\)\);/);
   assert.match(html, /function appendMenuSection\(label\)/);
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
   assert.match(html, /appendMenuSection\('Destructive'\);/);
   assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
   assert.match(html, /placeContextMenu\(clientX, clientY\);/);
+  assert.doesNotMatch(html, /contextMenu\.querySelector\('\\.context-item'\)\?\.focus\(\);/);
+  assert.doesNotMatch(html, /selectionActionBar/);
+  assert.doesNotMatch(html, /appendSelectionAction/);
+});
+
+test('renders a graph minimap overview with viewport navigation handlers', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /class="graph-minimap"/);
+  assert.match(html, /viewBox="0 0 180 240"/);
+  assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);
+  assert.match(html, /function syncMinimap\(\)/);
+  assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
+  assert.match(html, /function renderMinimapNode\(hash, transform\)/);
+  assert.match(html, /function syncMinimapViewport\(transform\)/);
+  assert.match(html, /function centerViewportFromMinimapEvent\(event\)/);
+  assert.match(html, /function getMinimapTransform\(\)/);
+  assert.match(html, /const height = 240;/);
+  assert.match(html, /const scale = Math\.max\(/);
+  assert.match(html, /graphMinimap\.scrollTop/);
+  assert.match(html, /getNodeWidth\(hash\) \* transform\.scale/);
+  assert.doesNotMatch(html, /transform\.scaleX/);
+  assert.match(html, /class="minimap-edge"/);
+  assert.match(html, /class="' \+ nodeClass \+ '"/);
 });
 
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
@@ -366,6 +388,15 @@ function createWebviewRuntime() {
     closest(): null {
       return null;
     }
+
+    getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
+      return {
+        left: 0,
+        top: 0,
+        width: this.clientWidth,
+        height: this.clientHeight
+      };
+    }
   }
 
   const ids = [
@@ -379,7 +410,11 @@ function createWebviewRuntime() {
     'statusMessage',
     'statusActionButton',
     'contextMenu',
-    'selectionActionBar',
+    'graphMinimap',
+    'minimapSvg',
+    'minimapEdgeLayer',
+    'minimapNodeLayer',
+    'minimapViewport',
     'loadingOverlay',
     'loadingMessage',
     'workspaceLed',

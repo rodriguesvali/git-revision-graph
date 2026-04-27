@@ -40,7 +40,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       syncRelationshipHighlights();
       syncSearchHighlights();
-      syncSelectionActions();
       syncMinimap();
     }
 
@@ -348,7 +347,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       contextMenu.classList.add('open');
       placeContextMenu(clientX, clientY);
-      contextMenu.querySelector('.context-item')?.focus();
     }
 
     function appendMenuSection(label) {
@@ -436,64 +434,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       viewOptionsButton.title = visibleOptions.length > 0
         ? 'View options: showing ' + visibleOptions.join(', ')
         : 'View options: refs only';
-    }
-
-    function syncSelectionActions() {
-      if (!selectionActionBar) {
-        return;
-      }
-
-      const base = selected[0] ? getSelectionTarget(selected[0]) : null;
-      const compare = selected[1] ? getSelectionTarget(selected[1]) : null;
-      selectionActionBar.innerHTML = '';
-
-      if (!base) {
-        selectionActionBar.hidden = true;
-        return;
-      }
-
-      selectionActionBar.hidden = false;
-      const summary = document.createElement('span');
-      summary.className = 'selection-summary';
-      summary.textContent = compare
-        ? 'Compare ' + base.label + ' -> ' + compare.label
-        : base.label;
-      selectionActionBar.appendChild(summary);
-
-      if (compare) {
-        appendSelectionAction('Compare', () => postCompareSelected(base, compare), { primary: true });
-        appendSelectionAction('Show Log', () => postShowLogRange(base, compare));
-        appendSelectionAction('Unified Diff', () => postUnifiedDiff(base, compare));
-        appendSelectionAction('Copy Hash', () => postCopyCommitHash(compare.hash));
-      } else {
-        appendSelectionAction('Compare Worktree', () => postCompareWithWorktree(base), { primary: true });
-        appendSelectionAction('Show Log', () => postShowLogTarget(base));
-        appendSelectionAction('Copy Hash', () => postCopyCommitHash(base.hash));
-        if (base.kind !== 'stash') {
-          appendSelectionAction('Branch', () => postCreateBranch(base));
-          appendSelectionAction('Tag', () => postCreateTag(base));
-        }
-      }
-
-      appendSelectionAction('Clear', () => {
-        selected.splice(0, selected.length);
-        syncSelection();
-      });
-    }
-
-    function appendSelectionAction(label, onClick, options = {}) {
-      const button = document.createElement('button');
-      button.className = 'selection-action';
-      if (options.primary) {
-        button.classList.add('primary');
-      }
-      button.type = 'button';
-      button.textContent = label;
-      button.addEventListener('click', () => {
-        onClick();
-        closeContextMenu();
-      });
-      selectionActionBar.appendChild(button);
     }
 
     function postCompareSelected(base, compare) {

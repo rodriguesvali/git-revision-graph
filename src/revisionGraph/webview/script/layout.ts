@@ -480,6 +480,152 @@ export function renderRevisionGraphScriptLayout(): string {
       return references.find((ref) => ref.id === refId);
     }
 
-    function syncMinimap() {}
+    function syncMinimap() {
+      if (
+        !graphMinimap ||
+        !minimapSvg ||
+        !minimapEdgeLayer ||
+        !minimapNodeLayer ||
+        !minimapViewport ||
+        !currentState ||
+        currentState.viewMode !== 'ready' ||
+        nodeElements.size === 0
+      ) {
+        if (graphMinimap) {
+          graphMinimap.hidden = true;
+        }
+        return;
+      }
+
+      const transform = getMinimapTransform();
+      if (!transform) {
+        graphMinimap.hidden = true;
+        return;
+      }
+
+      graphMinimap.hidden = false;
+      minimapSvg.setAttribute('viewBox', '0 0 ' + transform.width + ' ' + transform.height);
+      minimapSvg.style.width = transform.width + 'px';
+      minimapSvg.style.height = transform.height + 'px';
+      minimapEdgeLayer.innerHTML = graphEdges
+        .map((edge) => renderMinimapEdge(edge, transform))
+        .join('');
+      minimapNodeLayer.innerHTML = Array.from(nodeElements.keys())
+        .map((hash) => renderMinimapNode(hash, transform))
+        .join('');
+      syncMinimapViewport(transform);
+      if (!minimapDragState) {
+        ensureMinimapViewportVisible(transform);
+      }
+    }
+
+    function renderMinimapEdge(edge, transform) {
+      if (!nodeElements.has(edge.from) || !nodeElements.has(edge.to)) {
+        return '';
+      }
+
+      const sourceX = transform.mapX(getNodeCenterX(edge.from) + layoutOffsetX);
+      const sourceY = transform.mapY(getNodeTop(edge.from) + getNodeHeight(edge.from) / 2 + layoutOffsetY);
+      const targetX = transform.mapX(getNodeCenterX(edge.to) + layoutOffsetX);
+      const targetY = transform.mapY(getNodeTop(edge.to) + getNodeHeight(edge.to) / 2 + layoutOffsetY);
+      return '<line class="minimap-edge" x1="' + sourceX + '" y1="' + sourceY + '" x2="' + targetX + '" y2="' + targetY + '"></line>';
+    }
+
+    function renderMinimapNode(hash, transform) {
+      const left = getNodeLeft(hash) + layoutOffsetX;
+      const top = getNodeTop(hash) + layoutOffsetY;
+      const width = Math.max(2, getNodeWidth(hash) * transform.scale);
+      const height = Math.max(2, getNodeHeight(hash) * transform.scale);
+      const x = transform.mapX(left);
+      const y = transform.mapY(top);
+      const nodeClass = hash === headNodeHash ? 'minimap-node head' : 'minimap-node';
+      return '<rect class="' + nodeClass + '" x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" rx="1.5"></rect>';
+    }
+
+    function syncMinimapViewport(transform) {
+      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}) / currentZoom;
+      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / currentZoom;
+      const visibleLeft = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / currentZoom);
+      const visibleTop = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / currentZoom);
+      const visibleRight = visibleLeft + visibleWidth;
+      const visibleBottom = visibleTop + visibleHeight;
+      const clippedLeft = clamp(visibleLeft, transform.bounds.minX, transform.bounds.maxX);
+      const clippedTop = clamp(visibleTop, transform.bounds.minY, transform.bounds.maxY);
+      const clippedRight = clamp(visibleRight, transform.bounds.minX, transform.bounds.maxX);
+      const clippedBottom = clamp(visibleBottom, transform.bounds.minY, transform.bounds.maxY);
+
+      minimapViewport.setAttribute('x', String(transform.mapX(clippedLeft)));
+      minimapViewport.setAttribute('y', String(transform.mapY(clippedTop)));
+      minimapViewport.setAttribute('width', String(Math.max(3, (clippedRight - clippedLeft) * transform.scale)));
+      minimapViewport.setAttribute('height', String(Math.max(3, (clippedBottom - clippedTop) * transform.scale)));
+    }
+
+    function ensureMinimapViewportVisible(transform) {
+      if (!graphMinimap || !minimapViewport) {
+        return;
+      }
+
+      const x = Number(minimapViewport.getAttribute('x') || 0);
+      const y = Number(minimapViewport.getAttribute('y') || 0);
+      const width = Number(minimapViewport.getAttribute('width') || 0);
+      const height = Number(minimapViewport.getAttribute('height') || 0);
+      const margin = 10;
+      if (y < graphMinimap.scrollTop + margin) {
+        graphMinimap.scrollTop = Math.max(0, y - margin);
+      } else if (y + height > graphMinimap.scrollTop + graphMinimap.clientHeight - margin) {
+        graphMinimap.scrollTop = Math.max(0, y + height - graphMinimap.clientHeight + margin);
+      }
+
+      if (x < graphMinimap.scrollLeft + margin) {
+        graphMinimap.scrollLeft = Math.max(0, x - margin);
+      } else if (x + width > graphMinimap.scrollLeft + graphMinimap.clientWidth - margin) {
+        graphMinimap.scrollLeft = Math.max(0, x + width - graphMinimap.clientWidth + margin);
+      }
+    }
+
+    function centerViewportFromMinimapEvent(event) {
+      const transform = getMinimapTransform();
+      if (!transform || !graphMinimap || typeof graphMinimap.getBoundingClientRect !== 'function') {
+        return;
+      }
+
+      const rect = graphMinimap.getBoundingClientRect();
+      const localX = clamp(event.clientX - rect.left + graphMinimap.scrollLeft, 0, transform.width);
+      const localY = clamp(event.clientY - rect.top + graphMinimap.scrollTop, 0, transform.height);
+      const targetX = transform.unmapX(localX);
+      const targetY = transform.unmapY(localY);
+      centerViewportOnPoint(targetX, targetY);
+    }
+
+    function getMinimapTransform() {
+      const bounds = getDisplayedGraphBounds();
+      const graphWidth = Math.max(1, bounds.maxX - bounds.minX);
+      const graphHeight = Math.max(1, bounds.maxY - bounds.minY);
+      const width = 180;
+      const height = 240;
+      const padding = 8;
+      const scale = Math.max(
+        (width - padding * 2) / graphWidth,
+        (height - padding * 2) / graphHeight
+      );
+      if (!Number.isFinite(scale) || scale <= 0) {
+        return null;
+      }
+      const contentWidth = Math.max(width, graphWidth * scale + padding * 2);
+      const contentHeight = Math.max(height, graphHeight * scale + padding * 2);
+      const offsetX = padding + Math.max(0, contentWidth - padding * 2 - graphWidth * scale) / 2;
+      const offsetY = padding + Math.max(0, contentHeight - padding * 2 - graphHeight * scale) / 2;
+
+      return {
+        bounds,
+        width: contentWidth,
+        height: contentHeight,
+        scale,
+        mapX: (value) => offsetX + (value - bounds.minX) * scale,
+        mapY: (value) => offsetY + (value - bounds.minY) * scale,
+        unmapX: (value) => bounds.minX + (value - offsetX) / scale,
+        unmapY: (value) => bounds.minY + (value - offsetY) / scale
+      };
+    }
   `;
 }

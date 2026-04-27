@@ -25,7 +25,6 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
-- Visible selection action bar for one-target and two-target graph workflows, including compare, log, diff, branch, tag, copy hash, and clear-selection actions
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
 - On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
@@ -43,6 +42,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
 - Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
+- Minimap overview with visible viewport bounds and click/drag navigation for larger graphs
 - Client-side search across the loaded graph by branch, tag, hash, subject, and author
 - Actionable empty state for choosing a repository when a multi-repository workspace needs an explicit graph target
 - Automatic refresh when repository state changes
@@ -257,7 +257,7 @@ Potential improvements after the MVP:
 - Improve conflict-awareness before checkout and merge
 - Add reference rename flows
 - Support richer branch metadata in the UI
-- Expand the revision graph with a real minimap and richer revision actions
+- Expand the revision graph with richer revision actions
 
 ## Validation Strategy
 
