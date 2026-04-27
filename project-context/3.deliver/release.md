@@ -7,7 +7,7 @@ Target release: `0.0.22`.
 
 Planned publishable change set:
 
-- Refine graph UX with grouped graph context menus, compact view options, minimap navigation, copy-hash feedback, and actionable repository empty states.
+- Refine graph UX with grouped graph context menus, compact view options, minimap navigation, copy-hash feedback, actionable repository empty states, and on-demand remote-tag action resolution.
 
 Do not bump versions or publish without explicit human approval.
 

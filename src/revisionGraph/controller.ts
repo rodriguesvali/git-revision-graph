@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { API, Repository } from '../git';
+import { API, RefType, Repository } from '../git';
 import { toErrorDetail } from '../errorDetail';
 import { execGitWithResult } from '../gitExec';
 import {
@@ -72,6 +72,75 @@ import {
   RevisionGraphSnapshotReloadSemaphore,
   registerPendingFollowUpRefresh
 } from '../revisionGraphRefresh';
+
+const REMOTE_TAG_STATE_MAX_OUTPUT_BYTES = 1024 * 1024;
+const REMOTE_TAG_STATE_TIMEOUT_MS = 3000;
+
+async function isTagPublishedToAnyRemote(repository: Repository, tagName: string): Promise<boolean> {
+  const remoteNames = await getRepositoryRemoteNames(repository);
+  for (const remoteName of remoteNames) {
+    if (await remoteHasTag(repository, remoteName, tagName)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function getRepositoryRemoteNames(repository: Repository): Promise<readonly string[]> {
+  try {
+    const { stdout } = await execGitWithResult(repository.rootUri.fsPath, ['remote']);
+    const remoteNames = stdout
+      .split(/\r?\n/)
+      .map((remoteName) => remoteName.trim())
+      .filter((remoteName) => remoteName.length > 0);
+    if (remoteNames.length > 0) {
+      return remoteNames;
+    }
+  } catch {
+    // Fall back to the Git API refs below when the command cannot be queried.
+  }
+
+  return [
+    ...new Set(
+      repository.state.refs
+        .filter((ref) => ref.type === RefType.RemoteHead && !!ref.remote)
+        .map((ref) => ref.remote as string)
+    )
+  ].sort();
+}
+
+async function remoteHasTag(repository: Repository, remoteName: string, tagName: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REMOTE_TAG_STATE_TIMEOUT_MS);
+  try {
+    const { stdout } = await execGitWithResult(
+      repository.rootUri.fsPath,
+      ['ls-remote', '--tags', '--refs', remoteName, `refs/tags/${tagName}`],
+      {
+        maxOutputBytes: REMOTE_TAG_STATE_MAX_OUTPUT_BYTES,
+        signal: controller.signal
+      }
+    );
+    return parseRemoteTagNames(stdout).has(tagName);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function parseRemoteTagNames(stdout: string): Set<string> {
+  const names = new Set<string>();
+  for (const line of stdout.split(/\r?\n/)) {
+    const [, refName] = line.trim().split(/\s+/);
+    if (refName?.startsWith('refs/tags/')) {
+      names.add(refName.slice('refs/tags/'.length));
+    }
+  }
+
+  return names;
+}
 
 export class RevisionGraphController implements vscode.Disposable {
   private view: vscode.WebviewView | undefined;
@@ -397,6 +466,15 @@ export class RevisionGraphController implements vscode.Disposable {
             this.actionServices
           );
         }
+        return;
+      case 'resolve-remote-tag-state':
+        this.postHostMessage({
+          type: 'set-remote-tag-state',
+          tagName: message.refName,
+          isPublished: this.currentRepository
+            ? await isTagPublishedToAnyRemote(this.currentRepository, message.refName)
+            : false
+        });
         return;
       case 'push-tag':
         if (this.currentRepository) {

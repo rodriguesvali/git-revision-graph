@@ -295,7 +295,7 @@ export function renderRevisionGraphStyles(): string {
     .context-item.destructive {
       color: var(--vscode-errorForeground);
     }
-    .context-item:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .context-item:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .context-item:disabled { opacity: 0.45; cursor: default; }
     .context-separator {
       height: 1px;

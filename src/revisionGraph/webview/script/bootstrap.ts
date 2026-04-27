@@ -86,6 +86,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let activeSearchResultIndex = -1;
     let toolbarBusy = false;
     let knownRemoteTagNames = new Set();
+    let remoteTagPublicationState = new Map();
+    let pendingRemoteTagStateRequests = new Set();
+    let activeContextMenuRequest = null;
     let minimapDragState = null;
 
     window.addEventListener('message', (event) => {
@@ -496,6 +499,21 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         knownRemoteTagNames.add(tagName);
       } else {
         knownRemoteTagNames.delete(tagName);
+      }
+      pendingRemoteTagStateRequests.delete(tagName);
+      remoteTagPublicationState.set(tagName, !!isPublished);
+      if (
+        activeContextMenuRequest &&
+        activeContextMenuRequest.target &&
+        activeContextMenuRequest.target.kind === 'tag' &&
+        activeContextMenuRequest.target.name === tagName &&
+        contextMenu.classList.contains('open')
+      ) {
+        openContextMenu(
+          activeContextMenuRequest.clientX,
+          activeContextMenuRequest.clientY,
+          activeContextMenuRequest.target
+        );
       }
     }
 

@@ -33,7 +33,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
 - Create a local tag from a branch, tag, remote branch, or visible unreferenced commit
 - Publish a local branch to a selected Git remote with upstream tracking
-- Push a local tag to a selected Git remote from the graph context menu
+- Push a local tag to a selected Git remote from the graph context menu when it is not already published
 - Delete a pushed tag from a selected Git remote while keeping the local tag unchanged
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
@@ -225,7 +225,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Create a new branch from a selected reference
 - Create a local tag from a selected reference or visible commit
 - Publish a local branch to a selected Git remote
-- Push a local tag to a selected Git remote
+- Push a local tag to a selected Git remote when the tag is not already published
 - Delete a remote tag from a selected Git remote
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream

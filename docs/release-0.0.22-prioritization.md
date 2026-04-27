@@ -43,6 +43,7 @@ Why it matters:
 
 - The menu has grown past the point where a flat list feels safe.
 - Destructive operations become easier to distinguish.
+- Tag publish/delete availability becomes less misleading by resolving remote-tag state before showing the remote action.
 - The graph menu catches up to the compare/log webview menu quality.
 
 ### 2. Toolbar Density Reduction
@@ -124,5 +125,6 @@ Why it matters:
   - Select two graph targets and verify compare, show log, unified diff, and clear selection from the grouped context menu.
   - Navigate a larger graph with the minimap by clicking and dragging the overview.
   - Verify destructive menu items remain confirmed by native VS Code dialogs.
+  - Verify a tag that already exists on a remote shows remote deletion instead of tag publishing after the menu resolves remote state.
   - Verify copy commit hash gives feedback and writes the expected hash.
   - Verify compare results and show log views still open and operate normally.

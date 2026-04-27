@@ -251,6 +251,7 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function openContextMenu(clientX, clientY, target) {
+      activeContextMenuRequest = { clientX, clientY, target };
       const base = selected[0] ? getSelectionTarget(selected[0]) : undefined;
       const compare = selected[1] ? getSelectionTarget(selected[1]) : undefined;
       const targetLabel = target.label || target.name;
@@ -314,12 +315,17 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuItem('Create Tag', () => postCreateTag(target));
         }
         if (target.kind === 'tag') {
-          if (knownRemoteTagNames.has(target.name)) {
+          const hasResolvedRemoteTagState = remoteTagPublicationState.has(target.name);
+          if (hasResolvedRemoteTagState && knownRemoteTagNames.has(target.name)) {
             appendMenuSection('Destructive');
             appendMenuItem('Delete Remote Tag', () => postDeleteRemoteTag(target), { destructive: true });
-          } else {
+          } else if (hasResolvedRemoteTagState) {
             appendMenuSection('Create And Publish');
             appendMenuItem('Push Tag to Remote', () => postPushTag(target));
+          } else {
+            appendMenuSection('Create And Publish');
+            appendMenuItem('Checking Remote Tag...', () => {}, { disabled: true });
+            requestRemoteTagState(target);
           }
         }
         if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
@@ -400,6 +406,7 @@ export function renderRevisionGraphScriptInteractions(): string {
     function closeContextMenu() {
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
+      activeContextMenuRequest = null;
       delete contextMenu.dataset.currentSection;
     }
 
@@ -518,6 +525,23 @@ export function renderRevisionGraphScriptInteractions(): string {
         revision: target.revision,
         label: target.label,
         refKind: target.kind
+      });
+    }
+
+    function requestRemoteTagState(target) {
+      if (
+        !target ||
+        target.kind !== 'tag' ||
+        remoteTagPublicationState.has(target.name) ||
+        pendingRemoteTagStateRequests.has(target.name)
+      ) {
+        return;
+      }
+
+      pendingRemoteTagStateRequests.add(target.name);
+      vscode.postMessage({
+        type: 'resolve-remote-tag-state',
+        refName: target.name
       });
     }
 

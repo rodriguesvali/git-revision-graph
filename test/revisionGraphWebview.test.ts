@@ -206,9 +206,16 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let knownRemoteTagNames = new Set\(\);/);
+  assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
+  assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, !!message\.isPublished\);/);
-  assert.match(html, /if \(target\.kind === 'tag'\) \{\s*if \(knownRemoteTagNames\.has\(target\.name\)\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
-  assert.match(html, /} else \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
+  assert.match(html, /remoteTagPublicationState\.set\(tagName, !!isPublished\);/);
+  assert.match(html, /const hasResolvedRemoteTagState = remoteTagPublicationState\.has\(target\.name\);/);
+  assert.match(html, /if \(hasResolvedRemoteTagState && knownRemoteTagNames\.has\(target\.name\)\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
+  assert.match(html, /} else if \(hasResolvedRemoteTagState\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
+  assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) => \{\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
+  assert.match(html, /function requestRemoteTagState\(target\) \{\s*if \(\s*!target \|\|\s*target\.kind !== 'tag' \|\|\s*remoteTagPublicationState\.has\(target\.name\) \|\|\s*pendingRemoteTagStateRequests\.has\(target\.name\)/s);
+  assert.match(html, /type: 'resolve-remote-tag-state',\s*refName: target\.name/s);
   assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'delete-remote-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
