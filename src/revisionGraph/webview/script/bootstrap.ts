@@ -26,6 +26,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const minimapEdgeLayer = document.getElementById('minimapEdgeLayer');
     const minimapNodeLayer = document.getElementById('minimapNodeLayer');
     const minimapViewport = document.getElementById('minimapViewport');
+    const minimapZoomOutButton = document.getElementById('minimapZoomOutButton');
+    const minimapZoomInButton = document.getElementById('minimapZoomInButton');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const workspaceLed = document.getElementById('workspaceLed');
@@ -75,6 +77,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let baseCanvasWidth = 880;
     let baseCanvasHeight = 480;
     let currentZoom = 1;
+    const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4];
+    let minimapZoom = 1;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;
     let dragState = null;
@@ -206,6 +210,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         if (event.button !== 0) {
           return;
         }
+        if (event.target && typeof event.target.closest === 'function' && event.target.closest('.minimap-zoom-button')) {
+          return;
+        }
         minimapDragState = { active: true };
         centerViewportFromMinimapEvent(event);
         closeContextMenu();
@@ -217,6 +224,18 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           event.preventDefault();
           centerGraphInViewport();
         }
+      });
+    }
+    if (minimapZoomOutButton) {
+      minimapZoomOutButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        zoomOutMinimap();
+      });
+    }
+    if (minimapZoomInButton) {
+      minimapZoomInButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        zoomInMinimap();
       });
     }
     viewport.addEventListener('mousedown', (event) => {

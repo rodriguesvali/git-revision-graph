@@ -147,6 +147,22 @@ export function renderRevisionGraphShellHtml(): string {
     aria-label="Graph overview. Click or drag to navigate."
     hidden
   >
+    <div class="minimap-controls" aria-label="Minimap zoom controls">
+      <button
+        id="minimapZoomOutButton"
+        class="minimap-zoom-button"
+        type="button"
+        title="Zoom Out Minimap"
+        aria-label="Zoom Out Minimap"
+      >-</button>
+      <button
+        id="minimapZoomInButton"
+        class="minimap-zoom-button"
+        type="button"
+        title="Zoom In Minimap"
+        aria-label="Zoom In Minimap"
+      >+</button>
+    </div>
     <svg id="minimapSvg" viewBox="0 0 180 240" aria-hidden="true">
       <g id="minimapEdgeLayer"></g>
       <g id="minimapNodeLayer"></g>

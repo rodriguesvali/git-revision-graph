@@ -33,6 +33,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="statusMessage"/);
   assert.match(html, /id="statusActionButton"/);
   assert.match(html, /id="graphMinimap"/);
+  assert.match(html, /id="minimapZoomOutButton"/);
+  assert.match(html, /id="minimapZoomInButton"/);
   assert.match(html, /id="minimapEdgeLayer"/);
   assert.match(html, /id="minimapNodeLayer"/);
   assert.match(html, /id="minimapViewport"/);
@@ -45,8 +47,12 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
   assert.match(html, /--node-stash: #8c8f97;/);
-  assert.match(html, /--toolbar-safe-height: 92px/);
-  assert.match(html, /calc\(var\(--toolbar-safe-height\) \+ 18px\)/);
+  assert.match(html, /--toolbar-safe-height: 68px/);
+  assert.match(html, /--graph-top-offset: calc\(var\(--toolbar-safe-height\) \+ 1px\)/);
+  assert.match(html, /top: var\(--graph-top-offset\);/);
+  assert.match(html, /right: 0;/);
+  assert.match(html, /bottom: 0;/);
+  assert.match(html, /left: 0;/);
 });
 
 test('rehydrates the webview after the shell is recreated', () => {
@@ -245,6 +251,10 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
 
   assert.match(html, /class="graph-minimap"/);
   assert.match(html, /viewBox="0 0 180 240"/);
+  assert.match(html, /class="minimap-controls"/);
+  assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4\];/);
+  assert.match(html, /function zoomInMinimap\(\)/);
+  assert.match(html, /function zoomOutMinimap\(\)/);
   assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);
   assert.match(html, /function syncMinimap\(\)/);
   assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
@@ -253,7 +263,8 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function centerViewportFromMinimapEvent\(event\)/);
   assert.match(html, /function getMinimapTransform\(\)/);
   assert.match(html, /const height = 240;/);
-  assert.match(html, /const scale = Math\.max\(/);
+  assert.match(html, /const baseScale = Math\.max\(/);
+  assert.match(html, /const scale = baseScale \* minimapZoom;/);
   assert.match(html, /graphMinimap\.scrollTop/);
   assert.match(html, /getNodeWidth\(hash\) \* transform\.scale/);
   assert.doesNotMatch(html, /transform\.scaleX/);
@@ -422,6 +433,8 @@ function createWebviewRuntime() {
     'minimapEdgeLayer',
     'minimapNodeLayer',
     'minimapViewport',
+    'minimapZoomOutButton',
+    'minimapZoomInButton',
     'loadingOverlay',
     'loadingMessage',
     'workspaceLed',

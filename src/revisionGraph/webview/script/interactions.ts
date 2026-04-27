@@ -24,6 +24,27 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
     }
 
+    function setMinimapZoom(zoom) {
+      minimapZoom = zoom;
+      syncMinimap();
+      syncToolbarActions();
+    }
+
+    function zoomInMinimap() {
+      const nextZoom = minimapZoomLevels.find((value) => value > minimapZoom);
+      if (nextZoom) {
+        setMinimapZoom(nextZoom);
+      }
+    }
+
+    function zoomOutMinimap() {
+      const previousLevels = minimapZoomLevels.filter((value) => value < minimapZoom);
+      const nextZoom = previousLevels.length > 0 ? previousLevels[previousLevels.length - 1] : undefined;
+      if (nextZoom) {
+        setMinimapZoom(nextZoom);
+      }
+    }
+
     function syncSelection() {
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
@@ -574,6 +595,8 @@ export function renderRevisionGraphScriptInteractions(): string {
     function syncToolbarActions() {
       const canZoomIn = zoomLevels.some((value) => value > currentZoom);
       const canZoomOut = zoomLevels.some((value) => value < currentZoom);
+      const canZoomInMinimap = minimapZoomLevels.some((value) => value > minimapZoom);
+      const canZoomOutMinimap = minimapZoomLevels.some((value) => value < minimapZoom);
       if (scopeSelect) {
         scopeSelect.disabled = toolbarBusy;
       }
@@ -604,6 +627,12 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (zoomOutButton) {
         zoomOutButton.disabled = toolbarBusy || !canZoomOut;
       }
+      if (minimapZoomInButton) {
+        minimapZoomInButton.disabled = toolbarBusy || !canZoomInMinimap;
+      }
+      if (minimapZoomOutButton) {
+        minimapZoomOutButton.disabled = toolbarBusy || !canZoomOutMinimap;
+      }
     }
 
     function setToolbarBusy(isBusy, pendingControl = null) {
@@ -623,6 +652,8 @@ export function renderRevisionGraphScriptInteractions(): string {
         reorganizeButton,
         zoomOutButton,
         zoomInButton,
+        minimapZoomOutButton,
+        minimapZoomInButton,
         statusActionButton
       ];
       for (const control of controls) {

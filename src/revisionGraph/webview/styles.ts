@@ -32,7 +32,10 @@ export function renderRevisionGraphStyles(): string {
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
       --toolbar-top-offset: 14px;
-      --toolbar-safe-height: 92px;
+      --toolbar-safe-height: 68px;
+      --graph-top-offset: calc(var(--toolbar-safe-height) + 1px);
+      --viewport-scrollbar-gutter-right: 15px;
+      --viewport-scrollbar-gutter-bottom: 13px;
     }
     * { box-sizing: border-box; }
     body {
@@ -101,11 +104,14 @@ export function renderRevisionGraphStyles(): string {
       color: color-mix(in srgb, var(--muted) 88%, transparent);
     }
     .viewport {
-      position: relative;
-      height: 100vh;
+      position: fixed;
+      top: var(--graph-top-offset);
+      right: 0;
+      bottom: 0;
+      left: 0;
       overflow: auto;
       padding:
-        calc(var(--toolbar-safe-height) + ${VIEWPORT_PADDING_TOP}px)
+        ${VIEWPORT_PADDING_TOP}px
         ${VIEWPORT_PADDING_RIGHT}px
         ${VIEWPORT_PADDING_BOTTOM}px
         ${VIEWPORT_PADDING_LEFT}px;
@@ -628,8 +634,8 @@ export function renderRevisionGraphStyles(): string {
     }
     .graph-minimap {
       position: fixed;
-      right: 14px;
-      bottom: 68px;
+      right: calc(10px + var(--viewport-scrollbar-gutter-right));
+      bottom: calc(10px + var(--viewport-scrollbar-gutter-bottom));
       z-index: 64;
       width: 180px;
       height: 240px;
@@ -642,6 +648,29 @@ export function renderRevisionGraphStyles(): string {
       backdrop-filter: blur(2px);
       scrollbar-width: thin;
       scrollbar-color: color-mix(in srgb, var(--accent) 52%, transparent) transparent;
+    }
+    .minimap-controls {
+      position: sticky;
+      top: 6px;
+      left: 6px;
+      z-index: 2;
+      display: flex;
+      justify-content: flex-start;
+      gap: 4px;
+      width: max-content;
+      margin: 6px auto -32px 6px;
+      pointer-events: auto;
+    }
+    .minimap-zoom-button {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      padding: 0;
+      border-radius: 6px;
+      font-weight: 700;
+      line-height: 1;
+      background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     }
     .graph-minimap[hidden] {
       display: none;

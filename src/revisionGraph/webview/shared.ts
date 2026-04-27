@@ -23,7 +23,7 @@ export const GRAPH_PADDING_TOP = 88;
 export const GRAPH_PADDING_BOTTOM = 24;
 export const EDGE_VERTICAL_INSET = 6;
 export const VIEWPORT_PADDING_TOP = 18;
-export const VIEWPORT_PADDING_RIGHT = 18;
+export const VIEWPORT_PADDING_RIGHT = 0;
 export const VIEWPORT_PADDING_BOTTOM = 18;
 export const VIEWPORT_PADDING_LEFT = 18;
 

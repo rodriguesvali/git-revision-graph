@@ -604,10 +604,11 @@ export function renderRevisionGraphScriptLayout(): string {
       const width = 180;
       const height = 240;
       const padding = 8;
-      const scale = Math.max(
+      const baseScale = Math.max(
         (width - padding * 2) / graphWidth,
         (height - padding * 2) / graphHeight
       );
+      const scale = baseScale * minimapZoom;
       if (!Number.isFinite(scale) || scale <= 0) {
         return null;
       }
