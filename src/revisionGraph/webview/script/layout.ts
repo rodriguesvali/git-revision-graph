@@ -604,7 +604,7 @@ export function renderRevisionGraphScriptLayout(): string {
       const width = 180;
       const height = 240;
       const padding = 8;
-      const baseScale = Math.max(
+      const baseScale = Math.min(
         (width - padding * 2) / graphWidth,
         (height - padding * 2) / graphHeight
       );

@@ -263,11 +263,12 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function centerViewportFromMinimapEvent\(event\)/);
   assert.match(html, /function getMinimapTransform\(\)/);
   assert.match(html, /const height = 240;/);
-  assert.match(html, /const baseScale = Math\.max\(/);
+  assert.match(html, /const baseScale = Math\.min\(/);
   assert.match(html, /const scale = baseScale \* minimapZoom;/);
   assert.match(html, /graphMinimap\.scrollTop/);
   assert.match(html, /getNodeWidth\(hash\) \* transform\.scale/);
   assert.doesNotMatch(html, /transform\.scaleX/);
+  assert.doesNotMatch(html, /const baseScale = Math\.max\(/);
   assert.match(html, /class="minimap-edge"/);
   assert.match(html, /class="' \+ nodeClass \+ '"/);
 });

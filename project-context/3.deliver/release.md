@@ -9,6 +9,7 @@ Planned publishable change set:
 
 - Allow remote branch checkout to overwrite an existing non-current local branch after explicit confirmation, then check it out with upstream tracking.
 - Reduce direct Git CLI usage for remote-touching operations by moving remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching to the public `vscode.git` API.
+- Preserve minimap proportions for small repositories by fitting compact graphs inside the overview instead of stretching them.
 
 Do not publish without explicit human approval.
 
@@ -25,15 +26,15 @@ Planning references:
 
 Current verification:
 
-- Source implementation for the planned `0.0.23` remote checkout overwrite and remote-operation API migration improvements is complete.
+- Source implementation for the planned `0.0.23` remote checkout overwrite, remote-operation API migration, and minimap scaling improvements is complete.
 - Publication notes for `0.0.23` were added to `CHANGELOG.md`.
 - `npm run build` passed.
 - `npm test` passed with 192 tests.
-- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite and remote-operation flows is not complete.
+- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite, remote-operation, and small-repository minimap flows is not complete.
 
 Release preparation status:
 
-- Source release readiness is complete for the planned `0.0.23` checkout and remote-operation API migration improvements.
+- Source release readiness is complete for the planned `0.0.23` checkout, remote-operation API migration, and minimap scaling improvements.
 - Version bump to `0.0.23` is not complete.
 - Release notes for `0.0.23` are complete.
 - VSIX packaging is not complete for `0.0.23`.

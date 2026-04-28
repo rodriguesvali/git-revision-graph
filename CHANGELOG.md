@@ -9,10 +9,11 @@ All notable changes to this project will be documented in this file.
 - Remote branch checkout now offers an explicit confirmation path to overwrite an existing non-current local branch name before checking it out and configuring upstream tracking.
 - Remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching now use the `vscode.git` API instead of direct Git CLI calls.
 - Graph fetch with `Tags` and remote tag publication checks remain targeted Git CLI fallbacks because the public `vscode.git` API does not expose equivalent operations.
+- The minimap now preserves graph proportions for small repositories instead of stretching narrow graphs to fill the overview.
 
 ### Quality
 
-- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, and the existing remote tracking branch creation path.
+- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, proportional minimap scaling, and the existing remote tracking branch creation path.
 
 ## 0.0.22
 
