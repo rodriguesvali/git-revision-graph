@@ -13,6 +13,7 @@ import {
   getRepositoryRemoteNames,
   isMissingUpstreamConfigurationError
 } from './refActions/shared';
+import { validateGitBranchName } from './refActions/branchValidation';
 import { buildTagPushRefspec } from './refActions/tagRefspec';
 import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
@@ -42,7 +43,7 @@ export function createWorkbenchRefActionServices(
         return vscode.window.showInputBox({
           prompt: options.prompt,
           value: options.value,
-          validateInput: (value) => (value.trim().length === 0 ? 'Enter a branch name.' : undefined)
+          validateInput: validateGitBranchName
         });
       },
       async promptTagName(options) {

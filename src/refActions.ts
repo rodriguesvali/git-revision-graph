@@ -18,6 +18,7 @@ import {
   resolveRemoteCheckoutTarget,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './refActions/shared';
+import { validateGitBranchName } from './refActions/branchValidation';
 import { validateGitTagName } from './refActions/tagValidation';
 import {
   BranchCreationTarget,
@@ -132,6 +133,12 @@ export async function createBranchFromResolvedReference(
     });
 
     if (!branchName) {
+      return;
+    }
+
+    const validationMessage = validateGitBranchName(branchName);
+    if (validationMessage) {
+      await services.ui.showErrorMessage(`Could not create the branch. ${validationMessage}`);
       return;
     }
 

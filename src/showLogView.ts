@@ -14,21 +14,11 @@ import {
   ShowLogState
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
+import { validateShowLogWebviewMessage } from './showLog/messageValidation';
 
 export const SHOW_LOG_VISIBLE_CONTEXT = 'gitRefs.showLogVisible';
 const SHOW_LOG_PAGE_SIZE = 50;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
-
-type ShowLogWebviewMessage =
-  | { readonly type: 'ready' }
-  | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
-  | { readonly type: 'toggleCommit'; readonly commitHash: string }
-  | { readonly type: 'loadMore' }
-  | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
-  | { readonly type: 'compareWithWorktree'; readonly commitHash: string; readonly changeId: string }
-  | { readonly type: 'copyFileName'; readonly commitHash: string; readonly changeId: string }
-  | { readonly type: 'copyFullPath'; readonly commitHash: string; readonly changeId: string }
-  | { readonly type: 'openCommitDetails'; readonly commitHash: string };
 
 export interface ShowLogPresenter {
   showSource(repository: Repository, source: RevisionLogSource): Promise<void>;
@@ -66,7 +56,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         }
         this.disposeViewDisposables();
       }),
-      view.webview.onDidReceiveMessage(async (message: ShowLogWebviewMessage) => {
+      view.webview.onDidReceiveMessage(async (message: unknown) => {
         await this.handleMessage(message);
       })
     );
@@ -135,7 +125,12 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     await this.updateVisibility(false);
   }
 
-  private async handleMessage(message: ShowLogWebviewMessage): Promise<void> {
+  private async handleMessage(rawMessage: unknown): Promise<void> {
+    const message = validateShowLogWebviewMessage(rawMessage);
+    if (!message) {
+      return;
+    }
+
     switch (message.type) {
       case 'ready':
         this.postState();
@@ -169,6 +164,10 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
 
   private async toggleCommit(commitHash: string): Promise<void> {
     if (this.state.kind !== 'visible') {
+      return;
+    }
+
+    if (!this.isLoadedCommitHash(commitHash)) {
       return;
     }
 
@@ -412,6 +411,10 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       return undefined;
     }
 
+    if (!this.isLoadedCommitHash(commitHash)) {
+      return undefined;
+    }
+
     const match = /^.+:(\d+)$/.exec(changeId);
     const index = match ? Number(match[1]) : -1;
     if (!Number.isInteger(index) || index < 0) {
@@ -433,7 +436,15 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       return;
     }
 
+    if (!this.isLoadedCommitHash(commitHash)) {
+      return;
+    }
+
     await openRevisionCommitDetails(repository, commitHash, this.backend);
+  }
+
+  private isLoadedCommitHash(commitHash: string): boolean {
+    return this.state.kind === 'visible' && this.state.entries.some((entry) => entry.hash === commitHash);
   }
 
   private postState(): void {

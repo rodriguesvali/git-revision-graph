@@ -50,7 +50,6 @@ import {
 import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
-  RevisionGraphMessage,
   RevisionGraphViewMetadataPatch,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
@@ -59,6 +58,10 @@ import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
+import {
+  isRevisionGraphMessageAllowedForState,
+  validateRevisionGraphMessage
+} from './messageValidation';
 import { ShowLogPresenter } from '../showLogView';
 import {
   cancelPendingFollowUpRefresh,
@@ -264,7 +267,7 @@ export class RevisionGraphController implements vscode.Disposable {
         }
         this.disposeViewDisposables();
       }),
-      view.webview.onDidReceiveMessage(async (message: RevisionGraphMessage) => {
+      view.webview.onDidReceiveMessage(async (message: unknown) => {
         await this.handleMessage(message);
       })
     );
@@ -348,7 +351,12 @@ export class RevisionGraphController implements vscode.Disposable {
     };
   }
 
-  private async handleMessage(message: RevisionGraphMessage): Promise<void> {
+  private async handleMessage(rawMessage: unknown): Promise<void> {
+    const message = validateRevisionGraphMessage(rawMessage);
+    if (!message || !isRevisionGraphMessageAllowedForState(message, this.currentState)) {
+      return;
+    }
+
     switch (message.type) {
       case 'webview-ready':
         this.rehydrateWebview();

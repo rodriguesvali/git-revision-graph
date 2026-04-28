@@ -10,10 +10,12 @@ All notable changes to this project will be documented in this file.
 - Remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching now use the `vscode.git` API instead of direct Git CLI calls.
 - Graph fetch with `Tags` and remote tag publication checks remain targeted Git CLI fallbacks because the public `vscode.git` API does not expose equivalent operations.
 - The minimap now preserves graph proportions for small repositories instead of stretching narrow graphs to fill the overview.
+- Webview-to-extension-host messages are now validated before dispatch, and graph actions are checked against the current graph state before running host-side Git workflows.
+- Branch creation now applies Git-style branch-name validation before calling Git, and webview CSP nonces are generated with cryptographic randomness.
 
 ### Quality
 
-- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, proportional minimap scaling, and the existing remote tracking branch creation path.
+- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, proportional minimap scaling, branch-name validation, webview message validation, cryptographic nonce generation, and the existing remote tracking branch creation path.
 
 ## 0.0.22
 

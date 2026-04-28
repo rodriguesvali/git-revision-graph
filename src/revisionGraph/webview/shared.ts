@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from '../../revisionGraphData';
 import {
   estimateRevisionGraphNodeHeight,
@@ -186,7 +188,7 @@ export function formatNodeTitle(node: RevisionGraphNode): string {
 }
 
 export function createNonce(): string {
-  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  return randomBytes(16).toString('base64url');
 }
 
 export function escapeHtml(value: string): string {

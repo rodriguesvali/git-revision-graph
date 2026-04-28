@@ -508,6 +508,29 @@ test('createBranchFromResolvedReference creates a new branch from an unreference
   assert.equal(harness.infoMessages[0], 'Branch commit-12345678 was created and checked out from 12345678.');
 });
 
+test('createBranchFromResolvedReference rejects invalid branch names before Git is called', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })]
+  });
+  const harness = createServices({
+    async promptBranchName() {
+      return '-bad';
+    }
+  });
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(harness.resetBranches, []);
+  assert.match(harness.errorMessages[0] ?? '', /Branch names cannot start with a dash/);
+});
+
 test('createBranchFromResolvedReference keeps tracking information for remote refs', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

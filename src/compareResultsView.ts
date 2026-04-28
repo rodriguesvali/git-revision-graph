@@ -11,6 +11,7 @@ import {
   CompareResultsState
 } from './compareResultsShared';
 import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
+import { validateCompareResultsWebviewMessage } from './compareResults/messageValidation';
 import type { RefSelection } from './refActions';
 import {
   openChangeDiffBetweenRefs,
@@ -20,14 +21,6 @@ import {
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
-
-type CompareResultsWebviewMessage =
-  | { readonly type: 'ready' }
-  | { readonly type: 'base'; readonly itemId: string }
-  | { readonly type: 'copyFileName'; readonly itemIds: readonly string[] }
-  | { readonly type: 'copyFullPath'; readonly itemIds: readonly string[] }
-  | { readonly type: 'worktree'; readonly itemId: string }
-  | { readonly type: 'revert'; readonly itemId: string };
 
 export class CompareResultsViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
@@ -57,7 +50,7 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
         }
         this.disposeViewDisposables();
       }),
-      view.webview.onDidReceiveMessage(async (message: CompareResultsWebviewMessage) => {
+      view.webview.onDidReceiveMessage(async (message: unknown) => {
         await this.handleMessage(message);
       })
     );
@@ -225,7 +218,12 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     await vscode.commands.executeCommand(`${COMPARE_RESULTS_VIEW_ID}.focus`);
   }
 
-  private async handleMessage(message: CompareResultsWebviewMessage): Promise<void> {
+  private async handleMessage(rawMessage: unknown): Promise<void> {
+    const message = validateCompareResultsWebviewMessage(rawMessage);
+    if (!message) {
+      return;
+    }
+
     switch (message.type) {
       case 'ready':
         this.postState();
