@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 ## Context
-`GIT Revision Graph` is a VS Code extension with a revision-graph webview and native workbench workflows for compare, diff, checkout, branch, sync, merge, delete, and log actions. AAMAD is applied as process architecture around this existing system.
+`Git Revision Graph` is a VS Code extension with a revision-graph webview and native workbench workflows for compare, diff, checkout, branch, sync, merge, delete, and log actions. AAMAD is applied as process architecture around this existing system.
 
 ## Architecture Overview
 Keep the extension architecture intact:

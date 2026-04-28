@@ -4,23 +4,23 @@ import assert from 'node:assert/strict';
 import { getRevisionGraphViewTitle } from '../src/revisionGraph/viewTitle';
 import { createHead, createRepository } from './fakes';
 
-test('formats the revision graph title with the current branch name', () => {
+test('formats the revision graph title with repository and current branch names', () => {
   const repository = createRepository({
-    root: '/workspace/repo',
-    head: createHead('feature/next')
+    root: '/workspace/EngTutor',
+    head: createHead('auth_version')
   });
 
-  assert.equal(getRevisionGraphViewTitle(repository), 'Branch: feature/next');
+  assert.equal(getRevisionGraphViewTitle(repository), 'EngTutor: Branch: auth_version');
 });
 
 test('falls back to detached head when the repository has no branch name', () => {
   const repository = createRepository({
-    root: '/workspace/repo'
+    root: '/workspace/RepoCase'
   });
 
-  assert.equal(getRevisionGraphViewTitle(repository), 'Branch: Detached HEAD');
+  assert.equal(getRevisionGraphViewTitle(repository), 'RepoCase: Branch: Detached HEAD');
 });
 
 test('falls back to no repository when no repository is selected', () => {
-  assert.equal(getRevisionGraphViewTitle(undefined), 'Branch: No Repository');
+  assert.equal(getRevisionGraphViewTitle(undefined), 'No Repository');
 });

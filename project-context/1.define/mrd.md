@@ -1,7 +1,7 @@
 # Market Research Document
 
 ## Goal
-Position `GIT Revision Graph` as a lightweight VS Code-native revision graph for developers who want fast Git reference browsing and common branch workflows without leaving the editor.
+Position `Git Revision Graph` as a lightweight VS Code-native revision graph for developers who want fast Git reference browsing and common branch workflows without leaving the editor.
 
 ## Market
 The extension competes with Git graph extensions, standalone Git GUIs, and IDE-integrated source-control views. Its differentiator is staying close to VS Code workbench ergonomics while adding graph-oriented reference workflows.

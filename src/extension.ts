@@ -17,7 +17,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const git = await getGitApi();
   if (!git) {
     void vscode.window.showWarningMessage(
-      'GIT Revision Graph requires the built-in vscode.git extension to be active.'
+      'Git Revision Graph requires the built-in vscode.git extension to be active.'
     );
     return;
   }

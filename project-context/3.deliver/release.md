@@ -11,6 +11,7 @@ Planned publishable change set:
 - Reduce direct Git CLI usage for remote-touching operations by moving remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching to the public `vscode.git` API.
 - Preserve minimap proportions for small repositories by fitting compact graphs inside the overview instead of stretching them.
 - Harden webview message validation, branch-name validation, CSP nonce generation, and documented security-audit follow-up before publishing.
+- Polish the graph title so `Git Revision Graph` uses product casing and the real-case repository name appears before `Branch: <branch>`.
 
 Do not publish without explicit human approval.
 
@@ -30,16 +31,18 @@ Current verification:
 
 - Source implementation for the planned `0.0.23` remote checkout overwrite, remote-operation API migration, and minimap scaling improvements is complete.
 - Source implementation for the planned `0.0.23` security hardening is complete.
+- Source implementation for the planned `0.0.23` title casing/composition improvement is complete.
 - Publication notes for `0.0.23` were added to `CHANGELOG.md`.
 - `npm run build` passed.
 - `npm test` passed with 201 tests.
 - `npm audit --audit-level=low` reported 4 moderate dev-tool dependency vulnerabilities through `@vscode/vsce -> @azure/identity -> @azure/msal-node -> uuid`; remediation requires an explicit dependency-change decision and was not applied in this hardening pass.
-- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite, remote-operation, small-repository minimap, and security-hardening flows is not complete.
+- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite, remote-operation, small-repository minimap, security-hardening, and title casing/composition flows is not complete.
 
 Release preparation status:
 
 - Source release readiness is complete for the planned `0.0.23` checkout, remote-operation API migration, and minimap scaling improvements.
 - Source release readiness is complete for the planned `0.0.23` security hardening, except for the documented dev-tool dependency audit decision.
+- Source release readiness is complete for the planned `0.0.23` title casing/composition improvement.
 - Version bump to `0.0.23` is not complete.
 - Release notes for `0.0.23` are complete.
 - VSIX packaging is not complete for `0.0.23`.

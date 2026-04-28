@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 ## Goal
-Guide future feature and release work for `GIT Revision Graph` using AAMAD while preserving the published extension's current product shape.
+Guide future feature and release work for `Git Revision Graph` using AAMAD while preserving the published extension's current product shape.
 
 ## Users
 - VS Code users managing Git repositories from the editor.

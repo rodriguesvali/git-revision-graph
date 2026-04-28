@@ -1,12 +1,12 @@
-# GIT Revision Graph
+# Git Revision Graph
 
-GIT Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated view.
+Git Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated view.
 
 It is built on top of the public API exposed by the built-in `vscode.git` extension and keeps the experience close to the native VS Code diff and Source Control workflows.
 
 ## Install
 
-- From Marketplace: search for `GIT Revision Graph`
+- From Marketplace: search for `Git Revision Graph`
 - From a package file: install the generated `.vsix` via `Extensions: Install from VSIX...`
 
 ## Goals
@@ -18,7 +18,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 ## Current Features
 
-- Dedicated `GIT Revision Graph` Activity Bar container
+- Dedicated `Git Revision Graph` Activity Bar container
 - Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar and Command Palette, with optional `Prune` and `Tags` flags per run
@@ -188,7 +188,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `Graph` view inside the `GIT Revision Graph` Activity Bar container.
+5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container.
 
 ## Dev Container
 
@@ -276,7 +276,7 @@ Use both automated and manual checks when changing command behavior:
    - checkout of a local branch and remote branch
    - sync the current tracked `HEAD` branch with its upstream
    - merge of a selected reference into the current branch
-   - open `GIT Revision Graph` from the `GIT Revision Graph` title bar
+   - open `Git Revision Graph` from the `Git Revision Graph` title bar
    - Ctrl/Cmd-click two references and compare them
    - Ctrl/Cmd-click two references and open `Show Log` and `Unified Diff`
    - select one reference and compare it with the worktree

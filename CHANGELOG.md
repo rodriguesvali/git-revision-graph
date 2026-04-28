@@ -12,10 +12,11 @@ All notable changes to this project will be documented in this file.
 - The minimap now preserves graph proportions for small repositories instead of stretching narrow graphs to fill the overview.
 - Webview-to-extension-host messages are now validated before dispatch, and graph actions are checked against the current graph state before running host-side Git workflows.
 - Branch creation now applies Git-style branch-name validation before calling Git, and webview CSP nonces are generated with cryptographic randomness.
+- The revision graph title now uses `Git Revision Graph` casing and shows the real-case repository name before the real-case branch name.
 
 ### Quality
 
-- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, proportional minimap scaling, branch-name validation, webview message validation, cryptographic nonce generation, and the existing remote tracking branch creation path.
+- Added regression coverage for confirmed overwrite, canceled overwrite, current-branch protection, remote delete refspecs, remote-name discovery, fetch API routing, proportional minimap scaling, branch-name validation, webview message validation, cryptographic nonce generation, title casing, and the existing remote tracking branch creation path.
 
 ## 0.0.22
 
@@ -122,7 +123,7 @@ All notable changes to this project will be documented in this file.
 ### Workflow & UX
 
 - Compare result entries now prioritize the full repository-relative path, making large compare lists easier to scan when many files share the same name.
-- The primary graph view is now labeled `Graph`, reducing title repetition inside the `GIT Revision Graph` container.
+- The primary graph view is now labeled `Graph`, reducing title repetition inside the `Git Revision Graph` container.
 - The graph refresh flow now preserves viewport and selection more predictably after rebuilds when the effective layout is unchanged.
 - Initial graph organization and manual `Reorganize` now use the same layout routine, keeping the graph presentation consistent.
 
@@ -256,7 +257,7 @@ This release focuses on stability and release readiness for the Revision Graph e
 
 ## 0.0.1
 
-- Initial public release of GIT Revision Graph.
+- Initial public release of Git Revision Graph.
 - Dedicated revision graph webview for Git references.
 - Compare between references and against the worktree.
 - Checkout, merge, delete, unified diff, and revision log workflows.

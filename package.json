@@ -1,6 +1,6 @@
 {
   "name": "git-revision-graph",
-  "displayName": "GIT Revision Graph",
+  "displayName": "Git Revision Graph",
   "description": "Visualize Git revision graphs and run compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated VS Code view.",
   "version": "0.0.22",
   "publisher": "rodriguesvali",
@@ -43,7 +43,7 @@
       "activitybar": [
         {
           "id": "gitRefs",
-          "title": "GIT Revision Graph",
+          "title": "Git Revision Graph",
           "icon": "media/icon-source.svg"
         }
       ]
@@ -75,7 +75,7 @@
     "commands": [
       {
         "command": "gitRefs.refresh",
-        "title": "Refresh GIT Revision Graph",
+        "title": "Refresh Git Revision Graph",
         "icon": "$(refresh)"
       },
       {
@@ -101,12 +101,12 @@
       },
       {
         "command": "gitRefs.openRevisionGraph",
-        "title": "Open GIT Revision Graph",
+        "title": "Open Git Revision Graph",
         "icon": "$(git-commit)"
       },
       {
         "command": "gitRefs.chooseRevisionGraphRepository",
-        "title": "Choose GIT Revision Graph Repository",
+        "title": "Choose Git Revision Graph Repository",
         "icon": "$(repo)"
       },
       {
