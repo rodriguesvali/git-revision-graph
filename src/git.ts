@@ -47,6 +47,13 @@ export interface Branch extends Ref {
   readonly behind?: number;
 }
 
+export interface Remote {
+  readonly name: string;
+  readonly fetchUrl?: string;
+  readonly pushUrl?: string;
+  readonly isReadOnly: boolean;
+}
+
 export interface Change {
   readonly uri: vscode.Uri;
   readonly originalUri: vscode.Uri;
@@ -57,6 +64,7 @@ export interface Change {
 export interface RepositoryState {
   readonly HEAD: Branch | undefined;
   readonly refs: Ref[];
+  readonly remotes: Remote[];
   readonly mergeChanges: Change[];
   readonly indexChanges: Change[];
   readonly workingTreeChanges: Change[];
@@ -69,6 +77,14 @@ export interface RefQuery {
   readonly count?: number;
   readonly pattern?: string | string[];
   readonly sort?: 'alphabetically' | 'committerdate' | 'creatordate';
+}
+
+export interface FetchOptions {
+  readonly remote?: string;
+  readonly ref?: string;
+  readonly all?: boolean;
+  readonly prune?: boolean;
+  readonly depth?: number;
 }
 
 export interface Repository {
@@ -87,6 +103,7 @@ export interface Repository {
   deleteTag(name: string): Promise<void>;
   setBranchUpstream(name: string, upstream: string): Promise<void>;
   merge(ref: string): Promise<void>;
+  fetch(options?: FetchOptions): Promise<void>;
   pull(unshallow?: boolean): Promise<void>;
   push(remoteName?: string, branchName?: string, setUpstream?: boolean): Promise<void>;
 }

@@ -21,7 +21,12 @@ import {
   RefActionServices,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
-import { isMissingUpstreamConfigurationError } from '../src/refActions/shared';
+import {
+  buildRemoteBranchDeleteRefspec,
+  buildRemoteTagDeleteRefspec,
+  getRepositoryRemoteNames,
+  isMissingUpstreamConfigurationError
+} from '../src/refActions/shared';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
 function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
@@ -34,6 +39,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
+  readonly resetBranches: Array<{ readonly branchName: string; readonly refName: string }>;
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
@@ -51,6 +57,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
+  const resetBranches: Array<{ readonly branchName: string; readonly refName: string }> = [];
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
@@ -139,6 +146,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async createTag(_repository, tagName, refName) {
         createdTags.push({ tagName, refName });
       },
+      async resetBranch(_repository, branchName, refName) {
+        resetBranches.push({ branchName, refName });
+      },
       async getRemoteNames() {
         return ['origin'];
       },
@@ -177,6 +187,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     diffCalls,
     compareResultsCalls,
     createdTags,
+    resetBranches,
     pushedTags,
     deletedRemoteTags,
     deletedRemoteBranches,
@@ -357,6 +368,33 @@ test('recognizes the git error raised when clearing a missing upstream', () => {
   );
 });
 
+test('builds remote delete refspecs for Git API push calls', () => {
+  assert.equal(buildRemoteBranchDeleteRefspec('feature/demo'), ':refs/heads/feature/demo');
+  assert.equal(buildRemoteTagDeleteRefspec('v1.2.3'), ':refs/tags/v1.2.3');
+});
+
+test('gets remote names from Git API repository state before falling back to remote refs', () => {
+  const repositoryWithRemotes = createRepository({
+    root: '/workspace/repo',
+    remotes: [
+      { name: 'upstream', isReadOnly: false },
+      { name: 'origin', isReadOnly: false },
+      { name: 'origin', isReadOnly: false }
+    ],
+    refs: [createRef({ type: RefType.RemoteHead, remote: 'fallback', name: 'fallback/main' })]
+  });
+  const repositoryWithRemoteRefs = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main' }),
+      createRef({ type: RefType.RemoteHead, remote: 'upstream', name: 'upstream/main' })
+    ]
+  });
+
+  assert.deepEqual(getRepositoryRemoteNames(repositoryWithRemotes), ['origin', 'upstream']);
+  assert.deepEqual(getRepositoryRemoteNames(repositoryWithRemoteRefs), ['origin', 'upstream']);
+});
+
 test('checkoutResolvedReference blocks workspace-changing operations while conflicts are unresolved', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -494,6 +532,96 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was created and checked out from origin/feature/demo.');
   assert.deepEqual(harness.prepareRequests, []);
   assert.equal(harness.refreshCalls, 0);
+});
+
+test('createBranchFromResolvedReference overwrites an existing local branch for remote refs when confirmed', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('develop'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'feature/demo' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
+    ]
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Overwrite local branch feature/demo with origin/feature/demo?\n\nThis resets feature/demo to origin/feature/demo before checking it out. Local commits on feature/demo that are not reachable from another ref may be lost.',
+      confirmLabel: 'Overwrite Branch: feature/demo'
+    }
+  ]);
+  assert.deepEqual(harness.resetBranches, [
+    { branchName: 'feature/demo', refName: 'origin/feature/demo' }
+  ]);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, ['feature/demo']);
+  assert.deepEqual(repository.calls.setBranchUpstream, [
+    { name: 'feature/demo', upstream: 'origin/feature/demo' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was overwritten, checked out, and set to track origin/feature/demo.');
+});
+
+test('createBranchFromResolvedReference cancels remote branch overwrite when not confirmed', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('develop'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'feature/demo' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
+    ]
+  });
+  const harness = createServices({
+    async confirm() {
+      return false;
+    }
+  });
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.deepEqual(harness.infoMessages, []);
+});
+
+test('createBranchFromResolvedReference refuses to overwrite the current branch from a remote ref', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'feature/demo' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
+    ]
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.equal(
+    harness.warningMessages[0],
+    'The current branch feature/demo cannot be overwritten from origin/feature/demo. Check out another branch first.'
+  );
 });
 
 test('createBranchFromResolvedReference cancels a prepared refresh when branch creation fails', async () => {

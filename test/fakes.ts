@@ -1,4 +1,4 @@
-import { API, Branch, Change, Ref, RefQuery, RefType, Repository, RepositoryState, Status } from '../src/git';
+import { API, Branch, Change, FetchOptions, Ref, RefQuery, RefType, Remote, Repository, RepositoryState, Status } from '../src/git';
 
 type Listener<T> = (event: T) => void;
 
@@ -55,6 +55,7 @@ export function createChange(overrides: Partial<Change> & { readonly uriPath: st
 export function createRepository(options: {
   readonly root: string;
   readonly refs?: Ref[];
+  readonly remotes?: Remote[];
   readonly head?: Branch;
   readonly diffBetween?: Change[];
   readonly diffWith?: Change[];
@@ -71,6 +72,7 @@ export function createRepository(options: {
     readonly deleteTag: string[];
     readonly setBranchUpstream: Array<{ readonly name: string; readonly upstream: string }>;
     readonly merge: string[];
+    readonly fetch: Array<FetchOptions | undefined>;
     readonly pull: boolean[];
     readonly push: Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>;
   };
@@ -78,6 +80,7 @@ export function createRepository(options: {
   const stateChanges = createEventEmitter<void>();
   const checkoutChanges = createEventEmitter<void>();
   const refs = options.refs ?? [];
+  const remotes = options.remotes ?? [];
   const diffBetween = options.diffBetween ?? [];
   const diffWith = options.diffWith ?? [];
   const mergeChanges = options.mergeChanges ?? [];
@@ -91,6 +94,7 @@ export function createRepository(options: {
     deleteTag: [] as string[],
     setBranchUpstream: [] as Array<{ readonly name: string; readonly upstream: string }>,
     merge: [] as string[],
+    fetch: [] as Array<FetchOptions | undefined>,
     pull: [] as boolean[],
     push: [] as Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>
   };
@@ -100,6 +104,7 @@ export function createRepository(options: {
     state: {
       HEAD: options.head,
       refs,
+      remotes,
       mergeChanges,
       indexChanges,
       workingTreeChanges,
@@ -148,6 +153,9 @@ export function createRepository(options: {
     },
     async merge(ref: string): Promise<void> {
       calls.merge.push(ref);
+    },
+    async fetch(options?: FetchOptions): Promise<void> {
+      calls.fetch.push(options);
     },
     async pull(): Promise<void> {
       calls.pull.push(true);

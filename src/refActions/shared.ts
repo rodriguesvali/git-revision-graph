@@ -15,6 +15,31 @@ export function parseRemoteReferenceTarget(refName: string): { remoteName: strin
   };
 }
 
+export function buildRemoteBranchDeleteRefspec(branchName: string): string {
+  return `:refs/heads/${branchName}`;
+}
+
+export function buildRemoteTagDeleteRefspec(tagName: string): string {
+  return `:refs/tags/${tagName}`;
+}
+
+export function getRepositoryRemoteNames(repository: Repository): readonly string[] {
+  const remoteNames = repository.state.remotes
+    .map((remote) => remote.name.trim())
+    .filter((remoteName) => remoteName.length > 0);
+  if (remoteNames.length > 0) {
+    return [...new Set(remoteNames)].sort();
+  }
+
+  return [
+    ...new Set(
+      repository.state.refs
+        .filter((ref) => ref.type === RefType.RemoteHead && !!ref.remote)
+        .map((ref) => ref.remote as string)
+    )
+  ].sort();
+}
+
 export function getSuggestedLocalBranchName(refName: string): string {
   const firstSlash = refName.indexOf('/');
   return firstSlash >= 0 ? refName.slice(firstSlash + 1) : refName;

@@ -1,3 +1,5 @@
+import { FetchOptions } from '../git';
+
 export type RevisionGraphFetchOption = 'prune' | 'tags';
 
 export interface RevisionGraphFetchOptionItem {
@@ -47,6 +49,20 @@ export function buildRevisionGraphFetchArgs(
       .filter((option) => selected.has(option))
       .map((option) => FETCH_OPTION_CONFIG[option].arg)
   ];
+}
+
+export function shouldUseGitCliForRevisionGraphFetch(
+  selectedOptions: readonly RevisionGraphFetchOption[]
+): boolean {
+  return selectedOptions.includes('tags');
+}
+
+export function buildRevisionGraphFetchOptions(
+  selectedOptions: readonly RevisionGraphFetchOption[]
+): FetchOptions {
+  return {
+    prune: selectedOptions.includes('prune')
+  };
 }
 
 export function formatRevisionGraphFetchSuccessMessage(

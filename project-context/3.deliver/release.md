@@ -3,20 +3,20 @@
 ## Version / Change Set
 Current package baseline: `0.0.22`.
 
-Target release: `0.0.22`.
+Target release: `0.0.23`.
 
 Planned publishable change set:
 
-- Refine graph UX with grouped graph context menus, compact view options, minimap navigation, copy-hash feedback, actionable repository empty states, and on-demand remote-tag action resolution.
+- Allow remote branch checkout to overwrite an existing non-current local branch after explicit confirmation, then check it out with upstream tracking.
+- Reduce direct Git CLI usage for remote-touching operations by moving remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching to the public `vscode.git` API.
 
 Do not publish without explicit human approval.
 
-Version bump to `0.0.22` was approved and applied.
+Version bump to `0.0.23` has not been applied.
 
 Planning references:
 
-- `docs/release-0.0.22-prioritization.md`
-- `project-context/2.build/features/0.0.22-ux-polish.md`
+- `project-context/2.build/features/0.0.23-remote-checkout-overwrite.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -25,19 +25,19 @@ Planning references:
 
 Current verification:
 
-- Source implementation for the planned `0.0.22` UX polish is complete.
-- Publication notes for `0.0.22` were added to `CHANGELOG.md`.
+- Source implementation for the planned `0.0.23` remote checkout overwrite and remote-operation API migration improvements is complete.
+- Publication notes for `0.0.23` were added to `CHANGELOG.md`.
 - `npm run build` passed.
-- `npm test` passed with 186 tests.
-- Manual Extension Development Host validation for the `0.0.22` UX polish is not complete.
+- `npm test` passed with 192 tests.
+- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite and remote-operation flows is not complete.
 
 Release preparation status:
 
-- Source release readiness is complete for the planned `0.0.22` UX polish.
-- Version bump to `0.0.22` is complete.
-- Release notes for `0.0.22` are complete.
-- VSIX packaging is not complete for `0.0.22`.
-- Marketplace publishing is not complete for `0.0.22`.
+- Source release readiness is complete for the planned `0.0.23` checkout and remote-operation API migration improvements.
+- Version bump to `0.0.23` is not complete.
+- Release notes for `0.0.23` are complete.
+- VSIX packaging is not complete for `0.0.23`.
+- Marketplace publishing is not complete for `0.0.23`.
 
 ## Deployment Steps
 Release commands available in `package.json`:

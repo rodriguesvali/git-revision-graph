@@ -29,7 +29,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
 - Checkout of local and remote branch references
-- Guided checkout flow for remote branches by creating a local tracking branch
+- Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
 - Create a local tag from a branch, tag, remote branch, or visible unreferenced commit
 - Publish a local branch to a selected Git remote with upstream tracking

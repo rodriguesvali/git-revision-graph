@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   buildRevisionGraphFetchArgs,
+  buildRevisionGraphFetchOptions,
   createRevisionGraphFetchOptionItems,
-  formatRevisionGraphFetchSuccessMessage
+  formatRevisionGraphFetchSuccessMessage,
+  shouldUseGitCliForRevisionGraphFetch
 } from '../src/revisionGraph/fetchOptions';
 
 test('builds fetch quick pick items with prune enabled by default', () => {
@@ -29,6 +31,15 @@ test('builds fetch args from the selected fetch options', () => {
   assert.deepEqual(buildRevisionGraphFetchArgs(['prune']), ['fetch', '--prune']);
   assert.deepEqual(buildRevisionGraphFetchArgs(['tags']), ['fetch', '--tags']);
   assert.deepEqual(buildRevisionGraphFetchArgs(['prune', 'tags']), ['fetch', '--prune', '--tags']);
+});
+
+test('builds Git API fetch options when tag fetching is not selected', () => {
+  assert.deepEqual(buildRevisionGraphFetchOptions([]), { prune: false });
+  assert.deepEqual(buildRevisionGraphFetchOptions(['prune']), { prune: true });
+  assert.equal(shouldUseGitCliForRevisionGraphFetch([]), false);
+  assert.equal(shouldUseGitCliForRevisionGraphFetch(['prune']), false);
+  assert.equal(shouldUseGitCliForRevisionGraphFetch(['tags']), true);
+  assert.equal(shouldUseGitCliForRevisionGraphFetch(['prune', 'tags']), true);
 });
 
 test('formats fetch success messages with the selected option labels', () => {

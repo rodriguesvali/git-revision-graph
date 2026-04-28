@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { API, RefType, Repository } from '../git';
+import { API, Repository } from '../git';
 import { toErrorDetail } from '../errorDetail';
 import { execGitWithResult } from '../gitExec';
 import {
@@ -41,10 +41,13 @@ import { RevisionGraphRenderCoordinator } from './renderCoordinator';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   buildRevisionGraphFetchArgs,
+  buildRevisionGraphFetchOptions,
   createRevisionGraphFetchOptionItems,
   formatRevisionGraphFetchSuccessMessage,
-  RevisionGraphFetchOption
+  RevisionGraphFetchOption,
+  shouldUseGitCliForRevisionGraphFetch
 } from './fetchOptions';
+import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
   RevisionGraphMessage,
@@ -85,29 +88,6 @@ async function isTagPublishedToAnyRemote(repository: Repository, tagName: string
   }
 
   return false;
-}
-
-async function getRepositoryRemoteNames(repository: Repository): Promise<readonly string[]> {
-  try {
-    const { stdout } = await execGitWithResult(repository.rootUri.fsPath, ['remote']);
-    const remoteNames = stdout
-      .split(/\r?\n/)
-      .map((remoteName) => remoteName.trim())
-      .filter((remoteName) => remoteName.length > 0);
-    if (remoteNames.length > 0) {
-      return remoteNames;
-    }
-  } catch {
-    // Fall back to the Git API refs below when the command cannot be queried.
-  }
-
-  return [
-    ...new Set(
-      repository.state.refs
-        .filter((ref) => ref.type === RefType.RemoteHead && !!ref.remote)
-        .map((ref) => ref.remote as string)
-    )
-  ].sort();
 }
 
 async function remoteHasTag(repository: Repository, remoteName: string, tagName: string): Promise<boolean> {
@@ -622,10 +602,14 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     try {
-      await execGitWithResult(
-        this.currentRepository.rootUri.fsPath,
-        buildRevisionGraphFetchArgs(selectedOptions)
-      );
+      if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
+        await execGitWithResult(
+          this.currentRepository.rootUri.fsPath,
+          buildRevisionGraphFetchArgs(selectedOptions)
+        );
+      } else {
+        await this.currentRepository.fetch(buildRevisionGraphFetchOptions(selectedOptions));
+      }
       this.actionServices.ui.showInformationMessage(
         formatRevisionGraphFetchSuccessMessage(this.getCurrentRepositoryLabel(), selectedOptions)
       );

@@ -7,7 +7,12 @@ import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { PreparedRefreshHandle, RefActionServices } from './refActions';
-import { isMissingUpstreamConfigurationError } from './refActions/shared';
+import {
+  buildRemoteBranchDeleteRefspec,
+  buildRemoteTagDeleteRefspec,
+  getRepositoryRemoteNames,
+  isMissingUpstreamConfigurationError
+} from './refActions/shared';
 import { buildTagPushRefspec } from './refActions/tagRefspec';
 import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
@@ -92,21 +97,20 @@ export function createWorkbenchRefActionServices(
       async createTag(repository, tagName, refName) {
         await execGitWithResult(repository.rootUri.fsPath, ['tag', tagName, refName]);
       },
+      async resetBranch(repository, branchName, refName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName]);
+      },
       async getRemoteNames(repository) {
-        const { stdout } = await execGitWithResult(repository.rootUri.fsPath, ['remote']);
-        return stdout
-          .split(/\r?\n/)
-          .map((remoteName) => remoteName.trim())
-          .filter((remoteName) => remoteName.length > 0);
+        return getRepositoryRemoteNames(repository);
       },
       async pushTag(repository, remoteName, tagName) {
         await repository.push(remoteName, buildTagPushRefspec(tagName), false);
       },
       async deleteRemoteTag(repository, remoteName, tagName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', tagName]);
+        await repository.push(remoteName, buildRemoteTagDeleteRefspec(tagName), false);
       },
       async deleteRemoteBranch(repository, remoteName, branchName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['push', remoteName, '--delete', branchName]);
+        await repository.push(remoteName, buildRemoteBranchDeleteRefspec(branchName), false);
       },
       async unsetBranchUpstream(repository, branchName) {
         try {
