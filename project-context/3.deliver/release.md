@@ -8,6 +8,7 @@ Target release: `0.0.24`.
 Planned publishable change set:
 
 - Improve revision graph organization by preserving ELK layered `y` placement and compacting it into webview rows instead of forcing each visible commit into a unique `git log` row.
+- Improve local checkout refresh efficiency by avoiding full graph reloads for off-snapshot non-HEAD ref metadata.
 - Add 10 more minimap zoom levels for precise navigation in large revision graphs.
 - Improve minimap performance by batching updates and avoiding full SVG rebuilds during viewport-only movement.
 
@@ -18,6 +19,7 @@ Version bump to `0.0.24` has been applied in `package.json` and `package-lock.js
 Planning references:
 
 - `project-context/2.build/features/0.0.24-graph-layout-layering.md`
+- `project-context/2.build/features/0.0.24-checkout-metadata-patch-efficiency.md`
 - `project-context/2.build/features/0.0.24-minimap-zoom-levels.md`
 - `project-context/2.build/features/0.0.24-minimap-sync-performance.md`
 
@@ -29,6 +31,7 @@ Planning references:
 Current verification:
 
 - Source implementation for the planned `0.0.24` graph layout layering improvement is complete.
+- Source implementation for the planned `0.0.24` checkout metadata patch efficiency improvement is complete.
 - Source implementation for the planned `0.0.24` minimap zoom-level improvement is complete.
 - Source implementation for the planned `0.0.24` minimap sync performance improvement is complete.
 - `npm run build` passed.
@@ -38,6 +41,7 @@ Current verification:
 Release preparation status:
 
 - Source release readiness is complete for the planned `0.0.24` graph layout layering improvement.
+- Source release readiness is complete for the planned `0.0.24` checkout metadata patch efficiency improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap zoom-level improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap sync performance improvement.
 - Version bump to `0.0.24` is complete.
