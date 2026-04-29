@@ -615,9 +615,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showBranchingsToggle) {
         showBranchingsToggle.disabled = toolbarBusy;
       }
-      if (fetchButton) {
-        fetchButton.disabled = toolbarBusy;
-      }
       if (reorganizeButton) {
         reorganizeButton.disabled = toolbarBusy;
       }
@@ -648,7 +645,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchPrevButton,
         searchNextButton,
         searchClearButton,
-        fetchButton,
         reorganizeButton,
         zoomOutButton,
         zoomInButton,

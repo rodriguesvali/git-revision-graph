@@ -21,8 +21,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchPrevButton"/);
   assert.match(html, /id="searchNextButton"/);
   assert.match(html, /id="searchClearButton"/);
-  assert.match(html, /id="fetchButton"/);
-  assert.match(html, />\s*<span class="button-icon">↓<\/span>\s*<span>Fetch<\/span>/);
+  assert.doesNotMatch(html, /id="fetchButton"/);
+  assert.doesNotMatch(html, />\s*<span class="button-icon">↓<\/span>\s*<span>Fetch<\/span>/);
   assert.match(html, /class="workspace-led clean"/);
   assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+class="workspace-led clean"/);
   assert.match(html, /id="workspaceLed"/);
@@ -93,10 +93,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
     html,
     /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
   );
-  assert.match(
-    html,
-    /fetchButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(\{ type: 'fetch-current-repository' \}\);/s
-  );
+  assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
 });
 
 test('reorganize button does not crash when clustering by ref families', async () => {
@@ -333,7 +330,7 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /searchInput\.addEventListener\('input'/);
   assert.match(html, /showRemoteBranchesToggle\.addEventListener\('change'/);
   assert.match(html, /showStashesToggle\.addEventListener\('change'/);
-  assert.match(html, /fetchButton\.addEventListener\('click'/);
+  assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
   assert.match(html, /searchPrevButton\.addEventListener\('click'/);
   assert.match(html, /searchNextButton\.addEventListener\('click'/);
   assert.match(html, /searchClearButton\.addEventListener\('click'/);
@@ -456,7 +453,6 @@ function createWebviewRuntime() {
     'searchPrevButton',
     'searchNextButton',
     'searchClearButton',
-    'fetchButton',
     'reorganizeButton',
     'zoomOutButton',
     'zoomInButton'

@@ -12,6 +12,7 @@ Planned publishable change set:
 - Improve `Sync with...` refresh efficiency by using metadata patches for push-only and pull-only syncs.
 - Add 10 more minimap zoom levels for precise navigation in large revision graphs.
 - Improve minimap performance by batching updates and avoiding full SVG rebuilds during viewport-only movement.
+- Remove the redundant internal `Fetch` button from the revision graph webview toolbar while keeping the external VS Code view title action.
 
 Do not publish without explicit human approval.
 
@@ -24,6 +25,7 @@ Planning references:
 - `project-context/2.build/features/0.0.24-sync-refresh-efficiency.md`
 - `project-context/2.build/features/0.0.24-minimap-zoom-levels.md`
 - `project-context/2.build/features/0.0.24-minimap-sync-performance.md`
+- `project-context/2.build/features/0.0.24-internal-fetch-toolbar-removal.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -37,8 +39,9 @@ Current verification:
 - Source implementation for the planned `0.0.24` sync refresh efficiency improvement is complete.
 - Source implementation for the planned `0.0.24` minimap zoom-level improvement is complete.
 - Source implementation for the planned `0.0.24` minimap sync performance improvement is complete.
+- Source implementation for the planned `0.0.24` internal fetch toolbar removal is complete.
 - `npm run build` passed.
-- `npm test` passed with 202 tests.
+- `npm test` passed with 205 tests.
 - Manual Extension Development Host validation against the screenshot repository is not complete.
 
 Release preparation status:
@@ -48,6 +51,7 @@ Release preparation status:
 - Source release readiness is complete for the planned `0.0.24` sync refresh efficiency improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap zoom-level improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap sync performance improvement.
+- Source release readiness is complete for the planned `0.0.24` internal fetch toolbar removal.
 - Version bump to `0.0.24` is complete.
 - Release notes for `0.0.24` are not complete.
 - VSIX packaging is not complete for `0.0.24`.
