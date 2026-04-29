@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.24
+
+### Highlights
+
+- Improved revision graph organization by preserving ELK layered vertical placement, producing a layout that is closer to dedicated Git graph tools for complex repositories.
+- Added persisted ELK layout caching so repeated loads of the same graph topology can reuse previously calculated positions instead of recalculating the expensive layout.
+- Added 10 more minimap zoom levels for finer navigation in large revision graphs.
+
+### Performance & Refresh
+
+- Metadata-only checkout updates now avoid full graph reloads when off-snapshot non-HEAD refs are not visible in the current graph.
+- `Sync with...` now uses metadata patches after push-only and pull-only syncs, while keeping full rebuilds for diverged histories.
+- Initial graph snapshot loading now starts repository ref loading and the graph `git log` command concurrently.
+- Minimap viewport movement now avoids unnecessary full SVG rebuilds and batches minimap synchronization through animation frames.
+- Added opt-in graph load timing diagnostics through `gitRevisionGraph.traceLoading`, writing phase timings to the `Git Revision Graph` output channel when enabled.
+
+### Workflow & UX
+
+- Removed the redundant internal `Fetch` button from the graph toolbar; the external VS Code view title action remains available for fetching the current repository.
+- Kept graph loading diagnostics disabled by default so regular users do not see diagnostic output unless they explicitly enable it.
+
+### Quality
+
+- Added regression coverage for layout row reuse, independent-chain layering, checkout metadata patch fallback behavior, sync refresh intents, minimap sync throttling, webview toolbar cleanup, graph load tracing, and ELK layout cache restoration.
+- Updated release readiness artifacts for `0.0.24` with verification, rollback, and Marketplace-readiness notes.
+
 ## 0.0.23
 
 ### Workflow & UX

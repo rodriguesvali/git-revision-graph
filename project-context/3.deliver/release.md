@@ -50,7 +50,7 @@ Current verification:
 - Source implementation for the planned `0.0.24` graph load tracing diagnostic is complete.
 - Source implementation for the planned `0.0.24` persisted ELK layout cache is complete.
 - `npm run build` passed.
-- `npm test` passed with 208 tests.
+- `npm test` passed with 209 tests.
 - Focused ELK layout cache tests passed after adding workspace-state persistence.
 - Manual Extension Development Host validation against the screenshot repository is not complete.
 
@@ -66,7 +66,7 @@ Release preparation status:
 - Source release readiness is complete for the planned `0.0.24` graph load tracing diagnostic.
 - Source release readiness is complete for the planned `0.0.24` persisted ELK layout cache.
 - Version bump to `0.0.24` is complete.
-- Release notes for `0.0.24` are not complete.
+- Release notes for `0.0.24` are complete in `CHANGELOG.md`.
 - VSIX packaging is not complete for `0.0.24`.
 - Marketplace publishing is not complete for `0.0.24`.
 
