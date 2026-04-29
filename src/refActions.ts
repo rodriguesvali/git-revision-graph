@@ -414,7 +414,6 @@ export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const head = repository.state.HEAD;
     if (head?.name && head.upstream && !isBranchTrackingMatchingUpstream(head.name, head.upstream)) {
@@ -453,6 +452,10 @@ export async function syncCurrentHeadWithUpstream(
       await repository.push();
     }
 
+    const refreshIntent: RevisionGraphRefreshIntent =
+      syncState.ahead > 0 && syncState.behind > 0
+        ? 'full-rebuild'
+        : 'metadata-patch';
     services.refreshController.refresh(
       createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
     );

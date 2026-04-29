@@ -9,6 +9,7 @@ Planned publishable change set:
 
 - Improve revision graph organization by preserving ELK layered `y` placement and compacting it into webview rows instead of forcing each visible commit into a unique `git log` row.
 - Improve local checkout refresh efficiency by avoiding full graph reloads for off-snapshot non-HEAD ref metadata.
+- Improve `Sync with...` refresh efficiency by using metadata patches for push-only and pull-only syncs.
 - Add 10 more minimap zoom levels for precise navigation in large revision graphs.
 - Improve minimap performance by batching updates and avoiding full SVG rebuilds during viewport-only movement.
 
@@ -20,6 +21,7 @@ Planning references:
 
 - `project-context/2.build/features/0.0.24-graph-layout-layering.md`
 - `project-context/2.build/features/0.0.24-checkout-metadata-patch-efficiency.md`
+- `project-context/2.build/features/0.0.24-sync-refresh-efficiency.md`
 - `project-context/2.build/features/0.0.24-minimap-zoom-levels.md`
 - `project-context/2.build/features/0.0.24-minimap-sync-performance.md`
 
@@ -32,6 +34,7 @@ Current verification:
 
 - Source implementation for the planned `0.0.24` graph layout layering improvement is complete.
 - Source implementation for the planned `0.0.24` checkout metadata patch efficiency improvement is complete.
+- Source implementation for the planned `0.0.24` sync refresh efficiency improvement is complete.
 - Source implementation for the planned `0.0.24` minimap zoom-level improvement is complete.
 - Source implementation for the planned `0.0.24` minimap sync performance improvement is complete.
 - `npm run build` passed.
@@ -42,6 +45,7 @@ Release preparation status:
 
 - Source release readiness is complete for the planned `0.0.24` graph layout layering improvement.
 - Source release readiness is complete for the planned `0.0.24` checkout metadata patch efficiency improvement.
+- Source release readiness is complete for the planned `0.0.24` sync refresh efficiency improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap zoom-level improvement.
 - Source release readiness is complete for the planned `0.0.24` minimap sync performance improvement.
 - Version bump to `0.0.24` is complete.

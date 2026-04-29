@@ -1380,6 +1380,48 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   });
 });
 
+test('syncCurrentHeadWithUpstream uses a metadata patch after push-only sync', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 2, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: undefined, branchName: undefined, setUpstream: undefined }
+  ]);
+  assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
+  assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'metadata-patch',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
+});
+
+test('syncCurrentHeadWithUpstream uses a metadata patch after pull-only sync', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 2, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  await syncCurrentHeadWithUpstream(repository, harness.services);
+
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(harness.infoMessages[0], 'main was updated from origin/main.');
+  assert.equal(harness.refreshCalls, 1);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'metadata-patch',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
+});
+
 test('syncCurrentHeadWithUpstream reports when the current branch is already synchronized', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
