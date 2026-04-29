@@ -77,7 +77,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let baseCanvasWidth = 880;
     let baseCanvasHeight = 480;
     let currentZoom = 1;
-    const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4];
+    const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4, 5, 6.5, 8, 10, 12.5, 15, 18, 22, 26, 30];
     let minimapZoom = 1;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;

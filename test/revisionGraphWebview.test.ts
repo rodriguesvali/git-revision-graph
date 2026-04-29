@@ -252,7 +252,7 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /class="graph-minimap"/);
   assert.match(html, /viewBox="0 0 180 240"/);
   assert.match(html, /class="minimap-controls"/);
-  assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4\];/);
+  assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\];/);
   assert.match(html, /function zoomInMinimap\(\)/);
   assert.match(html, /function zoomOutMinimap\(\)/);
   assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);

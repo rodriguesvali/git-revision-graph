@@ -8,6 +8,7 @@ Target release: `0.0.24`.
 Planned publishable change set:
 
 - Improve revision graph organization by preserving ELK layered `y` placement and compacting it into webview rows instead of forcing each visible commit into a unique `git log` row.
+- Add 10 more minimap zoom levels for precise navigation in large revision graphs.
 
 Do not publish without explicit human approval.
 
@@ -16,6 +17,7 @@ Version bump to `0.0.24` has been applied in `package.json` and `package-lock.js
 Planning references:
 
 - `project-context/2.build/features/0.0.24-graph-layout-layering.md`
+- `project-context/2.build/features/0.0.24-minimap-zoom-levels.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -25,6 +27,7 @@ Planning references:
 Current verification:
 
 - Source implementation for the planned `0.0.24` graph layout layering improvement is complete.
+- Source implementation for the planned `0.0.24` minimap zoom-level improvement is complete.
 - `npm run build` passed.
 - `npm test` passed with 202 tests.
 - Manual Extension Development Host validation against the screenshot repository is not complete.
@@ -32,6 +35,7 @@ Current verification:
 Release preparation status:
 
 - Source release readiness is complete for the planned `0.0.24` graph layout layering improvement.
+- Source release readiness is complete for the planned `0.0.24` minimap zoom-level improvement.
 - Version bump to `0.0.24` is complete.
 - Release notes for `0.0.24` are not complete.
 - VSIX packaging is not complete for `0.0.24`.
