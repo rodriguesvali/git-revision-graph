@@ -154,7 +154,7 @@
       "properties": {
         "gitRevisionGraph.traceLoading": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Write revision graph load timing diagnostics to the Git Revision Graph output channel."
         }
       }
