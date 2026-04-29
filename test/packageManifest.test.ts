@@ -103,3 +103,18 @@ test('package manifest icon paths point to files that exist', () => {
     assert.equal(existsSync(path.join(process.cwd(), iconPath)), true, `missing icon asset: ${iconPath}`);
   }
 });
+
+test('package manifest contributes opt-in graph loading diagnostics', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly configuration?: {
+        readonly properties?: Record<string, { readonly type?: string; readonly default?: unknown }>;
+      };
+    };
+  };
+
+  const traceLoading = manifest.contributes.configuration?.properties?.['gitRevisionGraph.traceLoading'];
+
+  assert.equal(traceLoading?.type, 'boolean');
+  assert.equal(traceLoading?.default, false);
+});

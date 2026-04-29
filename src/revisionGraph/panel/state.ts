@@ -22,6 +22,7 @@ import {
   NODE_PADDING_X
 } from '../webview/shared';
 import { formatUpstreamLabel, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
+import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 
 export interface ReadyRevisionGraphViewStateBundle {
   readonly snapshot: RevisionGraphSnapshot;
@@ -34,17 +35,19 @@ export async function buildReadyRevisionGraphViewStateBundle(
   autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal);
-  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal);
+  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace);
   const state = await buildReadyRevisionGraphViewStateFromSnapshot(
     repository,
     projectionOptions,
     autoArrangeOnInit,
     backend,
     snapshot,
-    signal
+    signal,
+    trace
   );
 
   return {
@@ -59,7 +62,8 @@ export async function buildReadyRevisionGraphViewState(
   autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   return (
     await buildReadyRevisionGraphViewStateBundle(
@@ -68,7 +72,8 @@ export async function buildReadyRevisionGraphViewState(
       autoArrangeOnInit,
       backend,
       limitPolicy,
-      signal
+      signal,
+      trace
     )
   ).state;
 }
@@ -79,10 +84,16 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
   autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
+  const projectionStartedAt = nowMs();
   const projection = projectDecoratedCommitGraph(snapshot.graph, projectionOptions);
-  const scene = await buildRevisionGraphScene(snapshot.graph, projection);
+  traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
+  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace);
+  const ancestorsStartedAt = nowMs();
+  const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
+  traceDuration(trace, 'state.primaryAncestorPaths', ancestorsStartedAt, `nodes=${scene.nodes.length}`);
   return buildReadyRevisionGraphViewStateFromParts(
     repository,
     projectionOptions,
@@ -90,8 +101,9 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
     backend,
     snapshot,
     scene,
-    buildPrimaryAncestorPaths(snapshot.graph, scene),
-    signal
+    primaryAncestorPaths,
+    signal,
+    trace
   );
 }
 
@@ -290,11 +302,14 @@ async function buildReadyRevisionGraphViewStateFromParts(
   snapshot: RevisionGraphSnapshot,
   scene: RevisionGraphScene,
   primaryAncestorPaths: RevisionGraphViewState['primaryAncestorPathsByHash'],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   throwIfAborted(signal);
+  const partsStartedAt = nowMs();
   const nodeLayouts = buildNodeLayouts(scene);
   const references = buildViewReferences(scene);
+  const mergeBlockedStartedAt = nowMs();
   const mergeBlockedTargets = await backend.getMergeBlockedTargets(
     repository,
     snapshot,
@@ -302,6 +317,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     references,
     signal
   );
+  traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}`);
   throwIfAborted(signal);
   const baseCanvasWidth = Math.max(
     880,
@@ -312,7 +328,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultTop + node.height + GRAPH_PADDING_BOTTOM), GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM)
   );
 
-  return {
+  const state: RevisionGraphViewState = {
     viewMode: 'ready',
     hasRepositories: true,
     repositoryPath: repository.rootUri.fsPath,
@@ -337,6 +353,8 @@ async function buildReadyRevisionGraphViewStateFromParts(
     loadingLabel: undefined,
     errorMessage: undefined
   };
+  traceDuration(trace, 'state.readyViewState', partsStartedAt, `nodes=${scene.nodes.length}; refs=${references.length}`);
+  return state;
 }
 
 function getPublishedLocalBranchNames(repository: Repository): readonly string[] {

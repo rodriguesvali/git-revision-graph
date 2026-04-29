@@ -16,6 +16,7 @@ import {
   parseRevisionGraphLog
 } from './revisionGraph/source/graphGit';
 import { layoutProjectedGraph } from './revisionGraph/layout/layeredLayout';
+import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './revisionGraph/loadTrace';
 
 export type {
   CommitGraph,
@@ -59,11 +60,13 @@ interface CommitLaneLayout {
 
 export async function buildRevisionGraphScene(
   source: CommitGraph | readonly ParsedRevisionGraphCommit[],
-  projection?: ProjectedGraph
+  projection?: ProjectedGraph,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphScene> {
+  const startedAt = nowMs();
   const graph = toCommitGraph(source);
   const activeProjection = projection ?? projectDecoratedCommitGraph(graph);
-  const commitLayout = await layoutCommitLanes(activeProjection);
+  const commitLayout = await layoutCommitLanes(activeProjection, trace);
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 
   const rawNodes = activeProjection.nodes.map<RevisionGraphNode>((node) => {
@@ -104,12 +107,14 @@ export async function buildRevisionGraphScene(
   const laneCount = nodes.reduce((max, node) => Math.max(max, node.lane + 1), 0);
   const rowCount = nodes.reduce((max, node) => Math.max(max, node.row + 1), 0);
 
-  return {
+  const scene = {
     nodes,
     edges,
     laneCount: Math.max(laneCount, 1),
     rowCount: Math.max(rowCount, 1)
   };
+  traceDuration(trace, 'scene.total', startedAt, `nodes=${nodes.length}; edges=${edges.length}`);
+  return scene;
 }
 
 export function buildPrimaryAncestorPaths(
@@ -135,8 +140,13 @@ function isCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[
   return 'orderedCommits' in source && 'commitsByHash' in source;
 }
 
-async function layoutCommitLanes(projection: ProjectedGraph): Promise<CommitLaneLayout[]> {
+async function layoutCommitLanes(
+  projection: ProjectedGraph,
+  trace?: RevisionGraphLoadTraceSink
+): Promise<CommitLaneLayout[]> {
+  const startedAt = nowMs();
   const positionByHash = await layoutProjectedGraph(projection);
+  traceDuration(trace, 'scene.layout.elk', startedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
   const orderedHashes = projection.nodes.map((node) => node.hash);
   const fallbackXByHash = new Map(
     orderedHashes.map((hash, index) => [hash, index * 220] as const)

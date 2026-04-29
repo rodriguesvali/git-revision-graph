@@ -16,6 +16,7 @@ import {
   parseRevisionLogEntries
 } from './source/graphGit';
 import { isRefAncestorOfHead } from './repository/snapshot';
+import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './loadTrace';
 
 export interface RevisionGraphLimitPolicy {
   readonly initialLimit: number;
@@ -28,7 +29,8 @@ export interface RevisionGraphBackend {
     repository: Repository,
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot>;
   loadRevisionLog(
     repository: Repository,
@@ -73,10 +75,11 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     repository: Repository,
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot> {
     if (signal) {
-      return this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal);
+      return this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace);
     }
 
     pruneExpiredSnapshotCacheEntries(this.snapshotCache, Date.now());
@@ -87,7 +90,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       return cached.snapshotPromise;
     }
 
-    const snapshotPromise = this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal)
+    const snapshotPromise = this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace)
       .catch((error) => {
         this.snapshotCache.delete(cacheKey);
         throw error;
@@ -200,7 +203,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     repository: Repository,
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot> {
     const limits = [
       limitPolicy.initialLimit,
@@ -210,7 +214,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     let selectedSnapshot: RevisionGraphSnapshot | undefined;
     for (const limit of limits) {
       throwIfAborted(signal);
-      const snapshot = await loadSnapshot(repository, limit, options, signal);
+      const snapshot = await loadSnapshot(repository, limit, options, signal, trace);
       selectedSnapshot = snapshot;
 
       if (snapshot.graph.orderedCommits.length < limit) {
@@ -223,7 +227,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     }
 
     if (!selectedSnapshot) {
-      return loadSnapshot(repository, limitPolicy.initialLimit, options, signal);
+      return loadSnapshot(repository, limitPolicy.initialLimit, options, signal, trace);
     }
 
     return selectedSnapshot;
@@ -302,10 +306,15 @@ async function loadSnapshot(
   repository: Repository,
   limit: number,
   options: RevisionGraphProjectionOptions,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphSnapshot> {
   throwIfAborted(signal);
-  const refsPromise = repository.getRefs();
+  const snapshotStartedAt = nowMs();
+  const refsStartedAt = nowMs();
+  const refsPromise = repository.getRefs()
+    .finally(() => traceDuration(trace, 'snapshot.getRefs', refsStartedAt));
+  const gitLogStartedAt = nowMs();
   const stdoutPromise = execGit(
     repository.rootUri.fsPath,
     buildRevisionGraphGitLogArgs(limit, options),
@@ -313,13 +322,18 @@ async function loadSnapshot(
       signal,
       maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES
     }
-  );
+  )
+    .finally(() => traceDuration(trace, 'snapshot.gitLog', gitLogStartedAt, `limit=${limit}`));
   const [refs, stdout] = await Promise.all([refsPromise, stdoutPromise]);
   throwIfAborted(signal);
+  const parseStartedAt = nowMs();
   const refKindsByName = buildRevisionGraphRefKinds(refs);
+  const graph = buildCommitGraphFromGitLog(stdout, refKindsByName, 'git-decoration');
+  traceDuration(trace, 'snapshot.parseCommitGraph', parseStartedAt, `commits=${graph.orderedCommits.length}`);
+  traceDuration(trace, 'snapshot.total', snapshotStartedAt, `limit=${limit}; chars=${stdout.length}`);
 
   return {
-    graph: buildCommitGraphFromGitLog(stdout, refKindsByName, 'git-decoration'),
+    graph,
     loadedAt: Date.now(),
     requestedLimit: limit
   };

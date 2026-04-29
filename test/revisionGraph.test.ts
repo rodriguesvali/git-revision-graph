@@ -350,6 +350,28 @@ test('builds a scene from the projected graph while preserving merge edges', asy
   );
 });
 
+test('emits revision graph scene load trace phases when tracing is enabled', async () => {
+  const events: Array<{ readonly phase: string }> = [];
+  const scene = await buildRevisionGraphScene(
+    buildCommitGraph([
+      {
+        hash: 'head1',
+        parents: [],
+        author: 'Ada',
+        date: '2026-04-08',
+        subject: 'Bootstrap',
+        refs: [{ name: 'main', kind: 'head' }]
+      }
+    ]),
+    undefined,
+    (event) => events.push(event)
+  );
+
+  assert.equal(scene.nodes.length, 1);
+  assert.ok(events.some((event) => event.phase === 'scene.layout.elk'));
+  assert.ok(events.some((event) => event.phase === 'scene.total'));
+});
+
 test('gives distinct horizontal positions to wide visible branches in the same scene', async () => {
   const graph = buildCommitGraph([
     { hash: 'merge1', parents: ['left1', 'right1'], author: 'Ada', date: '2026-04-08', subject: 'Merge topic', refs: [{ name: 'main', kind: 'head' }] },

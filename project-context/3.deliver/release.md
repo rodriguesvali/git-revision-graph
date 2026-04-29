@@ -14,6 +14,7 @@ Planned publishable change set:
 - Improve minimap performance by batching updates and avoiding full SVG rebuilds during viewport-only movement.
 - Remove the redundant internal `Fetch` button from the revision graph webview toolbar while keeping the external VS Code view title action.
 - Improve revision graph load latency by starting repository ref loading and the graph `git log` command concurrently.
+- Add opt-in revision graph load timing diagnostics behind `gitRevisionGraph.traceLoading`.
 
 Do not publish without explicit human approval.
 
@@ -28,6 +29,7 @@ Planning references:
 - `project-context/2.build/features/0.0.24-minimap-sync-performance.md`
 - `project-context/2.build/features/0.0.24-internal-fetch-toolbar-removal.md`
 - `project-context/2.build/features/0.0.24-graph-load-io-parallelism.md`
+- `project-context/2.build/features/0.0.24-graph-load-tracing.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -43,8 +45,9 @@ Current verification:
 - Source implementation for the planned `0.0.24` minimap sync performance improvement is complete.
 - Source implementation for the planned `0.0.24` internal fetch toolbar removal is complete.
 - Source implementation for the planned `0.0.24` graph load I/O parallelism improvement is complete.
+- Source implementation for the planned `0.0.24` graph load tracing diagnostic is complete.
 - `npm run build` passed.
-- `npm test` passed with 205 tests.
+- `npm test` passed with 207 tests.
 - Manual Extension Development Host validation against the screenshot repository is not complete.
 
 Release preparation status:
@@ -56,6 +59,7 @@ Release preparation status:
 - Source release readiness is complete for the planned `0.0.24` minimap sync performance improvement.
 - Source release readiness is complete for the planned `0.0.24` internal fetch toolbar removal.
 - Source release readiness is complete for the planned `0.0.24` graph load I/O parallelism improvement.
+- Source release readiness is complete for the planned `0.0.24` graph load tracing diagnostic.
 - Version bump to `0.0.24` is complete.
 - Release notes for `0.0.24` are not complete.
 - VSIX packaging is not complete for `0.0.24`.

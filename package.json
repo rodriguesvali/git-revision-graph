@@ -148,6 +148,16 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "Git Revision Graph",
+      "properties": {
+        "gitRevisionGraph.traceLoading": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write revision graph load timing diagnostics to the Git Revision Graph output channel."
+        }
+      }
     }
   },
   "scripts": {

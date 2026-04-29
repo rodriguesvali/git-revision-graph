@@ -63,6 +63,7 @@ import {
   validateRevisionGraphMessage
 } from './messageValidation';
 import { ShowLogPresenter } from '../showLogView';
+import { RevisionGraphLoadTraceSink } from './loadTrace';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -206,6 +207,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
     | undefined;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  private traceOutput: vscode.OutputChannel | undefined;
 
   constructor(
     private readonly git: API,
@@ -245,6 +247,7 @@ export class RevisionGraphController implements vscode.Disposable {
   dispose(): void {
     this.renderCoordinator.cancel();
     this.disposeViewDisposables();
+    this.traceOutput?.dispose();
 
     for (const disposable of this.repoSubscriptions.values()) {
       disposable.dispose();
@@ -536,6 +539,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const repositoryPath = this.currentRepository.rootUri.fsPath;
+    const trace = this.createLoadTraceSink(repositoryPath, this.latestRefreshIntent, requestId);
     const currentSnapshot = this.currentSnapshot;
     const canReuseCurrentSnapshot =
       currentSnapshot?.repositoryPath === repositoryPath
@@ -565,7 +569,8 @@ export class RevisionGraphController implements vscode.Disposable {
         this.autoArrangeOnNextRender,
         this.backend,
         currentSnapshot.snapshot,
-        signal
+        signal,
+        trace
       );
       if (requestId === this.renderCoordinator.getCurrentRequestId()) {
         this.autoArrangeOnNextRender = false;
@@ -581,7 +586,8 @@ export class RevisionGraphController implements vscode.Disposable {
       this.autoArrangeOnNextRender,
       this.backend,
       this.limitPolicy,
-      signal
+      signal,
+      trace
     );
 
     if (requestId === this.renderCoordinator.getCurrentRequestId()) {
@@ -846,5 +852,34 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     this.view.title = getRevisionGraphViewTitle(this.currentRepository);
+  }
+
+  private createLoadTraceSink(
+    repositoryPath: string,
+    intent: RevisionGraphRefreshIntent,
+    requestId: number
+  ): RevisionGraphLoadTraceSink | undefined {
+    if (!vscode.workspace.getConfiguration('gitRevisionGraph').get<boolean>('traceLoading', false)) {
+      return undefined;
+    }
+
+    const output = this.getTraceOutput();
+    const repositoryLabel = vscode.workspace.asRelativePath(repositoryPath, false) || repositoryPath;
+    output.appendLine(`[revision-graph-load] request=${requestId} intent=${intent} repository=${repositoryLabel}`);
+
+    return (event) => {
+      const detail = event.detail ? ` ${event.detail}` : '';
+      output.appendLine(
+        `[revision-graph-load] request=${requestId} phase=${event.phase} duration=${event.durationMs}ms${detail}`
+      );
+    };
+  }
+
+  private getTraceOutput(): vscode.OutputChannel {
+    if (!this.traceOutput) {
+      this.traceOutput = vscode.window.createOutputChannel('Git Revision Graph');
+    }
+
+    return this.traceOutput;
   }
 }
