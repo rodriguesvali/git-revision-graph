@@ -94,6 +94,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let pendingRemoteTagStateRequests = new Set();
     let activeContextMenuRequest = null;
     let minimapDragState = null;
+    let pendingMinimapSyncFrame = 0;
+    let pendingMinimapSyncMode = 'none';
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -253,7 +255,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       closeContextMenu();
       event.preventDefault();
     });
-    viewport.addEventListener('scroll', syncMinimap);
+    viewport.addEventListener('scroll', () => syncMinimap('viewport'));
     viewport.addEventListener('scroll', closeContextMenu);
     window.addEventListener('resize', () => {
       syncCanvasSize();
@@ -284,7 +286,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       viewport.scrollLeft = dragState.scrollLeft - dx;
       viewport.scrollTop = dragState.scrollTop - dy;
-      syncMinimap();
+      syncMinimap('viewport');
     });
     window.addEventListener('mouseup', () => {
       if (minimapDragState) {
@@ -647,7 +649,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       );
       viewport.scrollLeft = nextScrollLeft;
       viewport.scrollTop = nextScrollTop;
-      syncMinimap();
+      syncMinimap('viewport');
     }
 
     function updateChrome(state) {

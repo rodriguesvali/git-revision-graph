@@ -480,7 +480,24 @@ export function renderRevisionGraphScriptLayout(): string {
       return references.find((ref) => ref.id === refId);
     }
 
-    function syncMinimap() {
+    function syncMinimap(mode = 'full') {
+      pendingMinimapSyncMode =
+        pendingMinimapSyncMode === 'full' || mode === 'full'
+          ? 'full'
+          : 'viewport';
+      if (pendingMinimapSyncFrame) {
+        return;
+      }
+
+      pendingMinimapSyncFrame = requestAnimationFrame(() => {
+        const nextMode = pendingMinimapSyncMode === 'viewport' ? 'viewport' : 'full';
+        pendingMinimapSyncFrame = 0;
+        pendingMinimapSyncMode = 'none';
+        renderMinimap(nextMode);
+      });
+    }
+
+    function renderMinimap(mode = 'full') {
       if (
         !graphMinimap ||
         !minimapSvg ||
@@ -504,15 +521,18 @@ export function renderRevisionGraphScriptLayout(): string {
       }
 
       graphMinimap.hidden = false;
-      minimapSvg.setAttribute('viewBox', '0 0 ' + transform.width + ' ' + transform.height);
-      minimapSvg.style.width = transform.width + 'px';
-      minimapSvg.style.height = transform.height + 'px';
-      minimapEdgeLayer.innerHTML = graphEdges
-        .map((edge) => renderMinimapEdge(edge, transform))
-        .join('');
-      minimapNodeLayer.innerHTML = Array.from(nodeElements.keys())
-        .map((hash) => renderMinimapNode(hash, transform))
-        .join('');
+      const shouldRenderContent = mode === 'full' || minimapNodeLayer.innerHTML.length === 0;
+      if (shouldRenderContent) {
+        minimapSvg.setAttribute('viewBox', '0 0 ' + transform.width + ' ' + transform.height);
+        minimapSvg.style.width = transform.width + 'px';
+        minimapSvg.style.height = transform.height + 'px';
+        minimapEdgeLayer.innerHTML = graphEdges
+          .map((edge) => renderMinimapEdge(edge, transform))
+          .join('');
+        minimapNodeLayer.innerHTML = Array.from(nodeElements.keys())
+          .map((hash) => renderMinimapNode(hash, transform))
+          .join('');
+      }
       syncMinimapViewport(transform);
       if (!minimapDragState) {
         ensureMinimapViewportVisible(transform);

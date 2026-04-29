@@ -256,7 +256,11 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function zoomInMinimap\(\)/);
   assert.match(html, /function zoomOutMinimap\(\)/);
   assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);
-  assert.match(html, /function syncMinimap\(\)/);
+  assert.match(html, /function syncMinimap\(mode = 'full'\)/);
+  assert.match(html, /pendingMinimapSyncFrame = requestAnimationFrame/);
+  assert.match(html, /function renderMinimap\(mode = 'full'\)/);
+  assert.match(html, /const shouldRenderContent = mode === 'full' \|\| minimapNodeLayer\.innerHTML\.length === 0;/);
+  assert.match(html, /viewport\.addEventListener\('scroll', \(\) => syncMinimap\('viewport'\)\);/);
   assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
   assert.match(html, /function renderMinimapNode\(hash, transform\)/);
   assert.match(html, /function syncMinimapViewport\(transform\)/);
