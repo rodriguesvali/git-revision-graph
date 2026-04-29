@@ -305,8 +305,8 @@ async function loadSnapshot(
   signal?: AbortSignal
 ): Promise<RevisionGraphSnapshot> {
   throwIfAborted(signal);
-  const refKindsByName = buildRevisionGraphRefKinds(await repository.getRefs());
-  const stdout = await execGit(
+  const refsPromise = repository.getRefs();
+  const stdoutPromise = execGit(
     repository.rootUri.fsPath,
     buildRevisionGraphGitLogArgs(limit, options),
     {
@@ -314,6 +314,9 @@ async function loadSnapshot(
       maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES
     }
   );
+  const [refs, stdout] = await Promise.all([refsPromise, stdoutPromise]);
+  throwIfAborted(signal);
+  const refKindsByName = buildRevisionGraphRefKinds(refs);
 
   return {
     graph: buildCommitGraphFromGitLog(stdout, refKindsByName, 'git-decoration'),
