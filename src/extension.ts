@@ -7,11 +7,20 @@ import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } fr
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } from './refCommands';
 import { RefNode } from './refNodes';
 import { createRevisionGraphBackend } from './revisionGraph/backend';
+import {
+  onProjectedGraphLayoutCacheDidChange,
+  restoreProjectedGraphLayoutCache,
+  serializeProjectedGraphLayoutCache
+} from './revisionGraph/layout/layeredLayout';
+import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
+
+const PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY = 'gitRevisionGraph.projectedGraphLayoutCache.v1';
+const PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS = 500;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const git = await getGitApi();
@@ -21,6 +30,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
     return;
   }
+
+  restoreProjectedGraphLayoutCache(
+    context.workspaceState.get<SerializedProjectedGraphLayoutCacheEntry[]>(
+      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+      []
+    )
+  );
+  let layoutCacheSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  const saveProjectedGraphLayoutCache = () => {
+    if (layoutCacheSaveTimer) {
+      clearTimeout(layoutCacheSaveTimer);
+    }
+
+    layoutCacheSaveTimer = setTimeout(() => {
+      layoutCacheSaveTimer = undefined;
+      void context.workspaceState.update(
+        PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+        serializeProjectedGraphLayoutCache()
+      );
+    }, PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS);
+  };
 
   const compareResultsProvider = new CompareResultsViewProvider();
   await compareResultsProvider.initialize();
@@ -34,6 +64,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     compareResultsProvider,
     showLogProvider,
     revisionGraphProvider,
+    onProjectedGraphLayoutCacheDidChange(saveProjectedGraphLayoutCache),
+    {
+      dispose() {
+        if (layoutCacheSaveTimer) {
+          clearTimeout(layoutCacheSaveTimer);
+          layoutCacheSaveTimer = undefined;
+        }
+
+        void context.workspaceState.update(
+          PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+          serializeProjectedGraphLayoutCache()
+        );
+      }
+    },
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
     vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),

@@ -19,6 +19,12 @@ import {
   buildRevisionLogGitArgs,
   parseRevisionLogEntries
 } from '../src/revisionGraph/source/graphGit';
+import {
+  clearProjectedGraphLayoutCache,
+  getProjectedGraphLayoutCacheStats,
+  restoreProjectedGraphLayoutCache,
+  serializeProjectedGraphLayoutCache
+} from '../src/revisionGraph/layout/layeredLayout';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('parses git log output into revision graph commits', () => {
@@ -370,6 +376,87 @@ test('emits revision graph scene load trace phases when tracing is enabled', asy
   assert.equal(scene.nodes.length, 1);
   assert.ok(events.some((event) => event.phase === 'scene.layout.elk'));
   assert.ok(events.some((event) => event.phase === 'scene.total'));
+});
+
+test('reuses cached ELK layout positions for the same projected graph topology', async () => {
+  clearProjectedGraphLayoutCache();
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Feature',
+      refs: [{ name: 'main', kind: 'head' }]
+    },
+    {
+      hash: 'base1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-07',
+      subject: 'Base',
+      refs: [{ name: 'origin/main', kind: 'remote' }]
+    }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+
+  const firstScene = await buildRevisionGraphScene(graph, projection);
+  const afterFirstLayout = getProjectedGraphLayoutCacheStats();
+  const secondScene = await buildRevisionGraphScene(graph, projection);
+  const afterSecondLayout = getProjectedGraphLayoutCacheStats();
+
+  assert.deepEqual(
+    secondScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x })),
+    firstScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x }))
+  );
+  assert.equal(afterFirstLayout.entries, 1);
+  assert.equal(afterFirstLayout.misses, 1);
+  assert.equal(afterFirstLayout.hits, 0);
+  assert.equal(afterSecondLayout.entries, 1);
+  assert.equal(afterSecondLayout.misses, 1);
+  assert.equal(afterSecondLayout.hits, 1);
+});
+
+test('restores serialized ELK layout cache entries across extension sessions', async () => {
+  clearProjectedGraphLayoutCache();
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Feature',
+      refs: [{ name: 'main', kind: 'head' }]
+    },
+    {
+      hash: 'base1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-07',
+      subject: 'Base',
+      refs: [{ name: 'origin/main', kind: 'remote' }]
+    }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+
+  const firstScene = await buildRevisionGraphScene(graph, projection);
+  const serializedCache = serializeProjectedGraphLayoutCache();
+  clearProjectedGraphLayoutCache();
+  restoreProjectedGraphLayoutCache(serializedCache);
+  const restoredStats = getProjectedGraphLayoutCacheStats();
+  const restoredScene = await buildRevisionGraphScene(graph, projection);
+  const afterRestoredLayout = getProjectedGraphLayoutCacheStats();
+
+  assert.equal(serializedCache.length, 1);
+  assert.equal(restoredStats.entries, 1);
+  assert.equal(restoredStats.hits, 0);
+  assert.equal(restoredStats.misses, 0);
+  assert.deepEqual(
+    restoredScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x })),
+    firstScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x }))
+  );
+  assert.equal(afterRestoredLayout.hits, 1);
+  assert.equal(afterRestoredLayout.misses, 0);
 });
 
 test('gives distinct horizontal positions to wide visible branches in the same scene', async () => {

@@ -15,7 +15,10 @@ import {
   parseDecorationRefs,
   parseRevisionGraphLog
 } from './revisionGraph/source/graphGit';
-import { layoutProjectedGraph } from './revisionGraph/layout/layeredLayout';
+import {
+  getProjectedGraphLayoutCacheStats,
+  layoutProjectedGraph
+} from './revisionGraph/layout/layeredLayout';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './revisionGraph/loadTrace';
 
 export type {
@@ -145,8 +148,16 @@ async function layoutCommitLanes(
   trace?: RevisionGraphLoadTraceSink
 ): Promise<CommitLaneLayout[]> {
   const startedAt = nowMs();
+  const cacheStatsBefore = getProjectedGraphLayoutCacheStats();
   const positionByHash = await layoutProjectedGraph(projection);
-  traceDuration(trace, 'scene.layout.elk', startedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
+  const cacheStatsAfter = getProjectedGraphLayoutCacheStats();
+  const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
+  traceDuration(
+    trace,
+    'scene.layout.elk',
+    startedAt,
+    `nodes=${projection.nodes.length}; edges=${projection.edges.length}; cache=${cacheResult}; entries=${cacheStatsAfter.entries}`
+  );
   const orderedHashes = projection.nodes.map((node) => node.hash);
   const fallbackXByHash = new Map(
     orderedHashes.map((hash, index) => [hash, index * 220] as const)
