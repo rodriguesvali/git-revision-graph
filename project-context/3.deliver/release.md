@@ -1,26 +1,21 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.22`.
+Current package baseline: `0.0.24`.
 
-Target release: `0.0.23`.
+Target release: `0.0.24`.
 
 Planned publishable change set:
 
-- Allow remote branch checkout to overwrite an existing non-current local branch after explicit confirmation, then check it out with upstream tracking.
-- Reduce direct Git CLI usage for remote-touching operations by moving remote branch deletion, remote tag deletion, remote-name discovery, and graph fetch without tag fetching to the public `vscode.git` API.
-- Preserve minimap proportions for small repositories by fitting compact graphs inside the overview instead of stretching them.
-- Harden webview message validation, branch-name validation, CSP nonce generation, and documented security-audit follow-up before publishing.
-- Polish the graph title so `Git Revision Graph` uses product casing and the real-case repository name appears before `Branch: <branch>`.
+- Improve revision graph organization by preserving ELK layered `y` placement and compacting it into webview rows instead of forcing each visible commit into a unique `git log` row.
 
 Do not publish without explicit human approval.
 
-Version bump to `0.0.23` has not been applied.
+Version bump to `0.0.24` has been applied in `package.json` and `package-lock.json`.
 
 Planning references:
 
-- `project-context/2.build/features/0.0.23-remote-checkout-overwrite.md`
-- `project-context/2.build/features/0.0.23-security-hardening.md`
+- `project-context/2.build/features/0.0.24-graph-layout-layering.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -29,24 +24,18 @@ Planning references:
 
 Current verification:
 
-- Source implementation for the planned `0.0.23` remote checkout overwrite, remote-operation API migration, and minimap scaling improvements is complete.
-- Source implementation for the planned `0.0.23` security hardening is complete.
-- Source implementation for the planned `0.0.23` title casing/composition improvement is complete.
-- Publication notes for `0.0.23` were added to `CHANGELOG.md`.
+- Source implementation for the planned `0.0.24` graph layout layering improvement is complete.
 - `npm run build` passed.
-- `npm test` passed with 201 tests.
-- `npm audit --audit-level=low` reported 4 moderate dev-tool dependency vulnerabilities through `@vscode/vsce -> @azure/identity -> @azure/msal-node -> uuid`; remediation requires an explicit dependency-change decision and was not applied in this hardening pass.
-- Manual Extension Development Host validation for the `0.0.23` remote checkout overwrite, remote-operation, small-repository minimap, security-hardening, and title casing/composition flows is not complete.
+- `npm test` passed with 202 tests.
+- Manual Extension Development Host validation against the screenshot repository is not complete.
 
 Release preparation status:
 
-- Source release readiness is complete for the planned `0.0.23` checkout, remote-operation API migration, and minimap scaling improvements.
-- Source release readiness is complete for the planned `0.0.23` security hardening, except for the documented dev-tool dependency audit decision.
-- Source release readiness is complete for the planned `0.0.23` title casing/composition improvement.
-- Version bump to `0.0.23` is not complete.
-- Release notes for `0.0.23` are complete.
-- VSIX packaging is not complete for `0.0.23`.
-- Marketplace publishing is not complete for `0.0.23`.
+- Source release readiness is complete for the planned `0.0.24` graph layout layering improvement.
+- Version bump to `0.0.24` is complete.
+- Release notes for `0.0.24` are not complete.
+- VSIX packaging is not complete for `0.0.24`.
+- Marketplace publishing is not complete for `0.0.24`.
 
 ## Deployment Steps
 Release commands available in `package.json`:

@@ -15,7 +15,7 @@ import {
   parseDecorationRefs,
   parseRevisionGraphLog
 } from './revisionGraph/source/graphGit';
-import { layoutProjectedGraphHorizontally } from './revisionGraph/layout/layeredLayout';
+import { layoutProjectedGraph } from './revisionGraph/layout/layeredLayout';
 
 export type {
   CommitGraph,
@@ -136,24 +136,35 @@ function isCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[
 }
 
 async function layoutCommitLanes(projection: ProjectedGraph): Promise<CommitLaneLayout[]> {
-  const xByHash = await layoutProjectedGraphHorizontally(projection);
+  const positionByHash = await layoutProjectedGraph(projection);
   const orderedHashes = projection.nodes.map((node) => node.hash);
   const fallbackXByHash = new Map(
     orderedHashes.map((hash, index) => [hash, index * 220] as const)
   );
+  const fallbackRowByHash = new Map(
+    orderedHashes.map((hash, index) => [hash, index] as const)
+  );
   const uniqueXs = [...new Set(
     orderedHashes
-      .map((hash) => Math.round((xByHash.get(hash) ?? fallbackXByHash.get(hash) ?? 0) / 10) * 10)
+      .map((hash) => Math.round((positionByHash.get(hash)?.x ?? fallbackXByHash.get(hash) ?? 0) / 10) * 10)
+  )].sort((left, right) => left - right);
+  const uniqueYs = [...new Set(
+    orderedHashes
+      .map((hash) => Math.round((positionByHash.get(hash)?.y ?? (fallbackRowByHash.get(hash) ?? 0) * 100) / 10) * 10)
   )].sort((left, right) => left - right);
   const laneByRoundedX = new Map(uniqueXs.map((x, index) => [x, index] as const));
+  const rowByRoundedY = new Map(uniqueYs.map((y, index) => [y, index] as const));
 
-  return projection.nodes.map((node, row) => {
-    const x = xByHash.get(node.hash) ?? fallbackXByHash.get(node.hash) ?? 0;
+  return projection.nodes.map((node) => {
+    const position = positionByHash.get(node.hash);
+    const x = position?.x ?? fallbackXByHash.get(node.hash) ?? 0;
+    const y = position?.y ?? (fallbackRowByHash.get(node.hash) ?? 0) * 100;
     const roundedX = Math.round(x / 10) * 10;
+    const roundedY = Math.round(y / 10) * 10;
 
     return {
       hash: node.hash,
-      row,
+      row: rowByRoundedY.get(roundedY) ?? fallbackRowByHash.get(node.hash) ?? 0,
       lane: laneByRoundedX.get(roundedX) ?? 0,
       x
     };

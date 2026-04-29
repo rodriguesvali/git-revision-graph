@@ -335,7 +335,7 @@ test('builds a scene from the projected graph while preserving merge edges', asy
   assert.deepEqual(scene.nodes.map((node) => ({ hash: node.hash, row: node.row })), [
     { hash: 'm1', row: 0 },
     { hash: 'a1', row: 1 },
-    { hash: 'b1', row: 2 }
+    { hash: 'b1', row: 1 }
   ]);
   assert.notEqual(
     scene.nodes.find((node) => node.hash === 'a1')?.lane,
@@ -370,6 +370,30 @@ test('gives distinct horizontal positions to wide visible branches in the same s
   assert.ok(rightNode);
   assert.notEqual(leftNode?.lane, rightNode?.lane);
   assert.notEqual(leftNode?.x, rightNode?.x);
+});
+
+test('uses layered layout rows instead of forcing every commit into a unique log row', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'leftTip', parents: ['leftBase'], author: 'Ada', date: '2026-04-08', subject: 'Left tip', refs: [{ name: 'feature/left', kind: 'branch' }] },
+    { hash: 'leftBase', parents: [], author: 'Ada', date: '2026-04-07', subject: 'Left base', refs: [{ name: 'left-base', kind: 'tag' }] },
+    { hash: 'rightTip', parents: ['rightBase'], author: 'Ada', date: '2026-04-06', subject: 'Right tip', refs: [{ name: 'origin/right', kind: 'remote' }] },
+    { hash: 'rightBase', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Right base', refs: [{ name: 'right-base', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph);
+  const scene = await buildRevisionGraphScene(graph, projection);
+  const leftTip = scene.nodes.find((node) => node.hash === 'leftTip');
+  const leftBase = scene.nodes.find((node) => node.hash === 'leftBase');
+  const rightTip = scene.nodes.find((node) => node.hash === 'rightTip');
+  const rightBase = scene.nodes.find((node) => node.hash === 'rightBase');
+
+  assert.ok(leftTip);
+  assert.ok(leftBase);
+  assert.ok(rightTip);
+  assert.ok(rightBase);
+  assert.equal(leftTip?.row, rightTip?.row);
+  assert.equal(leftBase?.row, rightBase?.row);
+  assert.equal(scene.rowCount, 2);
 });
 
 test('adds vertical clearance when a card grows with many refs', async () => {
