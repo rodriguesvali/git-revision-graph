@@ -12,6 +12,7 @@ const elk = new ELK();
 const ELK_FALLBACK_SPACING = 52;
 const ELK_FALLBACK_LAYER_SPACING = 96;
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
+export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
 const PROJECTED_GRAPH_LAYOUT_OPTIONS_KEY = JSON.stringify({
   algorithm: 'org.eclipse.elk.layered',
   direction: 'DOWN',
@@ -125,7 +126,7 @@ export function clearProjectedGraphLayoutCache(): void {
 
 export function serializeProjectedGraphLayoutCache(): SerializedProjectedGraphLayoutCacheEntry[] {
   return [...projectedGraphLayoutCache.entries()]
-    .flatMap(([key, entry]) => entry.positions
+    .flatMap(([key, entry]) => entry.positions && entry.positions.size <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS
       ? [{
           key,
           positions: [...entry.positions.entries()]
@@ -190,7 +191,17 @@ async function calculateProjectedGraphLayout(
     }))
   };
 
-  const layout = await elk.layout(graph);
+  let layout: ElkNode;
+  try {
+    layout = await elk.layout(graph);
+  } catch (error) {
+    if (!isMaximumCallStackExceededError(error)) {
+      throw error;
+    }
+
+    return calculateFallbackProjectedGraphLayout(projection);
+  }
+
   const positions = new Map<string, ProjectedGraphLayoutPosition>();
   const fallbackXByHash = new Map<string, number>();
   const fallbackYByHash = new Map<string, number>();
@@ -210,6 +221,73 @@ async function calculateProjectedGraphLayout(
   }
 
   return positions;
+}
+
+function calculateFallbackProjectedGraphLayout(
+  projection: ProjectedGraph
+): Map<string, ProjectedGraphLayoutPosition> {
+  const parentsByHash = new Map<string, string[]>();
+  for (const node of projection.nodes) {
+    parentsByHash.set(node.hash, []);
+  }
+  for (const edge of projection.edges) {
+    if (!parentsByHash.has(edge.from)) {
+      parentsByHash.set(edge.from, []);
+    }
+    parentsByHash.get(edge.from)?.push(edge.to);
+  }
+
+  let laneWidth = 220;
+  for (const node of projection.nodes) {
+    laneWidth = Math.max(laneWidth, estimateRevisionGraphNodeWidth(node) + ELK_FALLBACK_SPACING);
+  }
+
+  const positions = new Map<string, ProjectedGraphLayoutPosition>();
+  const activeLanes: Array<string | undefined> = [];
+  for (const [row, node] of projection.nodes.entries()) {
+    let nodeLane = activeLanes.indexOf(node.hash);
+    if (nodeLane < 0) {
+      nodeLane = firstEmptyLane(activeLanes);
+      if (nodeLane < 0) {
+        nodeLane = activeLanes.length;
+      }
+    }
+
+    positions.set(node.hash, {
+      x: nodeLane * laneWidth,
+      y: row * ELK_FALLBACK_LAYER_SPACING
+    });
+
+    const nextActiveLanes = [...activeLanes];
+    nextActiveLanes[nodeLane] = undefined;
+    const parents = parentsByHash.get(node.hash) ?? [];
+    if (parents[0]) {
+      nextActiveLanes[nodeLane] = parents[0];
+    }
+
+    for (const parentHash of parents.slice(1)) {
+      let parentLane = nextActiveLanes.indexOf(parentHash);
+      if (parentLane < 0) {
+        parentLane = firstEmptyLane(nextActiveLanes);
+        if (parentLane < 0) {
+          parentLane = nextActiveLanes.length;
+        }
+        nextActiveLanes[parentLane] = parentHash;
+      }
+    }
+
+    activeLanes.splice(0, activeLanes.length, ...nextActiveLanes);
+  }
+
+  return positions;
+}
+
+function firstEmptyLane(lanes: readonly (string | undefined)[]): number {
+  return lanes.findIndex((value) => !value);
+}
+
+function isMaximumCallStackExceededError(error: unknown): boolean {
+  return error instanceof Error && error.message.toLowerCase().includes('maximum call stack');
 }
 
 function cloneLayoutPositions(
@@ -238,12 +316,14 @@ function notifyProjectedGraphLayoutCacheChanged(): void {
 function isSerializedProjectedGraphLayoutCacheEntry(
   entry: unknown
 ): entry is SerializedProjectedGraphLayoutCacheEntry {
+  const positions = (entry as { positions?: unknown } | undefined)?.positions;
   return (
     typeof entry === 'object' &&
     entry !== null &&
     typeof (entry as { key?: unknown }).key === 'string' &&
-    Array.isArray((entry as { positions?: unknown }).positions) &&
-    (entry as { positions: unknown[] }).positions.every(isSerializedPositionEntry)
+    Array.isArray(positions) &&
+    positions.length <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS &&
+    positions.every(isSerializedPositionEntry)
   );
 }
 

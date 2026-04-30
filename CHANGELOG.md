@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.25
+
+### Stability
+
+- Hardened large-repository graph loading by bounding persisted layout-cache payloads and clearing oversized cache entries from VS Code workspace state.
+- Added a deterministic iterative lane-layout fallback for cases where ELK reports `Maximum call stack exceeded`, so the graph can still render instead of failing the load.
+
+### Quality
+
+- Added regression coverage for oversized persisted layout-cache rejection.
+
 ## 0.0.24
 
 ### Highlights

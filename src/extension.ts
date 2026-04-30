@@ -31,12 +31,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  restoreProjectedGraphLayoutCache(
-    context.workspaceState.get<SerializedProjectedGraphLayoutCacheEntry[]>(
-      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-      []
-    )
-  );
+  restorePersistedProjectedGraphLayoutCache(context);
   let layoutCacheSaveTimer: ReturnType<typeof setTimeout> | undefined;
   const saveProjectedGraphLayoutCache = () => {
     if (layoutCacheSaveTimer) {
@@ -45,10 +40,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     layoutCacheSaveTimer = setTimeout(() => {
       layoutCacheSaveTimer = undefined;
-      void context.workspaceState.update(
-        PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-        serializeProjectedGraphLayoutCache()
-      );
+      void persistProjectedGraphLayoutCache(context);
     }, PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS);
   };
 
@@ -72,10 +64,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           layoutCacheSaveTimer = undefined;
         }
 
-        void context.workspaceState.update(
-          PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-          serializeProjectedGraphLayoutCache()
-        );
+        void persistProjectedGraphLayoutCache(context);
       }
     },
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
@@ -117,6 +106,54 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export function deactivate(): void {}
+
+function restorePersistedProjectedGraphLayoutCache(context: vscode.ExtensionContext): void {
+  try {
+    const persistedCache = context.workspaceState.get<SerializedProjectedGraphLayoutCacheEntry[]>(
+      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+      []
+    );
+    restoreProjectedGraphLayoutCache(
+      persistedCache
+    );
+    if ((persistedCache?.length ?? 0) !== serializeProjectedGraphLayoutCache().length) {
+      void persistProjectedGraphLayoutCache(context);
+    }
+  } catch (error) {
+    console.warn('Failed to restore the persisted revision graph layout cache.', error);
+    restoreProjectedGraphLayoutCache(undefined);
+    void context.workspaceState.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
+  }
+}
+
+async function persistProjectedGraphLayoutCache(context: vscode.ExtensionContext): Promise<void> {
+  let serializedCache: SerializedProjectedGraphLayoutCacheEntry[];
+  try {
+    serializedCache = serializeProjectedGraphLayoutCache();
+  } catch (error) {
+    console.warn('Failed to serialize the revision graph layout cache.', error);
+    await clearPersistedProjectedGraphLayoutCache(context);
+    return;
+  }
+
+  try {
+    await context.workspaceState.update(
+      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+      serializedCache.length > 0 ? serializedCache : undefined
+    );
+  } catch (error) {
+    console.warn('Failed to persist the revision graph layout cache.', error);
+    await clearPersistedProjectedGraphLayoutCache(context);
+  }
+}
+
+async function clearPersistedProjectedGraphLayoutCache(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    await context.workspaceState.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
+  } catch (error) {
+    console.warn('Failed to clear the persisted revision graph layout cache.', error);
+  }
+}
 
 async function getGitApi(): Promise<API | undefined> {
   const extension = vscode.extensions.getExtension<GitExtension>('vscode.git');

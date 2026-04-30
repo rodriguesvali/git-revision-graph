@@ -22,6 +22,7 @@ import {
 import {
   clearProjectedGraphLayoutCache,
   getProjectedGraphLayoutCacheStats,
+  PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
 } from '../src/revisionGraph/layout/layeredLayout';
@@ -457,6 +458,24 @@ test('restores serialized ELK layout cache entries across extension sessions', a
   );
   assert.equal(afterRestoredLayout.hits, 1);
   assert.equal(afterRestoredLayout.misses, 0);
+});
+
+test('ignores oversized serialized ELK layout cache entries', () => {
+  clearProjectedGraphLayoutCache();
+  const oversizedPositions: [string, { readonly x: number; readonly y: number }][] = Array.from(
+    { length: PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS + 1 },
+    (_, index) => [`hash-${index}`, { x: index, y: index }]
+  );
+
+  restoreProjectedGraphLayoutCache([
+    {
+      key: 'elk-layered-v1:oversized',
+      positions: oversizedPositions
+    }
+  ]);
+
+  assert.equal(getProjectedGraphLayoutCacheStats().entries, 0);
+  assert.deepEqual(serializeProjectedGraphLayoutCache(), []);
 });
 
 test('gives distinct horizontal positions to wide visible branches in the same scene', async () => {
