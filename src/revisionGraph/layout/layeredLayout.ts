@@ -13,15 +13,18 @@ const ELK_FALLBACK_SPACING = 52;
 const ELK_FALLBACK_LAYER_SPACING = 96;
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_OPTIONS_KEY = JSON.stringify({
-  algorithm: 'org.eclipse.elk.layered',
-  direction: 'DOWN',
-  edgeRouting: 'POLYLINE',
-  nodeNodeSpacing: 52,
-  nodeNodeBetweenLayersSpacing: 72,
-  crossingMinimizationStrategy: 'LAYER_SWEEP',
-  nodePlacementStrategy: 'NETWORK_SIMPLEX'
-});
+const PROJECTED_GRAPH_LAYOUT_OPTIONS: Readonly<Record<string, string>> = {
+  'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
+  'org.eclipse.elk.direction': 'DOWN',
+  'org.eclipse.elk.edgeRouting': 'POLYLINE',
+  'org.eclipse.elk.spacing.nodeNode': '52',
+  'org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers': '72',
+  'org.eclipse.elk.layered.layering.strategy': 'NETWORK_SIMPLEX',
+  'org.eclipse.elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+  'org.eclipse.elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+  'org.eclipse.elk.layered.nodePlacement.favorStraightEdges': 'true'
+};
+const PROJECTED_GRAPH_LAYOUT_OPTIONS_KEY = JSON.stringify(PROJECTED_GRAPH_LAYOUT_OPTIONS);
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -106,7 +109,7 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
     hash.update(edge.to);
   }
 
-  return `elk-layered-v1:${hash.digest('base64url')}`;
+  return `elk-layered-v2:${hash.digest('base64url')}`;
 }
 
 export function getProjectedGraphLayoutCacheStats(): ProjectedGraphLayoutCacheStats {
@@ -170,15 +173,7 @@ async function calculateProjectedGraphLayout(
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   const graph: ElkNode = {
     id: 'root',
-    layoutOptions: {
-      'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
-      'org.eclipse.elk.direction': 'DOWN',
-      'org.eclipse.elk.edgeRouting': 'POLYLINE',
-      'org.eclipse.elk.spacing.nodeNode': '52',
-      'org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers': '72',
-      'org.eclipse.elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-      'org.eclipse.elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX'
-    },
+    layoutOptions: PROJECTED_GRAPH_LAYOUT_OPTIONS,
     children: projection.nodes.map((node) => ({
       id: node.hash,
       width: estimateRevisionGraphNodeWidth(node),

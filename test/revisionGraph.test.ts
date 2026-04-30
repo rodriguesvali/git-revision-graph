@@ -20,6 +20,7 @@ import {
   parseRevisionLogEntries
 } from '../src/revisionGraph/source/graphGit';
 import {
+  buildProjectedGraphLayoutCacheKey,
   clearProjectedGraphLayoutCache,
   getProjectedGraphLayoutCacheStats,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
@@ -416,6 +417,31 @@ test('reuses cached ELK layout positions for the same projected graph topology',
   assert.equal(afterSecondLayout.entries, 1);
   assert.equal(afterSecondLayout.misses, 1);
   assert.equal(afterSecondLayout.hits, 1);
+});
+
+test('uses a new layout cache namespace for the OGDF-inspired ELK placement options', () => {
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Feature',
+      refs: [{ name: 'main', kind: 'head' }]
+    },
+    {
+      hash: 'base1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-07',
+      subject: 'Base',
+      refs: [{ name: 'origin/main', kind: 'remote' }]
+    }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph);
+
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^elk-layered-v2:/);
 });
 
 test('restores serialized ELK layout cache entries across extension sessions', async () => {
