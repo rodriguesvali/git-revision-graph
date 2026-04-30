@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RevisionGraphNode, RevisionGraphScene } from '../src/revisionGraphData';
-import { buildNodeLayouts, createNonce, describeEdgePath, formatNodeSummary, renderEdge } from '../src/revisionGraph/webview/shared';
+import { buildNodeLayouts, createNonce, describeEdgePath, formatNodeSummary, NODE_HORIZONTAL_GAP, renderEdge } from '../src/revisionGraph/webview/shared';
 
 test('formats structural node summaries as compact short hashes', () => {
   const node: RevisionGraphNode = {
@@ -175,6 +175,57 @@ test('adds vertical clearance when a lower parent fans out to upper descendants'
   const fanOutParentTop = buildNodeLayouts(fanOutScene).find((node) => node.hash === 'parent')?.defaultTop ?? 0;
 
   assert.ok(fanOutParentTop > linearParentTop);
+});
+
+test('keeps cards in the same row from overlapping', () => {
+  const scene: RevisionGraphScene = {
+    nodes: [
+      {
+        hash: 'left',
+        refs: [{ name: 'origin/fix-extra-padding-on-tutorial-editor', kind: 'remote' }],
+        author: 'Ada',
+        date: '2026-04-30',
+        subject: 'Left',
+        x: 0,
+        row: 0,
+        lane: 0
+      },
+      {
+        hash: 'right',
+        refs: [{ name: '17.3.6', kind: 'tag' }],
+        author: 'Ada',
+        date: '2026-04-30',
+        subject: 'Right',
+        x: 120,
+        row: 0,
+        lane: 1
+      },
+      {
+        hash: 'other-row',
+        refs: [{ name: '17.3.5', kind: 'tag' }],
+        author: 'Ada',
+        date: '2026-04-30',
+        subject: 'Other row',
+        x: 120,
+        row: 1,
+        lane: 1
+      }
+    ],
+    edges: [],
+    laneCount: 2,
+    rowCount: 2
+  };
+
+  const layouts = buildNodeLayouts(scene);
+  const left = layouts.find((node) => node.hash === 'left');
+  const right = layouts.find((node) => node.hash === 'right');
+  const otherRow = layouts.find((node) => node.hash === 'other-row');
+
+  assert.ok(left);
+  assert.ok(right);
+  assert.ok(otherRow);
+  assert.ok((right?.defaultLeft ?? 0) >= (left?.defaultLeft ?? 0) + (left?.width ?? 0) + NODE_HORIZONTAL_GAP);
+  assert.equal(otherRow?.defaultLeft, 146);
 });
 
 test('creates CSP nonces with cryptographic base64url-friendly values', () => {

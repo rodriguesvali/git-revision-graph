@@ -80,7 +80,7 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.autoArrangeOnInit, true);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
-  assert.match(state.sceneLayoutKey, /^head1:0:/);
+  assert.match(state.sceneLayoutKey, /^head1:0:\d+:\d+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
 });

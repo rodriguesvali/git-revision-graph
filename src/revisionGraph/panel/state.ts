@@ -345,7 +345,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     scene,
     nodeLayouts,
     references,
-    sceneLayoutKey: scene.nodes.map((node) => `${node.hash}:${node.row}:${Math.round(node.x)}`).join('|'),
+    sceneLayoutKey: nodeLayouts.map((node) => `${node.hash}:${node.row}:${Math.round(node.defaultLeft)}:${Math.round(node.width)}`).join('|'),
     baseCanvasWidth,
     baseCanvasHeight,
     emptyMessage: undefined,

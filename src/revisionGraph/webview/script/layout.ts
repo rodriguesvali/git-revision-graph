@@ -114,7 +114,9 @@ export function renderRevisionGraphScriptLayout(): string {
           ordered.reduce((sum, node) => sum + node.defaultLeft + getNodeWidth(node.hash) / 2, 0) / ordered.length;
         const resolvedCenter =
           resolved.reduce((sum, left, index) => sum + left + getNodeWidth(ordered[index].hash) / 2, 0) / resolved.length;
-        const centered = resolved.map((left) => left + (defaultCenter - resolvedCenter));
+        const leftEdgeShift = -Math.min(...resolved);
+        const centerShift = defaultCenter - resolvedCenter;
+        const centered = resolved.map((left) => left + Math.max(leftEdgeShift, centerShift));
 
         for (let index = 0; index < ordered.length; index += 1) {
           positions.set(ordered[index].hash, clampNodeLeft(ordered[index].hash, centered[index]));
@@ -454,7 +456,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function getMinimumGap(leftHash, rightHash) {
-      return getNodeWidth(leftHash) / 2 + getNodeWidth(rightHash) / 2 + ${NODE_HORIZONTAL_GAP};
+      return getNodeWidth(leftHash) + ${NODE_HORIZONTAL_GAP};
     }
 
     function clampNodeOffset(hash, defaultLeft, offset) {

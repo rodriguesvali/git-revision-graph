@@ -309,6 +309,8 @@ test('keeps a single auto-arrange layout routine in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function autoArrangeLayout\(\)/);
+  assert.match(html, /return getNodeWidth\(leftHash\) \+ 28;/);
+  assert.match(html, /const leftEdgeShift = -Math\.min\(\.\.\.resolved\);/);
   assert.doesNotMatch(html, /function autoArrangeTortoiseLayout\(\)/);
   assert.doesNotMatch(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
   assert.doesNotMatch(html, /function buildFamilyAnchorMap\(familyAssignments\)/);

@@ -61,6 +61,14 @@ type EdgeAnchorPoints = {
   readonly targetY: number;
 };
 
+type HorizontalLayoutCandidate = {
+  readonly hash: string;
+  readonly row: number;
+  readonly x: number;
+  readonly width: number;
+  readonly initialLeft: number;
+};
+
 export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGraphNodeLayout[] {
   const dimensionsByHash = new Map(
     scene.nodes.map((node) => [
@@ -81,6 +89,7 @@ export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGr
     maxHeightByRow.set(node.row, Math.max(maxHeightByRow.get(node.row) ?? 0, dimensions.height));
   }
 
+  const leftByHash = buildNonOverlappingLeftByHash(scene, dimensionsByHash);
   const dynamicGapByRow = buildDynamicVerticalGapByRow(scene);
   const topByRow = new Map<number, number>();
   let nextTop = GRAPH_PADDING_TOP;
@@ -101,10 +110,72 @@ export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGr
       x: node.x,
       width: dimensions.width,
       height: dimensions.height,
-      defaultLeft: NODE_PADDING_X + node.x,
+      defaultLeft: leftByHash.get(node.hash) ?? NODE_PADDING_X + node.x,
       defaultTop: topByRow.get(node.row) ?? GRAPH_PADDING_TOP
     };
   });
+}
+
+function buildNonOverlappingLeftByHash(
+  scene: RevisionGraphScene,
+  dimensionsByHash: ReadonlyMap<string, { readonly width: number; readonly height: number }>
+): Map<string, number> {
+  const rows = new Map<number, HorizontalLayoutCandidate[]>();
+  for (const node of scene.nodes) {
+    const dimensions = dimensionsByHash.get(node.hash);
+    if (!dimensions) {
+      continue;
+    }
+
+    const candidates = rows.get(node.row) ?? [];
+    candidates.push({
+      hash: node.hash,
+      row: node.row,
+      x: node.x,
+      width: dimensions.width,
+      initialLeft: NODE_PADDING_X + node.x
+    });
+    rows.set(node.row, candidates);
+  }
+
+  const leftByHash = new Map<string, number>();
+  for (const candidates of rows.values()) {
+    const ordered = [...candidates].sort((left, right) =>
+      left.initialLeft - right.initialLeft ||
+      left.x - right.x ||
+      left.hash.localeCompare(right.hash)
+    );
+    if (ordered.length === 0) {
+      continue;
+    }
+
+    const resolved = ordered.map((node) => node.initialLeft);
+    for (let index = 1; index < ordered.length; index += 1) {
+      const previous = ordered[index - 1];
+      resolved[index] = Math.max(
+        resolved[index],
+        resolved[index - 1] + previous.width + NODE_HORIZONTAL_GAP
+      );
+    }
+
+    const initialCenter = getRowCenter(ordered, ordered.map((node) => node.initialLeft));
+    const resolvedCenter = getRowCenter(ordered, resolved);
+    const leftEdgeShift = NODE_PADDING_X - Math.min(...resolved);
+    const centerShift = initialCenter - resolvedCenter;
+    const shift = Math.max(leftEdgeShift, centerShift);
+    for (let index = 0; index < ordered.length; index += 1) {
+      leftByHash.set(ordered[index].hash, resolved[index] + shift);
+    }
+  }
+
+  return leftByHash;
+}
+
+function getRowCenter(nodes: readonly HorizontalLayoutCandidate[], lefts: readonly number[]): number {
+  if (nodes.length === 0 || lefts.length === 0) {
+    return 0;
+  }
+  return nodes.reduce((sum, node, index) => sum + lefts[index] + node.width / 2, 0) / nodes.length;
 }
 
 function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, number> {
