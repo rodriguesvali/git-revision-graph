@@ -19,6 +19,12 @@ export {
 
 export const ROW_HEIGHT = 140;
 export const ROW_VERTICAL_GAP = 48;
+const ROW_CORRIDOR_EDGE_EXTRA_GAP = 24;
+const ROW_FAN_OUT_EXTRA_GAP = 44;
+const ROW_DYNAMIC_VERTICAL_GAP_MAX = 160;
+const EDGE_TARGET_APPROACH_RATIO = 0.38;
+const EDGE_TARGET_APPROACH_MIN = 36;
+const EDGE_TARGET_APPROACH_MAX = 128;
 export const NODE_HORIZONTAL_GAP = 28;
 export const NODE_PADDING_X = 26;
 export const GRAPH_PADDING_TOP = 88;
@@ -48,6 +54,13 @@ type EdgeLayoutNode = {
   readonly height: number;
 };
 
+type EdgeAnchorPoints = {
+  readonly sourceX: number;
+  readonly sourceY: number;
+  readonly targetX: number;
+  readonly targetY: number;
+};
+
 export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGraphNodeLayout[] {
   const dimensionsByHash = new Map(
     scene.nodes.map((node) => [
@@ -68,11 +81,12 @@ export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGr
     maxHeightByRow.set(node.row, Math.max(maxHeightByRow.get(node.row) ?? 0, dimensions.height));
   }
 
+  const dynamicGapByRow = buildDynamicVerticalGapByRow(scene);
   const topByRow = new Map<number, number>();
   let nextTop = GRAPH_PADDING_TOP;
   for (let row = 0; row < scene.rowCount; row += 1) {
     topByRow.set(row, nextTop);
-    nextTop += (maxHeightByRow.get(row) ?? 0) + ROW_VERTICAL_GAP;
+    nextTop += (maxHeightByRow.get(row) ?? 0) + (dynamicGapByRow.get(row) ?? ROW_VERTICAL_GAP);
   }
 
   return scene.nodes.map((node) => {
@@ -91,6 +105,59 @@ export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGr
       defaultTop: topByRow.get(node.row) ?? GRAPH_PADDING_TOP
     };
   });
+}
+
+function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, number> {
+  const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
+  const crossingEdgesByGap = new Map<number, number>();
+  const lowerTargetsByUpperNode = new Map<string, Set<string>>();
+
+  for (const edge of scene.edges) {
+    const fromRow = rowByHash.get(edge.from);
+    const toRow = rowByHash.get(edge.to);
+    if (fromRow === undefined || toRow === undefined || fromRow === toRow) {
+      continue;
+    }
+
+    const upperRow = Math.min(fromRow, toRow);
+    const lowerRow = Math.max(fromRow, toRow);
+    const lowerHash = fromRow < toRow ? edge.to : edge.from;
+    const upperHash = fromRow < toRow ? edge.from : edge.to;
+    const upperNodeKey = `${upperRow}:${upperHash}`;
+
+    for (let row = upperRow; row < lowerRow; row += 1) {
+      crossingEdgesByGap.set(row, (crossingEdgesByGap.get(row) ?? 0) + 1);
+    }
+
+    if (!lowerTargetsByUpperNode.has(upperNodeKey)) {
+      lowerTargetsByUpperNode.set(upperNodeKey, new Set());
+    }
+    lowerTargetsByUpperNode.get(upperNodeKey)?.add(lowerHash);
+  }
+
+  const maxExtraDescendantsByUpperRow = new Map<number, number>();
+  for (const [key, targets] of lowerTargetsByUpperNode.entries()) {
+    const row = Number(key.slice(0, key.indexOf(':')));
+    if (!Number.isFinite(row)) {
+      continue;
+    }
+    maxExtraDescendantsByUpperRow.set(
+      row,
+      Math.max(maxExtraDescendantsByUpperRow.get(row) ?? 0, targets.size - 1)
+    );
+  }
+
+  const gapByRow = new Map<number, number>();
+  for (let row = 0; row < scene.rowCount - 1; row += 1) {
+    const extraGap = Math.min(
+      ROW_DYNAMIC_VERTICAL_GAP_MAX,
+      Math.max(0, (crossingEdgesByGap.get(row) ?? 0) - 1) * ROW_CORRIDOR_EDGE_EXTRA_GAP +
+      (maxExtraDescendantsByUpperRow.get(row) ?? 0) * ROW_FAN_OUT_EXTRA_GAP
+    );
+    gapByRow.set(row, ROW_VERTICAL_GAP + extraGap);
+  }
+
+  return gapByRow;
 }
 
 export function renderNode(node: RevisionGraphNode, width: number, x: number): string {
@@ -123,18 +190,31 @@ export function renderEdge(
 ): string {
   const strokeWidth = 1.8;
   const marker = 'marker-end="url(#arrowhead)"';
-  const sourceNode = nodeLayoutByHash.get(edge.from);
-  const targetNode = nodeLayoutByHash.get(edge.to);
-  if (!sourceNode || !targetNode) {
+  const childNode = nodeLayoutByHash.get(edge.from);
+  const parentNode = nodeLayoutByHash.get(edge.to);
+  if (!childNode || !parentNode) {
     return '';
   }
-  const path = describeEdgePath(
-    sourceNode.defaultLeft + sourceNode.width / 2,
-    sourceNode.defaultTop + sourceNode.height - EDGE_VERTICAL_INSET,
-    targetNode.defaultLeft + targetNode.width / 2,
-    targetNode.defaultTop + EDGE_VERTICAL_INSET
-  );
+  const anchors = getEdgeAnchorPoints(parentNode, childNode);
+  const path = describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
+}
+
+function getEdgeAnchorPoints(sourceNode: EdgeLayoutNode, targetNode: EdgeLayoutNode): EdgeAnchorPoints {
+  const sourceCenterY = sourceNode.defaultTop + sourceNode.height / 2;
+  const targetCenterY = targetNode.defaultTop + targetNode.height / 2;
+  const connectsDownward = sourceCenterY <= targetCenterY;
+
+  return {
+    sourceX: sourceNode.defaultLeft + sourceNode.width / 2,
+    sourceY: connectsDownward
+      ? sourceNode.defaultTop + sourceNode.height - EDGE_VERTICAL_INSET
+      : sourceNode.defaultTop + EDGE_VERTICAL_INSET,
+    targetX: targetNode.defaultLeft + targetNode.width / 2,
+    targetY: connectsDownward
+      ? targetNode.defaultTop + EDGE_VERTICAL_INSET
+      : targetNode.defaultTop + targetNode.height - EDGE_VERTICAL_INSET
+  };
 }
 
 export function getNodeClass(node: RevisionGraphNode): string {
@@ -200,12 +280,17 @@ export function createReferenceId(hash: string, kind: string, name: string): str
 }
 
 export function describeEdgePath(sourceX: number, sourceY: number, targetX: number, targetY: number): string {
-  if (Math.abs(sourceX - targetX) < 12 || Math.abs(sourceY - targetY) < 24) {
+  const deltaX = Math.abs(sourceX - targetX);
+  const deltaY = Math.abs(sourceY - targetY);
+  if (deltaX < 12 || deltaY < 24) {
     return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
   }
 
   const direction = targetY >= sourceY ? 1 : -1;
-  const approachLength = Math.min(Math.max(Math.abs(targetY - sourceY) * 0.25, 28), 96);
+  const approachLength = Math.min(
+    Math.max(deltaY * EDGE_TARGET_APPROACH_RATIO, EDGE_TARGET_APPROACH_MIN),
+    EDGE_TARGET_APPROACH_MAX
+  );
   const bendY = targetY - direction * approachLength;
   return `M ${sourceX} ${sourceY} L ${targetX} ${bendY} L ${targetX} ${targetY}`;
 }

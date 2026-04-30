@@ -277,10 +277,21 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
 	    function buildEdgePath(fromHash, toHash) {
-	      const sourceX = getNodeCenterX(fromHash);
-	      const sourceY = getNodeSourceY(fromHash);
-	      const targetX = getNodeCenterX(toHash);
-	      const targetY = getNodeTargetY(toHash);
+	      const sourceHash = toHash;
+	      const targetHash = fromHash;
+	      const sourceX = getNodeCenterX(sourceHash);
+	      const targetX = getNodeCenterX(targetHash);
+	      const sourceTop = getNodeTop(sourceHash);
+	      const sourceHeight = getNodeHeight(sourceHash);
+	      const targetTop = getNodeTop(targetHash);
+	      const targetHeight = getNodeHeight(targetHash);
+	      const connectsDownward = sourceTop + sourceHeight / 2 <= targetTop + targetHeight / 2;
+	      const sourceY = connectsDownward
+	        ? sourceTop + sourceHeight - ${EDGE_VERTICAL_INSET}
+	        : sourceTop + ${EDGE_VERTICAL_INSET};
+	      const targetY = connectsDownward
+	        ? targetTop + ${EDGE_VERTICAL_INSET}
+	        : targetTop + targetHeight - ${EDGE_VERTICAL_INSET};
 	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
@@ -398,14 +409,6 @@ export function renderRevisionGraphScriptLayout(): string {
 
     function getNodeCenterX(hash) {
       return getNodeLeft(hash) + getNodeWidth(hash) / 2;
-    }
-
-    function getNodeSourceY(hash) {
-      return getNodeTop(hash) + getNodeHeight(hash) - ${EDGE_VERTICAL_INSET};
-    }
-
-    function getNodeTargetY(hash) {
-      return getNodeTop(hash) + ${EDGE_VERTICAL_INSET};
     }
 
     function getNodeLeft(hash) {

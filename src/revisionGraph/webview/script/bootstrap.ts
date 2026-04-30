@@ -828,21 +828,34 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function renderEdgeMarkup(edge, layoutByHash) {
-      const sourceNode = layoutByHash.get(edge.from);
-      const targetNode = layoutByHash.get(edge.to);
-      if (!sourceNode || !targetNode) {
+      const childNode = layoutByHash.get(edge.from);
+      const parentNode = layoutByHash.get(edge.to);
+      if (!childNode || !parentNode) {
         return '';
       }
 
-      const path = describeEdgePath(
-        sourceNode.defaultLeft + sourceNode.width / 2,
-        sourceNode.defaultTop + sourceNode.height - ${EDGE_VERTICAL_INSET},
-        targetNode.defaultLeft + targetNode.width / 2,
-        targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
-      );
+      const anchors = getEdgeAnchorPoints(parentNode, childNode);
+      const path = describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
 
 	      return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
 	    }
+
+    function getEdgeAnchorPoints(sourceNode, targetNode) {
+      const sourceCenterY = sourceNode.defaultTop + sourceNode.height / 2;
+      const targetCenterY = targetNode.defaultTop + targetNode.height / 2;
+      const connectsDownward = sourceCenterY <= targetCenterY;
+
+      return {
+        sourceX: sourceNode.defaultLeft + sourceNode.width / 2,
+        sourceY: connectsDownward
+          ? sourceNode.defaultTop + sourceNode.height - ${EDGE_VERTICAL_INSET}
+          : sourceNode.defaultTop + ${EDGE_VERTICAL_INSET},
+        targetX: targetNode.defaultLeft + targetNode.width / 2,
+        targetY: connectsDownward
+          ? targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
+          : targetNode.defaultTop + targetNode.height - ${EDGE_VERTICAL_INSET}
+      };
+    }
 
     function getNodeClass(node) {
       if (node.refs.length === 0) {
@@ -883,12 +896,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
 	    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
-	      if (Math.abs(sourceX - targetX) < 12 || Math.abs(sourceY - targetY) < 24) {
+	      const deltaX = Math.abs(sourceX - targetX);
+	      const deltaY = Math.abs(sourceY - targetY);
+	      if (deltaX < 12 || deltaY < 24) {
 	        return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
 	      }
 
 	      const direction = targetY >= sourceY ? 1 : -1;
-	      const approachLength = Math.min(Math.max(Math.abs(targetY - sourceY) * 0.25, 28), 96);
+	      const approachLength = Math.min(Math.max(deltaY * 0.38, 36), 128);
 	      const bendY = targetY - direction * approachLength;
 	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + bendY + ' L ' + targetX + ' ' + targetY;
 	    }
