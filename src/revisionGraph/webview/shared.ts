@@ -109,50 +109,65 @@ export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGr
 
 function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, number> {
   const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
-  const crossingEdgesByGap = new Map<number, number>();
-  const lowerTargetsByUpperNode = new Map<string, Set<string>>();
+  const fanOutEdgesByGap = new Map<number, number>();
+  const fanOutTargetsBySourceNode = new Map<string, Set<string>>();
+  const crossedGapsBySourceNode = new Map<string, number[]>();
 
   for (const edge of scene.edges) {
-    const fromRow = rowByHash.get(edge.from);
-    const toRow = rowByHash.get(edge.to);
-    if (fromRow === undefined || toRow === undefined || fromRow === toRow) {
+    const sourceHash = edge.to;
+    const targetHash = edge.from;
+    const sourceRow = rowByHash.get(sourceHash);
+    const targetRow = rowByHash.get(targetHash);
+    if (sourceRow === undefined || targetRow === undefined || sourceRow === targetRow) {
       continue;
     }
 
-    const upperRow = Math.min(fromRow, toRow);
-    const lowerRow = Math.max(fromRow, toRow);
-    const lowerHash = fromRow < toRow ? edge.to : edge.from;
-    const upperHash = fromRow < toRow ? edge.from : edge.to;
-    const upperNodeKey = `${upperRow}:${upperHash}`;
+    const upperRow = Math.min(sourceRow, targetRow);
+    const lowerRow = Math.max(sourceRow, targetRow);
+    const sourceNodeKey = `${sourceRow}:${sourceHash}`;
 
+    if (!fanOutTargetsBySourceNode.has(sourceNodeKey)) {
+      fanOutTargetsBySourceNode.set(sourceNodeKey, new Set());
+    }
+    fanOutTargetsBySourceNode.get(sourceNodeKey)?.add(targetHash);
+
+    if (!crossedGapsBySourceNode.has(sourceNodeKey)) {
+      crossedGapsBySourceNode.set(sourceNodeKey, []);
+    }
+    const crossedGaps = crossedGapsBySourceNode.get(sourceNodeKey);
     for (let row = upperRow; row < lowerRow; row += 1) {
-      crossingEdgesByGap.set(row, (crossingEdgesByGap.get(row) ?? 0) + 1);
+      crossedGaps?.push(row);
     }
-
-    if (!lowerTargetsByUpperNode.has(upperNodeKey)) {
-      lowerTargetsByUpperNode.set(upperNodeKey, new Set());
-    }
-    lowerTargetsByUpperNode.get(upperNodeKey)?.add(lowerHash);
   }
 
-  const maxExtraDescendantsByUpperRow = new Map<number, number>();
-  for (const [key, targets] of lowerTargetsByUpperNode.entries()) {
+  const maxExtraDescendantsBySourceGap = new Map<number, number>();
+  for (const [key, targets] of fanOutTargetsBySourceNode.entries()) {
     const row = Number(key.slice(0, key.indexOf(':')));
-    if (!Number.isFinite(row)) {
+    const crossedGaps = crossedGapsBySourceNode.get(key) ?? [];
+    if (!Number.isFinite(row) || targets.size <= 1 || crossedGaps.length === 0) {
       continue;
     }
-    maxExtraDescendantsByUpperRow.set(
-      row,
-      Math.max(maxExtraDescendantsByUpperRow.get(row) ?? 0, targets.size - 1)
-    );
+
+    const sourceAdjacentGap = row <= Math.min(...crossedGaps) ? row : row - 1;
+    if (sourceAdjacentGap >= 0 && sourceAdjacentGap < scene.rowCount - 1) {
+      maxExtraDescendantsBySourceGap.set(
+        sourceAdjacentGap,
+        Math.max(maxExtraDescendantsBySourceGap.get(sourceAdjacentGap) ?? 0, targets.size - 1)
+      );
+    }
+
+    const crossedGapSet = new Set(crossedGaps);
+    for (const crossedGap of crossedGapSet) {
+      fanOutEdgesByGap.set(crossedGap, (fanOutEdgesByGap.get(crossedGap) ?? 0) + targets.size);
+    }
   }
 
   const gapByRow = new Map<number, number>();
   for (let row = 0; row < scene.rowCount - 1; row += 1) {
     const extraGap = Math.min(
       ROW_DYNAMIC_VERTICAL_GAP_MAX,
-      Math.max(0, (crossingEdgesByGap.get(row) ?? 0) - 1) * ROW_CORRIDOR_EDGE_EXTRA_GAP +
-      (maxExtraDescendantsByUpperRow.get(row) ?? 0) * ROW_FAN_OUT_EXTRA_GAP
+      Math.max(0, (fanOutEdgesByGap.get(row) ?? 0) - 1) * ROW_CORRIDOR_EDGE_EXTRA_GAP +
+      (maxExtraDescendantsBySourceGap.get(row) ?? 0) * ROW_FAN_OUT_EXTRA_GAP
     );
     gapByRow.set(row, ROW_VERTICAL_GAP + extraGap);
   }

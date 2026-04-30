@@ -91,15 +91,15 @@ test('adds vertical clearance after rows with multiple descendants', () => {
   ];
   const linearScene: RevisionGraphScene = {
     nodes,
-    edges: [{ from: 'parent', to: 'left' }],
+    edges: [{ from: 'left', to: 'parent' }],
     laneCount: 2,
     rowCount: 2
   };
   const multipleIndependentEdgesScene: RevisionGraphScene = {
     nodes,
     edges: [
-      { from: 'parent', to: 'left' },
-      { from: 'sibling', to: 'right' }
+      { from: 'left', to: 'parent' },
+      { from: 'right', to: 'sibling' }
     ],
     laneCount: 2,
     rowCount: 2
@@ -107,8 +107,8 @@ test('adds vertical clearance after rows with multiple descendants', () => {
   const fanOutScene: RevisionGraphScene = {
     nodes,
     edges: [
-      { from: 'parent', to: 'left' },
-      { from: 'parent', to: 'right' }
+      { from: 'left', to: 'parent' },
+      { from: 'right', to: 'parent' }
     ],
     laneCount: 2,
     rowCount: 2
@@ -118,8 +118,63 @@ test('adds vertical clearance after rows with multiple descendants', () => {
   const independentEdgesChildTop = buildNodeLayouts(multipleIndependentEdgesScene).find((node) => node.hash === 'left')?.defaultTop ?? 0;
   const fanOutChildTop = buildNodeLayouts(fanOutScene).find((node) => node.hash === 'left')?.defaultTop ?? 0;
 
-  assert.ok(independentEdgesChildTop > linearChildTop);
+  assert.equal(independentEdgesChildTop, linearChildTop);
   assert.ok(fanOutChildTop > independentEdgesChildTop);
+});
+
+test('adds vertical clearance when a lower parent fans out to upper descendants', () => {
+  const nodes: RevisionGraphScene['nodes'] = [
+    {
+      hash: 'left',
+      refs: [{ name: 'feature/left', kind: 'branch' }],
+      author: 'Ada',
+      date: '2026-04-30',
+      subject: 'Left',
+      x: 0,
+      row: 0,
+      lane: 0
+    },
+    {
+      hash: 'right',
+      refs: [{ name: 'feature/right', kind: 'branch' }],
+      author: 'Ada',
+      date: '2026-04-30',
+      subject: 'Right',
+      x: 180,
+      row: 0,
+      lane: 1
+    },
+    {
+      hash: 'parent',
+      refs: [{ name: 'main', kind: 'head' }],
+      author: 'Ada',
+      date: '2026-04-30',
+      subject: 'Parent',
+      x: 90,
+      row: 2,
+      lane: 0
+    }
+  ];
+  const linearScene: RevisionGraphScene = {
+    nodes,
+    edges: [{ from: 'left', to: 'parent' }],
+    laneCount: 2,
+    rowCount: 3
+  };
+  const fanOutScene: RevisionGraphScene = {
+    nodes,
+    edges: [
+      { from: 'left', to: 'parent' },
+      { from: 'right', to: 'parent' }
+    ],
+    laneCount: 2,
+    rowCount: 3
+  };
+
+  const linearParentTop = buildNodeLayouts(linearScene).find((node) => node.hash === 'parent')?.defaultTop ?? 0;
+  const fanOutParentTop = buildNodeLayouts(fanOutScene).find((node) => node.hash === 'parent')?.defaultTop ?? 0;
+
+  assert.ok(fanOutParentTop > linearParentTop);
 });
 
 test('creates CSP nonces with cryptographic base64url-friendly values', () => {
