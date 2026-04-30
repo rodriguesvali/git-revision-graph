@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.26
+
+### Highlights
+
+- Improved revision graph readability with single-bend edge routing that approaches cards diagonally and closes connections vertically near the target.
+- Added dynamic vertical spacing for real fan-out areas, including upward fan-outs, while keeping near-linear history chains compact.
+- Added same-row card overlap protection for initial graph layout and client-side `Reorganize`.
+
+### Workflow & UX
+
+- Empty graph viewport space now uses the normal cursor instead of the open-hand drag cursor.
+- Existing saved node offsets are invalidated when corrected card positions or widths change, preventing stale persisted layouts from reintroducing card overlaps.
+
+### Quality
+
+- Added regression coverage for single-bend edge paths, parent-to-descendant visual edge direction, fan-out vertical clearance, same-row overlap prevention, reorganize spacing, layout-key invalidation, and viewport cursor behavior.
+
 ## 0.0.25
 
 ### Stability
