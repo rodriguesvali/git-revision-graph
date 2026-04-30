@@ -274,6 +274,14 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /class="' \+ nodeClass \+ '"/);
 });
 
+test('uses a default cursor on the empty graph viewport', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /\.viewport \{[\s\S]*?cursor: default;/);
+  assert.match(html, /\.viewport\.dragging \{[\s\S]*?cursor: grabbing;/);
+  assert.match(html, /\.node-grip \{[\s\S]*?cursor: grab;/);
+});
+
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
   const html = renderRevisionGraphShellHtml();
 

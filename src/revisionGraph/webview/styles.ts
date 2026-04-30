@@ -115,7 +115,7 @@ export function renderRevisionGraphStyles(): string {
         ${VIEWPORT_PADDING_RIGHT}px
         ${VIEWPORT_PADDING_BOTTOM}px
         ${VIEWPORT_PADDING_LEFT}px;
-      cursor: grab;
+      cursor: default;
     }
     .viewport.dragging {
       cursor: grabbing;
