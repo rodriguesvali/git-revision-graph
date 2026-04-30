@@ -288,11 +288,12 @@ test('uses principal path highlight for single selection and compare-only highli
   assert.match(html, /element\.classList\.toggle\('muted', !!anchorHash && !isRelated\);/);
 });
 
-test('renders straighter edges and compact structural node styling in the shell runtime', () => {
+test('renders single-bend edges and compact structural node styling in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /stroke-width="1\.8"/);
-  assert.match(html, /return 'M ' \+ sourceX \+ ' ' \+ sourceY \+ ' L ' \+ targetX \+ ' ' \+ targetY;/);
+  assert.match(html, /const bendY = targetY - direction \* approachLength;/);
+  assert.match(html, /return describeEdgePath\(sourceX, sourceY, targetX, targetY\);/);
   assert.match(html, /min-width: 78px;/);
 });
 

@@ -19,8 +19,10 @@ test('formats structural node summaries as compact short hashes', () => {
   assert.equal(formatNodeSummary(node), '12345678');
 });
 
-test('renders straight edge paths for a more mechanical graph look', () => {
-  assert.equal(describeEdgePath(10, 20, 30, 40), 'M 10 20 L 30 40');
+test('renders single-bend edge paths for a more readable graph look', () => {
+  assert.equal(describeEdgePath(10, 20, 30, 60), 'M 10 20 L 30 32 L 30 60');
+  assert.equal(describeEdgePath(30, 60, 10, 20), 'M 30 60 L 10 48 L 10 20');
+  assert.equal(describeEdgePath(10, 20, 16, 60), 'M 10 20 L 16 60');
 });
 
 test('creates CSP nonces with cryptographic base64url-friendly values', () => {

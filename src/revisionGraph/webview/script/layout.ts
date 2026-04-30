@@ -281,7 +281,7 @@ export function renderRevisionGraphScriptLayout(): string {
 	      const sourceY = getNodeSourceY(fromHash);
 	      const targetX = getNodeCenterX(toHash);
 	      const targetY = getNodeTargetY(toHash);
-	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
+	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
     function syncCanvasSize() {

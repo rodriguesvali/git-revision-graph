@@ -200,5 +200,12 @@ export function createReferenceId(hash: string, kind: string, name: string): str
 }
 
 export function describeEdgePath(sourceX: number, sourceY: number, targetX: number, targetY: number): string {
-  return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+  if (Math.abs(sourceX - targetX) < 12 || Math.abs(sourceY - targetY) < 24) {
+    return `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+  }
+
+  const direction = targetY >= sourceY ? 1 : -1;
+  const approachLength = Math.min(Math.max(Math.abs(targetY - sourceY) * 0.25, 28), 96);
+  const bendY = targetY - direction * approachLength;
+  return `M ${sourceX} ${sourceY} L ${targetX} ${bendY} L ${targetX} ${targetY}`;
 }

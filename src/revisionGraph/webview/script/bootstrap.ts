@@ -883,7 +883,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
 	    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
-	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
+	      if (Math.abs(sourceX - targetX) < 12 || Math.abs(sourceY - targetY) < 24) {
+	        return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + targetY;
+	      }
+
+	      const direction = targetY >= sourceY ? 1 : -1;
+	      const approachLength = Math.min(Math.max(Math.abs(targetY - sourceY) * 0.25, 28), 96);
+	      const bendY = targetY - direction * approachLength;
+	      return 'M ' + sourceX + ' ' + sourceY + ' L ' + targetX + ' ' + bendY + ' L ' + targetX + ' ' + targetY;
 	    }
 
     function escapeHtml(value) {
