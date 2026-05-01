@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createChange, createRepository } from './fakes';
-import { buildShowLogCommitLabel, getShowLogSourceLabel, buildShowLogWebviewState, createHiddenShowLogState } from '../src/showLogShared';
+import {
+  addShowLogCachedChanges,
+  buildShowLogCommitLabel,
+  getShowLogSourceLabel,
+  buildShowLogWebviewState,
+  createHiddenShowLogState
+} from '../src/showLogShared';
 
 test('builds show log summaries for target and range sources', () => {
   assert.equal(
@@ -148,4 +154,31 @@ test('keeps a hidden default state before any show log request', () => {
   assert.equal(state.commits.length, 0);
   assert.equal(state.summaryCount, '');
   assert.match(state.emptyMessage ?? '', /Show Log/);
+});
+
+test('bounds show log cached changes and refreshes recently used commits', () => {
+  const changeA = createChange({ uriPath: '/workspace/repo/a.ts' });
+  const changeB = createChange({ uriPath: '/workspace/repo/b.ts' });
+  const changeC = createChange({ uriPath: '/workspace/repo/c.ts' });
+  const changeD = createChange({ uriPath: '/workspace/repo/d.ts' });
+
+  const initial = addShowLogCachedChanges(
+    addShowLogCachedChanges(
+      addShowLogCachedChanges({}, 'a', [changeA], 3),
+      'b',
+      [changeB],
+      3
+    ),
+    'c',
+    [changeC],
+    3
+  );
+  const refreshed = addShowLogCachedChanges(initial, 'a', [changeA], 3);
+  const bounded = addShowLogCachedChanges(refreshed, 'd', [changeD], 3);
+
+  assert.deepEqual(Object.keys(initial), ['a', 'b', 'c']);
+  assert.deepEqual(Object.keys(refreshed), ['b', 'c', 'a']);
+  assert.deepEqual(Object.keys(bounded), ['c', 'a', 'd']);
+  assert.equal(bounded.a?.[0], changeA);
+  assert.equal(bounded.b, undefined);
 });

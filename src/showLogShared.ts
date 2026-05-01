@@ -3,6 +3,8 @@ import type { Change, Repository } from './git';
 import type { RevisionLogEntry, RevisionLogSource } from './revisionGraphTypes';
 import { buildShowLogLaneRows, type ShowLogLaneRow } from './showLog/showLogLanes';
 
+export const SHOW_LOG_CACHED_CHANGES_MAX_COMMITS = 50;
+
 export interface ShowLogState {
   readonly kind: 'hidden' | 'visible';
   readonly repository: Repository | undefined;
@@ -70,6 +72,27 @@ export function createHiddenShowLogState(): ShowLogState {
     expandedCommitError: undefined,
     cachedChanges: {}
   };
+}
+
+export function addShowLogCachedChanges(
+  cache: Readonly<Record<string, readonly Change[]>>,
+  commitHash: string,
+  changes: readonly Change[],
+  maxCommits = SHOW_LOG_CACHED_CHANGES_MAX_COMMITS
+): Readonly<Record<string, readonly Change[]>> {
+  if (maxCommits <= 0) {
+    return {};
+  }
+
+  const entries = Object.entries(cache)
+    .filter(([hash]) => hash !== commitHash);
+  entries.push([commitHash, [...changes]]);
+
+  while (entries.length > maxCommits) {
+    entries.shift();
+  }
+
+  return Object.fromEntries(entries);
 }
 
 export function getShowLogSourceLabel(source: RevisionLogSource | undefined): string {

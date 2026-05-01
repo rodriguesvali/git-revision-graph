@@ -69,11 +69,14 @@ const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
+interface SnapshotCacheEntry {
+  readonly createdAt: number;
+  snapshot?: RevisionGraphSnapshot;
+  snapshotPromise: Promise<RevisionGraphSnapshot>;
+}
+
 export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLogBackend {
-  private readonly snapshotCache = new Map<string, {
-    readonly createdAt: number;
-    readonly snapshotPromise: Promise<RevisionGraphSnapshot>;
-  }>();
+  private readonly snapshotCache = new Map<string, SnapshotCacheEntry>();
 
   async loadGraphSnapshot(
     repository: Repository,
@@ -82,30 +85,55 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     signal?: AbortSignal,
     trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot> {
-    if (signal) {
-      return this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace);
-    }
-
-    pruneExpiredSnapshotCacheEntries(this.snapshotCache, Date.now());
+    const cacheStartedAt = nowMs();
+    const prunedEntries = pruneExpiredSnapshotCacheEntries(this.snapshotCache, Date.now());
     const cacheKey = buildSnapshotCacheKey(repository, options, limitPolicy);
     const now = Date.now();
     const cached = this.snapshotCache.get(cacheKey);
     if (cached && (now - cached.createdAt) <= SNAPSHOT_CACHE_TTL_MS) {
-      return cached.snapshotPromise;
+      if (cached.snapshot) {
+        traceSnapshotCache(trace, cacheStartedAt, 'hit', signal, this.snapshotCache.size, prunedEntries, 'completed');
+        return cached.snapshot;
+      }
+
+      if (signal) {
+        traceSnapshotCache(trace, cacheStartedAt, 'bypass', signal, this.snapshotCache.size, prunedEntries, 'pending-cancelable');
+      } else {
+        traceSnapshotCache(trace, cacheStartedAt, 'hit', signal, this.snapshotCache.size, prunedEntries, 'pending');
+        return cached.snapshotPromise;
+      }
+    } else {
+      traceSnapshotCache(trace, cacheStartedAt, 'miss', signal, this.snapshotCache.size, prunedEntries);
     }
 
-    const snapshotPromise = this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace)
+    if (signal) {
+      const snapshot = await this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace);
+      this.snapshotCache.set(cacheKey, {
+        createdAt: Date.now(),
+        snapshot,
+        snapshotPromise: Promise.resolve(snapshot)
+      });
+      return snapshot;
+    }
+
+    const cacheEntry: SnapshotCacheEntry = {
+      createdAt: now,
+      snapshotPromise: this.loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace)
+    };
+    cacheEntry.snapshotPromise = cacheEntry.snapshotPromise
+      .then((snapshot) => {
+        cacheEntry.snapshot = snapshot;
+        return snapshot;
+      })
       .catch((error) => {
-        this.snapshotCache.delete(cacheKey);
+        if (this.snapshotCache.get(cacheKey) === cacheEntry) {
+          this.snapshotCache.delete(cacheKey);
+        }
         throw error;
       });
+    this.snapshotCache.set(cacheKey, cacheEntry);
 
-    this.snapshotCache.set(cacheKey, {
-      createdAt: now,
-      snapshotPromise
-    });
-
-    return snapshotPromise;
+    return cacheEntry.snapshotPromise;
   }
 
   async loadRevisionLog(
@@ -362,12 +390,38 @@ async function loadSnapshot(
 function pruneExpiredSnapshotCacheEntries<T extends { readonly createdAt: number }>(
   cache: Map<string, T>,
   now: number
-): void {
+): number {
+  let pruned = 0;
   for (const [key, entry] of cache.entries()) {
     if ((now - entry.createdAt) > SNAPSHOT_CACHE_TTL_MS) {
       cache.delete(key);
+      pruned += 1;
     }
   }
+
+  return pruned;
+}
+
+function traceSnapshotCache(
+  trace: RevisionGraphLoadTraceSink | undefined,
+  startedAt: number,
+  result: 'hit' | 'miss' | 'bypass',
+  signal: AbortSignal | undefined,
+  entries: number,
+  pruned: number,
+  reason?: string
+): void {
+  const details = [
+    `result=${result}`,
+    `signal=${signal ? 'true' : 'false'}`,
+    `entries=${entries}`,
+    `pruned=${pruned}`
+  ];
+  if (reason) {
+    details.push(`reason=${reason}`);
+  }
+
+  traceDuration(trace, 'snapshot.cache', startedAt, details.join('; '));
 }
 
 function throwIfAborted(signal: AbortSignal | undefined): void {

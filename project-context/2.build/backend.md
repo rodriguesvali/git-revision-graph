@@ -15,6 +15,11 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Added Git option terminators before direct revision arguments where command syntax supports them.
   - Added repository containment checks before compare restore writes/deletes worktree paths.
   - Switched ref-backed content loading to the shared bounded Git executor.
+- 2026-05-01 `0.0.27` cache stabilization:
+  - Added snapshot cache trace events for hits, misses, and cancelable pending-entry bypasses.
+  - Reused completed graph snapshot cache entries for cancelable refreshes without sharing cancelable in-flight Git work.
+  - Skipped redundant persisted layout-cache workspace-state writes when the serialized payload is unchanged.
+  - Bounded Show Log expanded-change caching with a small LRU-style commit budget.
 
 ## Verification
 - Run `npm run build`.
@@ -24,7 +29,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
 Latest automated verification for this backend slice:
 
 - `npm run build` passed.
-- `npm test` passed with 221 tests.
+- `npm test` passed with 225 tests.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

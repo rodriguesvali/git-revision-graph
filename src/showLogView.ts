@@ -9,6 +9,7 @@ import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import {
+  addShowLogCachedChanges,
   buildShowLogWebviewState,
   createHiddenShowLogState,
   ShowLogState
@@ -190,7 +191,12 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     };
     this.postState();
 
-    if (this.state.cachedChanges[commitHash]) {
+    const cachedChanges = this.state.cachedChanges[commitHash];
+    if (cachedChanges) {
+      this.state = {
+        ...this.state,
+        cachedChanges: addShowLogCachedChanges(this.state.cachedChanges, commitHash, cachedChanges)
+      };
       return;
     }
 
@@ -221,10 +227,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       this.state = {
         ...this.state,
         loadingCommitHash: undefined,
-        cachedChanges: {
-          ...this.state.cachedChanges,
-          [commitHash]: [...changes]
-        }
+        cachedChanges: addShowLogCachedChanges(this.state.cachedChanges, commitHash, changes)
       };
       this.postState();
     } catch (error) {

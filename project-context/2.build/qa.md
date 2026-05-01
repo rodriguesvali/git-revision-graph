@@ -20,12 +20,17 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm test` passed with 223 tests.
   - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
   - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`.
+- 2026-05-01 `0.0.27` cache stabilization:
+  - `npm run build` passed.
+  - `npm test` passed with 225 tests.
+  - Added regression coverage for completed snapshot cache reuse in cancelable refreshes and bounded Show Log cached changes.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
 
 - Manual Extension Development Host validation is still pending for graph loading, show log, unified diff, compare results, restore, and fetch-with-tags flows.
 - Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
+- Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification
