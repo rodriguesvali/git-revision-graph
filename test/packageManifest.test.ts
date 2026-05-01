@@ -118,3 +118,25 @@ test('package manifest contributes opt-in graph loading diagnostics', () => {
   assert.equal(traceLoading?.type, 'boolean');
   assert.equal(traceLoading?.default, false);
 });
+
+test('package manifest contributes graph git command timeout configuration', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly configuration?: {
+        readonly properties?: Record<string, {
+          readonly type?: string;
+          readonly default?: unknown;
+          readonly minimum?: unknown;
+          readonly maximum?: unknown;
+        }>;
+      };
+    };
+  };
+
+  const timeout = manifest.contributes.configuration?.properties?.['gitRevisionGraph.graphCommandTimeoutMs'];
+
+  assert.equal(timeout?.type, 'number');
+  assert.equal(timeout?.default, 60000);
+  assert.equal(timeout?.minimum, 5000);
+  assert.equal(timeout?.maximum, 300000);
+});

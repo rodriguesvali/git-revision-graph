@@ -84,6 +84,8 @@ const REMOTE_TAG_STATE_MAX_OUTPUT_BYTES = 1024 * 1024;
 const REMOTE_TAG_STATE_TIMEOUT_MS = 3000;
 const FETCH_WITH_TAGS_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
 const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
+const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
+const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
 
 async function isTagPublishedToAnyRemote(repository: Repository, tagName: string): Promise<boolean> {
   const remoteNames = await getRepositoryRemoteNames(repository);
@@ -126,6 +128,17 @@ function parseRemoteTagNames(stdout: string): Set<string> {
   }
 
   return names;
+}
+
+function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number): number {
+  if (typeof configuredValue !== 'number' || !Number.isFinite(configuredValue)) {
+    return fallback;
+  }
+
+  return Math.min(
+    MAX_GRAPH_COMMAND_TIMEOUT_MS,
+    Math.max(MIN_GRAPH_COMMAND_TIMEOUT_MS, Math.trunc(configuredValue))
+  );
 }
 
 export class RevisionGraphController implements vscode.Disposable {
@@ -587,7 +600,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.projectionOptions,
       this.autoArrangeOnNextRender,
       this.backend,
-      this.limitPolicy,
+      this.resolveLimitPolicy(),
       signal,
       trace
     );
@@ -602,6 +615,20 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     return bundle.state;
+  }
+
+  private resolveLimitPolicy(): RevisionGraphLimitPolicy {
+    const configuredTimeoutMs = vscode.workspace
+      .getConfiguration('gitRevisionGraph')
+      .get<unknown>('graphCommandTimeoutMs', this.limitPolicy.graphCommandTimeoutMs);
+
+    return {
+      ...this.limitPolicy,
+      graphCommandTimeoutMs: resolveGraphCommandTimeoutMs(
+        configuredTimeoutMs,
+        this.limitPolicy.graphCommandTimeoutMs
+      )
+    };
   }
 
   private async runFetchCurrentRepository(): Promise<void> {

@@ -18,7 +18,8 @@ import { createBranch, createChange, createHead, createRef, createRepository } f
 const LIMIT_POLICY: RevisionGraphLimitPolicy = {
   initialLimit: 6000,
   steppedLimits: [6000, 12000],
-  minVisibleNodes: 24
+  minVisibleNodes: 24,
+  graphCommandTimeoutMs: 60000
 };
 
 test('builds a serializable ready state for the persistent webview shell', async () => {

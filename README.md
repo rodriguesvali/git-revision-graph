@@ -85,6 +85,13 @@ At a high level:
 
 This approach keeps the extension lightweight for reference workflows. The revision graph view uses targeted `git log`, `git diff`, and `git show` calls only where the public `vscode.git` API does not expose enough commit graph or textual history data.
 
+## Settings
+
+- `gitRevisionGraph.traceLoading`
+  - Enables graph loading diagnostics in the `Git Revision Graph` output channel.
+- `gitRevisionGraph.graphCommandTimeoutMs`
+  - Controls the timeout for the revision graph `git log` command. The default is `60000` ms, with supported values from `5000` to `300000` ms.
+
 ## Project Structure
 
 ```text

@@ -60,7 +60,8 @@ test('reuses completed graph snapshot cache entries for cancelable refreshes', a
       const limitPolicy: RevisionGraphLimitPolicy = {
         initialLimit: 50,
         steppedLimits: [],
-        minVisibleNodes: 1
+        minVisibleNodes: 1,
+        graphCommandTimeoutMs: 60000
       };
       const events: RevisionGraphLoadTraceEvent[] = [];
 
@@ -90,6 +91,44 @@ test('reuses completed graph snapshot cache entries for cancelable refreshes', a
         && event.detail.includes('signal=true')
         && event.detail.includes('reason=completed')
       ));
+    }
+  );
+});
+
+test('uses the graph limit policy timeout for snapshot git log commands', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      'sleep 1',
+      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
+    ].join('\n'),
+    async (repositoryPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({
+        root: repositoryPath,
+        head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+        refs: [
+          createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+        ]
+      });
+      const limitPolicy: RevisionGraphLimitPolicy = {
+        initialLimit: 50,
+        steppedLimits: [],
+        minVisibleNodes: 1,
+        graphCommandTimeoutMs: 25
+      };
+
+      await assert.rejects(
+        backend.loadGraphSnapshot(
+          repository,
+          createDefaultRevisionGraphProjectionOptions(),
+          limitPolicy
+        ),
+        (error: unknown) => error instanceof Error
+          && error.name === 'TimeoutError'
+          && error.message.includes('25 ms')
+      );
     }
   );
 });

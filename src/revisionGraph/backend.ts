@@ -22,6 +22,7 @@ export interface RevisionGraphLimitPolicy {
   readonly initialLimit: number;
   readonly steppedLimits: readonly number[];
   readonly minVisibleNodes: number;
+  readonly graphCommandTimeoutMs: number;
 }
 
 export interface RevisionGraphBackend {
@@ -63,7 +64,7 @@ export interface ShowLogBackend {
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
 const GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
-const GRAPH_GIT_COMMAND_TIMEOUT_MS = 15000;
+const DEFAULT_GIT_COMMAND_TIMEOUT_MS = 15000;
 const REVISION_LOG_MAX_OUTPUT_BYTES = 12 * 1024 * 1024;
 const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
@@ -152,7 +153,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches),
       {
         maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
-        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
     const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
@@ -177,7 +178,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       ['diff', '--no-color', '--end-of-options', left, right],
       {
         maxOutputBytes: UNIFIED_DIFF_MAX_OUTPUT_BYTES,
-        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
   }
@@ -188,7 +189,7 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       ['show', '--stat', '--patch', '--format=fuller', '--no-color', '--end-of-options', commitHash],
       {
         maxOutputBytes: COMMIT_DETAILS_MAX_OUTPUT_BYTES,
-        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
   }
@@ -261,7 +262,14 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     let selectedSnapshot: RevisionGraphSnapshot | undefined;
     for (const limit of limits) {
       throwIfAborted(signal);
-      const snapshot = await loadSnapshot(repository, limit, options, signal, trace);
+      const snapshot = await loadSnapshot(
+        repository,
+        limit,
+        options,
+        limitPolicy.graphCommandTimeoutMs,
+        signal,
+        trace
+      );
       selectedSnapshot = snapshot;
 
       if (snapshot.graph.orderedCommits.length < limit) {
@@ -274,7 +282,14 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     }
 
     if (!selectedSnapshot) {
-      return loadSnapshot(repository, limitPolicy.initialLimit, options, signal, trace);
+      return loadSnapshot(
+        repository,
+        limitPolicy.initialLimit,
+        options,
+        limitPolicy.graphCommandTimeoutMs,
+        signal,
+        trace
+      );
     }
 
     return selectedSnapshot;
@@ -337,7 +352,8 @@ function buildSnapshotCacheKey(
   const policyKey = [
     limitPolicy.initialLimit,
     limitPolicy.steppedLimits.join(','),
-    limitPolicy.minVisibleNodes
+    limitPolicy.minVisibleNodes,
+    limitPolicy.graphCommandTimeoutMs
   ].join(':');
 
   return [
@@ -353,6 +369,7 @@ async function loadSnapshot(
   repository: Repository,
   limit: number,
   options: RevisionGraphProjectionOptions,
+  graphCommandTimeoutMs: number,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphSnapshot> {
@@ -368,10 +385,10 @@ async function loadSnapshot(
     {
       signal,
       maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES,
-      timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+      timeoutMs: graphCommandTimeoutMs
     }
   )
-    .finally(() => traceDuration(trace, 'snapshot.gitLog', gitLogStartedAt, `limit=${limit}`));
+    .finally(() => traceDuration(trace, 'snapshot.gitLog', gitLogStartedAt, `limit=${limit}; timeoutMs=${graphCommandTimeoutMs}`));
   const [refs, stdout] = await Promise.all([refsPromise, stdoutPromise]);
   throwIfAborted(signal);
   const parseStartedAt = nowMs();

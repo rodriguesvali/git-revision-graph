@@ -156,6 +156,13 @@
           "type": "boolean",
           "default": false,
           "description": "Write revision graph load timing diagnostics to the Git Revision Graph output channel."
+        },
+        "gitRevisionGraph.graphCommandTimeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 5000,
+          "maximum": 300000,
+          "description": "Maximum time in milliseconds allowed for the revision graph Git log command."
         }
       }
     }
