@@ -52,6 +52,7 @@ Keep the extension architecture intact:
 - Feature work should be scoped by release impact and tracked in `project-context/2.build/features/`.
 - Release deployment remains human-approved.
 - Built-in `vscode.git` remains preferred for repository state and mutations; Git CLI remains acceptable for graph/history data not exposed by the API.
+- The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -76,3 +77,6 @@ Keep the extension architecture intact:
 ## Open Questions
 - Which graph parity gaps should be prioritized after the current release baseline?
 - Should release validation include a fixed sample repository fixture for manual testing?
+- Should Git argument hardening normalize all known refs to full ref names before command execution?
+- Which Git CLI paths should receive hard timeouts versus output caps only?
+- Should stabilization validation include a fixture repository with option-like tag/ref names?

@@ -37,6 +37,15 @@ The extension is already published and feature-rich enough that new work can aff
 - Verification commands are recorded for each meaningful change.
 - Release work cannot proceed to publish or version bump without explicit human approval.
 
+## Next Release Define Draft
+- Current package baseline on 2026-05-01: `0.0.26`.
+- Current release readiness state: `0.0.26` source readiness, version bump, and changelog are complete; VSIX packaging and Marketplace publishing remain incomplete and require explicit human approval.
+- Candidate next release: `0.0.27`.
+- Approved direction from user: stabilization.
+- Recommended anchor: harden existing Git CLI, webview message, compare restore, and dependency audit surfaces without adding broad product features.
+- Define artifact: `docs/release-0.0.27-prioritization.md`.
+- Candidate feature artifact: `project-context/2.build/features/0.0.27-stabilization-hardening.md`.
+
 ## Success Metrics
 - Fewer regressions from manifest/command/view drift.
 - Clearer release readiness before package or Marketplace steps.
@@ -64,5 +73,6 @@ The extension is already published and feature-rich enough that new work can aff
 - Contributors will use AAMAD artifacts as living working notes, not as formal documents detached from implementation.
 
 ## Open Questions
-- What is the exact feature list for the next release?
+- What output limits and timeouts should be used for expensive Git CLI paths in `0.0.27`?
+- Should dev-tooling audit fixes be included if they require `@vscode/vsce` or lockfile updates?
 - What manual validation matrix should be required before each Marketplace publish?

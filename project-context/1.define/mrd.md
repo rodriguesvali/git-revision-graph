@@ -20,6 +20,7 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - Improve graph parity and discoverability without abandoning VS Code-native interactions.
 - Add carefully scoped feature releases around graph filtering, history depth, tag/ref actions, compare workflows, and safer branch operations.
 - Use published-extension release governance to reduce regressions in command wiring, manifest contributions, and Git workflow behavior.
+- For the next planned release after `0.0.26`, stabilization is the strongest candidate because recent feature growth increased the value of hardening Git command, webview, filesystem restore, and release-tooling surfaces before adding more workflow breadth.
 
 ## Risks
 - Feature growth can make the extension feel heavier than the current focused workflow.
@@ -40,5 +41,6 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - AAMAD should guide feature and release work without slowing small bug fixes.
 
 ## Open Questions
-- Which feature should anchor the next planned release after the current package baseline?
-- Should the next feature release be treated as patch or minor version work?
+- Which hardening items are mandatory for `0.0.27` versus acceptable follow-up work?
+- Should dev-tooling audit fixes be included in the release if production dependencies are already clean?
+- Should `0.0.27` remain a patch release if it contains no new product features?
