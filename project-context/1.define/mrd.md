@@ -21,6 +21,7 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - Add carefully scoped feature releases around graph filtering, history depth, tag/ref actions, compare workflows, and safer branch operations.
 - Use published-extension release governance to reduce regressions in command wiring, manifest contributions, and Git workflow behavior.
 - For the next planned release after `0.0.26`, stabilization is the strongest candidate because recent feature growth increased the value of hardening Git command, webview, filesystem restore, and release-tooling surfaces before adding more workflow breadth.
+- Treat cache optimization as a stabilization opportunity when it improves graph responsiveness without broadening the product surface or risking stale repository data.
 
 ## Risks
 - Feature growth can make the extension feel heavier than the current focused workflow.
@@ -44,3 +45,4 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - Which hardening items are mandatory for `0.0.27` versus acceptable follow-up work?
 - Should dev-tooling audit fixes be included in the release if production dependencies are already clean?
 - Should `0.0.27` remain a patch release if it contains no new product features?
+- Which cache optimizations provide enough user-visible responsiveness or reliability value to include in a patch stabilization release?

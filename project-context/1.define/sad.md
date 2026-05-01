@@ -17,6 +17,7 @@ Keep the extension architecture intact:
 - Extension host orchestration: activation, command registration, repository and provider wiring.
 - Git integration: public `vscode.git` API for repository state and mutations, targeted Git CLI for graph/history data.
 - Webview UI: revision graph rendering, interactions, filtering, context menus, compare/log surfaces.
+- Cache layers: short-lived graph snapshot cache, persisted bounded projected-layout cache, webview state for scene offsets, and Show Log expanded-change cache.
 - Tests: TypeScript build, Node test suite, focused unit/integration-style coverage.
 - AAMAD artifacts: Define, Build, Deliver, handoff, and feature-scoped notes.
 
@@ -53,11 +54,14 @@ Keep the extension architecture intact:
 - Release deployment remains human-approved.
 - Built-in `vscode.git` remains preferred for repository state and mutations; Git CLI remains acceptable for graph/history data not exposed by the API.
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
+- Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
+- Separating immutable commit DAG/history caching from mutable ref and HEAD overlay state is a larger architecture candidate and should remain follow-up unless explicitly approved.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
 - Webview state bugs can be hard to catch through automated tests alone.
 - Release packaging can ship stale README or contribution metadata if Deliver checks are skipped.
+- Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
 
 ## Verification Strategy
 - Required after meaningful changes: `npm run build`.
@@ -80,3 +84,5 @@ Keep the extension architecture intact:
 - Should Git argument hardening normalize all known refs to full ref names before command execution?
 - Which Git CLI paths should receive hard timeouts versus output caps only?
 - Should stabilization validation include a fixture repository with option-like tag/ref names?
+- Should graph snapshot caching be split into immutable DAG/history data and mutable ref/HEAD overlay data?
+- Which cache paths need manual validation with rapid refresh, repository switching, and interrupted graph loads?
