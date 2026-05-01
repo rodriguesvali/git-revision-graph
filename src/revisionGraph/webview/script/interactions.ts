@@ -1,10 +1,17 @@
 export function renderRevisionGraphScriptInteractions(): string {
   return `
-    function setZoom(zoom) {
+    function setZoom(zoom, options = {}) {
+      const shouldPreserveViewport = options.preserveViewport !== false;
+      const scenePlacementSnapshot = shouldPreserveViewport ? captureScenePlacementSnapshot() : null;
+      const viewportSnapshot = shouldPreserveViewport ? captureViewportSnapshot() : null;
       currentZoom = zoom;
       canvas.style.transform = 'scale(' + zoom + ')';
       syncCanvasSize();
       applyNodeLayout(false);
+      if (shouldPreserveViewport) {
+        restoreScenePlacementSnapshot(scenePlacementSnapshot);
+        restoreViewportSnapshot(viewportSnapshot);
+      }
       syncToolbarActions();
       syncMinimap();
     }

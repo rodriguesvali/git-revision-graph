@@ -17,7 +17,7 @@ Record command output summaries, not full logs, when verification is performed.
 
 - 2026-05-01 `0.0.27` stabilization hardening:
   - `npm run build` passed.
-  - `npm test` passed with 221 tests.
+  - `npm test` passed with 223 tests.
   - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
   - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`.
 
@@ -25,6 +25,7 @@ Record command output summaries, not full logs, when verification is performed.
 Record failures, skipped checks, and residual risks.
 
 - Manual Extension Development Host validation is still pending for graph loading, show log, unified diff, compare results, restore, and fetch-with-tags flows.
+- Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification

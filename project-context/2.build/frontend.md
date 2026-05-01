@@ -9,10 +9,17 @@ Use `README.md`, `docs/revision-graph-parity-plan.md`, feature artifacts in `pro
 ## Changes
 Record frontend changes here only when they affect shared webview behavior. Prefer feature-specific files under `project-context/2.build/features/` for individual feature notes.
 
+- 2026-05-01 `0.0.27` stabilization: toolbar zoom now preserves the current graph viewport instead of recentering the graph, fixing a pre-existing issue when zooming while scrolled below the top.
+
 ## Verification
 - Run `npm run build`.
 - Run `npm test` for graph state, render coordination, controller, or behavior changes.
 - Manually verify affected graph interactions in an Extension Development Host when changing webview behavior.
+
+Latest automated verification:
+
+- `npm run build` passed.
+- `npm test` passed with 223 tests.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.

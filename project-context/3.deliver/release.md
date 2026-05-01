@@ -11,6 +11,7 @@ Planned publishable change set:
 - Add timeout and output-budget safeguards to expensive Git command paths.
 - Guard compare restore writes/deletes so they remain inside the selected repository.
 - Tighten graph, compare-results, and show-log webview message validation with payload size budgets.
+- Preserve the current graph viewport when using toolbar zoom actions.
 - Record production and dev-tooling audit status for release readiness.
 
 Do not publish without explicit human approval.
@@ -30,8 +31,9 @@ Planning references:
 Current verification:
 
 - Source stabilization hardening for Git CLI bounds, revision option terminators, compare restore path guards, and webview message budgets is complete.
+- Graph zoom viewport preservation fix is complete.
 - `npm run build` passed.
-- `npm test` passed with 221 tests.
+- `npm test` passed with 223 tests.
 - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
 - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`; dependency remediation requires explicit approval.
 - Manual Extension Development Host validation is recommended before Marketplace publication.

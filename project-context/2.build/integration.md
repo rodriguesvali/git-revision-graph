@@ -10,6 +10,7 @@ Use feature artifacts, manifest contributions, command registrations, README fea
 Record integration decisions when a feature touches more than one surface.
 
 - 2026-05-01 `0.0.27` stabilization hardening touched extension host Git command execution, revision graph backend, graph/show-log/compare webview message validators, ref content provider, compare restore, and regression tests.
+- The same stabilization slice fixed a pre-existing graph zoom viewport regression in the webview runtime.
 - No `package.json` contribution changes were needed.
 - No README or CHANGELOG release-note update was made yet because versioning/release packaging has not been approved.
 
@@ -27,7 +28,7 @@ Record integration decisions when a feature touches more than one surface.
 Record touched surfaces, mismatches found, verification commands, and manual smoke-test coverage.
 
 - Feature artifact: `project-context/2.build/features/0.0.27-stabilization-hardening.md`.
-- Automated verification complete: `npm run build`, `npm test`, production audit.
+- Automated verification complete: `npm run build`, `npm test` with 223 tests, production audit.
 - Manual smoke-test coverage is still pending.
 
 ## Known Gaps

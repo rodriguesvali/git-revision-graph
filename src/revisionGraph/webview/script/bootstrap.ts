@@ -185,13 +185,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (zoomOutButton) {
       zoomOutButton.addEventListener('click', () => {
         zoomOut();
-        centerGraphInViewport();
       });
     }
     if (zoomInButton) {
       zoomInButton.addEventListener('click', () => {
         zoomIn();
-        centerGraphInViewport();
       });
     }
     if (statusActionButton) {
@@ -374,7 +372,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
     });
 
-    setZoom(1);
+    setZoom(1, { preserveViewport: false });
     syncCanvasSize();
     updateScenePlacement();
     syncToolbarActions();

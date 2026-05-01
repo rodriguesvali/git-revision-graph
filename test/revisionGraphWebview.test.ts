@@ -96,6 +96,37 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
 });
 
+test('preserves the current viewport when zooming from toolbar buttons', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(
+    html,
+    /function setZoom\(zoom, options = \{\}\) \{\s*const shouldPreserveViewport = options\.preserveViewport !== false;\s*const scenePlacementSnapshot = shouldPreserveViewport \? captureScenePlacementSnapshot\(\) : null;\s*const viewportSnapshot = shouldPreserveViewport \? captureViewportSnapshot\(\) : null;[\s\S]*?restoreViewportSnapshot\(viewportSnapshot\);/s
+  );
+  assert.match(
+    html,
+    /zoomOutButton\.addEventListener\('click', \(\) => \{\s*zoomOut\(\);\s*\}\);/s
+  );
+  assert.match(
+    html,
+    /zoomInButton\.addEventListener\('click', \(\) => \{\s*zoomIn\(\);\s*\}\);/s
+  );
+  assert.match(html, /setZoom\(1, \{ preserveViewport: false \}\);/);
+});
+
+test('does not recenter the graph when zooming from toolbar buttons', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.doesNotMatch(
+    html,
+    /zoomInButton\.addEventListener\('click', \(\) => \{\s*zoomIn\(\);\s*centerGraphInViewport\(\);/s
+  );
+  assert.doesNotMatch(
+    html,
+    /zoomOutButton\.addEventListener\('click', \(\) => \{\s*zoomOut\(\);\s*centerGraphInViewport\(\);/s
+  );
+});
+
 test('reorganize button does not crash when clustering by ref families', async () => {
   const runtime = createWebviewRuntime();
 
