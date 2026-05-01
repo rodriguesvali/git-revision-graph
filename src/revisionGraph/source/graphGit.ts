@@ -149,10 +149,12 @@ export function buildRevisionLogGitArgs(
         args.push('--all');
       } else {
         args.push('--first-parent');
+        args.push('--end-of-options');
         args.push(source.revision);
       }
       break;
     case 'range':
+      args.push('--end-of-options');
       args.push(`${source.baseRevision}..${source.compareRevision}`);
       break;
   }

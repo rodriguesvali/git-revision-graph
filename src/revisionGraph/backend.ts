@@ -63,6 +63,10 @@ export interface ShowLogBackend {
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
 const GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
+const GRAPH_GIT_COMMAND_TIMEOUT_MS = 15000;
+const REVISION_LOG_MAX_OUTPUT_BYTES = 12 * 1024 * 1024;
+const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
+const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLogBackend {
@@ -117,7 +121,11 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const stdout = await execGit(
       repository.rootUri.fsPath,
-      buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches)
+      buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches),
+      {
+        maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
+        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+      }
     );
     const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
 
@@ -136,13 +144,24 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
   }
 
   async loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string> {
-    return execGit(repository.rootUri.fsPath, ['diff', '--no-color', left, right]);
+    return execGit(
+      repository.rootUri.fsPath,
+      ['diff', '--no-color', '--end-of-options', left, right],
+      {
+        maxOutputBytes: UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+      }
+    );
   }
 
   async loadCommitDetails(repository: Repository, commitHash: string): Promise<string> {
     return execGit(
       repository.rootUri.fsPath,
-      ['show', '--stat', '--patch', '--format=fuller', '--no-color', commitHash]
+      ['show', '--stat', '--patch', '--format=fuller', '--no-color', '--end-of-options', commitHash],
+      {
+        maxOutputBytes: COMMIT_DETAILS_MAX_OUTPUT_BYTES,
+        timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
+      }
     );
   }
 
@@ -320,7 +339,8 @@ async function loadSnapshot(
     buildRevisionGraphGitLogArgs(limit, options),
     {
       signal,
-      maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES
+      maxOutputBytes: GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES,
+      timeoutMs: GRAPH_GIT_COMMAND_TIMEOUT_MS
     }
   )
     .finally(() => traceDuration(trace, 'snapshot.gitLog', gitLogStartedAt, `limit=${limit}`));

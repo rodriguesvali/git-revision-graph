@@ -120,6 +120,7 @@ test('builds show log git args for a target revision', () => {
       '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
       '--shortstat',
       '--first-parent',
+      '--end-of-options',
       'feature/demo'
     ]
   );
@@ -172,7 +173,34 @@ test('builds show log git args for a revision range', () => {
       '--skip=0',
       '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
       '--shortstat',
+      '--end-of-options',
       'main..feature/demo'
+    ]
+  );
+});
+
+test('builds show log git args with an option terminator before option-like revisions', () => {
+  assert.deepEqual(
+    buildRevisionLogGitArgs(
+      {
+        kind: 'target',
+        revision: '-malicious',
+        label: '-malicious'
+      },
+      51
+    ),
+    [
+      'log',
+      '--topo-order',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=51',
+      '--skip=0',
+      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--shortstat',
+      '--first-parent',
+      '--end-of-options',
+      '-malicious'
     ]
   );
 });

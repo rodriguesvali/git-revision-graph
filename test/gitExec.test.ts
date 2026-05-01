@@ -102,6 +102,23 @@ test('execGit aborts an in-flight git process when the signal is cancelled', asy
   );
 });
 
+test('execGit stops when the configured timeout expires', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+    async (repositoryPath) => {
+      await assert.rejects(
+        execGit(repositoryPath, ['status'], { timeoutMs: 25 }),
+        (error: unknown) => {
+          assert.ok(error instanceof Error);
+          assert.equal(error.name, 'TimeoutError');
+          assert.match(error.message, /timeout/i);
+          return true;
+        }
+      );
+    }
+  );
+});
+
 test('execGit stops when the captured output exceeds the configured limit', async () => {
   await withFakeGitScript(
     '#!/bin/sh\nprintf "1234567890"\n',

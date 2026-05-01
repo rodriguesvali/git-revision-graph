@@ -2,6 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  MAX_WEBVIEW_MESSAGE_ARRAY_LENGTH,
+  MAX_WEBVIEW_MESSAGE_STRING_LENGTH,
+  isBoundedStringArray
+} from '../src/webviewMessageValidation';
+import {
   isRevisionGraphMessageAllowedForState,
   validateRevisionGraphMessage
 } from '../src/revisionGraph/messageValidation';
@@ -14,6 +19,13 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(validateRevisionGraphMessage({}), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'checkout', refName: 'main', refKind: 'evil' }), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'set-projection-options', options: { showTags: 'yes' } }), undefined);
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'copy-commit-hash',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -76,6 +88,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
 test('validateCompareResultsWebviewMessage rejects malformed compare result messages', () => {
   assert.equal(validateCompareResultsWebviewMessage({ type: 'base' }), undefined);
   assert.equal(validateCompareResultsWebviewMessage({ type: 'copyFileName', itemIds: 'file:0' }), undefined);
+  assert.equal(
+    validateCompareResultsWebviewMessage({
+      type: 'copyFileName',
+      itemIds: Array.from({ length: MAX_WEBVIEW_MESSAGE_ARRAY_LENGTH + 1 }, (_, index) => `file:${index}`)
+    }),
+    undefined
+  );
   assert.deepEqual(
     validateCompareResultsWebviewMessage({ type: 'copyFullPath', itemIds: ['file:0'] }),
     { type: 'copyFullPath', itemIds: ['file:0'] }
@@ -85,10 +104,22 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
 test('validateShowLogWebviewMessage rejects malformed show log messages', () => {
   assert.equal(validateShowLogWebviewMessage({ type: 'toggleShowAllBranches', value: 'true' }), undefined);
   assert.equal(validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123' }), undefined);
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'openCommitDetails',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }),
     { type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }
   );
+});
+
+test('isBoundedStringArray rejects oversized items', () => {
+  assert.equal(isBoundedStringArray(['ok']), true);
+  assert.equal(isBoundedStringArray(['a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)]), false);
 });
 
 function createReadyRevisionGraphState(): RevisionGraphViewState {

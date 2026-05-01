@@ -82,6 +82,8 @@ import {
 
 const REMOTE_TAG_STATE_MAX_OUTPUT_BYTES = 1024 * 1024;
 const REMOTE_TAG_STATE_TIMEOUT_MS = 3000;
+const FETCH_WITH_TAGS_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
+const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
 
 async function isTagPublishedToAnyRemote(repository: Repository, tagName: string): Promise<boolean> {
   const remoteNames = await getRepositoryRemoteNames(repository);
@@ -619,7 +621,11 @@ export class RevisionGraphController implements vscode.Disposable {
       if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
         await execGitWithResult(
           this.currentRepository.rootUri.fsPath,
-          buildRevisionGraphFetchArgs(selectedOptions)
+          buildRevisionGraphFetchArgs(selectedOptions),
+          {
+            maxOutputBytes: FETCH_WITH_TAGS_MAX_OUTPUT_BYTES,
+            timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS
+          }
         );
       } else {
         await this.currentRepository.fetch(buildRevisionGraphFetchOptions(selectedOptions));

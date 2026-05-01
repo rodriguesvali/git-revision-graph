@@ -2,7 +2,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
-import { buildCompareResultRestorePlan } from './compareResultRestore';
+import { assertCompareResultRestorePlanInsideRepository, buildCompareResultRestorePlan } from './compareResultRestore';
 import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
@@ -18,6 +18,9 @@ import { buildTagPushRefspec } from './refActions/tagRefspec';
 import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
+
+const RESTORE_REF_CONTENT_MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
+const RESTORE_REF_CONTENT_TIMEOUT_MS = 15000;
 
 export function createWorkbenchRefActionServices(
   refresh?: (request?: RevisionGraphRefreshRequestLike) => void,
@@ -192,6 +195,7 @@ export async function restoreWorktreeChangeFromRef(
   ref: string
 ): Promise<void> {
   const plan = buildCompareResultRestorePlan(change);
+  assertCompareResultRestorePlanInsideRepository(repository.rootUri.fsPath, plan);
 
   for (const action of plan) {
     switch (action.kind) {
@@ -201,7 +205,14 @@ export async function restoreWorktreeChangeFromRef(
       case 'write-ref': {
         const relativePath = path.relative(repository.rootUri.fsPath, action.refPath);
         const gitPath = relativePath.split(path.sep).join('/');
-        const { stdout } = await execGitBinaryWithResult(repository.rootUri.fsPath, ['show', `${ref}:${gitPath}`]);
+        const { stdout } = await execGitBinaryWithResult(
+          repository.rootUri.fsPath,
+          ['show', '--end-of-options', `${ref}:${gitPath}`],
+          {
+            maxOutputBytes: RESTORE_REF_CONTENT_MAX_OUTPUT_BYTES,
+            timeoutMs: RESTORE_REF_CONTENT_TIMEOUT_MS
+          }
+        );
         const targetUri = vscode.Uri.file(action.targetPath);
         await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.dirname(action.targetPath)));
         await vscode.workspace.fs.writeFile(targetUri, stdout);

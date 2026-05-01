@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 export interface GitExecOptions {
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
+  readonly timeoutMs?: number;
 }
 
 export interface GitExecResult {
@@ -53,6 +54,12 @@ function createAbortError(): Error {
   return error;
 }
 
+function createTimeoutError(timeoutMs: number): Error {
+  const error = new Error(`The git command exceeded the timeout of ${timeoutMs} ms.`);
+  error.name = 'TimeoutError';
+  return error;
+}
+
 function execGitCapturedWithResult(
   repositoryPath: string,
   args: readonly string[],
@@ -87,6 +94,7 @@ function execGitCapturedWithResult(
     let stderr = '';
     let settled = false;
     let capturedOutputBytes = 0;
+    let timeout: NodeJS.Timeout | undefined;
 
     if (stdoutMode === 'text') {
       child.stdout.setEncoding('utf8');
@@ -95,6 +103,10 @@ function execGitCapturedWithResult(
 
     const cleanup = () => {
       options.signal?.removeEventListener('abort', abortChildProcess);
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = undefined;
+      }
     };
 
     const currentStdout = (): string | Buffer =>
@@ -148,7 +160,18 @@ function execGitCapturedWithResult(
       rejectOnce(createAbortError());
     };
 
+    const timeoutChildProcess = () => {
+      if (child.exitCode === null && !child.killed) {
+        child.kill();
+      }
+
+      rejectOnce(createTimeoutError(options.timeoutMs ?? 0));
+    };
+
     options.signal?.addEventListener('abort', abortChildProcess, { once: true });
+    if (options.timeoutMs !== undefined) {
+      timeout = setTimeout(timeoutChildProcess, options.timeoutMs);
+    }
 
     child.stdout.on('data', (chunk: string | Buffer) => {
       if (settled) {

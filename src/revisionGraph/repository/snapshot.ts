@@ -32,7 +32,7 @@ export async function isRefAncestorOfHead(
   try {
     await execGitWithResult(
       repository.rootUri.fsPath,
-      ['merge-base', '--is-ancestor', refName, headRefName],
+      ['merge-base', '--is-ancestor', '--end-of-options', refName, headRefName],
       { signal }
     );
     return true;

@@ -1,4 +1,4 @@
-import { isNonEmptyString, isRecord, isString, isStringArray } from '../webviewMessageValidation';
+import { isBoundedNonEmptyString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type CompareResultsWebviewMessage =
   | { readonly type: 'ready' }
@@ -19,12 +19,12 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
     case 'base':
     case 'worktree':
     case 'revert':
-      return isNonEmptyString(message.itemId)
+      return isBoundedNonEmptyString(message.itemId)
         ? { type: message.type, itemId: message.itemId }
         : undefined;
     case 'copyFileName':
     case 'copyFullPath':
-      return isStringArray(message.itemIds)
+      return isBoundedStringArray(message.itemIds)
         ? { type: message.type, itemIds: message.itemIds }
         : undefined;
   }

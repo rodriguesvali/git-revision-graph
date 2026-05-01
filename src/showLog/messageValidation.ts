@@ -1,4 +1,4 @@
-import { isBoolean, isNonEmptyString, isRecord, isString } from '../webviewMessageValidation';
+import { isBoolean, isBoundedNonEmptyString, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
@@ -26,14 +26,14 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
         : undefined;
     case 'toggleCommit':
     case 'openCommitDetails':
-      return isNonEmptyString(message.commitHash)
+      return isBoundedNonEmptyString(message.commitHash)
         ? { type: message.type, commitHash: message.commitHash }
         : undefined;
     case 'openFile':
     case 'compareWithWorktree':
     case 'copyFileName':
     case 'copyFullPath':
-      return isNonEmptyString(message.commitHash) && isNonEmptyString(message.changeId)
+      return isBoundedNonEmptyString(message.commitHash) && isBoundedNonEmptyString(message.changeId)
         ? { type: message.type, commitHash: message.commitHash, changeId: message.changeId }
         : undefined;
   }

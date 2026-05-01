@@ -4,7 +4,7 @@ import {
   RevisionLogSource
 } from '../revisionGraphTypes';
 import { RevisionGraphProjectionOptions, RevisionGraphRef } from '../revisionGraphData';
-import { isBoolean, isNonEmptyString, isRecord, isString } from '../webviewMessageValidation';
+import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
 
 const REVISION_GRAPH_REF_KINDS = new Set<RevisionGraphRef['kind']>(['head', 'branch', 'remote', 'tag', 'stash']);
 const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>([
@@ -34,10 +34,10 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return options ? { type: 'set-projection-options', options } : undefined;
     }
     case 'compare-selected':
-      return isNonEmptyString(message.baseRevision)
-        && isString(message.baseLabel)
-        && isNonEmptyString(message.compareRevision)
-        && isString(message.compareLabel)
+      return isBoundedNonEmptyString(message.baseRevision)
+        && isBoundedString(message.baseLabel)
+        && isBoundedNonEmptyString(message.compareRevision)
+        && isBoundedString(message.compareLabel)
         ? {
           type: 'compare-selected',
           baseRevision: message.baseRevision,
@@ -51,46 +51,46 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return source ? { type: 'show-log', source } : undefined;
     }
     case 'open-unified-diff':
-      return isNonEmptyString(message.baseRevision) && isNonEmptyString(message.compareRevision)
+      return isBoundedNonEmptyString(message.baseRevision) && isBoundedNonEmptyString(message.compareRevision)
         ? { type: 'open-unified-diff', baseRevision: message.baseRevision, compareRevision: message.compareRevision }
         : undefined;
     case 'compare-with-worktree':
-      return isNonEmptyString(message.revision) && isString(message.label)
+      return isBoundedNonEmptyString(message.revision) && isBoundedString(message.label)
         ? { type: 'compare-with-worktree', revision: message.revision, label: message.label }
         : undefined;
     case 'copy-commit-hash':
-      return isNonEmptyString(message.commitHash)
+      return isBoundedNonEmptyString(message.commitHash)
         ? { type: 'copy-commit-hash', commitHash: message.commitHash }
         : undefined;
     case 'checkout':
-      return isNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
+      return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
         : undefined;
     case 'create-branch':
     case 'create-tag':
-      return isNonEmptyString(message.revision)
-        && isString(message.label)
+      return isBoundedNonEmptyString(message.revision)
+        && isBoundedString(message.label)
         && isRevisionGraphTargetKind(message.refKind)
         ? { type: message.type, revision: message.revision, label: message.label, refKind: message.refKind }
         : undefined;
     case 'resolve-remote-tag-state':
-      return isNonEmptyString(message.refName)
+      return isBoundedNonEmptyString(message.refName)
         ? { type: 'resolve-remote-tag-state', refName: message.refName }
         : undefined;
     case 'push-tag':
     case 'delete-remote-tag':
     case 'publish-branch':
-      return isNonEmptyString(message.refName)
-        && isString(message.label)
+      return isBoundedNonEmptyString(message.refName)
+        && isBoundedString(message.label)
         && isRevisionGraphRefKind(message.refKind)
         ? { type: message.type, refName: message.refName, label: message.label, refKind: message.refKind }
         : undefined;
     case 'delete':
-      return isNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
+      return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'delete', refName: message.refName, refKind: message.refKind }
         : undefined;
     case 'merge':
-      return isNonEmptyString(message.refName)
+      return isBoundedNonEmptyString(message.refName)
         ? { type: 'merge', refName: message.refName }
         : undefined;
   }
@@ -177,16 +177,16 @@ function validateRevisionLogSource(value: unknown): RevisionLogSource | undefine
   }
 
   if (value.kind === 'target') {
-    return isNonEmptyString(value.revision) && isString(value.label)
+    return isBoundedNonEmptyString(value.revision) && isBoundedString(value.label)
       ? { kind: 'target', revision: value.revision, label: value.label }
       : undefined;
   }
 
   if (value.kind === 'range') {
-    return isNonEmptyString(value.baseRevision)
-      && isString(value.baseLabel)
-      && isNonEmptyString(value.compareRevision)
-      && isString(value.compareLabel)
+    return isBoundedNonEmptyString(value.baseRevision)
+      && isBoundedString(value.baseLabel)
+      && isBoundedNonEmptyString(value.compareRevision)
+      && isBoundedString(value.compareLabel)
       ? {
         kind: 'range',
         baseRevision: value.baseRevision,
