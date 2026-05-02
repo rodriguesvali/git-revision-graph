@@ -18,6 +18,7 @@ Planned publishable change set:
 - Start new revision graph sessions in `Current Branch` scope by default. This was later reversed during `0.0.28` development so new sessions start with `All Refs` again.
 - Remove the `Show Branchings & Merges` view option during `0.0.28` development after it proved low-value and introduced graph blanking risk in large repositories.
 - Add an `Abort Merge` graph toolbar action during `0.0.28` development for conflicted merge recovery.
+- Add five more main graph zoom-out levels during `0.0.28` development for large graph navigation.
 - Record production and dev-tooling audit status for release readiness.
 
 Publication completed after human approval.
@@ -45,8 +46,9 @@ Current verification:
 - Graph layout stabilization for topology-aware scene keys and stale-offset invalidation is complete.
 - Refs-only merge simplification for default graph readability is complete.
 - Default graph scope was changed to `Current Branch` in `0.0.27`; `0.0.28` development has since restored the default to `All Refs`.
+- Main graph zoom-out levels were expanded during `0.0.28` development.
 - `npm run build` passed.
-- `npm test` passed with 232 tests.
+- `npm test` passed with 239 tests.
 - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
 - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`; dependency remediation requires explicit approval.
 - Manual Extension Development Host validation was recommended before Marketplace publication; post-publication monitoring should watch for real-workspace graph regressions.

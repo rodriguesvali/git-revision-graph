@@ -16,6 +16,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-02 `0.0.28` current scope refinement: the `View` menu now includes `Show Current Branch Descendants` only for `Current Branch`, which lets that scope include visible references whose tips descend from the current `HEAD` while excluding unrelated sibling refs.
 - 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
 - 2026-05-02 `0.0.28` merge recovery: the graph toolbar now exposes `Abort Merge` only while merge conflicts are present.
+- 2026-05-02 `0.0.28` graph navigation: the main graph zoom list now has 10 levels by adding five zoom-out levels below the previous `0.6` minimum.
 
 ## Verification
 - Run `npm run build`.
@@ -40,3 +41,4 @@ Manual validation is specifically pending for the TensorFlow fan-out area before
 Manual validation is specifically pending for a local branch after merging multiple branches into it in the refs-only graph.
 Manual validation is specifically pending for descendant references in the `Current Branch` scope.
 Manual validation is specifically pending for aborting a conflicted merge from the graph toolbar.
+Manual validation is specifically pending for the added main graph zoom-out levels in a large graph.

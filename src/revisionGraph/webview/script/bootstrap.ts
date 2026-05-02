@@ -10,7 +10,7 @@ import { RenderRevisionGraphScriptOptions } from './types';
 export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraphScriptOptions): string {
   return `
     const vscode = acquireVsCodeApi();
-    const zoomLevels = [0.6, 0.8, 1, 1.25, 1.5];
+    const zoomLevels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5];
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');

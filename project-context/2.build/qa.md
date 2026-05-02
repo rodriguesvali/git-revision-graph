@@ -61,6 +61,11 @@ Record command output summaries, not full logs, when verification is performed.
   - Added coverage for confirmed abort, no-conflict no-op, abort failure recovery, webview message validation, and shell rendering.
   - `npm run build` passed.
   - `npm test` passed with 239 tests.
+- 2026-05-02 `0.0.28` graph zoom-out levels:
+  - Added five main graph zoom-out levels below the previous `0.6` minimum while preserving the existing zoom-in maximum.
+  - Added webview shell coverage for the 10-level main graph zoom list.
+  - `npm run build` passed.
+  - `npm test` passed with 239 tests.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -75,6 +80,7 @@ Record failures, skipped checks, and residual risks.
 - Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
 - Manual validation is still pending that the `View` menu no longer exposes `Show Branchings & Merges` and that toggling remaining options does not blank the graph.
 - Manual validation is still pending for aborting a conflicted merge from the graph toolbar in an Extension Development Host.
+- Manual validation is still pending for the added main graph zoom-out levels in an Extension Development Host.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification

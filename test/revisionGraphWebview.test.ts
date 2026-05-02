@@ -103,6 +103,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
 test('preserves the current viewport when zooming from toolbar buttons', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /const zoomLevels = \[0\.1, 0\.2, 0\.3, 0\.4, 0\.5, 0\.6, 0\.8, 1, 1\.25, 1\.5\];/);
   assert.match(
     html,
     /function setZoom\(zoom, options = \{\}\) \{\s*const shouldPreserveViewport = options\.preserveViewport !== false;\s*const scenePlacementSnapshot = shouldPreserveViewport \? captureScenePlacementSnapshot\(\) : null;\s*const viewportSnapshot = shouldPreserveViewport \? captureViewportSnapshot\(\) : null;[\s\S]*?restoreViewportSnapshot\(viewportSnapshot\);/s
