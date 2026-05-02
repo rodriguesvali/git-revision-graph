@@ -40,19 +40,21 @@ The extension is already published and feature-rich enough that new work can aff
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
 ## Next Release Define Draft
-- Current package baseline on 2026-05-01: `0.0.26`.
-- Current release readiness state: `0.0.26` source readiness, version bump, and changelog are complete; VSIX packaging and Marketplace publishing remain incomplete and require explicit human approval.
-- Candidate next release: `0.0.27`.
-- Approved direction from user: stabilization.
-- Recommended anchor: harden existing Git CLI, webview message, compare restore, dependency audit, and low-risk cache efficiency surfaces without adding broad product features.
-- Define artifact: `docs/release-0.0.27-prioritization.md`.
-- Candidate feature artifact: `project-context/2.build/features/0.0.27-stabilization-hardening.md`.
+- Current package baseline on 2026-05-02: `0.0.27`.
+- Current release readiness state: `0.0.27` source readiness, version bump, VSIX packaging, and Marketplace publishing are complete; future packaging and publishing require explicit human approval.
+- Candidate next release: `0.0.28`.
+- Approved direction from user: define graph cache architecture improvements.
+- Recommended anchor: split immutable commit DAG/history data from mutable ref/HEAD overlays so refreshes can reuse loaded history while applying repository metadata changes safely.
+- Define artifact: `docs/release-0.0.28-prioritization.md`.
+- Candidate feature artifact: `project-context/2.build/features/0.0.28-graph-cache-architecture.md`.
 
-## Cache Optimization Candidate Scope
-- Add cache observability before changing cache behavior: snapshot cache hit/miss counters, timing, and clear trace labels for bypasses or invalidations.
-- Improve low-risk cache efficiency where the current behavior is already bounded, such as avoiding redundant persisted layout-cache writes and bounding Show Log expanded-change cache growth.
-- Evaluate whether completed graph snapshots can be reused for cancelable refresh paths without sharing a cancelable Git process across consumers.
-- Treat deeper snapshot-cache architecture changes, such as separating immutable DAG/history data from ref and HEAD overlays, as follow-up work unless explicitly approved for the release.
+## 0.0.28 Graph Cache Architecture Candidate Scope
+- Define a cacheable immutable graph snapshot that represents commit DAG/history data loaded from `git log`.
+- Define mutable overlays for current refs, `HEAD`, upstream/published state, workspace dirtiness, and merge-blocked metadata.
+- Preserve repository freshness by invalidating the immutable snapshot only when history/topology inputs change, while allowing overlay-only updates for metadata changes.
+- Preserve cancellation semantics by avoiding shared cancelable in-flight Git work unless ownership and abort behavior are explicit.
+- Preserve bounded memory usage with cache size, age, repository, projection, and history-limit constraints.
+- Keep the existing webview, controller, Git API, and targeted Git CLI architecture; this is an internal cache architecture change, not a new product surface.
 
 ## Success Metrics
 - Fewer regressions from manifest/command/view drift.
@@ -81,7 +83,6 @@ The extension is already published and feature-rich enough that new work can aff
 - Contributors will use AAMAD artifacts as living working notes, not as formal documents detached from implementation.
 
 ## Open Questions
-- What output limits and timeouts should be used for expensive Git CLI paths in `0.0.27`?
-- Should dev-tooling audit fixes be included if they require `@vscode/vsce` or lockfile updates?
+- What exact event taxonomy should distinguish immutable graph invalidation from overlay-only updates in `0.0.28`?
+- Should the immutable graph snapshot be keyed by the exact current graph load parameters, or should `0.0.28` introduce a reusable superset snapshot for multiple projection modes?
 - What manual validation matrix should be required before each Marketplace publish?
-- Which cache improvements should be included in `0.0.27`: instrumentation only, completed snapshot reuse for cancelable refreshes, layout-cache persistence deduplication, Show Log cache bounding, or remote-tag TTL caching?

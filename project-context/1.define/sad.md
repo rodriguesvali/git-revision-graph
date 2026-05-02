@@ -55,7 +55,7 @@ Keep the extension architecture intact:
 - Built-in `vscode.git` remains preferred for repository state and mutations; Git CLI remains acceptable for graph/history data not exposed by the API.
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 - Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
-- Separating immutable commit DAG/history caching from mutable ref and HEAD overlay state is a larger architecture candidate and should remain follow-up unless explicitly approved.
+- The `0.0.28` Define draft should evaluate separating immutable commit DAG/history caching from mutable ref and HEAD overlay state as the next cache architecture improvement.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -84,5 +84,6 @@ Keep the extension architecture intact:
 - Should Git argument hardening normalize all known refs to full ref names before command execution?
 - Which Git CLI paths should receive hard timeouts versus output caps only?
 - Should stabilization validation include a fixture repository with option-like tag/ref names?
-- Should graph snapshot caching be split into immutable DAG/history data and mutable ref/HEAD overlay data?
-- Which cache paths need manual validation with rapid refresh, repository switching, and interrupted graph loads?
+- Which repository events should invalidate immutable DAG/history data versus only rebuilding overlays?
+- Can projection changes reuse a larger immutable graph snapshot without stale refs or incorrect branch-scope results?
+- Which cache paths need manual validation with rapid refresh, repository switching, interrupted graph loads, checkout, fetch, push-only sync, and pull-only sync?

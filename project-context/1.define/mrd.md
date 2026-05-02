@@ -20,8 +20,9 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - Improve graph parity and discoverability without abandoning VS Code-native interactions.
 - Add carefully scoped feature releases around graph filtering, history depth, tag/ref actions, compare workflows, and safer branch operations.
 - Use published-extension release governance to reduce regressions in command wiring, manifest contributions, and Git workflow behavior.
-- For the next planned release after `0.0.26`, stabilization is the strongest candidate because recent feature growth increased the value of hardening Git command, webview, filesystem restore, and release-tooling surfaces before adding more workflow breadth.
+- `0.0.27` completed the stabilization push that followed recent graph and workflow growth.
 - Treat cache optimization as a stabilization opportunity when it improves graph responsiveness without broadening the product surface or risking stale repository data.
+- For `0.0.28`, evaluate a deeper cache architecture split between immutable history/topology and mutable repository overlays to make repeated graph refreshes feel faster in large repositories.
 
 ## Risks
 - Feature growth can make the extension feel heavier than the current focused workflow.
@@ -42,7 +43,7 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 - AAMAD should guide feature and release work without slowing small bug fixes.
 
 ## Open Questions
-- Which hardening items are mandatory for `0.0.27` versus acceptable follow-up work?
+- Which cache architecture changes are mandatory for `0.0.28` versus acceptable follow-up work?
 - Should dev-tooling audit fixes be included in the release if production dependencies are already clean?
-- Should `0.0.27` remain a patch release if it contains no new product features?
-- Which cache optimizations provide enough user-visible responsiveness or reliability value to include in a patch stabilization release?
+- Should `0.0.28` remain a patch release if the work is internal performance architecture rather than a new product feature?
+- Which graph refresh scenarios provide enough user-visible responsiveness value to justify deeper cache architecture work?
