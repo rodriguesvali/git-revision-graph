@@ -464,7 +464,8 @@ export function renderRevisionGraphScriptInteractions(): string {
         currentProjectionOptions.showTags ? 'tags' : null,
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
         currentProjectionOptions.showStashes ? 'stash' : null,
-        currentProjectionOptions.showBranchingsAndMerges ? 'branching/merge commits' : null
+        currentProjectionOptions.showBranchingsAndMerges ? 'branching/merge commits' : null,
+        currentProjectionOptions.showCurrentBranchDescendants ? 'current branch descendants' : null
       ].filter(Boolean);
       viewOptionsButton.title = visibleOptions.length > 0
         ? 'View options: showing ' + visibleOptions.join(', ')
@@ -622,6 +623,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showBranchingsToggle) {
         showBranchingsToggle.disabled = toolbarBusy;
       }
+      if (showCurrentBranchDescendantsToggle) {
+        showCurrentBranchDescendantsToggle.disabled = toolbarBusy;
+      }
       if (reorganizeButton) {
         reorganizeButton.disabled = toolbarBusy;
       }
@@ -648,6 +652,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         showRemoteBranchesToggle,
         showStashesToggle,
         showBranchingsToggle,
+        showCurrentBranchDescendantsToggle,
         searchInput,
         searchPrevButton,
         searchNextButton,

@@ -25,6 +25,9 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Reused the same overlay normalization for metadata patches and ready-state builds.
   - Relaxed short-lived snapshot cache keys so same-commit ref renames can reuse loaded history while live labels come from repository overlays.
   - Added `state.repositoryOverlay` graph load trace timing.
+- 2026-05-02 `0.0.28` current scope refinement:
+  - Current-scope graph loading keeps using `HEAD` by default and switches to `--all` when `Show Current Branch Descendants` is enabled.
+  - Projection now includes visible descendant ref tips from `HEAD` in addition to the current branch ancestry when the option is enabled.
 
 ## Verification
 - Run `npm run build`.
@@ -34,7 +37,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
 Latest automated verification for this backend slice:
 
 - `npm run build` passed.
-- `npm test` passed with 234 tests.
+- `npm test` passed with 237 tests.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

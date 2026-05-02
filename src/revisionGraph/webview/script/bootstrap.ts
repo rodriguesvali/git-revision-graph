@@ -38,6 +38,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
     const showBranchingsToggle = document.getElementById('showBranchingsToggle');
+    const showCurrentBranchDescendantsToggle = document.getElementById('showCurrentBranchDescendantsToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
     const searchPrevButton = document.getElementById('searchPrevButton');
@@ -57,7 +58,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showBranchingsAndMerges: false
+      showBranchingsAndMerges: false,
+      showCurrentBranchDescendants: false
     };
     let mergeBlockedTargets = new Set();
     let graphNodes = [];
@@ -152,6 +154,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           type: 'set-projection-options',
           options: { showBranchingsAndMerges: showBranchingsToggle.checked }
         }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...', showBranchingsToggle);
+      });
+    }
+    if (showCurrentBranchDescendantsToggle) {
+      showCurrentBranchDescendantsToggle.addEventListener('change', () => {
+        postMessageWithLoading({
+          type: 'set-projection-options',
+          options: { showCurrentBranchDescendants: showCurrentBranchDescendantsToggle.checked }
+        }, showCurrentBranchDescendantsToggle.checked ? 'Showing current branch descendants...' : 'Hiding current branch descendants...', showCurrentBranchDescendantsToggle);
       });
     }
     if (searchInput) {
@@ -659,6 +669,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showBranchingsToggle) {
         showBranchingsToggle.checked = !!state.projectionOptions.showBranchingsAndMerges;
+      }
+      if (showCurrentBranchDescendantsToggle) {
+        showCurrentBranchDescendantsToggle.checked = !!state.projectionOptions.showCurrentBranchDescendants;
       }
       if (workspaceLed) {
         const tooltip = state.isWorkspaceDirty

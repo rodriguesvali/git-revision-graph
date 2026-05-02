@@ -6,14 +6,15 @@ import {
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from '../model/commitGraphTypes';
-import { collectAncestorHashes } from '../model/commitGraphQueries';
+import { collectAncestorHashes, collectDescendantHashes } from '../model/commitGraphQueries';
 
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   refScope: 'current',
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
-  showBranchingsAndMerges: false
+  showBranchingsAndMerges: false,
+  showCurrentBranchDescendants: false
 };
 
 export function projectDecoratedCommitGraph(
@@ -85,9 +86,15 @@ function getScopeHashes(
       const headHashes = graph.orderedCommits
         .filter((commit) => commit.refs.some((ref) => ref.kind === 'head'))
         .map((commit) => commit.hash);
-      return headHashes.length > 0
-        ? collectAncestorHashes(graph, headHashes)
-        : new Set(graph.orderedCommits.map((commit) => commit.hash));
+      if (headHashes.length === 0) {
+        return new Set(graph.orderedCommits.map((commit) => commit.hash));
+      }
+
+      const descendantRefTipHashes = options.showCurrentBranchDescendants
+        ? collectCurrentBranchDescendantRefTipHashes(graph, headHashes, options)
+        : [];
+
+      return collectAncestorHashes(graph, [...headHashes, ...descendantRefTipHashes]);
     }
     case 'local': {
       const localBranchHashes = graph.orderedCommits
@@ -100,6 +107,21 @@ function getScopeHashes(
     case 'all':
       return new Set(graph.orderedCommits.map((commit) => commit.hash));
   }
+}
+
+function collectCurrentBranchDescendantRefTipHashes(
+  graph: CommitGraph,
+  headHashes: readonly string[],
+  options: RevisionGraphProjectionOptions
+): string[] {
+  const descendantHashes = collectDescendantHashes(graph, headHashes);
+  return graph.orderedCommits
+    .filter((commit) =>
+      descendantHashes.has(commit.hash) &&
+      commit.refs.some((ref) => ref.kind !== 'head') &&
+      filterRefs(commit.refs, options).length > 0
+    )
+    .map((commit) => commit.hash);
 }
 
 function buildVisibleHashes(

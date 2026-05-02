@@ -80,7 +80,8 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       showTags: false,
       showRemoteBranches: false,
       showStashes: false,
-      showBranchingsAndMerges: true
+      showBranchingsAndMerges: true,
+      showCurrentBranchDescendants: false
     }),
     [
       'log',
@@ -727,10 +728,51 @@ test('marks visible refs as merge-blocked when their tips are already in the HEA
   assert.deepEqual(blocked, ['branch::release/1.x', 'tag::v1.0.0']);
 });
 
+test('builds current branch git log args from HEAD by default', () => {
+  assert.deepEqual(
+    buildRevisionGraphGitLogArgs(6000, {
+      ...createDefaultRevisionGraphProjectionOptions(),
+      refScope: 'current'
+    }),
+    [
+      'log',
+      'HEAD',
+      '--topo-order',
+      '--simplify-by-decoration',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=6000',
+      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+    ]
+  );
+});
+
+test('builds current branch git log args from all refs when descendant references are visible', () => {
+  assert.deepEqual(
+    buildRevisionGraphGitLogArgs(6000, {
+      ...createDefaultRevisionGraphProjectionOptions(),
+      refScope: 'current',
+      showCurrentBranchDescendants: true
+    }),
+    [
+      'log',
+      '--all',
+      '--topo-order',
+      '--simplify-by-decoration',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=6000',
+      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+    ]
+  );
+});
+
 test('can scope the projection to the current branch ancestry', () => {
   const graph = buildCommitGraph([
+    { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic tip', refs: [{ name: 'feature/from-main', kind: 'branch' }] },
+    { hash: 'topic1', parents: ['head1'], author: 'Ada', date: '2026-04-08', subject: 'Topic work', refs: [] },
     { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }] },
-    { hash: 'feature1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Feature head', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'feature1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Sibling feature head', refs: [{ name: 'feature/sibling', kind: 'branch' }] },
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
@@ -740,6 +782,31 @@ test('can scope the projection to the current branch ancestry', () => {
   });
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'base1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'head1', to: 'base1', through: [] }
+  ]);
+});
+
+test('can include descendant references in the current branch projection when enabled', () => {
+  const graph = buildCommitGraph([
+    { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic tip', refs: [{ name: 'feature/from-main', kind: 'branch' }] },
+    { hash: 'topic1', parents: ['head1'], author: 'Ada', date: '2026-04-08', subject: 'Topic work', refs: [] },
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'feature1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Sibling feature head', refs: [{ name: 'feature/sibling', kind: 'branch' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'current',
+    showCurrentBranchDescendants: true
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic2', 'head1', 'base1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'topic2', to: 'head1', through: ['topic1'] },
+    { from: 'head1', to: 'base1', through: [] }
+  ]);
 });
 
 test('can scope the projection to local branches', () => {

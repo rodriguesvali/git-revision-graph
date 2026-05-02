@@ -29,6 +29,7 @@ export interface RevisionGraphProjectionOptions {
   readonly showRemoteBranches: boolean;
   readonly showStashes: boolean;
   readonly showBranchingsAndMerges: boolean;
+  readonly showCurrentBranchDescendants: boolean;
 }
 
 export interface ProjectedGraphNode {

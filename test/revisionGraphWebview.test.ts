@@ -145,7 +145,8 @@ test('reorganize button does not crash when clustering by ref families', async (
         showTags: true,
         showRemoteBranches: true,
         showStashes: true,
-        showBranchingsAndMerges: true
+        showBranchingsAndMerges: true,
+        showCurrentBranchDescendants: true
       },
       mergeBlockedTargets: [],
       primaryAncestorPathsByHash: {},

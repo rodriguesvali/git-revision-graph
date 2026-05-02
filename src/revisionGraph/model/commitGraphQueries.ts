@@ -41,6 +41,31 @@ export function collectAncestorHashes(
   return reachable;
 }
 
+export function collectDescendantHashes(
+  graph: CommitGraph,
+  startHashes: readonly string[]
+): Set<string> {
+  const reachable = new Set<string>();
+  const queue = [...startHashes];
+
+  while (queue.length > 0) {
+    const hash = queue.shift();
+    if (!hash || reachable.has(hash)) {
+      continue;
+    }
+
+    reachable.add(hash);
+    const commit = graph.commitsByHash.get(hash);
+    if (!commit) {
+      continue;
+    }
+
+    queue.push(...commit.children);
+  }
+
+  return reachable;
+}
+
 export function buildFirstParentVisiblePath(
   graph: CommitGraph,
   startHash: string,

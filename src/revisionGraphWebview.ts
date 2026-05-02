@@ -54,6 +54,10 @@ export function renderRevisionGraphShellHtml(): string {
           <input id="showBranchingsToggle" type="checkbox" />
           <span>Show Branchings &amp; Merges</span>
         </label>
+        <label for="showCurrentBranchDescendantsToggle">
+          <input id="showCurrentBranchDescendantsToggle" type="checkbox" />
+          <span>Show Current Branch Descendants</span>
+        </label>
       </div>
     </div>
     <div class="search-controls" aria-label="Search the loaded revision graph">

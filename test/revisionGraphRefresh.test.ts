@@ -122,4 +122,8 @@ test('projection option changes require a fresh graph snapshot', () => {
     ...defaultOptions,
     showBranchingsAndMerges: true
   }), true);
+  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
+    ...defaultOptions,
+    showCurrentBranchDescendants: true
+  }), true);
 });
