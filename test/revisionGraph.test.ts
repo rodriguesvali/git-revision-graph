@@ -263,7 +263,7 @@ test('builds a commit graph with child links and boundary commits for missing pa
   assert.deepEqual(graph.commitsByHash.get('missing-parent')?.children, ['a1']);
 });
 
-test('keeps all merge parents in the projected graph instead of collapsing to one referenced ancestor', () => {
+test('keeps merge parent lines while hiding merge-only cards in refs-only projection', () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
@@ -283,7 +283,30 @@ test('keeps all merge parents in the projected graph instead of collapsing to on
   );
 });
 
-test('promotes a hidden merge connector instead of fanning one edge out to multiple visible ancestors', () => {
+test('keeps all merge parents when branching and merge commits are visible', () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
+    { hash: 'a1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Release', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['m1', 'a1', 'b1']);
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'm1', to: 'a1', through: ['x1'] },
+      { from: 'm1', to: 'b1', through: [] }
+    ]
+  );
+});
+
+test('hides hidden merge connectors in refs-only projection', () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Hidden merge', refs: [] },
@@ -292,6 +315,30 @@ test('promotes a hidden merge connector instead of fanning one edge out to multi
   ]);
 
   const projection = projectDecoratedCommitGraph(graph);
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'topic1', 'base1']);
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'head1', to: 'base1', through: ['merge1'] },
+      { from: 'head1', to: 'topic1', through: ['merge1'] },
+      { from: 'topic1', to: 'base1', through: [] }
+    ]
+  );
+});
+
+test('keeps hidden merge connectors when branching and merge commits are visible', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Hidden merge', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Topic tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
   assert.deepEqual(
@@ -305,7 +352,7 @@ test('promotes a hidden merge connector instead of fanning one edge out to multi
   );
 });
 
-test('keeps sync merges visible so release tags reconnect to older release lines', () => {
+test('hides sync merges in refs-only git-simplified graphs', () => {
   const graph = buildCommitGraphWithSimplification([
     { hash: 'rel2501', parents: ['sync2491'], author: 'Ada', date: '2026-04-08', subject: 'Git 2.50.1', refs: [{ name: 'v2.50.1', kind: 'tag' }] },
     { hash: 'sync2491', parents: ['rel2500', 'rel2491'], author: 'Ada', date: '2026-04-07', subject: 'Sync with 2.49.1', refs: [] },
@@ -317,6 +364,37 @@ test('keeps sync merges visible so release tags reconnect to older release lines
   ], 'git-decoration');
 
   const projection = projectDecoratedCommitGraph(graph);
+
+  assert.deepEqual(
+    projection.nodes.map((node) => node.hash),
+    ['rel2501', 'rel2500', 'rel2491', 'rel2490', 'rel2482']
+  );
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'rel2501', to: 'rel2500', through: ['sync2491'] },
+      { from: 'rel2501', to: 'rel2491', through: ['sync2491'] },
+      { from: 'rel2491', to: 'rel2490', through: ['sync2482'] },
+      { from: 'rel2491', to: 'rel2482', through: ['sync2482'] }
+    ]
+  );
+});
+
+test('keeps sync merges visible so release tags reconnect to older release lines in detailed mode', () => {
+  const graph = buildCommitGraphWithSimplification([
+    { hash: 'rel2501', parents: ['sync2491'], author: 'Ada', date: '2026-04-08', subject: 'Git 2.50.1', refs: [{ name: 'v2.50.1', kind: 'tag' }] },
+    { hash: 'sync2491', parents: ['rel2500', 'rel2491'], author: 'Ada', date: '2026-04-07', subject: 'Sync with 2.49.1', refs: [] },
+    { hash: 'rel2500', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Git 2.50.0', refs: [{ name: 'v2.50.0', kind: 'tag' }] },
+    { hash: 'rel2491', parents: ['sync2482'], author: 'Ada', date: '2026-04-05', subject: 'Git 2.49.1', refs: [{ name: 'v2.49.1', kind: 'tag' }] },
+    { hash: 'sync2482', parents: ['rel2490', 'rel2482'], author: 'Ada', date: '2026-04-04', subject: 'Sync with 2.48.2', refs: [] },
+    { hash: 'rel2490', parents: [], author: 'Ada', date: '2026-04-03', subject: 'Git 2.49.0', refs: [{ name: 'v2.49.0', kind: 'tag' }] },
+    { hash: 'rel2482', parents: [], author: 'Ada', date: '2026-04-02', subject: 'Git 2.48.2', refs: [{ name: 'v2.48.2', kind: 'tag' }] }
+  ], 'git-decoration');
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
 
   assert.deepEqual(
     projection.nodes.map((node) => node.hash),
@@ -356,7 +434,7 @@ test('rewrites linear unlabeled commits on git-simplified graphs when tags are h
   );
 });
 
-test('builds a scene from the projected graph while preserving merge edges', async () => {
+test('builds a scene from the detailed projected graph while preserving merge edges', async () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['x1', 'b1'], author: 'Ada', date: '2026-04-07', subject: 'Merge', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'x1', parents: ['a1'], author: 'Ada', date: '2026-04-06', subject: 'Mainline commit', refs: [] },
@@ -364,7 +442,10 @@ test('builds a scene from the projected graph while preserving merge edges', asy
     { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
   ]);
 
-  const projection = projectDecoratedCommitGraph(graph);
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showBranchingsAndMerges: true
+  });
   const scene = await buildRevisionGraphScene(graph, projection);
 
   assert.equal(scene.nodes.length, 3);

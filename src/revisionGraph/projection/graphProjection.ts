@@ -52,22 +52,19 @@ export function projectCommitGraph(
     }
 
     for (const parentHash of commit.parents) {
-      const target = findProjectedTarget(graph, parentHash, visibleHashes);
-      if (!target) {
-        continue;
-      }
+      for (const target of findProjectedTargets(graph, parentHash, visibleHashes)) {
+        const key = `${node.hash}->${target.to}`;
+        if (edgeKeys.has(key)) {
+          continue;
+        }
 
-      const key = `${node.hash}->${target.to}`;
-      if (edgeKeys.has(key)) {
-        continue;
+        edgeKeys.add(key);
+        edges.push({
+          from: node.hash,
+          to: target.to,
+          through: target.through
+        });
       }
-
-      edgeKeys.add(key);
-      edges.push({
-        from: node.hash,
-        to: target.to,
-        through: target.through
-      });
     }
   }
 
@@ -124,7 +121,7 @@ function buildVisibleHashes(
     return visibleHashes;
   }
 
-  return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes);
+  return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes, options);
 }
 
 function buildVisibleHashesFromGitSimplifiedGraph(
@@ -135,13 +132,18 @@ function buildVisibleHashesFromGitSimplifiedGraph(
   const candidateCommits = graph.orderedCommits.filter(
     (commit) => candidateHashes.has(commit.hash) && !commit.isBoundary
   );
-  const visibleHashes = new Set(candidateCommits.map((commit) => commit.hash));
+  const visibleHashes = new Set(candidateCommits
+    .filter((commit) => shouldDisplayCommit(commit, options))
+    .map((commit) => commit.hash));
 
   if (options.showTags && !options.showBranchingsAndMerges) {
-    return visibleHashes;
+    return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes, options);
   }
 
-  return rewriteGitSimplifiedVisibleHashes(candidateCommits, options);
+  return rewriteGitSimplifiedVisibleHashes(
+    candidateCommits.filter((commit) => visibleHashes.has(commit.hash)),
+    options
+  );
 }
 
 function shouldDisplayCommit(
@@ -253,7 +255,8 @@ function rewriteGitSimplifiedVisibleHashes(
 function expandVisibleHashesWithStructuralConnectors(
   graph: CommitGraph,
   candidateHashes: ReadonlySet<string>,
-  baseVisibleHashes: ReadonlySet<string>
+  baseVisibleHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions
 ): Set<string> {
   const visibleHashes = new Set(baseVisibleHashes);
   let changed = true;
@@ -267,7 +270,7 @@ function expandVisibleHashesWithStructuralConnectors(
       }
 
       for (const parentHash of commit.parents) {
-        const connectorHash = findStructuralConnectorHash(graph, parentHash, candidateHashes, visibleHashes);
+        const connectorHash = findStructuralConnectorHash(graph, parentHash, candidateHashes, visibleHashes, options);
         if (!connectorHash || visibleHashes.has(connectorHash)) {
           continue;
         }
@@ -285,7 +288,8 @@ function findStructuralConnectorHash(
   graph: CommitGraph,
   startHash: string,
   candidateHashes: ReadonlySet<string>,
-  visibleHashes: ReadonlySet<string>
+  visibleHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions
 ): string | undefined {
   let currentHash: string | undefined = startHash;
   const visited = new Set<string>();
@@ -300,7 +304,7 @@ function findStructuralConnectorHash(
       return undefined;
     }
 
-    if (isStructuralConnectorCommit(commit)) {
+    if (isStructuralConnectorCommit(commit, options)) {
       return currentHash;
     }
 
@@ -315,37 +319,61 @@ function findStructuralConnectorHash(
   return undefined;
 }
 
-function isStructuralConnectorCommit(commit: CommitGraph['orderedCommits'][number]): boolean {
-  return commit.parents.length > 1 || commit.children.length > 1;
+function isStructuralConnectorCommit(
+  commit: CommitGraph['orderedCommits'][number],
+  options: RevisionGraphProjectionOptions
+): boolean {
+  if (options.showBranchingsAndMerges) {
+    return commit.parents.length > 1 || commit.children.length > 1;
+  }
+
+  return commit.children.length > 1;
 }
 
-function findProjectedTarget(
+function findProjectedTargets(
   graph: CommitGraph,
   startHash: string,
   visibleHashes: ReadonlySet<string>
-): { readonly to: string; readonly through: readonly string[] } | undefined {
-  const through: string[] = [];
-  let currentHash: string | undefined = startHash;
-  const visited = new Set<string>();
+): Array<{ readonly to: string; readonly through: readonly string[] }> {
+  const targets: Array<{ readonly to: string; readonly through: readonly string[] }> = [];
+  const targetKeys = new Set<string>();
 
-  while (currentHash && !visited.has(currentHash)) {
-    if (visibleHashes.has(currentHash)) {
-      return { to: currentHash, through };
-    }
+  collectProjectedTargets(graph, startHash, visibleHashes, [], new Set(), targets, targetKeys);
 
-    visited.add(currentHash);
-    const commit = graph.commitsByHash.get(currentHash);
-    if (!commit) {
-      return undefined;
-    }
+  return targets;
+}
 
-    through.push(currentHash);
-    if (commit.parents.length === 0) {
-      return undefined;
-    }
-
-    currentHash = commit.parents[0];
+function collectProjectedTargets(
+  graph: CommitGraph,
+  currentHash: string,
+  visibleHashes: ReadonlySet<string>,
+  through: readonly string[],
+  visited: ReadonlySet<string>,
+  targets: Array<{ readonly to: string; readonly through: readonly string[] }>,
+  targetKeys: Set<string>
+): void {
+  if (visited.has(currentHash)) {
+    return;
   }
 
-  return undefined;
+  if (visibleHashes.has(currentHash)) {
+    if (!targetKeys.has(currentHash)) {
+      targetKeys.add(currentHash);
+      targets.push({ to: currentHash, through });
+    }
+    return;
+  }
+
+  const commit = graph.commitsByHash.get(currentHash);
+  if (!commit || commit.parents.length === 0) {
+    return;
+  }
+
+  const nextVisited = new Set(visited);
+  nextVisited.add(currentHash);
+  const nextThrough = [...through, currentHash];
+
+  for (const parentHash of commit.parents) {
+    collectProjectedTargets(graph, parentHash, visibleHashes, nextThrough, nextVisited, targets, targetKeys);
+  }
 }

@@ -28,6 +28,10 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm run build` passed.
   - `npm test` passed with 228 tests.
   - Added regression coverage that scene layout keys include edge topology to avoid stale node offsets.
+- 2026-05-02 `0.0.27` refs-only merge simplification:
+  - `npm run build` passed.
+  - `npm test` passed with 231 tests.
+  - Added regression coverage for refs-only merge-parent line preservation, hidden merge connector removal, git-simplified sync merge hiding, and detailed-mode topology preservation.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -36,6 +40,7 @@ Record failures, skipped checks, and residual risks.
 - Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
 - Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
 - Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
+- Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification
