@@ -15,6 +15,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-02 `0.0.28` default scope reversal: new revision graph sessions now start with `All Refs` again.
 - 2026-05-02 `0.0.28` current scope refinement: the `View` menu now includes `Show Current Branch Descendants` only for `Current Branch`, which lets that scope include visible references whose tips descend from the current `HEAD` while excluding unrelated sibling refs.
 - 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
+- 2026-05-02 `0.0.28` merge recovery: the graph toolbar now exposes `Abort Merge` only while merge conflicts are present.
 
 ## Verification
 - Run `npm run build`.
@@ -24,7 +25,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 Latest automated verification:
 
 - `npm run build` passed.
-- `npm test` passed with 235 tests.
+- `npm test` passed with 239 tests.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.
@@ -38,3 +39,4 @@ Manual VS Code webview validation is still needed for many UI regressions.
 Manual validation is specifically pending for the TensorFlow fan-out area before and after fetch/update.
 Manual validation is specifically pending for a local branch after merging multiple branches into it in the refs-only graph.
 Manual validation is specifically pending for descendant references in the `Current Branch` scope.
+Manual validation is specifically pending for aborting a conflicted merge from the graph toolbar.

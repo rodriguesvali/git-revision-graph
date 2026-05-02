@@ -624,6 +624,11 @@ export function renderRevisionGraphStyles(): string {
       font-size: 16px;
       font-weight: 700;
     }
+    .view-controls .toolbar-button.destructive:not([hidden]) {
+      border-color: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
+      color: var(--workspace-dirty);
+      background: color-mix(in srgb, var(--workspace-dirty) 14%, var(--panel));
+    }
     .view-controls .toolbar-button .button-icon {
       display: inline-flex;
       align-items: center;

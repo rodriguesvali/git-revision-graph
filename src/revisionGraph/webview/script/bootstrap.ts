@@ -31,6 +31,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const workspaceLed = document.getElementById('workspaceLed');
+    const abortMergeButton = document.getElementById('abortMergeButton');
     const scopeSelect = document.getElementById('scopeSelect');
     const viewOptionsButton = document.getElementById('viewOptionsButton');
     const viewOptionsMenu = document.getElementById('viewOptionsMenu');
@@ -107,6 +108,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         if (isWorkspaceDirty) {
           vscode.postMessage({ type: 'open-source-control' });
         }
+      });
+    }
+    if (abortMergeButton) {
+      abortMergeButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'abort-merge' }, 'Aborting merge...', abortMergeButton);
       });
     }
     if (scopeSelect) {
@@ -673,14 +679,19 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         showCurrentBranchDescendantsToggle.checked = !!state.projectionOptions.showCurrentBranchDescendants;
       }
       if (workspaceLed) {
-        const tooltip = state.isWorkspaceDirty
-          ? 'Workspace dirty: click to open Source Control Changes.'
-          : 'Workspace clean: no pending changes.';
+        const tooltip = state.hasMergeConflicts
+          ? 'Merge conflicts detected: click to open Source Control.'
+          : state.isWorkspaceDirty
+            ? 'Workspace dirty: click to open Source Control Changes.'
+            : 'Workspace clean: no pending changes.';
         workspaceLed.classList.toggle('dirty', !!state.isWorkspaceDirty);
         workspaceLed.classList.toggle('clean', !state.isWorkspaceDirty);
         workspaceLed.disabled = !state.isWorkspaceDirty;
         workspaceLed.setAttribute('aria-label', tooltip);
         workspaceLed.title = tooltip;
+      }
+      if (abortMergeButton) {
+        abortMergeButton.hidden = !state.hasMergeConflicts;
       }
       syncViewOptionsButton();
     }

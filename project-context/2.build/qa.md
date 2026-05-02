@@ -56,6 +56,11 @@ Record command output summaries, not full logs, when verification is performed.
   - Updated graph Git args expectations so graph loading no longer adds `--sparse` for the revision graph.
   - `npm run build` passed.
   - `npm test` passed with 235 tests.
+- 2026-05-02 `0.0.28` abort conflicted merge:
+  - Added a contextual `Abort Merge` toolbar action for conflicted merge state.
+  - Added coverage for confirmed abort, no-conflict no-op, abort failure recovery, webview message validation, and shell rendering.
+  - `npm run build` passed.
+  - `npm test` passed with 239 tests.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -69,6 +74,7 @@ Record failures, skipped checks, and residual risks.
 - Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
 - Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
 - Manual validation is still pending that the `View` menu no longer exposes `Show Branchings & Merges` and that toggling remaining options does not blank the graph.
+- Manual validation is still pending for aborting a conflicted merge from the graph toolbar in an Extension Development Host.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification

@@ -8,6 +8,7 @@ import {
   RevisionGraphRefreshRequest
 } from '../src/revisionGraphRefresh';
 import {
+  abortCurrentMerge,
   createBranchFromResolvedReference,
   createTagFromResolvedReference,
   checkoutResolvedReference,
@@ -43,6 +44,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
+  readonly abortedMerges: number;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
   readonly canceledPrepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -62,6 +64,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const upstreamClears: string[] = [];
+  let abortedMerges = 0;
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
   const canceledPrepareRequests: RevisionGraphRefreshRequest[] = [];
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
@@ -163,6 +166,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async unsetBranchUpstream(_repository, branchName) {
         upstreamClears.push(branchName);
+      },
+      async abortMerge() {
+        abortedMerges += 1;
       }
     },
     ancestryInspector: {
@@ -191,6 +197,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     pushedTags,
     deletedRemoteTags,
     deletedRemoteBranches,
+    get abortedMerges() {
+      return abortedMerges;
+    },
     upstreamClears,
     prepareRequests,
     canceledPrepareRequests,
@@ -1573,6 +1582,55 @@ test('mergeResolvedReference opens Source Control when the merge leaves conflict
     harness.errorMessages[0],
     'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. Automatic merge failed; fix conflicts and then commit the result. [Conflict]'
   );
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('abortCurrentMerge aborts conflicted merges after confirmation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await abortCurrentMerge(repository, harness.services);
+
+  assert.equal(harness.abortedMerges, 1);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Abort the current merge?\n\nConflict resolutions and staged merge changes from this merge may be discarded.',
+      confirmLabel: 'Abort Merge'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Merge aborted. Workspace restored to the pre-merge state.');
+  assert.equal(harness.refreshRequests[0]?.intent, 'full-rebuild');
+});
+
+test('abortCurrentMerge does nothing when there is no conflicted merge', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createServices();
+
+  await abortCurrentMerge(repository, harness.services);
+
+  assert.equal(harness.abortedMerges, 0);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.equal(harness.infoMessages[0], 'There is no conflicted merge to abort.');
+});
+
+test('abortCurrentMerge keeps conflicts visible when abort fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+  harness.services.referenceManager.abortMerge = async () => {
+    throw Object.assign(new Error('Failed to execute git'), {
+      stderr: 'fatal: There is no merge to abort'
+    });
+  };
+
+  await abortCurrentMerge(repository, harness.services);
+
+  assert.equal(harness.errorMessages[0], 'Could not abort the current merge. fatal: There is no merge to abort');
   assert.equal(harness.sourceControlOpens, 1);
 });
 

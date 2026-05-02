@@ -516,6 +516,36 @@ export async function mergeResolvedReference(
   }
 }
 
+export async function abortCurrentMerge(
+  repository: Repository,
+  services: RefActionServices
+): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  try {
+    if (!hasMergeConflicts(repository)) {
+      services.ui.showInformationMessage('There is no conflicted merge to abort.');
+      return;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: 'Abort the current merge?\n\nConflict resolutions and staged merge changes from this merge may be discarded.',
+      confirmLabel: 'Abort Merge'
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    await services.referenceManager.abortMerge(repository);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+    services.ui.showInformationMessage('Merge aborted. Workspace restored to the pre-merge state.');
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not abort the current merge.', error));
+    await services.ui.showSourceControl();
+  }
+}
+
 export async function deleteResolvedReference(
   repository: Repository,
   target: RefActionTarget,

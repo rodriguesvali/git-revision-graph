@@ -24,6 +24,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'fetch-current-repository' }
   | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }
+  | { readonly type: 'abort-merge' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
   | {
     readonly type: 'compare-selected';
@@ -73,6 +74,7 @@ export interface RevisionGraphViewState {
   readonly currentHeadUpstreamName: string | undefined;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
@@ -96,6 +98,7 @@ export interface RevisionGraphViewMetadataPatch {
   readonly currentHeadUpstreamName: string | undefined;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;

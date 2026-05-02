@@ -17,6 +17,7 @@ Planned publishable change set:
 - Simplify the default refs-only graph after merges by hiding unreferenced merge connectors while preserving merged-branch lines from visible merge commits.
 - Start new revision graph sessions in `Current Branch` scope by default. This was later reversed during `0.0.28` development so new sessions start with `All Refs` again.
 - Remove the `Show Branchings & Merges` view option during `0.0.28` development after it proved low-value and introduced graph blanking risk in large repositories.
+- Add an `Abort Merge` graph toolbar action during `0.0.28` development for conflicted merge recovery.
 - Record production and dev-tooling audit status for release readiness.
 
 Publication completed after human approval.

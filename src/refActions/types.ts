@@ -61,6 +61,7 @@ export interface ReferenceManager {
   deleteRemoteTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
   unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
+  abortMerge(repository: Repository): Promise<void>;
 }
 
 export interface AncestryInspector {

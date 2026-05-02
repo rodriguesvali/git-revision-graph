@@ -25,7 +25,7 @@ import {
   NODE_PADDING_X,
   RevisionGraphNodeLayout
 } from '../webview/shared';
-import { formatUpstreamLabel, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
+import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
@@ -243,6 +243,7 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
       : undefined,
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
+    hasMergeConflicts: hasMergeConflicts(repository),
     sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, patchedScene.edges),
     references
   });
@@ -256,6 +257,7 @@ export function buildRevisionGraphViewFingerprint(
     | 'currentHeadUpstreamName'
     | 'publishedLocalBranchNames'
     | 'isWorkspaceDirty'
+    | 'hasMergeConflicts'
     | 'sceneLayoutKey'
     | 'references'
   >
@@ -266,6 +268,7 @@ export function buildRevisionGraphViewFingerprint(
     currentHeadUpstreamName: state.currentHeadUpstreamName,
     publishedLocalBranchNames: [...state.publishedLocalBranchNames].sort(),
     isWorkspaceDirty: state.isWorkspaceDirty,
+    hasMergeConflicts: state.hasMergeConflicts,
     sceneLayoutKey: state.sceneLayoutKey,
     references: state.references.map((reference) => ({
       id: reference.id,
@@ -408,6 +411,7 @@ export function buildEmptyRevisionGraphViewState(
     currentHeadUpstreamName: undefined,
     publishedLocalBranchNames: [],
     isWorkspaceDirty: false,
+    hasMergeConflicts: false,
     projectionOptions,
     mergeBlockedTargets: [],
     primaryAncestorPathsByHash: {},
@@ -476,6 +480,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
       : undefined,
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
+    hasMergeConflicts: hasMergeConflicts(repository),
     projectionOptions,
     mergeBlockedTargets,
     primaryAncestorPathsByHash: primaryAncestorPaths,

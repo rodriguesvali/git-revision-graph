@@ -50,6 +50,10 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({ type: 'checkout', refName: 'main', refKind: 'head' }),
     { type: 'checkout', refName: 'main', refKind: 'head' }
   );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'abort-merge' }),
+    { type: 'abort-merge' }
+  );
 });
 
 test('isRevisionGraphMessageAllowedForState restricts graph actions to known refs and commits', () => {
@@ -82,6 +86,17 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       state
     ),
     false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'abort-merge' }, state),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'abort-merge' },
+      { ...state, hasMergeConflicts: true, isWorkspaceDirty: true }
+    ),
+    true
   );
 });
 
@@ -131,6 +146,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     currentHeadUpstreamName: 'origin/main',
     publishedLocalBranchNames: ['main'],
     isWorkspaceDirty: false,
+    hasMergeConflicts: false,
     projectionOptions: {
       refScope: 'all',
       showTags: true,

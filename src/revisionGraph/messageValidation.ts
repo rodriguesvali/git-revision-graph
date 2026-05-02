@@ -27,6 +27,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'fetch-current-repository':
     case 'open-source-control':
     case 'choose-repository':
+    case 'abort-merge':
     case 'sync-current-head':
       return { type: message.type };
     case 'set-projection-options': {
@@ -111,6 +112,8 @@ export function isRevisionGraphMessageAllowedForState(
     case 'set-projection-options':
     case 'sync-current-head':
       return true;
+    case 'abort-merge':
+      return state.viewMode === 'ready' && state.hasMergeConflicts;
     case 'compare-selected':
       return hasKnownRevision(state, message.baseRevision) && hasKnownRevision(state, message.compareRevision);
     case 'show-log':

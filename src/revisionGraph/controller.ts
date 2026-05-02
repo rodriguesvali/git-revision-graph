@@ -10,6 +10,7 @@ import {
   shouldPromptForGraphRepositoryOnOpen
 } from '../repositorySelection';
 import {
+  abortCurrentMerge,
   createBranchFromResolvedReference,
   createTagFromResolvedReference,
   checkoutResolvedReference,
@@ -389,6 +390,11 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'open-source-control':
         await this.actionServices.ui.showSourceControl();
+        return;
+      case 'abort-merge':
+        if (this.currentRepository) {
+          await abortCurrentMerge(this.currentRepository, this.actionServices);
+        }
         return;
       case 'choose-repository':
         {
@@ -875,6 +881,7 @@ export class RevisionGraphController implements vscode.Disposable {
       currentHeadUpstreamName: state.currentHeadUpstreamName,
       publishedLocalBranchNames: state.publishedLocalBranchNames,
       isWorkspaceDirty: state.isWorkspaceDirty,
+      hasMergeConflicts: state.hasMergeConflicts,
       projectionOptions: state.projectionOptions,
       mergeBlockedTargets: state.mergeBlockedTargets,
       primaryAncestorPathsByHash: state.primaryAncestorPathsByHash,

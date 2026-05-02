@@ -28,6 +28,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /class="workspace-led clean"/);
   assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+class="workspace-led clean"/);
   assert.match(html, /id="workspaceLed"/);
+  assert.match(html, /id="abortMergeButton"/);
+  assert.match(html, /Abort Merge/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
   assert.match(html, /id="nodeLayer"/);
@@ -142,6 +144,7 @@ test('reorganize button does not crash when clustering by ref families', async (
       currentHeadUpstreamName: 'origin/main',
       publishedLocalBranchNames: ['main'],
       isWorkspaceDirty: false,
+      hasMergeConflicts: false,
       projectionOptions: {
         refScope: 'all',
         showTags: true,
@@ -389,6 +392,16 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
 });
 
+test('renders merge abort controls only for conflicted merge state', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /const abortMergeButton = document\.getElementById\('abortMergeButton'\);/);
+  assert.match(html, /postMessageWithLoading\(\{ type: 'abort-merge' \}, 'Aborting merge\.\.\.', abortMergeButton\);/);
+  assert.match(html, /abortMergeButton\.hidden = !state\.hasMergeConflicts;/);
+  assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasMergeConflicts;/);
+  assert.match(html, /Merge conflicts detected: click to open Source Control\./);
+});
+
 test('scopes current branch descendants controls to current branch scope', () => {
   const html = renderRevisionGraphShellHtml();
 
@@ -498,6 +511,7 @@ function createWebviewRuntime() {
     'loadingOverlay',
     'loadingMessage',
     'workspaceLed',
+    'abortMergeButton',
     'scopeSelect',
     'viewOptions',
     'viewOptionsButton',

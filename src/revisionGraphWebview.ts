@@ -103,6 +103,17 @@ export function renderRevisionGraphShellHtml(): string {
         title="Workspace clean: no pending changes."
       ></button>
       <button
+        id="abortMergeButton"
+        class="toolbar-button destructive"
+        type="button"
+        title="Abort the current merge"
+        aria-label="Abort the current merge"
+        hidden
+      >
+        <span class="button-icon">!</span>
+        <span>Abort Merge</span>
+      </button>
+      <button
         id="reorganizeButton"
         class="toolbar-button"
         type="button"

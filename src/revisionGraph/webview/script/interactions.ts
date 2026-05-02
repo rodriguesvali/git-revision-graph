@@ -612,6 +612,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (viewOptionsButton) {
         viewOptionsButton.disabled = toolbarBusy;
       }
+      if (abortMergeButton) {
+        abortMergeButton.disabled = toolbarBusy || !currentState?.hasMergeConflicts;
+      }
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;
       }
@@ -650,6 +653,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         showRemoteBranchesToggle,
         showStashesToggle,
         showCurrentBranchDescendantsToggle,
+        abortMergeButton,
         searchInput,
         searchPrevButton,
         searchNextButton,

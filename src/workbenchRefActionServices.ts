@@ -124,6 +124,9 @@ export function createWorkbenchRefActionServices(
             throw error;
           }
         }
+      },
+      async abortMerge(repository) {
+        await execGitWithResult(repository.rootUri.fsPath, ['merge', '--abort']);
       }
     },
     ancestryInspector: {

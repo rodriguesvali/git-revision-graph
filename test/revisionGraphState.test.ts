@@ -889,6 +889,7 @@ test('metadata patch fingerprints use the same complete ref set as the applied p
       currentHeadUpstreamName: patchedState!.currentHeadUpstreamName,
       publishedLocalBranchNames: patchedState!.publishedLocalBranchNames,
       isWorkspaceDirty: patchedState!.isWorkspaceDirty,
+      hasMergeConflicts: patchedState!.hasMergeConflicts,
       sceneLayoutKey: patchedState!.sceneLayoutKey,
       references: patchedState!.references
     })

@@ -37,6 +37,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Delete a pushed tag from a selected Git remote while keeping the local tag unchanged
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
+- Abort a conflicted merge from the graph toolbar after confirmation
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
@@ -246,7 +247,7 @@ The Activity Bar container also includes two on-demand secondary views:
 
 ## Known Limitations
 
-- Merge conflict resolution is delegated to the standard Source Control experience in VS Code.
+- Merge conflict resolution is delegated to the standard Source Control experience in VS Code; conflicted merges can be aborted from the graph toolbar.
 - Remote branch deletion uses an explicit confirmation because it affects the remote repository and collaborators.
 - Binary files or unusual encodings may not render nicely in content-based diffs.
 - The UX for tags and detached HEAD workflows is intentionally minimal in the MVP.
@@ -261,7 +262,7 @@ Potential improvements after the MVP:
 - Avoid full graph reloads for metadata-only local operations such as checkout and branch creation when the loaded commit window is unchanged
 - Preserve zoom, scroll, and selection context across lightweight refreshes
 - Add refresh profiling and caching for graph load, projection, and layout hot paths
-- Improve conflict-awareness before checkout and merge
+- Improve conflict guidance before checkout and merge
 - Add reference rename flows
 - Support richer branch metadata in the UI
 - Expand the revision graph with richer revision actions
