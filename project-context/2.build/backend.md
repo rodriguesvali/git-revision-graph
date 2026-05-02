@@ -20,6 +20,11 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Reused completed graph snapshot cache entries for cancelable refreshes without sharing cancelable in-flight Git work.
   - Skipped redundant persisted layout-cache workspace-state writes when the serialized payload is unchanged.
   - Bounded Show Log expanded-change caching with a small LRU-style commit budget.
+- 2026-05-02 `0.0.28` graph cache architecture:
+  - Applied explicit repository overlays to ready-state graph snapshots before projection and merge-blocked target calculation.
+  - Reused the same overlay normalization for metadata patches and ready-state builds.
+  - Relaxed short-lived snapshot cache keys so same-commit ref renames can reuse loaded history while live labels come from repository overlays.
+  - Added `state.repositoryOverlay` graph load trace timing.
 
 ## Verification
 - Run `npm run build`.
@@ -29,7 +34,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
 Latest automated verification for this backend slice:
 
 - `npm run build` passed.
-- `npm test` passed with 225 tests.
+- `npm test` passed with 234 tests.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

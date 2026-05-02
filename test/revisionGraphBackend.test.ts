@@ -95,6 +95,68 @@ test('reuses completed graph snapshot cache entries for cancelable refreshes', a
   );
 });
 
+test('reuses graph snapshot cache entries when ref names change on the same commits', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const refs = [
+        createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+      ];
+      const repository = createRepository({
+        root: repositoryPath,
+        head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+        refs
+      });
+      const limitPolicy: RevisionGraphLimitPolicy = {
+        initialLimit: 50,
+        steppedLimits: [],
+        minVisibleNodes: 1,
+        graphCommandTimeoutMs: 60000
+      };
+      const events: RevisionGraphLoadTraceEvent[] = [];
+
+      await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        limitPolicy,
+        undefined,
+        (event) => events.push(event)
+      );
+      refs.splice(
+        0,
+        refs.length,
+        createRef({ type: RefType.Head, name: 'release/2026', commit: 'head1' })
+      );
+      (repository.state as { HEAD: ReturnType<typeof createBranch> }).HEAD = createBranch({
+        type: RefType.Head,
+        name: 'release/2026',
+        commit: 'head1'
+      });
+
+      await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        limitPolicy,
+        undefined,
+        (event) => events.push(event)
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(calls.trim().split('\n').length, 1);
+      assert.ok(events.some((event) =>
+        event.phase === 'snapshot.cache'
+        && event.detail?.includes('result=hit')
+        && event.detail.includes('reason=completed')
+      ));
+    }
+  );
+});
+
 test('uses the graph limit policy timeout for snapshot git log commands', async () => {
   await withFakeGitScript(
     [

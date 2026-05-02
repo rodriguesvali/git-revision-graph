@@ -35,6 +35,12 @@ export interface ReadyRevisionGraphViewStateBundle {
   readonly state: RevisionGraphViewState;
 }
 
+export interface RevisionGraphRepositoryOverlay {
+  readonly refs: readonly Ref[];
+  readonly currentHeadName: string | undefined;
+  readonly currentHeadCommit: string | undefined;
+}
+
 export async function buildReadyRevisionGraphViewStateBundle(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
@@ -46,7 +52,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal);
   const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace);
-  const state = await buildReadyRevisionGraphViewStateFromSnapshot(
+  return buildReadyRevisionGraphViewStateBundleFromSnapshot(
     repository,
     projectionOptions,
     autoArrangeOnInit,
@@ -55,11 +61,6 @@ export async function buildReadyRevisionGraphViewStateBundle(
     signal,
     trace
   );
-
-  return {
-    snapshot,
-    state
-  };
 }
 
 export async function buildReadyRevisionGraphViewState(
@@ -85,6 +86,60 @@ export async function buildReadyRevisionGraphViewState(
 }
 
 export async function buildReadyRevisionGraphViewStateFromSnapshot(
+  repository: Repository,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  autoArrangeOnInit: boolean,
+  backend: RevisionGraphBackend,
+  snapshot: RevisionGraphSnapshot,
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
+): Promise<RevisionGraphViewState> {
+  return (
+    await buildReadyRevisionGraphViewStateBundleFromSnapshot(
+      repository,
+      projectionOptions,
+      autoArrangeOnInit,
+      backend,
+      snapshot,
+      signal,
+      trace
+    )
+  ).state;
+}
+
+async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
+  repository: Repository,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  autoArrangeOnInit: boolean,
+  backend: RevisionGraphBackend,
+  snapshot: RevisionGraphSnapshot,
+  signal?: AbortSignal,
+  trace?: RevisionGraphLoadTraceSink
+): Promise<ReadyRevisionGraphViewStateBundle> {
+  const overlayedSnapshot = await buildGraphSnapshotWithRepositoryOverlay(
+    repository,
+    snapshot,
+    projectionOptions,
+    signal,
+    trace
+  );
+  const state = await buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
+    repository,
+    projectionOptions,
+    autoArrangeOnInit,
+    backend,
+    overlayedSnapshot,
+    signal,
+    trace
+  );
+
+  return {
+    snapshot: overlayedSnapshot,
+    state
+  };
+}
+
+async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
   autoArrangeOnInit: boolean,
@@ -129,12 +184,11 @@ export async function buildMetadataPatchedRevisionGraphViewState(
   }
 
   const repositoryRefs = await loadRepositoryRefs(repository, signal);
+  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
   const patchedScene = patchSceneReferences(
     previousState.scene,
     snapshot.graph,
-    repositoryRefs,
-    repository.state.HEAD?.commit,
-    repository.state.HEAD?.name,
+    overlay,
     previousState.projectionOptions
   );
   if (!patchedScene) {
@@ -167,12 +221,11 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
   }
 
   const repositoryRefs = await loadRepositoryRefs(repository, signal);
+  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
   const patchedScene = patchSceneReferences(
     previousState.scene,
     snapshot.graph,
-    repositoryRefs,
-    repository.state.HEAD?.commit,
-    repository.state.HEAD?.name,
+    overlay,
     previousState.projectionOptions
   );
   if (!patchedScene) {
@@ -242,6 +295,84 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
     error.name = 'AbortError';
     throw error;
   }
+}
+
+async function buildGraphSnapshotWithRepositoryOverlay(
+  repository: Repository,
+  snapshot: RevisionGraphSnapshot,
+  projectionOptions: RevisionGraphViewState['projectionOptions'],
+  signal: AbortSignal | undefined,
+  trace: RevisionGraphLoadTraceSink | undefined
+): Promise<RevisionGraphSnapshot> {
+  const overlayStartedAt = nowMs();
+  const repositoryRefs = await loadRepositoryRefs(repository, signal);
+  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
+  const overlayedGraph = applyRevisionGraphRepositoryOverlay(snapshot.graph, overlay, projectionOptions);
+  traceDuration(
+    trace,
+    'state.repositoryOverlay',
+    overlayStartedAt,
+    `refs=${repositoryRefs.length}; changed=${overlayedGraph !== snapshot.graph}`
+  );
+
+  return overlayedGraph === snapshot.graph
+    ? snapshot
+    : {
+        ...snapshot,
+        graph: overlayedGraph
+      };
+}
+
+function buildRevisionGraphRepositoryOverlay(
+  repository: Repository,
+  refs: readonly Ref[]
+): RevisionGraphRepositoryOverlay {
+  return {
+    refs,
+    currentHeadName: repository.state.HEAD?.name,
+    currentHeadCommit: repository.state.HEAD?.commit
+  };
+}
+
+function applyRevisionGraphRepositoryOverlay(
+  graph: CommitGraph,
+  overlay: RevisionGraphRepositoryOverlay,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): CommitGraph {
+  const visibleHashes = new Set(graph.orderedCommits.map((commit) => commit.hash));
+  const refsByHash = buildOverlayRefsByHash(
+    graph,
+    visibleHashes,
+    graph.orderedCommits,
+    overlay,
+    projectionOptions
+  );
+  if (!refsByHash) {
+    return graph;
+  }
+
+  let changed = false;
+  const orderedCommits = graph.orderedCommits.map((commit) => {
+    const refs = sortRevisionGraphRefs(refsByHash.get(commit.hash) ?? []);
+    if (!areRevisionGraphRefsEqual(commit.refs, refs)) {
+      changed = true;
+      return {
+        ...commit,
+        refs
+      };
+    }
+
+    return commit;
+  });
+  if (!changed) {
+    return graph;
+  }
+
+  return {
+    ...graph,
+    orderedCommits,
+    commitsByHash: new Map(orderedCommits.map((commit) => [commit.hash, commit] as const))
+  };
 }
 
 async function loadRepositoryRefs(
@@ -432,15 +563,40 @@ function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewRefere
 function patchSceneReferences(
   scene: RevisionGraphScene,
   graph: CommitGraph,
-  repositoryRefs: readonly Ref[],
-  currentHeadCommit: string | undefined,
-  currentHeadName: string | undefined,
+  overlay: RevisionGraphRepositoryOverlay,
   projectionOptions: RevisionGraphViewState['projectionOptions']
 ): RevisionGraphScene | undefined {
   const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
-  const refsByHash = seedSupplementalRefsByHash(scene, projectionOptions);
+  const refsByHash = buildOverlayRefsByHash(
+    graph,
+    visibleHashes,
+    scene.nodes,
+    overlay,
+    projectionOptions
+  );
+  if (!refsByHash) {
+    return undefined;
+  }
 
-  for (const ref of repositoryRefs) {
+  return {
+    ...scene,
+    nodes: scene.nodes.map((node) => ({
+      ...node,
+      refs: sortRevisionGraphRefs(refsByHash.get(node.hash) ?? [])
+    }))
+  };
+}
+
+function buildOverlayRefsByHash(
+  graph: CommitGraph,
+  visibleHashes: ReadonlySet<string>,
+  sourceNodes: readonly { readonly hash: string; readonly refs: readonly RevisionGraphRef[] }[],
+  overlay: RevisionGraphRepositoryOverlay,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): Map<string, RevisionGraphRef[]> | undefined {
+  const refsByHash = seedSupplementalRefsByHash(sourceNodes, projectionOptions);
+
+  for (const ref of overlay.refs) {
     const normalizedRef = normalizeRepositoryRef(ref, projectionOptions);
     if (!normalizedRef) {
       continue;
@@ -454,22 +610,21 @@ function patchSceneReferences(
     pushRef(refsByHash, hash, normalizedRef);
   }
 
-  if (currentHeadName) {
-    const headHash = resolveVisibleHeadHash(graph, visibleHashes, currentHeadName, currentHeadCommit);
+  if (overlay.currentHeadName) {
+    const headHash = resolveVisibleHeadHash(
+      graph,
+      visibleHashes,
+      overlay.currentHeadName,
+      overlay.currentHeadCommit
+    );
     if (!headHash) {
       return undefined;
     }
 
-    pushRef(refsByHash, headHash, { name: currentHeadName, kind: 'head' });
+    pushRef(refsByHash, headHash, { name: overlay.currentHeadName, kind: 'head' });
   }
 
-  return {
-    ...scene,
-    nodes: scene.nodes.map((node) => ({
-      ...node,
-      refs: sortRevisionGraphRefs(refsByHash.get(node.hash) ?? [])
-    }))
-  };
+  return refsByHash;
 }
 
 function resolveVisibleHeadHash(
@@ -588,12 +743,12 @@ function getRevisionGraphRefPriority(kind: RevisionGraphRef['kind']): number {
 }
 
 function seedSupplementalRefsByHash(
-  scene: RevisionGraphScene,
+  sourceNodes: readonly { readonly hash: string; readonly refs: readonly RevisionGraphRef[] }[],
   projectionOptions: RevisionGraphViewState['projectionOptions']
 ): Map<string, RevisionGraphRef[]> {
   const refsByHash = new Map<string, RevisionGraphRef[]>();
 
-  for (const node of scene.nodes) {
+  for (const node of sourceNodes) {
     const supplementalRefs = node.refs.filter((ref) => ref.kind === 'stash' && projectionOptions.showStashes);
     if (supplementalRefs.length > 0) {
       refsByHash.set(node.hash, [...supplementalRefs]);
@@ -615,4 +770,15 @@ function getRevisionGraphRefFamilyKey(ref: RevisionGraphRef): string {
   }
 
   return ref.name;
+}
+
+function areRevisionGraphRefsEqual(
+  left: readonly RevisionGraphRef[],
+  right: readonly RevisionGraphRef[]
+): boolean {
+  return left.length === right.length &&
+    left.every((ref, index) => {
+      const other = right[index];
+      return other?.name === ref.name && other.kind === ref.kind;
+    });
 }

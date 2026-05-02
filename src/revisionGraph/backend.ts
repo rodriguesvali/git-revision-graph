@@ -340,15 +340,14 @@ function buildSnapshotCacheKey(
   options: RevisionGraphProjectionOptions,
   limitPolicy: RevisionGraphLimitPolicy
 ): string {
-  const refsKey = repository.state.refs
-    .map((ref) => `${ref.type}:${ref.remote ?? ''}:${ref.name ?? ''}:${ref.commit ?? ''}`)
+  // Ref names and upstream metadata are applied later as overlays; the snapshot
+  // cache key keeps only data that can change the loaded history window.
+  const refsKey = [...new Set(repository.state.refs.map(buildSnapshotTopologyRefKey))]
+    .sort()
     .join('|');
-  const headKey = [
-    repository.state.HEAD?.name ?? '',
-    repository.state.HEAD?.commit ?? '',
-    repository.state.HEAD?.upstream?.remote ?? '',
-    repository.state.HEAD?.upstream?.name ?? ''
-  ].join(':');
+  const headKey = repository.state.HEAD?.commit
+    ? `commit:${repository.state.HEAD.commit}`
+    : `name:${repository.state.HEAD?.name ?? ''}`;
   const policyKey = [
     limitPolicy.initialLimit,
     limitPolicy.steppedLimits.join(','),
@@ -363,6 +362,12 @@ function buildSnapshotCacheKey(
     JSON.stringify(options),
     policyKey
   ].join('::');
+}
+
+function buildSnapshotTopologyRefKey(ref: Repository['state']['refs'][number]): string {
+  return ref.commit
+    ? `${ref.type}:commit:${ref.commit}`
+    : `${ref.type}:name:${ref.remote ?? ''}:${ref.name ?? ''}`;
 }
 
 async function loadSnapshot(

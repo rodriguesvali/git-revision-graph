@@ -88,6 +88,75 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.errorMessage, undefined);
 });
 
+test('applies repository overlay refs before projecting a ready graph state', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createBranch({
+      type: RefType.Head,
+      name: 'release/2026',
+      commit: 'head1',
+      upstream: { remote: 'origin', name: 'release/2026' }
+    }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'release/2026', commit: 'head1' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/release/2026', commit: 'head1' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'origin/main', kind: 'remote' }
+      ]
+    }
+  ]);
+  let mergeBlockedSnapshotRefs: unknown;
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets(_repository, snapshot) {
+      mergeBlockedSnapshotRefs = snapshot.graph.orderedCommits[0]?.refs;
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+
+  assert.deepEqual(
+    state.scene.nodes[0]?.refs,
+    [
+      { name: 'release/2026', kind: 'head' },
+      { name: 'origin/release/2026', kind: 'remote' }
+    ]
+  );
+  assert.deepEqual(mergeBlockedSnapshotRefs, state.scene.nodes[0]?.refs);
+});
+
 test('scene layout keys include edge topology to avoid stale node offsets', () => {
   const scene = {
     nodes: [

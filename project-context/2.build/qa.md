@@ -37,6 +37,10 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm test` passed with 232 tests.
   - Updated graph Git args coverage so the default projection loads `HEAD` for the current branch scope.
   - Added regression coverage requiring a fresh graph snapshot when projection options change.
+- 2026-05-02 `0.0.28` graph cache architecture:
+  - `npm run build` passed.
+  - `npm test` passed with 234 tests.
+  - Added regression coverage for ready-state repository overlay application and same-commit ref rename snapshot cache reuse.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -44,6 +48,7 @@ Record failures, skipped checks, and residual risks.
 - Manual Extension Development Host validation is still pending for graph loading, show log, unified diff, compare results, restore, and fetch-with-tags flows.
 - Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
 - Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
+- Manual graph cache overlay validation is still pending for branch rename/create, checkout, fetch, and pull scenarios in a real repository.
 - Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
 - Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
