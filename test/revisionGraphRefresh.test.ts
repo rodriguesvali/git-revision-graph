@@ -112,7 +112,7 @@ test('projection option changes require a fresh graph snapshot', () => {
   assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, defaultOptions), false);
   assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
     ...defaultOptions,
-    refScope: 'all'
+    refScope: 'current'
   }), true);
   assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
     ...defaultOptions,

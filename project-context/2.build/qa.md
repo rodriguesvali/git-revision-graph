@@ -41,6 +41,9 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm run build` passed.
   - `npm test` passed with 234 tests.
   - Added regression coverage for ready-state repository overlay application and same-commit ref rename snapshot cache reuse.
+- 2026-05-02 `0.0.28` default scope reversal:
+  - Restored the default revision graph scope to `All Refs`.
+  - Updated graph Git args coverage so the default projection loads `--all`.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -49,6 +52,7 @@ Record failures, skipped checks, and residual risks.
 - Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
 - Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
 - Manual graph cache overlay validation is still pending for branch rename/create, checkout, fetch, and pull scenarios in a real repository.
+- Manual default-scope validation is still pending in an Extension Development Host.
 - Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
 - Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.

@@ -118,7 +118,7 @@ export type RevisionGraphViewHostMessage =
 
 export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProjectionOptions {
   return {
-    refScope: 'current',
+    refScope: 'all',
     showTags: true,
     showRemoteBranches: true,
     showStashes: true,

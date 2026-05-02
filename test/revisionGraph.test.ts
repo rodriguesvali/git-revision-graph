@@ -57,12 +57,12 @@ test('parses decoration labels by type', () => {
   ]);
 });
 
-test('builds default git log args for the current branch', () => {
+test('builds default git log args for all refs', () => {
   assert.deepEqual(
     buildRevisionGraphGitLogArgs(6000, createDefaultRevisionGraphProjectionOptions()),
     [
       'log',
-      'HEAD',
+      '--all',
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
