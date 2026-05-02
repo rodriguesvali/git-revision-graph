@@ -2,7 +2,7 @@
   "name": "git-revision-graph",
   "displayName": "Git Revision Graph",
   "description": "Visualize Git revision graphs and run compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated VS Code view.",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "publisher": "rodriguesvali",
   "license": "MIT",
   "icon": "media/icon.png",

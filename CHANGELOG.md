@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.28
+
+### Highlights
+
+- Added conflicted-merge recovery from the graph toolbar, with `Abort Merge` shown only while a real conflicted merge is in progress.
+- Added `Copy ref name to clipboard` to graph reference context menus.
+- Added optional descendant reference visibility for `Current Branch` scope.
+- Removed the low-value `Show Branchings & Merges` graph view option to keep the default graph path simpler and more stable.
+
+### Performance & Refresh
+
+- Improved local checkout refreshes by patching visible ref metadata without rebuilding graph topology when the target commit is already loaded.
+- Improved local branch deletion responsiveness by removing the deleted branch line from the existing card through a direct reference patch.
+- Updated merge-conflict and successful abort flows to patch workspace state without rerendering the graph.
+- Expanded graph cache architecture for safer snapshot reuse and metadata freshness.
+- Added five more main graph zoom-out levels for large graph navigation.
+
+### Quality
+
+- `npm run build` passed for the 0.0.28 release candidate.
+- `npm test` passed with 246 tests for the 0.0.28 release candidate.
+- Manual Extension Development Host smoke testing is still recommended before packaging or Marketplace publication.
+- Version bump to `0.0.28` has been applied in `package.json` and `package-lock.json`.
+
 ## 0.0.27
 
 ### Highlights

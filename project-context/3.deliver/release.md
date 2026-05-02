@@ -1,5 +1,68 @@
 # Release Readiness
 
+## 0.0.28 Candidate Readiness
+
+Current package baseline: `0.0.27`.
+
+Candidate target: `0.0.28`.
+
+Status: Deliver preparation in progress. Version bump to `0.0.28` has been applied in `package.json` and `package-lock.json`. No VSIX packaging, Marketplace publishing, or deployment command has been run for this candidate.
+
+Candidate change set:
+
+- Add an `Abort Merge` graph toolbar action for real conflicted merge state only.
+- Hide `Abort Merge` outside conflicted merge state instead of showing it disabled in clean workspaces.
+- Align the conflicted workspace LED and `Abort Merge` button colors, with a brighter hover state.
+- Update merge conflict detection and successful merge abort flows through lightweight workspace-state patches instead of graph refreshes.
+- Optimize local branch checkout metadata updates so visible branch colors can change without graph topology rebuilds.
+- Optimize local branch deletion by removing the deleted local branch line from the existing card through a direct reference patch.
+- Add `Copy ref name to clipboard` to context menus for visible graph references.
+- Add the `Current Branch` descendant-reference view option.
+- Remove the low-value `Show Branchings & Merges` graph view option.
+- Add five more main graph zoom-out levels.
+- Continue graph cache architecture work for safer snapshot reuse and metadata freshness.
+
+Planning references:
+
+- `project-context/2.build/features/0.0.28-abort-conflicted-merge.md`
+- `project-context/2.build/features/0.0.28-copy-ref-name.md`
+- `project-context/2.build/features/0.0.28-current-scope-descendant-refs.md`
+- `project-context/2.build/features/0.0.28-graph-cache-architecture.md`
+- `project-context/2.build/features/0.0.28-graph-zoom-out-levels.md`
+- `project-context/2.build/features/0.0.28-remove-branchings-merges-view-option.md`
+- `project-context/2.build/features/0.0.24-checkout-metadata-patch-efficiency.md`
+
+Verification completed:
+
+- Fresh `npm run build` passed after the `0.0.28` version bump.
+- Fresh `npm test` passed with 246 tests after the `0.0.28` version bump. This includes `npm run build` through the test script.
+- `git diff --check` passed after the latest feature edits.
+
+Remaining release gates:
+
+- Complete manual Extension Development Host smoke testing for graph load, context menus, checkout, local branch delete, conflicted merge/abort merge, scope/view options, zoom, and repository switching.
+- Decide whether to run production/dev dependency audit for the candidate.
+- Confirm release notes.
+- Package with `npm run package:vsix` only after approval.
+- Publish with the appropriate `npm run publish:*` command only after approval.
+
+Manual smoke-test focus:
+
+- Clean workspace: `Abort Merge` is hidden and the dirty LED reflects clean state.
+- Conflicted merge: dirty LED shows conflict color, `Abort Merge` appears, confirmation is required, abort updates toolbar state without graph rebuild.
+- Local checkout between visible branches: previous branch turns green and new branch turns red without graph rebuild.
+- Local branch deletion: confirmation is required and the branch line disappears from the card without a long `Updating revision graph...` wait.
+- Reference context menu: `Copy ref name to clipboard` copies exact local, remote, tag, and `HEAD` ref labels.
+- Structural commit context menu: ref-name copy action is not shown.
+- `Current Branch` descendant refs: descendant refs appear only when the option is enabled.
+- Large graph navigation: added zoom-out levels remain usable and do not blank the graph.
+
+Candidate risks:
+
+- Some refresh paths now intentionally avoid graph rebuilds; manual validation should watch for stale ref labels after Git operations.
+- Conflicted merge UI depends on both unresolved merge changes and `MERGE_HEAD`; worktree edge cases should be tested in normal repositories and worktrees.
+- Direct branch-line removal assumes the deleted local branch is visible in the current scene; hidden/off-snapshot branches should continue to rely on later normal refresh behavior.
+
 ## Version / Change Set
 Previous package baseline: `0.0.26`.
 
