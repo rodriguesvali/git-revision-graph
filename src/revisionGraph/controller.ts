@@ -882,6 +882,7 @@ export class RevisionGraphController implements vscode.Disposable {
       publishedLocalBranchNames: state.publishedLocalBranchNames,
       isWorkspaceDirty: state.isWorkspaceDirty,
       hasMergeConflicts: state.hasMergeConflicts,
+      hasConflictedMerge: state.hasConflictedMerge,
       projectionOptions: state.projectionOptions,
       mergeBlockedTargets: state.mergeBlockedTargets,
       primaryAncestorPathsByHash: state.primaryAncestorPathsByHash,

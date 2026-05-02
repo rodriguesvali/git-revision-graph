@@ -25,7 +25,7 @@ import {
   NODE_PADDING_X,
   RevisionGraphNodeLayout
 } from '../webview/shared';
-import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
+import { formatUpstreamLabel, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
@@ -244,6 +244,7 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     hasMergeConflicts: hasMergeConflicts(repository),
+    hasConflictedMerge: hasConflictedMerge(repository),
     sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, patchedScene.edges),
     references
   });
@@ -258,6 +259,7 @@ export function buildRevisionGraphViewFingerprint(
     | 'publishedLocalBranchNames'
     | 'isWorkspaceDirty'
     | 'hasMergeConflicts'
+    | 'hasConflictedMerge'
     | 'sceneLayoutKey'
     | 'references'
   >
@@ -269,6 +271,7 @@ export function buildRevisionGraphViewFingerprint(
     publishedLocalBranchNames: [...state.publishedLocalBranchNames].sort(),
     isWorkspaceDirty: state.isWorkspaceDirty,
     hasMergeConflicts: state.hasMergeConflicts,
+    hasConflictedMerge: state.hasConflictedMerge,
     sceneLayoutKey: state.sceneLayoutKey,
     references: state.references.map((reference) => ({
       id: reference.id,
@@ -412,6 +415,7 @@ export function buildEmptyRevisionGraphViewState(
     publishedLocalBranchNames: [],
     isWorkspaceDirty: false,
     hasMergeConflicts: false,
+    hasConflictedMerge: false,
     projectionOptions,
     mergeBlockedTargets: [],
     primaryAncestorPathsByHash: {},
@@ -481,6 +485,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     hasMergeConflicts: hasMergeConflicts(repository),
+    hasConflictedMerge: hasConflictedMerge(repository),
     projectionOptions,
     mergeBlockedTargets,
     primaryAncestorPathsByHash: primaryAncestorPaths,

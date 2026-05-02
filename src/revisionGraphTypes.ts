@@ -75,6 +75,7 @@ export interface RevisionGraphViewState {
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
   readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
@@ -99,6 +100,7 @@ export interface RevisionGraphViewMetadataPatch {
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
   readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;

@@ -94,7 +94,14 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'abort-merge' },
-      { ...state, hasMergeConflicts: true, isWorkspaceDirty: true }
+      { ...state, hasMergeConflicts: true, hasConflictedMerge: false, isWorkspaceDirty: true }
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'abort-merge' },
+      { ...state, hasMergeConflicts: true, hasConflictedMerge: true, isWorkspaceDirty: true }
     ),
     true
   );
@@ -147,6 +154,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     publishedLocalBranchNames: ['main'],
     isWorkspaceDirty: false,
     hasMergeConflicts: false,
+    hasConflictedMerge: false,
     projectionOptions: {
       refScope: 'all',
       showTags: true,

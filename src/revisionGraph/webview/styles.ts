@@ -617,6 +617,9 @@ export function renderRevisionGraphStyles(): string {
       line-height: 1;
       font-weight: 600;
     }
+    .view-controls .toolbar-button[hidden] {
+      display: none;
+    }
     .view-controls .toolbar-button.icon-only {
       width: 32px;
       min-width: 32px;

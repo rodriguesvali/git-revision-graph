@@ -146,6 +146,7 @@ test('reorganize button does not crash when clustering by ref families', async (
       publishedLocalBranchNames: ['main'],
       isWorkspaceDirty: false,
       hasMergeConflicts: false,
+      hasConflictedMerge: false,
       projectionOptions: {
         refScope: 'all',
         showTags: true,
@@ -398,8 +399,9 @@ test('renders merge abort controls only for conflicted merge state', () => {
 
   assert.match(html, /const abortMergeButton = document\.getElementById\('abortMergeButton'\);/);
   assert.match(html, /postMessageWithLoading\(\{ type: 'abort-merge' \}, 'Aborting merge\.\.\.', abortMergeButton\);/);
-  assert.match(html, /abortMergeButton\.hidden = !state\.hasMergeConflicts;/);
-  assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasMergeConflicts;/);
+  assert.match(html, /abortMergeButton\.hidden = !state\.hasConflictedMerge;/);
+  assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasConflictedMerge;/);
+  assert.match(html, /\.view-controls \.toolbar-button\[hidden\]\s*\{\s*display: none;/);
   assert.match(html, /Merge conflicts detected: click to open Source Control\./);
 });
 

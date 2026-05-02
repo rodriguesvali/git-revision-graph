@@ -113,7 +113,7 @@ export function isRevisionGraphMessageAllowedForState(
     case 'sync-current-head':
       return true;
     case 'abort-merge':
-      return state.viewMode === 'ready' && state.hasMergeConflicts;
+      return state.viewMode === 'ready' && state.hasConflictedMerge;
     case 'compare-selected':
       return hasKnownRevision(state, message.baseRevision) && hasKnownRevision(state, message.compareRevision);
     case 'show-log':

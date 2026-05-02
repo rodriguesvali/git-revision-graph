@@ -613,7 +613,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         viewOptionsButton.disabled = toolbarBusy;
       }
       if (abortMergeButton) {
-        abortMergeButton.disabled = toolbarBusy || !currentState?.hasMergeConflicts;
+        abortMergeButton.disabled = toolbarBusy || !currentState?.hasConflictedMerge;
       }
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;

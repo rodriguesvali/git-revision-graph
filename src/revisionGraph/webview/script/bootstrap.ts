@@ -691,7 +691,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         workspaceLed.title = tooltip;
       }
       if (abortMergeButton) {
-        abortMergeButton.hidden = !state.hasMergeConflicts;
+        abortMergeButton.hidden = !state.hasConflictedMerge;
       }
       syncViewOptionsButton();
     }
