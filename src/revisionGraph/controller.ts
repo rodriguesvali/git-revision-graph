@@ -773,13 +773,14 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
-      if (
-        intent === 'metadata-patch' &&
-        eventKind === 'state' &&
-        buildRevisionGraphWorkspaceStatePatch(repository).hasMergeConflicts &&
-        this.applyCurrentRepositoryWorkspaceStatePatch()
-      ) {
-        return;
+      if (intent === 'metadata-patch' && eventKind === 'state') {
+        const workspacePatch = buildRevisionGraphWorkspaceStatePatch(repository);
+        if (
+          (workspacePatch.hasMergeConflicts || this.currentState.hasMergeConflicts || this.currentState.hasConflictedMerge) &&
+          this.applyCurrentRepositoryWorkspaceStatePatch(workspacePatch)
+        ) {
+          return;
+        }
       }
 
       if (await this.isRedundantRepositoryRefresh(repository, intent)) {
@@ -914,16 +915,18 @@ export class RevisionGraphController implements vscode.Disposable {
     };
   }
 
-  private applyCurrentRepositoryWorkspaceStatePatch(): boolean {
+  private applyCurrentRepositoryWorkspaceStatePatch(
+    patch = this.currentRepository ? buildRevisionGraphWorkspaceStatePatch(this.currentRepository) : undefined
+  ): boolean {
     if (
       !this.currentRepository ||
+      !patch ||
       this.currentState.viewMode !== 'ready' ||
       this.currentState.repositoryPath !== this.currentRepository.rootUri.fsPath
     ) {
       return false;
     }
 
-    const patch = buildRevisionGraphWorkspaceStatePatch(this.currentRepository);
     this.currentLoadingLabel = undefined;
     this.currentLoadingMode = undefined;
     this.currentErrorMessage = undefined;

@@ -1606,7 +1606,10 @@ test('abortCurrentMerge aborts conflicted merges after confirmation', async () =
     }
   ]);
   assert.equal(harness.infoMessages[0], 'Merge aborted. Workspace restored to the pre-merge state.');
-  assert.equal(harness.refreshRequests[0]?.intent, 'full-rebuild');
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'overlay-patch',
+    repositoryPath: '/workspace/repo'
+  });
 });
 
 test('abortCurrentMerge does nothing when there is no conflicted merge', async () => {

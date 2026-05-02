@@ -523,7 +523,6 @@ export async function abortCurrentMerge(
   repository: Repository,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     if (!hasMergeConflicts(repository)) {
       services.ui.showInformationMessage('There is no conflicted merge to abort.');
@@ -540,7 +539,7 @@ export async function abortCurrentMerge(
 
     await services.referenceManager.abortMerge(repository);
     services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+      { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
     );
     services.ui.showInformationMessage('Merge aborted. Workspace restored to the pre-merge state.');
   } catch (error) {
