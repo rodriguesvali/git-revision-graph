@@ -10,6 +10,7 @@ Use `README.md`, `docs/revision-graph-parity-plan.md`, feature artifacts in `pro
 Record frontend changes here only when they affect shared webview behavior. Prefer feature-specific files under `project-context/2.build/features/` for individual feature notes.
 
 - 2026-05-01 `0.0.27` stabilization: toolbar zoom now preserves the current graph viewport instead of recentering the graph, fixing a pre-existing issue when zooming while scrolled below the top.
+- 2026-05-02 `0.0.27` graph layout stabilization: scene layout identity now includes a fan-out balance version and edge topology so normal refresh/update paths discard stale node offsets and converge with full rebuild disposition.
 
 ## Verification
 - Run `npm run build`.
@@ -19,7 +20,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 Latest automated verification:
 
 - `npm run build` passed.
-- `npm test` passed with 223 tests.
+- `npm test` passed with 228 tests.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.
@@ -30,3 +31,4 @@ Document changed files, user-facing behavior, known browser-side state risks, an
 
 ## Known Gaps
 Manual VS Code webview validation is still needed for many UI regressions.
+Manual validation is specifically pending for the TensorFlow fan-out area before and after fetch/update.

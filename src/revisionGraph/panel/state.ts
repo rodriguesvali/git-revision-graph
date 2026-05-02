@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { Branch, Ref, RefType, Repository } from '../../git';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../backend';
 import {
@@ -6,6 +8,7 @@ import {
   CommitGraph,
   projectDecoratedCommitGraph,
   RevisionGraphRef,
+  RevisionGraphEdge,
   RevisionGraphScene
 } from '../../revisionGraphData';
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
@@ -19,10 +22,13 @@ import {
   createReferenceId,
   GRAPH_PADDING_BOTTOM,
   GRAPH_PADDING_TOP,
-  NODE_PADDING_X
+  NODE_PADDING_X,
+  RevisionGraphNodeLayout
 } from '../webview/shared';
 import { formatUpstreamLabel, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
+
+const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
 
 export interface ReadyRevisionGraphViewStateBundle {
   readonly snapshot: RevisionGraphSnapshot;
@@ -174,6 +180,7 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
   }
 
   const references = buildViewReferences(patchedScene);
+  const nodeLayouts = buildNodeLayouts(patchedScene);
 
   return buildRevisionGraphViewFingerprint({
     repositoryPath: repository.rootUri.fsPath,
@@ -183,7 +190,7 @@ export async function buildMetadataPatchedRevisionGraphViewFingerprint(
       : undefined,
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
-    sceneLayoutKey: previousState.sceneLayoutKey,
+    sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, patchedScene.edges),
     references
   });
 }
@@ -345,7 +352,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     scene,
     nodeLayouts,
     references,
-    sceneLayoutKey: nodeLayouts.map((node) => `${node.hash}:${node.row}:${Math.round(node.defaultLeft)}:${Math.round(node.width)}`).join('|'),
+    sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, scene.edges),
     baseCanvasWidth,
     baseCanvasHeight,
     emptyMessage: undefined,
@@ -355,6 +362,41 @@ async function buildReadyRevisionGraphViewStateFromParts(
   };
   traceDuration(trace, 'state.readyViewState', partsStartedAt, `nodes=${scene.nodes.length}; refs=${references.length}`);
   return state;
+}
+
+export function buildRevisionGraphSceneLayoutKey(
+  nodeLayouts: readonly RevisionGraphNodeLayout[],
+  edges: readonly RevisionGraphEdge[]
+): string {
+  const hash = createHash('sha256');
+  hash.update(REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION);
+
+  for (const node of nodeLayouts) {
+    hash.update('\0node\0');
+    hash.update(node.hash);
+    hash.update('\0');
+    hash.update(String(node.row));
+    hash.update('\0');
+    hash.update(String(Math.round(node.defaultLeft)));
+    hash.update('\0');
+    hash.update(String(Math.round(node.width)));
+    hash.update('\0');
+    hash.update(String(Math.round(node.height)));
+  }
+
+  for (const edge of [...edges].sort(compareRevisionGraphEdges)) {
+    hash.update('\0edge\0');
+    hash.update(edge.from);
+    hash.update('\0');
+    hash.update(edge.to);
+  }
+
+  return `${REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION}:${hash.digest('base64url')}`;
+}
+
+function compareRevisionGraphEdges(left: RevisionGraphEdge, right: RevisionGraphEdge): number {
+  return left.from.localeCompare(right.from) ||
+    left.to.localeCompare(right.to);
 }
 
 function getPublishedLocalBranchNames(repository: Repository): readonly string[] {

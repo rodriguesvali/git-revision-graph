@@ -24,6 +24,10 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm run build` passed.
   - `npm test` passed with 225 tests.
   - Added regression coverage for completed snapshot cache reuse in cancelable refreshes and bounded Show Log cached changes.
+- 2026-05-02 `0.0.27` graph layout stabilization:
+  - `npm run build` passed.
+  - `npm test` passed with 228 tests.
+  - Added regression coverage that scene layout keys include edge topology to avoid stale node offsets.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -31,6 +35,7 @@ Record failures, skipped checks, and residual risks.
 - Manual Extension Development Host validation is still pending for graph loading, show log, unified diff, compare results, restore, and fetch-with-tags flows.
 - Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
 - Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
+- Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification

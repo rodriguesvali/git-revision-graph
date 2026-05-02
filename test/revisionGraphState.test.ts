@@ -9,9 +9,11 @@ import {
   canPreserveRevisionGraphContext,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
+  buildRevisionGraphSceneLayoutKey,
   buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewState
 } from '../src/revisionGraph/panel/state';
+import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 import { createBranch, createChange, createHead, createRef, createRepository } from './fakes';
 
@@ -81,9 +83,57 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.autoArrangeOnInit, true);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
-  assert.match(state.sceneLayoutKey, /^head1:0:\d+:\d+$/);
+  assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
+});
+
+test('scene layout keys include edge topology to avoid stale node offsets', () => {
+  const scene = {
+    nodes: [
+      {
+        hash: 'parent',
+        refs: [{ name: 'main', kind: 'head' as const }],
+        author: 'Ada',
+        date: '2026-05-02',
+        subject: 'Parent',
+        x: 220,
+        row: 0,
+        lane: 1
+      },
+      {
+        hash: 'child-a',
+        refs: [{ name: 'feature/a', kind: 'branch' as const }],
+        author: 'Ada',
+        date: '2026-05-02',
+        subject: 'Child A',
+        x: 0,
+        row: 1,
+        lane: 0
+      },
+      {
+        hash: 'child-b',
+        refs: [{ name: 'feature/b', kind: 'branch' as const }],
+        author: 'Ada',
+        date: '2026-05-02',
+        subject: 'Child B',
+        x: 440,
+        row: 1,
+        lane: 2
+      }
+    ],
+    edges: [
+      { from: 'child-a', to: 'parent' }
+    ],
+    laneCount: 3,
+    rowCount: 2
+  };
+  const nodeLayouts = buildNodeLayouts(scene);
+
+  assert.notEqual(
+    buildRevisionGraphSceneLayoutKey(nodeLayouts, scene.edges),
+    buildRevisionGraphSceneLayoutKey(nodeLayouts, [{ from: 'child-b', to: 'parent' }])
+  );
 });
 
 test('builds the empty state without rebuilding the shell', () => {

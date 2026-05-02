@@ -13,6 +13,7 @@ Planned publishable change set:
 - Tighten graph, compare-results, and show-log webview message validation with payload size budgets.
 - Preserve the current graph viewport when using toolbar zoom actions.
 - Improve cache observability and bounded cache behavior for snapshot, layout persistence, and Show Log expanded changes.
+- Stabilize graph layout refresh paths so fan-out balancing does not reuse stale browser-side offsets after topology or layout-rule changes.
 - Record production and dev-tooling audit status for release readiness.
 
 Do not publish without explicit human approval.
@@ -24,6 +25,7 @@ Planning references:
 - `docs/release-0.0.27-prioritization.md`
 - `project-context/2.build/features/0.0.27-stabilization-hardening.md`
 - `project-context/2.build/features/0.0.27-cache-stabilization.md`
+- `project-context/2.build/features/0.0.27-graph-layout-stabilization.md`
 
 ## Verification Summary
 - Required for meaningful changes: `npm run build`.
@@ -35,15 +37,16 @@ Current verification:
 - Source stabilization hardening for Git CLI bounds, revision option terminators, compare restore path guards, and webview message budgets is complete.
 - Graph zoom viewport preservation fix is complete.
 - Cache stabilization for snapshot trace/reuse, layout persistence deduplication, and Show Log cached-change bounding is complete.
+- Graph layout stabilization for topology-aware scene keys and stale-offset invalidation is complete.
 - `npm run build` passed.
-- `npm test` passed with 225 tests.
+- `npm test` passed with 228 tests.
 - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
 - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`; dependency remediation requires explicit approval.
 - Manual Extension Development Host validation is recommended before Marketplace publication.
 
 Release preparation status:
 
-- Source release readiness is complete for the implemented stabilization hardening and cache stabilization slices.
+- Source release readiness is complete for the implemented stabilization hardening, cache stabilization, and graph layout stabilization slices.
 - Version bump to `0.0.27` is not complete.
 - Release notes for `0.0.27` are not complete in `CHANGELOG.md`.
 - VSIX packaging is not complete for `0.0.27`.
@@ -66,7 +69,7 @@ The extension depends on the built-in `vscode.git` extension and supports VS Cod
 Runtime dependency audit status for `0.0.27` stabilization is clean. Dev-tooling audit remediation is pending approval.
 
 ## Monitoring
-Post-release monitoring should prioritize Git command timeout/output-limit reports, option-like ref handling, compare restore failures, ref-backed diff content loading, cache freshness or stale graph reports, Marketplace feedback, and regressions reported against graph/show-log/compare workflows.
+Post-release monitoring should prioritize Git command timeout/output-limit reports, option-like ref handling, compare restore failures, ref-backed diff content loading, cache freshness or stale graph reports, layout-offset/fan-out disposition regressions, Marketplace feedback, and regressions reported against graph/show-log/compare workflows.
 
 ## Rollback
 Rollback options depend on Marketplace state:
