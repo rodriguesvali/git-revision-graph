@@ -63,6 +63,10 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: 'copy-commit-hash', commitHash: message.commitHash }
         : undefined;
+    case 'copy-ref-name':
+      return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
+        ? { type: 'copy-ref-name', refName: message.refName, refKind: message.refKind }
+        : undefined;
     case 'checkout':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
@@ -124,6 +128,8 @@ export function isRevisionGraphMessageAllowedForState(
       return hasKnownRevision(state, message.revision);
     case 'copy-commit-hash':
       return hasKnownCommitHash(state, message.commitHash);
+    case 'copy-ref-name':
+      return hasKnownReference(state, message.refName, message.refKind);
     case 'checkout':
     case 'delete':
       return isRevisionGraphRefKind(message.refKind) && hasKnownReference(state, message.refName, message.refKind);

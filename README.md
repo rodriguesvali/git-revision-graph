@@ -27,7 +27,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
 - On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
-- Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes
+- Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
@@ -237,6 +237,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Delete a remote tag from a selected Git remote
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream
+- Copy a selected reference name to the clipboard
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 

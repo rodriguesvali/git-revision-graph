@@ -37,6 +37,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
   | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
   | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
+  | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | {
     readonly type: 'create-branch';

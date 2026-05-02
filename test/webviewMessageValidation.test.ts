@@ -26,6 +26,10 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     }),
     undefined
   );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'copy-ref-name', refName: 'main', refKind: 'commit' }),
+    undefined
+  );
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -54,6 +58,10 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({ type: 'abort-merge' }),
     { type: 'abort-merge' }
   );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'copy-ref-name', refName: 'main', refKind: 'head' }),
+    { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
+  );
 });
 
 test('isRevisionGraphMessageAllowedForState restricts graph actions to known refs and commits', () => {
@@ -79,6 +87,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       state
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-ref-name', refName: 'main', refKind: 'head' },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-ref-name', refName: 'missing', refKind: 'branch' },
+      state
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(

@@ -240,6 +240,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /compare\.hash === target\.hash/);
   assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(\{ type: 'compare-with-worktree', revision: target\.revision, label: target\.label \}\);/s);
   assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash \}\);/s);
+  assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(\{ type: 'copy-ref-name', refName: target\.name, refKind: target\.kind \}\);/s);
+  assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy ref name to clipboard', \(\) => postCopyRefName\(target\)\);/s);
   assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);

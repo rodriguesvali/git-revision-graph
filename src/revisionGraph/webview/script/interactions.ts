@@ -314,6 +314,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
         appendMenuSection('Inspect');
         appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        if (target.kind !== 'commit') {
+          appendMenuItem('Copy ref name to clipboard', () => postCopyRefName(target));
+        }
         appendMenuSection('Selection');
         appendMenuItem('Clear Selection', () => {
           selected.splice(0, selected.length);
@@ -323,6 +326,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuSection('Inspect');
         appendMenuItem('Show Log', () => postShowLogTarget(target));
         appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        if (target.kind !== 'commit') {
+          appendMenuItem('Copy ref name to clipboard', () => postCopyRefName(target));
+        }
         appendMenuSection('Compare');
         appendMenuItem('Compare With Worktree', () => postCompareWithWorktree(target));
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
@@ -521,6 +527,10 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function postCopyCommitHash(commitHash) {
       vscode.postMessage({ type: 'copy-commit-hash', commitHash });
+    }
+
+    function postCopyRefName(target) {
+      vscode.postMessage({ type: 'copy-ref-name', refName: target.name, refKind: target.kind });
     }
 
     function postCheckout(target) {

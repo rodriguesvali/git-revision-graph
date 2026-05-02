@@ -474,6 +474,10 @@ export class RevisionGraphController implements vscode.Disposable {
         await vscode.env.clipboard.writeText(message.commitHash);
         this.actionServices.ui.showInformationMessage(`Copied commit ${message.commitHash.slice(0, 8)}.`);
         return;
+      case 'copy-ref-name':
+        await vscode.env.clipboard.writeText(message.refName);
+        this.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
+        return;
       case 'checkout':
         if (this.currentRepository) {
           await checkoutResolvedReference(
