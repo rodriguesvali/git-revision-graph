@@ -58,7 +58,6 @@ export function shouldReloadSnapshotForProjectionOptionsChange(
     previousOptions.showTags !== nextOptions.showTags ||
     previousOptions.showRemoteBranches !== nextOptions.showRemoteBranches ||
     previousOptions.showStashes !== nextOptions.showStashes ||
-    previousOptions.showBranchingsAndMerges !== nextOptions.showBranchingsAndMerges ||
     previousOptions.showCurrentBranchDescendants !== nextOptions.showCurrentBranchDescendants;
 }
 

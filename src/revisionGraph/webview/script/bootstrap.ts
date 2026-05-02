@@ -37,7 +37,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
-    const showBranchingsToggle = document.getElementById('showBranchingsToggle');
     const showCurrentBranchDescendantsToggle = document.getElementById('showCurrentBranchDescendantsToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
@@ -58,7 +57,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showBranchingsAndMerges: false,
       showCurrentBranchDescendants: false
     };
     let mergeBlockedTargets = new Set();
@@ -146,14 +144,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           type: 'set-projection-options',
           options: { showStashes: showStashesToggle.checked }
         }, showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
-      });
-    }
-    if (showBranchingsToggle) {
-      showBranchingsToggle.addEventListener('change', () => {
-        postMessageWithLoading({
-          type: 'set-projection-options',
-          options: { showBranchingsAndMerges: showBranchingsToggle.checked }
-        }, showBranchingsToggle.checked ? 'Showing branchings and merges...' : 'Showing refs only...', showBranchingsToggle);
       });
     }
     if (showCurrentBranchDescendantsToggle) {
@@ -666,9 +656,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showStashesToggle) {
         showStashesToggle.checked = !!state.projectionOptions.showStashes;
-      }
-      if (showBranchingsToggle) {
-        showBranchingsToggle.checked = !!state.projectionOptions.showBranchingsAndMerges;
       }
       if (showCurrentBranchDescendantsToggle) {
         showCurrentBranchDescendantsToggle.checked = !!state.projectionOptions.showCurrentBranchDescendants;

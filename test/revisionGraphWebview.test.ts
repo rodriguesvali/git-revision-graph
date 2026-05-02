@@ -10,7 +10,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /id="viewOptionsButton"/);
   assert.match(html, /id="viewOptionsMenu"/);
-  assert.match(html, /Show Branchings &amp; Merges/);
+  assert.doesNotMatch(html, /Show Branchings &amp; Merges/);
+  assert.doesNotMatch(html, /id="showBranchingsToggle"/);
   assert.match(html, /id="showRemoteBranchesToggle"/);
   assert.match(html, /Show Remote Branches/);
   assert.match(html, /id="showStashesToggle"/);
@@ -145,7 +146,6 @@ test('reorganize button does not crash when clustering by ref families', async (
         showTags: true,
         showRemoteBranches: true,
         showStashes: true,
-        showBranchingsAndMerges: true,
         showCurrentBranchDescendants: true
       },
       mergeBlockedTargets: [],
@@ -490,7 +490,7 @@ function createWebviewRuntime() {
     'showTagsToggle',
     'showRemoteBranchesToggle',
     'showStashesToggle',
-    'showBranchingsToggle',
+    'showCurrentBranchDescendantsToggle',
     'searchInput',
     'searchResultBadge',
     'searchPrevButton',

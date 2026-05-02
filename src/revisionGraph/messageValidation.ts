@@ -159,7 +159,7 @@ function validateProjectionOptions(value: unknown): Partial<RevisionGraphProject
     options.refScope = value.refScope;
   }
 
-  for (const key of ['showTags', 'showRemoteBranches', 'showStashes', 'showBranchingsAndMerges', 'showCurrentBranchDescendants'] as const) {
+  for (const key of ['showTags', 'showRemoteBranches', 'showStashes', 'showCurrentBranchDescendants'] as const) {
     if (value[key] !== undefined) {
       if (!isBoolean(value[key])) {
         return undefined;

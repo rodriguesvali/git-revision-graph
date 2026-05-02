@@ -101,10 +101,6 @@ export function buildRevisionGraphGitLogArgs(
 
   args.push('--topo-order', '--simplify-by-decoration');
 
-  if (options.showBranchingsAndMerges) {
-    args.push('--sparse');
-  }
-
   args.push('--decorate=short');
 
   if (!options.showTags) {

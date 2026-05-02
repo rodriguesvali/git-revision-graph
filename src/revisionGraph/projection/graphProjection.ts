@@ -9,11 +9,10 @@ import {
 import { collectAncestorHashes, collectDescendantHashes } from '../model/commitGraphQueries';
 
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
-  refScope: 'current',
+  refScope: 'all',
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
-  showBranchingsAndMerges: false,
   showCurrentBranchDescendants: false
 };
 
@@ -139,11 +138,7 @@ function buildVisibleHashes(
       .map((commit) => commit.hash)
   );
 
-  if (options.showBranchingsAndMerges) {
-    return visibleHashes;
-  }
-
-  return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes, options);
+  return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes);
 }
 
 function buildVisibleHashesFromGitSimplifiedGraph(
@@ -158,8 +153,8 @@ function buildVisibleHashesFromGitSimplifiedGraph(
     .filter((commit) => shouldDisplayCommit(commit, options))
     .map((commit) => commit.hash));
 
-  if (options.showTags && !options.showBranchingsAndMerges) {
-    return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes, options);
+  if (options.showTags) {
+    return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes);
   }
 
   return rewriteGitSimplifiedVisibleHashes(
@@ -176,11 +171,7 @@ function shouldDisplayCommit(
     return true;
   }
 
-  if (!options.showBranchingsAndMerges || commit.isBoundary) {
-    return false;
-  }
-
-  return commit.parents.length > 1 || commit.children.length > 1;
+  return false;
 }
 
 function filterRefs(
@@ -277,8 +268,7 @@ function rewriteGitSimplifiedVisibleHashes(
 function expandVisibleHashesWithStructuralConnectors(
   graph: CommitGraph,
   candidateHashes: ReadonlySet<string>,
-  baseVisibleHashes: ReadonlySet<string>,
-  options: RevisionGraphProjectionOptions
+  baseVisibleHashes: ReadonlySet<string>
 ): Set<string> {
   const visibleHashes = new Set(baseVisibleHashes);
   let changed = true;
@@ -292,7 +282,7 @@ function expandVisibleHashesWithStructuralConnectors(
       }
 
       for (const parentHash of commit.parents) {
-        const connectorHash = findStructuralConnectorHash(graph, parentHash, candidateHashes, visibleHashes, options);
+        const connectorHash = findStructuralConnectorHash(graph, parentHash, candidateHashes, visibleHashes);
         if (!connectorHash || visibleHashes.has(connectorHash)) {
           continue;
         }
@@ -310,8 +300,7 @@ function findStructuralConnectorHash(
   graph: CommitGraph,
   startHash: string,
   candidateHashes: ReadonlySet<string>,
-  visibleHashes: ReadonlySet<string>,
-  options: RevisionGraphProjectionOptions
+  visibleHashes: ReadonlySet<string>
 ): string | undefined {
   let currentHash: string | undefined = startHash;
   const visited = new Set<string>();
@@ -326,7 +315,7 @@ function findStructuralConnectorHash(
       return undefined;
     }
 
-    if (isStructuralConnectorCommit(commit, options)) {
+    if (isStructuralConnectorCommit(commit)) {
       return currentHash;
     }
 
@@ -342,13 +331,8 @@ function findStructuralConnectorHash(
 }
 
 function isStructuralConnectorCommit(
-  commit: CommitGraph['orderedCommits'][number],
-  options: RevisionGraphProjectionOptions
+  commit: CommitGraph['orderedCommits'][number]
 ): boolean {
-  if (options.showBranchingsAndMerges) {
-    return commit.parents.length > 1 || commit.children.length > 1;
-  }
-
   return commit.children.length > 1;
 }
 

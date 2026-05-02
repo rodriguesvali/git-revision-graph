@@ -136,7 +136,6 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showBranchingsAndMerges: true,
       showCurrentBranchDescendants: true
     },
     mergeBlockedTargets: [],

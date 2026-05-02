@@ -122,7 +122,6 @@ export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProj
     showTags: true,
     showRemoteBranches: true,
     showStashes: true,
-    showBranchingsAndMerges: false,
     showCurrentBranchDescendants: false
   };
 }

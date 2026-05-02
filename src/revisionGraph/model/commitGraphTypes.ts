@@ -28,7 +28,6 @@ export interface RevisionGraphProjectionOptions {
   readonly showTags: boolean;
   readonly showRemoteBranches: boolean;
   readonly showStashes: boolean;
-  readonly showBranchingsAndMerges: boolean;
   readonly showCurrentBranchDescendants: boolean;
 }
 

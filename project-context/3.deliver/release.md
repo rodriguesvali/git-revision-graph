@@ -14,8 +14,9 @@ Planned publishable change set:
 - Preserve the current graph viewport when using toolbar zoom actions.
 - Improve cache observability and bounded cache behavior for snapshot, layout persistence, and Show Log expanded changes.
 - Stabilize graph layout refresh paths so fan-out balancing does not reuse stale browser-side offsets after topology or layout-rule changes.
-- Simplify the default refs-only graph after merges by hiding unreferenced merge connectors while preserving merged-branch lines from visible merge commits and full topology in the detailed branching/merge view.
+- Simplify the default refs-only graph after merges by hiding unreferenced merge connectors while preserving merged-branch lines from visible merge commits.
 - Start new revision graph sessions in `Current Branch` scope by default. This was later reversed during `0.0.28` development so new sessions start with `All Refs` again.
+- Remove the `Show Branchings & Merges` view option during `0.0.28` development after it proved low-value and introduced graph blanking risk in large repositories.
 - Record production and dev-tooling audit status for release readiness.
 
 Publication completed after human approval.
