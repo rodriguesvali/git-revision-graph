@@ -31,6 +31,7 @@ export function renderRevisionGraphStyles(): string {
       --node-text-dark: #181818;
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
+      --merge-conflict-border: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
       --toolbar-top-offset: 14px;
       --toolbar-safe-height: 68px;
       --graph-top-offset: calc(var(--toolbar-safe-height) + 1px);
@@ -458,15 +459,22 @@ export function renderRevisionGraphStyles(): string {
       cursor: default;
     }
     .workspace-led.dirty {
-      background: var(--workspace-dirty);
+      border-color: var(--merge-conflict-border);
+      background: var(--merge-conflict-border);
       box-shadow:
         0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-        0 0 22px color-mix(in srgb, var(--workspace-dirty) 68%, transparent),
+        0 0 22px color-mix(in srgb, var(--merge-conflict-border) 68%, transparent),
         inset 0 1px 2px rgba(255, 255, 255, 0.25);
       cursor: pointer;
       animation: workspace-led-pulse 1.7s ease-in-out infinite;
     }
     .workspace-led.dirty:hover {
+      border-color: var(--workspace-dirty);
+      background: var(--workspace-dirty);
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
+        0 0 28px color-mix(in srgb, var(--workspace-dirty) 82%, transparent),
+        inset 0 1px 2px rgba(255, 255, 255, 0.34);
       transform: scale(1.08);
     }
     .workspace-led:focus-visible {
@@ -477,13 +485,13 @@ export function renderRevisionGraphStyles(): string {
       0%, 100% {
         box-shadow:
           0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-          0 0 18px color-mix(in srgb, var(--workspace-dirty) 58%, transparent),
+          0 0 18px color-mix(in srgb, var(--merge-conflict-border) 58%, transparent),
           inset 0 1px 2px rgba(255, 255, 255, 0.24);
       }
       50% {
         box-shadow:
           0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-          0 0 30px color-mix(in srgb, var(--workspace-dirty) 82%, transparent),
+          0 0 30px color-mix(in srgb, var(--merge-conflict-border) 82%, transparent),
         inset 0 1px 2px rgba(255, 255, 255, 0.32);
       }
     }
@@ -628,7 +636,7 @@ export function renderRevisionGraphStyles(): string {
       font-weight: 700;
     }
     .view-controls .toolbar-button.destructive:not([hidden]) {
-      border-color: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
+      border-color: var(--merge-conflict-border);
       color: var(--workspace-dirty);
       background: color-mix(in srgb, var(--workspace-dirty) 14%, var(--panel));
     }
