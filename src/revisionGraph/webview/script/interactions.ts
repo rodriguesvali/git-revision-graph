@@ -464,7 +464,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         currentProjectionOptions.showTags ? 'tags' : null,
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
         currentProjectionOptions.showStashes ? 'stash' : null,
-        currentProjectionOptions.showCurrentBranchDescendants ? 'current branch descendants' : null
+        currentProjectionOptions.refScope === 'current' && currentProjectionOptions.showCurrentBranchDescendants
+          ? 'current branch descendants'
+          : null
       ].filter(Boolean);
       viewOptionsButton.title = visibleOptions.length > 0
         ? 'View options: showing ' + visibleOptions.join(', ')
@@ -620,7 +622,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         showStashesToggle.disabled = toolbarBusy;
       }
       if (showCurrentBranchDescendantsToggle) {
-        showCurrentBranchDescendantsToggle.disabled = toolbarBusy;
+        showCurrentBranchDescendantsToggle.disabled = toolbarBusy || currentProjectionOptions.refScope !== 'current';
       }
       if (reorganizeButton) {
         reorganizeButton.disabled = toolbarBusy;

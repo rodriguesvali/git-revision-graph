@@ -50,6 +50,7 @@ import {
 import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
+  normalizeRevisionGraphProjectionOptionsForScope,
   RevisionGraphViewMetadataPatch,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
@@ -403,10 +404,10 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       case 'set-projection-options':
         {
-          const nextProjectionOptions = {
+          const nextProjectionOptions = normalizeRevisionGraphProjectionOptionsForScope({
             ...this.projectionOptions,
             ...message.options
-          };
+          });
           if (shouldReloadSnapshotForProjectionOptionsChange(this.projectionOptions, nextProjectionOptions)) {
             this.currentSnapshot = undefined;
             this.snapshotReloadSemaphore.markReloadRequired();

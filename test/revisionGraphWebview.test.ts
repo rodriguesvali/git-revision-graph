@@ -16,6 +16,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Show Remote Branches/);
   assert.match(html, /id="showStashesToggle"/);
   assert.match(html, /Show Stash/);
+  assert.match(html, /<label id="showCurrentBranchDescendantsOption" for="showCurrentBranchDescendantsToggle" hidden>/);
   assert.match(html, /id="searchInput"/);
   assert.match(html, /Find in graph\.\.\./);
   assert.match(html, /id="searchResultBadge"/);
@@ -386,6 +387,20 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /event\.key\.toLowerCase\(\) === 'f'/);
   assert.match(html, /currentState\.scene\.nodes/);
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
+});
+
+test('scopes current branch descendants controls to current branch scope', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /const showCurrentBranchDescendantsOption = document\.getElementById\('showCurrentBranchDescendantsOption'\);/);
+  assert.match(html, /if \(nextRefScope !== 'current'\) \{\s*options\.showCurrentBranchDescendants = false;\s*\}/s);
+  assert.match(html, /if \(currentProjectionOptions\.refScope !== 'current'\) \{\s*return;\s*\}/s);
+  assert.match(html, /showCurrentBranchDescendantsOption\.hidden = state\.projectionOptions\.refScope !== 'current';/);
+  assert.match(html, /showCurrentBranchDescendantsToggle\.disabled = toolbarBusy \|\| currentProjectionOptions\.refScope !== 'current';/);
+  assert.match(
+    html,
+    /currentProjectionOptions\.refScope === 'current' && currentProjectionOptions\.showCurrentBranchDescendants\s*\?\s*'current branch descendants'/s
+  );
 });
 
 function createWebviewRuntime() {

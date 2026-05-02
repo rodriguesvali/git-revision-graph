@@ -46,15 +46,16 @@ Record command output summaries, not full logs, when verification is performed.
   - Updated graph Git args coverage so the default projection loads `--all`.
 - 2026-05-02 `0.0.28` current scope descendant refs:
   - `npm run build` passed.
-  - `npm test` passed with 237 tests.
+  - `npm test` passed with 235 tests.
   - Added coverage that current-scope graph loading uses `HEAD` by default and `--all` when `Show Current Branch Descendants` is enabled.
   - Added projection coverage for default current-branch ancestry and opt-in descendant branch refs from `HEAD` while excluding unrelated sibling branches.
   - Added refresh invalidation coverage for the descendant toggle.
+  - Added webview/controller coverage so `Show Current Branch Descendants` is only available for `Current Branch` scope and is cleared for `All Refs`/`Local Branches`.
 - 2026-05-02 `0.0.28` branch/merge view option removal:
   - Removed the `Show Branchings & Merges` webview control and projection option.
   - Updated graph Git args expectations so graph loading no longer adds `--sparse` for the revision graph.
   - `npm run build` passed.
-  - `npm test` passed with 233 tests.
+  - `npm test` passed with 235 tests.
 
 ## Issues
 Record failures, skipped checks, and residual risks.

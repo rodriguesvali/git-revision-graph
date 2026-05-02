@@ -13,7 +13,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-02 `0.0.27` graph layout stabilization: scene layout identity now includes a fan-out balance version and edge topology so normal refresh/update paths discard stale node offsets and converge with full rebuild disposition.
 - 2026-05-02 `0.0.27` refs-only merge simplification: the default graph now hides unreferenced merge connector cards while preserving merged-branch lines from visible merge commits.
 - 2026-05-02 `0.0.28` default scope reversal: new revision graph sessions now start with `All Refs` again.
-- 2026-05-02 `0.0.28` current scope refinement: the `View` menu now includes `Show Current Branch Descendants`, which lets `Current Branch` include visible references whose tips descend from the current `HEAD` while excluding unrelated sibling refs.
+- 2026-05-02 `0.0.28` current scope refinement: the `View` menu now includes `Show Current Branch Descendants` only for `Current Branch`, which lets that scope include visible references whose tips descend from the current `HEAD` while excluding unrelated sibling refs.
 - 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
 
 ## Verification
@@ -24,7 +24,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 Latest automated verification:
 
 - `npm run build` passed.
-- `npm test` passed with 233 tests.
+- `npm test` passed with 235 tests.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.

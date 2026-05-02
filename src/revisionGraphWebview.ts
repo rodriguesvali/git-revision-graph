@@ -50,7 +50,7 @@ export function renderRevisionGraphShellHtml(): string {
           <input id="showStashesToggle" type="checkbox" />
           <span>Show Stash</span>
         </label>
-        <label for="showCurrentBranchDescendantsToggle">
+        <label id="showCurrentBranchDescendantsOption" for="showCurrentBranchDescendantsToggle" hidden>
           <input id="showCurrentBranchDescendantsToggle" type="checkbox" />
           <span>Show Current Branch Descendants</span>
         </label>

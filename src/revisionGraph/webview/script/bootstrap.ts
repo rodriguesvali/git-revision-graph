@@ -37,6 +37,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
+    const showCurrentBranchDescendantsOption = document.getElementById('showCurrentBranchDescendantsOption');
     const showCurrentBranchDescendantsToggle = document.getElementById('showCurrentBranchDescendantsToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
@@ -110,9 +111,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (scopeSelect) {
       scopeSelect.addEventListener('change', () => {
+        const nextRefScope = scopeSelect.value;
+        const options = { refScope: nextRefScope };
+        if (nextRefScope !== 'current') {
+          options.showCurrentBranchDescendants = false;
+        }
         postMessageWithLoading({
           type: 'set-projection-options',
-          options: { refScope: scopeSelect.value }
+          options
         }, 'Updating graph scope...', scopeSelect);
       });
     }
@@ -148,6 +154,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (showCurrentBranchDescendantsToggle) {
       showCurrentBranchDescendantsToggle.addEventListener('change', () => {
+        if (currentProjectionOptions.refScope !== 'current') {
+          return;
+        }
         postMessageWithLoading({
           type: 'set-projection-options',
           options: { showCurrentBranchDescendants: showCurrentBranchDescendantsToggle.checked }
@@ -656,6 +665,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showStashesToggle) {
         showStashesToggle.checked = !!state.projectionOptions.showStashes;
+      }
+      if (showCurrentBranchDescendantsOption) {
+        showCurrentBranchDescendantsOption.hidden = state.projectionOptions.refScope !== 'current';
       }
       if (showCurrentBranchDescendantsToggle) {
         showCurrentBranchDescendantsToggle.checked = !!state.projectionOptions.showCurrentBranchDescendants;

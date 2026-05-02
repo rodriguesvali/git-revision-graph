@@ -12,7 +12,10 @@ import {
   registerPendingFollowUpRefresh,
   shouldReloadSnapshotForProjectionOptionsChange
 } from '../src/revisionGraphRefresh';
-import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
+import {
+  createDefaultRevisionGraphProjectionOptions,
+  normalizeRevisionGraphProjectionOptionsForScope
+} from '../src/revisionGraphTypes';
 
 test('createActionRefreshRequest attaches the default follow-up repository events', () => {
   assert.deepEqual(
@@ -122,4 +125,45 @@ test('projection option changes require a fresh graph snapshot', () => {
     ...defaultOptions,
     showCurrentBranchDescendants: true
   }), true);
+});
+
+test('projection options clear current branch descendants outside current scope', () => {
+  const defaultOptions = createDefaultRevisionGraphProjectionOptions();
+
+  assert.deepEqual(
+    normalizeRevisionGraphProjectionOptionsForScope({
+      ...defaultOptions,
+      refScope: 'current',
+      showCurrentBranchDescendants: true
+    }),
+    {
+      ...defaultOptions,
+      refScope: 'current',
+      showCurrentBranchDescendants: true
+    }
+  );
+  assert.deepEqual(
+    normalizeRevisionGraphProjectionOptionsForScope({
+      ...defaultOptions,
+      refScope: 'all',
+      showCurrentBranchDescendants: true
+    }),
+    {
+      ...defaultOptions,
+      refScope: 'all',
+      showCurrentBranchDescendants: false
+    }
+  );
+  assert.deepEqual(
+    normalizeRevisionGraphProjectionOptionsForScope({
+      ...defaultOptions,
+      refScope: 'local',
+      showCurrentBranchDescendants: true
+    }),
+    {
+      ...defaultOptions,
+      refScope: 'local',
+      showCurrentBranchDescendants: false
+    }
+  );
 });

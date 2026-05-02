@@ -126,6 +126,17 @@ export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProj
   };
 }
 
+export function normalizeRevisionGraphProjectionOptionsForScope(
+  options: RevisionGraphProjectionOptions
+): RevisionGraphProjectionOptions {
+  return options.refScope === 'current'
+    ? options
+    : {
+        ...options,
+        showCurrentBranchDescendants: false
+      };
+}
+
 export interface RevisionLogEntry {
   readonly hash: string;
   readonly shortHash: string;
