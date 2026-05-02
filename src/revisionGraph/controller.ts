@@ -889,6 +889,16 @@ export class RevisionGraphController implements vscode.Disposable {
     previousState: RevisionGraphViewState,
     nextState: RevisionGraphViewState
   ): boolean {
+    if (
+      this.latestRefreshIntent === 'metadata-patch' &&
+      previousState.viewMode === 'ready' &&
+      nextState.viewMode === 'ready' &&
+      !!previousState.repositoryPath &&
+      previousState.repositoryPath === nextState.repositoryPath
+    ) {
+      return true;
+    }
+
     return canPreserveRevisionGraphContext(previousState, nextState);
   }
 

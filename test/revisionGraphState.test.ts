@@ -174,6 +174,81 @@ test('applies repository overlay refs before projecting a ready graph state', as
   assert.deepEqual(mergeBlockedSnapshotRefs, state.scene.nodes[0]?.refs);
 });
 
+test('metadata patches remove deleted local branch refs without changing graph topology', async () => {
+  const refs = [
+    createRef({ type: RefType.Head, name: 'exported_pr_908716369', commit: 'head1' }),
+    createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/exported_pr_908716369', commit: 'head1' })
+  ];
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'exported_pr_908716369', kind: 'branch' },
+        { name: 'origin/exported_pr_908716369', kind: 'remote' }
+      ]
+    }
+  ]);
+  const snapshot = {
+    graph,
+    loadedAt: Date.now(),
+    requestedLimit: 6000
+  };
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return snapshot;
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const initialState = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+
+  refs.splice(
+    0,
+    refs.length,
+    createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/exported_pr_908716369', commit: 'head1' })
+  );
+
+  const patchedState = await buildMetadataPatchedRevisionGraphViewState(
+    initialState,
+    repository,
+    backend,
+    snapshot
+  );
+
+  assert.ok(patchedState);
+  assert.deepEqual(patchedState?.scene.edges, initialState.scene.edges);
+  assert.notEqual(patchedState?.sceneLayoutKey, initialState.sceneLayoutKey);
+  assert.deepEqual(
+    patchedState?.scene.nodes[0]?.refs,
+    [{ name: 'origin/exported_pr_908716369', kind: 'remote' }]
+  );
+});
+
 test('scene layout keys include edge topology to avoid stale node offsets', () => {
   const scene = {
     nodes: [
