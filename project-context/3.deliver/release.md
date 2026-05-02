@@ -1,14 +1,14 @@
 # Release Readiness
 
-## 0.0.28 Candidate Readiness
+## 0.0.28 Release Readiness
 
 Current package baseline: `0.0.27`.
 
-Candidate target: `0.0.28`.
+Released version: `0.0.28`.
 
-Status: Deliver preparation in progress. Version bump to `0.0.28` has been applied in `package.json` and `package-lock.json`. No VSIX packaging, Marketplace publishing, or deployment command has been run for this candidate.
+Status: Publication completed after human approval. Version bump to `0.0.28` has been applied in `package.json` and `package-lock.json`. VSIX packaging and Marketplace publishing were completed by the maintainer outside this Codex turn.
 
-Candidate change set:
+Published change set:
 
 - Add an `Abort Merge` graph toolbar action for real conflicted merge state only.
 - Hide `Abort Merge` outside conflicted merge state instead of showing it disabled in clean workspaces.
@@ -38,26 +38,26 @@ Verification completed:
 - Fresh `npm test` passed with 246 tests after the `0.0.28` version bump. This includes `npm run build` through the test script.
 - `git diff --check` passed after the latest feature edits.
 
-Remaining release gates:
+Release gates completed:
 
-- Complete manual Extension Development Host smoke testing for graph load, context menus, checkout, local branch delete, conflicted merge/abort merge, scope/view options, zoom, and repository switching.
-- Decide whether to run production/dev dependency audit for the candidate.
-- Confirm release notes.
-- Package with `npm run package:vsix` only after approval.
-- Publish with the appropriate `npm run publish:*` command only after approval.
+- Version bump to `0.0.28`.
+- Release notes confirmed in `CHANGELOG.md`.
+- Fresh build and test verification completed.
+- VSIX packaging completed after approval.
+- Marketplace publishing completed after approval.
 
-Manual smoke-test focus:
+Post-release monitoring focus:
 
-- Clean workspace: `Abort Merge` is hidden and the dirty LED reflects clean state.
-- Conflicted merge: dirty LED shows conflict color, `Abort Merge` appears, confirmation is required, abort updates toolbar state without graph rebuild.
-- Local checkout between visible branches: previous branch turns green and new branch turns red without graph rebuild.
-- Local branch deletion: confirmation is required and the branch line disappears from the card without a long `Updating revision graph...` wait.
-- Reference context menu: `Copy ref name to clipboard` copies exact local, remote, tag, and `HEAD` ref labels.
-- Structural commit context menu: ref-name copy action is not shown.
-- `Current Branch` descendant refs: descendant refs appear only when the option is enabled.
-- Large graph navigation: added zoom-out levels remain usable and do not blank the graph.
+- Clean workspaces should keep `Abort Merge` hidden and show clean workspace status.
+- Conflicted merges should show conflict LED/abort action, require confirmation, and update toolbar state without graph rebuild after abort.
+- Local checkout between visible branches should update previous/current branch colors without graph rebuild.
+- Local branch deletion should remove the branch line quickly without a long `Updating revision graph...` wait.
+- Reference context menus should copy exact local, remote, tag, and `HEAD` ref labels.
+- Structural commit context menus should not show the ref-name copy action.
+- `Current Branch` descendant refs should appear only when the option is enabled.
+- Added zoom-out levels should remain usable on large graphs and should not blank the graph.
 
-Candidate risks:
+Residual risks:
 
 - Some refresh paths now intentionally avoid graph rebuilds; manual validation should watch for stale ref labels after Git operations.
 - Conflicted merge UI depends on both unresolved merge changes and `MERGE_HEAD`; worktree edge cases should be tested in normal repositories and worktrees.

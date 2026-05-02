@@ -6,6 +6,14 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
+Current post-release focus for `0.0.28`:
+
+- Graph toolbar state around clean workspaces, conflicted merges, and merge abort.
+- Metadata-only refresh behavior after local checkout and local branch deletion.
+- Context-menu clipboard behavior for copied ref names.
+- `Current Branch` descendant reference option behavior.
+- Large-graph zoom-out and graph blanking reports.
+
 ## Alerts
 No automated alerting is configured. Treat regressions in graph loading, repository switching, compare/diff, checkout, branch, merge, sync, delete, and log workflows as release-impacting.
 

@@ -13,6 +13,11 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Package with `npm run package:vsix` only after approval.
 - Publish with the appropriate `npm run publish:*` command only after approval.
 
+## Latest Deployment
+- `0.0.28` publication completed after human approval.
+- Packaging and Marketplace publishing were performed by the maintainer outside this Codex turn.
+- Post-release monitoring should follow `project-context/3.deliver/release.md`.
+
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.
 
