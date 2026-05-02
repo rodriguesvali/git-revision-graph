@@ -365,6 +365,7 @@ test('preserves viewport and selection during metadata patches', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function applyMetadataPatch\(patch\)/);
+  assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}/);
   assert.match(html, /preserveSelection: !!patch\.preserveSelection/);
   assert.match(html, /preserveViewport: !!patch\.preserveViewport/);
   assert.match(html, /function captureSelectionSnapshot\(\)/);
@@ -373,6 +374,20 @@ test('preserves viewport and selection during metadata patches', () => {
   assert.match(html, /function restoreScenePlacementSnapshot\(snapshot\)/);
   assert.match(html, /function captureViewportSnapshot\(\)/);
   assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
+});
+
+test('patches reference metadata without rerendering graph edges', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
+  assert.match(html, /patch\.sceneLayoutKey !== sceneLayoutKey/);
+  assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout\);/);
+  assert.match(html, /nextElement\.style\.left = previousLeft;/);
+  assert.match(html, /element\.replaceWith\(nextElement\);/);
+  assert.match(html, /refreshGraphCaches\(\);\s*bindSceneEventHandlers\(\);/s);
+  assert.match(html, /syncMinimap\('full'\);/);
+  assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?renderScene[\s\S]*?function applyWorkspaceStatePatch/);
+  assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
 });
 
 test('patches workspace state without rerendering the graph scene', () => {

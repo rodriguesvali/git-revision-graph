@@ -511,6 +511,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return;
       }
 
+      if (applyReferenceMetadataPatch(patch)) {
+        return;
+      }
+
       applyState(Object.assign({}, currentState, patch, {
         loading: false,
         loadingLabel: undefined,
@@ -519,6 +523,77 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         preserveSelection: !!patch.preserveSelection,
         preserveViewport: !!patch.preserveViewport
       });
+    }
+
+    function applyReferenceMetadataPatch(patch) {
+      if (
+        !patch ||
+        !currentState ||
+        currentState.viewMode !== 'ready' ||
+        patch.sceneLayoutKey !== sceneLayoutKey ||
+        !patch.scene ||
+        !patch.nodeLayouts
+      ) {
+        return false;
+      }
+
+      const selectionSnapshot = patch.preserveSelection ? captureSelectionSnapshot() : [];
+      currentState = Object.assign({}, currentState, patch, {
+        loading: false,
+        loadingLabel: undefined,
+        errorMessage: undefined
+      });
+      currentHeadName = currentState.currentHeadName || null;
+      currentHeadUpstreamName = currentState.currentHeadUpstreamName || null;
+      publishedLocalBranchNames = new Set(currentState.publishedLocalBranchNames || []);
+      isWorkspaceDirty = !!currentState.isWorkspaceDirty;
+      currentProjectionOptions = currentState.projectionOptions || currentProjectionOptions;
+      mergeBlockedTargets = new Set(currentState.mergeBlockedTargets || []);
+      references = currentState.references || [];
+      graphNodes = currentState.nodeLayouts || [];
+      graphEdges = (currentState.scene && currentState.scene.edges) || [];
+      graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      primaryAncestorPathsByHash = currentState.primaryAncestorPathsByHash || {};
+      baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
+      baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
+
+      const sceneNodes = (currentState.scene && currentState.scene.nodes) || [];
+      sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
+      const layoutByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      for (const node of sceneNodes) {
+        const element = nodeElements.get(node.hash);
+        const layout = layoutByHash.get(node.hash);
+        if (!element || !layout) {
+          return false;
+        }
+
+        const previousLeft = element.style.left;
+        const container = document.createElement('div');
+        container.innerHTML = renderNodeMarkup(node, layout);
+        const nextElement = container.firstElementChild;
+        if (!nextElement) {
+          return false;
+        }
+        nextElement.style.left = previousLeft;
+        element.replaceWith(nextElement);
+      }
+
+      refreshGraphCaches();
+      bindSceneEventHandlers();
+      if (patch.preserveSelection) {
+        restoreSelectionSnapshot(selectionSnapshot);
+      } else {
+        const availableReferenceIds = new Set(references.map((ref) => ref.id));
+        selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
+      }
+      updateChrome(currentState);
+      syncSelection();
+      syncToolbarActions();
+      syncSearchResults({ preserveActiveHash: true, focusActive: false });
+      syncMinimap('full');
+      hideLoading();
+      hideStatus();
+      return true;
     }
 
     function applyWorkspaceStatePatch(patch) {
