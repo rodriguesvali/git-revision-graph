@@ -1696,9 +1696,12 @@ test('deleteResolvedReference explains that deleting a tracked local branch leav
   assert.deepEqual(repository.calls.deleteBranch, [{ name: 'feature/demo', force: false }]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was deleted.');
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'overlay-patch',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state'],
+    referencePatch: {
+      removeRefs: [{ kind: 'branch', name: 'feature/demo' }]
+    }
   });
 });
 
@@ -1738,9 +1741,12 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was force deleted.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'overlay-patch',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state'],
+    referencePatch: {
+      removeRefs: [{ kind: 'branch', name: 'feature/demo' }]
+    }
   });
 });
 

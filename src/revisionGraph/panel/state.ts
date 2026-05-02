@@ -14,6 +14,7 @@ import {
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import {
+  RevisionGraphReferencePatch,
   RevisionGraphViewReference,
   RevisionGraphWorkspaceStatePatch,
   RevisionGraphViewState
@@ -215,6 +216,53 @@ export function buildRevisionGraphWorkspaceStatePatch(
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     hasMergeConflicts: hasMergeConflicts(repository),
     hasConflictedMerge: hasConflictedMerge(repository)
+  };
+}
+
+export function applyRevisionGraphReferencePatch(
+  state: RevisionGraphViewState,
+  patch: RevisionGraphReferencePatch
+): RevisionGraphViewState | undefined {
+  if (state.viewMode !== 'ready') {
+    return undefined;
+  }
+
+  const removeRefs = new Set(patch.removeRefs.map((ref) => `${ref.kind}\0${ref.name}`));
+  if (removeRefs.size === 0) {
+    return state;
+  }
+
+  const scene = {
+    ...state.scene,
+    nodes: state.scene.nodes.map((node) => ({
+      ...node,
+      refs: node.refs.filter((ref) => !removeRefs.has(`${ref.kind}\0${ref.name}`))
+    }))
+  };
+  const nodeLayouts = buildNodeLayouts(scene);
+  const references = buildViewReferences(scene);
+
+  return {
+    ...state,
+    scene,
+    nodeLayouts,
+    references,
+    publishedLocalBranchNames: state.publishedLocalBranchNames.filter((name) => !removeRefs.has(`branch\0${name}`)),
+    mergeBlockedTargets: state.mergeBlockedTargets.filter((target) =>
+      !patch.removeRefs.some((ref) => target === `${ref.kind}::${ref.name}`)
+    ),
+    sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, scene.edges),
+    baseCanvasWidth: Math.max(
+      880,
+      nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
+    ),
+    baseCanvasHeight: Math.max(
+      480,
+      nodeLayouts.reduce((max, node) => Math.max(max, node.defaultTop + node.height + GRAPH_PADDING_BOTTOM), GRAPH_PADDING_TOP + GRAPH_PADDING_BOTTOM)
+    ),
+    loading: false,
+    loadingLabel: undefined,
+    errorMessage: undefined
   };
 }
 

@@ -119,6 +119,15 @@ export interface RevisionGraphWorkspaceStatePatch {
   readonly hasConflictedMerge: boolean;
 }
 
+export interface RevisionGraphReferencePatchRef {
+  readonly kind: RevisionGraphRef['kind'];
+  readonly name: string;
+}
+
+export interface RevisionGraphReferencePatch {
+  readonly removeRefs: readonly RevisionGraphReferencePatchRef[];
+}
+
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }

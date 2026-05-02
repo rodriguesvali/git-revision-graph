@@ -30,6 +30,7 @@ import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
+  applyRevisionGraphReferencePatch,
   buildMetadataPatchedRevisionGraphViewFingerprint,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
@@ -343,7 +344,10 @@ export class RevisionGraphController implements vscode.Disposable {
     const request = this.resolveRefreshRequest(requestLike);
     if (request.intent === 'overlay-patch') {
       const preparedRefresh = this.prepareRefresh(request);
-      if (!this.applyCurrentRepositoryWorkspaceStatePatch()) {
+      const applied = request.referencePatch
+        ? this.applyCurrentReferencePatch(request.referencePatch)
+        : this.applyCurrentRepositoryWorkspaceStatePatch();
+      if (!applied) {
         preparedRefresh?.cancel();
       }
       return;
@@ -950,6 +954,31 @@ export class RevisionGraphController implements vscode.Disposable {
     this.postHostMessage({
       type: 'patch-workspace-state',
       patch
+    });
+    return true;
+  }
+
+  private applyCurrentReferencePatch(patch: NonNullable<RevisionGraphRefreshRequest['referencePatch']>): boolean {
+    if (
+      !this.currentRepository ||
+      this.currentState.viewMode !== 'ready' ||
+      this.currentState.repositoryPath !== this.currentRepository.rootUri.fsPath
+    ) {
+      return false;
+    }
+
+    const nextState = applyRevisionGraphReferencePatch(this.currentState, patch);
+    if (!nextState) {
+      return false;
+    }
+
+    this.currentLoadingLabel = undefined;
+    this.currentLoadingMode = undefined;
+    this.currentErrorMessage = undefined;
+    this.currentState = nextState;
+    this.postHostMessage({
+      type: 'patch-metadata',
+      patch: this.createMetadataPatch(nextState)
     });
     return true;
   }

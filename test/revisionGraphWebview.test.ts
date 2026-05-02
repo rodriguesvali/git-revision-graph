@@ -380,7 +380,7 @@ test('patches reference metadata without rerendering graph edges', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
-  assert.match(html, /patch\.sceneLayoutKey !== sceneLayoutKey/);
+  assert.doesNotMatch(html, /patch\.sceneLayoutKey !== sceneLayoutKey/);
   assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout\);/);
   assert.match(html, /nextElement\.style\.left = previousLeft;/);
   assert.match(html, /element\.replaceWith\(nextElement\);/);

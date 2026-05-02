@@ -1,4 +1,5 @@
 import type { RevisionGraphProjectionOptions } from './revisionGraph/model/commitGraphTypes';
+import type { RevisionGraphReferencePatch } from './revisionGraphTypes';
 
 export type RevisionGraphRefreshIntent =
   | 'full-rebuild'
@@ -12,6 +13,7 @@ export interface RevisionGraphRefreshRequest {
   readonly intent: RevisionGraphRefreshIntent;
   readonly repositoryPath?: string;
   readonly followUpEvents?: readonly RevisionGraphRepositoryEventKind[];
+  readonly referencePatch?: RevisionGraphReferencePatch;
 }
 
 export type RevisionGraphRefreshRequestLike =

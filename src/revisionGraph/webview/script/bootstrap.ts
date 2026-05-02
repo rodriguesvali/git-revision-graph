@@ -530,7 +530,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         !patch ||
         !currentState ||
         currentState.viewMode !== 'ready' ||
-        patch.sceneLayoutKey !== sceneLayoutKey ||
         !patch.scene ||
         !patch.nodeLayouts
       ) {

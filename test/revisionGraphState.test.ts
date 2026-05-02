@@ -12,6 +12,7 @@ import {
   buildRevisionGraphWorkspaceStatePatch,
   buildRevisionGraphSceneLayoutKey,
   buildRevisionGraphViewFingerprint,
+  applyRevisionGraphReferencePatch,
   buildReadyRevisionGraphViewState
 } from '../src/revisionGraph/panel/state';
 import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
@@ -247,6 +248,77 @@ test('metadata patches remove deleted local branch refs without changing graph t
     patchedState?.scene.nodes[0]?.refs,
     [{ name: 'origin/exported_pr_908716369', kind: 'remote' }]
   );
+});
+
+test('reference patches remove deleted local branch refs without reloading repository metadata', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createRef({ type: RefType.Head, name: 'exported_pr_908716369', commit: 'head1' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/exported_pr_908716369', commit: 'head1' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'exported_pr_908716369', kind: 'branch' },
+        { name: 'origin/exported_pr_908716369', kind: 'remote' }
+      ]
+    }
+  ]);
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return ['branch::exported_pr_908716369'];
+    }
+  };
+
+  const initialState = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+  const patchedState = applyRevisionGraphReferencePatch(initialState, {
+    removeRefs: [{ kind: 'branch', name: 'exported_pr_908716369' }]
+  });
+
+  assert.ok(patchedState);
+  assert.deepEqual(patchedState.scene.edges, initialState.scene.edges);
+  assert.deepEqual(
+    patchedState.scene.nodes[0]?.refs,
+    [{ name: 'origin/exported_pr_908716369', kind: 'remote' }]
+  );
+  assert.equal(
+    patchedState.references.some(
+      (reference) => reference.kind === 'branch' && reference.name === 'exported_pr_908716369'
+    ),
+    false
+  );
+  assert.deepEqual(patchedState.mergeBlockedTargets, []);
+  assert.equal(patchedState.loading, false);
+  assert.equal(patchedState.errorMessage, undefined);
 });
 
 test('scene layout keys include edge topology to avoid stale node offsets', () => {
