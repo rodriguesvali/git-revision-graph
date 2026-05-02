@@ -32,6 +32,11 @@ Record command output summaries, not full logs, when verification is performed.
   - `npm run build` passed.
   - `npm test` passed with 231 tests.
   - Added regression coverage for refs-only merge-parent line preservation, hidden merge connector removal, git-simplified sync merge hiding, and detailed-mode topology preservation.
+- 2026-05-02 `0.0.27` default graph scope:
+  - `npm run build` passed.
+  - `npm test` passed with 232 tests.
+  - Updated graph Git args coverage so the default projection loads `HEAD` for the current branch scope.
+  - Added regression coverage requiring a fresh graph snapshot when projection options change.
 
 ## Issues
 Record failures, skipped checks, and residual risks.

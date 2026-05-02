@@ -12,6 +12,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-01 `0.0.27` stabilization: toolbar zoom now preserves the current graph viewport instead of recentering the graph, fixing a pre-existing issue when zooming while scrolled below the top.
 - 2026-05-02 `0.0.27` graph layout stabilization: scene layout identity now includes a fan-out balance version and edge topology so normal refresh/update paths discard stale node offsets and converge with full rebuild disposition.
 - 2026-05-02 `0.0.27` refs-only merge simplification: the default graph now hides unreferenced merge connector cards while preserving merged-branch lines from visible merge commits; the detailed branching/merge view keeps the full topology.
+- 2026-05-02 `0.0.27` default scope: new revision graph sessions now start with `Current Branch` instead of `All Refs`.
 
 ## Verification
 - Run `npm run build`.
@@ -21,7 +22,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 Latest automated verification:
 
 - `npm run build` passed.
-- `npm test` passed with 231 tests.
+- `npm test` passed with 232 tests.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.

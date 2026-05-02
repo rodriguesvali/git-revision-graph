@@ -1,3 +1,5 @@
+import type { RevisionGraphProjectionOptions } from './revisionGraph/model/commitGraphTypes';
+
 export type RevisionGraphRefreshIntent =
   | 'full-rebuild'
   | 'projection-rebuild'
@@ -46,6 +48,17 @@ export class RevisionGraphSnapshotReloadSemaphore {
   requiresReload(repositoryPath: string | undefined): boolean {
     return !this.canReuseSnapshot(repositoryPath);
   }
+}
+
+export function shouldReloadSnapshotForProjectionOptionsChange(
+  previousOptions: RevisionGraphProjectionOptions,
+  nextOptions: RevisionGraphProjectionOptions
+): boolean {
+  return previousOptions.refScope !== nextOptions.refScope ||
+    previousOptions.showTags !== nextOptions.showTags ||
+    previousOptions.showRemoteBranches !== nextOptions.showRemoteBranches ||
+    previousOptions.showStashes !== nextOptions.showStashes ||
+    previousOptions.showBranchingsAndMerges !== nextOptions.showBranchingsAndMerges;
 }
 
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;

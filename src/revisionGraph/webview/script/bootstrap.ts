@@ -53,7 +53,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let publishedLocalBranchNames = new Set();
     let isWorkspaceDirty = false;
     let currentProjectionOptions = {
-      refScope: 'all',
+      refScope: 'current',
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,

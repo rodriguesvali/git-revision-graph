@@ -9,8 +9,10 @@ import {
   getDefaultFollowUpEventsForIntent,
   normalizeRefreshRequest,
   RevisionGraphSnapshotReloadSemaphore,
-  registerPendingFollowUpRefresh
+  registerPendingFollowUpRefresh,
+  shouldReloadSnapshotForProjectionOptionsChange
 } from '../src/revisionGraphRefresh';
+import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('createActionRefreshRequest attaches the default follow-up repository events', () => {
   assert.deepEqual(
@@ -102,4 +104,22 @@ test('RevisionGraphSnapshotReloadSemaphore tracks when a repository snapshot can
   semaphore.markReloadRequired();
 
   assert.equal(semaphore.requiresReload('/workspace/repo'), true);
+});
+
+test('projection option changes require a fresh graph snapshot', () => {
+  const defaultOptions = createDefaultRevisionGraphProjectionOptions();
+
+  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, defaultOptions), false);
+  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
+    ...defaultOptions,
+    refScope: 'all'
+  }), true);
+  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
+    ...defaultOptions,
+    showRemoteBranches: false
+  }), true);
+  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
+    ...defaultOptions,
+    showBranchingsAndMerges: true
+  }), true);
 });

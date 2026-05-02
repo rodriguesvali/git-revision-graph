@@ -9,7 +9,7 @@ import {
 import { collectAncestorHashes } from '../model/commitGraphQueries';
 
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
-  refScope: 'all',
+  refScope: 'current',
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,

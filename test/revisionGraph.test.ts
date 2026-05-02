@@ -57,12 +57,12 @@ test('parses decoration labels by type', () => {
   ]);
 });
 
-test('builds git log args aligned with tortoisegit simplify-by-decoration defaults', () => {
+test('builds default git log args for the current branch', () => {
   assert.deepEqual(
     buildRevisionGraphGitLogArgs(6000, createDefaultRevisionGraphProjectionOptions()),
     [
       'log',
-      '--all',
+      'HEAD',
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',

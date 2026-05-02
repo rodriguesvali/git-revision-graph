@@ -77,7 +77,8 @@ import {
   RevisionGraphRefreshRequestLike,
   RevisionGraphRepositoryEventKind,
   RevisionGraphSnapshotReloadSemaphore,
-  registerPendingFollowUpRefresh
+  registerPendingFollowUpRefresh,
+  shouldReloadSnapshotForProjectionOptionsChange
 } from '../revisionGraphRefresh';
 
 const REMOTE_TAG_STATE_MAX_OUTPUT_BYTES = 1024 * 1024;
@@ -401,10 +402,17 @@ export class RevisionGraphController implements vscode.Disposable {
         await this.refresh('full-rebuild');
         return;
       case 'set-projection-options':
-        this.projectionOptions = {
-          ...this.projectionOptions,
-          ...message.options
-        };
+        {
+          const nextProjectionOptions = {
+            ...this.projectionOptions,
+            ...message.options
+          };
+          if (shouldReloadSnapshotForProjectionOptionsChange(this.projectionOptions, nextProjectionOptions)) {
+            this.currentSnapshot = undefined;
+            this.snapshotReloadSemaphore.markReloadRequired();
+          }
+          this.projectionOptions = nextProjectionOptions;
+        }
         this.autoArrangeOnNextRender = true;
         await this.refresh('projection-rebuild');
         return;

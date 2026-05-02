@@ -15,6 +15,7 @@ Planned publishable change set:
 - Improve cache observability and bounded cache behavior for snapshot, layout persistence, and Show Log expanded changes.
 - Stabilize graph layout refresh paths so fan-out balancing does not reuse stale browser-side offsets after topology or layout-rule changes.
 - Simplify the default refs-only graph after merges by hiding unreferenced merge connectors while preserving merged-branch lines from visible merge commits and full topology in the detailed branching/merge view.
+- Start new revision graph sessions in `Current Branch` scope by default.
 - Record production and dev-tooling audit status for release readiness.
 
 Do not publish without explicit human approval.
@@ -41,8 +42,9 @@ Current verification:
 - Cache stabilization for snapshot trace/reuse, layout persistence deduplication, and Show Log cached-change bounding is complete.
 - Graph layout stabilization for topology-aware scene keys and stale-offset invalidation is complete.
 - Refs-only merge simplification for default graph readability is complete.
+- Default graph scope now starts at `Current Branch`.
 - `npm run build` passed.
-- `npm test` passed with 231 tests.
+- `npm test` passed with 232 tests.
 - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
 - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`; dependency remediation requires explicit approval.
 - Manual Extension Development Host validation is recommended before Marketplace publication.
