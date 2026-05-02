@@ -15,6 +15,7 @@ import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import {
   RevisionGraphViewReference,
+  RevisionGraphWorkspaceStatePatch,
   RevisionGraphViewState
 } from '../../revisionGraphTypes';
 import {
@@ -205,6 +206,16 @@ export async function buildMetadataPatchedRevisionGraphViewState(
     previousState.primaryAncestorPathsByHash,
     signal
   );
+}
+
+export function buildRevisionGraphWorkspaceStatePatch(
+  repository: Repository
+): RevisionGraphWorkspaceStatePatch {
+  return {
+    isWorkspaceDirty: hasWorkspaceChanges(repository),
+    hasMergeConflicts: hasMergeConflicts(repository),
+    hasConflictedMerge: hasConflictedMerge(repository)
+  };
 }
 
 export async function buildMetadataPatchedRevisionGraphViewFingerprint(

@@ -113,10 +113,17 @@ export interface RevisionGraphViewMetadataPatch {
   readonly baseCanvasHeight: number;
 }
 
+export interface RevisionGraphWorkspaceStatePatch {
+  readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
+}
+
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState }
   | { readonly type: 'patch-metadata'; readonly patch: RevisionGraphViewMetadataPatch }
+  | { readonly type: 'patch-workspace-state'; readonly patch: RevisionGraphWorkspaceStatePatch }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly isPublished: boolean }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };

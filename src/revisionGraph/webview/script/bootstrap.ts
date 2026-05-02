@@ -407,6 +407,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         case 'patch-metadata':
           applyMetadataPatch(message.patch);
           return;
+        case 'patch-workspace-state':
+          applyWorkspaceStatePatch(message.patch);
+          return;
         case 'set-remote-tag-state':
           setRemoteTagState(message.tagName, !!message.isPublished);
           return;
@@ -516,6 +519,23 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         preserveSelection: !!patch.preserveSelection,
         preserveViewport: !!patch.preserveViewport
       });
+    }
+
+    function applyWorkspaceStatePatch(patch) {
+      if (!patch || !currentState) {
+        return;
+      }
+
+      currentState = Object.assign({}, currentState, patch, {
+        loading: false,
+        loadingLabel: undefined,
+        errorMessage: undefined
+      });
+      isWorkspaceDirty = !!currentState.isWorkspaceDirty;
+      updateChrome(currentState);
+      syncToolbarActions();
+      hideLoading();
+      hideStatus();
     }
 
     function setRemoteTagState(tagName, isPublished) {

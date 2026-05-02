@@ -34,6 +34,7 @@ import {
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
   buildReadyRevisionGraphViewStateFromSnapshot,
+  buildRevisionGraphWorkspaceStatePatch,
   canPreserveRevisionGraphContext,
   buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewStateBundle
@@ -340,6 +341,14 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const request = this.resolveRefreshRequest(requestLike);
+    if (request.intent === 'overlay-patch') {
+      const preparedRefresh = this.prepareRefresh(request);
+      if (!this.applyCurrentRepositoryWorkspaceStatePatch()) {
+        preparedRefresh?.cancel();
+      }
+      return;
+    }
+
     if (request.intent === 'full-rebuild') {
       this.snapshotReloadSemaphore.markReloadRequired();
     }
@@ -764,6 +773,15 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
+      if (
+        intent === 'metadata-patch' &&
+        eventKind === 'state' &&
+        buildRevisionGraphWorkspaceStatePatch(repository).hasMergeConflicts &&
+        this.applyCurrentRepositoryWorkspaceStatePatch()
+      ) {
+        return;
+      }
+
       if (await this.isRedundantRepositoryRefresh(repository, intent)) {
         return;
       }
@@ -894,6 +912,33 @@ export class RevisionGraphController implements vscode.Disposable {
       baseCanvasWidth: state.baseCanvasWidth,
       baseCanvasHeight: state.baseCanvasHeight
     };
+  }
+
+  private applyCurrentRepositoryWorkspaceStatePatch(): boolean {
+    if (
+      !this.currentRepository ||
+      this.currentState.viewMode !== 'ready' ||
+      this.currentState.repositoryPath !== this.currentRepository.rootUri.fsPath
+    ) {
+      return false;
+    }
+
+    const patch = buildRevisionGraphWorkspaceStatePatch(this.currentRepository);
+    this.currentLoadingLabel = undefined;
+    this.currentLoadingMode = undefined;
+    this.currentErrorMessage = undefined;
+    this.currentState = {
+      ...this.currentState,
+      ...patch,
+      loading: false,
+      loadingLabel: undefined,
+      errorMessage: undefined
+    };
+    this.postHostMessage({
+      type: 'patch-workspace-state',
+      patch
+    });
+    return true;
   }
 
   private syncViewTitle(): void {

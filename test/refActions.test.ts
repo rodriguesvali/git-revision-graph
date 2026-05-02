@@ -1582,6 +1582,10 @@ test('mergeResolvedReference opens Source Control when the merge leaves conflict
     harness.errorMessages[0],
     'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. Automatic merge failed; fix conflicts and then commit the result. [Conflict]'
   );
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'overlay-patch',
+    repositoryPath: '/workspace/repo'
+  });
   assert.equal(harness.sourceControlOpens, 1);
 });
 

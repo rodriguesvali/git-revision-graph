@@ -511,6 +511,9 @@ export async function mergeResolvedReference(
       toOperationError('Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.', error)
     );
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
+      services.refreshController.refresh(
+        { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
+      );
       await services.ui.showSourceControl();
     }
   }

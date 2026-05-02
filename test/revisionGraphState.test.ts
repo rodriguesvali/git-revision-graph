@@ -9,6 +9,7 @@ import {
   canPreserveRevisionGraphContext,
   buildEmptyRevisionGraphViewState,
   buildMetadataPatchedRevisionGraphViewState,
+  buildRevisionGraphWorkspaceStatePatch,
   buildRevisionGraphSceneLayoutKey,
   buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewState
@@ -86,6 +87,22 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
+});
+
+test('builds a lightweight workspace state patch without graph scene data', () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts' })]
+  });
+
+  assert.deepEqual(
+    buildRevisionGraphWorkspaceStatePatch(repository),
+    {
+      isWorkspaceDirty: true,
+      hasMergeConflicts: true,
+      hasConflictedMerge: false
+    }
+  );
 });
 
 test('applies repository overlay refs before projecting a ready graph state', async () => {

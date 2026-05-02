@@ -26,6 +26,14 @@ test('createActionRefreshRequest attaches the default follow-up repository event
       followUpEvents: ['state', 'checkout']
     }
   );
+  assert.deepEqual(
+    createActionRefreshRequest('overlay-patch', '/workspace/repo'),
+    {
+      intent: 'overlay-patch',
+      repositoryPath: '/workspace/repo',
+      followUpEvents: []
+    }
+  );
   assert.deepEqual(getDefaultFollowUpEventsForIntent('projection-rebuild'), []);
 });
 

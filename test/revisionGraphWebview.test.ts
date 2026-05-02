@@ -47,6 +47,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'init-state'/);
   assert.match(html, /case 'update-state'/);
   assert.match(html, /case 'patch-metadata'/);
+  assert.match(html, /case 'patch-workspace-state'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
@@ -363,6 +364,7 @@ test('recenters after auto-arranging the initial graph state', () => {
 test('preserves viewport and selection during metadata patches', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /function applyMetadataPatch\(patch\)/);
   assert.match(html, /preserveSelection: !!patch\.preserveSelection/);
   assert.match(html, /preserveViewport: !!patch\.preserveViewport/);
   assert.match(html, /function captureSelectionSnapshot\(\)/);
@@ -371,6 +373,15 @@ test('preserves viewport and selection during metadata patches', () => {
   assert.match(html, /function restoreScenePlacementSnapshot\(snapshot\)/);
   assert.match(html, /function captureViewportSnapshot\(\)/);
   assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
+});
+
+test('patches workspace state without rerendering the graph scene', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function applyWorkspaceStatePatch\(patch\)/);
+  assert.match(html, /currentState = Object\.assign\(\{\}, currentState, patch,/);
+  assert.match(html, /updateChrome\(currentState\);\s*syncToolbarActions\(\);\s*hideLoading\(\);\s*hideStatus\(\);/s);
+  assert.doesNotMatch(html, /function applyWorkspaceStatePatch\(patch\)[\s\S]*?renderScene[\s\S]*?function setRemoteTagState/);
 });
 
 test('renders client-side graph search controls and runtime handlers', () => {
