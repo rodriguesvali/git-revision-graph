@@ -1,7 +1,7 @@
 # Release Readiness
 
 ## Version / Change Set
-Current package baseline: `0.0.26`.
+Previous package baseline: `0.0.26`.
 
 Target release: `0.0.27`.
 
@@ -18,9 +18,9 @@ Planned publishable change set:
 - Start new revision graph sessions in `Current Branch` scope by default.
 - Record production and dev-tooling audit status for release readiness.
 
-Do not publish without explicit human approval.
+Publication completed after human approval.
 
-Version bump to `0.0.27` has not been applied in `package.json` or `package-lock.json`.
+Version bump to `0.0.27` has been applied in `package.json` and `package-lock.json`.
 
 Planning references:
 
@@ -47,15 +47,15 @@ Current verification:
 - `npm test` passed with 232 tests.
 - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
 - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`; dependency remediation requires explicit approval.
-- Manual Extension Development Host validation is recommended before Marketplace publication.
+- Manual Extension Development Host validation was recommended before Marketplace publication; post-publication monitoring should watch for real-workspace graph regressions.
 
 Release preparation status:
 
 - Source release readiness is complete for the implemented stabilization hardening, cache stabilization, graph layout stabilization, and refs-only merge simplification slices.
-- Version bump to `0.0.27` is not complete.
-- Release notes for `0.0.27` are not complete in `CHANGELOG.md`.
-- VSIX packaging is not complete for `0.0.27`.
-- Marketplace publishing is not complete for `0.0.27`.
+- Version bump to `0.0.27` is complete.
+- Release notes for `0.0.27` are complete in `CHANGELOG.md`.
+- VSIX packaging is complete for `0.0.27`.
+- Marketplace publishing is complete for `0.0.27`.
 
 ## Deployment Steps
 Release commands available in `package.json`:
@@ -66,7 +66,7 @@ Release commands available in `package.json`:
 - `npm run publish:minor`
 - `npm run publish:major`
 
-Only run packaging or publish commands when explicitly requested.
+Packaging and publishing for `0.0.27` have been completed.
 
 ## Configuration
 The extension depends on the built-in `vscode.git` extension and supports VS Code `^1.90.0`.
@@ -86,6 +86,6 @@ Rollback options depend on Marketplace state:
 ## Approvals
 Human approval is required before:
 
-- VSIX release packaging.
-- Marketplace publishing.
+- Future VSIX release packaging.
+- Future Marketplace publishing.
 - Any destructive Git or repository history operation.

@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.27
+
+### Highlights
+
+- Focused the release on stabilization, hardening, and graph readability instead of broad new feature scope.
+- The revision graph now starts in `Current Branch` scope by default, while switching scope or view options reloads the graph snapshot when needed so `All Refs` and other filters reflect the selected data set.
+- Improved refs-only graph readability after merges by hiding unreferenced merge connector cards while preserving the lines that show which visible branches were merged.
+- Stabilized graph layout identity so refreshed graphs discard stale node offsets when topology or layout rules change.
+
+### Stability & Security
+
+- Hardened targeted Git CLI calls with safer revision argument handling for unusual or option-like ref names.
+- Added timeout and output-budget safeguards around expensive Git command paths, including graph loading, logs, diffs, commit details, fetch-with-tags, ref content, and compare restore.
+- Guarded compare restore writes and deletes so file operations stay inside the selected repository.
+- Tightened graph, compare results, and Show Log webview message validation with shared payload size budgets.
+- Preserved the current graph viewport when zooming from toolbar buttons instead of recentering the graph.
+
+### Performance & Cache
+
+- Added graph snapshot cache tracing for hits, misses, and bypasses.
+- Reused completed graph snapshot cache entries for cancelable refreshes without sharing cancelable in-flight Git work.
+- Avoided redundant persisted layout-cache writes when the serialized cache payload is unchanged.
+- Bounded Show Log expanded-change caching with recency refresh behavior.
+
+### Quality
+
+- Added regression coverage for Git command timeouts and output caps, option-like revisions, compare restore containment, oversized webview messages, graph zoom viewport preservation, snapshot cache reuse, Show Log cache bounding, topology-aware layout keys, refs-only merge simplification, default `Current Branch` graph loading, and snapshot reloads after projection option changes.
+- `npm run build` passed.
+- `npm test` passed with 232 tests.
+- Production dependency audit reported 0 vulnerabilities; dev-tooling audit still reports moderate transitive findings through `@vscode/vsce -> @azure/msal-node -> uuid`.
+
 ## 0.0.26
 
 ### Highlights
