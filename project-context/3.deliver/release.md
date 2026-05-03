@@ -6,7 +6,7 @@ Current package baseline: `0.0.28`.
 
 Target release: `0.0.29`.
 
-Status: Source feature implementation started for `0.0.29`. Version bump, VSIX packaging, and Marketplace publishing remain unapproved.
+Status: Release candidate packaged for `0.0.29`. Version bump and VSIX packaging are complete. Marketplace publishing remains with the maintainer.
 
 Candidate change set:
 
@@ -23,8 +23,9 @@ Planning references:
 
 Verification completed:
 
-- `npm run build` passed after the `origin/HEAD` scope implementation.
-- `npm test` passed with 250 tests after the `origin/HEAD` scope implementation. This includes `npm run build` through the test script.
+- `npm run build` passed for the `0.0.29` release candidate.
+- `npm test` passed with 253 tests for the `0.0.29` release candidate. This includes `npm run build` through the test script.
+- `npm run package:vsix` passed and generated `git-revision-graph-0.0.29.vsix`.
 
 Manual validation pending:
 
@@ -40,11 +41,9 @@ Manual validation pending:
 
 Release gates pending:
 
-- Human approval for version bump to `0.0.29`.
-- Changelog or release-note update.
-- Fresh build and test verification after final release edits.
-- Human approval for VSIX packaging.
-- Human approval for Marketplace publishing.
+- Changelog update completed.
+- Fresh build and test verification completed after final release edits.
+- Marketplace publishing by the maintainer.
 
 ## 0.0.28 Release Readiness
 

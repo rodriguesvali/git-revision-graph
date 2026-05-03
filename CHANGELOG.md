@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.29
+
+### Highlights
+
+- Added an `origin/HEAD` graph scope for focusing on the default remote trunk and its descendant refs.
+- Made descendant refs part of the core `Current Branch` scope behavior and removed the former descendant view option.
+- Added current-branch workspace reset actions, with a separate confirmed option to remove untracked files.
+
+### Workflow & UX
+
+- Merge conflicts now keep the user in the graph surface: the conflict LED and `Abort Merge` action appear without automatically opening Source Control.
+- Local current-branch tips that descend from `origin/HEAD`, such as `master-copy`, are now visible in the `origin/HEAD` scope.
+
+### Quality
+
+- `npm run build` passed for the 0.0.29 release candidate.
+- `npm test` passed with 253 tests for the 0.0.29 release candidate.
+- Manual Extension Development Host smoke testing is still recommended before Marketplace publication.
+- Version bump to `0.0.29` has been applied in `package.json` and `package-lock.json`.
+
 ## 0.0.28
 
 ### Highlights
