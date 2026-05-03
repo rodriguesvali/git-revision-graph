@@ -515,7 +515,6 @@ export async function mergeResolvedReference(
       services.refreshController.refresh(
         { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
       );
-      await services.ui.showSourceControl();
     }
   }
 }

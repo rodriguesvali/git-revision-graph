@@ -1556,7 +1556,7 @@ test('mergeResolvedReference prevents merges that are already ancestors of HEAD'
   assert.equal(harness.infoMessages[0], 'release/2026 is already contained in main.');
 });
 
-test('mergeResolvedReference opens Source Control when the merge leaves conflicts to resolve', async () => {
+test('mergeResolvedReference updates graph state without opening Source Control when the merge leaves conflicts to resolve', async () => {
   const mergeChanges = [] as ReturnType<typeof createChange>[];
   const repository = createRepository({
     root: '/workspace/repo',
@@ -1586,7 +1586,7 @@ test('mergeResolvedReference opens Source Control when the merge leaves conflict
     intent: 'overlay-patch',
     repositoryPath: '/workspace/repo'
   });
-  assert.equal(harness.sourceControlOpens, 1);
+  assert.equal(harness.sourceControlOpens, 0);
 });
 
 test('abortCurrentMerge aborts conflicted merges after confirmation', async () => {
