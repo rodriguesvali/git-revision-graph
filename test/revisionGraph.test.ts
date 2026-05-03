@@ -744,6 +744,7 @@ test('can scope the projection to origin head ancestry and descendant refs', () 
   const graph = buildCommitGraph([
     { hash: 'topic2', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-09', subject: 'Remote topic tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
     { hash: 'localTopic1', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-09', subject: 'Local topic tip', refs: [{ name: 'feature/from-origin-head', kind: 'branch' }] },
+    { hash: 'localHeadFromRemote1', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-09', subject: 'Current local copy', refs: [{ name: 'master-copy', kind: 'head' }] },
     { hash: 'remoteHead1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Remote trunk tip', refs: [{ name: 'origin/main', kind: 'remote' }, { name: 'origin/HEAD', kind: 'remote' }] },
     { hash: 'localHead1', parents: ['featureBase1'], author: 'Ada', date: '2026-04-07', subject: 'Current feature', refs: [{ name: 'feature/work', kind: 'head' }] },
     { hash: 'featureBase1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Feature base', refs: [] },
@@ -755,10 +756,11 @@ test('can scope the projection to origin head ancestry and descendant refs', () 
     refScope: 'remoteHead'
   });
 
-  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic2', 'localTopic1', 'remoteHead1', 'base1']);
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic2', 'localTopic1', 'localHeadFromRemote1', 'remoteHead1', 'base1']);
   assert.deepEqual(projection.edges, [
     { from: 'topic2', to: 'remoteHead1', through: [] },
     { from: 'localTopic1', to: 'remoteHead1', through: [] },
+    { from: 'localHeadFromRemote1', to: 'remoteHead1', through: [] },
     { from: 'remoteHead1', to: 'base1', through: [] }
   ]);
 });

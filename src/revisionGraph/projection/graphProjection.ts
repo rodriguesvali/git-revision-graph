@@ -92,7 +92,7 @@ function getScopeHashes(
 
       return collectAncestorHashes(graph, [
         ...headHashes,
-        ...collectDescendantRefTipHashes(graph, headHashes, options)
+        ...collectDescendantRefTipHashes(graph, headHashes, options, false)
       ]);
     }
     case 'remoteHead': {
@@ -102,7 +102,7 @@ function getScopeHashes(
       return remoteHeadHashes.length > 0
         ? collectAncestorHashes(graph, [
             ...remoteHeadHashes,
-            ...collectDescendantRefTipHashes(graph, remoteHeadHashes, options)
+            ...collectDescendantRefTipHashes(graph, remoteHeadHashes, options, true)
           ])
         : new Set<string>();
     }
@@ -122,13 +122,16 @@ function getScopeHashes(
 function collectDescendantRefTipHashes(
   graph: CommitGraph,
   startHashes: readonly string[],
-  options: RevisionGraphProjectionOptions
+  options: RevisionGraphProjectionOptions,
+  includeHeadRefs: boolean
 ): string[] {
   const descendantHashes = collectDescendantHashes(graph, startHashes);
+  const startHashSet = new Set(startHashes);
   return graph.orderedCommits
     .filter((commit) =>
+      !startHashSet.has(commit.hash) &&
       descendantHashes.has(commit.hash) &&
-      commit.refs.some((ref) => ref.kind !== 'head') &&
+      commit.refs.some((ref) => includeHeadRefs || ref.kind !== 'head') &&
       filterRefs(commit.refs, options).length > 0
     )
     .map((commit) => commit.hash);
