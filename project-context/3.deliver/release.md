@@ -13,10 +13,12 @@ Candidate change set:
 - Add an `origin/HEAD` graph scope that focuses the graph on the default remote trunk and its descendant refs without changing the current branch.
 - Make descendant refs core behavior for `Current Branch` and remove the former `Show Current Branch Descendants` view option.
 - Keep conflicted merge handling inside the graph surface until the user chooses Source Control: merge conflicts now update the conflict LED and `Abort Merge` action without automatically opening Source Control.
+- Add current-branch context menu actions to reset the workspace to `HEAD`, with a separate confirmed option to remove untracked files.
 
 Planning references:
 
 - `project-context/2.build/features/0.0.29-origin-head-scope.md`
+- `project-context/2.build/features/0.0.29-reset-current-workspace.md`
 
 Verification completed:
 
@@ -30,6 +32,7 @@ Manual validation pending:
 - Confirm visible descendant refs from `origin/HEAD` appear without a separate toggle.
 - Confirm visible descendant refs from `Current Branch` appear without a separate toggle.
 - Trigger a merge conflict, confirm the conflict LED and `Abort Merge` action appear, and confirm Source Control opens only when the user clicks the LED or another explicit Source Control path.
+- Create tracked, staged, and untracked changes; validate both current-branch workspace reset actions and their confirmations.
 - Confirm repositories missing symbolic `origin/HEAD` still behave through the `origin/main` or `origin/master` fallback when available.
 - Toggle remote branch visibility and confirm the scoped graph remains coherent.
 

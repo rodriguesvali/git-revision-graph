@@ -23,6 +23,7 @@ import {
   pushTagResolvedReference,
   CompareResultsPresenter,
   RefActionKind,
+  resetCurrentBranchWorkspace,
   syncCurrentHeadWithUpstream
 } from '../refActions';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
@@ -550,6 +551,15 @@ export class RevisionGraphController implements vscode.Disposable {
       case 'sync-current-head':
         if (this.currentRepository) {
           await syncCurrentHeadWithUpstream(this.currentRepository, this.actionServices);
+        }
+        return;
+      case 'reset-current-workspace':
+        if (this.currentRepository) {
+          await resetCurrentBranchWorkspace(
+            this.currentRepository,
+            message.includeUntracked,
+            this.actionServices
+          );
         }
         return;
       case 'delete':

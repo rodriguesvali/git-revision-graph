@@ -52,6 +52,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let currentHeadUpstreamName = null;
     let publishedLocalBranchNames = new Set();
     let isWorkspaceDirty = false;
+    let hasConflictedMerge = false;
     let currentProjectionOptions = {
       refScope: 'all',
       showTags: true,
@@ -421,6 +422,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
       publishedLocalBranchNames = new Set(nextState.publishedLocalBranchNames || []);
       isWorkspaceDirty = !!nextState.isWorkspaceDirty;
+      hasConflictedMerge = !!nextState.hasConflictedMerge;
       currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
       references = nextState.references || [];
@@ -530,6 +532,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentHeadUpstreamName = currentState.currentHeadUpstreamName || null;
       publishedLocalBranchNames = new Set(currentState.publishedLocalBranchNames || []);
       isWorkspaceDirty = !!currentState.isWorkspaceDirty;
+      hasConflictedMerge = !!currentState.hasConflictedMerge;
       currentProjectionOptions = currentState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(currentState.mergeBlockedTargets || []);
       references = currentState.references || [];

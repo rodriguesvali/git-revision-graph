@@ -104,6 +104,12 @@ export function createWorkbenchRefActionServices(
       async resetBranch(repository, branchName, refName) {
         await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName]);
       },
+      async resetWorkspace(repository, includeUntracked) {
+        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD']);
+        if (includeUntracked) {
+          await execGitWithResult(repository.rootUri.fsPath, ['clean', '-fd']);
+        }
+      },
       async getRemoteNames(repository) {
         return getRepositoryRemoteNames(repository);
       },

@@ -90,6 +90,10 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         && isRevisionGraphRefKind(message.refKind)
         ? { type: message.type, refName: message.refName, label: message.label, refKind: message.refKind }
         : undefined;
+    case 'reset-current-workspace':
+      return isBoolean(message.includeUntracked)
+        ? { type: 'reset-current-workspace', includeUntracked: message.includeUntracked }
+        : undefined;
     case 'delete':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'delete', refName: message.refName, refKind: message.refKind }
@@ -116,6 +120,10 @@ export function isRevisionGraphMessageAllowedForState(
     case 'set-projection-options':
     case 'sync-current-head':
       return true;
+    case 'reset-current-workspace':
+      return state.viewMode === 'ready'
+        && !!state.currentHeadName
+        && state.references.some((ref) => ref.kind === 'head' && ref.name === state.currentHeadName);
     case 'abort-merge':
       return state.viewMode === 'ready' && state.hasConflictedMerge;
     case 'compare-selected':

@@ -38,6 +38,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
 - Merge a selected reference into the current branch
 - Abort a conflicted merge from the graph toolbar after confirmation
+- Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference

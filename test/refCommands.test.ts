@@ -99,6 +99,7 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     referenceManager: {
       async createTag() {},
       async resetBranch() {},
+      async resetWorkspace() {},
       async getRemoteNames() {
         return ['origin'];
       },

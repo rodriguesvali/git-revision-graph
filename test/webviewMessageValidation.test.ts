@@ -76,6 +76,10 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({ type: 'copy-ref-name', refName: 'main', refKind: 'head' }),
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'reset-current-workspace', includeUntracked: true }),
+    { type: 'reset-current-workspace', includeUntracked: true }
+  );
 });
 
 test('isRevisionGraphMessageAllowedForState restricts graph actions to known refs and commits', () => {
@@ -140,6 +144,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { ...state, hasMergeConflicts: true, hasConflictedMerge: true, isWorkspaceDirty: true }
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'reset-current-workspace', includeUntracked: false },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'reset-current-workspace', includeUntracked: false },
+      { ...state, currentHeadName: 'missing' }
+    ),
+    false
   );
 });
 

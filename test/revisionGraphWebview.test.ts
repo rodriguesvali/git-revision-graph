@@ -249,6 +249,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
   assert.match(html, /const canSyncCurrentHead =\s*target\.kind === 'head' &&\s*!!currentHeadUpstreamName &&\s*publishedLocalBranchNames\.has\(target\.name\);/s);
+  assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(\{ type: 'reset-current-workspace', includeUntracked: !!includeUntracked \}\);/s);
+  assert.match(html, /const canResetCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasConflictedMerge;/s);
+  assert.match(html, /if \(canResetCurrentWorkspace\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Reset Workspace to HEAD', \(\) => postResetCurrentWorkspace\(false\), \{ destructive: true \}\);\s*appendMenuItem\('Reset Workspace and Remove Untracked Files', \(\) => postResetCurrentWorkspace\(true\), \{ destructive: true \}\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let knownRemoteTagNames = new Set\(\);/);

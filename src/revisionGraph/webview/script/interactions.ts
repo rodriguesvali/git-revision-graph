@@ -295,6 +295,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canPublishBranch =
         (target.kind === 'head' || target.kind === 'branch') &&
         !publishedLocalBranchNames.has(target.name);
+      const canResetCurrentWorkspace =
+        target.kind === 'head' &&
+        isWorkspaceDirty &&
+        !hasConflictedMerge;
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -338,6 +342,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (canSyncCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Sync with ' + currentHeadUpstreamName, () => postSyncCurrentHead());
+        }
+        if (canResetCurrentWorkspace) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Reset Workspace to HEAD', () => postResetCurrentWorkspace(false), { destructive: true });
+          appendMenuItem('Reset Workspace and Remove Untracked Files', () => postResetCurrentWorkspace(true), { destructive: true });
         }
         if (canPublishBranch) {
           appendMenuSection('Create And Publish');
@@ -536,6 +545,10 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function postSyncCurrentHead() {
       vscode.postMessage({ type: 'sync-current-head' });
+    }
+
+    function postResetCurrentWorkspace(includeUntracked) {
+      vscode.postMessage({ type: 'reset-current-workspace', includeUntracked: !!includeUntracked });
     }
 
     function postPublishBranch(target) {

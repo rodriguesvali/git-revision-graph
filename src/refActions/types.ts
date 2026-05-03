@@ -56,6 +56,7 @@ export interface RefreshController {
 export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
   resetBranch(repository: Repository, branchName: string, refName: string): Promise<void>;
+  resetWorkspace(repository: Repository, includeUntracked: boolean): Promise<void>;
   getRemoteNames(repository: Repository): Promise<readonly string[]>;
   pushTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;

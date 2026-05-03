@@ -20,6 +20,7 @@ import {
   publishLocalBranchResolvedReference,
   pushTagResolvedReference,
   RefActionServices,
+  resetCurrentBranchWorkspace,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
 import {
@@ -44,6 +45,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
+  readonly workspaceResets: Array<{ readonly includeUntracked: boolean }>;
   readonly abortedMerges: number;
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -63,6 +65,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
+  const workspaceResets: Array<{ readonly includeUntracked: boolean }> = [];
   const upstreamClears: string[] = [];
   let abortedMerges = 0;
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -152,6 +155,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async resetBranch(_repository, branchName, refName) {
         resetBranches.push({ branchName, refName });
       },
+      async resetWorkspace(_repository, includeUntracked) {
+        workspaceResets.push({ includeUntracked });
+      },
       async getRemoteNames() {
         return ['origin'];
       },
@@ -197,6 +203,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     pushedTags,
     deletedRemoteTags,
     deletedRemoteBranches,
+    workspaceResets,
     get abortedMerges() {
       return abortedMerges;
     },
@@ -1639,6 +1646,67 @@ test('abortCurrentMerge keeps conflicts visible when abort fails', async () => {
 
   assert.equal(harness.errorMessages[0], 'Could not abort the current merge. fatal: There is no merge to abort');
   assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('resetCurrentBranchWorkspace resets tracked workspace changes and keeps untracked files', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })],
+    untrackedChanges: [createChange({ uriPath: '/workspace/repo/tmp.txt', status: Status.UNTRACKED })]
+  });
+  const harness = createServices();
+
+  await resetCurrentBranchWorkspace(repository, false, harness.services);
+
+  assert.deepEqual(harness.workspaceResets, [{ includeUntracked: false }]);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Reset workspace on main to HEAD?\n\nThis discards tracked changes and staged changes in this repository. Untracked files are kept.',
+      confirmLabel: 'Reset Workspace'
+    }
+  ]);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'overlay-patch',
+    repositoryPath: '/workspace/repo'
+  });
+  assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were kept.');
+});
+
+test('resetCurrentBranchWorkspace can remove untracked files when explicitly requested', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })],
+    untrackedChanges: [createChange({ uriPath: '/workspace/repo/tmp.txt', status: Status.UNTRACKED })]
+  });
+  const harness = createServices();
+
+  await resetCurrentBranchWorkspace(repository, true, harness.services);
+
+  assert.deepEqual(harness.workspaceResets, [{ includeUntracked: true }]);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Reset workspace on main to HEAD and remove untracked files?\n\nThis discards tracked changes, staged changes, and untracked files in this repository.',
+      confirmLabel: 'Reset and Remove Untracked'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were removed.');
+});
+
+test('resetCurrentBranchWorkspace refuses conflicted merges', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await resetCurrentBranchWorkspace(repository, true, harness.services);
+
+  assert.deepEqual(harness.workspaceResets, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.equal(harness.warningMessages[0], 'Abort or resolve the current conflicted merge before resetting the workspace.');
 });
 
 test('deleteResolvedReference deletes remote branches through the shared reference manager', async () => {
