@@ -59,8 +59,7 @@ export function shouldReloadSnapshotForProjectionOptionsChange(
   return previousOptions.refScope !== nextOptions.refScope ||
     previousOptions.showTags !== nextOptions.showTags ||
     previousOptions.showRemoteBranches !== nextOptions.showRemoteBranches ||
-    previousOptions.showStashes !== nextOptions.showStashes ||
-    previousOptions.showCurrentBranchDescendants !== nextOptions.showCurrentBranchDescendants;
+    previousOptions.showStashes !== nextOptions.showStashes;
 }
 
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;

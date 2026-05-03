@@ -51,10 +51,6 @@ export function renderRevisionGraphShellHtml(): string {
           <input id="showStashesToggle" type="checkbox" />
           <span>Show Stash</span>
         </label>
-        <label id="showCurrentBranchDescendantsOption" for="showCurrentBranchDescendantsToggle" hidden>
-          <input id="showCurrentBranchDescendantsToggle" type="checkbox" />
-          <span>Show Current Branch Descendants</span>
-        </label>
       </div>
     </div>
     <div class="search-controls" aria-label="Search the loaded revision graph">

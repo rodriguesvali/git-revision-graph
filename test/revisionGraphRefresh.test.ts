@@ -132,17 +132,17 @@ test('projection option changes require a fresh graph snapshot', () => {
   assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
     ...defaultOptions,
     showCurrentBranchDescendants: true
-  }), true);
+  }), false);
 });
 
-test('projection options clear current branch descendants outside current scope', () => {
+test('projection options keep descendants as core current branch behavior', () => {
   const defaultOptions = createDefaultRevisionGraphProjectionOptions();
 
   assert.deepEqual(
     normalizeRevisionGraphProjectionOptionsForScope({
       ...defaultOptions,
       refScope: 'current',
-      showCurrentBranchDescendants: true
+      showCurrentBranchDescendants: false
     }),
     {
       ...defaultOptions,

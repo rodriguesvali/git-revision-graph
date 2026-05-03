@@ -13,7 +13,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-02 `0.0.27` graph layout stabilization: scene layout identity now includes a fan-out balance version and edge topology so normal refresh/update paths discard stale node offsets and converge with full rebuild disposition.
 - 2026-05-02 `0.0.27` refs-only merge simplification: the default graph now hides unreferenced merge connector cards while preserving merged-branch lines from visible merge commits.
 - 2026-05-02 `0.0.28` default scope reversal: new revision graph sessions now start with `All Refs` again.
-- 2026-05-02 `0.0.28` current scope refinement: the `View` menu now includes `Show Current Branch Descendants` only for `Current Branch`, which lets that scope include visible references whose tips descend from the current `HEAD` while excluding unrelated sibling refs.
+- 2026-05-03 `0.0.29` current scope refinement: `Current Branch` now includes visible descendant refs by default, so the former `Show Current Branch Descendants` view option is no longer rendered.
 - 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
 - 2026-05-02 `0.0.28` merge recovery: the graph toolbar now exposes `Abort Merge` only while merge conflicts are present.
 - 2026-05-02 `0.0.28` graph navigation: the main graph zoom list now has 10 levels by adding five zoom-out levels below the previous `0.6` minimum.

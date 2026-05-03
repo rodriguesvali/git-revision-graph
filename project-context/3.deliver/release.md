@@ -11,6 +11,7 @@ Status: Source feature implementation started for `0.0.29`. Version bump, VSIX p
 Candidate change set:
 
 - Add an `origin/HEAD` graph scope that focuses the graph on the default remote trunk and its descendant refs without changing the current branch.
+- Make descendant refs core behavior for `Current Branch` and remove the former `Show Current Branch Descendants` view option.
 
 Planning references:
 
@@ -26,6 +27,7 @@ Manual validation pending:
 - Select `origin/HEAD` in a real repository whose remote default branch is `origin/main`.
 - Confirm the graph remains scoped to the remote trunk while the current local branch is a feature branch.
 - Confirm visible descendant refs from `origin/HEAD` appear without a separate toggle.
+- Confirm visible descendant refs from `Current Branch` appear without a separate toggle.
 - Confirm repositories missing symbolic `origin/HEAD` still behave through the `origin/main` or `origin/master` fallback when available.
 - Toggle remote branch visibility and confirm the scoped graph remains coherent.
 
@@ -91,7 +93,7 @@ Post-release monitoring focus:
 - Local branch deletion should remove the branch line quickly without a long `Updating revision graph...` wait.
 - Reference context menus should copy exact local, remote, tag, and `HEAD` ref labels.
 - Structural commit context menus should not show the ref-name copy action.
-- `Current Branch` descendant refs should appear only when the option is enabled.
+- `Current Branch` descendant refs should appear by default in `0.0.29`; in `0.0.28`, they appeared only when the option was enabled.
 - Added zoom-out levels should remain usable on large graphs and should not blank the graph.
 
 Residual risks:

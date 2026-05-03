@@ -151,12 +151,10 @@ export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProj
 export function normalizeRevisionGraphProjectionOptionsForScope(
   options: RevisionGraphProjectionOptions
 ): RevisionGraphProjectionOptions {
-  return options.refScope === 'current'
-    ? options
-    : {
-        ...options,
-        showCurrentBranchDescendants: false
-      };
+  return {
+    ...options,
+    showCurrentBranchDescendants: options.refScope === 'current'
+  };
 }
 
 export interface RevisionLogEntry {

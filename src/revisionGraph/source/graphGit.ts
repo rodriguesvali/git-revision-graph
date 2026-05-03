@@ -89,7 +89,7 @@ export function buildRevisionGraphGitLogArgs(
 
   switch (options.refScope) {
     case 'current':
-      args.push(options.showCurrentBranchDescendants ? '--all' : 'HEAD');
+      args.push('--all');
       break;
     case 'remoteHead':
       args.push('--all');

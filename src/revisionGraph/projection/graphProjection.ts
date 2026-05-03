@@ -90,11 +90,10 @@ function getScopeHashes(
         return new Set(graph.orderedCommits.map((commit) => commit.hash));
       }
 
-      const descendantRefTipHashes = options.showCurrentBranchDescendants
-        ? collectDescendantRefTipHashes(graph, headHashes, options)
-        : [];
-
-      return collectAncestorHashes(graph, [...headHashes, ...descendantRefTipHashes]);
+      return collectAncestorHashes(graph, [
+        ...headHashes,
+        ...collectDescendantRefTipHashes(graph, headHashes, options)
+      ]);
     }
     case 'remoteHead': {
       const remoteHeadHashes = graph.orderedCommits

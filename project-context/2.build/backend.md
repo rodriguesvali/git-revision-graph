@@ -26,7 +26,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Relaxed short-lived snapshot cache keys so same-commit ref renames can reuse loaded history while live labels come from repository overlays.
   - Added `state.repositoryOverlay` graph load trace timing.
 - 2026-05-02 `0.0.28` current scope refinement:
-  - Current-scope graph loading keeps using `HEAD` by default and switches to `--all` when `Show Current Branch Descendants` is enabled.
+  - Current-scope graph loading now uses `--all` by default so descendant refs can be projected as core `Current Branch` behavior.
   - Projection now includes visible descendant ref tips from `HEAD` in addition to the current branch ancestry when the option is enabled.
 
 ## Verification

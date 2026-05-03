@@ -639,7 +639,7 @@ test('marks visible refs as merge-blocked when their tips are already in the HEA
   assert.deepEqual(blocked, ['branch::release/1.x', 'tag::v1.0.0']);
 });
 
-test('builds current branch git log args from HEAD by default', () => {
+test('builds current branch git log args from all refs by default so descendants can be projected', () => {
   assert.deepEqual(
     buildRevisionGraphGitLogArgs(6000, {
       ...createDefaultRevisionGraphProjectionOptions(),
@@ -647,7 +647,7 @@ test('builds current branch git log args from HEAD by default', () => {
     }),
     [
       'log',
-      'HEAD',
+      '--all',
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
@@ -658,7 +658,7 @@ test('builds current branch git log args from HEAD by default', () => {
   );
 });
 
-test('builds current branch git log args from all refs when descendant references are visible', () => {
+test('builds current branch git log args from all refs for legacy descendant option messages', () => {
   assert.deepEqual(
     buildRevisionGraphGitLogArgs(6000, {
       ...createDefaultRevisionGraphProjectionOptions(),
@@ -697,7 +697,7 @@ test('builds origin head git log args from all refs so descendants can be projec
   );
 });
 
-test('can scope the projection to the current branch ancestry', () => {
+test('can scope the projection to the current branch ancestry and descendant refs', () => {
   const graph = buildCommitGraph([
     { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic tip', refs: [{ name: 'feature/from-main', kind: 'branch' }] },
     { hash: 'topic1', parents: ['head1'], author: 'Ada', date: '2026-04-08', subject: 'Topic work', refs: [] },
@@ -711,13 +711,14 @@ test('can scope the projection to the current branch ancestry', () => {
     refScope: 'current'
   });
 
-  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'base1']);
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic2', 'head1', 'base1']);
   assert.deepEqual(projection.edges, [
+    { from: 'topic2', to: 'head1', through: ['topic1'] },
     { from: 'head1', to: 'base1', through: [] }
   ]);
 });
 
-test('can include descendant references in the current branch projection when enabled', () => {
+test('keeps current branch descendants enabled for legacy descendant option messages', () => {
   const graph = buildCommitGraph([
     { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic tip', refs: [{ name: 'feature/from-main', kind: 'branch' }] },
     { hash: 'topic1', parents: ['head1'], author: 'Ada', date: '2026-04-08', subject: 'Topic work', refs: [] },
