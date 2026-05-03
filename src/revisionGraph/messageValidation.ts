@@ -162,7 +162,12 @@ function validateProjectionOptions(value: unknown): Partial<RevisionGraphProject
 
   const options: MutableProjectionOptions = {};
   if (value.refScope !== undefined) {
-    if (value.refScope !== 'current' && value.refScope !== 'local' && value.refScope !== 'all') {
+    if (
+      value.refScope !== 'current' &&
+      value.refScope !== 'remoteHead' &&
+      value.refScope !== 'local' &&
+      value.refScope !== 'all'
+    ) {
       return undefined;
     }
     options.refScope = value.refScope;

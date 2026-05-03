@@ -1,5 +1,42 @@
 # Release Readiness
 
+## 0.0.29 Release Readiness
+
+Current package baseline: `0.0.28`.
+
+Target release: `0.0.29`.
+
+Status: Source feature implementation started for `0.0.29`. Version bump, VSIX packaging, and Marketplace publishing remain unapproved.
+
+Candidate change set:
+
+- Add an `origin/HEAD` graph scope that focuses the graph on the default remote trunk and its descendant refs without changing the current branch.
+
+Planning references:
+
+- `project-context/2.build/features/0.0.29-origin-head-scope.md`
+
+Verification completed:
+
+- `npm run build` passed after the `origin/HEAD` scope implementation.
+- `npm test` passed with 250 tests after the `origin/HEAD` scope implementation. This includes `npm run build` through the test script.
+
+Manual validation pending:
+
+- Select `origin/HEAD` in a real repository whose remote default branch is `origin/main`.
+- Confirm the graph remains scoped to the remote trunk while the current local branch is a feature branch.
+- Confirm visible descendant refs from `origin/HEAD` appear without a separate toggle.
+- Confirm repositories missing symbolic `origin/HEAD` still behave through the `origin/main` or `origin/master` fallback when available.
+- Toggle remote branch visibility and confirm the scoped graph remains coherent.
+
+Release gates pending:
+
+- Human approval for version bump to `0.0.29`.
+- Changelog or release-note update.
+- Fresh build and test verification after final release edits.
+- Human approval for VSIX packaging.
+- Human approval for Marketplace publishing.
+
 ## 0.0.28 Release Readiness
 
 Current package baseline: `0.0.27`.

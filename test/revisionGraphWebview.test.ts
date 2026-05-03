@@ -8,6 +8,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /<select id="scopeSelect">/);
+  assert.match(html, /<option value="remoteHead">origin\/HEAD<\/option>/);
   assert.match(html, /id="viewOptionsButton"/);
   assert.match(html, /id="viewOptionsMenu"/);
   assert.doesNotMatch(html, /Show Branchings &amp; Merges/);

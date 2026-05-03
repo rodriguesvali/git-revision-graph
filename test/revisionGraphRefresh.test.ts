@@ -165,6 +165,18 @@ test('projection options clear current branch descendants outside current scope'
   assert.deepEqual(
     normalizeRevisionGraphProjectionOptionsForScope({
       ...defaultOptions,
+      refScope: 'remoteHead',
+      showCurrentBranchDescendants: true
+    }),
+    {
+      ...defaultOptions,
+      refScope: 'remoteHead',
+      showCurrentBranchDescendants: false
+    }
+  );
+  assert.deepEqual(
+    normalizeRevisionGraphProjectionOptionsForScope({
+      ...defaultOptions,
       refScope: 'local',
       showCurrentBranchDescendants: true
     }),

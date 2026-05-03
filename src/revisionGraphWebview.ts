@@ -21,6 +21,7 @@ export function renderRevisionGraphShellHtml(): string {
       <select id="scopeSelect">
         <option value="all">All Refs</option>
         <option value="current">Current Branch</option>
+        <option value="remoteHead">origin/HEAD</option>
         <option value="local">Local Branches</option>
       </select>
     </label>

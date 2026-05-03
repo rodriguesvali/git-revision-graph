@@ -15,6 +15,7 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   showStashes: true,
   showCurrentBranchDescendants: false
 };
+const DEFAULT_REMOTE_HEAD_REF_NAMES = ['origin/HEAD', 'origin/main', 'origin/master'];
 
 export function projectDecoratedCommitGraph(
   graph: CommitGraph,
@@ -90,10 +91,21 @@ function getScopeHashes(
       }
 
       const descendantRefTipHashes = options.showCurrentBranchDescendants
-        ? collectCurrentBranchDescendantRefTipHashes(graph, headHashes, options)
+        ? collectDescendantRefTipHashes(graph, headHashes, options)
         : [];
 
       return collectAncestorHashes(graph, [...headHashes, ...descendantRefTipHashes]);
+    }
+    case 'remoteHead': {
+      const remoteHeadHashes = graph.orderedCommits
+        .filter((commit) => commit.refs.some(isDefaultRemoteHeadRef))
+        .map((commit) => commit.hash);
+      return remoteHeadHashes.length > 0
+        ? collectAncestorHashes(graph, [
+            ...remoteHeadHashes,
+            ...collectDescendantRefTipHashes(graph, remoteHeadHashes, options)
+          ])
+        : new Set<string>();
     }
     case 'local': {
       const localBranchHashes = graph.orderedCommits
@@ -108,12 +120,12 @@ function getScopeHashes(
   }
 }
 
-function collectCurrentBranchDescendantRefTipHashes(
+function collectDescendantRefTipHashes(
   graph: CommitGraph,
-  headHashes: readonly string[],
+  startHashes: readonly string[],
   options: RevisionGraphProjectionOptions
 ): string[] {
-  const descendantHashes = collectDescendantHashes(graph, headHashes);
+  const descendantHashes = collectDescendantHashes(graph, startHashes);
   return graph.orderedCommits
     .filter((commit) =>
       descendantHashes.has(commit.hash) &&
@@ -167,11 +179,19 @@ function shouldDisplayCommit(
   commit: CommitGraph['orderedCommits'][number],
   options: RevisionGraphProjectionOptions
 ): boolean {
+  if (options.refScope === 'remoteHead' && commit.refs.some(isDefaultRemoteHeadRef)) {
+    return true;
+  }
+
   if (filterRefs(commit.refs, options).length > 0) {
     return true;
   }
 
   return false;
+}
+
+function isDefaultRemoteHeadRef(ref: RevisionGraphRef): boolean {
+  return ref.kind === 'remote' && DEFAULT_REMOTE_HEAD_REF_NAMES.includes(ref.name);
 }
 
 function filterRefs(

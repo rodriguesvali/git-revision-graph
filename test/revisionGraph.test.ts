@@ -678,6 +678,25 @@ test('builds current branch git log args from all refs when descendant reference
   );
 });
 
+test('builds origin head git log args from all refs so descendants can be projected', () => {
+  assert.deepEqual(
+    buildRevisionGraphGitLogArgs(6000, {
+      ...createDefaultRevisionGraphProjectionOptions(),
+      refScope: 'remoteHead'
+    }),
+    [
+      'log',
+      '--all',
+      '--topo-order',
+      '--simplify-by-decoration',
+      '--decorate=short',
+      '--date=short',
+      '--max-count=6000',
+      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+    ]
+  );
+});
+
 test('can scope the projection to the current branch ancestry', () => {
   const graph = buildCommitGraph([
     { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic tip', refs: [{ name: 'feature/from-main', kind: 'branch' }] },
@@ -718,6 +737,68 @@ test('can include descendant references in the current branch projection when en
     { from: 'topic2', to: 'head1', through: ['topic1'] },
     { from: 'head1', to: 'base1', through: [] }
   ]);
+});
+
+test('can scope the projection to origin head ancestry and descendant refs', () => {
+  const graph = buildCommitGraph([
+    { hash: 'topic2', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-09', subject: 'Remote topic tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'localTopic1', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-09', subject: 'Local topic tip', refs: [{ name: 'feature/from-origin-head', kind: 'branch' }] },
+    { hash: 'remoteHead1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Remote trunk tip', refs: [{ name: 'origin/main', kind: 'remote' }, { name: 'origin/HEAD', kind: 'remote' }] },
+    { hash: 'localHead1', parents: ['featureBase1'], author: 'Ada', date: '2026-04-07', subject: 'Current feature', refs: [{ name: 'feature/work', kind: 'head' }] },
+    { hash: 'featureBase1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Feature base', refs: [] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'remoteHead'
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic2', 'localTopic1', 'remoteHead1', 'base1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'topic2', to: 'remoteHead1', through: [] },
+    { from: 'localTopic1', to: 'remoteHead1', through: [] },
+    { from: 'remoteHead1', to: 'base1', through: [] }
+  ]);
+});
+
+test('can scope the projection to origin main when origin head decoration is missing', () => {
+  const graph = buildCommitGraph([
+    { hash: 'remoteHead1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Remote trunk tip', refs: [{ name: 'origin/main', kind: 'remote' }] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Sibling topic', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'remoteHead'
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['remoteHead1', 'base1']);
+});
+
+test('keeps the origin head anchor visible when remote branch labels are hidden', () => {
+  const graph = buildCommitGraph([
+    { hash: 'remoteHead1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Remote trunk tip', refs: [{ name: 'origin/HEAD', kind: 'remote' }] },
+    { hash: 'localTopic1', parents: ['remoteHead1'], author: 'Ada', date: '2026-04-08', subject: 'Local topic tip', refs: [{ name: 'feature/from-origin-head', kind: 'branch' }] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-07', subject: 'Sibling topic', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectDecoratedCommitGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    refScope: 'remoteHead',
+    showRemoteBranches: false
+  });
+
+  assert.deepEqual(
+    projection.nodes.map((node) => ({ hash: node.hash, refs: node.refs.map((ref) => ref.name) })),
+    [
+      { hash: 'remoteHead1', refs: [] },
+      { hash: 'localTopic1', refs: ['feature/from-origin-head'] },
+      { hash: 'base1', refs: ['v1.0.0'] }
+    ]
+  );
 });
 
 test('can scope the projection to local branches', () => {

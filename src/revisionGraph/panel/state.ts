@@ -757,10 +757,20 @@ function normalizeRepositoryRef(
     case RefType.Head:
       return { name, kind: 'branch' };
     case RefType.RemoteHead:
-      return projectionOptions.showRemoteBranches ? { name, kind: 'remote' } : undefined;
+      return projectionOptions.showRemoteBranches || isDefaultRemoteHeadScopeAnchor(name, projectionOptions)
+        ? { name, kind: 'remote' }
+        : undefined;
     case RefType.Tag:
       return projectionOptions.showTags ? { name, kind: 'tag' } : undefined;
   }
+}
+
+function isDefaultRemoteHeadScopeAnchor(
+  name: string,
+  projectionOptions: RevisionGraphViewState['projectionOptions']
+): boolean {
+  return projectionOptions.refScope === 'remoteHead' &&
+    (name === 'origin/HEAD' || name === 'origin/main' || name === 'origin/master');
 }
 
 function getNormalizedRefName(ref: Ref): string {

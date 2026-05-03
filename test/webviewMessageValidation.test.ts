@@ -51,6 +51,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        refScope: 'remoteHead'
+      }
+    }),
+    {
+      type: 'set-projection-options',
+      options: {
+        refScope: 'remoteHead'
+      }
+    }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'checkout', refName: 'main', refKind: 'head' }),
     { type: 'checkout', refName: 'main', refKind: 'head' }
   );

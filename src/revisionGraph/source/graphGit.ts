@@ -91,6 +91,9 @@ export function buildRevisionGraphGitLogArgs(
     case 'current':
       args.push(options.showCurrentBranchDescendants ? '--all' : 'HEAD');
       break;
+    case 'remoteHead':
+      args.push('--all');
+      break;
     case 'local':
       args.push('--branches');
       break;
