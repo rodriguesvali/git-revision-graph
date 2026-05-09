@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { compareLoadedShowLogCommits } from '../src/showLog/commitCompare';
+import {
+  compareLoadedShowLogCommits,
+  compareLoadedShowLogCommitWithWorktree
+} from '../src/showLog/commitCompare';
 import type { RevisionLogEntry } from '../src/revisionGraphTypes';
 import { createChange, createRepository } from './fakes';
 
@@ -111,6 +114,71 @@ test('reports when loaded show log commits have no differences', async () => {
   );
 
   assert.deepEqual(messages, ['No differences found between aaaaaaa and bbbbbbb.']);
+});
+
+test('compares a loaded show log commit with the worktree through compare results', async () => {
+  const change = createChange({ uriPath: '/workspace/repo/src/demo.ts' });
+  const repository = createRepository({
+    root: '/workspace/repo',
+    diffWith: [change]
+  });
+  const comparisons: Array<{
+    readonly target: { readonly refName: string; readonly label: string };
+    readonly changes: readonly unknown[];
+  }> = [];
+
+  await compareLoadedShowLogCommitWithWorktree(
+    repository,
+    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    'a'.repeat(40),
+    {
+      async showBetweenRefs() {},
+      async showWithWorktree(_repository, target, changes) {
+        comparisons.push({ target, changes });
+      }
+    },
+    {
+      showInformationMessage() {},
+      async showErrorMessage() {}
+    }
+  );
+
+  assert.deepEqual(comparisons, [
+    {
+      target: { refName: 'a'.repeat(40), label: 'aaaaaaa' },
+      changes: [change]
+    }
+  ]);
+});
+
+test('reports when a loaded show log commit is already aligned with the worktree', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    diffWith: []
+  });
+  const messages: string[] = [];
+
+  await compareLoadedShowLogCommitWithWorktree(
+    repository,
+    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    'a'.repeat(40),
+    {
+      async showBetweenRefs() {},
+      async showWithWorktree() {
+        throw new Error('Compare results should not open for empty worktree diffs.');
+      }
+    },
+    {
+      showInformationMessage(message) {
+        messages.push(message);
+      },
+      async showErrorMessage(message) {
+        messages.push(message);
+      }
+    }
+  );
+
+  assert.deepEqual(messages, ['The worktree is already aligned with aaaaaaa.']);
 });
 
 function createLogEntry(

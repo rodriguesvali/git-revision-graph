@@ -9,7 +9,7 @@ import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/
 import type { CompareResultsPresenter } from './refActions';
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
-import { compareLoadedShowLogCommits } from './showLog/commitCompare';
+import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
 import {
   addShowLogCachedChanges,
   buildShowLogWebviewState,
@@ -172,6 +172,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'compareCommits':
         await this.compareCommits(message.baseCommitHash, message.compareCommitHash);
+        return;
+      case 'compareCommitWithWorktree':
+        await this.compareCommitWithWorktree(message.commitHash);
         return;
     }
   }
@@ -538,6 +541,27 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       this.state.entries,
       baseCommitHash,
       compareCommitHash,
+      this.compareResultsPresenter,
+      {
+        showInformationMessage(message) {
+          void vscode.window.showInformationMessage(message);
+        },
+        async showErrorMessage(message) {
+          await vscode.window.showErrorMessage(message);
+        }
+      }
+    );
+  }
+
+  private async compareCommitWithWorktree(commitHash: string): Promise<void> {
+    if (this.state.kind !== 'visible' || !this.state.repository) {
+      return;
+    }
+
+    await compareLoadedShowLogCommitWithWorktree(
+      this.state.repository,
+      this.state.entries,
+      commitHash,
       this.compareResultsPresenter,
       {
         showInformationMessage(message) {

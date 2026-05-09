@@ -991,6 +991,7 @@ export function renderShowLogWebviewHtml(): string {
 
     function handleContextMenu(commitHash, clientX, clientY) {
       const compareSelection = getCompareSelectionForCommit(commitHash);
+      const canCompareWithWorktree = isSingleSelectedCommit(commitHash);
       contextMenuState = {
         kind: 'commit',
         commitHash,
@@ -1003,7 +1004,10 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + (compareSelection
           ? '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
-          : '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>');
+          : (canCompareWithWorktree
+            ? '<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
+              + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+            : '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'));
       showContextMenuAt(clientX, clientY);
     }
 
@@ -1125,6 +1129,10 @@ export function renderShowLogWebviewHtml(): string {
         baseCommitHash: selectedCommitHashes[0],
         compareCommitHash: selectedCommitHashes[1]
       };
+    }
+
+    function isSingleSelectedCommit(commitHash) {
+      return selectedCommitHashes.length === 1 && selectedCommitHashes[0] === commitHash;
     }
 
     function syncLoadMoreObserver() {
@@ -1301,6 +1309,9 @@ export function renderShowLogWebviewHtml(): string {
             baseCommitHash: state.baseCommitHash,
             compareCommitHash: state.compareCommitHash
           });
+        }
+        if (action === 'compareCommitWithWorktree') {
+          vscode.postMessage({ type: 'compareCommitWithWorktree', commitHash: state.commitHash });
         }
         return;
       }

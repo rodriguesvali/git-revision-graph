@@ -71,7 +71,11 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /IntersectionObserver/);
   assert.match(html, /type: 'loadMore'/);
   assert.match(html, /Open Commit Details/);
-  assert.match(html, /compareSelection\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>'\s*:\s*'<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details<\/button>'/s);
+  assert.match(html, /const canCompareWithWorktree = isSingleSelectedCommit\(commitHash\);/);
+  assert.match(html, /data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>/);
+  assert.match(html, /compareSelection\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>'/s);
+  assert.match(html, /canCompareWithWorktree\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>'/s);
+  assert.match(html, /function isSingleSelectedCommit\(commitHash\)/);
   assert.match(html, /Open Diff/);
   assert.match(html, /Compare with Worktree/);
   assert.match(html, /Copy to Clipboard/);
@@ -80,6 +84,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /type: 'toggleCommit', commitHash/);
   assert.match(html, /data-menu-action="compareCommits"/);
   assert.match(html, /type: 'compareCommits'/);
+  assert.match(html, /type: 'compareCommitWithWorktree'/);
   assert.match(html, /baseCommitHash: state\.baseCommitHash/);
   assert.match(html, /compareCommitHash: state\.compareCommitHash/);
   assert.match(html, /data-menu-action="openFile"/);
