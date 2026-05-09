@@ -2,6 +2,7 @@ import { RevisionGraphProjectionOptions, RevisionGraphRef, RevisionGraphScene } 
 import { RevisionGraphNodeLayout } from './revisionGraph/webview/shared';
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
+export const REVISION_GRAPH_VISIBLE_CONTEXT = 'gitRefs.revisionGraphVisible';
 export const SHOW_LOG_VIEW_ID = 'gitRefs.showLogView';
 
 export type RevisionLogSource =

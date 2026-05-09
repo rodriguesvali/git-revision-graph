@@ -38,6 +38,7 @@ export type {
   RefreshController,
   ReferenceManager,
   AncestryInspector,
+  CompareResultsRevealOptions,
   RefActionKind,
   RefActionUi,
   RefActionServices,

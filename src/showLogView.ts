@@ -18,6 +18,7 @@ import {
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
 import { validateShowLogWebviewMessage } from './showLog/messageValidation';
+import { focusAndMaximizeSecondaryView, hideSecondaryView } from './viewLayout';
 
 export const SHOW_LOG_VISIBLE_CONTEXT = 'gitRefs.showLogVisible';
 const SHOW_LOG_PAGE_SIZE = 50;
@@ -89,7 +90,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     };
     await this.updateVisibility(true);
     this.postState();
-    await this.focus();
+    await focusAndMaximizeSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
 
     try {
       const result = await this.backend.loadRevisionLog(
@@ -131,6 +132,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.state = createHiddenShowLogState();
     this.postState();
     await this.updateVisibility(false);
+    await hideSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -587,10 +589,6 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       type: 'state',
       state: buildShowLogWebviewState(this.state)
     });
-  }
-
-  private async focus(): Promise<void> {
-    await vscode.commands.executeCommand(`${SHOW_LOG_VIEW_ID}.focus`);
   }
 
   private disposeViewDisposables(): void {

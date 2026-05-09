@@ -17,6 +17,7 @@ import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
+import { initializeRevisionGraphVisibility } from './viewLayout';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY = 'gitRevisionGraph.projectedGraphLayoutCache.v1';
@@ -24,6 +25,8 @@ const PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS = 500;
 let lastPersistedProjectedGraphLayoutCacheJson: string | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  await initializeRevisionGraphVisibility(vscode.commands);
+
   const git = await getGitApi();
   if (!git) {
     void vscode.window.showWarningMessage(

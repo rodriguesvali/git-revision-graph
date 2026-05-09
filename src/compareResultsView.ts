@@ -12,7 +12,13 @@ import {
 } from './compareResultsShared';
 import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
 import { validateCompareResultsWebviewMessage } from './compareResults/messageValidation';
-import type { RefSelection } from './refActions';
+import type { CompareResultsRevealOptions, RefSelection } from './refActions';
+import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
+import {
+  focusAndMaximizeSecondaryView,
+  hideSecondaryView,
+  minimizeSecondaryViewThenMaximizeView
+} from './viewLayout';
 import {
   openChangeDiffBetweenRefs,
   openChangeDiffWithWorktree,
@@ -27,6 +33,7 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
   private view: vscode.WebviewView | undefined;
   private readonly viewDisposables: vscode.Disposable[] = [];
   private isVisible: boolean | undefined;
+  private restoreShowLogOnHide = false;
 
   async initialize(): Promise<void> {
     await this.updateVisibility(false);
@@ -61,7 +68,8 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     repository: Repository,
     left: RefSelection,
     right: RefSelection,
-    changes: readonly Change[]
+    changes: readonly Change[],
+    options: CompareResultsRevealOptions = {}
   ): Promise<void> {
     this.state = {
       kind: 'between',
@@ -70,15 +78,17 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
       right,
       changes: [...changes]
     };
+    this.restoreShowLogOnHide = options.source === 'showLog';
     await this.updateVisibility(true);
     this.refresh();
-    await this.focus();
+    await this.reveal(options);
   }
 
   async showWithWorktree(
     repository: Repository,
     target: RefSelection,
-    changes: readonly Change[]
+    changes: readonly Change[],
+    options: CompareResultsRevealOptions = {}
   ): Promise<void> {
     this.state = {
       kind: 'worktree',
@@ -86,15 +96,24 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
       target,
       changes: [...changes]
     };
+    this.restoreShowLogOnHide = options.source === 'showLog';
     await this.updateVisibility(true);
     this.refresh();
-    await this.focus();
+    await this.reveal(options);
   }
 
   async hide(): Promise<void> {
+    const shouldRestoreShowLog = this.restoreShowLogOnHide;
+    this.restoreShowLogOnHide = false;
     this.state = { kind: 'empty' };
     this.refresh();
     await this.updateVisibility(false);
+    if (shouldRestoreShowLog) {
+      await hideSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands, SHOW_LOG_VIEW_ID);
+      return;
+    }
+
+    await hideSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   async openItem(item: CompareResultItem): Promise<void> {
@@ -214,8 +233,13 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     }
   }
 
-  private async focus(): Promise<void> {
-    await vscode.commands.executeCommand(`${COMPARE_RESULTS_VIEW_ID}.focus`);
+  private async reveal(options: CompareResultsRevealOptions): Promise<void> {
+    if (options.source === 'showLog') {
+      await minimizeSecondaryViewThenMaximizeView(SHOW_LOG_VIEW_ID, COMPARE_RESULTS_VIEW_ID, vscode.commands);
+      return;
+    }
+
+    await focusAndMaximizeSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {

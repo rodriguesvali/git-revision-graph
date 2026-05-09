@@ -48,6 +48,28 @@ test('package manifest contributes compare results as an on-demand webview with 
   );
 });
 
+test('package manifest contributes graph as a context-controlled webview', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly views: {
+        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
+      };
+    };
+  };
+
+  const graphView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.revisionGraphView');
+  assert.equal(graphView?.type, 'webview');
+  assert.equal(graphView?.when, 'gitRefs.revisionGraphVisible');
+});
+
+test('package manifest activates on startup so graph visibility context is initialized', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly activationEvents?: string[];
+  };
+
+  assert.ok(manifest.activationEvents?.includes('onStartupFinished'));
+});
+
 test('package manifest contributes show log as an on-demand webview with a hide action', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {

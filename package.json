@@ -35,6 +35,9 @@
     "SCM Providers"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "extensionDependencies": [
     "vscode.git"
   ],
@@ -54,7 +57,8 @@
           "id": "gitRefs.revisionGraphView",
           "name": "Graph",
           "type": "webview",
-          "icon": "media/icon-source.svg"
+          "icon": "media/icon-source.svg",
+          "when": "gitRefs.revisionGraphVisible"
         },
         {
           "id": "gitRefs.compareResultsView",

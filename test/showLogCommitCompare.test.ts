@@ -18,6 +18,7 @@ test('compares two loaded show log commits through compare results', async () =>
     readonly left: { readonly refName: string; readonly label: string };
     readonly right: { readonly refName: string; readonly label: string };
     readonly changes: readonly unknown[];
+    readonly source: string | undefined;
   }> = [];
   const messages: string[] = [];
 
@@ -30,8 +31,8 @@ test('compares two loaded show log commits through compare results', async () =>
     'a'.repeat(40),
     'b'.repeat(40),
     {
-      async showBetweenRefs(_repository, left, right, changes) {
-        comparisons.push({ left, right, changes });
+      async showBetweenRefs(_repository, left, right, changes, options) {
+        comparisons.push({ left, right, changes, source: options?.source });
       },
       async showWithWorktree() {}
     },
@@ -49,7 +50,8 @@ test('compares two loaded show log commits through compare results', async () =>
     {
       left: { refName: 'a'.repeat(40), label: 'aaaaaaa' },
       right: { refName: 'b'.repeat(40), label: 'bbbbbbb' },
-      changes: [change]
+      changes: [change],
+      source: 'showLog'
     }
   ]);
   assert.deepEqual(messages, []);
@@ -125,6 +127,7 @@ test('compares a loaded show log commit with the worktree through compare result
   const comparisons: Array<{
     readonly target: { readonly refName: string; readonly label: string };
     readonly changes: readonly unknown[];
+    readonly source: string | undefined;
   }> = [];
 
   await compareLoadedShowLogCommitWithWorktree(
@@ -133,8 +136,8 @@ test('compares a loaded show log commit with the worktree through compare result
     'a'.repeat(40),
     {
       async showBetweenRefs() {},
-      async showWithWorktree(_repository, target, changes) {
-        comparisons.push({ target, changes });
+      async showWithWorktree(_repository, target, changes, options) {
+        comparisons.push({ target, changes, source: options?.source });
       }
     },
     {
@@ -146,7 +149,8 @@ test('compares a loaded show log commit with the worktree through compare result
   assert.deepEqual(comparisons, [
     {
       target: { refName: 'a'.repeat(40), label: 'aaaaaaa' },
-      changes: [change]
+      changes: [change],
+      source: 'showLog'
     }
   ]);
 });

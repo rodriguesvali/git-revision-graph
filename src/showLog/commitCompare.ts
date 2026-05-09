@@ -33,7 +33,8 @@ export async function compareLoadedShowLogCommits(
       repository,
       { refName: base.hash, label: base.shortHash },
       { refName: compare.hash, label: compare.shortHash },
-      changes
+      changes,
+      { source: 'showLog' }
     );
   } catch (error) {
     await ui.showErrorMessage(toOperationError('Could not compare the selected commits.', error));
@@ -62,7 +63,8 @@ export async function compareLoadedShowLogCommitWithWorktree(
     await compareResultsPresenter.showWithWorktree(
       repository,
       { refName: entry.hash, label: entry.shortHash },
-      changes
+      changes,
+      { source: 'showLog' }
     );
   } catch (error) {
     await ui.showErrorMessage(toOperationError('Could not compare the selected commit with the worktree.', error));

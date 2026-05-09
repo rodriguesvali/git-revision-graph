@@ -9,6 +9,10 @@ export interface RefSelection {
   readonly label: string;
 }
 
+export interface CompareResultsRevealOptions {
+  readonly source?: 'graph' | 'showLog';
+}
+
 export interface RefActionTarget extends RefSelection {
   readonly kind: RefActionKind;
 }
@@ -35,12 +39,14 @@ export interface CompareResultsPresenter {
     repository: Repository,
     left: RefSelection,
     right: RefSelection,
-    changes: readonly ChangeQuickPickItem['change'][]
+    changes: readonly ChangeQuickPickItem['change'][],
+    options?: CompareResultsRevealOptions
   ): Promise<void>;
   showWithWorktree(
     repository: Repository,
     target: RefSelection,
-    changes: readonly ChangeQuickPickItem['change'][]
+    changes: readonly ChangeQuickPickItem['change'][],
+    options?: CompareResultsRevealOptions
   ): Promise<void>;
 }
 
