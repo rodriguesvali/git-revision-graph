@@ -182,6 +182,13 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.equal(validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123' }), undefined);
   assert.equal(
     validateShowLogWebviewMessage({
+      type: 'setFilterText',
+      value: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
       type: 'openCommitDetails',
       commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
@@ -190,6 +197,10 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }),
     { type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada' }),
+    { type: 'setFilterText', value: 'Ada' }
   );
 });
 

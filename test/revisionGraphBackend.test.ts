@@ -194,3 +194,60 @@ test('uses the graph limit policy timeout for snapshot git log commands', async 
     }
   );
 });
+
+test('loads filtered show log pages across message author hashes and refs', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf '\\036aaa111aaa111\\037\\037Ada\\0372026-05-03\\037origin/main\\037Fix parser\\037Match body\\036'",
+      "printf '\\036bbb222bbb222\\037\\037Linus\\0372026-05-02\\037tag: v1.0.0\\037Update docs\\037Release notes\\036'",
+      "printf '\\036ccc333ccc333\\037\\037Grace\\0372026-05-01\\037\\037Refactor cache\\037Second match\\036'"
+    ].join('\n'),
+    async (repositoryPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const firstPage = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        1,
+        0,
+        false,
+        'match'
+      );
+      const secondPage = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        1,
+        1,
+        false,
+        'match'
+      );
+
+      assert.deepEqual(firstPage.entries.map((entry) => entry.shortHash), ['aaa111a']);
+      assert.equal(firstPage.hasMore, true);
+      assert.deepEqual(secondPage.entries.map((entry) => entry.shortHash), ['ccc333c']);
+      assert.equal(secondPage.hasMore, false);
+
+      const authorMatch = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        1,
+        0,
+        false,
+        'linus'
+      );
+      assert.deepEqual(authorMatch.entries.map((entry) => entry.shortHash), ['bbb222b']);
+      const tagMatch = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        1,
+        0,
+        false,
+        'tag:v1.0.0'
+      );
+      assert.deepEqual(tagMatch.entries.map((entry) => entry.shortHash), ['bbb222b']);
+    }
+  );
+});

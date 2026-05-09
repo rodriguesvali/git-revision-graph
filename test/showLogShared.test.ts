@@ -38,6 +38,7 @@ test('builds expanded show log webview commits with inline file changes and lane
     repository,
     source: { kind: 'target' as const, revision: 'main', label: 'main' },
     showAllBranches: false,
+    filterText: '',
     entries: [
       {
         hash: 'a'.repeat(40),
@@ -83,6 +84,7 @@ test('builds expanded show log webview commits with inline file changes and lane
   assert.equal(webviewState.summaryCount, '2 commits');
   assert.equal(webviewState.showAllBranches, false);
   assert.equal(webviewState.canToggleAllBranches, true);
+  assert.equal(webviewState.filterText, '');
   assert.equal(webviewState.commits[0]?.expanded, true);
   assert.equal(webviewState.commits[0]?.changes[0]?.path, 'src/demo.ts');
   assert.equal(webviewState.commits[0]?.changes[0]?.status, 'Modified');
@@ -105,6 +107,7 @@ test('updates the summary count when more commits are appended', () => {
     repository,
     source: { kind: 'range' as const, baseRevision: 'origin/jch', baseLabel: 'origin/jch', compareRevision: 'origin/seen', compareLabel: 'origin/seen' },
     showAllBranches: false,
+    filterText: '',
     entries: [
       {
         hash: 'a'.repeat(40),
@@ -150,6 +153,29 @@ test('updates the summary count when more commits are appended', () => {
   assert.equal(initial.summary, 'Base: origin/jch -> Compare: origin/seen');
   assert.equal(initial.summaryCount, '1+ commits');
   assert.equal(afterLoadMore.summaryCount, '2+ commits');
+});
+
+test('builds a filtered empty message for show log searches with no matches', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const webviewState = buildShowLogWebviewState({
+    kind: 'visible',
+    repository,
+    source: { kind: 'target', revision: 'main', label: 'main' },
+    showAllBranches: false,
+    filterText: 'Ada',
+    entries: [],
+    hasMore: false,
+    loading: false,
+    loadingMore: false,
+    errorMessage: undefined,
+    expandedCommitHash: undefined,
+    loadingCommitHash: undefined,
+    expandedCommitError: undefined,
+    cachedChanges: {}
+  });
+
+  assert.equal(webviewState.filterText, 'Ada');
+  assert.equal(webviewState.emptyMessage, 'No commits found matching "Ada".');
 });
 
 test('keeps a hidden default state before any show log request', () => {

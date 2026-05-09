@@ -9,6 +9,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /<title>Show Log<\/title>/);
   assert.match(html, /class="table-header"/);
   assert.match(html, /class="summary-count" id="summaryCount"/);
+  assert.match(html, /class="filter-input" id="filterInput"/);
+  assert.match(html, /placeholder="Filter commits"/);
+  assert.match(html, /class="filter-clear" id="filterClear"/);
   assert.match(html, /graph-header-label">Graph<\/span>/);
   assert.match(html, /Show All Branches/);
   assert.match(html, /id="showAllBranchesToggle"/);
@@ -46,6 +49,10 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /vscode\.setState\(/);
   assert.match(html, /document\.addEventListener\('pointerdown'/);
   assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);
+  assert.match(html, /function scheduleFilterUpdate\(value\)/);
+  assert.match(html, /type: 'setFilterText', value/);
+  assert.match(html, /filterInput\?\.addEventListener\('input'/);
+  assert.match(html, /filterClear\?\.addEventListener\('click'/);
   assert.match(html, /class="commit-files"/);
   assert.match(html, /id="loadMoreSentinel"/);
   assert.match(html, /IntersectionObserver/);

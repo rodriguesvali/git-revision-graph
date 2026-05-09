@@ -71,6 +71,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       repository,
       source,
       showAllBranches: source.kind === 'range',
+      filterText: '',
       entries: [],
       hasMore: false,
       loading: true,
@@ -91,7 +92,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         source,
         SHOW_LOG_PAGE_SIZE,
         0,
-        this.state.showAllBranches
+        this.state.showAllBranches,
+        this.state.filterText
       );
       if (requestId !== this.loadRequestId) {
         return;
@@ -141,6 +143,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'toggleShowAllBranches':
         await this.toggleShowAllBranches(message.value);
+        return;
+      case 'setFilterText':
+        await this.setFilterText(message.value);
         return;
       case 'loadMore':
         await this.loadMore();
@@ -282,7 +287,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         source,
         SHOW_LOG_PAGE_SIZE,
         0,
-        value
+        value,
+        this.state.filterText
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
@@ -304,6 +310,73 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         ...this.state,
         loading: false,
         errorMessage: toOperationError('Could not update the log scope.', error)
+      };
+      this.postState();
+    }
+  }
+
+  private async setFilterText(value: string): Promise<void> {
+    if (this.state.kind !== 'visible') {
+      return;
+    }
+
+    const filterText = value.trim();
+    if (this.state.filterText === filterText) {
+      return;
+    }
+
+    const repository = this.state.repository;
+    const source = this.state.source;
+    if (!repository || !source) {
+      return;
+    }
+
+    const requestId = ++this.loadRequestId;
+    this.expandRequestId += 1;
+    this.state = {
+      ...this.state,
+      filterText,
+      loading: true,
+      loadingMore: false,
+      errorMessage: undefined,
+      entries: [],
+      hasMore: false,
+      expandedCommitHash: undefined,
+      loadingCommitHash: undefined,
+      expandedCommitError: undefined,
+      cachedChanges: {}
+    };
+    this.postState();
+
+    try {
+      const result = await this.backend.loadRevisionLog(
+        repository,
+        source,
+        SHOW_LOG_PAGE_SIZE,
+        0,
+        this.state.showAllBranches,
+        filterText
+      );
+      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        loading: false,
+        entries: [...result.entries],
+        hasMore: result.hasMore
+      };
+      this.postState();
+    } catch (error) {
+      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        loading: false,
+        errorMessage: toOperationError('Could not filter the selected log.', error)
       };
       this.postState();
     }
@@ -331,7 +404,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         source,
         SHOW_LOG_PAGE_SIZE,
         skip,
-        this.state.showAllBranches
+        this.state.showAllBranches,
+        this.state.filterText
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;

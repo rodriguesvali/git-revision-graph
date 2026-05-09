@@ -17,6 +17,8 @@ import {
 import {
   buildRevisionGraphGitLogArgs,
   buildRevisionLogGitArgs,
+  matchesRevisionLogFilter,
+  normalizeRevisionLogFilterText,
   parseRevisionLogEntries
 } from '../src/revisionGraph/source/graphGit';
 import {
@@ -227,6 +229,18 @@ test('parses show log entries with refs and short stats', () => {
     deletions: 2
   });
   assert.equal(entries[1].shortStat, undefined);
+});
+
+test('matches show log filter text across message author hashes and references', () => {
+  const [entry] = parseRevisionLogEntries(
+    '\u001eaaa111bbb222\u001f\u001fAda Lovelace\u001f2026-04-17\u001fHEAD -> main, origin/main, tag: v0.0.17\u001fAdd show log\u001fBody line with parser details\u001e'
+  );
+
+  assert.equal(matchesRevisionLogFilter(entry!, normalizeRevisionLogFilterText('parser details')), true);
+  assert.equal(matchesRevisionLogFilter(entry!, normalizeRevisionLogFilterText('ada lovelace')), true);
+  assert.equal(matchesRevisionLogFilter(entry!, normalizeRevisionLogFilterText('aaa111')), true);
+  assert.equal(matchesRevisionLogFilter(entry!, normalizeRevisionLogFilterText('tag:v0.0.17')), true);
+  assert.equal(matchesRevisionLogFilter(entry!, normalizeRevisionLogFilterText('missing text')), false);
 });
 
 test('prefers repository ref kinds for branch names that contain slashes', () => {

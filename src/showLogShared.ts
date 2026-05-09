@@ -10,6 +10,7 @@ export interface ShowLogState {
   readonly repository: Repository | undefined;
   readonly source: RevisionLogSource | undefined;
   readonly showAllBranches: boolean;
+  readonly filterText: string;
   readonly entries: readonly RevisionLogEntry[];
   readonly hasMore: boolean;
   readonly loading: boolean;
@@ -56,6 +57,7 @@ export interface ShowLogWebviewState {
   readonly summaryCount: string;
   readonly showAllBranches: boolean;
   readonly canToggleAllBranches: boolean;
+  readonly filterText: string;
   readonly emptyMessage: string | undefined;
   readonly errorMessage: string | undefined;
   readonly commits: readonly ShowLogWebviewCommitItem[];
@@ -68,6 +70,7 @@ export function createHiddenShowLogState(): ShowLogState {
     repository: undefined,
     source: undefined,
     showAllBranches: false,
+    filterText: '',
     entries: [],
     hasMore: false,
     loading: false,
@@ -127,6 +130,10 @@ export function buildShowLogEmptyMessage(state: ShowLogState): string | undefine
     return 'Loading log...';
   }
 
+  if (state.filterText.trim()) {
+    return `No commits found matching "${state.filterText.trim()}".`;
+  }
+
   switch (state.source.kind) {
     case 'target':
       return `No commits found for ${state.source.label}.`;
@@ -145,6 +152,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       summaryCount: '',
       showAllBranches: false,
       canToggleAllBranches: false,
+      filterText: '',
       emptyMessage: buildShowLogEmptyMessage(state),
       errorMessage: undefined,
       commits: [],
@@ -162,6 +170,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     summaryCount: buildShowLogCommitLabel(state.entries.length, state.hasMore),
     showAllBranches: state.showAllBranches,
     canToggleAllBranches: state.source?.kind === 'target',
+    filterText: state.filterText,
     emptyMessage: state.entries.length === 0 ? buildShowLogEmptyMessage(state) : undefined,
     errorMessage: state.errorMessage,
     commits: state.entries.map((entry) => {

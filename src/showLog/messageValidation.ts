@@ -1,8 +1,9 @@
-import { isBoolean, isBoundedNonEmptyString, isRecord, isString } from '../webviewMessageValidation';
+import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
+  | { readonly type: 'setFilterText'; readonly value: string }
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'loadMore' }
   | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
@@ -23,6 +24,10 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'toggleShowAllBranches':
       return isBoolean(message.value)
         ? { type: 'toggleShowAllBranches', value: message.value }
+        : undefined;
+    case 'setFilterText':
+      return isBoundedString(message.value)
+        ? { type: 'setFilterText', value: message.value }
         : undefined;
     case 'toggleCommit':
     case 'openCommitDetails':

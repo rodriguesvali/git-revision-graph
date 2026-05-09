@@ -100,6 +100,55 @@ export function renderShowLogWebviewHtml(): string {
     .toolbar-toggle input {
       margin: 0;
     }
+    .filter-control {
+      position: relative;
+      flex: 0 1 220px;
+      min-width: 150px;
+    }
+    .filter-input {
+      width: 100%;
+      height: 24px;
+      padding: 3px 24px 3px 8px;
+      border: 1px solid var(--vscode-input-border, transparent);
+      border-radius: 4px;
+      color: var(--vscode-input-foreground);
+      background: var(--vscode-input-background);
+      outline: none;
+      font-family: inherit;
+      font-size: 11px;
+    }
+    .filter-input:focus {
+      border-color: var(--vscode-focusBorder);
+    }
+    .filter-input::placeholder {
+      color: var(--vscode-input-placeholderForeground);
+    }
+    .filter-clear {
+      position: absolute;
+      top: 50%;
+      right: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 0;
+      border-radius: 3px;
+      color: var(--vscode-descriptionForeground);
+      background: transparent;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+    .filter-clear:hover,
+    .filter-clear:focus-visible {
+      color: var(--vscode-foreground);
+      background: var(--vscode-toolbar-hoverBackground);
+      outline: none;
+    }
+    .filter-clear[hidden] {
+      display: none;
+    }
     .loading-chip {
       display: none;
       flex-shrink: 0;
@@ -598,6 +647,10 @@ export function renderShowLogWebviewHtml(): string {
       <div class="toolbar-main">
         <div class="summary" id="summary"></div>
         <div class="summary-count" id="summaryCount"></div>
+        <div class="filter-control">
+          <input class="filter-input" id="filterInput" type="search" placeholder="Filter commits" aria-label="Filter commits" spellcheck="false" />
+          <button class="filter-clear" id="filterClear" type="button" title="Clear filter" aria-label="Clear filter" hidden>×</button>
+        </div>
         <label class="toolbar-toggle" id="showAllBranchesControl" hidden>
           <input type="checkbox" id="showAllBranchesToggle" />
           <span>Show All Branches</span>
@@ -619,6 +672,8 @@ export function renderShowLogWebviewHtml(): string {
     const contextMenu = document.getElementById('contextMenu');
     const showAllBranchesControl = document.getElementById('showAllBranchesControl');
     const showAllBranchesToggle = document.getElementById('showAllBranchesToggle');
+    const filterInput = document.getElementById('filterInput');
+    const filterClear = document.getElementById('filterClear');
     const LANE_COLORS = ['#5bbaf9', '#d87cff', '#ffd24d', '#52d273', '#ff7db8', '#ff9b5e', '#8fd6c9'];
     const GRAPH_WIDTH_KEY = 'showLogGraphWidth';
     const MIN_GRAPH_WIDTH = 42;
@@ -630,6 +685,7 @@ export function renderShowLogWebviewHtml(): string {
     let resizeState = null;
     let selectedCommitHash = persistedUiState.selectedCommitHash || null;
     let loadMoreObserver = null;
+    let filterDebounceTimer = 0;
 
     applyGraphColumnWidth(graphWidth);
 
@@ -645,6 +701,7 @@ export function renderShowLogWebviewHtml(): string {
         summaryCount: '',
         showAllBranches: false,
         canToggleAllBranches: false,
+        filterText: '',
         emptyMessage: 'Use Show Log from the graph context menu to load a commit stack or range here.',
         errorMessage: undefined,
         commits: [],
@@ -655,6 +712,17 @@ export function renderShowLogWebviewHtml(): string {
       summaryCount.textContent = state.summaryCount || '';
       loadingChip.dataset.visible = state.loading ? 'true' : 'false';
       loadingChip.textContent = 'Loading';
+      if (filterInput instanceof HTMLInputElement) {
+        const nextFilterText = state.filterText || '';
+        if (filterInput.value !== nextFilterText) {
+          filterInput.value = nextFilterText;
+        }
+        filterInput.disabled = state.kind !== 'visible';
+      }
+      if (filterClear instanceof HTMLButtonElement) {
+        filterClear.hidden = !(state.filterText || '').trim();
+        filterClear.disabled = state.kind !== 'visible';
+      }
       if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
         showAllBranchesControl.hidden = !state.canToggleAllBranches;
         showAllBranchesToggle.checked = !!state.showAllBranches;
@@ -982,6 +1050,13 @@ export function renderShowLogWebviewHtml(): string {
       vscode.postMessage({ type: 'loadMore' });
     }
 
+    function scheduleFilterUpdate(value) {
+      window.clearTimeout(filterDebounceTimer);
+      filterDebounceTimer = window.setTimeout(() => {
+        vscode.postMessage({ type: 'setFilterText', value });
+      }, 250);
+    }
+
     function syncLoadMoreObserver() {
       if (loadMoreObserver) {
         loadMoreObserver.disconnect();
@@ -1172,6 +1247,23 @@ export function renderShowLogWebviewHtml(): string {
         return;
       }
       vscode.postMessage({ type: 'toggleShowAllBranches', value: target.checked });
+    });
+
+    filterInput?.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) {
+        return;
+      }
+      scheduleFilterUpdate(target.value);
+    });
+
+    filterClear?.addEventListener('click', () => {
+      if (!(filterInput instanceof HTMLInputElement)) {
+        return;
+      }
+      filterInput.value = '';
+      filterInput.focus();
+      scheduleFilterUpdate('');
     });
 
     document.addEventListener('pointerdown', (event) => {

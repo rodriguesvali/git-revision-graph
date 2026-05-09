@@ -161,6 +161,46 @@ export function buildRevisionLogGitArgs(
   return args;
 }
 
+export function normalizeRevisionLogFilterText(filterText: string | undefined): string {
+  return filterText?.trim().toLocaleLowerCase() ?? '';
+}
+
+export function matchesRevisionLogFilter(entry: RevisionLogEntry, normalizedFilterText: string): boolean {
+  if (!normalizedFilterText) {
+    return true;
+  }
+
+  return buildRevisionLogSearchText(entry).includes(normalizedFilterText);
+}
+
+function buildRevisionLogSearchText(entry: RevisionLogEntry): string {
+  return [
+    entry.hash,
+    entry.shortHash,
+    entry.author,
+    entry.subject,
+    entry.message,
+    ...entry.references.flatMap((ref) => [
+      ref.name,
+      ref.kind,
+      formatRevisionLogReferenceForSearch(ref.name, ref.kind)
+    ])
+  ]
+    .join('\n')
+    .toLocaleLowerCase();
+}
+
+function formatRevisionLogReferenceForSearch(name: string, kind: RevisionGraphRef['kind']): string {
+  switch (kind) {
+    case 'head':
+      return `HEAD ${name}`;
+    case 'tag':
+      return `tag:${name}`;
+    default:
+      return name;
+  }
+}
+
 export function getRevisionLogFormat(): string {
   return `%x1e%H${FIELD_SEPARATOR}%P${FIELD_SEPARATOR}%an${FIELD_SEPARATOR}%ad${FIELD_SEPARATOR}%D${FIELD_SEPARATOR}%s${FIELD_SEPARATOR}%b`;
 }
