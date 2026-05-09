@@ -183,7 +183,20 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.equal(
     validateShowLogWebviewMessage({
       type: 'setFilterText',
-      value: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+      value: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1),
+      sourceToken: '1'
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada' }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'setFilterText',
+      value: 'Ada',
+      sourceToken: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
     undefined
   );
@@ -222,8 +235,8 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
     { type: 'compareCommitWithWorktree', commitHash: 'abc123' }
   );
   assert.deepEqual(
-    validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada' }),
-    { type: 'setFilterText', value: 'Ada' }
+    validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada', sourceToken: '1' }),
+    { type: 'setFilterText', value: 'Ada', sourceToken: '1' }
   );
 });
 

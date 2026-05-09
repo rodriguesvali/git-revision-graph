@@ -35,6 +35,7 @@ test('builds expanded show log webview commits with inline file changes and lane
   const repository = createRepository({ root: '/workspace/repo' });
   const state = {
     kind: 'visible' as const,
+    sourceToken: 'test-source-1',
     repository,
     source: { kind: 'target' as const, revision: 'main', label: 'main' },
     showAllBranches: false,
@@ -80,6 +81,7 @@ test('builds expanded show log webview commits with inline file changes and lane
   const webviewState = buildShowLogWebviewState(state);
 
   assert.equal(webviewState.kind, 'visible');
+  assert.equal(webviewState.sourceToken, 'test-source-1');
   assert.equal(webviewState.summary, 'main');
   assert.equal(webviewState.summaryCount, '2 commits');
   assert.equal(webviewState.showAllBranches, false);
@@ -104,6 +106,7 @@ test('updates the summary count when more commits are appended', () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const baseState = {
     kind: 'visible' as const,
+    sourceToken: 'test-source-2',
     repository,
     source: { kind: 'range' as const, baseRevision: 'origin/jch', baseLabel: 'origin/jch', compareRevision: 'origin/seen', compareLabel: 'origin/seen' },
     showAllBranches: false,
@@ -159,6 +162,7 @@ test('builds a filtered empty message for show log searches with no matches', ()
   const repository = createRepository({ root: '/workspace/repo' });
   const webviewState = buildShowLogWebviewState({
     kind: 'visible',
+    sourceToken: 'test-source-3',
     repository,
     source: { kind: 'target', revision: 'main', label: 'main' },
     showAllBranches: false,
@@ -182,6 +186,7 @@ test('keeps a hidden default state before any show log request', () => {
   const state = buildShowLogWebviewState(createHiddenShowLogState());
 
   assert.equal(state.kind, 'hidden');
+  assert.equal(state.sourceToken, '');
   assert.equal(state.commits.length, 0);
   assert.equal(state.summaryCount, '');
   assert.match(state.emptyMessage ?? '', /Show Log/);

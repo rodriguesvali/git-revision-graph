@@ -709,6 +709,7 @@ export function renderShowLogWebviewHtml(): string {
         summaryCount: '',
         showAllBranches: false,
         canToggleAllBranches: false,
+        sourceToken: '',
         filterText: '',
         emptyMessage: 'Use Show Log from the graph context menu to load a commit stack or range here.',
         errorMessage: undefined,
@@ -1073,10 +1074,23 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function scheduleFilterUpdate(value) {
+      const sourceToken = getCurrentSourceToken();
       window.clearTimeout(filterDebounceTimer);
       filterDebounceTimer = window.setTimeout(() => {
-        vscode.postMessage({ type: 'setFilterText', value });
+        if (sourceToken !== getCurrentSourceToken()) {
+          return;
+        }
+        vscode.postMessage({ type: 'setFilterText', value, sourceToken });
       }, 250);
+    }
+
+    function clearPendingFilterUpdate() {
+      window.clearTimeout(filterDebounceTimer);
+      filterDebounceTimer = 0;
+    }
+
+    function getCurrentSourceToken() {
+      return (currentState && currentState.sourceToken) || '';
     }
 
     function normalizeSelectedCommitHashes(value) {
@@ -1101,9 +1115,7 @@ export function renderShowLogWebviewHtml(): string {
       }
 
       if (!append) {
-        selectedCommitHashes = selectedCommitHashes.length === 1 && selectedCommitHashes[0] === commitHash
-          ? []
-          : [commitHash];
+        selectedCommitHashes = [commitHash];
         persistUiState();
         return;
       }
@@ -1202,6 +1214,9 @@ export function renderShowLogWebviewHtml(): string {
           render();
           return;
         }
+        selectCommit(commitHash, false);
+        closeContextMenu();
+        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash });
       }
     });
@@ -1228,6 +1243,9 @@ export function renderShowLogWebviewHtml(): string {
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-commit-hash]')) {
         event.preventDefault();
         const commitHash = target.getAttribute('data-commit-hash') || '';
+        selectCommit(commitHash, false);
+        closeContextMenu();
+        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash });
         return;
       }
@@ -1388,7 +1406,11 @@ export function renderShowLogWebviewHtml(): string {
 
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'state') {
+        const previousSourceToken = getCurrentSourceToken();
         currentState = event.data.state;
+        if (previousSourceToken !== getCurrentSourceToken()) {
+          clearPendingFilterUpdate();
+        }
         render();
       }
     });

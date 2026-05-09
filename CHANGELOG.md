@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.30
+
+### Highlights
+
+- Added Show Log text filtering across commit metadata, hashes, authors, messages, and references.
+- Added Show Log commit comparison through the existing Compare Results view.
+- Added Show Log commit-to-worktree comparison from selected commits.
+- Added kind-aware Show Log reference badges for `HEAD`, branches, remotes, tags, and stash refs.
+
+### Refresh & Layout
+
+- Local branch deletion now uses a full revision graph rebuild so destructive ref mutations do not leave stale graph topology behind.
+- Pull-based sync now uses a full graph rebuild so `HEAD`, visible refs, and topology can advance beyond the current snapshot.
+- Push-only sync keeps the lighter metadata-patch refresh path.
+- Graph, Show Log, and Compare Results view focus is coordinated so secondary views can take focus while the graph is temporarily hidden.
+
+### Quality
+
+- Normal Show Log commit clicks now update the commit comparison selection while preserving expand/collapse behavior.
+- Debounced Show Log filter messages are scoped to the active Show Log source, preventing stale filter text from applying after switching sources.
+- `npm run build` passed after the 0.0.30 version bump.
+- `npm test` passed with 269 tests after the 0.0.30 version bump.
+- Manual Extension Development Host smoke testing is still recommended before Marketplace publication.
+- Version bump to `0.0.30` has been applied in `package.json` and `package-lock.json`.
+- Marketplace publication remains with the maintainer.
+
 ## 0.0.29
 
 ### Highlights

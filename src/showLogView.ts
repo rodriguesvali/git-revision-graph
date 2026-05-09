@@ -35,6 +35,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   private isVisible: boolean | undefined;
   private loadRequestId = 0;
   private expandRequestId = 0;
+  private sourceTokenSeed = 0;
 
   constructor(
     private readonly backend: RevisionGraphBackend & ShowLogBackend,
@@ -74,6 +75,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     const requestId = ++this.loadRequestId;
     this.state = {
       kind: 'visible',
+      sourceToken: this.createSourceToken(),
       repository,
       source,
       showAllBranches: source.kind === 'range',
@@ -152,7 +154,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         await this.toggleShowAllBranches(message.value);
         return;
       case 'setFilterText':
-        await this.setFilterText(message.value);
+        await this.setFilterText(message.value, message.sourceToken);
         return;
       case 'loadMore':
         await this.loadMore();
@@ -328,8 +330,12 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
   }
 
-  private async setFilterText(value: string): Promise<void> {
+  private async setFilterText(value: string, sourceToken: string): Promise<void> {
     if (this.state.kind !== 'visible') {
+      return;
+    }
+
+    if (this.state.sourceToken !== sourceToken) {
       return;
     }
 
@@ -589,6 +595,11 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       type: 'state',
       state: buildShowLogWebviewState(this.state)
     });
+  }
+
+  private createSourceToken(): string {
+    this.sourceTokenSeed += 1;
+    return String(this.sourceTokenSeed);
   }
 
   private disposeViewDisposables(): void {

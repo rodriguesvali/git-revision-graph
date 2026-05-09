@@ -3,7 +3,7 @@ import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString
 export type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
-  | { readonly type: 'setFilterText'; readonly value: string }
+  | { readonly type: 'setFilterText'; readonly value: string; readonly sourceToken: string }
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'compareCommits'; readonly baseCommitHash: string; readonly compareCommitHash: string }
   | { readonly type: 'compareCommitWithWorktree'; readonly commitHash: string }
@@ -28,8 +28,8 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
         ? { type: 'toggleShowAllBranches', value: message.value }
         : undefined;
     case 'setFilterText':
-      return isBoundedString(message.value)
-        ? { type: 'setFilterText', value: message.value }
+      return isBoundedString(message.value) && isBoundedString(message.sourceToken)
+        ? { type: 'setFilterText', value: message.value, sourceToken: message.sourceToken }
         : undefined;
     case 'toggleCommit':
     case 'compareCommitWithWorktree':

@@ -7,6 +7,7 @@ export const SHOW_LOG_CACHED_CHANGES_MAX_COMMITS = 50;
 
 export interface ShowLogState {
   readonly kind: 'hidden' | 'visible';
+  readonly sourceToken: string;
   readonly repository: Repository | undefined;
   readonly source: RevisionLogSource | undefined;
   readonly showAllBranches: boolean;
@@ -51,6 +52,7 @@ export interface ShowLogWebviewCommitItem {
 
 export interface ShowLogWebviewState {
   readonly kind: 'hidden' | 'visible';
+  readonly sourceToken: string;
   readonly loading: boolean;
   readonly loadingMore: boolean;
   readonly summary: string;
@@ -67,6 +69,7 @@ export interface ShowLogWebviewState {
 export function createHiddenShowLogState(): ShowLogState {
   return {
     kind: 'hidden',
+    sourceToken: '',
     repository: undefined,
     source: undefined,
     showAllBranches: false,
@@ -146,6 +149,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
   if (state.kind === 'hidden') {
     return {
       kind: 'hidden',
+      sourceToken: '',
       loading: false,
       loadingMore: false,
       summary: '',
@@ -164,6 +168,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
 
   return {
     kind: 'visible',
+    sourceToken: state.sourceToken,
     loading: state.loading,
     loadingMore: state.loadingMore,
     summary: getShowLogSourceLabel(state.source),

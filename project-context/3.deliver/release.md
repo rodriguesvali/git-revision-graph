@@ -1,5 +1,90 @@
 # Release Readiness
 
+## 0.0.30 Release Readiness
+
+Current package baseline: `0.0.29`.
+
+Target release: `0.0.30`.
+
+Status: Release notes and version bump are complete for `0.0.30`. Source verification passed and the code-quality blockers found during review have been corrected. Package generation and Marketplace publishing remain with the maintainer.
+
+Candidate change set:
+
+- Refresh the revision graph with a full rebuild after local branch deletion so destructive ref mutations do not leave stale graph topology behind.
+- Refresh the revision graph with a full rebuild after pull-based sync so visible topology and `HEAD` can advance beyond the current snapshot.
+- Keep push-only sync on the lighter metadata-patch path.
+- Add Show Log text filtering across commit metadata, hashes, authors, messages, and references.
+- Add kind-aware Show Log reference badges for `HEAD`, branches, remotes, tags, and stash refs.
+- Add Show Log commit comparison through the existing Compare Results view.
+- Add Show Log commit-to-worktree comparison through the existing Compare Results view.
+- Coordinate the graph, Show Log, and Compare Results views so secondary views can take focus while the graph is temporarily hidden.
+
+Planning references:
+
+- `project-context/1.define/show-log-commit-context-menu.md`
+- `project-context/1.define/show-log-text-filter.md`
+- `project-context/2.build/features/0.0.30-reference-deletion-refresh.md`
+- `project-context/2.build/features/0.0.30-sync-pull-refresh.md`
+- `project-context/2.build/features/0.0.30-show-log-text-filter.md`
+- `project-context/2.build/features/0.0.30-show-log-reference-badges.md`
+- `project-context/2.build/features/0.0.30-show-log-commit-compare.md`
+
+Automated verification completed:
+
+- `npm run build` passed during the 2026-05-09 code-quality review.
+- `npm run build` passed after the 2026-05-09 blocker fixes.
+- `npm test` passed with 269 tests after the 2026-05-09 blocker fixes. This includes `npm run build` through the test script.
+- `npm run build` passed after the `0.0.30` version bump.
+- `npm test` passed with 269 tests after the `0.0.30` version bump. This includes `npm run build` through the test script.
+- `git diff --check fdc571eb3f1e1b50bafe01dbc38243615fd92daa..HEAD` passed during the 2026-05-09 code-quality review.
+- `git diff --check` passed after the 2026-05-09 blocker fixes.
+- `git diff --check` passed after the `0.0.30` version bump.
+- `CHANGELOG.md` now includes `0.0.30` release notes.
+- Version bump to `0.0.30` has been applied in `package.json` and `package-lock.json`.
+
+Release blockers:
+
+- Manual Extension Development Host validation is still pending.
+
+Resolved blockers:
+
+- Show Log normal-click and keyboard activation now update the commit comparison selection while preserving expand/collapse behavior.
+- Debounced Show Log filter messages are scoped to the active Show Log source token, so stale filter text is ignored after source switches.
+- `CHANGELOG.md` now contains `0.0.30` release notes.
+- `package.json` and `package-lock.json` now declare `0.0.30`.
+
+Manual validation pending:
+
+- Delete a local branch that is visible in the graph and confirm the graph rebuild removes stale branch labels and topology.
+- Sync a pull-only branch and a diverged branch, then confirm `HEAD`, visible refs, graph topology, and Compare Results state are fresh.
+- Sync a push-only branch and confirm the lighter metadata patch path still updates ahead/behind state without a full graph rebuild.
+- Open Show Log for a target and range, filter by author, subject, hash, body text, branch ref, remote ref, tag, and `HEAD`, then clear the filter.
+- Scroll filtered Show Log results and confirm `Load More` continues paging through matching commits.
+- Confirm Show Log reference badges render legibly in the active VS Code theme.
+- Normal-click and Ctrl-click Show Log commits, then verify context-menu availability for `Open Commit Details`, `Compare`, and `Compare with Worktree`.
+- Open Compare Results from Show Log and confirm hiding Compare Results returns focus to Show Log.
+- Hide Show Log and Compare Results in different orders and confirm the graph view returns without stale empty states.
+- Smoke test multi-repository behavior for graph refresh, Show Log source selection, and Compare Results focus restoration.
+
+Release gates pending:
+
+- Complete manual Extension Development Host smoke validation.
+- Run `npm run package:vsix` when the maintainer is ready to package.
+- Marketplace publishing remains with the maintainer.
+
+Post-release monitoring focus:
+
+- Reports of stale graph topology after branch deletion or pull-based sync.
+- Show Log filter correctness and responsiveness on large repositories.
+- Show Log context-menu discoverability for compare workflows.
+- Focus restoration between Graph, Show Log, and Compare Results.
+- Theme contrast for kind-aware reference badges.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the affected `0.0.30` slice or disables the affected Show Log workflow.
+- Keep the previous `0.0.29` VSIX available for manual rollback guidance if Marketplace publication has already occurred.
+
 ## 0.0.29 Release Readiness
 
 Current package baseline: `0.0.28`.
