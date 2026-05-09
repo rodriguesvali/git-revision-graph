@@ -1391,8 +1391,7 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
-    repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    repositoryPath: '/workspace/repo'
   });
 });
 
@@ -1418,7 +1417,7 @@ test('syncCurrentHeadWithUpstream uses a metadata patch after push-only sync', a
   });
 });
 
-test('syncCurrentHeadWithUpstream uses a metadata patch after pull-only sync', async () => {
+test('syncCurrentHeadWithUpstream uses a full rebuild after pull-only sync', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('main', 0, 2, { remote: 'origin', name: 'main' })
@@ -1432,9 +1431,8 @@ test('syncCurrentHeadWithUpstream uses a metadata patch after pull-only sync', a
   assert.equal(harness.infoMessages[0], 'main was updated from origin/main.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
-    repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo'
   });
 });
 

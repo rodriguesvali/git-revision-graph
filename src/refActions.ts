@@ -453,11 +453,13 @@ export async function syncCurrentHeadWithUpstream(
     }
 
     const refreshIntent: RevisionGraphRefreshIntent =
-      syncState.ahead > 0 && syncState.behind > 0
+      syncState.behind > 0
         ? 'full-rebuild'
         : 'metadata-patch';
     services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+      syncState.behind > 0
+        ? { intent: refreshIntent, repositoryPath: repository.rootUri.toString() }
+        : createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
     );
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
   } catch (error) {

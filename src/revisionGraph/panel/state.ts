@@ -344,11 +344,24 @@ function buildRevisionGraphRepositoryOverlay(
   repository: Repository,
   refs: readonly Ref[]
 ): RevisionGraphRepositoryOverlay {
+  const currentHeadName = repository.state.HEAD?.name;
   return {
     refs,
-    currentHeadName: repository.state.HEAD?.name,
-    currentHeadCommit: repository.state.HEAD?.commit
+    currentHeadName,
+    currentHeadCommit: findRepositoryRefCommit(refs, RefType.Head, currentHeadName) ?? repository.state.HEAD?.commit
   };
+}
+
+function findRepositoryRefCommit(
+  refs: readonly Ref[],
+  type: RefType,
+  name: string | undefined
+): string | undefined {
+  if (!name) {
+    return undefined;
+  }
+
+  return refs.find((ref) => ref.type === type && ref.name === name)?.commit;
 }
 
 function applyRevisionGraphRepositoryOverlay(

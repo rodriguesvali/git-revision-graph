@@ -522,6 +522,19 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return false;
       }
 
+      const sceneNodes = (patch.scene && patch.scene.nodes) || [];
+      if (!haveSameNodeHashes((currentState.scene && currentState.scene.nodes) || [], sceneNodes)) {
+        return false;
+      }
+
+      const nextGraphNodes = patch.nodeLayouts || [];
+      const layoutByHash = new Map(nextGraphNodes.map((node) => [node.hash, node]));
+      for (const node of sceneNodes) {
+        if (!nodeElements.get(node.hash) || !layoutByHash.get(node.hash)) {
+          return false;
+        }
+      }
+
       const selectionSnapshot = patch.preserveSelection ? captureSelectionSnapshot() : [];
       currentState = Object.assign({}, currentState, patch, {
         loading: false,
@@ -536,23 +549,17 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentProjectionOptions = currentState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(currentState.mergeBlockedTargets || []);
       references = currentState.references || [];
-      graphNodes = currentState.nodeLayouts || [];
+      graphNodes = nextGraphNodes;
       graphEdges = (currentState.scene && currentState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       primaryAncestorPathsByHash = currentState.primaryAncestorPathsByHash || {};
       baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
       baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
 
-      const sceneNodes = (currentState.scene && currentState.scene.nodes) || [];
       sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-      const layoutByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       for (const node of sceneNodes) {
         const element = nodeElements.get(node.hash);
         const layout = layoutByHash.get(node.hash);
-        if (!element || !layout) {
-          return false;
-        }
-
         const previousLeft = element.style.left;
         const container = document.createElement('div');
         container.innerHTML = renderNodeMarkup(node, layout);
@@ -580,6 +587,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       hideLoading();
       hideStatus();
       return true;
+    }
+
+    function haveSameNodeHashes(currentNodes, nextNodes) {
+      if (currentNodes.length !== nextNodes.length) {
+        return false;
+      }
+
+      const currentHashes = new Set(currentNodes.map((node) => node.hash));
+      return nextNodes.every((node) => currentHashes.has(node.hash));
     }
 
     function applyWorkspaceStatePatch(patch) {

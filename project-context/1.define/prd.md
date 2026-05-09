@@ -44,8 +44,9 @@ The extension is already published and feature-rich enough that new work can aff
 - Current release readiness state: `0.0.29` release candidate is packaged; Marketplace publishing remains with the maintainer and future packaging or publishing still requires explicit human approval.
 - Candidate next release: `0.0.30`.
 - Approved direction from user: prioritize visual correctness after reference deletion by removing the recent local-branch deletion optimization that bypasses a graph reload.
-- Recommended anchor: restore a full graph rebuild after successful local branch deletion so the rendered scene, node sizing, layout keys, refs, selection, and viewport state are rebuilt from repository truth instead of an optimistic reference-removal overlay.
+- Recommended anchor: restore full graph rebuilds after successful local branch deletion and after `Sync with...` pulls, so the rendered scene, node sizing, layout keys, refs, selection, and viewport state are rebuilt from repository truth when Git topology may have changed.
 - Candidate feature artifact: `project-context/2.build/features/0.0.30-reference-deletion-refresh.md`.
+- Additional candidate feature artifact: `project-context/2.build/features/0.0.30-sync-pull-refresh.md`.
 
 ## 0.0.30 Reference Deletion Refresh Candidate Scope
 - Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
@@ -54,6 +55,12 @@ The extension is already published and feature-rich enough that new work can aff
 - Build decision: remove the now-unused `referencePatch` host/controller/state contract because no active workflow needs direct reference patches after restoring full rebuilds for local branch deletion.
 - Update focused tests so normal and force local branch deletion expect a full rebuild refresh request.
 - Manually validate deleting a local branch that shares a card with a remote tracking ref, deleting a local branch that is the only visible ref on a card, and deleting a hidden/off-snapshot branch.
+
+## 0.0.30 Sync Pull Refresh Candidate Scope
+- Keep push-only `Sync with...` on `metadata-patch` because it updates remote/upstream metadata without changing local commit topology.
+- Restore `full-rebuild` after pull-only `Sync with...` because pulled commits can move `HEAD` to topology that is not safely represented by a metadata-only patch.
+- Keep diverged sync on `full-rebuild`.
+- Preserve existing sync guards and user-facing messages.
 
 ## 0.0.28 Graph Cache Architecture Candidate Scope
 - Define a cacheable immutable graph snapshot that represents commit DAG/history data loaded from `git log`.

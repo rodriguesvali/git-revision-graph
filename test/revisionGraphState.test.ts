@@ -174,6 +174,77 @@ test('applies repository overlay refs before projecting a ready graph state', as
   assert.deepEqual(mergeBlockedSnapshotRefs, state.scene.nodes[0]?.refs);
 });
 
+test('repository overlays prefer getRefs for current head commit when repository state lags after pull', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createBranch({ type: RefType.Head, name: 'master', commit: 'old-head' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'master', commit: 'new-head' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/master', commit: 'new-head' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'new-head',
+      parents: ['old-head'],
+      author: 'Ada',
+      date: '2026-05-09',
+      subject: 'Pulled update',
+      refs: [{ name: 'origin/master', kind: 'remote' }]
+    },
+    {
+      hash: 'old-head',
+      parents: [],
+      author: 'Ada',
+      date: '2026-05-08',
+      subject: 'Previous head',
+      refs: [{ name: 'master', kind: 'head' }]
+    }
+  ]);
+  const backend: RevisionGraphBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async loadRevisionLog() {
+      return { entries: [], hasMore: false };
+    },
+    async loadUnifiedDiff() {
+      return '';
+    },
+    async loadCommitDetails() {
+      return '';
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    true,
+    backend,
+    LIMIT_POLICY
+  );
+  const newHeadNode = state.scene.nodes.find((node) => node.hash === 'new-head');
+
+  assert.deepEqual(
+    newHeadNode?.refs,
+    [
+      { name: 'master', kind: 'head' },
+      { name: 'origin/master', kind: 'remote' }
+    ]
+  );
+  assert.equal(
+    state.references.some((ref) => ref.name === 'master' && ref.kind === 'head' && ref.hash === 'old-head'),
+    false
+  );
+});
+
 test('metadata patches remove deleted local branch refs without changing graph topology', async () => {
   const refs = [
     createRef({ type: RefType.Head, name: 'exported_pr_908716369', commit: 'head1' }),
