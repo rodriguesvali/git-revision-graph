@@ -28,8 +28,7 @@ import {
 } from './refActions/types';
 import {
   createActionRefreshRequest,
-  RevisionGraphRefreshIntent,
-  RevisionGraphRefreshRequestLike
+  RevisionGraphRefreshIntent
 } from './revisionGraphRefresh';
 
 export type {
@@ -711,6 +710,7 @@ async function deleteBranchReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const branch = await getLocalBranchForDeletion(repository, target.refName);
   const upstreamLabel = branch?.upstream
     ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
@@ -728,7 +728,7 @@ async function deleteBranchReference(
     await repository.deleteBranch(target.refName, false);
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
     services.refreshController.refresh(
-      createDeletedLocalBranchPatchRequest(repository, target.refName)
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
     );
   } catch (error) {
     if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
@@ -746,21 +746,7 @@ async function deleteBranchReference(
     await repository.deleteBranch(target.refName, true);
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
     services.refreshController.refresh(
-      createDeletedLocalBranchPatchRequest(repository, target.refName)
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
     );
   }
-}
-
-function createDeletedLocalBranchPatchRequest(
-  repository: Repository,
-  branchName: string
-): RevisionGraphRefreshRequestLike {
-  return {
-    intent: 'overlay-patch',
-    repositoryPath: repository.rootUri.toString(),
-    followUpEvents: ['state'],
-    referencePatch: {
-      removeRefs: [{ kind: 'branch', name: branchName }]
-    }
-  };
 }

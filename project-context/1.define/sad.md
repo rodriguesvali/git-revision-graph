@@ -56,12 +56,16 @@ Keep the extension architecture intact:
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 - Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
 - The `0.0.28` Define draft should evaluate separating immutable commit DAG/history caching from mutable ref and HEAD overlay state as the next cache architecture improvement.
+- The `0.0.30` Define draft should remove the local branch deletion reference-removal overlay because visual correctness outranks avoiding a reload for destructive ref mutations.
+- Reference deletion refresh behavior should be conservative: local branch, tag, and remote branch deletion should converge on a full graph rebuild unless a future design proves scene/layout correctness with deterministic validation.
+- Build decision for `0.0.30`: remove the unused direct reference-patch post-message/controller/state contract after local branch deletion returns to full graph rebuilds.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
 - Webview state bugs can be hard to catch through automated tests alone.
 - Release packaging can ship stale README or contribution metadata if Deliver checks are skipped.
 - Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
+- Optimistic reference patches can compromise visual integrity after deletion by leaving stale scene geometry, empty cards, or preserved viewport/selection context that no longer matches repository truth.
 
 ## Verification Strategy
 - Required after meaningful changes: `npm run build`.

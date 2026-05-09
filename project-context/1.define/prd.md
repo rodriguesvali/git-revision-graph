@@ -40,13 +40,20 @@ The extension is already published and feature-rich enough that new work can aff
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
 ## Next Release Define Draft
-- Current package baseline on 2026-05-02: `0.0.27`.
-- Current release readiness state: `0.0.27` source readiness, version bump, VSIX packaging, and Marketplace publishing are complete; future packaging and publishing require explicit human approval.
-- Candidate next release: `0.0.28`.
-- Approved direction from user: define graph cache architecture improvements.
-- Recommended anchor: split immutable commit DAG/history data from mutable ref/HEAD overlays so refreshes can reuse loaded history while applying repository metadata changes safely.
-- Define artifact: `docs/release-0.0.28-prioritization.md`.
-- Candidate feature artifact: `project-context/2.build/features/0.0.28-graph-cache-architecture.md`.
+- Current package baseline on 2026-05-09: `0.0.29`.
+- Current release readiness state: `0.0.29` release candidate is packaged; Marketplace publishing remains with the maintainer and future packaging or publishing still requires explicit human approval.
+- Candidate next release: `0.0.30`.
+- Approved direction from user: prioritize visual correctness after reference deletion by removing the recent local-branch deletion optimization that bypasses a graph reload.
+- Recommended anchor: restore a full graph rebuild after successful local branch deletion so the rendered scene, node sizing, layout keys, refs, selection, and viewport state are rebuilt from repository truth instead of an optimistic reference-removal overlay.
+- Candidate feature artifact: `project-context/2.build/features/0.0.30-reference-deletion-refresh.md`.
+
+## 0.0.30 Reference Deletion Refresh Candidate Scope
+- Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
+- Preserve existing confirmation, conflict/error reporting, force-delete fallback, multi-repository behavior, and native VS Code Git API usage.
+- Keep lightweight workspace-state overlay patches for merge/reset status changes; this scope targets reference deletion visual integrity, not all overlay refresh behavior.
+- Build decision: remove the now-unused `referencePatch` host/controller/state contract because no active workflow needs direct reference patches after restoring full rebuilds for local branch deletion.
+- Update focused tests so normal and force local branch deletion expect a full rebuild refresh request.
+- Manually validate deleting a local branch that shares a card with a remote tracking ref, deleting a local branch that is the only visible ref on a card, and deleting a hidden/off-snapshot branch.
 
 ## 0.0.28 Graph Cache Architecture Candidate Scope
 - Define a cacheable immutable graph snapshot that represents commit DAG/history data loaded from `git log`.
