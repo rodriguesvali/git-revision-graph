@@ -90,7 +90,12 @@ test('builds expanded show log webview commits with inline file changes and lane
   assert.deepEqual(webviewState.commits[0]?.topology.continuingLanes, [0]);
   assert.deepEqual(webviewState.commits[0]?.topology.secondaryParentLanes, []);
   assert.equal(webviewState.commits[0]?.topology.colorByLane[0], 0);
-  assert.deepEqual(webviewState.commits[0]?.refs, ['HEAD → main']);
+  assert.deepEqual(webviewState.commits[0]?.refs, [
+    { name: 'main', label: 'HEAD → main', kind: 'head' }
+  ]);
+  assert.deepEqual(webviewState.commits[1]?.refs, [
+    { name: 'origin/main', label: 'origin/main', kind: 'remote' }
+  ]);
 });
 
 test('updates the summary count when more commits are appended', () => {

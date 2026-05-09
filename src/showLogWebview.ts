@@ -19,6 +19,11 @@ export function renderShowLogWebviewHtml(): string {
       --show-log-author-width: 132px;
       --show-log-date-width: 84px;
       --show-log-resizer-hit-width: 8px;
+      --show-log-ref-branch: #19d60f;
+      --show-log-ref-head: #d62828;
+      --show-log-ref-tag: #f7f300;
+      --show-log-ref-remote: #f6d8a8;
+      --show-log-ref-stash: #8c8f97;
     }
     * { box-sizing: border-box; }
     body {
@@ -379,19 +384,49 @@ export function renderShowLogWebviewHtml(): string {
       min-width: 0;
     }
     .ref-badge {
+      position: relative;
+      --show-log-ref-color: var(--vscode-badge-background);
       display: inline-flex;
       align-items: center;
       max-width: 144px;
-      padding: 0 5px;
+      padding: 1px 5px 4px;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--vscode-badge-background) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--show-log-ref-color) 34%, transparent);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 7.5px;
+      font-size: 8.5px;
+      line-height: 1.15;
       font-weight: 600;
-      color: var(--vscode-badge-foreground);
-      background: color-mix(in srgb, var(--vscode-badge-background) 18%, transparent);
+      color: color-mix(in srgb, var(--vscode-foreground) 88%, var(--show-log-ref-color) 12%);
+      background: color-mix(in srgb, var(--show-log-ref-color) 14%, transparent);
+    }
+    .ref-badge::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      right: 5px;
+      bottom: 2px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--show-log-ref-color);
+    }
+    .ref-badge[data-ref-kind="head"] {
+      --show-log-ref-color: var(--show-log-ref-head);
+    }
+    .ref-badge[data-ref-kind="branch"] {
+      --show-log-ref-color: var(--show-log-ref-branch);
+    }
+    .ref-badge[data-ref-kind="remote"] {
+      --show-log-ref-color: var(--show-log-ref-remote);
+      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
+    }
+    .ref-badge[data-ref-kind="tag"] {
+      --show-log-ref-color: var(--show-log-ref-tag);
+      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
+    }
+    .ref-badge[data-ref-kind="stash"] {
+      --show-log-ref-color: var(--show-log-ref-stash);
     }
     .stats {
       white-space: nowrap;
@@ -692,7 +727,7 @@ export function renderShowLogWebviewHtml(): string {
         + ((commit.refs.length > 0 || commit.stats)
           ? '      <div class="subject-meta">'
             + (commit.refs.length > 0
-              ? '        <div class="refs">' + commit.refs.map((ref) => '<span class="ref-badge">' + escapeHtml(ref) + '</span>').join('') + '</div>'
+              ? '        <div class="refs">' + commit.refs.map(renderRefBadge).join('') + '</div>'
               : '')
             + (commit.stats ? '        <span class="stats">' + escapeHtml(commit.stats) + '</span>' : '')
             + '      </div>'
@@ -703,6 +738,10 @@ export function renderShowLogWebviewHtml(): string {
         + '  <div class="date-cell">' + escapeHtml(commit.date) + '</div>'
         + (commit.expanded ? renderCommitFiles(commit) : '')
         + '</div>';
+    }
+
+    function renderRefBadge(ref) {
+      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '" title="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.label) + '</span>';
     }
 
     function renderTopology(topology) {

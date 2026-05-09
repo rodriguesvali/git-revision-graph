@@ -27,13 +27,19 @@ export interface ShowLogWebviewChangeItem {
   readonly status: string;
 }
 
+export interface ShowLogWebviewReferenceItem {
+  readonly name: string;
+  readonly label: string;
+  readonly kind: RevisionLogEntry['references'][number]['kind'];
+}
+
 export interface ShowLogWebviewCommitItem {
   readonly hash: string;
   readonly shortHash: string;
   readonly subject: string;
   readonly author: string;
   readonly date: string;
-  readonly refs: readonly string[];
+  readonly refs: readonly ShowLogWebviewReferenceItem[];
   readonly stats: string | undefined;
   readonly topology: ShowLogLaneRow;
   readonly expanded: boolean;
@@ -166,7 +172,11 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
         subject: entry.subject,
         author: entry.author,
         date: entry.date,
-        refs: entry.references.map((ref) => formatShowLogRef(ref.name, ref.kind)),
+        refs: entry.references.map((ref) => ({
+          name: ref.name,
+          label: formatShowLogRef(ref.name, ref.kind),
+          kind: ref.kind
+        })),
         stats: formatShortStat(entry.shortStat),
         topology: topologyByHash.get(entry.hash) ?? {
           laneCount: 1,
