@@ -256,6 +256,12 @@ export function renderShowLogWebviewHtml(): string {
     .commit-entry[data-selected="true"] {
       background: color-mix(in srgb, var(--show-log-row-active) 22%, transparent);
     }
+    .commit-entry[data-compare-base="true"] {
+      box-shadow: inset 3px 0 0 color-mix(in srgb, var(--vscode-list-focusOutline) 72%, var(--vscode-foreground));
+    }
+    .commit-entry[data-compare-target="true"] {
+      box-shadow: inset 3px 0 0 var(--vscode-list-focusOutline);
+    }
     .commit-row {
       position: relative;
       display: grid;
@@ -683,7 +689,9 @@ export function renderShowLogWebviewHtml(): string {
     const persistedUiState = vscode.getState() || {};
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
     let resizeState = null;
-    let selectedCommitHash = persistedUiState.selectedCommitHash || null;
+    let selectedCommitHashes = normalizeSelectedCommitHashes(
+      persistedUiState.selectedCommitHashes || persistedUiState.selectedCommitHash
+    );
     let loadMoreObserver = null;
     let filterDebounceTimer = 0;
 
@@ -712,6 +720,7 @@ export function renderShowLogWebviewHtml(): string {
       summaryCount.textContent = state.summaryCount || '';
       loadingChip.dataset.visible = state.loading ? 'true' : 'false';
       loadingChip.textContent = 'Loading';
+      syncSelectedCommitHashes(state.commits || []);
       if (filterInput instanceof HTMLInputElement) {
         const nextFilterText = state.filterText || '';
         if (filterInput.value !== nextFilterText) {
@@ -768,7 +777,7 @@ export function renderShowLogWebviewHtml(): string {
       return ''
         + '<div class="commit-list">'
         + commits.map((commit) => ''
-          + '<div class="commit-entry" data-selected="' + (selectedCommitHash === commit.hash ? 'true' : 'false') + '">'
+          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '">'
           + renderCommit(commit)
           + '</div>'
         ).join('')
@@ -908,7 +917,7 @@ export function renderShowLogWebviewHtml(): string {
       vscode.setState({
         ...existingState,
         [GRAPH_WIDTH_KEY]: graphWidth,
-        selectedCommitHash
+        selectedCommitHashes
       });
     }
 
@@ -917,7 +926,7 @@ export function renderShowLogWebviewHtml(): string {
       vscode.setState({
         ...existingState,
         [GRAPH_WIDTH_KEY]: graphWidth,
-        selectedCommitHash
+        selectedCommitHashes
       });
     }
 
@@ -981,11 +990,20 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function handleContextMenu(commitHash, clientX, clientY) {
-      contextMenuState = { kind: 'commit', commitHash };
+      const compareSelection = getCompareSelectionForCommit(commitHash);
+      contextMenuState = {
+        kind: 'commit',
+        commitHash,
+        baseCommitHash: compareSelection?.baseCommitHash,
+        compareCommitHash: compareSelection?.compareCommitHash
+      };
       if (!contextMenu) {
         return;
       }
-      contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>';
+      contextMenu.innerHTML = ''
+        + (compareSelection
+          ? '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
+          : '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>');
       showContextMenuAt(clientX, clientY);
     }
 
@@ -1057,6 +1075,58 @@ export function renderShowLogWebviewHtml(): string {
       }, 250);
     }
 
+    function normalizeSelectedCommitHashes(value) {
+      const rawValues = Array.isArray(value) ? value : (typeof value === 'string' ? [value] : []);
+      return rawValues
+        .filter((hash, index, values) => typeof hash === 'string' && hash.length > 0 && values.indexOf(hash) === index)
+        .slice(-2);
+    }
+
+    function syncSelectedCommitHashes(commits) {
+      const loadedCommitHashes = new Set(commits.map((commit) => commit.hash));
+      const nextSelected = selectedCommitHashes.filter((hash) => loadedCommitHashes.has(hash));
+      if (nextSelected.length !== selectedCommitHashes.length) {
+        selectedCommitHashes = nextSelected;
+        persistUiState();
+      }
+    }
+
+    function selectCommit(commitHash, append) {
+      if (!commitHash) {
+        return;
+      }
+
+      if (!append) {
+        selectedCommitHashes = selectedCommitHashes.length === 1 && selectedCommitHashes[0] === commitHash
+          ? []
+          : [commitHash];
+        persistUiState();
+        return;
+      }
+
+      if (selectedCommitHashes.includes(commitHash)) {
+        selectedCommitHashes = selectedCommitHashes.filter((hash) => hash !== commitHash);
+        persistUiState();
+        return;
+      }
+
+      selectedCommitHashes = selectedCommitHashes.filter((hash) => hash !== commitHash);
+      selectedCommitHashes.push(commitHash);
+      selectedCommitHashes = selectedCommitHashes.slice(-2);
+      persistUiState();
+    }
+
+    function getCompareSelectionForCommit(commitHash) {
+      if (selectedCommitHashes.length !== 2 || !selectedCommitHashes.includes(commitHash)) {
+        return undefined;
+      }
+
+      return {
+        baseCommitHash: selectedCommitHashes[0],
+        compareCommitHash: selectedCommitHashes[1]
+      };
+    }
+
     function syncLoadMoreObserver() {
       if (loadMoreObserver) {
         loadMoreObserver.disconnect();
@@ -1117,10 +1187,14 @@ export function renderShowLogWebviewHtml(): string {
       }
       const commitRow = target.closest('[data-commit-hash]');
       if (commitRow instanceof HTMLElement) {
-        selectedCommitHash = commitRow.getAttribute('data-commit-hash') || null;
-        persistUiState();
-        render();
-        vscode.postMessage({ type: 'toggleCommit', commitHash: commitRow.getAttribute('data-commit-hash') || '' });
+        const commitHash = commitRow.getAttribute('data-commit-hash') || '';
+        if (event.ctrlKey) {
+          selectCommit(commitHash, true);
+          closeContextMenu();
+          render();
+          return;
+        }
+        vscode.postMessage({ type: 'toggleCommit', commitHash });
       }
     });
 
@@ -1145,10 +1219,8 @@ export function renderShowLogWebviewHtml(): string {
       }
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-commit-hash]')) {
         event.preventDefault();
-        selectedCommitHash = target.getAttribute('data-commit-hash') || null;
-        persistUiState();
-        render();
-        vscode.postMessage({ type: 'toggleCommit', commitHash: target.getAttribute('data-commit-hash') || '' });
+        const commitHash = target.getAttribute('data-commit-hash') || '';
+        vscode.postMessage({ type: 'toggleCommit', commitHash });
         return;
       }
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-change-id]')) {
@@ -1222,6 +1294,13 @@ export function renderShowLogWebviewHtml(): string {
       if (state.kind === 'commit') {
         if (action === 'openCommitDetails') {
           vscode.postMessage({ type: 'openCommitDetails', commitHash: state.commitHash });
+        }
+        if (action === 'compareCommits' && state.baseCommitHash && state.compareCommitHash) {
+          vscode.postMessage({
+            type: 'compareCommits',
+            baseCommitHash: state.baseCommitHash,
+            compareCommitHash: state.compareCommitHash
+          });
         }
         return;
       }

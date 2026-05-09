@@ -6,8 +6,10 @@ import type { Change, Repository } from './git';
 import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
 import type { RevisionGraphBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
+import type { CompareResultsPresenter } from './refActions';
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
+import { compareLoadedShowLogCommits } from './showLog/commitCompare';
 import {
   addShowLogCachedChanges,
   buildShowLogWebviewState,
@@ -33,7 +35,10 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   private loadRequestId = 0;
   private expandRequestId = 0;
 
-  constructor(private readonly backend: RevisionGraphBackend & ShowLogBackend) {}
+  constructor(
+    private readonly backend: RevisionGraphBackend & ShowLogBackend,
+    private readonly compareResultsPresenter: CompareResultsPresenter
+  ) {}
 
   async initialize(): Promise<void> {
     await this.updateVisibility(false);
@@ -164,6 +169,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'openCommitDetails':
         await this.openCommitDetails(message.commitHash);
+        return;
+      case 'compareCommits':
+        await this.compareCommits(message.baseCommitHash, message.compareCommitHash);
         return;
     }
   }
@@ -518,6 +526,28 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     }
 
     await openRevisionCommitDetails(repository, commitHash, this.backend);
+  }
+
+  private async compareCommits(baseCommitHash: string, compareCommitHash: string): Promise<void> {
+    if (this.state.kind !== 'visible' || !this.state.repository) {
+      return;
+    }
+
+    await compareLoadedShowLogCommits(
+      this.state.repository,
+      this.state.entries,
+      baseCommitHash,
+      compareCommitHash,
+      this.compareResultsPresenter,
+      {
+        showInformationMessage(message) {
+          void vscode.window.showInformationMessage(message);
+        },
+        async showErrorMessage(message) {
+          await vscode.window.showErrorMessage(message);
+        }
+      }
+    );
   }
 
   private isLoadedCommitHash(commitHash: string): boolean {

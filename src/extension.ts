@@ -48,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const compareResultsProvider = new CompareResultsViewProvider();
   await compareResultsProvider.initialize();
   const backend = createRevisionGraphBackend();
-  const showLogProvider = new ShowLogViewProvider(backend);
+  const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider);
   await showLogProvider.initialize();
   const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider, showLogProvider, backend);
   const services = createCommandServices(revisionGraphProvider, compareResultsProvider);

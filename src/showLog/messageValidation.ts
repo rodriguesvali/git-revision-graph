@@ -5,6 +5,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
   | { readonly type: 'setFilterText'; readonly value: string }
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
+  | { readonly type: 'compareCommits'; readonly baseCommitHash: string; readonly compareCommitHash: string }
   | { readonly type: 'loadMore' }
   | { readonly type: 'openFile'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'compareWithWorktree'; readonly commitHash: string; readonly changeId: string }
@@ -33,6 +34,10 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'openCommitDetails':
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: message.type, commitHash: message.commitHash }
+        : undefined;
+    case 'compareCommits':
+      return isBoundedNonEmptyString(message.baseCommitHash) && isBoundedNonEmptyString(message.compareCommitHash)
+        ? { type: 'compareCommits', baseCommitHash: message.baseCommitHash, compareCommitHash: message.compareCommitHash }
         : undefined;
     case 'openFile':
     case 'compareWithWorktree':
