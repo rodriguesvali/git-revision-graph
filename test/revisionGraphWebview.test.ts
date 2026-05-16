@@ -387,7 +387,7 @@ test('patches reference metadata without rerendering graph edges', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
-  assert.doesNotMatch(html, /patch\.sceneLayoutKey !== sceneLayoutKey/);
+  assert.match(html, /if \(patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey\) \{\s*return false;\s*\}/);
   assert.match(html, /if \(!haveSameNodeHashes\(\(currentState\.scene && currentState\.scene\.nodes\) \|\| \[\], sceneNodes\)\) \{\s*return false;\s*\}/);
   assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout\);/);
   assert.match(html, /nextElement\.style\.left = previousLeft;/);
@@ -405,6 +405,13 @@ test('falls back to full state apply when metadata patches change the visible no
   assert.match(html, /currentNodes\.length !== nextNodes\.length/);
   assert.match(html, /nextNodes\.every\(\(node\) => currentHashes\.has\(node\.hash\)\)/);
   assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}\s*applyState\(Object\.assign/);
+});
+
+test('falls back to full state apply when metadata patches change graph layout', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey/);
+  assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}\s*applyState\(Object\.assign\(\{\}, currentState, patch/);
 });
 
 test('patches workspace state without rerendering the graph scene', () => {

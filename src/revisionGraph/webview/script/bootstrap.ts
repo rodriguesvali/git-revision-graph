@@ -523,6 +523,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const sceneNodes = (patch.scene && patch.scene.nodes) || [];
+      if (patch.sceneLayoutKey && patch.sceneLayoutKey !== sceneLayoutKey) {
+        return false;
+      }
+
       if (!haveSameNodeHashes((currentState.scene && currentState.scene.nodes) || [], sceneNodes)) {
         return false;
       }
