@@ -13,6 +13,7 @@ Build implementation complete on 2026-05-16 for Phase 3 of Source Control integr
 - Keep left Activity Bar review containers, labeled `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
 - Close Compare Results and Show Log when the editor graph panel is closed.
 - Keep the Compare Results file action text as `Compare`; when the Compare Results state is `ref <-> ref`, also offer `Compare with Worktree`; when the state is already a worktree comparison, omit the redundant `Compare with Worktree` action.
+- When the last secondary review view is closed, restore the Source Control Activity Bar context instead of allowing the workbench to fall back to Explorer.
 
 ## Scope
 
@@ -26,6 +27,7 @@ In scope:
 - Keep `gitRefs.openRevisionGraph` registered as a compatibility alias for the editor panel.
 - Bind Compare Results and Show Log visibility to the editor graph panel lifecycle.
 - Polish Compare Results file actions so the primary diff action is unambiguous, ref-to-ref compare results still allow a file worktree comparison, and worktree-originated compare results do not repeat the same worktree action.
+- Restore Source Control after user-initiated Compare Results or Show Log close.
 - Update README, product context, and manifest tests.
 
 Out of scope:
@@ -44,6 +46,7 @@ Out of scope:
 - Closing Compare Results or Show Log returns to the editor graph command.
 - Closing the editor graph panel hides Compare Results and Show Log without reopening the graph.
 - Compare Results file context menus show `Compare` as the primary action, show `Compare with Worktree` for ref-to-ref results, and omit `Compare with Worktree` when the result set already compares a reference with the worktree.
+- Closing the last secondary review view activates Source Control rather than Explorer.
 - `npm run build` passes.
 - `npm test` passes.
 - `git diff --check` passes.

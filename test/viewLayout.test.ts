@@ -60,7 +60,8 @@ test('hideSecondaryView reopens the editor graph after the last secondary view c
   await hideSecondaryView('gitRefs.showLogView', harness.commands);
 
   assert.deepEqual(harness.contexts.at(-1), { key: 'gitRefs.revisionGraphVisible', value: false });
-  assert.equal(harness.calls.at(-1), 'gitRefs.openRevisionGraphEditor');
+  assert.equal(harness.calls.at(-2), 'gitRefs.openRevisionGraphEditor');
+  assert.equal(harness.calls.at(-1), 'workbench.view.scm');
 });
 
 test('hideSecondaryView restores focus to another visible secondary view', async () => {

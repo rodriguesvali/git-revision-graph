@@ -13,6 +13,7 @@ const DECREASE_HEIGHT_COMMANDS = [
   'workbench.action.decreaseViewHeight',
   'workbench.action.decreaseViewSize'
 ] as const;
+const SOURCE_CONTROL_VIEW_COMMAND = 'workbench.view.scm';
 
 const visibleSecondaryViewIds = new Set<string>();
 
@@ -67,6 +68,7 @@ export async function hideSecondaryView(
 
   if (wasVisible && visibleSecondaryViewIds.size === 0) {
     await commands.executeCommand('gitRefs.openRevisionGraphEditor');
+    await commands.executeCommand(SOURCE_CONTROL_VIEW_COMMAND);
   }
 }
 
