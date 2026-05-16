@@ -71,6 +71,14 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /filterInput\?\.addEventListener\('input'/);
   assert.match(html, /filterClear\?\.addEventListener\('click'/);
   assert.match(html, /class="commit-files"/);
+  assert.match(html, /cursor: pointer;/);
+  assert.match(html, /user-select: none;/);
+  assert.match(html, /content\.addEventListener\('mousedown'/);
+  assert.match(html, /content\.addEventListener\('auxclick'/);
+  assert.match(html, /content\.addEventListener\('dblclick'/);
+  assert.match(html, /target instanceof HTMLElement && target\.closest\('\[data-change-id\]'\)/);
+  assert.match(html, /Double-click to compare\. Press Shift\+F10 or Enter for actions\./);
+  assert.match(html, /type: 'openFile',\s*commitHash: fileRow\.getAttribute\('data-commit-hash'\)/s);
   assert.match(html, /id="loadMoreSentinel"/);
   assert.match(html, /IntersectionObserver/);
   assert.match(html, /type: 'loadMore'/);
@@ -80,7 +88,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /compareSelection\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>'/s);
   assert.match(html, /canCompareWithWorktree\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>'/s);
   assert.match(html, /function isSingleSelectedCommit\(commitHash\)/);
-  assert.match(html, /Open Diff/);
+  assert.match(html, /data-menu-action="openFile">Compare<\/button>/);
   assert.match(html, /Compare with Worktree/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /context-menu-group/);
@@ -96,5 +104,4 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /type: action,\s*commitHash: state\.commitHash,\s*changeId: state\.changeId/s);
   assert.match(html, /type: 'openCommitDetails', commitHash: state\.commitHash/);
   assert.doesNotMatch(html, /id="loadMoreButton"/);
-  assert.doesNotMatch(html, /vscode\.postMessage\(\{\s*type: 'openFile',\s*commitHash: fileRow/s);
 });

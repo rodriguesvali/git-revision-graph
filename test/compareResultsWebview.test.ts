@@ -21,6 +21,8 @@ test('renders compare result actions through a context menu in the webview', () 
   const html = renderCompareResultsWebviewHtml();
 
   assert.match(html, /content\.addEventListener\('click'/);
+  assert.match(html, /content\.addEventListener\('mousedown'/);
+  assert.match(html, /content\.addEventListener\('auxclick'/);
   assert.match(html, /content\.addEventListener\('contextmenu'/);
   assert.doesNotMatch(html, /content\.addEventListener\('dblclick'/);
   assert.match(html, /content\.addEventListener\('keydown'/);
@@ -33,17 +35,22 @@ test('renders compare result actions through a context menu in the webview', () 
   assert.match(html, /aria-selected="/);
   assert.match(html, /role="listbox"/);
   assert.match(html, /role="option"/);
-  assert.match(html, /Double-click to open the file diff\. Press Shift\+F10 or Enter for actions\./);
+  assert.match(html, /cursor: pointer;/);
+  assert.match(html, /user-select: none;/);
+  assert.match(html, /event\.button !== 1/);
+  assert.match(html, /Double-click to compare\. Press Shift\+F10 or Enter for actions\./);
   assert.match(html, /function openContextMenuForElement\(items, element\)/);
   assert.match(html, /function updateSelection\(itemId, event\)/);
   assert.match(html, /function extendSelectionWithArrow\(itemId, direction\)/);
   assert.match(html, /focusItem\(targetItemId\)/);
   assert.match(html, /function getSelectionForContextMenu\(itemId\)/);
-  assert.match(html, /Open File Diff/);
+  assert.match(html, /\{ action: 'base', label: 'Compare' \}/);
+  assert.doesNotMatch(html, /Open File Diff/);
+  assert.doesNotMatch(html, /Open Diff File/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /File Name/);
   assert.match(html, /Full Path/);
-  assert.match(html, /Compare with Worktree/);
+  assert.match(html, /else if \(item\.leftRef \|\| item\.rightRef\) \{\s*actions\.push\(\{ action: 'worktree', label: 'Compare with Worktree' \}\);/s);
   assert.match(html, /Revert to This/);
   assert.match(html, /context-menu-group/);
   assert.match(html, /context-submenu/);

@@ -141,11 +141,12 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
   }
 
   async compareWithWorktree(item: CompareResultItem): Promise<void> {
-    if (!item.worktreeRef) {
+    const ref = item.worktreeRef ?? item.rightRef ?? item.leftRef;
+    if (!ref) {
       return;
     }
 
-    await openChangeDiffWithWorktree(item.repository, item.change, item.worktreeRef);
+    await openChangeDiffWithWorktree(item.repository, item.change, ref);
   }
 
   async revertToItem(item: CompareResultItem): Promise<void> {

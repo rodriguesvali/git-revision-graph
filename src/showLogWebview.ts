@@ -524,7 +524,8 @@ export function renderShowLogWebviewHtml(): string {
       min-height: 24px;
       padding: 3px 8px 3px 0;
       border-radius: 6px;
-      cursor: context-menu;
+      cursor: pointer;
+      user-select: none;
     }
     .file-row:hover,
     .file-row:focus-visible {
@@ -972,7 +973,7 @@ export function renderShowLogWebviewHtml(): string {
         + '<div class="commit-files">'
         + '  <div class="commit-files-list">'
         + commit.changes.map((change) => ''
-          + '    <div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Press Shift+F10 or Enter for actions.') + '">'
+          + '    <div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Double-click to compare. Press Shift+F10 or Enter for actions.') + '">'
           + '      <span class="file-path">' + escapeHtml(change.path) + '</span>'
           + '      <span class="file-status">' + escapeHtml(change.status) + '</span>'
           + '    </div>'
@@ -1018,7 +1019,7 @@ export function renderShowLogWebviewHtml(): string {
         return;
       }
       contextMenu.innerHTML = ''
-        + '<button class="context-menu-button" type="button" data-menu-action="openFile">Open Diff</button>'
+        + '<button class="context-menu-button" type="button" data-menu-action="openFile">Compare</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="compareWithWorktree">Compare with Worktree</button>'
         + '<div class="context-menu-group">'
         + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy to Clipboard">'
@@ -1218,6 +1219,49 @@ export function renderShowLogWebviewHtml(): string {
         closeContextMenu();
         render();
         vscode.postMessage({ type: 'toggleCommit', commitHash });
+      }
+    });
+
+    content.addEventListener('dblclick', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const fileRow = target.closest('[data-change-id]');
+      if (!(fileRow instanceof HTMLElement)) {
+        return;
+      }
+
+      event.preventDefault();
+      closeContextMenu();
+      fileRow.focus();
+      vscode.postMessage({
+        type: 'openFile',
+        commitHash: fileRow.getAttribute('data-commit-hash') || '',
+        changeId: fileRow.getAttribute('data-change-id') || ''
+      });
+    });
+
+    content.addEventListener('mousedown', (event) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('[data-change-id]')) {
+        event.preventDefault();
+      }
+    });
+
+    content.addEventListener('auxclick', (event) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest('[data-change-id]')) {
+        event.preventDefault();
       }
     });
 

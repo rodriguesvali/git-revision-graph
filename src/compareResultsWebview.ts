@@ -130,7 +130,8 @@ export function renderCompareResultsWebviewHtml(): string {
       border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
       border-radius: 10px;
       background: color-mix(in srgb, var(--vscode-editorWidget-background) 60%, transparent);
-      cursor: context-menu;
+      cursor: pointer;
+      user-select: none;
     }
     .row:hover {
       border-color: color-mix(in srgb, var(--vscode-focusBorder) 45%, transparent);
@@ -354,6 +355,27 @@ export function renderCompareResultsWebviewHtml(): string {
       }
     });
 
+    content.addEventListener('mousedown', (event) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      if (event.target?.closest?.('[data-item-id]')) {
+        event.preventDefault();
+      }
+    });
+
+    content.addEventListener('auxclick', (event) => {
+      if (event.button !== 1) {
+        return;
+      }
+
+      if (event.target?.closest?.('[data-item-id]')) {
+        event.preventDefault();
+        resetDoubleClickTracking();
+      }
+    });
+
     content.addEventListener('contextmenu', (event) => {
       const target = event.target?.closest?.('[data-item-id]');
       const itemId = target?.getAttribute('data-item-id');
@@ -495,7 +517,7 @@ export function renderCompareResultsWebviewHtml(): string {
           + ' role="option"'
           + ' aria-haspopup="menu"'
           + ' aria-selected="' + (isSelected ? 'true' : 'false') + '"'
-          + ' aria-label="' + escapeHtml(item.path + '. ' + item.status + '. ' + secondaryLabel + '. Double-click to open the file diff. Press Shift+F10 or Enter for actions.') + '"'
+          + ' aria-label="' + escapeHtml(item.path + '. ' + item.status + '. ' + secondaryLabel + '. Double-click to compare. Press Shift+F10 or Enter for actions.') + '"'
           + '>'
           + '  <div class="file-entry" data-item-id="' + escapeHtml(item.id) + '">'
           + '    <div class="file-path">' + escapeHtml(item.path) + '</div>'
@@ -556,12 +578,13 @@ export function renderCompareResultsWebviewHtml(): string {
 
       const item = items[0];
       const actions = [
-        { action: 'base', label: 'Open File Diff' }
+        { action: 'base', label: 'Compare' }
       ];
 
       if (item.worktreeRef) {
-        actions.push({ action: 'worktree', label: 'Compare with Worktree' });
         actions.push({ action: 'revert', label: 'Revert to This' });
+      } else if (item.leftRef || item.rightRef) {
+        actions.push({ action: 'worktree', label: 'Compare with Worktree' });
       }
 
       actions.push({
