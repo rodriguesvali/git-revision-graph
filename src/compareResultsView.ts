@@ -15,6 +15,7 @@ import { validateCompareResultsWebviewMessage } from './compareResults/messageVa
 import type { CompareResultsRevealOptions, RefSelection } from './refActions';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import {
+  detachSecondaryView,
   focusAndMaximizeSecondaryView,
   hideSecondaryView,
   minimizeSecondaryViewThenMaximizeView
@@ -114,6 +115,14 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     }
 
     await hideSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
+  }
+
+  async hideWithRevisionGraph(): Promise<void> {
+    this.restoreShowLogOnHide = false;
+    this.state = { kind: 'empty' };
+    this.refresh();
+    await this.updateVisibility(false);
+    await detachSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   async openItem(item: CompareResultItem): Promise<void> {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  detachSecondaryView,
   focusAndMaximizeSecondaryView,
   hideSecondaryView,
   initializeRevisionGraphVisibility,
@@ -77,6 +78,18 @@ test('hideSecondaryView restores focus to another visible secondary view', async
 
   assert.ok(restoredShowLogFocusIndex > lastSetContextIndex);
   assert.ok(lastIncreaseIndex > restoredShowLogFocusIndex);
+});
+
+test('detachSecondaryView clears secondary layout state without reopening the editor graph', async () => {
+  resetViewLayoutStateForTests();
+  const harness = createCommandHarness();
+
+  await focusAndMaximizeSecondaryView('gitRefs.showLogView', harness.commands);
+  await detachSecondaryView('gitRefs.showLogView', harness.commands);
+  await hideSecondaryView('gitRefs.compareResultsView', harness.commands);
+
+  assert.deepEqual(harness.contexts.at(-1), { key: 'gitRefs.revisionGraphVisible', value: false });
+  assert.equal(harness.calls.includes('gitRefs.openRevisionGraphEditor'), false);
 });
 
 function createCommandHarness(failingCommands = new Set<string>()): {

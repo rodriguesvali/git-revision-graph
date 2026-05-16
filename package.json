@@ -43,7 +43,7 @@
   ],
   "contributes": {
     "viewsContainers": {
-      "activitybar": [
+      "panel": [
         {
           "id": "gitRefs",
           "title": "Git Revision Graph",

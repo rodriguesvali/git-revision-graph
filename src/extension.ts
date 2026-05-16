@@ -58,6 +58,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     git,
     compareResultsProvider,
     showLogProvider,
+    async () => {
+      await Promise.all([
+        compareResultsProvider.hideWithRevisionGraph(),
+        showLogProvider.hideWithRevisionGraph()
+      ]);
+    },
     backend
   );
   const services = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);

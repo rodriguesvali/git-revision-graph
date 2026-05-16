@@ -67,8 +67,8 @@ The extension is already published and feature-rich enough that new work can aff
 ## Source Control Product Surface Phase 3 Draft
 - Current package baseline on 2026-05-16: `0.0.30`.
 - Candidate direction: Phase 3 of Source Control integration, tracked in `project-context/2.build/features/source-control-product-surface.md`.
-- Product decision: do not keep the dedicated Activity Bar graph visible and do not keep the Source Control companion graph view.
-- Recommended scope: keep Source Control toolbar access as the primary entry point, open/reveal the editor graph panel, remove duplicate graph side-bar contributions, and preserve on-demand Compare Results and Show Log review views.
+- Product decision: do not keep the dedicated Activity Bar graph visible, do not keep the Source Control companion graph view, and do not keep a dedicated left Activity Bar button for the review views.
+- Recommended scope: keep Source Control toolbar access as the primary entry point, open/reveal the editor graph panel, remove duplicate graph side-bar contributions, preserve on-demand Compare Results and Show Log review views in the workbench Panel while the graph panel is open, and close those dependent views when the graph panel closes.
 - Success condition: users have one clear graph entry point from Source Control and one full-size graph surface in the editor area.
 
 ## 0.0.30 Reference Deletion Refresh Candidate Scope

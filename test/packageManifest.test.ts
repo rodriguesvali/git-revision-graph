@@ -80,6 +80,9 @@ test('package manifest contributes compare results as an on-demand webview with 
 test('package manifest does not contribute duplicate graph side-bar views', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
+      readonly viewsContainers?: {
+        readonly activitybar?: Array<{ readonly id: string }>;
+      };
       readonly views: {
         readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
         readonly scm?: Array<{ readonly id: string }>;
@@ -91,8 +94,36 @@ test('package manifest does not contribute duplicate graph side-bar views', () =
   const companionView = manifest.contributes.views.scm?.find(
     (view) => view.id === 'gitRefs.sourceControlRevisionGraphView'
   );
+  const activityBarContainer = manifest.contributes.viewsContainers?.activitybar?.find(
+    (container) => container.id === 'gitRefs'
+  );
   assert.equal(graphView, undefined);
   assert.equal(companionView, undefined);
+  assert.equal(activityBarContainer, undefined);
+});
+
+test('package manifest keeps review views out of the Activity Bar', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly viewsContainers: {
+        readonly activitybar?: Array<{ readonly id: string }>;
+        readonly panel?: Array<{ readonly id: string; readonly title?: string; readonly icon?: string }>;
+      };
+    };
+  };
+
+  assert.notEqual(
+    manifest.contributes.viewsContainers.activitybar?.some((container) => container.id === 'gitRefs'),
+    true
+  );
+  assert.ok(
+    manifest.contributes.viewsContainers.panel?.some(
+      (container) =>
+        container.id === 'gitRefs'
+        && container.title === 'Git Revision Graph'
+        && container.icon === 'media/icon-source.svg'
+    )
+  );
 });
 
 test('package manifest routes Source Control graph access to the editor panel', () => {
@@ -195,7 +226,8 @@ test('package manifest icon paths point to files that exist', () => {
     readonly icon: string;
     readonly contributes: {
       readonly viewsContainers: {
-        readonly activitybar: Array<{ readonly icon: string }>;
+        readonly activitybar?: Array<{ readonly icon: string }>;
+        readonly panel?: Array<{ readonly icon: string }>;
       };
       readonly views: {
         readonly gitRefs: Array<{ readonly icon?: string }>;
@@ -206,7 +238,8 @@ test('package manifest icon paths point to files that exist', () => {
 
   const referencedIcons = [
     manifest.icon,
-    ...manifest.contributes.viewsContainers.activitybar.map((item) => item.icon),
+    ...(manifest.contributes.viewsContainers.activitybar ?? []).map((item) => item.icon),
+    ...(manifest.contributes.viewsContainers.panel ?? []).map((item) => item.icon),
     ...manifest.contributes.views.gitRefs.flatMap((item) => (item.icon ? [item.icon] : [])),
     ...manifest.contributes.commands.flatMap((command) => collectFileIconPaths(command.icon))
   ];

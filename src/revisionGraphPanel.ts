@@ -59,6 +59,7 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     git: API,
     compareResultsPresenter: CompareResultsPresenter,
     showLogPresenter: ShowLogPresenter,
+    private readonly closeDependentViews: () => Promise<void> | void = () => undefined,
     backend: RevisionGraphBackend = createRevisionGraphBackend()
   ) {
     this.controller = new RevisionGraphController(
@@ -100,6 +101,7 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       if (this.panel === panel) {
         this.panel = undefined;
       }
+      void this.closeDependentViews();
     });
 
     await this.controller.resolveWebviewPanel(panel);

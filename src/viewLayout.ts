@@ -54,7 +54,7 @@ export async function hideSecondaryView(
   commands: ViewCommandExecutor,
   restoreFocusViewId?: string
 ): Promise<void> {
-  visibleSecondaryViewIds.delete(viewId);
+  const wasVisible = visibleSecondaryViewIds.delete(viewId);
   await updateRevisionGraphVisibility(commands);
   await waitForWorkbenchLayout();
 
@@ -65,9 +65,18 @@ export async function hideSecondaryView(
     return;
   }
 
-  if (visibleSecondaryViewIds.size === 0) {
+  if (wasVisible && visibleSecondaryViewIds.size === 0) {
     await commands.executeCommand('gitRefs.openRevisionGraphEditor');
   }
+}
+
+export async function detachSecondaryView(
+  viewId: string,
+  commands: ViewCommandExecutor
+): Promise<void> {
+  visibleSecondaryViewIds.delete(viewId);
+  await updateRevisionGraphVisibility(commands);
+  await waitForWorkbenchLayout();
 }
 
 export function resetViewLayoutStateForTests(): void {
