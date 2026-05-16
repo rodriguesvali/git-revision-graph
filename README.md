@@ -240,10 +240,10 @@ Additional actions are available directly inside the Revision Graph context menu
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
-The extension also includes two on-demand secondary review views in the workbench Panel:
+The extension also includes two on-demand secondary review views with dedicated Activity Bar labels:
 
-- `Compare Results`, which appears when a compare produces results and keeps the latest compare session available for multi-file review while the graph panel is open
-- `Show Log`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline while the graph panel is open
+- `Git Revision Graph - Compare`, which appears when a compare produces results and keeps the latest compare session available for multi-file review while the graph panel is open
+- `Git Revision Graph - Show Logs`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline while the graph panel is open
 
 Closing the editor graph panel also closes these secondary review views.
 

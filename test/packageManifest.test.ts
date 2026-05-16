@@ -14,6 +14,22 @@ type CommandIconContribution = string | {
   readonly dark: string;
 };
 
+type ViewContribution = {
+  readonly id: string;
+  readonly name?: string;
+  readonly type?: string;
+  readonly when?: string;
+  readonly icon?: string;
+};
+
+type ViewContainerContribution = {
+  readonly id: string;
+  readonly title?: string;
+  readonly icon?: string;
+};
+
+type ViewContributions = Record<string, ViewContribution[] | undefined>;
+
 const collectFileIconPaths = (icon?: CommandIconContribution): string[] => {
   if (!icon) {
     return [];
@@ -25,6 +41,9 @@ const collectFileIconPaths = (icon?: CommandIconContribution): string[] => {
 
   return [icon.light, icon.dark];
 };
+
+const collectViews = (views: ViewContributions): ViewContribution[] =>
+  Object.values(views).flatMap((items) => items ?? []);
 
 test('package manifest keeps the hide compare results command contribution', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
@@ -45,16 +64,16 @@ test('package manifest keeps the hide compare results command contribution', () 
 test('package manifest contributes compare results as an on-demand webview with a hide action', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
-      readonly views: {
-        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
-      };
+      readonly views: ViewContributions;
       readonly menus: {
         readonly ['view/title']: MenuContribution[];
       };
     };
   };
 
-  const compareResultsView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.compareResultsView');
+  const compareResultsView = manifest.contributes.views.gitRefsCompare?.find(
+    (view) => view.id === 'gitRefs.compareResultsView'
+  );
   assert.equal(compareResultsView?.type, 'webview');
   assert.equal(compareResultsView?.when, 'gitRefs.compareResultsVisible');
 
@@ -80,47 +99,40 @@ test('package manifest contributes compare results as an on-demand webview with 
 test('package manifest does not contribute duplicate graph side-bar views', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
-      readonly viewsContainers?: {
-        readonly activitybar?: Array<{ readonly id: string }>;
-      };
-      readonly views: {
-        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
-        readonly scm?: Array<{ readonly id: string }>;
-      };
+      readonly views: ViewContributions;
     };
   };
 
-  const graphView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.revisionGraphView');
+  const graphView = collectViews(manifest.contributes.views).find((view) => view.id === 'gitRefs.revisionGraphView');
   const companionView = manifest.contributes.views.scm?.find(
     (view) => view.id === 'gitRefs.sourceControlRevisionGraphView'
   );
-  const activityBarContainer = manifest.contributes.viewsContainers?.activitybar?.find(
-    (container) => container.id === 'gitRefs'
-  );
   assert.equal(graphView, undefined);
   assert.equal(companionView, undefined);
-  assert.equal(activityBarContainer, undefined);
 });
 
-test('package manifest keeps review views out of the Activity Bar', () => {
+test('package manifest labels Activity Bar review containers by action', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
       readonly viewsContainers: {
-        readonly activitybar?: Array<{ readonly id: string }>;
-        readonly panel?: Array<{ readonly id: string; readonly title?: string; readonly icon?: string }>;
+        readonly activitybar?: ViewContainerContribution[];
       };
     };
   };
 
-  assert.notEqual(
-    manifest.contributes.viewsContainers.activitybar?.some((container) => container.id === 'gitRefs'),
-    true
+  assert.ok(
+    manifest.contributes.viewsContainers.activitybar?.some(
+      (container) =>
+        container.id === 'gitRefsCompare'
+        && container.title === 'Git Revision Graph - Compare'
+        && container.icon === 'media/icon-source.svg'
+    )
   );
   assert.ok(
-    manifest.contributes.viewsContainers.panel?.some(
+    manifest.contributes.viewsContainers.activitybar?.some(
       (container) =>
-        container.id === 'gitRefs'
-        && container.title === 'Git Revision Graph'
+        container.id === 'gitRefsShowLogs'
+        && container.title === 'Git Revision Graph - Show Logs'
         && container.icon === 'media/icon-source.svg'
     )
   );
@@ -192,9 +204,7 @@ test('package manifest activates on startup so graph visibility context is initi
 test('package manifest contributes show log as an on-demand webview with a hide action', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
-      readonly views: {
-        readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
-      };
+      readonly views: ViewContributions;
       readonly menus: {
         readonly ['view/title']: MenuContribution[];
       };
@@ -202,7 +212,8 @@ test('package manifest contributes show log as an on-demand webview with a hide 
     };
   };
 
-  const showLogView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.showLogView');
+  const showLogView = manifest.contributes.views.gitRefsShowLogs?.find((view) => view.id === 'gitRefs.showLogView');
+  assert.equal(showLogView?.name, 'Show Logs');
   assert.equal(showLogView?.type, 'webview');
   assert.equal(showLogView?.when, 'gitRefs.showLogVisible');
   assert.ok(
@@ -227,11 +238,8 @@ test('package manifest icon paths point to files that exist', () => {
     readonly contributes: {
       readonly viewsContainers: {
         readonly activitybar?: Array<{ readonly icon: string }>;
-        readonly panel?: Array<{ readonly icon: string }>;
       };
-      readonly views: {
-        readonly gitRefs: Array<{ readonly icon?: string }>;
-      };
+      readonly views: ViewContributions;
       readonly commands: Array<{ readonly icon?: CommandIconContribution }>;
     };
   };
@@ -239,8 +247,7 @@ test('package manifest icon paths point to files that exist', () => {
   const referencedIcons = [
     manifest.icon,
     ...(manifest.contributes.viewsContainers.activitybar ?? []).map((item) => item.icon),
-    ...(manifest.contributes.viewsContainers.panel ?? []).map((item) => item.icon),
-    ...manifest.contributes.views.gitRefs.flatMap((item) => (item.icon ? [item.icon] : [])),
+    ...collectViews(manifest.contributes.views).flatMap((item) => (item.icon ? [item.icon] : [])),
     ...manifest.contributes.commands.flatMap((command) => collectFileIconPaths(command.icon))
   ];
 

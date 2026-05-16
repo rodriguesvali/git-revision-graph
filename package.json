@@ -43,26 +43,33 @@
   ],
   "contributes": {
     "viewsContainers": {
-      "panel": [
+      "activitybar": [
         {
-          "id": "gitRefs",
-          "title": "Git Revision Graph",
+          "id": "gitRefsCompare",
+          "title": "Git Revision Graph - Compare",
+          "icon": "media/icon-source.svg"
+        },
+        {
+          "id": "gitRefsShowLogs",
+          "title": "Git Revision Graph - Show Logs",
           "icon": "media/icon-source.svg"
         }
       ]
     },
     "views": {
-      "gitRefs": [
+      "gitRefsCompare": [
         {
           "id": "gitRefs.compareResultsView",
           "name": "Compare Results",
           "type": "webview",
           "visibility": "collapsed",
           "when": "gitRefs.compareResultsVisible"
-        },
+        }
+      ],
+      "gitRefsShowLogs": [
         {
           "id": "gitRefs.showLogView",
-          "name": "Show Log",
+          "name": "Show Logs",
           "type": "webview",
           "visibility": "collapsed",
           "when": "gitRefs.showLogVisible"
