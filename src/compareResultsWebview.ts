@@ -530,7 +530,7 @@ export function renderCompareResultsWebviewHtml(): string {
 
       const item = items[0];
       const actions = [
-        { action: 'base', label: 'Compare with Base' }
+        { action: 'base', label: 'Open File Diff' }
       ];
 
       if (item.worktreeRef) {

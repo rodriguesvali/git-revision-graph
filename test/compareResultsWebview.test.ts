@@ -35,7 +35,7 @@ test('renders compare result actions through a context menu in the webview', () 
   assert.match(html, /function extendSelectionWithArrow\(itemId, direction\)/);
   assert.match(html, /focusItem\(targetItemId\)/);
   assert.match(html, /function getSelectionForContextMenu\(itemId\)/);
-  assert.match(html, /Compare with Base/);
+  assert.match(html, /Open File Diff/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /File Name/);
   assert.match(html, /Full Path/);
