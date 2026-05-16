@@ -56,6 +56,14 @@ The extension is already published and feature-rich enough that new work can aff
 - Non-goals: custom SCM Provider, editor-tab graph, removal of the dedicated Activity Bar container, Compare Results/Show Log relocation, telemetry, or graph model redesign.
 - Success condition: users can inspect and act on revision topology from Source Control without losing the focused graph-first product identity.
 
+## Source Control Editor Panel Phase 2 Draft
+- Current package baseline on 2026-05-16: `0.0.30`.
+- Candidate direction: Phase 2 of Source Control integration, tracked in `project-context/2.build/features/source-control-editor-panel.md`.
+- Product goal: let Source Control users open the revision graph in the editor area as a full-size internal workbench tab.
+- Recommended scope: add a `WebviewPanel` graph surface, add a command to open/reveal it, and route the Source Control toolbar button to that command.
+- Non-goals: removing existing graph placements, custom SCM Provider work, Compare Results/Show Log relocation, telemetry, or graph model redesign.
+- Success condition: users can launch a full-size graph from Source Control while the existing Activity Bar graph and companion view remain stable.
+
 ## 0.0.30 Reference Deletion Refresh Candidate Scope
 - Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
 - Preserve existing confirmation, conflict/error reporting, force-delete fallback, multi-repository behavior, and native VS Code Git API usage.

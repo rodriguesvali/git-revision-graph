@@ -14,7 +14,7 @@ import {
 } from './revisionGraph/layout/layeredLayout';
 import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
 import { SHOW_LOG_VIEW_ID, SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
-import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
+import { REVISION_GRAPH_VIEW_ID, RevisionGraphEditorPanel, RevisionGraphViewProvider } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
 import { initializeRevisionGraphVisibility } from './viewLayout';
@@ -54,6 +54,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider);
   await showLogProvider.initialize();
   const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider, showLogProvider, backend);
+  const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
+    context.extensionUri,
+    git,
+    compareResultsProvider,
+    showLogProvider,
+    backend
+  );
   const sourceControlRevisionGraphProvider = new RevisionGraphViewProvider(
     git,
     compareResultsProvider,
@@ -67,6 +74,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     compareResultsProvider,
     showLogProvider,
     revisionGraphProvider,
+    revisionGraphEditorPanel,
     sourceControlRevisionGraphProvider,
     onProjectedGraphLayoutCacheDidChange(saveProjectedGraphLayoutCache),
     {
@@ -108,6 +116,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraph', async () => {
       await revisionGraphProvider.open();
+    }),
+    vscode.commands.registerCommand('gitRefs.openRevisionGraphEditor', async () => {
+      await revisionGraphEditorPanel.open();
     }),
     vscode.commands.registerCommand('gitRefs.chooseRevisionGraphRepository', async () => {
       await revisionGraphProvider.chooseRepository();

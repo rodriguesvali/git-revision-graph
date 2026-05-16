@@ -5,7 +5,7 @@ import { API } from './git';
 import { createRevisionGraphBackend, RevisionGraphBackend } from './revisionGraph/backend';
 import { RevisionGraphController } from './revisionGraph/controller';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
-import { REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
+import { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
 import { ShowLogPresenter } from './showLogView';
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -50,4 +50,60 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
   }
 }
 
-export { REVISION_GRAPH_VIEW_ID };
+export class RevisionGraphEditorPanel implements vscode.Disposable {
+  private readonly controller: RevisionGraphController;
+  private panel: vscode.WebviewPanel | undefined;
+
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    git: API,
+    compareResultsPresenter: CompareResultsPresenter,
+    showLogPresenter: ShowLogPresenter,
+    backend: RevisionGraphBackend = createRevisionGraphBackend()
+  ) {
+    this.controller = new RevisionGraphController(
+      git,
+      backend,
+      compareResultsPresenter,
+      showLogPresenter,
+      REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE
+    );
+  }
+
+  dispose(): void {
+    this.panel?.dispose();
+    this.controller.dispose();
+  }
+
+  async open(): Promise<void> {
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.One);
+      await this.controller.refresh();
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE,
+      'Git Revision Graph',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    panel.iconPath = {
+      light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),
+      dark: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-dark.svg')
+    };
+    this.panel = panel;
+    panel.onDidDispose(() => {
+      if (this.panel === panel) {
+        this.panel = undefined;
+      }
+    });
+
+    await this.controller.resolveWebviewPanel(panel);
+  }
+}
+
+export { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID };

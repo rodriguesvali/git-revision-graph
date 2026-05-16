@@ -19,6 +19,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 ## Current Features
 
 - Dedicated `Git Revision Graph` Activity Bar container
+- `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Collapsed `Revision Graph` companion view inside VS Code Source Control for graph access beside native Git changes
 - Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
@@ -60,10 +61,10 @@ Included in the MVP:
 - Reference discovery through the built-in Git extension API
 - Webview-based graph navigation
 - Companion graph access from the built-in Source Control container
-- Source Control toolbar button for opening the Source Control `Revision Graph` companion view
+- Source Control toolbar button for opening `Git Revision Graph` in the editor area
 - Toolbar and context menu actions inside the Revision Graph
 - Command Palette access to refresh, compare, compare-with-worktree, checkout, merge, open graph, and repository selection actions
-- Command Palette access to `View Git Revision Graph` for focusing the Source Control companion view
+- Command Palette access to `View Git Revision Graph` for opening or revealing the editor graph panel
 - File-level diff opening through the native VS Code diff editor
 - Unified diff and revision log viewing for selected references
 - Local branch creation and reference deletion flows from the Revision Graph
@@ -85,7 +86,7 @@ At a high level:
 1. The extension gets the Git API through `vscode.git`.
 2. It reads repositories from the current workspace.
 3. It loads references with `getRefs(...)`.
-4. It renders the active repository through a `WebviewViewProvider`.
+4. It renders the active repository through a `WebviewViewProvider` or editor `WebviewPanel`.
 5. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
 6. It executes workflows such as compare, checkout, branch creation, merge, sync, and deletion by using the Git API where available.
 
@@ -201,7 +202,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container, or run `View Git Revision Graph` to focus the collapsed `Revision Graph` companion view inside Source Control.
+5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container, or run `View Git Revision Graph` to open the graph in the editor area.
 
 ## Dev Container
 

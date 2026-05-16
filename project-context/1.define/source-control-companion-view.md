@@ -1,7 +1,7 @@
 # Source Control Companion View Define
 
 ## Status
-Draft for Phase 1.
+Phase 1 complete. Phase 2 editor-panel work is tracked separately in `project-context/2.build/features/source-control-editor-panel.md`.
 
 ## Product Goal
 Make `Git Revision Graph` feel naturally available from VS Code Source Control while preserving the current dedicated graph experience as the stable primary surface.

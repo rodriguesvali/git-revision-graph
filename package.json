@@ -118,6 +118,14 @@
         "icon": "$(git-commit)"
       },
       {
+        "command": "gitRefs.openRevisionGraphEditor",
+        "title": "View Git Revision Graph",
+        "icon": {
+          "light": "media/icon-source-light.svg",
+          "dark": "media/icon-source-dark.svg"
+        }
+      },
+      {
         "command": "gitRefs.chooseRevisionGraphRepository",
         "title": "Choose Git Revision Graph Repository",
         "icon": "$(repo)"
@@ -159,6 +167,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "gitRefs.openSourceControlRevisionGraph",
+          "when": "false"
+        },
+        {
           "command": "gitRefs.refreshSourceControlRevisionGraph",
           "when": "false"
         },
@@ -173,14 +185,14 @@
       ],
       "scm/title": [
         {
-          "command": "gitRefs.openSourceControlRevisionGraph",
+          "command": "gitRefs.openRevisionGraphEditor",
           "when": "scmProvider == git",
           "group": "navigation"
         }
       ],
       "view/title": [
         {
-          "command": "gitRefs.openSourceControlRevisionGraph",
+          "command": "gitRefs.openRevisionGraphEditor",
           "when": "view == scm",
           "group": "navigation"
         },

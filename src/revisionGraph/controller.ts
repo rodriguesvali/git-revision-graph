@@ -92,6 +92,32 @@ const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
 
+interface RevisionGraphWebviewSurface {
+  readonly webview: vscode.Webview;
+  onDidDispose(listener: () => void): vscode.Disposable;
+  setTitle(title: string): void;
+}
+
+function createWebviewViewSurface(view: vscode.WebviewView): RevisionGraphWebviewSurface {
+  return {
+    webview: view.webview,
+    onDidDispose: (listener) => view.onDidDispose(listener),
+    setTitle: (title) => {
+      view.title = title;
+    }
+  };
+}
+
+function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWebviewSurface {
+  return {
+    webview: panel.webview,
+    onDidDispose: (listener) => panel.onDidDispose(listener),
+    setTitle: (title) => {
+      panel.title = title;
+    }
+  };
+}
+
 async function isTagPublishedToAnyRemote(repository: Repository, tagName: string): Promise<boolean> {
   const remoteNames = await getRepositoryRemoteNames(repository);
   for (const remoteName of remoteNames) {
@@ -147,7 +173,7 @@ function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number
 }
 
 export class RevisionGraphController implements vscode.Disposable {
-  private view: vscode.WebviewView | undefined;
+  private view: RevisionGraphWebviewSurface | undefined;
   private readonly viewDisposables: vscode.Disposable[] = [];
   private currentRepository: Repository | undefined;
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
@@ -280,6 +306,14 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
+    await this.resolveWebviewSurface(createWebviewViewSurface(view));
+  }
+
+  async resolveWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
+    await this.resolveWebviewSurface(createWebviewPanelSurface(panel));
+  }
+
+  private async resolveWebviewSurface(view: RevisionGraphWebviewSurface): Promise<void> {
     this.disposeViewDisposables();
     this.view = view;
     this.syncViewTitle();
@@ -975,7 +1009,7 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    this.view.title = getRevisionGraphViewTitle(this.currentRepository);
+    this.view.setTitle(getRevisionGraphViewTitle(this.currentRepository));
   }
 
   private createLoadTraceSink(

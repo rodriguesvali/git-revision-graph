@@ -201,9 +201,9 @@ Status: Integration Engineer implementation complete for Tasks 1-3, with the REA
 Implemented:
 
 - Added `gitRefs.sourceControlRevisionGraphView` as a collapsed `Revision Graph` webview under `contributes.views.scm`.
-- Added `View Git Revision Graph` as a visible Command Palette command to focus the internal Source Control companion view directly.
-- Added `View Git Revision Graph` to the Source Control title toolbar through `menus.scm/title`.
-- Added the same command to the native Source Control view title through `menus.view/title` with `view == scm`, because that is the visible Source Control view header in the workbench.
+- Added a dedicated command to focus the internal Source Control companion view directly. Phase 2 now hides that command from the Command Palette because `View Git Revision Graph` opens the editor panel.
+- Initially added `View Git Revision Graph` to the Source Control title toolbar through `menus.scm/title`; Phase 2 now routes that toolbar entry to the editor panel command.
+- Initially added the same command to the native Source Control view title through `menus.view/title` with `view == scm`; Phase 2 now routes that visible Source Control header entry to the editor panel command.
 - Added light and dark command icon variants based on the Activity Bar icon shape so the Source Control toolbar button remains visible in both themes.
 - Added Source Control companion title commands for refresh, fetch, and repository selection so title actions target the companion provider instead of the primary graph provider.
 - Kept those companion-specific title commands hidden from the Command Palette to avoid duplicating the global graph commands.

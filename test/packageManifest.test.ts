@@ -62,7 +62,7 @@ test('package manifest contributes compare results as an on-demand webview with 
   assert.ok(
     titleMenus.some(
       (menu) =>
-        menu.command === 'gitRefs.openSourceControlRevisionGraph'
+        menu.command === 'gitRefs.openRevisionGraphEditor'
         && menu.when === 'view == scm'
         && menu.group === 'navigation'
     )
@@ -126,16 +126,17 @@ test('package manifest contributes a collapsed revision graph companion view to 
   assert.equal(companionView?.icon, 'media/icon-source.svg');
 
   const commandIds = new Set(manifest.contributes.commands.map((command) => command.command));
+  assert.equal(commandIds.has('gitRefs.openRevisionGraphEditor'), true);
   assert.equal(commandIds.has('gitRefs.openSourceControlRevisionGraph'), true);
   assert.equal(commandIds.has('gitRefs.refreshSourceControlRevisionGraph'), true);
   assert.equal(commandIds.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
   assert.equal(commandIds.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
 
-  const openCompanionCommand = manifest.contributes.commands.find(
-    (command) => command.command === 'gitRefs.openSourceControlRevisionGraph'
+  const openEditorCommand = manifest.contributes.commands.find(
+    (command) => command.command === 'gitRefs.openRevisionGraphEditor'
   );
-  assert.equal(openCompanionCommand?.title, 'View Git Revision Graph');
-  assert.deepEqual(openCompanionCommand?.icon, {
+  assert.equal(openEditorCommand?.title, 'View Git Revision Graph');
+  assert.deepEqual(openEditorCommand?.icon, {
     light: 'media/icon-source-light.svg',
     dark: 'media/icon-source-dark.svg'
   });
@@ -145,6 +146,7 @@ test('package manifest contributes a collapsed revision graph companion view to 
       .filter((menu) => menu.when === 'false')
       .map((menu) => menu.command)
   );
+  assert.equal(hiddenPaletteCommands.has('gitRefs.openSourceControlRevisionGraph'), true);
   assert.equal(hiddenPaletteCommands.has('gitRefs.refreshSourceControlRevisionGraph'), true);
   assert.equal(hiddenPaletteCommands.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
   assert.equal(hiddenPaletteCommands.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
@@ -153,7 +155,7 @@ test('package manifest contributes a collapsed revision graph companion view to 
   assert.ok(
     scmTitleMenus.some(
       (menu) =>
-        menu.command === 'gitRefs.openSourceControlRevisionGraph'
+        menu.command === 'gitRefs.openRevisionGraphEditor'
         && menu.when === 'scmProvider == git'
         && menu.group === 'navigation'
     )

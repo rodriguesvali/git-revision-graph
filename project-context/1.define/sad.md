@@ -109,6 +109,8 @@ With two graph placements:
 - The Source Control companion view should default to `collapsed` in the manifest to reduce Source Control clutter on first install/update.
 - The primary `gitRefs.revisionGraphView` remains the target for the existing `gitRefs.openRevisionGraph` command in Phase 1.
 - Compare Results and Show Log remain shared on-demand secondary views in the existing `gitRefs` container for Phase 1; origin-aware focus restoration can be revisited after the companion view is stable.
+- Phase 2 adds an editor-area `WebviewPanel` graph surface as a third placement. The panel uses its own graph controller instance, reuses the existing graph webview shell and shared backend/action services, and is opened or revealed through a dedicated command instead of replacing the primary Activity Bar graph command.
+- The Source Control toolbar entry should launch the editor panel in Phase 2, while the Phase 1 companion view remains available as a collapsible Source Control view for users who want an embedded side-bar graph.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.

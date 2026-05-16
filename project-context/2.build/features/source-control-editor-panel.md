@@ -1,0 +1,73 @@
+# Source Control Editor Panel
+
+## Status
+Build implementation complete on 2026-05-16 for Phase 2 of Source Control integration.
+
+## Goal
+Open `Git Revision Graph` in the VS Code editor area from Source Control, similar to extensions that provide a full-size internal workbench tab, while preserving the existing Activity Bar graph and Phase 1 Source Control companion view.
+
+## Scope
+In scope:
+
+- Add an editor-area `WebviewPanel` surface for the revision graph.
+- Add a command to open or reveal that editor panel.
+- Point the Source Control toolbar entry at the editor panel command so users get a full-size graph from Source Control.
+- Reuse the existing graph shell, backend, Git actions, repository selection, refresh, fetch, compare, checkout, branch, sync, merge, delete, diff, and log flows.
+- Keep one editor graph panel open at a time and reveal it when invoked again.
+- Preserve the existing dedicated Activity Bar graph view and Source Control companion view.
+- Update package manifest, README, and tests.
+
+Out of scope:
+
+- Removing the Phase 1 Source Control companion view.
+- Replacing Compare Results or Show Log with editor panels.
+- Custom SCM Provider integration.
+- Graph model, layout, cache, or Git workflow redesign.
+- Version bumping, packaging, or publishing.
+
+## Acceptance Criteria
+
+- Source Control toolbar command opens `Git Revision Graph` in the editor area.
+- Re-invoking the command reveals the existing editor graph panel instead of creating duplicates.
+- The editor graph renders and supports the same graph actions as the existing view.
+- Closing the editor graph disposes its controller view attachment without breaking the Activity Bar or Source Control companion graph.
+- Existing `gitRefs.openRevisionGraph` behavior remains focused on the primary Activity Bar graph.
+- Tests lock the editor panel command, command title/icon, and Source Control toolbar wiring.
+- `npm run build` and `npm test` pass.
+
+## Implementation Notes
+
+- Use `vscode.window.createWebviewPanel` with `enableScripts: true` and `retainContextWhenHidden: true`.
+- Generalize `RevisionGraphController` from `WebviewView` ownership to a small internal host abstraction that can wrap both `WebviewView` and `WebviewPanel`.
+- Keep one `RevisionGraphController` instance per graph surface.
+- Use the existing `renderRevisionGraphShellHtml()` and webview message contract.
+
+## Implementation Progress
+
+- Added `gitRefs.openRevisionGraphEditor`.
+- Added a singleton editor graph panel backed by `vscode.window.createWebviewPanel`.
+- Routed Source Control toolbar entries to the editor graph command.
+- Kept `gitRefs.openSourceControlRevisionGraph` available for the companion view but hidden from the Command Palette.
+- Generalized `RevisionGraphController` to attach to either `WebviewView` or `WebviewPanel`.
+- Updated README and manifest tests for the editor graph entry point.
+
+## Verification
+
+- `npm run build` passed.
+- `npm test` passed with 270 tests.
+- `git diff --check` passed.
+
+## Remaining Handoffs
+
+- QA Engineer: manually validate the editor panel path in an Extension Development Host, including repeated toolbar clicks, close/reopen, no-repository, and multi-repository behavior.
+- Deliver/DevOps: record manual validation and release readiness before packaging or publishing.
+
+## Manual Validation
+
+- Launch Extension Development Host with `F5`.
+- Open Source Control in a Git workspace.
+- Click `View Git Revision Graph` in the Source Control toolbar and confirm an editor tab opens.
+- Click the command again and confirm it reveals the same tab.
+- Use refresh, fetch, repository selection, search, scope/filter controls, and graph context menu actions from the editor tab.
+- Confirm the Activity Bar `Graph` view and Source Control `Revision Graph` companion view still work.
+- Validate no-repository and multi-repository behavior.
