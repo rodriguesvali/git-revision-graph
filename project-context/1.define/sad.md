@@ -60,6 +60,8 @@ Keep the extension architecture intact:
 - Reference deletion refresh behavior should be conservative: local branch, tag, and remote branch deletion should converge on a full graph rebuild unless a future design proves scene/layout correctness with deterministic validation.
 - Build decision for `0.0.30`: remove the unused direct reference-patch post-message/controller/state contract after local branch deletion returns to full graph rebuilds.
 - The `0.0.30` sync refresh path should keep push-only sync optimized with metadata patches, but use full graph rebuilds after any pull because `HEAD` and visible topology may advance beyond the current snapshot.
+- Source Control integration should begin as an additive companion view under the built-in `scm` container, not as a custom SCM Provider and not as a replacement for the existing Activity Bar graph.
+- Phase 1 of Source Control integration should preserve the current graph controller/backend/webview boundaries unless a targeted lifecycle refactor is required to support multiple simultaneous graph view instances safely.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -68,6 +70,8 @@ Keep the extension architecture intact:
 - Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
 - Optimistic reference patches can compromise visual integrity after deletion by leaving stale scene geometry, empty cards, or preserved viewport/selection context that no longer matches repository truth.
 - Pull-based sync metadata patches can preserve stale layout context when newly pulled commits change topology, even when a fallback exists for unresolved `HEAD` cases.
+- Sharing one graph controller across the existing Activity Bar graph and a new Source Control companion view can create lifecycle, refresh cancellation, and repository-selection bugs if not refactored deliberately.
+- A Source Control companion view can crowd the built-in Git UI if it is visible by default or mirrors the full graph without respecting side-bar constraints.
 
 ## Verification Strategy
 - Required after meaningful changes: `npm run build`.
@@ -93,3 +97,5 @@ Keep the extension architecture intact:
 - Which repository events should invalidate immutable DAG/history data versus only rebuilding overlays?
 - Can projection changes reuse a larger immutable graph snapshot without stale refs or incorrect branch-scope results?
 - Which cache paths need manual validation with rapid refresh, repository switching, interrupted graph loads, checkout, fetch, push-only sync, and pull-only sync?
+- Should the Source Control companion view share repository selection with the dedicated graph or maintain independent per-placement selection?
+- Should Compare Results and Show Log focus restoration return to the originating graph placement once multiple graph placements exist?

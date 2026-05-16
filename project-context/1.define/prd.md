@@ -48,6 +48,14 @@ The extension is already published and feature-rich enough that new work can aff
 - Candidate feature artifact: `project-context/2.build/features/0.0.30-reference-deletion-refresh.md`.
 - Additional candidate feature artifact: `project-context/2.build/features/0.0.30-sync-pull-refresh.md`.
 
+## Source Control Companion View Define Draft
+- Current package baseline on 2026-05-16: `0.0.30`.
+- Candidate direction: Phase 1 of Source Control integration, tracked in `project-context/1.define/source-control-companion-view.md`.
+- Product goal: make the revision graph available from the built-in Source Control container while preserving the current dedicated `Git Revision Graph` Activity Bar surface.
+- Recommended scope: add a companion `Revision Graph` webview view under `contributes.views.scm`, keep the existing graph view intact, and reuse existing graph workflows.
+- Non-goals: custom SCM Provider, editor-tab graph, removal of the dedicated Activity Bar container, Compare Results/Show Log relocation, telemetry, or graph model redesign.
+- Success condition: users can inspect and act on revision topology from Source Control without losing the focused graph-first product identity.
+
 ## 0.0.30 Reference Deletion Refresh Candidate Scope
 - Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
 - Preserve existing confirmation, conflict/error reporting, force-delete fallback, multi-repository behavior, and native VS Code Git API usage.
