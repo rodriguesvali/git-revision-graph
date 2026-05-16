@@ -17,6 +17,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Show Remote Branches/);
   assert.match(html, /id="showStashesToggle"/);
   assert.match(html, /Show Stash/);
+  assert.match(html, /id="showMinimapToggle"/);
+  assert.match(html, /Show Minimap/);
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
   assert.doesNotMatch(html, /Show Current Branch Descendants/);
   assert.match(html, /id="searchInput"/);
@@ -296,6 +298,14 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /viewBox="0 0 180 240"/);
   assert.match(html, /class="minimap-controls"/);
   assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\];/);
+  assert.match(html, /let minimapEnabled = initialWebviewState\.showMinimap !== false;/);
+  assert.match(html, /function syncMinimapPreference\(\)/);
+  assert.match(html, /function setMinimapEnabled\(enabled\)/);
+  assert.match(html, /showMinimapToggle\.addEventListener\('change'/);
+  assert.match(html, /showMinimapToggle\.checked = minimapEnabled;/);
+  assert.match(html, /showMinimap: minimapEnabled/);
+  assert.match(html, /!minimapEnabled/);
+  assert.match(html, /vscode\.setState\(\{ \.\.\.existingState, sceneLayoutKey, nodeOffsets: normalizedOffsets \}\);/);
   assert.match(html, /function zoomInMinimap\(\)/);
   assert.match(html, /function zoomOutMinimap\(\)/);
   assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);
@@ -569,6 +579,7 @@ function createWebviewRuntime() {
     'showTagsToggle',
     'showRemoteBranchesToggle',
     'showStashesToggle',
+    'showMinimapToggle',
     'searchInput',
     'searchResultBadge',
     'searchPrevButton',

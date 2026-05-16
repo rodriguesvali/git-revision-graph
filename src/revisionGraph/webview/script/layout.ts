@@ -34,7 +34,8 @@ export function renderRevisionGraphScriptLayout(): string {
           normalizedOffsets[hash] = offset;
         }
       }
-      vscode.setState({ sceneLayoutKey, nodeOffsets: normalizedOffsets });
+      const existingState = vscode.getState() || {};
+      vscode.setState({ ...existingState, sceneLayoutKey, nodeOffsets: normalizedOffsets });
     }
 
 	    function autoArrangeLayout() {
@@ -509,6 +510,7 @@ export function renderRevisionGraphScriptLayout(): string {
         !minimapEdgeLayer ||
         !minimapNodeLayer ||
         !minimapViewport ||
+        !minimapEnabled ||
         !currentState ||
         currentState.viewMode !== 'ready' ||
         nodeElements.size === 0

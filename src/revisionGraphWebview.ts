@@ -51,6 +51,10 @@ export function renderRevisionGraphShellHtml(): string {
           <input id="showStashesToggle" type="checkbox" />
           <span>Show Stash</span>
         </label>
+        <label for="showMinimapToggle">
+          <input id="showMinimapToggle" type="checkbox" />
+          <span>Show Minimap</span>
+        </label>
       </div>
     </div>
     <div class="search-controls" aria-label="Search the loaded revision graph">

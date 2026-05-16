@@ -38,6 +38,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
+    const showMinimapToggle = document.getElementById('showMinimapToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
     const searchPrevButton = document.getElementById('searchPrevButton');
@@ -78,7 +79,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let baseCanvasHeight = 480;
     let currentZoom = 1;
     const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4, 5, 6.5, 8, 10, 12.5, 15, 18, 22, 26, 30];
+    const initialWebviewState = vscode.getState() || {};
     let minimapZoom = 1;
+    let minimapEnabled = initialWebviewState.showMinimap !== false;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;
     let dragState = null;
@@ -154,6 +157,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         }, showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
       });
     }
+    if (showMinimapToggle) {
+      showMinimapToggle.addEventListener('change', () => {
+        setMinimapEnabled(showMinimapToggle.checked);
+      });
+    }
     if (searchInput) {
       searchInput.addEventListener('input', () => {
         setSearchQuery(searchInput.value);
@@ -204,7 +212,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         if (event.button !== 0) {
           return;
         }
-        if (event.target && typeof event.target.closest === 'function' && event.target.closest('.minimap-zoom-button')) {
+        if (!minimapEnabled || (event.target && typeof event.target.closest === 'function' && event.target.closest('.minimap-zoom-button'))) {
           return;
         }
         minimapDragState = { active: true };
@@ -372,6 +380,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
     });
 
+    syncMinimapPreference();
     setZoom(1, { preserveViewport: false });
     syncCanvasSize();
     updateScenePlacement();

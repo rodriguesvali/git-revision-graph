@@ -478,11 +478,41 @@ export function renderRevisionGraphScriptInteractions(): string {
       const visibleOptions = [
         currentProjectionOptions.showTags ? 'tags' : null,
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
-        currentProjectionOptions.showStashes ? 'stash' : null
+        currentProjectionOptions.showStashes ? 'stash' : null,
+        minimapEnabled ? 'minimap' : null
       ].filter(Boolean);
       viewOptionsButton.title = visibleOptions.length > 0
         ? 'View options: showing ' + visibleOptions.join(', ')
         : 'View options: refs only';
+    }
+
+    function syncMinimapPreference() {
+      if (showMinimapToggle) {
+        showMinimapToggle.checked = minimapEnabled;
+      }
+      if (!minimapEnabled && graphMinimap) {
+        minimapDragState = null;
+        graphMinimap.hidden = true;
+      }
+      syncViewOptionsButton();
+    }
+
+    function setMinimapEnabled(enabled) {
+      minimapEnabled = !!enabled;
+      persistWebviewUiState();
+      syncMinimapPreference();
+      if (minimapEnabled) {
+        syncMinimap('full');
+      }
+      syncToolbarActions();
+    }
+
+    function persistWebviewUiState() {
+      const existingState = vscode.getState() || {};
+      vscode.setState({
+        ...existingState,
+        showMinimap: minimapEnabled
+      });
     }
 
     function postCompareSelected(base, compare) {
@@ -644,6 +674,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showStashesToggle) {
         showStashesToggle.disabled = toolbarBusy;
       }
+      if (showMinimapToggle) {
+        showMinimapToggle.disabled = toolbarBusy;
+      }
       if (reorganizeButton) {
         reorganizeButton.disabled = toolbarBusy;
       }
@@ -654,10 +687,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         zoomOutButton.disabled = toolbarBusy || !canZoomOut;
       }
       if (minimapZoomInButton) {
-        minimapZoomInButton.disabled = toolbarBusy || !canZoomInMinimap;
+        minimapZoomInButton.disabled = toolbarBusy || !minimapEnabled || !canZoomInMinimap;
       }
       if (minimapZoomOutButton) {
-        minimapZoomOutButton.disabled = toolbarBusy || !canZoomOutMinimap;
+        minimapZoomOutButton.disabled = toolbarBusy || !minimapEnabled || !canZoomOutMinimap;
       }
     }
 

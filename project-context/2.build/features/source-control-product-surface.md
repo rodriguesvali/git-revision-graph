@@ -14,6 +14,7 @@ Build implementation complete on 2026-05-16 for Phase 3 of Source Control integr
 - Close Compare Results and Show Log when the editor graph panel is closed.
 - Keep the Compare Results file action text as `Compare`; when the Compare Results state is `ref <-> ref`, also offer `Compare with Worktree`; when the state is already a worktree comparison, omit the redundant `Compare with Worktree` action.
 - When the last secondary review view is closed, restore the Source Control Activity Bar context instead of allowing the workbench to fall back to Explorer.
+- Let users hide or show the graph minimap from the webview `View` options, preserving the preference with the rest of the webview UI state.
 
 ## Scope
 
@@ -28,6 +29,7 @@ In scope:
 - Bind Compare Results and Show Log visibility to the editor graph panel lifecycle.
 - Polish Compare Results file actions so the primary diff action is unambiguous, ref-to-ref compare results still allow a file worktree comparison, and worktree-originated compare results do not repeat the same worktree action.
 - Restore Source Control after user-initiated Compare Results or Show Log close.
+- Add a `Show Minimap` checkbox to the graph `View` options menu and persist the choice across webview state updates.
 - Update README, product context, and manifest tests.
 
 Out of scope:
@@ -47,6 +49,10 @@ Out of scope:
 - Closing the editor graph panel hides Compare Results and Show Log without reopening the graph.
 - Compare Results file context menus show `Compare` as the primary action, show `Compare with Worktree` for ref-to-ref results, and omit `Compare with Worktree` when the result set already compares a reference with the worktree.
 - Closing the last secondary review view activates Source Control rather than Explorer.
+- The graph `View` options menu includes `Show Minimap`.
+- Unchecking `Show Minimap` hides the minimap and disables its zoom controls without resetting graph layout.
+- Rechecking `Show Minimap` renders the minimap again with the current graph state.
+- The minimap preference persists through webview layout-state saves.
 - `npm run build` passes.
 - `npm test` passes.
 - `git diff --check` passes.
@@ -54,7 +60,7 @@ Out of scope:
 ## Verification
 
 - `npm run build` passed.
-- `npm test` passed with 272 tests.
+- `npm test` passed with 273 tests.
 - `git diff --check` passed.
 
 ## Remaining Handoffs
