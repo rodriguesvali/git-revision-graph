@@ -22,14 +22,18 @@ test('renders compare result actions through a context menu in the webview', () 
 
   assert.match(html, /content\.addEventListener\('click'/);
   assert.match(html, /content\.addEventListener\('contextmenu'/);
+  assert.doesNotMatch(html, /content\.addEventListener\('dblclick'/);
   assert.match(html, /content\.addEventListener\('keydown'/);
+  assert.match(html, /const doubleClickThresholdMs = 500/);
+  assert.match(html, /lastPrimaryClickItemId === itemId/);
+  assert.match(html, /now - lastPrimaryClickAt <= doubleClickThresholdMs/);
   assert.match(html, /event\.key === 'ArrowDown' \|\| event\.key === 'ArrowUp'/);
   assert.match(html, /tabindex="0"/);
   assert.match(html, /aria-haspopup="menu"/);
   assert.match(html, /aria-selected="/);
   assert.match(html, /role="listbox"/);
   assert.match(html, /role="option"/);
-  assert.match(html, /Press Shift\+F10 or Enter for actions\./);
+  assert.match(html, /Double-click to open the file diff\. Press Shift\+F10 or Enter for actions\./);
   assert.match(html, /function openContextMenuForElement\(items, element\)/);
   assert.match(html, /function updateSelection\(itemId, event\)/);
   assert.match(html, /function extendSelectionWithArrow\(itemId, direction\)/);
@@ -46,6 +50,8 @@ test('renders compare result actions through a context menu in the webview', () 
   assert.match(html, /function openContextMenu\(items, x, y\)/);
   assert.match(html, /countBadge\.textContent = totalCount \+ '\/' \+ selectedCount/);
   assert.match(html, /function postSingleAction\(type, itemId\)/);
+  assert.match(html, /postSingleAction\('base', itemId\)/);
+  assert.match(html, /function resetDoubleClickTracking\(\)/);
   assert.match(html, /function postMultiAction\(type, itemIds\)/);
   assert.match(html, /vscode\.postMessage\(\{ type, itemIds \}\)/);
   assert.match(html, /item\.fullPath/);

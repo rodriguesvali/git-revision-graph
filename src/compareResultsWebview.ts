@@ -292,6 +292,9 @@ export function renderCompareResultsWebviewHtml(): string {
     let selectedItemIds = [];
     let selectionAnchorItemId = undefined;
     let contextMenuItemIds = [];
+    let lastPrimaryClickItemId = undefined;
+    let lastPrimaryClickAt = 0;
+    const doubleClickThresholdMs = 500;
 
     window.addEventListener('message', (event) => {
       const message = event.data;
@@ -300,6 +303,7 @@ export function renderCompareResultsWebviewHtml(): string {
         searchInput.value = '';
         selectedItemIds = [];
         selectionAnchorItemId = undefined;
+        resetDoubleClickTracking();
         closeContextMenu();
         render();
       }
@@ -324,21 +328,43 @@ export function renderCompareResultsWebviewHtml(): string {
         return;
       }
 
+      const isPrimaryPlainClick =
+        event.button === 0
+        && !event.ctrlKey
+        && !event.metaKey
+        && !event.shiftKey
+        && !event.altKey;
+      const now = Date.now();
+      const isDoubleClick =
+        isPrimaryPlainClick
+        && lastPrimaryClickItemId === itemId
+        && now - lastPrimaryClickAt <= doubleClickThresholdMs;
+
+      lastPrimaryClickItemId = isPrimaryPlainClick ? itemId : undefined;
+      lastPrimaryClickAt = isPrimaryPlainClick ? now : 0;
+
       closeContextMenu();
       updateSelection(itemId, event);
       render();
       focusItem(itemId);
+
+      if (isDoubleClick) {
+        resetDoubleClickTracking();
+        postSingleAction('base', itemId);
+      }
     });
 
     content.addEventListener('contextmenu', (event) => {
       const target = event.target?.closest?.('[data-item-id]');
       const itemId = target?.getAttribute('data-item-id');
       if (!itemId) {
+        resetDoubleClickTracking();
         closeContextMenu();
         return;
       }
 
       event.preventDefault();
+      resetDoubleClickTracking();
       updateContextMenuSelection(itemId, event);
       render();
       openContextMenu(getSelectionForContextMenu(itemId), event.clientX, event.clientY);
@@ -469,7 +495,7 @@ export function renderCompareResultsWebviewHtml(): string {
           + ' role="option"'
           + ' aria-haspopup="menu"'
           + ' aria-selected="' + (isSelected ? 'true' : 'false') + '"'
-          + ' aria-label="' + escapeHtml(item.path + '. ' + item.status + '. ' + secondaryLabel + '. Press Shift+F10 or Enter for actions.') + '"'
+          + ' aria-label="' + escapeHtml(item.path + '. ' + item.status + '. ' + secondaryLabel + '. Double-click to open the file diff. Press Shift+F10 or Enter for actions.') + '"'
           + '>'
           + '  <div class="file-entry" data-item-id="' + escapeHtml(item.id) + '">'
           + '    <div class="file-path">' + escapeHtml(item.path) + '</div>'
@@ -695,6 +721,11 @@ export function renderCompareResultsWebviewHtml(): string {
 
     function postMultiAction(type, itemIds) {
       vscode.postMessage({ type, itemIds });
+    }
+
+    function resetDoubleClickTracking() {
+      lastPrimaryClickItemId = undefined;
+      lastPrimaryClickAt = 0;
     }
 
     function escapeHtml(value) {
