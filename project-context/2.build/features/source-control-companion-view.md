@@ -1,5 +1,7 @@
 # Source Control Companion View Build Plan
 
+Phase 1 implementation is complete and superseded by the Phase 3 product surface decision to remove the companion graph view from the final UI.
+
 ## Goal
 Implement Phase 1 of Source Control integration by adding a `Revision Graph` companion webview under VS Code's built-in Source Control container while preserving the existing `Git Revision Graph` Activity Bar view as the primary stable surface.
 

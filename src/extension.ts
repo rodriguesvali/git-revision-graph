@@ -13,8 +13,8 @@ import {
   serializeProjectedGraphLayoutCache
 } from './revisionGraph/layout/layeredLayout';
 import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
-import { SHOW_LOG_VIEW_ID, SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
-import { REVISION_GRAPH_VIEW_ID, RevisionGraphEditorPanel, RevisionGraphViewProvider } from './revisionGraphPanel';
+import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
+import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
 import { initializeRevisionGraphVisibility } from './viewLayout';
@@ -53,7 +53,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const backend = createRevisionGraphBackend();
   const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider);
   await showLogProvider.initialize();
-  const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider, showLogProvider, backend);
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
     git,
@@ -61,21 +60,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     showLogProvider,
     backend
   );
-  const sourceControlRevisionGraphProvider = new RevisionGraphViewProvider(
-    git,
-    compareResultsProvider,
-    showLogProvider,
-    backend,
-    SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID
-  );
-  const services = createCommandServices(revisionGraphProvider, compareResultsProvider);
+  const services = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);
 
   context.subscriptions.push(
     compareResultsProvider,
     showLogProvider,
-    revisionGraphProvider,
     revisionGraphEditorPanel,
-    sourceControlRevisionGraphProvider,
     onProjectedGraphLayoutCacheDidChange(saveProjectedGraphLayoutCache),
     {
       dispose() {
@@ -89,19 +79,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
     vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
-    vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
-    vscode.window.registerWebviewViewProvider(
-      SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID,
-      sourceControlRevisionGraphProvider
-    ),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
-    vscode.commands.registerCommand('gitRefs.refresh', async () => {
-      await revisionGraphProvider.refresh();
-    }),
-    vscode.commands.registerCommand('gitRefs.fetchCurrentRepository', async () => {
-      await revisionGraphProvider.fetchCurrentRepository();
-    }),
     vscode.commands.registerCommand('gitRefs.compareRefs', async (node?: RefNode) => {
       await compareRefs(git, node, services);
     }),
@@ -115,25 +94,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       await mergeReference(git, node, services);
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraph', async () => {
-      await revisionGraphProvider.open();
+      await revisionGraphEditorPanel.open();
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraphEditor', async () => {
       await revisionGraphEditorPanel.open();
-    }),
-    vscode.commands.registerCommand('gitRefs.chooseRevisionGraphRepository', async () => {
-      await revisionGraphProvider.chooseRepository();
-    }),
-    vscode.commands.registerCommand('gitRefs.openSourceControlRevisionGraph', async () => {
-      await sourceControlRevisionGraphProvider.open();
-    }),
-    vscode.commands.registerCommand('gitRefs.refreshSourceControlRevisionGraph', async () => {
-      await sourceControlRevisionGraphProvider.refresh();
-    }),
-    vscode.commands.registerCommand('gitRefs.fetchSourceControlRevisionGraphRepository', async () => {
-      await sourceControlRevisionGraphProvider.fetchCurrentRepository();
-    }),
-    vscode.commands.registerCommand('gitRefs.chooseSourceControlRevisionGraphRepository', async () => {
-      await sourceControlRevisionGraphProvider.chooseRepository();
     }),
     vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
       await compareResultsProvider.hide();
@@ -226,15 +190,15 @@ async function getGitApi(): Promise<API | undefined> {
 }
 
 function createCommandServices(
-  revisionGraphProvider: RevisionGraphViewProvider,
+  revisionGraphPanel: RevisionGraphEditorPanel,
   compareResultsProvider: CompareResultsViewProvider
 ): RefCommandServices {
   const baseServices = createWorkbenchRefActionServices(
     (request?: RevisionGraphRefreshRequestLike) => {
-      void revisionGraphProvider.refresh(request);
+      void revisionGraphPanel.refresh(request);
     },
     (request?: RevisionGraphRefreshRequestLike) => {
-      return revisionGraphProvider.prepareRefresh(request);
+      return revisionGraphPanel.prepareRefresh(request);
     },
     compareResultsProvider
   );

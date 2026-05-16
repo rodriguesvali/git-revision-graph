@@ -10,14 +10,14 @@ import {
 } from '../src/viewLayout';
 import type { ViewCommandExecutor } from '../src/viewLayout';
 
-test('initializeRevisionGraphVisibility shows the graph when no secondary views are visible', async () => {
+test('initializeRevisionGraphVisibility keeps the legacy side-bar graph hidden', async () => {
   resetViewLayoutStateForTests();
   const harness = createCommandHarness();
 
   await initializeRevisionGraphVisibility(harness.commands);
 
   assert.deepEqual(harness.contexts, [
-    { key: 'gitRefs.revisionGraphVisible', value: true }
+    { key: 'gitRefs.revisionGraphVisible', value: false }
   ]);
 });
 
@@ -51,15 +51,15 @@ test('minimizeSecondaryViewThenMaximizeView keeps the graph hidden while compare
   assert.ok(firstIncreaseIndex > compareFocusIndex);
 });
 
-test('hideSecondaryView restores the graph after the last secondary view closes', async () => {
+test('hideSecondaryView reopens the editor graph after the last secondary view closes', async () => {
   resetViewLayoutStateForTests();
   const harness = createCommandHarness();
 
   await focusAndMaximizeSecondaryView('gitRefs.showLogView', harness.commands);
   await hideSecondaryView('gitRefs.showLogView', harness.commands);
 
-  assert.deepEqual(harness.contexts.at(-1), { key: 'gitRefs.revisionGraphVisible', value: true });
-  assert.equal(harness.calls.at(-1), 'gitRefs.revisionGraphView.focus');
+  assert.deepEqual(harness.contexts.at(-1), { key: 'gitRefs.revisionGraphVisible', value: false });
+  assert.equal(harness.calls.at(-1), 'gitRefs.openRevisionGraphEditor');
 });
 
 test('hideSecondaryView restores focus to another visible secondary view', async () => {

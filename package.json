@@ -1,7 +1,7 @@
 {
   "name": "git-revision-graph",
   "displayName": "Git Revision Graph",
-  "description": "Visualize Git revision graphs and run compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated VS Code view.",
+  "description": "Visualize Git revision graphs from VS Code Source Control and run compare, checkout, branch, merge, sync, delete, and diff workflows.",
   "version": "0.0.30",
   "publisher": "rodriguesvali",
   "license": "MIT",
@@ -54,13 +54,6 @@
     "views": {
       "gitRefs": [
         {
-          "id": "gitRefs.revisionGraphView",
-          "name": "Graph",
-          "type": "webview",
-          "icon": "media/icon-source.svg",
-          "when": "gitRefs.revisionGraphVisible"
-        },
-        {
           "id": "gitRefs.compareResultsView",
           "name": "Compare Results",
           "type": "webview",
@@ -74,28 +67,9 @@
           "visibility": "collapsed",
           "when": "gitRefs.showLogVisible"
         }
-      ],
-      "scm": [
-        {
-          "id": "gitRefs.sourceControlRevisionGraphView",
-          "name": "Revision Graph",
-          "type": "webview",
-          "visibility": "collapsed",
-          "icon": "media/icon-source.svg"
-        }
       ]
     },
     "commands": [
-      {
-        "command": "gitRefs.refresh",
-        "title": "Refresh Git Revision Graph",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "gitRefs.fetchCurrentRepository",
-        "title": "Fetch Current Repository",
-        "icon": "$(cloud-download)"
-      },
       {
         "command": "gitRefs.compareRefs",
         "title": "Compare References"
@@ -113,45 +87,12 @@
         "title": "Merge Into Current Branch"
       },
       {
-        "command": "gitRefs.openRevisionGraph",
-        "title": "Open Git Revision Graph",
-        "icon": "$(git-commit)"
-      },
-      {
         "command": "gitRefs.openRevisionGraphEditor",
         "title": "View Git Revision Graph",
         "icon": {
           "light": "media/icon-source-light.svg",
           "dark": "media/icon-source-dark.svg"
         }
-      },
-      {
-        "command": "gitRefs.chooseRevisionGraphRepository",
-        "title": "Choose Git Revision Graph Repository",
-        "icon": "$(repo)"
-      },
-      {
-        "command": "gitRefs.openSourceControlRevisionGraph",
-        "title": "View Git Revision Graph",
-        "icon": {
-          "light": "media/icon-source-light.svg",
-          "dark": "media/icon-source-dark.svg"
-        }
-      },
-      {
-        "command": "gitRefs.refreshSourceControlRevisionGraph",
-        "title": "Refresh Source Control Revision Graph",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "gitRefs.fetchSourceControlRevisionGraphRepository",
-        "title": "Fetch Source Control Revision Graph Repository",
-        "icon": "$(cloud-download)"
-      },
-      {
-        "command": "gitRefs.chooseSourceControlRevisionGraphRepository",
-        "title": "Choose Source Control Revision Graph Repository",
-        "icon": "$(repo)"
       },
       {
         "command": "gitRefs.hideCompareResults",
@@ -165,24 +106,6 @@
       }
     ],
     "menus": {
-      "commandPalette": [
-        {
-          "command": "gitRefs.openSourceControlRevisionGraph",
-          "when": "false"
-        },
-        {
-          "command": "gitRefs.refreshSourceControlRevisionGraph",
-          "when": "false"
-        },
-        {
-          "command": "gitRefs.fetchSourceControlRevisionGraphRepository",
-          "when": "false"
-        },
-        {
-          "command": "gitRefs.chooseSourceControlRevisionGraphRepository",
-          "when": "false"
-        }
-      ],
       "scm/title": [
         {
           "command": "gitRefs.openRevisionGraphEditor",
@@ -195,36 +118,6 @@
           "command": "gitRefs.openRevisionGraphEditor",
           "when": "view == scm",
           "group": "navigation"
-        },
-        {
-          "command": "gitRefs.refresh",
-          "when": "view == gitRefs.revisionGraphView",
-          "group": "navigation"
-        },
-        {
-          "command": "gitRefs.fetchCurrentRepository",
-          "when": "view == gitRefs.revisionGraphView",
-          "group": "navigation@2"
-        },
-        {
-          "command": "gitRefs.chooseRevisionGraphRepository",
-          "when": "view == gitRefs.revisionGraphView",
-          "group": "navigation@3"
-        },
-        {
-          "command": "gitRefs.refreshSourceControlRevisionGraph",
-          "when": "view == gitRefs.sourceControlRevisionGraphView",
-          "group": "navigation"
-        },
-        {
-          "command": "gitRefs.fetchSourceControlRevisionGraphRepository",
-          "when": "view == gitRefs.sourceControlRevisionGraphView",
-          "group": "navigation@2"
-        },
-        {
-          "command": "gitRefs.chooseSourceControlRevisionGraphRepository",
-          "when": "view == gitRefs.sourceControlRevisionGraphView",
-          "group": "navigation@3"
         },
         {
           "command": "gitRefs.hideCompareResults",

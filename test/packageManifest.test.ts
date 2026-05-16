@@ -77,34 +77,31 @@ test('package manifest contributes compare results as an on-demand webview with 
   );
 });
 
-test('package manifest contributes graph as a context-controlled webview', () => {
+test('package manifest does not contribute duplicate graph side-bar views', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
       readonly views: {
         readonly gitRefs: Array<{ readonly id: string; readonly type?: string; readonly when?: string }>;
+        readonly scm?: Array<{ readonly id: string }>;
       };
     };
   };
 
   const graphView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.revisionGraphView');
-  assert.equal(graphView?.type, 'webview');
-  assert.equal(graphView?.when, 'gitRefs.revisionGraphVisible');
+  const companionView = manifest.contributes.views.scm?.find(
+    (view) => view.id === 'gitRefs.sourceControlRevisionGraphView'
+  );
+  assert.equal(graphView, undefined);
+  assert.equal(companionView, undefined);
 });
 
-test('package manifest contributes a collapsed revision graph companion view to Source Control', () => {
+test('package manifest routes Source Control graph access to the editor panel', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
       readonly views: {
-        readonly scm?: Array<{
-          readonly id: string;
-          readonly name?: string;
-          readonly type?: string;
-          readonly visibility?: string;
-          readonly icon?: string;
-        }>;
+        readonly scm?: Array<{ readonly id: string }>;
       };
       readonly menus: {
-        readonly commandPalette?: MenuContribution[];
         readonly ['scm/title']?: MenuContribution[];
         readonly ['view/title']: MenuContribution[];
       };
@@ -116,21 +113,12 @@ test('package manifest contributes a collapsed revision graph companion view to 
     };
   };
 
-  const companionView = manifest.contributes.views.scm?.find(
-    (view) => view.id === 'gitRefs.sourceControlRevisionGraphView'
-  );
-
-  assert.equal(companionView?.name, 'Revision Graph');
-  assert.equal(companionView?.type, 'webview');
-  assert.equal(companionView?.visibility, 'collapsed');
-  assert.equal(companionView?.icon, 'media/icon-source.svg');
-
   const commandIds = new Set(manifest.contributes.commands.map((command) => command.command));
   assert.equal(commandIds.has('gitRefs.openRevisionGraphEditor'), true);
-  assert.equal(commandIds.has('gitRefs.openSourceControlRevisionGraph'), true);
-  assert.equal(commandIds.has('gitRefs.refreshSourceControlRevisionGraph'), true);
-  assert.equal(commandIds.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
-  assert.equal(commandIds.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
+  assert.equal(commandIds.has('gitRefs.openSourceControlRevisionGraph'), false);
+  assert.equal(commandIds.has('gitRefs.refreshSourceControlRevisionGraph'), false);
+  assert.equal(commandIds.has('gitRefs.fetchSourceControlRevisionGraphRepository'), false);
+  assert.equal(commandIds.has('gitRefs.chooseSourceControlRevisionGraphRepository'), false);
 
   const openEditorCommand = manifest.contributes.commands.find(
     (command) => command.command === 'gitRefs.openRevisionGraphEditor'
@@ -140,16 +128,6 @@ test('package manifest contributes a collapsed revision graph companion view to 
     light: 'media/icon-source-light.svg',
     dark: 'media/icon-source-dark.svg'
   });
-
-  const hiddenPaletteCommands = new Set(
-    (manifest.contributes.menus.commandPalette ?? [])
-      .filter((menu) => menu.when === 'false')
-      .map((menu) => menu.command)
-  );
-  assert.equal(hiddenPaletteCommands.has('gitRefs.openSourceControlRevisionGraph'), true);
-  assert.equal(hiddenPaletteCommands.has('gitRefs.refreshSourceControlRevisionGraph'), true);
-  assert.equal(hiddenPaletteCommands.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
-  assert.equal(hiddenPaletteCommands.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
 
   const scmTitleMenus = manifest.contributes.menus['scm/title'] ?? [];
   assert.ok(
@@ -165,25 +143,9 @@ test('package manifest contributes a collapsed revision graph companion view to 
   assert.ok(
     titleMenus.some(
       (menu) =>
-        menu.command === 'gitRefs.refreshSourceControlRevisionGraph'
-        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
+        menu.command === 'gitRefs.openRevisionGraphEditor'
+        && menu.when === 'view == scm'
         && menu.group === 'navigation'
-    )
-  );
-  assert.ok(
-    titleMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.fetchSourceControlRevisionGraphRepository'
-        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
-        && menu.group === 'navigation@2'
-    )
-  );
-  assert.ok(
-    titleMenus.some(
-      (menu) =>
-        menu.command === 'gitRefs.chooseSourceControlRevisionGraphRepository'
-        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
-        && menu.group === 'navigation@3'
     )
   );
 });
@@ -237,7 +199,6 @@ test('package manifest icon paths point to files that exist', () => {
       };
       readonly views: {
         readonly gitRefs: Array<{ readonly icon?: string }>;
-        readonly scm?: Array<{ readonly icon?: string }>;
       };
       readonly commands: Array<{ readonly icon?: CommandIconContribution }>;
     };
@@ -247,7 +208,6 @@ test('package manifest icon paths point to files that exist', () => {
     manifest.icon,
     ...manifest.contributes.viewsContainers.activitybar.map((item) => item.icon),
     ...manifest.contributes.views.gitRefs.flatMap((item) => (item.icon ? [item.icon] : [])),
-    ...(manifest.contributes.views.scm ?? []).flatMap((item) => (item.icon ? [item.icon] : [])),
     ...manifest.contributes.commands.flatMap((command) => collectFileIconPaths(command.icon))
   ];
 

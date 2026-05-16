@@ -12,12 +12,12 @@ Keep the extension architecture intact:
 - Reference workflows live in testable action modules and VS Code workbench service adapters.
 - `project-context/` tracks product, implementation, QA, and release decisions.
 
-For Source Control integration Phase 1, add a second workbench placement for the revision graph instead of replacing the current surface:
+After Source Control integration Phase 3, keep one graph product surface:
 
-- Existing primary view: `gitRefs.revisionGraphView` in the custom `gitRefs` Activity Bar container.
-- New companion view: a `webview` view contributed under the built-in `scm` Source Control container.
-- The companion view is additive and initially collapsed to avoid crowding Source Control.
-- Both placements use the same graph product capability, but each visible webview owns its own lifecycle, repository selection, render coordinator, and webview message subscriptions.
+- Primary entry point: `View Git Revision Graph` from the built-in Source Control toolbar or Command Palette.
+- Primary graph surface: an editor-area `WebviewPanel`.
+- Removed graph surfaces: the dedicated Activity Bar graph and the Source Control companion graph view.
+- On-demand secondary review views remain available for Compare Results and Show Log until they are deliberately redesigned.
 - Shared services remain shared where they are already cross-surface concepts: Git API access, graph backend/cache services, Compare Results presenter, Show Log presenter, text document content providers, and workbench action services.
 
 ## Components
@@ -29,30 +29,29 @@ For Source Control integration Phase 1, add a second workbench placement for the
 - Tests: TypeScript build, Node test suite, focused unit/integration-style coverage.
 - AAMAD artifacts: Define, Build, Deliver, handoff, and feature-scoped notes.
 
-## Source Control Companion Architecture
-Phase 1 should use a dual-placement architecture:
+## Source Control Editor Panel Architecture
+Phase 3 uses a single graph placement architecture:
 
 - `package.json`
-  - Keep `contributes.views.gitRefs` unchanged for the primary graph, Compare Results, and Show Log.
-  - Add `contributes.views.scm` with a new webview view ID for the Source Control companion graph, for example `gitRefs.sourceControlRevisionGraphView`.
-  - Set the Source Control companion `visibility` to `collapsed` unless validation proves VS Code ignores or degrades that setting for this container.
-  - Mirror only graph-specific title actions that make sense inside Source Control: refresh, fetch current repository, and choose graph repository.
+  - Do not contribute `gitRefs.revisionGraphView`.
+  - Do not contribute `gitRefs.sourceControlRevisionGraphView`.
+  - Keep the Source Control title action wired to `gitRefs.openRevisionGraphEditor`.
+  - Keep Compare Results and Show Log as on-demand secondary views.
 - `src/revisionGraphTypes.ts`
-  - Add a separate view ID constant for the Source Control companion graph.
-  - Keep the current primary graph view ID stable for existing commands, tests, screenshots, and user muscle memory.
+  - Keep the editor panel view type as the graph surface identifier.
+  - Keep legacy view IDs only where still needed by compatibility code or tests.
 - `src/revisionGraphPanel.ts` and `src/revisionGraph/controller.ts`
-  - Parameterize graph placement metadata instead of hardcoding `REVISION_GRAPH_VIEW_ID` in the controller.
-  - Keep one controller instance per graph placement. Do not attach two live `WebviewView` instances to the same controller.
-  - Preserve per-placement webview state, current repository selection, pending render cancellation, and message subscriptions.
+  - Keep a singleton editor `WebviewPanel` that reveals the existing panel when invoked again.
+  - Reuse the existing graph controller, webview shell, backend, and message contract.
 - `src/extension.ts`
-  - Register one `RevisionGraphViewProvider` for the primary view and a second provider for the Source Control companion view.
-  - Pass the same `git` API, backend, Compare Results provider, and Show Log provider to both graph providers where the underlying service is safe to share.
-  - Keep existing commands focused on the primary graph unless a dedicated Source Control focus command is intentionally added.
+  - Register Compare Results and Show Log view providers.
+  - Register `gitRefs.openRevisionGraphEditor` and keep `gitRefs.openRevisionGraph` as a compatibility alias to the editor panel.
+  - Do not register graph `WebviewViewProvider` instances for removed side-bar graph placements.
 - `src/viewLayout.ts`
-  - Keep Compare Results and Show Log visibility management scoped to the existing `gitRefs` container in Phase 1.
-  - Do not attempt to move secondary views into Source Control in this phase.
+  - Keep the removed side-bar graph hidden.
+  - Return focus to `gitRefs.openRevisionGraphEditor` after the last secondary view closes.
 
-The architectural intent is to share domain services, not webview ownership. A graph placement is a UI session with its own lifecycle; Git data loading and action execution remain shared extension capabilities.
+The architectural intent is to keep one graph workspace while preserving existing review workflows. Git data loading and action execution remain shared extension capabilities.
 
 ## Data Flow
 1. VS Code activates the extension and loads the built-in Git API.
@@ -62,18 +61,19 @@ The architectural intent is to share domain services, not webview ownership. A g
 5. User actions flow from webview or Command Palette to extension host handlers.
 6. Native VS Code UI and Git operations complete workflows, then refresh visible state.
 
-With two graph placements:
+With the editor graph panel:
 
-1. VS Code resolves each graph view independently when that view becomes visible.
-2. Each graph controller reconciles its own current repository against the shared `vscode.git` repository list.
-3. Repository events can trigger refresh preparation in each resolved graph placement.
+1. The Source Control toolbar command opens or reveals the singleton editor panel.
+2. The graph controller reconciles its current repository against the shared `vscode.git` repository list.
+3. Repository events can trigger refresh preparation in the resolved editor graph.
 4. Compare, diff, checkout, branch, sync, merge, delete, and log actions still flow through the existing shared workbench action services.
-5. Compare Results and Show Log remain single shared secondary surfaces in the dedicated `gitRefs` container.
+5. Compare Results and Show Log remain single shared secondary review surfaces.
 
 ## Interfaces
 - VS Code extension API.
-- VS Code `contributes.views` contribution point for both custom containers and the built-in `scm` container.
-- VS Code `WebviewViewProvider` registration, one registration per graph view ID.
+- VS Code `contributes.menus` contribution points for Source Control toolbar access.
+- VS Code `WebviewPanel` for the editor graph.
+- VS Code `WebviewViewProvider` for remaining secondary review views.
 - Built-in `vscode.git` extension API.
 - Targeted `git` CLI calls for log, diff, show, and graph/history data.
 - Webview post-message contracts between extension host and browser-side graph scripts.
@@ -111,6 +111,8 @@ With two graph placements:
 - Compare Results and Show Log remain shared on-demand secondary views in the existing `gitRefs` container for Phase 1; origin-aware focus restoration can be revisited after the companion view is stable.
 - Phase 2 adds an editor-area `WebviewPanel` graph surface as a third placement. The panel uses its own graph controller instance, reuses the existing graph webview shell and shared backend/action services, and is opened or revealed through a dedicated command instead of replacing the primary Activity Bar graph command.
 - The Source Control toolbar entry should launch the editor panel in Phase 2, while the Phase 1 companion view remains available as a collapsible Source Control view for users who want an embedded side-bar graph.
+- Phase 3 product surface decision removes the dedicated Activity Bar graph and Source Control companion graph contributions. Source Control toolbar access becomes the primary entry point, and the editor `WebviewPanel` becomes the single graph surface.
+- Compare Results and Show Log remain on-demand secondary review views in the existing `gitRefs` container until they are intentionally redesigned, but they should return focus to the editor graph command instead of the removed side-bar graph.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -119,25 +121,23 @@ With two graph placements:
 - Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
 - Optimistic reference patches can compromise visual integrity after deletion by leaving stale scene geometry, empty cards, or preserved viewport/selection context that no longer matches repository truth.
 - Pull-based sync metadata patches can preserve stale layout context when newly pulled commits change topology, even when a fallback exists for unresolved `HEAD` cases.
-- Sharing one graph controller across the existing Activity Bar graph and a new Source Control companion view can create lifecycle, refresh cancellation, and repository-selection bugs if not refactored deliberately.
-- A Source Control companion view can crowd the built-in Git UI if it is visible by default or mirrors the full graph without respecting side-bar constraints.
-- Independent graph controllers can duplicate refresh work when both graph placements are visible; implementation should avoid global cancellation side effects and rely on existing bounded graph command safeguards.
-- Shared Compare Results and Show Log presenters can surprise users if an action starts in Source Control but the secondary result appears in the custom `gitRefs` container; this is acceptable for Phase 1 only if documented and manually validated.
-- Hardcoded primary graph view IDs in controller, layout, tests, or menus can cause the companion view to focus the wrong surface or fail title actions.
+- Shared Compare Results and Show Log remain side-bar review surfaces while the graph itself lives in the editor area; this split needs manual UX validation.
+- Legacy side-bar graph command IDs can cause drift if future code assumes `gitRefs.revisionGraphView` still exists in the manifest.
 
 ## Verification Strategy
 - Required after meaningful changes: `npm run build`.
 - Required for behavior, command, graph, controller, or workflow changes: `npm test`.
 - Recommended before release: install generated VSIX in an Extension Development Host or clean VS Code profile and exercise graph loading, repository switching, compare, diff, checkout, branch, sync, merge, delete, and log flows as applicable.
 
-For Source Control companion Phase 1, add manual validation for:
+For Source Control product surface Phase 3, add manual validation for:
 
-- Source Control companion view contribution appears under `scm` and starts collapsed on a fresh workspace when VS Code honors the manifest setting.
-- Primary Activity Bar graph still opens through `gitRefs.openRevisionGraph`.
-- Both graph placements can be opened simultaneously without losing repository selection, pending refresh state, or webview event handling.
-- Refresh, fetch, repository selection, compare, diff, checkout, branch creation, sync, merge, delete, Show Log, and Compare Results still work when started from the companion view.
-- Zero-repository and multi-repository workspaces behave consistently across both placements.
-- Moving or hiding the Source Control companion view does not break the primary graph.
+- Source Control toolbar opens the editor graph panel.
+- Repeated toolbar clicks reveal the same editor panel.
+- No dedicated graph Activity Bar entry appears on a fresh workspace.
+- No Source Control companion graph view appears below Changes.
+- Refresh, fetch, repository selection, compare, diff, checkout, branch creation, sync, merge, delete, Show Log, and Compare Results still work from the editor graph.
+- Closing Compare Results or Show Log returns to the editor graph entry point.
+- Zero-repository and multi-repository workspaces behave consistently.
 
 ## Sources
 - `package.json`
@@ -161,5 +161,3 @@ For Source Control companion Phase 1, add manual validation for:
 - Which repository events should invalidate immutable DAG/history data versus only rebuilding overlays?
 - Can projection changes reuse a larger immutable graph snapshot without stale refs or incorrect branch-scope results?
 - Which cache paths need manual validation with rapid refresh, repository switching, interrupted graph loads, checkout, fetch, push-only sync, and pull-only sync?
-- Should the Source Control companion view share repository selection with the dedicated graph or maintain independent per-placement selection?
-- Should Compare Results and Show Log focus restoration return to the originating graph placement once multiple graph placements exist?

@@ -64,6 +64,13 @@ The extension is already published and feature-rich enough that new work can aff
 - Non-goals: removing existing graph placements, custom SCM Provider work, Compare Results/Show Log relocation, telemetry, or graph model redesign.
 - Success condition: users can launch a full-size graph from Source Control while the existing Activity Bar graph and companion view remain stable.
 
+## Source Control Product Surface Phase 3 Draft
+- Current package baseline on 2026-05-16: `0.0.30`.
+- Candidate direction: Phase 3 of Source Control integration, tracked in `project-context/2.build/features/source-control-product-surface.md`.
+- Product decision: do not keep the dedicated Activity Bar graph visible and do not keep the Source Control companion graph view.
+- Recommended scope: keep Source Control toolbar access as the primary entry point, open/reveal the editor graph panel, remove duplicate graph side-bar contributions, and preserve on-demand Compare Results and Show Log review views.
+- Success condition: users have one clear graph entry point from Source Control and one full-size graph surface in the editor area.
+
 ## 0.0.30 Reference Deletion Refresh Candidate Scope
 - Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
 - Preserve existing confirmation, conflict/error reporting, force-delete fallback, multi-repository behavior, and native VS Code Git API usage.

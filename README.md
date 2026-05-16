@@ -1,6 +1,6 @@
 # Git Revision Graph
 
-Git Revision Graph is a Visual Studio Code extension for browsing a Git revision graph and running compare, checkout, branch, merge, sync, delete, and diff workflows from a dedicated view.
+Git Revision Graph is a Visual Studio Code extension for browsing a Git revision graph from Source Control and running compare, checkout, branch, merge, sync, delete, and diff workflows in an editor panel.
 
 It is built on top of the public API exposed by the built-in `vscode.git` extension and keeps the experience close to the native VS Code diff and Source Control workflows.
 
@@ -11,19 +11,16 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 
 ## Goals
 
-- Visualize the Git revision graph and its references in a dedicated Activity Bar view
+- Visualize the Git revision graph and its references from VS Code Source Control
 - Group local branches, tags, and remote branches in a way that is easy to scan
 - Provide direct actions for compare, checkout, branch, merge, sync, and review workflows
 - Reuse VS Code's native Git and diff experience instead of re-implementing Git internals
 
 ## Current Features
 
-- Dedicated `Git Revision Graph` Activity Bar container
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
-- Collapsed `Revision Graph` companion view inside VS Code Source Control for graph access beside native Git changes
-- Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
-- Fetch the active repository directly from the graph toolbar and Command Palette, with optional `Prune` and `Tags` flags per run
+- Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
@@ -60,10 +57,9 @@ Included in the MVP:
 
 - Reference discovery through the built-in Git extension API
 - Webview-based graph navigation
-- Companion graph access from the built-in Source Control container
 - Source Control toolbar button for opening `Git Revision Graph` in the editor area
 - Toolbar and context menu actions inside the Revision Graph
-- Command Palette access to refresh, compare, compare-with-worktree, checkout, merge, open graph, and repository selection actions
+- Command Palette access to compare, compare-with-worktree, checkout, merge, and open graph actions
 - Command Palette access to `View Git Revision Graph` for opening or revealing the editor graph panel
 - File-level diff opening through the native VS Code diff editor
 - Unified diff and revision log viewing for selected references
@@ -86,7 +82,7 @@ At a high level:
 1. The extension gets the Git API through `vscode.git`.
 2. It reads repositories from the current workspace.
 3. It loads references with `getRefs(...)`.
-4. It renders the active repository through a `WebviewViewProvider` or editor `WebviewPanel`.
+4. It renders the active repository through an editor `WebviewPanel`.
 5. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
 6. It executes workflows such as compare, checkout, branch creation, merge, sync, and deletion by using the Git API where available.
 
@@ -202,7 +198,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container, or run `View Git Revision Graph` to open the graph in the editor area.
+5. Click `View Git Revision Graph` in the Source Control toolbar, or run `View Git Revision Graph` from the Command Palette.
 
 ## Dev Container
 
@@ -225,14 +221,11 @@ To use it:
 
 The current extension contributes these Command Palette commands:
 
-- `gitRefs.refresh`
-- `gitRefs.fetchCurrentRepository`
 - `gitRefs.compareRefs`
 - `gitRefs.compareWithWorktree`
 - `gitRefs.checkout`
 - `gitRefs.merge`
-- `gitRefs.openRevisionGraph`
-- `gitRefs.chooseRevisionGraphRepository`
+- `gitRefs.openRevisionGraphEditor`
 
 Additional actions are available directly inside the Revision Graph context menu:
 
@@ -247,7 +240,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
-The Activity Bar container also includes two on-demand secondary views:
+The extension also includes two on-demand secondary review views:
 
 - `Compare Results`, which appears when a compare produces results and keeps the latest compare session available for multi-file review
 - `Show Log`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline

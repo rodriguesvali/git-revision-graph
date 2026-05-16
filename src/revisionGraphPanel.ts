@@ -104,6 +104,14 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
 
     await this.controller.resolveWebviewPanel(panel);
   }
+
+  async refresh(request?: RevisionGraphRefreshRequestLike): Promise<void> {
+    await this.controller.refresh(request);
+  }
+
+  prepareRefresh(request?: RevisionGraphRefreshRequestLike) {
+    return this.controller.prepareRefresh(request);
+  }
 }
 
 export { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID };

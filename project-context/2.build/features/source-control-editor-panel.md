@@ -3,6 +3,8 @@
 ## Status
 Build implementation complete on 2026-05-16 for Phase 2 of Source Control integration.
 
+Phase 3 product surface cleanup is tracked separately in `project-context/2.build/features/source-control-product-surface.md`.
+
 ## Goal
 Open `Git Revision Graph` in the VS Code editor area from Source Control, similar to extensions that provide a full-size internal workbench tab, while preserving the existing Activity Bar graph and Phase 1 Source Control companion view.
 

@@ -1,7 +1,4 @@
-import {
-  REVISION_GRAPH_VIEW_ID,
-  REVISION_GRAPH_VISIBLE_CONTEXT
-} from './revisionGraphTypes';
+import { REVISION_GRAPH_VISIBLE_CONTEXT } from './revisionGraphTypes';
 
 export interface ViewCommandExecutor {
   executeCommand<T = unknown>(command: string, ...args: unknown[]): PromiseLike<T>;
@@ -69,7 +66,7 @@ export async function hideSecondaryView(
   }
 
   if (visibleSecondaryViewIds.size === 0) {
-    await commands.executeCommand(`${REVISION_GRAPH_VIEW_ID}.focus`);
+    await commands.executeCommand('gitRefs.openRevisionGraphEditor');
   }
 }
 
@@ -114,6 +111,6 @@ async function updateRevisionGraphVisibility(commands: ViewCommandExecutor): Pro
   await commands.executeCommand(
     'setContext',
     REVISION_GRAPH_VISIBLE_CONTEXT,
-    visibleSecondaryViewIds.size === 0
+    false
   );
 }
