@@ -194,3 +194,33 @@ User-visible release note candidate:
 - `npm run build` passes.
 - `npm test` passes.
 - Manual Extension Development Host smoke validation is recorded in `project-context/3.deliver/release.md` before packaging.
+
+## Integration Handoff
+Status: Integration Engineer implementation complete for Tasks 1-3, with the README update from Task 4 included because the new Source Control placement is user-visible.
+
+Implemented:
+
+- Added `gitRefs.sourceControlRevisionGraphView` as a collapsed `Revision Graph` webview under `contributes.views.scm`.
+- Added `View Git Revision Graph` as a visible Command Palette command to focus the internal Source Control companion view directly.
+- Added `View Git Revision Graph` to the Source Control title toolbar through `menus.scm/title`.
+- Added the same command to the native Source Control view title through `menus.view/title` with `view == scm`, because that is the visible Source Control view header in the workbench.
+- Added light and dark command icon variants based on the Activity Bar icon shape so the Source Control toolbar button remains visible in both themes.
+- Added Source Control companion title commands for refresh, fetch, and repository selection so title actions target the companion provider instead of the primary graph provider.
+- Kept those companion-specific title commands hidden from the Command Palette to avoid duplicating the global graph commands.
+- Added `SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID`.
+- Parameterized `RevisionGraphController` and `RevisionGraphViewProvider` with a placement view ID.
+- Registered a second `RevisionGraphViewProvider` instance for the Source Control companion graph.
+- Kept `gitRefs.openRevisionGraph` focused on the primary `gitRefs.revisionGraphView` surface.
+- Updated package manifest tests to lock the companion view, title actions, and icon path.
+- Updated README to mention the Source Control companion placement.
+
+Verification completed:
+
+- `npm run build` passed.
+- `npm test` passed with 270 tests.
+
+Remaining handoffs:
+
+- Frontend Engineer: inspect the graph in the narrower Source Control side bar and adjust only if concrete layout problems appear.
+- QA Engineer: run Extension Development Host validation for the new `scm` view placement, both graph placements open together, no-repository, and multi-repository behavior.
+- Deliver/DevOps: record manual validation results and release readiness before any packaging.

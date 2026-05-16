@@ -15,9 +15,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     git: API,
     compareResultsPresenter: CompareResultsPresenter,
     showLogPresenter: ShowLogPresenter,
-    backend: RevisionGraphBackend = createRevisionGraphBackend()
+    backend: RevisionGraphBackend = createRevisionGraphBackend(),
+    viewId: string = REVISION_GRAPH_VIEW_ID
   ) {
-    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter);
+    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter, viewId);
   }
 
   dispose(): void {

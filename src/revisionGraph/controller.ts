@@ -234,6 +234,7 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly backend: RevisionGraphBackend,
     compareResultsPresenter: CompareResultsPresenter,
     private readonly showLogPresenter: ShowLogPresenter,
+    private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY
   ) {
     this.actionServices = createWorkbenchRefActionServices(
@@ -309,7 +310,7 @@ export class RevisionGraphController implements vscode.Disposable {
 
   async open(): Promise<void> {
     const hadResolvedView = !!this.view;
-    await vscode.commands.executeCommand(`${REVISION_GRAPH_VIEW_ID}.focus`);
+    await vscode.commands.executeCommand(`${this.viewId}.focus`);
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));
     if (shouldPromptForGraphRepositoryOnOpen(this.git.repositories, this.currentRepository, hadResolvedView)) {
       this.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));

@@ -13,7 +13,7 @@ import {
   serializeProjectedGraphLayoutCache
 } from './revisionGraph/layout/layeredLayout';
 import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
-import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
+import { SHOW_LOG_VIEW_ID, SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
 import { REVISION_GRAPH_VIEW_ID, RevisionGraphViewProvider } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
@@ -54,12 +54,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider);
   await showLogProvider.initialize();
   const revisionGraphProvider = new RevisionGraphViewProvider(git, compareResultsProvider, showLogProvider, backend);
+  const sourceControlRevisionGraphProvider = new RevisionGraphViewProvider(
+    git,
+    compareResultsProvider,
+    showLogProvider,
+    backend,
+    SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID
+  );
   const services = createCommandServices(revisionGraphProvider, compareResultsProvider);
 
   context.subscriptions.push(
     compareResultsProvider,
     showLogProvider,
     revisionGraphProvider,
+    sourceControlRevisionGraphProvider,
     onProjectedGraphLayoutCacheDidChange(saveProjectedGraphLayoutCache),
     {
       dispose() {
@@ -74,6 +82,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
     vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
     vscode.window.registerWebviewViewProvider(REVISION_GRAPH_VIEW_ID, revisionGraphProvider),
+    vscode.window.registerWebviewViewProvider(
+      SOURCE_CONTROL_REVISION_GRAPH_VIEW_ID,
+      sourceControlRevisionGraphProvider
+    ),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
     vscode.commands.registerCommand('gitRefs.refresh', async () => {
@@ -99,6 +111,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.chooseRevisionGraphRepository', async () => {
       await revisionGraphProvider.chooseRepository();
+    }),
+    vscode.commands.registerCommand('gitRefs.openSourceControlRevisionGraph', async () => {
+      await sourceControlRevisionGraphProvider.open();
+    }),
+    vscode.commands.registerCommand('gitRefs.refreshSourceControlRevisionGraph', async () => {
+      await sourceControlRevisionGraphProvider.refresh();
+    }),
+    vscode.commands.registerCommand('gitRefs.fetchSourceControlRevisionGraphRepository', async () => {
+      await sourceControlRevisionGraphProvider.fetchCurrentRepository();
+    }),
+    vscode.commands.registerCommand('gitRefs.chooseSourceControlRevisionGraphRepository', async () => {
+      await sourceControlRevisionGraphProvider.chooseRepository();
     }),
     vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
       await compareResultsProvider.hide();

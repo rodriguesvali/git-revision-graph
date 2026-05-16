@@ -19,6 +19,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 ## Current Features
 
 - Dedicated `Git Revision Graph` Activity Bar container
+- Collapsed `Revision Graph` companion view inside VS Code Source Control for graph access beside native Git changes
 - Branch-aware graph view title that shows the current `HEAD` branch directly in the container header
 - Toolbar controls for scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar and Command Palette, with optional `Prune` and `Tags` flags per run
@@ -58,8 +59,11 @@ Included in the MVP:
 
 - Reference discovery through the built-in Git extension API
 - Webview-based graph navigation
+- Companion graph access from the built-in Source Control container
+- Source Control toolbar button for opening the Source Control `Revision Graph` companion view
 - Toolbar and context menu actions inside the Revision Graph
 - Command Palette access to refresh, compare, compare-with-worktree, checkout, merge, open graph, and repository selection actions
+- Command Palette access to `View Git Revision Graph` for focusing the Source Control companion view
 - File-level diff opening through the native VS Code diff editor
 - Unified diff and revision log viewing for selected references
 - Local branch creation and reference deletion flows from the Revision Graph
@@ -197,7 +201,7 @@ Open the project in VS Code and run the extension:
 2. Press `F5`.
 3. A new Extension Development Host window will open.
 4. Open a folder that contains a Git repository in that host window.
-5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container.
+5. Use the `Graph` view inside the `Git Revision Graph` Activity Bar container, or run `View Git Revision Graph` to focus the collapsed `Revision Graph` companion view inside Source Control.
 
 ## Dev Container
 

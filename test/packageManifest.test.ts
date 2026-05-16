@@ -9,10 +9,31 @@ type MenuContribution = {
   readonly group?: string;
 };
 
+type CommandIconContribution = string | {
+  readonly light: string;
+  readonly dark: string;
+};
+
+const collectFileIconPaths = (icon?: CommandIconContribution): string[] => {
+  if (!icon) {
+    return [];
+  }
+
+  if (typeof icon === 'string') {
+    return icon.startsWith('$(') ? [] : [icon];
+  }
+
+  return [icon.light, icon.dark];
+};
+
 test('package manifest keeps the hide compare results command contribution', () => {
   const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
     readonly contributes: {
-      readonly commands: Array<{ readonly command: string }>;
+      readonly commands: Array<{
+        readonly command: string;
+        readonly title?: string;
+        readonly icon?: CommandIconContribution;
+      }>;
     };
   };
 
@@ -41,6 +62,14 @@ test('package manifest contributes compare results as an on-demand webview with 
   assert.ok(
     titleMenus.some(
       (menu) =>
+        menu.command === 'gitRefs.openSourceControlRevisionGraph'
+        && menu.when === 'view == scm'
+        && menu.group === 'navigation'
+    )
+  );
+  assert.ok(
+    titleMenus.some(
+      (menu) =>
         menu.command === 'gitRefs.hideCompareResults'
         && menu.when === 'view == gitRefs.compareResultsView'
         && menu.group === 'navigation'
@@ -60,6 +89,101 @@ test('package manifest contributes graph as a context-controlled webview', () =>
   const graphView = manifest.contributes.views.gitRefs.find((view) => view.id === 'gitRefs.revisionGraphView');
   assert.equal(graphView?.type, 'webview');
   assert.equal(graphView?.when, 'gitRefs.revisionGraphVisible');
+});
+
+test('package manifest contributes a collapsed revision graph companion view to Source Control', () => {
+  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
+    readonly contributes: {
+      readonly views: {
+        readonly scm?: Array<{
+          readonly id: string;
+          readonly name?: string;
+          readonly type?: string;
+          readonly visibility?: string;
+          readonly icon?: string;
+        }>;
+      };
+      readonly menus: {
+        readonly commandPalette?: MenuContribution[];
+        readonly ['scm/title']?: MenuContribution[];
+        readonly ['view/title']: MenuContribution[];
+      };
+      readonly commands: Array<{
+        readonly command: string;
+        readonly title?: string;
+        readonly icon?: CommandIconContribution;
+      }>;
+    };
+  };
+
+  const companionView = manifest.contributes.views.scm?.find(
+    (view) => view.id === 'gitRefs.sourceControlRevisionGraphView'
+  );
+
+  assert.equal(companionView?.name, 'Revision Graph');
+  assert.equal(companionView?.type, 'webview');
+  assert.equal(companionView?.visibility, 'collapsed');
+  assert.equal(companionView?.icon, 'media/icon-source.svg');
+
+  const commandIds = new Set(manifest.contributes.commands.map((command) => command.command));
+  assert.equal(commandIds.has('gitRefs.openSourceControlRevisionGraph'), true);
+  assert.equal(commandIds.has('gitRefs.refreshSourceControlRevisionGraph'), true);
+  assert.equal(commandIds.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
+  assert.equal(commandIds.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
+
+  const openCompanionCommand = manifest.contributes.commands.find(
+    (command) => command.command === 'gitRefs.openSourceControlRevisionGraph'
+  );
+  assert.equal(openCompanionCommand?.title, 'View Git Revision Graph');
+  assert.deepEqual(openCompanionCommand?.icon, {
+    light: 'media/icon-source-light.svg',
+    dark: 'media/icon-source-dark.svg'
+  });
+
+  const hiddenPaletteCommands = new Set(
+    (manifest.contributes.menus.commandPalette ?? [])
+      .filter((menu) => menu.when === 'false')
+      .map((menu) => menu.command)
+  );
+  assert.equal(hiddenPaletteCommands.has('gitRefs.refreshSourceControlRevisionGraph'), true);
+  assert.equal(hiddenPaletteCommands.has('gitRefs.fetchSourceControlRevisionGraphRepository'), true);
+  assert.equal(hiddenPaletteCommands.has('gitRefs.chooseSourceControlRevisionGraphRepository'), true);
+
+  const scmTitleMenus = manifest.contributes.menus['scm/title'] ?? [];
+  assert.ok(
+    scmTitleMenus.some(
+      (menu) =>
+        menu.command === 'gitRefs.openSourceControlRevisionGraph'
+        && menu.when === 'scmProvider == git'
+        && menu.group === 'navigation'
+    )
+  );
+
+  const titleMenus = manifest.contributes.menus['view/title'];
+  assert.ok(
+    titleMenus.some(
+      (menu) =>
+        menu.command === 'gitRefs.refreshSourceControlRevisionGraph'
+        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
+        && menu.group === 'navigation'
+    )
+  );
+  assert.ok(
+    titleMenus.some(
+      (menu) =>
+        menu.command === 'gitRefs.fetchSourceControlRevisionGraphRepository'
+        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
+        && menu.group === 'navigation@2'
+    )
+  );
+  assert.ok(
+    titleMenus.some(
+      (menu) =>
+        menu.command === 'gitRefs.chooseSourceControlRevisionGraphRepository'
+        && menu.when === 'view == gitRefs.sourceControlRevisionGraphView'
+        && menu.group === 'navigation@3'
+    )
+  );
 });
 
 test('package manifest activates on startup so graph visibility context is initialized', () => {
@@ -111,14 +235,18 @@ test('package manifest icon paths point to files that exist', () => {
       };
       readonly views: {
         readonly gitRefs: Array<{ readonly icon?: string }>;
+        readonly scm?: Array<{ readonly icon?: string }>;
       };
+      readonly commands: Array<{ readonly icon?: CommandIconContribution }>;
     };
   };
 
   const referencedIcons = [
     manifest.icon,
     ...manifest.contributes.viewsContainers.activitybar.map((item) => item.icon),
-    ...manifest.contributes.views.gitRefs.flatMap((item) => (item.icon ? [item.icon] : []))
+    ...manifest.contributes.views.gitRefs.flatMap((item) => (item.icon ? [item.icon] : [])),
+    ...(manifest.contributes.views.scm ?? []).flatMap((item) => (item.icon ? [item.icon] : [])),
+    ...manifest.contributes.commands.flatMap((command) => collectFileIconPaths(command.icon))
   ];
 
   for (const iconPath of referencedIcons) {
