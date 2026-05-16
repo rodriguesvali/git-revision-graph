@@ -30,12 +30,16 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\.ref-badge\[data-ref-kind="branch"\]/);
   assert.match(html, /\.ref-badge\[data-ref-kind="remote"\]/);
   assert.match(html, /\.ref-badge\[data-ref-kind="tag"\]/);
+  assert.match(html, /\.subject-meta \{\s*display: flex;[\s\S]*?overflow: hidden;[\s\S]*?flex-wrap: nowrap;/);
+  assert.match(html, /\.refs \{\s*display: flex;[\s\S]*?flex: 1 1 auto;[\s\S]*?overflow: hidden;[\s\S]*?flex-wrap: nowrap;/);
+  assert.match(html, /\.ref-badge \{[\s\S]*?flex: 0 1 auto;[\s\S]*?min-width: 0;/);
   assert.match(html, /font-size: 8\.5px;/);
   assert.match(html, /function renderRefBadge\(ref\)/);
   assert.match(html, /data-ref-kind="' \+ escapeHtml\(ref\.kind\)/);
   assert.match(html, /escapeHtml\(ref\.label\)/);
   assert.match(html, /function renderTopology\(topology\)/);
   assert.match(html, /function renderContinuationTopology\(topology\)/);
+  assert.match(html, /\.commit-row:not\(\[data-expanded="true"\]\) \.graph-main \{\s*flex: 1 1 auto;\s*\}/);
   assert.match(html, /const LANE_COLORS = \[/);
   assert.match(html, /const GRAPH_LANE_SPACING = 10;/);
   assert.match(html, /const GRAPH_LEFT_INSET = 8;/);
@@ -43,6 +47,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /const width = getGraphContentWidth\(topology\.laneCount, laneSpacing\);/);
   assert.match(html, /function getGraphContentWidth\(laneCount, laneSpacing\)/);
   assert.match(html, /<svg class="graph-svg" width="/);
+  assert.match(html, /style="width: ' \+ width \+ 'px;"/);
+  assert.match(html, /preserveAspectRatio="none"/);
   assert.match(html, /function applyGraphColumnWidth\(width\)/);
   assert.match(html, /selectedCommitHashes = normalizeSelectedCommitHashes/);
   assert.match(html, /data-compare-base="/);

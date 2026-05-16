@@ -322,6 +322,9 @@ export function renderShowLogWebviewHtml(): string {
       min-height: 30px;
       overflow: hidden;
     }
+    .commit-row:not([data-expanded="true"]) .graph-main {
+      flex: 1 1 auto;
+    }
     .graph-continuation {
       display: flex;
       flex: 1 1 auto;
@@ -426,7 +429,8 @@ export function renderShowLogWebviewHtml(): string {
       align-items: center;
       gap: 5px;
       min-width: 0;
-      flex-wrap: wrap;
+      overflow: hidden;
+      flex-wrap: nowrap;
       color: var(--vscode-descriptionForeground);
       font-size: 9.5px;
       line-height: 1.15;
@@ -434,15 +438,19 @@ export function renderShowLogWebviewHtml(): string {
     }
     .refs {
       display: flex;
+      flex: 1 1 auto;
       gap: 4px;
-      flex-wrap: wrap;
       min-width: 0;
+      overflow: hidden;
+      flex-wrap: nowrap;
     }
     .ref-badge {
       position: relative;
       --show-log-ref-color: var(--vscode-badge-background);
       display: inline-flex;
+      flex: 0 1 auto;
       align-items: center;
+      min-width: 0;
       max-width: 144px;
       padding: 1px 5px 4px;
       border-radius: 999px;
@@ -484,6 +492,7 @@ export function renderShowLogWebviewHtml(): string {
       --show-log-ref-color: var(--show-log-ref-stash);
     }
     .stats {
+      flex: 0 0 auto;
       white-space: nowrap;
       opacity: 0.88;
     }
@@ -859,7 +868,7 @@ export function renderShowLogWebviewHtml(): string {
       lineParts.push('<circle class="graph-node-ring" cx="' + nodeX + '" cy="' + centerY + '" r="3.65" stroke="' + nodeColor + '" />');
       lineParts.push('<circle class="graph-node-core" cx="' + nodeX + '" cy="' + centerY + '" r="1.45" fill="' + nodeColor + '" />');
 
-      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -2 ' + width + ' ' + height + '" aria-hidden="true">' + lineParts.join('') + '</svg>';
+      return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
     }
 
     function renderContinuationTopology(topology) {
@@ -876,7 +885,7 @@ export function renderShowLogWebviewHtml(): string {
         lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
       }
 
-      return '<svg class="graph-svg" width="' + width + '" viewBox="0 -2 ' + width + ' ' + height + '" aria-hidden="true">' + lineParts.join('') + '</svg>';
+      return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
     }
 
     function renderContinuationRows(commit) {
