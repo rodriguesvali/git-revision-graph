@@ -66,6 +66,26 @@ Record command output summaries, not full logs, when verification is performed.
   - Added webview shell coverage for the 10-level main graph zoom list.
   - `npm run build` passed.
   - `npm test` passed with 239 tests.
+- 2026-05-16 `0.0.31` Source Control companion implementation:
+  - Added temporary Source Control companion graph coverage and manifest alignment checks.
+  - `npm run build` passed.
+  - `npm test` passed with 270 tests.
+- 2026-05-16 `0.0.31` Source Control editor panel:
+  - Added editor graph command, singleton panel behavior, and Source Control toolbar wiring coverage.
+  - `npm run build` passed.
+  - `npm test` passed with 270 tests.
+  - `git diff --check` passed.
+- 2026-05-16 `0.0.31` Source Control product surface:
+  - Removed duplicate graph side-bar contribution coverage and locked secondary review view labels.
+  - Added Compare Results/Show Log double-click coverage and minimap preference coverage.
+  - `npm run build` passed.
+  - `npm test` passed with 273 tests.
+  - `git diff --check` passed.
+- 2026-05-17 `0.0.31` release documentation review:
+  - Updated README, CHANGELOG, Define/Build/Deliver artifacts, deployment/operations notes, and release prioritization docs.
+  - `npm run build` passed.
+  - `npm test` passed with 273 tests.
+  - `git diff --check` passed.
 
 ## Issues
 Record failures, skipped checks, and residual risks.
@@ -81,6 +101,9 @@ Record failures, skipped checks, and residual risks.
 - Manual validation is still pending that the `View` menu no longer exposes `Show Branchings & Merges` and that toggling remaining options does not blank the graph.
 - Manual validation is still pending for aborting a conflicted merge from the graph toolbar in an Extension Development Host.
 - Manual validation is still pending for the added main graph zoom-out levels in an Extension Development Host.
+- Manual validation is still pending for the `0.0.31` Source Control toolbar editor graph path, including repeated open/reveal, graph panel close/reopen, no-repository behavior, and multi-repository selection.
+- Manual validation is still pending that no primary graph Activity Bar view and no Source Control companion graph view appear in the final `0.0.31` surface.
+- Manual validation is still pending for Compare Results and Show Log lifecycle, double-click file diff routing, focus restoration, and persisted `Show Minimap` behavior.
 - Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
 
 ## Verification

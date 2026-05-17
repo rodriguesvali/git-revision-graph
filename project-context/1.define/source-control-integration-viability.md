@@ -1,21 +1,27 @@
 # Source Control Integration Viability
 
-## Context
-The current product is `Git Revision Graph` version `0.0.30` from `package.json`. It focuses on visualizing Git references and revision topology in a dedicated VS Code Activity Bar container, with compare, checkout, branch, merge, sync, delete, diff, and log workflows around that graph.
+## Status
+Decision implemented for the `0.0.31` release candidate.
 
-The evaluated direction is inspired by Git Graph: make the graph feel more like part of VS Code Source Control and support opening the graph in the editor area as an internal tab.
+The incremental evaluation is complete. Phase 1 proved a Source Control companion view was technically viable, Phase 2 added the editor graph panel, and Phase 3 selected the final product surface for release: launch from Source Control and render the graph in a singleton editor panel. The temporary companion graph and old dedicated graph Activity Bar contribution are not part of the final `0.0.31` release surface.
+
+## Context
+The current package baseline is `Git Revision Graph` version `0.0.30` from `package.json`; the target release is `0.0.31`.
+
+The evaluated direction was inspired by Git Graph: make the graph feel more like part of VS Code Source Control and support opening the graph in the editor area as an internal tab.
 
 ## Product Question
 Can `Git Revision Graph` evolve from a dedicated reference graph surface into a Source Control-adjacent experience without losing its focused product identity?
 
-## Recommendation
-Proceed incrementally. The direction is viable if framed as better VS Code workbench placement and discoverability, not as a full replacement for VS Code's built-in Git UI.
+## Implemented Recommendation
+Proceeding incrementally was viable, but the release decision is narrower than keeping every explored surface.
 
-Recommended product direction:
+Implemented product direction for `0.0.31`:
 
-1. Add an optional `Graph` view under the built-in Source Control container (`scm`) while keeping the existing Activity Bar container.
-2. Add an `Open Git Revision Graph in Editor` command backed by a `WebviewPanel`, reusing the current graph controller/backend where practical.
-3. After telemetry-free manual validation and user feedback, decide whether the dedicated Activity Bar container should remain the primary surface or become secondary.
+1. Use Source Control toolbar access as the primary graph entry point.
+2. Open or reveal `Git Revision Graph` in a full-size editor `WebviewPanel`.
+3. Keep Compare Results and Show Log as on-demand secondary review views.
+4. Remove the dedicated graph Activity Bar contribution and the Source Control companion graph contribution from the shipped surface.
 
 Avoid implementing a custom SCM Provider for now. The product already depends on the built-in `vscode.git` extension and should continue to let VS Code own changes, staging, commits, conflict resolution, and repository state. A custom SCM Provider would increase user confusion and technical risk while duplicating native Git behavior.
 
@@ -29,7 +35,7 @@ The current architecture is already close to this direction:
 - Compare and diff flows already use native VS Code editors.
 - Multi-repository selection and empty states are already first-class concerns.
 
-The main gap is placement. The current graph lives in a custom `gitRefs` Activity Bar container rather than inside the built-in Source Control container or editor area.
+The main gap was placement. The release implementation resolves it by moving graph launch to Source Control and graph work into the editor area.
 
 ## Viability By Option
 
@@ -115,45 +121,46 @@ Recommendation:
 
 - Do not pursue unless there is a separate approved product strategy to become a full Git client.
 
-## Suggested Roadmap
+## Roadmap Outcome
 
 ### Phase 1: Source Control Companion View
-Scope:
+Outcome:
 
-- Add an optional compact graph view inside the built-in Source Control container.
-- Keep the dedicated Activity Bar graph as the stable primary surface.
-- Use the Source Control view as discovery and quick navigation.
+- Implemented as a technical/product spike.
+- Superseded by Phase 3 and not shipped as the final `0.0.31` graph surface.
+- Kept as historical evidence that the extension can contribute to Source Control when a future compact view is explicitly desired.
 
-Validation:
+Validation performed:
 
 - `npm run build`
 - `npm test`
-- Extension Development Host smoke test with one repository, multiple repositories, and no repository.
-- Manual layout check in left side bar, right side bar, and moved view containers.
 
 ### Phase 2: Editor Graph Panel
-Scope:
+Outcome:
 
-- Add an editor-area `WebviewPanel` command for the full graph.
-- Reuse graph rendering and actions, but isolate webview lifecycle from the side-bar view.
-- Make the Source Control view or Activity Bar view able to launch the editor graph.
+- Implemented as the preferred graph workspace.
+- Source Control toolbar access opens or reveals a singleton editor graph panel.
+- Existing graph rendering and actions are reused through the generalized controller host.
 
-Validation:
+Validation performed:
 
-- Verify singleton reveal behavior.
-- Verify side-bar and editor surfaces can be opened, closed, and refreshed independently.
-- Verify compare and diff flows still open native VS Code diff editors.
+- `npm run build`
+- `npm test`
+- `git diff --check`
 
 ### Phase 3: Product Surface Decision
-Scope:
+Outcome:
 
-- Decide based on usage feedback whether the dedicated Activity Bar container remains primary, becomes optional, or is reduced to a launcher.
-- Update Marketplace messaging and screenshots around the chosen positioning.
+- Implemented for the `0.0.31` release candidate.
+- Removed duplicate graph side-bar placements.
+- Kept on-demand Compare Results and Show Log review containers with explicit labels.
+- Updated release documentation and README for the final surface.
 
-Validation:
+Validation required before packaging:
 
 - Manual Marketplace readiness review.
-- README and changelog update.
+- Extension Development Host smoke validation of Source Control launch, editor panel lifecycle, secondary review views, zero-repository state, and multi-repository selection.
+- README and changelog review.
 - Packaging only after explicit maintainer approval.
 
 ## Marketplace Positioning
@@ -164,11 +171,9 @@ Recommended positioning:
 This preserves the product's distinction from Git Graph: the extension remains graph/reference-first, not a broad Git client clone.
 
 ## Open Questions
-- Should the Source Control placement be enabled by default, or gated by a setting/context while it matures?
-- Should the editor graph mirror the same selected repository as the side-bar graph, or maintain independent repository selection?
-- Should `Open Git Revision Graph` change behavior to open the editor panel, while a separate command focuses the side-bar view?
-- Should the dedicated Activity Bar container remain visible after Source Control integration ships?
-- What screenshot and README changes would best explain the two-surface model without making the product look heavier than it is?
+- Should Marketplace screenshots be refreshed before `0.0.31` publication?
+- Should release copy explicitly call out that the old graph Activity Bar entry moved to Source Control/editor usage?
+- Should Compare Results and Show Log become editor-panel surfaces in a later release, or remain Activity Bar review containers?
 
 ## Sources
 - `package.json`

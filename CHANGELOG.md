@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.31
+
+### Highlights
+
+- Repositioned Git Revision Graph around VS Code Source Control: `View Git Revision Graph` now opens or reveals the full-size revision graph in an editor panel.
+- Removed the primary graph Activity Bar view and the temporary Source Control companion graph view so there is one clear graph workspace.
+- Kept Compare Results and Show Logs as on-demand secondary review views with explicit Activity Bar labels: `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
+- Added light and dark Source Control toolbar icons for the graph entry point.
+
+### Workflow & UX
+
+- Closing the editor graph panel now closes Compare Results and Show Log review views instead of leaving stale dependent surfaces open.
+- Closing the last secondary review view now returns the workbench to Source Control rather than falling back to Explorer.
+- Compare Results file rows now support double-clicking to open the primary file diff.
+- Show Log changed-file rows now support double-clicking to open file diffs from the compact history view.
+- Compare Results file actions now use `Compare` as the primary action and show `Compare with Worktree` only when it adds a distinct workflow.
+- The graph `View` menu now includes a persisted `Show Minimap` option for hiding or restoring the minimap without resetting graph layout.
+
+### Quality
+
+- Graph layout state now checks the saved scene layout key before reuse, reducing stale layout restoration after graph structure changes.
+- Manifest coverage now locks the Source Control toolbar entry, editor graph command, secondary review view labels, and removed side-bar graph contributions.
+- Webview coverage now locks Compare Results double-click behavior, Show Log double-click behavior, and minimap preference persistence.
+- `npm run build` and `npm test` verification for the final `0.0.31` documentation pass is recorded in `project-context/3.deliver/release.md`.
+- Version bump to `0.0.31`, VSIX packaging, and Marketplace publication remain with the maintainer.
+
 ## 0.0.30
 
 ### Highlights

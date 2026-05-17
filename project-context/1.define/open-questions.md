@@ -1,8 +1,8 @@
 # Open Questions
 
-- Which `0.0.28` cache architecture changes are mandatory: immutable DAG/history snapshots, mutable ref/HEAD overlays, projection superset reuse, or cache metrics?
-- Which repository events invalidate immutable graph topology versus only overlay metadata?
-- Should immutable graph snapshots be keyed by exact graph load parameters, or should the backend load a reusable superset for multiple projection modes?
-- What freshness guarantees should cache tests cover for rapid refreshes, repository switching, interrupted graph loads, checkout, fetch, push-only sync, and pull-only sync?
-- What manual Extension Development Host validation matrix should be required before Marketplace publishing?
-- Should `0.0.28` remain a patch release if the work improves performance architecture without adding a new visible workflow?
+- What exact manual Extension Development Host smoke matrix is mandatory before packaging `0.0.31`?
+- Should Marketplace screenshots be refreshed before `0.0.31` publication to show the Source Control toolbar entry and editor graph panel?
+- Should release copy explicitly call out removal of the old graph Activity Bar entry for existing users?
+- Should future work move Compare Results and Show Logs into editor panels, or keep them as on-demand Activity Bar review views?
+- Which graph parity gap should be prioritized after the Source Control/editor graph surface ships?
+- Which future cache architecture changes remain mandatory: immutable DAG/history snapshots, mutable ref/HEAD overlays, projection superset reuse, or cache metrics?

@@ -39,51 +39,33 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
-## Next Release Define Draft
-- Current package baseline on 2026-05-09: `0.0.29`.
-- Current release readiness state: `0.0.29` release candidate is packaged; Marketplace publishing remains with the maintainer and future packaging or publishing still requires explicit human approval.
-- Candidate next release: `0.0.30`.
-- Approved direction from user: prioritize visual correctness after reference deletion by removing the recent local-branch deletion optimization that bypasses a graph reload.
-- Recommended anchor: restore full graph rebuilds after successful local branch deletion and after `Sync with...` pulls, so the rendered scene, node sizing, layout keys, refs, selection, and viewport state are rebuilt from repository truth when Git topology may have changed.
-- Candidate feature artifact: `project-context/2.build/features/0.0.30-reference-deletion-refresh.md`.
-- Additional candidate feature artifact: `project-context/2.build/features/0.0.30-sync-pull-refresh.md`.
+## 0.0.31 Release Define
+- Current package baseline on 2026-05-17: `0.0.30`.
+- Source baseline for this release review: `c2bd300edcadf0207e6f6cf472c939a33ed164b5`.
+- Target release: `0.0.31`.
+- Current release readiness state: documentation is prepared for `0.0.31`; manual Extension Development Host validation, version bump, VSIX packaging, and Marketplace publishing remain pending maintainer approval.
+- Product goal: make Source Control the primary launch point for the graph and use a full-size editor panel as the single graph workspace.
+- Recommended scope: ship the Source Control toolbar entry, singleton editor graph panel, removed side-bar graph contributions, on-demand Compare Results and Show Log review containers, review-view lifecycle cleanup, double-click diff polish, and persisted `Show Minimap` option.
+- Non-goals: custom SCM Provider behavior, restoring the old graph Activity Bar view, shipping the temporary Source Control companion graph view, redesigning Compare Results or Show Log as editor panels, dependency changes, publishing, or version bumping without approval.
+- Success condition: users can open the graph from Source Control, work in one editor graph surface, and use Compare Results or Show Logs only when those review workflows are active.
 
-## Source Control Companion View Define Draft
-- Current package baseline on 2026-05-16: `0.0.30`.
-- Candidate direction: Phase 1 of Source Control integration, tracked in `project-context/1.define/source-control-companion-view.md`.
-- Product goal: make the revision graph available from the built-in Source Control container while preserving the current dedicated `Git Revision Graph` Activity Bar surface.
-- Recommended scope: add a companion `Revision Graph` webview view under `contributes.views.scm`, keep the existing graph view intact, and reuse existing graph workflows.
-- Non-goals: custom SCM Provider, editor-tab graph, removal of the dedicated Activity Bar container, Compare Results/Show Log relocation, telemetry, or graph model redesign.
-- Success condition: users can inspect and act on revision topology from Source Control without losing the focused graph-first product identity.
+## Source Control Integration Decision Record
+- Phase 1 proved the companion view approach but it is superseded for the release because a narrow side-bar graph creates duplicate product surface and weaker graph ergonomics.
+- Phase 2 added the editor `WebviewPanel` and Source Control toolbar command.
+- Phase 3 is the release decision for `0.0.31`: remove the dedicated graph Activity Bar contribution and the Source Control companion graph contribution; keep only on-demand Activity Bar review containers labeled `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
+- Planning references:
+  - `project-context/1.define/source-control-integration-viability.md`
+  - `project-context/1.define/source-control-companion-view.md`
+  - `project-context/2.build/features/source-control-companion-view.md`
+  - `project-context/2.build/features/source-control-editor-panel.md`
+  - `project-context/2.build/features/source-control-product-surface.md`
+  - `docs/release-0.0.31-prioritization.md`
 
-## Source Control Editor Panel Phase 2 Draft
-- Current package baseline on 2026-05-16: `0.0.30`.
-- Candidate direction: Phase 2 of Source Control integration, tracked in `project-context/2.build/features/source-control-editor-panel.md`.
-- Product goal: let Source Control users open the revision graph in the editor area as a full-size internal workbench tab.
-- Recommended scope: add a `WebviewPanel` graph surface, add a command to open/reveal it, and route the Source Control toolbar button to that command.
-- Non-goals: removing existing graph placements, custom SCM Provider work, Compare Results/Show Log relocation, telemetry, or graph model redesign.
-- Success condition: users can launch a full-size graph from Source Control while the existing Activity Bar graph and companion view remain stable.
-
-## Source Control Product Surface Phase 3 Draft
-- Current package baseline on 2026-05-16: `0.0.30`.
-- Candidate direction: Phase 3 of Source Control integration, tracked in `project-context/2.build/features/source-control-product-surface.md`.
-- Product decision: do not keep the dedicated Activity Bar graph visible and do not keep the Source Control companion graph view. Keep left Activity Bar review containers only for Compare and Show Logs, labeled as `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
-- Recommended scope: keep Source Control toolbar access as the primary entry point, open/reveal the editor graph panel, remove duplicate graph side-bar contributions, preserve on-demand Compare Results and Show Log review views while the graph panel is open, and close those dependent views when the graph panel closes.
-- Success condition: users have one clear graph entry point from Source Control and one full-size graph surface in the editor area.
-
-## 0.0.30 Reference Deletion Refresh Candidate Scope
-- Replace the local branch deletion direct reference patch with the standard full graph rebuild path used by tag and remote branch deletion.
-- Preserve existing confirmation, conflict/error reporting, force-delete fallback, multi-repository behavior, and native VS Code Git API usage.
-- Keep lightweight workspace-state overlay patches for merge/reset status changes; this scope targets reference deletion visual integrity, not all overlay refresh behavior.
-- Build decision: remove the now-unused `referencePatch` host/controller/state contract because no active workflow needs direct reference patches after restoring full rebuilds for local branch deletion.
-- Update focused tests so normal and force local branch deletion expect a full rebuild refresh request.
-- Manually validate deleting a local branch that shares a card with a remote tracking ref, deleting a local branch that is the only visible ref on a card, and deleting a hidden/off-snapshot branch.
-
-## 0.0.30 Sync Pull Refresh Candidate Scope
-- Keep push-only `Sync with...` on `metadata-patch` because it updates remote/upstream metadata without changing local commit topology.
-- Restore `full-rebuild` after pull-only `Sync with...` because pulled commits can move `HEAD` to topology that is not safely represented by a metadata-only patch.
-- Keep diverged sync on `full-rebuild`.
-- Preserve existing sync guards and user-facing messages.
+## Recent 0.0.30 Completed Scope
+- Restored full graph rebuilds after local branch deletion and pull-based sync to prioritize visual correctness when Git topology changes.
+- Added Show Log text filtering, reference badges, commit comparison, and commit-to-worktree comparison through Compare Results.
+- Coordinated graph, Show Log, and Compare Results view focus for the previous Activity Bar graph surface.
+- `0.0.30` remains the current package baseline until the maintainer approves a `0.0.31` version bump.
 
 ## 0.0.28 Graph Cache Architecture Candidate Scope
 - Define a cacheable immutable graph snapshot that represents commit DAG/history data loaded from `git log`.
@@ -120,6 +102,7 @@ The extension is already published and feature-rich enough that new work can aff
 - Contributors will use AAMAD artifacts as living working notes, not as formal documents detached from implementation.
 
 ## Open Questions
-- What exact event taxonomy should distinguish immutable graph invalidation from overlay-only updates in `0.0.28`?
-- Should the immutable graph snapshot be keyed by the exact current graph load parameters, or should `0.0.28` introduce a reusable superset snapshot for multiple projection modes?
-- What manual validation matrix should be required before each Marketplace publish?
+- What manual Extension Development Host smoke matrix is mandatory before `0.0.31` packaging?
+- Should Marketplace screenshots be refreshed for the Source Control toolbar and editor graph panel before publication?
+- Should future releases redesign Compare Results and Show Log as editor surfaces, or keep them as on-demand Activity Bar review views?
+- Which graph parity gap should be prioritized after the Source Control surface change ships?

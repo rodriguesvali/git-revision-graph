@@ -1,7 +1,11 @@
 # Source Control Companion View Define
 
 ## Status
-Phase 1 complete and superseded by the Phase 3 product surface decision. Phase 2 editor-panel work is tracked in `project-context/2.build/features/source-control-editor-panel.md`; Phase 3 surface cleanup is tracked in `project-context/2.build/features/source-control-product-surface.md`.
+Historical Phase 1 artifact.
+
+Phase 1 is complete and superseded by the Phase 3 product surface decision for `0.0.31`. The temporary Source Control companion graph view is not part of the release surface. The shipped direction is tracked in `project-context/2.build/features/source-control-editor-panel.md`, `project-context/2.build/features/source-control-product-surface.md`, and `docs/release-0.0.31-prioritization.md`.
+
+The scope and acceptance criteria below document the original companion-view experiment and should not be read as the final `0.0.31` ship plan.
 
 ## Product Goal
 Make `Git Revision Graph` feel naturally available from VS Code Source Control while preserving the current dedicated graph experience as the stable primary surface.
@@ -101,12 +105,10 @@ Start with a technical spike before broad implementation:
 4. Add focused tests around provider registration intent, visibility/context decisions, and lifecycle helpers where practical.
 
 ## Open Questions
-- Should the Source Control companion view be visible by default or collapsed by default?
-- Should the companion view share the exact selected repository with the dedicated graph, or keep independent selection per placement?
-- Should there be a dedicated command to focus the Source Control companion graph?
-- Should the Source Control companion view expose the same title actions as the dedicated graph on day one?
-- How should Compare Results and Show Log focus restoration behave if the action originated from the Source Control companion view?
-- Should the Marketplace screenshots show both placements in the same release, or keep the release note text-only until Phase 2?
+- Resolved for `0.0.31`: the Source Control companion view is not shipped.
+- Resolved for `0.0.31`: Source Control launches the editor graph panel instead of focusing a side-bar companion graph.
+- Resolved for `0.0.31`: Compare Results and Show Log focus restoration is anchored to Source Control/editor graph lifecycle, not companion-view origin.
+- Remaining product question: should a compact Source Control companion view be reconsidered in a future release after the editor graph surface has shipped and received feedback?
 
 ## Sources
 - `package.json`

@@ -28,6 +28,12 @@ Record shared backend changes here. Feature-specific implementation notes belong
 - 2026-05-02 `0.0.28` current scope refinement:
   - Current-scope graph loading now uses `--all` by default so descendant refs can be projected as core `Current Branch` behavior.
   - Projection now includes visible descendant ref tips from `HEAD` in addition to the current branch ancestry when the option is enabled.
+- 2026-05-16 `0.0.31` Source Control/editor graph surface:
+  - Added editor graph panel opening/reveal lifecycle through `gitRefs.openRevisionGraphEditor`.
+  - Kept `gitRefs.openRevisionGraph` as a compatibility alias for the editor graph path.
+  - Removed graph `WebviewViewProvider` registrations for the old side-bar graph placements.
+  - Wired editor graph disposal to close dependent Compare Results and Show Log review views.
+  - Updated focus restoration so closing the last secondary review view returns to Source Control.
 
 ## Verification
 - Run `npm run build`.
@@ -37,7 +43,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
 Latest automated verification for this backend slice:
 
 - `npm run build` passed.
-- `npm test` passed with 237 tests.
+- `npm test` passed with 273 tests during the `0.0.31` product surface implementation.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

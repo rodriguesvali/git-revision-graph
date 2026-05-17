@@ -1,5 +1,102 @@
 # Release Readiness
 
+## 0.0.31 Release Readiness
+
+Current package baseline: `0.0.30`.
+
+Target release: `0.0.31`.
+
+Source baseline for this release review: `c2bd300edcadf0207e6f6cf472c939a33ed164b5`.
+
+Current implementation head reviewed: `f9fdb7539a9756fa606eccd6f61744d6cecb0b7a`.
+
+Status: Release documentation is prepared for `0.0.31`. The implemented change set since the baseline is focused on Source Control workbench integration, the editor graph panel, secondary review view lifecycle, Compare Results/Show Log interaction polish, and the persisted minimap toggle. Version bump, VSIX packaging, and Marketplace publication have not been executed and remain with the maintainer.
+
+Candidate change set:
+
+- Make Source Control the primary workbench entry point through `View Git Revision Graph` in the Source Control toolbar.
+- Open or reveal the revision graph as a singleton editor `WebviewPanel`.
+- Keep `gitRefs.openRevisionGraph` as a compatibility alias for the editor graph path.
+- Remove the dedicated primary graph Activity Bar contribution and the temporary Source Control companion graph view contribution.
+- Keep Compare Results and Show Log as on-demand secondary review views while the editor graph panel is open.
+- Rename Activity Bar review containers to `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
+- Close Compare Results and Show Log when the editor graph panel closes.
+- Return focus to Source Control after the last secondary review view is closed.
+- Add light and dark Source Control toolbar icon variants.
+- Improve Compare Results file interactions with primary diff double-click behavior and clearer context-menu action labels.
+- Improve Show Log changed-file interactions with double-click file diff opening.
+- Add a persisted `Show Minimap` graph view option.
+- Guard graph layout-state reuse with a scene layout key check.
+
+Planning and build references:
+
+- `project-context/1.define/source-control-integration-viability.md`
+- `project-context/1.define/source-control-companion-view.md`
+- `project-context/1.define/prd.md`
+- `project-context/1.define/sad.md`
+- `project-context/2.build/features/source-control-companion-view.md`
+- `project-context/2.build/features/source-control-editor-panel.md`
+- `project-context/2.build/features/source-control-product-surface.md`
+
+Automated verification completed:
+
+- `npm run build` passed for Source Control companion implementation.
+- `npm test` passed with 270 tests for Source Control companion implementation.
+- `npm run build` passed for Source Control editor panel implementation.
+- `npm test` passed with 270 tests for Source Control editor panel implementation.
+- `git diff --check` passed for Source Control editor panel implementation.
+- `npm run build` passed for Source Control product surface cleanup.
+- `npm test` passed with 273 tests for Source Control product surface cleanup.
+- `git diff --check` passed for Source Control product surface cleanup.
+- `npm run build` passed on 2026-05-17 after the final `0.0.31` documentation review edits.
+- `npm test` passed with 273 tests on 2026-05-17 after the final `0.0.31` documentation review edits. This includes `npm run build` through the test script.
+- `git diff --check` passed on 2026-05-17 after the final `0.0.31` documentation review edits.
+
+Release blockers:
+
+- Manual Extension Development Host validation is still pending for the final Source Control/editor graph product surface.
+- Version bump to `0.0.31` in `package.json` and `package-lock.json` is pending explicit maintainer approval.
+- VSIX packaging and Marketplace publication are pending explicit maintainer approval.
+
+Manual validation pending:
+
+- Open a Git workspace in the Extension Development Host and click `View Git Revision Graph` in the Source Control toolbar.
+- Re-run the command and confirm it reveals the existing editor graph panel instead of creating duplicates.
+- Confirm the editor graph supports refresh, fetch, repository selection, scope changes, search, compare, worktree compare, unified diff, Show Log, checkout, branch creation, tag creation, sync, merge, delete, reset, and conflict recovery workflows.
+- Confirm no primary `Git Revision Graph` graph Activity Bar entry appears on a fresh workspace.
+- Confirm no Source Control companion `Revision Graph` view appears below native Source Control changes.
+- Confirm Compare Results opens only after compare results exist and uses the `Git Revision Graph - Compare` Activity Bar label.
+- Confirm Show Log opens from the graph context menu and uses the `Git Revision Graph - Show Logs` Activity Bar label.
+- Confirm double-clicking Compare Results file rows opens the primary file diff.
+- Confirm double-clicking Show Log changed-file rows opens the expected file diff.
+- Confirm Compare Results file context menus show `Compare`, show `Compare with Worktree` only for ref-to-ref results, and omit redundant worktree comparison for worktree result sets.
+- Confirm closing Compare Results or Show Log returns the workbench to Source Control without reopening the graph unexpectedly.
+- Confirm closing the editor graph panel hides Compare Results and Show Log.
+- Toggle `Show Minimap` off and on, then refresh or change graph state and confirm the preference persists without resetting layout unexpectedly.
+- Validate zero-repository and multi-repository workspaces.
+
+Release gates pending:
+
+- Complete manual Extension Development Host smoke validation.
+- Apply the `0.0.31` version bump only after maintainer approval.
+- Run fresh `npm run build` and `npm test` after any version bump.
+- Run `npm run package:vsix` only after maintainer approval.
+- Marketplace publishing remains with the maintainer.
+
+Post-release monitoring focus:
+
+- Source Control toolbar discoverability and singleton editor panel reveal behavior.
+- Reports that the old side-bar graph disappeared unexpectedly for users upgrading from the Activity Bar graph surface.
+- Secondary review view lifecycle after graph panel close.
+- Focus restoration after closing Compare Results and Show Log.
+- Compare Results and Show Log double-click diff routing.
+- Minimap toggle persistence and layout-state reuse.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the affected `0.0.31` surface change or temporarily restores the previous graph entry point.
+- Keep the previous `0.0.30` VSIX available for manual rollback guidance if Marketplace publication has already occurred.
+
 ## 0.0.30 Release Readiness
 
 Current package baseline: `0.0.29`.

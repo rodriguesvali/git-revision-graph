@@ -18,6 +18,12 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Packaging and Marketplace publishing were performed by the maintainer outside this Codex turn.
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
 
+## Current Release Preparation
+- Target release: `0.0.31`.
+- Current package baseline remains `0.0.30` until the maintainer approves a version bump.
+- Documentation is updated for the Source Control/editor graph product surface.
+- VSIX packaging and Marketplace publishing remain pending explicit maintainer approval.
+
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.
 

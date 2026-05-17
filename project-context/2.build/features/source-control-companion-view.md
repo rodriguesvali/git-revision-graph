@@ -1,6 +1,8 @@
 # Source Control Companion View Build Plan
 
-Phase 1 implementation is complete and superseded by the Phase 3 product surface decision to remove the companion graph view from the final UI.
+Phase 1 implementation is complete and superseded by the Phase 3 product surface decision to remove the companion graph view from the final `0.0.31` UI.
+
+This artifact is retained as the implementation/handoff record for the experiment. The companion view release-note candidate below is historical and should not be used for the final `0.0.31` Marketplace notes.
 
 ## Goal
 Implement Phase 1 of Source Control integration by adding a `Revision Graph` companion webview under VS Code's built-in Source Control container while preserving the existing `Git Revision Graph` Activity Bar view as the primary stable surface.
@@ -185,9 +187,13 @@ Recommended persona order:
 - No version bump or publishing without explicit maintainer approval.
 
 ## Release-Note Impact
-User-visible release note candidate:
+Historical user-visible release note candidate from Phase 1:
 
 > Adds a collapsed `Revision Graph` companion view to VS Code Source Control, while keeping the dedicated `Git Revision Graph` Activity Bar view as the primary graph workspace.
+
+Final `0.0.31` release impact:
+
+> Source Control now opens Git Revision Graph in a full editor panel, and the temporary companion graph side-bar placement is not shipped.
 
 ## Definition Of Done
 - Source Control companion graph is implemented and registered.
@@ -223,6 +229,5 @@ Verification completed:
 
 Remaining handoffs:
 
-- Frontend Engineer: inspect the graph in the narrower Source Control side bar and adjust only if concrete layout problems appear.
-- QA Engineer: run Extension Development Host validation for the new `scm` view placement, both graph placements open together, no-repository, and multi-repository behavior.
-- Deliver/DevOps: record manual validation results and release readiness before any packaging.
+- No companion-view handoff remains for the `0.0.31` release because Phase 3 removed the shipped companion graph surface.
+- QA and Deliver validation now focus on the Source Control toolbar entry, editor graph panel, removed side-bar graph contributions, and secondary review view lifecycle in `project-context/2.build/features/source-control-product-surface.md`.

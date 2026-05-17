@@ -122,6 +122,7 @@ With the editor graph panel:
 - Phase 3 product surface decision removes the dedicated Activity Bar graph and Source Control companion graph contributions. Source Control toolbar access becomes the primary entry point, and the editor `WebviewPanel` becomes the single graph surface.
 - Review containers can remain in the Activity Bar, but their titles must identify the active review use case: `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
 - Compare Results and Show Log remain on-demand secondary review views until they are intentionally redesigned, but they should return focus to the editor graph command after user-initiated secondary close and should close with the editor graph panel after graph-panel close.
+- The `0.0.31` release candidate should document the final Source Control/editor graph product surface and should not present the superseded companion graph as a shipped feature.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -154,9 +155,12 @@ For Source Control product surface Phase 3, add manual validation for:
 - `README.md`
 - `project-context/1.define/source-control-companion-view.md`
 - `project-context/1.define/source-control-integration-viability.md`
+- `project-context/2.build/features/source-control-editor-panel.md`
+- `project-context/2.build/features/source-control-product-surface.md`
+- `docs/release-0.0.31-prioritization.md`
 - `.codex/skills/vscode-extension-developer/references/project-map.md`
 - `docs/revision-graph-parity-plan.md`
-- VS Code Extension API documentation for `contributes.views` and `WebviewViewProvider`.
+- VS Code Extension API documentation for `contributes.views`, `contributes.menus`, `WebviewViewProvider`, and editor `WebviewPanel` usage.
 
 ## Assumptions
 - Current package baseline is read from `package.json`; release readiness state is tracked in `project-context/3.deliver/release.md`.

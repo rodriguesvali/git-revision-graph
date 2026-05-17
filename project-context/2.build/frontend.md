@@ -17,6 +17,10 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
 - 2026-05-02 `0.0.28` merge recovery: the graph toolbar now exposes `Abort Merge` only while merge conflicts are present.
 - 2026-05-02 `0.0.28` graph navigation: the main graph zoom list now has 10 levels by adding five zoom-out levels below the previous `0.6` minimum.
+- 2026-05-16 `0.0.31` review polish: Compare Results file rows and Show Log changed-file rows support double-click diff opening.
+- 2026-05-16 `0.0.31` review polish: Compare Results file context menus use `Compare` as the primary action and show `Compare with Worktree` only when the result set is ref-to-ref.
+- 2026-05-16 `0.0.31` graph navigation: the `View` menu includes a persisted `Show Minimap` checkbox so users can hide or restore the minimap without resetting graph layout.
+- 2026-05-16 `0.0.31` product surface: the graph now renders in an editor panel launched from Source Control, while Compare Results and Show Logs remain as on-demand review views.
 
 ## Verification
 - Run `npm run build`.
@@ -26,7 +30,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 Latest automated verification:
 
 - `npm run build` passed.
-- `npm test` passed with 239 tests.
+- `npm test` passed with 273 tests during the `0.0.31` product surface implementation.
 
 ## Decisions
 - Keep UI aligned with VS Code workbench conventions and theme variables.
@@ -42,3 +46,4 @@ Manual validation is specifically pending for a local branch after merging multi
 Manual validation is specifically pending for descendant references in the `Current Branch` scope.
 Manual validation is specifically pending for aborting a conflicted merge from the graph toolbar.
 Manual validation is specifically pending for the added main graph zoom-out levels in a large graph.
+Manual validation is specifically pending for the Source Control toolbar editor graph, secondary review view lifecycle, double-click diff routing, and persisted `Show Minimap` behavior in an Extension Development Host.

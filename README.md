@@ -24,8 +24,8 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Curved graph connectors with graph centering inside the board for denser repositories
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
-- On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box plus a file context menu to compare with base, compare with worktree, and restore worktree files to the selected ref
-- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files for the expanded commit
+- On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
+- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
@@ -43,7 +43,7 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
 - Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
 - Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
-- Minimap overview with visible viewport bounds and click/drag navigation for larger graphs
+- Minimap overview with visible viewport bounds, click/drag navigation for larger graphs, and a persisted `Show Minimap` view option
 - Client-side search across the loaded graph by branch, tag, hash, subject, and author
 - Actionable empty state for choosing a repository when a multi-repository workspace needs an explicit graph target
 - Automatic refresh when repository state changes
@@ -102,7 +102,10 @@ This approach keeps the extension lightweight for reference workflows. The revis
 ├── .devcontainer/
 │   └── devcontainer.json
 ├── media/
-│   └── git-refs.svg
+│   ├── icon.png
+│   ├── icon-source.svg
+│   ├── icon-source-dark.svg
+│   └── icon-source-light.svg
 ├── src/
 │   ├── extension.ts
 │   └── git.ts
@@ -132,7 +135,7 @@ This approach keeps the extension lightweight for reference workflows. The revis
 
 - `src/revisionGraphData.ts`, `src/revisionGraphPanel.ts`, `src/revisionGraphRepository.ts`, `src/revisionGraphWebview.ts`
   - commit graph parsing and lane layout
-  - revision graph controller, repository helpers, and webview rendering
+  - editor graph panel lifecycle, repository helpers, and webview rendering
   - commit selection and compare/checkout actions from the graph
 
 - `test/*.test.ts`
@@ -140,7 +143,7 @@ This approach keeps the extension lightweight for reference workflows. The revis
 
 - `package.json`
   - extension metadata
-  - contributed view container and revision graph webview
+  - Source Control toolbar contribution and on-demand review view containers
   - commands and context menus
 
 - `docs/revision-graph-parity-plan.md`

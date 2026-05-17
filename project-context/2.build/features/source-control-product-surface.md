@@ -3,6 +3,10 @@
 ## Status
 Build implementation complete on 2026-05-16 for Phase 3 of Source Control integration.
 
+Target release: `0.0.31`.
+
+Source baseline for release review: `c2bd300edcadf0207e6f6cf472c939a33ed164b5`.
+
 ## Product Decisions
 
 - Do not keep the dedicated Activity Bar graph visible.
@@ -67,3 +71,15 @@ Out of scope:
 
 - QA Engineer: manually validate that the Activity Bar review buttons use the `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs` tooltips, the Source Control companion graph no longer appears below Changes, and the Source Control toolbar still opens the editor graph.
 - Deliver/DevOps: update release readiness after manual validation, before packaging or publishing.
+
+## Release-Note Impact
+
+User-visible release note candidate:
+
+> Git Revision Graph now opens from Source Control into a full editor panel, while Compare Results and Show Logs remain as on-demand review views with clearer lifecycle behavior.
+
+Documentation impact:
+
+- `README.md` should describe Source Control launch and editor graph usage.
+- `CHANGELOG.md` should list Source Control/editor graph positioning, removed duplicate graph side-bar surfaces, review-view lifecycle, double-click diff polish, and the minimap toggle.
+- `project-context/3.deliver/release.md` should record manual validation and packaging gates before publication.
