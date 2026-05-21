@@ -6,9 +6,9 @@ Current package baseline: `0.0.31`.
 
 Target release: `0.0.32`.
 
-Status: Define phase opened. No implementation, version bump, VSIX packaging, or Marketplace publishing has been performed for `0.0.32`.
+Status: Delivery phase opened for the first `0.0.32` candidate slice. The editor panel `Reload` toolbar action is implemented. Version bump to `0.0.32` has been applied after maintainer approval. VSIX packaging and Marketplace publication have not been performed and remain pending explicit maintainer approval.
 
-Initial release direction:
+Release direction:
 
 - Consolidate the Source Control toolbar and singleton editor graph product surface introduced in `0.0.31`.
 - Restore any graph toolbar actions that became unavailable after the move from `WebviewView` title actions to the editor `WebviewPanel`, starting with `Reload`.
@@ -16,29 +16,51 @@ Initial release direction:
 - Patch any discovered editor graph panel, secondary review view, focus restoration, zero-repository, or multi-repository issues.
 - Select one bounded graph-parity groundwork slice before implementation.
 
-Planning reference:
+Planning and build references:
 
 - `docs/release-0.0.32-prioritization.md`
+- `project-context/2.build/features/0.0.32-editor-panel-reload-button.md`
 
 Candidate change set:
 
 - Restore `Reload` in the editor graph toolbar using the existing full-rebuild refresh path.
+- Keep `Reload` disabled while blocking toolbar actions are running.
+- Update README feature copy and CHANGELOG notes for the restored editor panel action.
 
 Automated verification completed:
 
 - `npm run build` passed for the editor panel `Reload` toolbar action.
 - `npm test` passed with 274 tests for the editor panel `Reload` toolbar action.
 - `git diff --check` passed for the editor panel `Reload` toolbar action.
+- Version bump to `0.0.32` has been applied in `package.json` and `package-lock.json`.
+- `npm run build` passed after the `0.0.32` version bump.
+- `npm test` passed with 274 tests after the `0.0.32` version bump. This includes `npm run build` through the test script.
+- `git diff --check` passed after the `0.0.32` version bump.
+
+Release blockers:
+
+- Manual Extension Development Host validation is still pending for the restored `Reload` toolbar action.
+- Final `0.0.32` scope is still open if additional candidate slices are approved.
+- VSIX packaging and Marketplace publication are pending explicit maintainer approval.
+
+Manual validation pending:
+
+- Open a Git workspace in the Extension Development Host and click `View Git Revision Graph` in the Source Control toolbar.
+- Confirm the editor graph panel shows `Reload` in the graph toolbar.
+- Click `Reload` and confirm the graph reloads with loading feedback.
+- Confirm `Reload` is disabled while another blocking toolbar action is running.
+- Confirm the existing Source Control launch, singleton reveal, repository selection, Compare Results, and Show Log workflows still behave normally.
+
+Post-release monitoring focus:
+
+- Reports that users still cannot find a manual graph reload path in the editor panel.
+- Reports that `Reload` does not reflect current repository state after the graph moved to the editor panel.
+- Toolbar crowding or layout issues in narrower editor widths.
 
 Release gates pending:
 
 - Confirm final `0.0.32` scope and non-goals.
-- Create or update feature-specific Build artifacts for the selected implementation slice.
-- Run `npm run build` after meaningful changes.
-- Run `npm test` for behavior, graph, controller, webview, or workflow changes.
-- Run `git diff --check` before packaging.
 - Complete manual Extension Development Host smoke validation.
-- Apply the `0.0.32` version bump only after maintainer approval.
 - Run `npm run package:vsix` only after maintainer approval.
 - Marketplace publishing remains with the maintainer.
 

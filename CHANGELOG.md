@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.32
+
+### Workflow & UX
+
+- Restored `Reload` inside the editor graph toolbar so users can manually refresh the revision graph after the move to the Source Control-launched editor panel.
+
+### Quality
+
+- Webview coverage now locks the restored `Reload` button markup, message wiring, and busy-state handling.
+- `npm run build`, `npm test`, and `git diff --check` verification for the editor panel `Reload` action is recorded in `project-context/3.deliver/release.md`.
+- Version bump to `0.0.32` has been applied in `package.json` and `package-lock.json`.
+- VSIX packaging and Marketplace publication remain with the maintainer.
+
 ## 0.0.31
 
 ### Highlights
