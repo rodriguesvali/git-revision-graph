@@ -96,6 +96,16 @@ export function renderRevisionGraphShellHtml(): string {
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <button
+        id="reloadButton"
+        class="toolbar-button"
+        type="button"
+        title="Reload revision graph"
+        aria-label="Reload revision graph"
+      >
+        <span class="button-icon">&#8635;</span>
+        <span>Reload</span>
+      </button>
+      <button
         class="workspace-led clean"
         id="workspaceLed"
         type="button"

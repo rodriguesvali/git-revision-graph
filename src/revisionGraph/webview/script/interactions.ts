@@ -662,6 +662,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (viewOptionsButton) {
         viewOptionsButton.disabled = toolbarBusy;
       }
+      if (reloadButton) {
+        reloadButton.disabled = toolbarBusy;
+      }
       if (abortMergeButton) {
         abortMergeButton.disabled = toolbarBusy || !currentState?.hasConflictedMerge;
       }
@@ -707,6 +710,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchPrevButton,
         searchNextButton,
         searchClearButton,
+        reloadButton,
         reorganizeButton,
         zoomOutButton,
         zoomInButton,

@@ -30,6 +30,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const minimapZoomInButton = document.getElementById('minimapZoomInButton');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
+    const reloadButton = document.getElementById('reloadButton');
     const workspaceLed = document.getElementById('workspaceLed');
     const abortMergeButton = document.getElementById('abortMergeButton');
     const scopeSelect = document.getElementById('scopeSelect');
@@ -105,6 +106,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     });
     vscode.postMessage({ type: 'webview-ready' });
 
+    if (reloadButton) {
+      reloadButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'refresh' }, 'Reloading revision graph...', reloadButton);
+      });
+    }
     if (workspaceLed) {
       workspaceLed.addEventListener('click', () => {
         if (isWorkspaceDirty) {

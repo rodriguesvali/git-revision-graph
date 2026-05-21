@@ -39,6 +39,15 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
+## 0.0.32 Release Define
+- Current package baseline on 2026-05-21: `0.0.31`.
+- Target release: `0.0.32`.
+- Product goal: consolidate the new Source Control/editor graph product surface and choose one bounded graph-parity groundwork slice for implementation or deeper design.
+- Recommended scope: treat the `0.0.31` Source Control/editor graph workflows as the regression baseline; patch discovered lifecycle, focus, or review-view issues; update user-facing docs/copy if needed; and select one low-risk foundation slice such as graph fixtures, `CommitGraph` / `ProjectedGraph` boundaries, refresh intent instrumentation, or a proven metadata-only refresh path.
+- Non-goals: broad graph renderer replacement, moving Compare Results or Show Log into editor panels without a separate decision, making revision selection the primary interaction model in one release, broad cache architecture replacement, dependency changes, publishing, or version bumping without approval.
+- Success condition: users can trust the Source Control launch and editor graph workflow, and maintainers have measured groundwork for the next graph-parity step without destabilizing the published extension.
+- Planning reference: `docs/release-0.0.32-prioritization.md`.
+
 ## 0.0.31 Release Define
 - Current package baseline on 2026-05-17: `0.0.30`.
 - Source baseline for this release review: `c2bd300edcadf0207e6f6cf472c939a33ed164b5`.
@@ -102,6 +111,9 @@ The extension is already published and feature-rich enough that new work can aff
 - Contributors will use AAMAD artifacts as living working notes, not as formal documents detached from implementation.
 
 ## Open Questions
+- Should `0.0.32` be primarily a stabilization release, or include one small visible graph-parity improvement?
+- Which graph-parity foundation slice should lead `0.0.32`: fixture coverage, model boundary types, refresh intent instrumentation, or one metadata-only patch path?
+- What repository fixture should become the standard manual smoke sample for graph correctness?
 - What manual Extension Development Host smoke matrix is mandatory before `0.0.31` packaging?
 - Should Marketplace screenshots be refreshed for the Source Control toolbar and editor graph panel before publication?
 - Should future releases redesign Compare Results and Show Log as editor surfaces, or keep them as on-demand Activity Bar review views?

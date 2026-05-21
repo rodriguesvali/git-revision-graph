@@ -104,6 +104,7 @@ With the editor graph panel:
 - Feature work should be scoped by release impact and tracked in `project-context/2.build/features/`.
 - Release deployment remains human-approved.
 - Built-in `vscode.git` remains preferred for repository state and mutations; Git CLI remains acceptable for graph/history data not exposed by the API.
+- The `0.0.32` Define draft should start as a post-Source-Control stabilization and graph-parity groundwork release. The release should protect the `0.0.31` Source Control/editor graph product surface before taking on one bounded graph foundation slice.
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 - Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
 - The `0.0.28` Define draft should evaluate separating immutable commit DAG/history caching from mutable ref and HEAD overlay state as the next cache architecture improvement.
@@ -167,6 +168,8 @@ For Source Control product surface Phase 3, add manual validation for:
 - New features will continue to use the existing extension host plus webview architecture unless explicitly approved otherwise.
 
 ## Open Questions
+- Which `0.0.32` graph foundation slice should be implemented first: graph fixtures, model boundary types, refresh intent instrumentation, or a narrow metadata-only patch path?
+- Should `0.0.32` keep Compare Results and Show Log as Activity Bar review surfaces while the primary graph remains in an editor panel?
 - Which graph parity gaps should be prioritized after the current release baseline?
 - Should release validation include a fixed sample repository fixture for manual testing?
 - Should Git argument hardening normalize all known refs to full ref names before command execution?

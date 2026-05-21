@@ -1,5 +1,15 @@
 # Open Questions
 
+## 0.0.32
+
+- Should `0.0.32` be primarily a stabilization release, or include one small visible graph-parity improvement?
+- Which first foundation slice has the best risk/reward: graph fixtures, model boundary types, refresh instrumentation, or one metadata-only patch path?
+- Should release copy explicitly explain that the old primary graph Activity Bar entry was replaced by Source Control launch?
+- Should Compare Results and Show Logs stay as Activity Bar review views for another release?
+- What repository fixture should become the standard manual smoke sample for graph correctness?
+
+## Previous Release Follow-Up
+
 - What exact manual Extension Development Host smoke matrix is mandatory before packaging `0.0.31`?
 - Should Marketplace screenshots be refreshed before `0.0.31` publication to show the Source Control toolbar entry and editor graph panel?
 - Should release copy explicitly call out removal of the old graph Activity Bar entry for existing users?

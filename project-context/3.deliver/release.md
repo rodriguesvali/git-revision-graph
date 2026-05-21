@@ -1,5 +1,51 @@
 # Release Readiness
 
+## 0.0.32 Release Readiness
+
+Current package baseline: `0.0.31`.
+
+Target release: `0.0.32`.
+
+Status: Define phase opened. No implementation, version bump, VSIX packaging, or Marketplace publishing has been performed for `0.0.32`.
+
+Initial release direction:
+
+- Consolidate the Source Control toolbar and singleton editor graph product surface introduced in `0.0.31`.
+- Restore any graph toolbar actions that became unavailable after the move from `WebviewView` title actions to the editor `WebviewPanel`, starting with `Reload`.
+- Treat the final `0.0.31` manual smoke matrix as the starting regression checklist.
+- Patch any discovered editor graph panel, secondary review view, focus restoration, zero-repository, or multi-repository issues.
+- Select one bounded graph-parity groundwork slice before implementation.
+
+Planning reference:
+
+- `docs/release-0.0.32-prioritization.md`
+
+Candidate change set:
+
+- Restore `Reload` in the editor graph toolbar using the existing full-rebuild refresh path.
+
+Automated verification completed:
+
+- `npm run build` passed for the editor panel `Reload` toolbar action.
+- `npm test` passed with 274 tests for the editor panel `Reload` toolbar action.
+- `git diff --check` passed for the editor panel `Reload` toolbar action.
+
+Release gates pending:
+
+- Confirm final `0.0.32` scope and non-goals.
+- Create or update feature-specific Build artifacts for the selected implementation slice.
+- Run `npm run build` after meaningful changes.
+- Run `npm test` for behavior, graph, controller, webview, or workflow changes.
+- Run `git diff --check` before packaging.
+- Complete manual Extension Development Host smoke validation.
+- Apply the `0.0.32` version bump only after maintainer approval.
+- Run `npm run package:vsix` only after maintainer approval.
+- Marketplace publishing remains with the maintainer.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the affected `0.0.32` slice while preserving the `0.0.31` Source Control/editor graph baseline when possible.
+
 ## 0.0.31 Release Readiness
 
 Current package baseline: `0.0.30`.

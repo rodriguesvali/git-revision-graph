@@ -29,8 +29,10 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchClearButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.doesNotMatch(html, />\s*<span class="button-icon">↓<\/span>\s*<span>Fetch<\/span>/);
+  assert.match(html, /id="reloadButton"/);
+  assert.match(html, />\s*<span class="button-icon">&#8635;<\/span>\s*<span>Reload<\/span>/);
   assert.match(html, /class="workspace-led clean"/);
-  assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+class="workspace-led clean"/);
+  assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+id="reloadButton"/);
   assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="abortMergeButton"/);
   assert.match(html, /Abort Merge/);
@@ -103,6 +105,18 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
     /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
   );
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
+});
+
+test('reloads the graph from the webview toolbar', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /const reloadButton = document\.getElementById\('reloadButton'\);/);
+  assert.match(
+    html,
+    /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'refresh' \}, 'Reloading revision graph\.\.\.', reloadButton\);/s
+  );
+  assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
+  assert.match(html, /searchClearButton,\s*reloadButton,\s*reorganizeButton,/s);
 });
 
 test('preserves the current viewport when zooming from toolbar buttons', () => {
