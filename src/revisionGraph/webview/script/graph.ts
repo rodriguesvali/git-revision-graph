@@ -38,9 +38,33 @@ export function renderRevisionGraphScriptGraphLogic(): string {
 
     function getPrimaryAncestorPath(startHash) {
       const precomputedPath = primaryAncestorPathsByHash[startHash];
-      return Array.isArray(precomputedPath) && precomputedPath.length > 0
-        ? precomputedPath
+      if (Array.isArray(precomputedPath) && precomputedPath.length > 0) {
+        return precomputedPath;
+      }
+
+      const compactPath = buildPrimaryAncestorPathFromNextMap(startHash);
+      return compactPath.length > 1
+        ? compactPath
         : tracePrimaryPath(startHash, 'ancestor');
+    }
+
+    function buildPrimaryAncestorPathFromNextMap(startHash) {
+      const path = [startHash];
+      const visited = new Set(path);
+      let currentHash = startHash;
+
+      while (true) {
+        const nextHash = primaryAncestorNextByHash[currentHash];
+        if (!nextHash || visited.has(nextHash)) {
+          break;
+        }
+
+        path.push(nextHash);
+        visited.add(nextHash);
+        currentHash = nextHash;
+      }
+
+      return path;
     }
 
     function tracePrimaryPath(startHash, direction) {

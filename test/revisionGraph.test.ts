@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildPrimaryAncestorNextByHash,
   buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
   parseDecorationRefs,
@@ -25,10 +26,13 @@ import {
   buildProjectedGraphLayoutCacheKey,
   clearProjectedGraphLayoutCache,
   getProjectedGraphLayoutCacheStats,
+  layoutProjectedGraph,
+  PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
 } from '../src/revisionGraph/layout/layeredLayout';
+import { ProjectedGraph } from '../src/revisionGraph/model/commitGraphTypes';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
 test('parses git log output into revision graph commits', () => {
@@ -482,6 +486,38 @@ test('uses a new layout cache namespace for the OGDF-inspired ELK placement opti
   assert.match(buildProjectedGraphLayoutCacheKey(projection), /^elk-layered-v2:/);
 });
 
+test('uses fallback lane layout before ELK for oversized projected graphs', async () => {
+  clearProjectedGraphLayoutCache();
+  const nodeCount = PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES + 1;
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: Array.from({ length: nodeCount }, (_, index) => ({
+      hash: `large-${index}`,
+      author: 'Ada',
+      date: '2026-05-22',
+      subject: `Large ${index}`,
+      refs: [],
+      isBoundary: false
+    })),
+    edges: Array.from({ length: nodeCount - 1 }, (_, index) => ({
+      from: `large-${index}`,
+      to: `large-${index + 1}`,
+      through: []
+    })),
+    visibleHashes: new Set(Array.from({ length: nodeCount }, (_, index) => `large-${index}`))
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const cacheStats = getProjectedGraphLayoutCacheStats();
+
+  assert.equal(positions.size, nodeCount);
+  assert.deepEqual(positions.get('large-0'), { x: 0, y: 0 });
+  assert.deepEqual(positions.get('large-1'), { x: 0, y: 96 });
+  assert.equal(cacheStats.entries, 1);
+  assert.equal(cacheStats.misses, 1);
+  assert.equal(cacheStats.hits, 0);
+});
+
 test('restores serialized ELK layout cache entries across extension sessions', async () => {
   clearProjectedGraphLayoutCache();
   const graph = buildCommitGraph([
@@ -619,6 +655,54 @@ test('adds vertical clearance when a card grows with many refs', async () => {
   assert.ok(headLayout);
   assert.ok(tagLayout);
   assert.ok((tagLayout?.defaultTop ?? 0) > (headLayout?.defaultTop ?? 0) + (headLayout?.height ?? 0));
+});
+
+test('builds node layouts for long fan-out corridors without spreading large arrays', () => {
+  const scene = {
+    nodes: [
+      {
+        hash: 'base1',
+        row: 0,
+        lane: 0,
+        x: 0,
+        refs: [{ name: 'main', kind: 'head' as const }],
+        author: 'Ada',
+        date: '2026-05-22',
+        subject: 'Base'
+      },
+      {
+        hash: 'child1',
+        row: 150000,
+        lane: 0,
+        x: 0,
+        refs: [{ name: 'feature/one', kind: 'branch' as const }],
+        author: 'Ada',
+        date: '2026-05-22',
+        subject: 'Child one'
+      },
+      {
+        hash: 'child2',
+        row: 160000,
+        lane: 1,
+        x: 220,
+        refs: [{ name: 'feature/two', kind: 'branch' as const }],
+        author: 'Ada',
+        date: '2026-05-22',
+        subject: 'Child two'
+      }
+    ],
+    edges: [
+      { from: 'child1', to: 'base1' },
+      { from: 'child2', to: 'base1' }
+    ],
+    laneCount: 2,
+    rowCount: 160001
+  };
+
+  const layouts = buildNodeLayouts(scene);
+
+  assert.equal(layouts.length, 3);
+  assert.ok((layouts.find((node) => node.hash === 'child2')?.defaultTop ?? 0) > 0);
 });
 
 test('can find commits by ref and collect their ancestor hashes from the full DAG', () => {
@@ -917,5 +1001,21 @@ test('builds primary ancestor paths from the full graph for the visible scene', 
     m1: ['m1', 'b1'],
     s1: ['s1', 'b1'],
     b1: ['b1']
+  });
+});
+
+test('builds compact primary ancestor next pointers for the visible scene', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
+    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
+    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+  const scene = await buildRevisionGraphScene(graph, projection);
+
+  assert.deepEqual(buildPrimaryAncestorNextByHash(graph, scene), {
+    m1: 'b1',
+    s1: 'b1'
   });
 });

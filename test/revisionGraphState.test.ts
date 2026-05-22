@@ -84,6 +84,8 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.autoArrangeOnInit, true);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
+  assert.deepEqual(state.primaryAncestorNextByHash, {});
+  assert.deepEqual(state.primaryAncestorPathsByHash, {});
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
@@ -243,6 +245,8 @@ test('repository overlays prefer getRefs for current head commit when repository
     state.references.some((ref) => ref.name === 'master' && ref.kind === 'head' && ref.hash === 'old-head'),
     false
   );
+  assert.deepEqual(state.primaryAncestorNextByHash, {});
+  assert.deepEqual(state.primaryAncestorPathsByHash, {});
 });
 
 test('metadata patches remove deleted local branch refs without changing graph topology', async () => {

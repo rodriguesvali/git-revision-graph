@@ -361,6 +361,8 @@ test('uses principal path highlight for single selection and compare-only highli
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-related', 'descendant-related'\);/);
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-path', 'descendant-path', 'muted'\);/);
   assert.match(html, /const ancestorPath = anchorHash \? getPrimaryAncestorPath\(anchorHash\) : \[\];/);
+  assert.match(html, /function buildPrimaryAncestorPathFromNextMap\(startHash\)/);
+  assert.match(html, /const nextHash = primaryAncestorNextByHash\[currentHash\];/);
   assert.match(html, /element\.classList\.toggle\('selected', anchorHash === hash\);/);
   assert.match(html, /element\.classList\.toggle\('related', !!anchorHash && anchorHash !== hash && relatedHashes\.has\(hash\)\);/);
   assert.match(html, /element\.classList\.toggle\('muted', !!anchorHash && !isRelated\);/);
@@ -380,7 +382,8 @@ test('keeps a single auto-arrange layout routine in the shell runtime', () => {
 
   assert.match(html, /function autoArrangeLayout\(\)/);
   assert.match(html, /return getNodeWidth\(leftHash\) \+ 28;/);
-  assert.match(html, /const leftEdgeShift = -Math\.min\(\.\.\.resolved\);/);
+  assert.match(html, /const leftEdgeShift = -minNumber\(resolved, 0\);/);
+  assert.match(html, /function minNumber\(values, fallback\)/);
   assert.doesNotMatch(html, /function autoArrangeTortoiseLayout\(\)/);
   assert.doesNotMatch(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
   assert.doesNotMatch(html, /function buildFamilyAnchorMap\(familyAssignments\)/);

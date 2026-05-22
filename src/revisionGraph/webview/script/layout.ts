@@ -115,7 +115,7 @@ export function renderRevisionGraphScriptLayout(): string {
           ordered.reduce((sum, node) => sum + node.defaultLeft + getNodeWidth(node.hash) / 2, 0) / ordered.length;
         const resolvedCenter =
           resolved.reduce((sum, left, index) => sum + left + getNodeWidth(ordered[index].hash) / 2, 0) / resolved.length;
-        const leftEdgeShift = -Math.min(...resolved);
+        const leftEdgeShift = -minNumber(resolved, 0);
         const centerShift = defaultCenter - resolvedCenter;
         const centered = resolved.map((left) => left + Math.max(leftEdgeShift, centerShift));
 
@@ -123,6 +123,14 @@ export function renderRevisionGraphScriptLayout(): string {
           positions.set(ordered[index].hash, clampNodeLeft(ordered[index].hash, centered[index]));
         }
       }
+    }
+
+    function minNumber(values, fallback) {
+      let min = Infinity;
+      for (const value of values) {
+        min = Math.min(min, value);
+      }
+      return Number.isFinite(min) ? min : fallback;
     }
 
     function compactHorizontalSpread(positions, neighborMap) {

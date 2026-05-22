@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { Branch, Ref, RefType, Repository } from '../../git';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../backend';
 import {
-  buildPrimaryAncestorPaths,
+  buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
   CommitGraph,
   projectDecoratedCommitGraph,
@@ -154,8 +154,13 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
   const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace);
   const ancestorsStartedAt = nowMs();
-  const primaryAncestorPaths = buildPrimaryAncestorPaths(snapshot.graph, scene);
-  traceDuration(trace, 'state.primaryAncestorPaths', ancestorsStartedAt, `nodes=${scene.nodes.length}`);
+  const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(snapshot.graph, scene);
+  traceDuration(
+    trace,
+    'state.primaryAncestorPaths',
+    ancestorsStartedAt,
+    `mode=next-map; nodes=${scene.nodes.length}; entries=${Object.keys(primaryAncestorNextByHash).length}`
+  );
   return buildReadyRevisionGraphViewStateFromParts(
     repository,
     projectionOptions,
@@ -163,7 +168,7 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     backend,
     snapshot,
     scene,
-    primaryAncestorPaths,
+    primaryAncestorNextByHash,
     signal,
     trace
   );
@@ -203,7 +208,7 @@ export async function buildMetadataPatchedRevisionGraphViewState(
     backend,
     snapshot,
     patchedScene,
-    previousState.primaryAncestorPathsByHash,
+    previousState.primaryAncestorNextByHash ?? {},
     signal
   );
 }
@@ -442,6 +447,7 @@ export function buildEmptyRevisionGraphViewState(
     hasConflictedMerge: false,
     projectionOptions,
     mergeBlockedTargets: [],
+    primaryAncestorNextByHash: {},
     primaryAncestorPathsByHash: {},
     autoArrangeOnInit: false,
     scene: {
@@ -471,7 +477,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   scene: RevisionGraphScene,
-  primaryAncestorPaths: RevisionGraphViewState['primaryAncestorPathsByHash'],
+  primaryAncestorNextByHash: NonNullable<RevisionGraphViewState['primaryAncestorNextByHash']>,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
@@ -512,7 +518,8 @@ async function buildReadyRevisionGraphViewStateFromParts(
     hasConflictedMerge: hasConflictedMerge(repository),
     projectionOptions,
     mergeBlockedTargets,
-    primaryAncestorPathsByHash: primaryAncestorPaths,
+    primaryAncestorNextByHash,
+    primaryAncestorPathsByHash: {},
     autoArrangeOnInit,
     scene,
     nodeLayouts,

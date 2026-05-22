@@ -82,6 +82,7 @@ export interface RevisionGraphViewState {
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
+  readonly primaryAncestorNextByHash?: Readonly<Record<string, string>>;
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
   readonly autoArrangeOnInit: boolean;
   readonly scene: RevisionGraphScene;
@@ -107,6 +108,7 @@ export interface RevisionGraphViewMetadataPatch {
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
   readonly mergeBlockedTargets: readonly string[];
+  readonly primaryAncestorNextByHash?: Readonly<Record<string, string>>;
   readonly primaryAncestorPathsByHash: Readonly<Record<string, readonly string[]>>;
   readonly autoArrangeOnInit: boolean;
   readonly scene: RevisionGraphScene;

@@ -160,7 +160,7 @@ function buildNonOverlappingLeftByHash(
 
     const initialCenter = getRowCenter(ordered, ordered.map((node) => node.initialLeft));
     const resolvedCenter = getRowCenter(ordered, resolved);
-    const leftEdgeShift = NODE_PADDING_X - Math.min(...resolved);
+    const leftEdgeShift = NODE_PADDING_X - minNumber(resolved, 0);
     const centerShift = initialCenter - resolvedCenter;
     const shift = Math.max(leftEdgeShift, centerShift);
     for (let index = 0; index < ordered.length; index += 1) {
@@ -219,7 +219,7 @@ function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, nu
       continue;
     }
 
-    const sourceAdjacentGap = row <= Math.min(...crossedGaps) ? row : row - 1;
+    const sourceAdjacentGap = row <= minNumber(crossedGaps, row) ? row : row - 1;
     if (sourceAdjacentGap >= 0 && sourceAdjacentGap < scene.rowCount - 1) {
       maxExtraDescendantsBySourceGap.set(
         sourceAdjacentGap,
@@ -244,6 +244,15 @@ function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, nu
   }
 
   return gapByRow;
+}
+
+function minNumber(values: readonly number[], fallback: number): number {
+  let min = Infinity;
+  for (const value of values) {
+    min = Math.min(min, value);
+  }
+
+  return Number.isFinite(min) ? min : fallback;
 }
 
 export function renderNode(node: RevisionGraphNode, width: number, x: number): string {

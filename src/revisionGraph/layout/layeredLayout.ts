@@ -11,6 +11,7 @@ const elk = new ELK();
 
 const ELK_FALLBACK_SPACING = 52;
 const ELK_FALLBACK_LAYER_SPACING = 96;
+export const PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES = 1500;
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
 const PROJECTED_GRAPH_LAYOUT_OPTIONS: Readonly<Record<string, string>> = {
@@ -171,6 +172,10 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 async function calculateProjectedGraphLayout(
   projection: ProjectedGraph
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+  if (projection.nodes.length > PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES) {
+    return calculateFallbackProjectedGraphLayout(projection);
+  }
+
   const graph: ElkNode = {
     id: 'root',
     layoutOptions: PROJECTED_GRAPH_LAYOUT_OPTIONS,

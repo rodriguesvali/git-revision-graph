@@ -74,6 +74,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let parentMap = new Map();
     let childMap = new Map();
     let headDistanceByHash = new Map();
+    let primaryAncestorNextByHash = {};
     let primaryAncestorPathsByHash = {};
     let sceneLayoutKey = 'empty';
     let baseCanvasWidth = 880;
@@ -444,6 +445,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       graphNodes = nextState.nodeLayouts || [];
       graphEdges = (nextState.scene && nextState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      primaryAncestorNextByHash = nextState.primaryAncestorNextByHash || {};
       primaryAncestorPathsByHash = nextState.primaryAncestorPathsByHash || {};
       sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
       baseCanvasWidth = nextState.baseCanvasWidth || 880;
@@ -571,6 +573,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       graphNodes = nextGraphNodes;
       graphEdges = (currentState.scene && currentState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      primaryAncestorNextByHash = currentState.primaryAncestorNextByHash || {};
       primaryAncestorPathsByHash = currentState.primaryAncestorPathsByHash || {};
       baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
       baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;

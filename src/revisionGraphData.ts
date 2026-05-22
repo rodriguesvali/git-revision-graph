@@ -135,6 +135,71 @@ export function buildPrimaryAncestorPaths(
   return pathsByHash;
 }
 
+export function buildPrimaryAncestorNextByHash(
+  source: CommitGraph | readonly ParsedRevisionGraphCommit[],
+  scene: RevisionGraphScene
+): Record<string, string> {
+  const graph = toCommitGraph(source);
+  const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
+  const nextByHash: Record<string, string> = {};
+  const memo = new Map<string, string | undefined>();
+
+  for (const node of scene.nodes) {
+    const nextHash = findNextVisibleFirstParentHash(graph, node.hash, visibleHashes, memo);
+    if (nextHash) {
+      nextByHash[node.hash] = nextHash;
+    }
+  }
+
+  return nextByHash;
+}
+
+function findNextVisibleFirstParentHash(
+  graph: CommitGraph,
+  startHash: string,
+  visibleHashes: ReadonlySet<string>,
+  memo: Map<string, string | undefined>
+): string | undefined {
+  const path: string[] = [];
+  const visited = new Set<string>();
+  let currentHash: string | undefined = startHash;
+  let resolved: string | undefined;
+
+  while (currentHash) {
+    if (memo.has(currentHash)) {
+      resolved = memo.get(currentHash);
+      break;
+    }
+
+    if (visited.has(currentHash)) {
+      resolved = undefined;
+      break;
+    }
+
+    visited.add(currentHash);
+    path.push(currentHash);
+    const commit = graph.commitsByHash.get(currentHash);
+    const parentHash = commit?.parents[0];
+    if (!parentHash) {
+      resolved = undefined;
+      break;
+    }
+
+    if (visibleHashes.has(parentHash)) {
+      resolved = parentHash;
+      break;
+    }
+
+    currentHash = parentHash;
+  }
+
+  for (const hash of path) {
+    memo.set(hash, resolved);
+  }
+
+  return resolved;
+}
+
 function toCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[]): CommitGraph {
   return isCommitGraph(source) ? source : buildCommitGraph(source);
 }
