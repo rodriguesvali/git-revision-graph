@@ -681,7 +681,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         showMinimapToggle.disabled = toolbarBusy;
       }
       if (reorganizeButton) {
-        reorganizeButton.disabled = toolbarBusy;
+        reorganizeButton.disabled = toolbarBusy || !canAutoArrangeGraph();
       }
       if (zoomInButton) {
         zoomInButton.disabled = toolbarBusy || !canZoomIn;

@@ -11,6 +11,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
   return `
     const vscode = acquireVsCodeApi();
     const zoomLevels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5];
+    const LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT = 1000;
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
@@ -101,6 +102,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let minimapDragState = null;
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
+    let sceneEventHandlersBound = false;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -191,6 +193,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (reorganizeButton) {
       reorganizeButton.addEventListener('click', async () => {
+        if (!canAutoArrangeGraph()) {
+          return;
+        }
         await runWithLoading('Reorganizing graph layout...', async () => {
           autoArrangeLayout();
           centerGraphInViewport();
@@ -489,7 +494,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         nextState.viewMode !== 'ready' ||
         (!!previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null));
       const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
-      applyNodeLayout(false);
+      if (hasStoredNodeOffsets()) {
+        applyNodeLayout(false);
+      }
       syncSelection();
       if (shouldResetSearch) {
         clearSearchQuery(false);
@@ -497,7 +504,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         syncSearchResults({ preserveActiveHash: true, focusActive: false });
       }
       requestAnimationFrame(() => {
-        if (nextState.autoArrangeOnInit) {
+        if (nextState.autoArrangeOnInit && canAutoArrangeGraph()) {
           autoArrangeLayout();
           centerGraphInViewport();
         } else if (viewportSnapshot) {
@@ -778,6 +785,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncMinimap('viewport');
     }
 
+    function hasStoredNodeOffsets() {
+      return Object.values(nodeOffsets).some((offset) => Math.abs(Number(offset) || 0) > 0.5);
+    }
+
+    function canAutoArrangeGraph() {
+      return graphNodes.length <= LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT;
+    }
+
     function updateChrome(state) {
       if (scopeSelect) {
         scopeSelect.value = state.projectionOptions.refScope;
@@ -858,83 +873,107 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function bindSceneEventHandlers() {
-      for (const element of document.querySelectorAll('[data-ref-id]')) {
-        element.addEventListener('click', (event) => {
+      if (sceneEventHandlersBound || !nodeLayer) {
+        return;
+      }
+
+      nodeLayer.addEventListener('click', (event) => {
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        if (refElement) {
           if (suppressNodeClick) {
             suppressNodeClick = false;
             event.preventDefault();
             event.stopPropagation();
             return;
           }
-          const refId = element.getAttribute('data-ref-id');
+          const refId = refElement.getAttribute('data-ref-id');
           if (!refId) {
             return;
           }
           toggleSelection(refId, event.ctrlKey || event.metaKey);
           closeContextMenu();
           syncSelection();
-        });
-        element.addEventListener('contextmenu', (event) => {
-          event.preventDefault();
-          const refId = element.getAttribute('data-ref-id');
-          if (!refId) {
-            return;
-          }
-          const target = getSelectionTarget(refId);
-          if (!target) {
-            return;
-          }
-          openContextMenu(event.clientX, event.clientY, target);
-        });
-      }
-
-      for (const element of document.querySelectorAll('[data-node-hash]')) {
-        const hash = element.getAttribute('data-node-hash');
-        const target = hash ? getStructuralNodeTarget(hash) : null;
-        if (!hash || !target) {
-          continue;
+          return;
         }
-        element.addEventListener('click', (event) => {
-          if (suppressNodeClick || isNodeGripEvent(event)) {
-            suppressNodeClick = false;
-            return;
-          }
-          toggleSelection(target.id, event.ctrlKey || event.metaKey);
-          closeContextMenu();
-          syncSelection();
-        });
-        element.addEventListener('contextmenu', (event) => {
-          if (isNodeGripEvent(event)) {
-            return;
-          }
-          event.preventDefault();
-          openContextMenu(event.clientX, event.clientY, target);
-        });
-      }
 
-      for (const grip of document.querySelectorAll('[data-node-grip]')) {
-        grip.addEventListener('mousedown', (event) => {
-          if (event.button !== 0) {
-            return;
-          }
-          const node = grip.closest('[data-node-hash]');
-          const hash = node ? node.getAttribute('data-node-hash') : undefined;
-          if (!node || !hash) {
-            return;
-          }
-          nodeDragState = {
-            hash,
-            element: node,
-            startX: event.clientX,
-            startOffset: Number(nodeOffsets[hash] || 0)
-          };
-          document.body.classList.add('node-dragging');
-          node.classList.add('dragging');
-          closeContextMenu();
+        if (suppressNodeClick || isNodeGripEvent(event)) {
+          suppressNodeClick = false;
+          return;
+        }
+
+        const nodeElement = findEventTargetElement(event, '[data-node-hash]');
+        const hash = nodeElement ? nodeElement.getAttribute('data-node-hash') : '';
+        const target = hash ? getStructuralNodeTarget(hash) : null;
+        if (!target) {
+          return;
+        }
+        toggleSelection(target.id, event.ctrlKey || event.metaKey);
+        closeContextMenu();
+        syncSelection();
+      });
+
+      nodeLayer.addEventListener('contextmenu', (event) => {
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        if (refElement) {
           event.preventDefault();
-          event.stopPropagation();
-        });
+          const refId = refElement.getAttribute('data-ref-id');
+          const target = refId ? getSelectionTarget(refId) : null;
+          if (target) {
+            openContextMenu(event.clientX, event.clientY, target);
+          }
+          return;
+        }
+
+        if (isNodeGripEvent(event)) {
+          return;
+        }
+
+        const nodeElement = findEventTargetElement(event, '[data-node-hash]');
+        const hash = nodeElement ? nodeElement.getAttribute('data-node-hash') : '';
+        const target = hash ? getStructuralNodeTarget(hash) : null;
+        if (!target) {
+          return;
+        }
+        event.preventDefault();
+        openContextMenu(event.clientX, event.clientY, target);
+      });
+
+      nodeLayer.addEventListener('mousedown', (event) => {
+        if (event.button !== 0) {
+          return;
+        }
+        const grip = findEventTargetElement(event, '[data-node-grip]');
+        if (!grip) {
+          return;
+        }
+        const node = grip.closest('[data-node-hash]');
+        const hash = node ? node.getAttribute('data-node-hash') : undefined;
+        if (!node || !hash) {
+          return;
+        }
+        nodeDragState = {
+          hash,
+          element: node,
+          startX: event.clientX,
+          startOffset: Number(nodeOffsets[hash] || 0)
+        };
+        document.body.classList.add('node-dragging');
+        node.classList.add('dragging');
+        closeContextMenu();
+        event.preventDefault();
+        event.stopPropagation();
+      });
+
+      sceneEventHandlersBound = true;
+    }
+
+    function findEventTargetElement(event, selector) {
+      const target = event.target;
+      if (!target || typeof target.closest !== 'function') {
+        return null;
       }
+      const element = target.closest(selector);
+      return element && nodeLayer && nodeLayer.contains(element) ? element : null;
     }
 
     function renderNodeMarkup(node, layout) {

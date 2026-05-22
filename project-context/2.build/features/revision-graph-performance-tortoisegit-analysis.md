@@ -139,6 +139,7 @@ But the larger current problem is implementation/architecture:
 
 - Added an ELK size guard so large projected graphs use deterministic fallback lane layout before entering `elkjs`.
 - Replaced large-array spread minimum calculations in shared host layout and webview auto-arrange layout with iterative scans.
+- Reduced initial webview render work for large graphs by skipping automatic auto-arrange above 1000 nodes, disabling the manual reorganize action at that scale, avoiding redundant edge layout when no saved offsets exist, and using delegated node/ref/grip event handlers instead of per-card listeners.
 - Added regression coverage for oversized projected graphs and long fan-out layout corridors.
 - Verification: `npm run build` passed; `npm test` passed with 277 tests.
 

@@ -102,7 +102,7 @@ test('shows loading feedback while reorganizing the graph layout client-side', (
 
   assert.match(
     html,
-    /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
+    /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*if \(!canAutoArrangeGraph\(\)\) \{\s*return;\s*\}\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
   );
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
 });
@@ -392,7 +392,10 @@ test('keeps a single auto-arrange layout routine in the shell runtime', () => {
 test('recenters after auto-arranging the initial graph state', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /if \(nextState\.autoArrangeOnInit\) \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);/);
+  assert.match(html, /const LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT = 1000;/);
+  assert.match(html, /function canAutoArrangeGraph\(\) \{\s*return graphNodes\.length <= LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT;\s*\}/);
+  assert.match(html, /if \(nextState\.autoArrangeOnInit && canAutoArrangeGraph\(\)\) \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);/);
+  assert.match(html, /reorganizeButton\.disabled = toolbarBusy \|\| !canAutoArrangeGraph\(\);/);
 });
 
 test('preserves viewport and selection during metadata patches', () => {
@@ -420,6 +423,11 @@ test('patches reference metadata without rerendering graph edges', () => {
   assert.match(html, /nextElement\.style\.left = previousLeft;/);
   assert.match(html, /element\.replaceWith\(nextElement\);/);
   assert.match(html, /refreshGraphCaches\(\);\s*bindSceneEventHandlers\(\);/s);
+  assert.match(html, /nodeLayer\.addEventListener\('click',/);
+  assert.match(html, /nodeLayer\.addEventListener\('contextmenu',/);
+  assert.match(html, /nodeLayer\.addEventListener\('mousedown',/);
+  assert.match(html, /if \(sceneEventHandlersBound \|\| !nodeLayer\) \{/);
+  assert.doesNotMatch(html, /for \(const element of document\.querySelectorAll\('\\[data-ref-id\\]'\)\) \{\s*element\.addEventListener\('click'/);
   assert.match(html, /syncMinimap\('full'\);/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?renderScene[\s\S]*?function applyWorkspaceStatePatch/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
