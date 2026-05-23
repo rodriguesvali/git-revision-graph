@@ -142,6 +142,13 @@ export function renderRevisionGraphShellHtml(): string {
         aria-label="Zoom Out"
       >-</button>
       <button
+        id="zoomResetButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Reset Zoom (Alt 0)"
+        aria-label="Reset Zoom"
+      >0</button>
+      <button
         id="zoomInButton"
         class="toolbar-button icon-only"
         type="button"
@@ -167,6 +174,13 @@ export function renderRevisionGraphShellHtml(): string {
         title="Zoom Out Minimap"
         aria-label="Zoom Out Minimap"
       >-</button>
+      <button
+        id="minimapZoomResetButton"
+        class="minimap-zoom-button"
+        type="button"
+        title="Reset Minimap Zoom"
+        aria-label="Reset Minimap Zoom"
+      >0</button>
       <button
         id="minimapZoomInButton"
         class="minimap-zoom-button"

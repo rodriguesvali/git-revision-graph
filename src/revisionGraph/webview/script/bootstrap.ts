@@ -27,6 +27,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const minimapNodeLayer = document.getElementById('minimapNodeLayer');
     const minimapViewport = document.getElementById('minimapViewport');
     const minimapZoomOutButton = document.getElementById('minimapZoomOutButton');
+    const minimapZoomResetButton = document.getElementById('minimapZoomResetButton');
     const minimapZoomInButton = document.getElementById('minimapZoomInButton');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
@@ -47,6 +48,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const searchClearButton = document.getElementById('searchClearButton');
     const centerHeadButton = document.getElementById('centerHeadButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
+    const zoomResetButton = document.getElementById('zoomResetButton');
     const zoomInButton = document.getElementById('zoomInButton');
     let currentState = null;
     let references = [];
@@ -201,6 +203,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         zoomOut();
       });
     }
+    if (zoomResetButton) {
+      zoomResetButton.addEventListener('click', () => {
+        resetZoom();
+      });
+    }
     if (zoomInButton) {
       zoomInButton.addEventListener('click', () => {
         zoomIn();
@@ -238,6 +245,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       minimapZoomOutButton.addEventListener('click', (event) => {
         event.stopPropagation();
         zoomOutMinimap();
+      });
+    }
+    if (minimapZoomResetButton) {
+      minimapZoomResetButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        resetMinimapZoom();
       });
     }
     if (minimapZoomInButton) {

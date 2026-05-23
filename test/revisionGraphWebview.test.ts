@@ -36,6 +36,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="abortMergeButton"/);
   assert.match(html, /Abort Merge/);
+  assert.match(html, /id="zoomOutButton"/);
+  assert.match(html, /id="zoomResetButton"/);
+  assert.match(html, /id="zoomInButton"/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
   assert.match(html, /id="nodeLayer"/);
@@ -44,6 +47,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="statusActionButton"/);
   assert.match(html, /id="graphMinimap"/);
   assert.match(html, /id="minimapZoomOutButton"/);
+  assert.match(html, /id="minimapZoomResetButton"/);
   assert.match(html, /id="minimapZoomInButton"/);
   assert.match(html, /id="minimapEdgeLayer"/);
   assert.match(html, /id="minimapNodeLayer"/);
@@ -118,9 +122,11 @@ test('reloads the graph from the webview toolbar', () => {
   );
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
   assert.match(html, /searchClearButton,\s*reloadButton,\s*centerHeadButton,/s);
+  assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
+  assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
 });
 
-test('preserves the current viewport when zooming from toolbar buttons', () => {
+test('preserves the current viewport when zooming or resetting from toolbar buttons', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /const zoomLevels = \[0\.1, 0\.2, 0\.3, 0\.4, 0\.5, 0\.6, 0\.8, 1, 1\.25, 1\.5\];/);
@@ -136,6 +142,11 @@ test('preserves the current viewport when zooming from toolbar buttons', () => {
     html,
     /zoomInButton\.addEventListener\('click', \(\) => \{\s*zoomIn\(\);\s*\}\);/s
   );
+  assert.match(
+    html,
+    /zoomResetButton\.addEventListener\('click', \(\) => \{\s*resetZoom\(\);\s*\}\);/s
+  );
+  assert.match(html, /function resetZoom\(\) \{\s*setZoom\(1\);\s*\}/s);
   assert.match(html, /setZoom\(1, \{ preserveViewport: false \}\);/);
 });
 
@@ -322,6 +333,11 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /vscode\.setState\(\{ \.\.\.existingState, sceneLayoutKey, nodeOffsets: normalizedOffsets \}\);/);
   assert.match(html, /function zoomInMinimap\(\)/);
   assert.match(html, /function zoomOutMinimap\(\)/);
+  assert.match(html, /function resetMinimapZoom\(\) \{\s*setMinimapZoom\(1\);\s*\}/s);
+  assert.match(
+    html,
+    /minimapZoomResetButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*resetMinimapZoom\(\);\s*\}\);/s
+  );
   assert.match(html, /graphMinimap\.addEventListener\('mousedown'/);
   assert.match(html, /function syncMinimap\(mode = 'full'\)/);
   assert.match(html, /pendingMinimapSyncFrame = requestAnimationFrame/);
@@ -590,6 +606,7 @@ function createWebviewRuntime() {
     'minimapNodeLayer',
     'minimapViewport',
     'minimapZoomOutButton',
+    'minimapZoomResetButton',
     'minimapZoomInButton',
     'loadingOverlay',
     'loadingMessage',
@@ -610,6 +627,7 @@ function createWebviewRuntime() {
     'searchClearButton',
     'centerHeadButton',
     'zoomOutButton',
+    'zoomResetButton',
     'zoomInButton'
   ] as const;
   const elements = new Map<string, MockElement>(ids.map((id) => [id, new MockElement(id)]));

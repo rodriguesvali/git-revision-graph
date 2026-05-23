@@ -31,6 +31,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
     }
 
+    function resetZoom() {
+      setZoom(1);
+    }
+
     function setMinimapZoom(zoom) {
       minimapZoom = zoom;
       syncMinimap();
@@ -42,6 +46,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (nextZoom) {
         setMinimapZoom(nextZoom);
       }
+    }
+
+    function resetMinimapZoom() {
+      setMinimapZoom(1);
     }
 
     function zoomOutMinimap() {
@@ -654,8 +662,10 @@ export function renderRevisionGraphScriptInteractions(): string {
     function syncToolbarActions() {
       const canZoomIn = zoomLevels.some((value) => value > currentZoom);
       const canZoomOut = zoomLevels.some((value) => value < currentZoom);
+      const canResetZoom = currentZoom !== 1;
       const canZoomInMinimap = minimapZoomLevels.some((value) => value > minimapZoom);
       const canZoomOutMinimap = minimapZoomLevels.some((value) => value < minimapZoom);
+      const canResetMinimapZoom = minimapZoom !== 1;
       if (scopeSelect) {
         scopeSelect.disabled = toolbarBusy;
       }
@@ -689,11 +699,17 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (zoomOutButton) {
         zoomOutButton.disabled = toolbarBusy || !canZoomOut;
       }
+      if (zoomResetButton) {
+        zoomResetButton.disabled = toolbarBusy || !canResetZoom;
+      }
       if (minimapZoomInButton) {
         minimapZoomInButton.disabled = toolbarBusy || !minimapEnabled || !canZoomInMinimap;
       }
       if (minimapZoomOutButton) {
         minimapZoomOutButton.disabled = toolbarBusy || !minimapEnabled || !canZoomOutMinimap;
+      }
+      if (minimapZoomResetButton) {
+        minimapZoomResetButton.disabled = toolbarBusy || !minimapEnabled || !canResetMinimapZoom;
       }
     }
 
@@ -713,8 +729,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         reloadButton,
         centerHeadButton,
         zoomOutButton,
+        zoomResetButton,
         zoomInButton,
         minimapZoomOutButton,
+        minimapZoomResetButton,
         minimapZoomInButton,
         statusActionButton
       ];
