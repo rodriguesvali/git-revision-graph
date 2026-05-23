@@ -133,12 +133,12 @@ function buildNonOverlappingLeftByHash(
       row: node.row,
       x: node.x,
       width: dimensions.width,
-      initialLeft: NODE_PADDING_X + node.x
+      initialLeft: NODE_PADDING_X + node.x - dimensions.width / 2
     });
     rows.set(node.row, candidates);
   }
 
-  const leftByHash = new Map<string, number>();
+  const preliminaryLeftByHash = new Map<string, number>();
   for (const candidates of rows.values()) {
     const ordered = [...candidates].sort((left, right) =>
       left.initialLeft - right.initialLeft ||
@@ -160,15 +160,17 @@ function buildNonOverlappingLeftByHash(
 
     const initialCenter = getRowCenter(ordered, ordered.map((node) => node.initialLeft));
     const resolvedCenter = getRowCenter(ordered, resolved);
-    const leftEdgeShift = NODE_PADDING_X - minNumber(resolved, 0);
     const centerShift = initialCenter - resolvedCenter;
-    const shift = Math.max(leftEdgeShift, centerShift);
     for (let index = 0; index < ordered.length; index += 1) {
-      leftByHash.set(ordered[index].hash, resolved[index] + shift);
+      preliminaryLeftByHash.set(ordered[index].hash, resolved[index] + centerShift);
     }
   }
 
-  return leftByHash;
+  const leftEdgeShift = NODE_PADDING_X - minNumber([...preliminaryLeftByHash.values()], NODE_PADDING_X);
+  const globalShift = Math.max(0, leftEdgeShift);
+  return new Map(
+    [...preliminaryLeftByHash.entries()].map(([hash, left]) => [hash, left + globalShift] as const)
+  );
 }
 
 function getRowCenter(nodes: readonly HorizontalLayoutCandidate[], lefts: readonly number[]): number {

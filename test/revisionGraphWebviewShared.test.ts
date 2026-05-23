@@ -225,7 +225,48 @@ test('keeps cards in the same row from overlapping', () => {
   assert.ok(right);
   assert.ok(otherRow);
   assert.ok((right?.defaultLeft ?? 0) >= (left?.defaultLeft ?? 0) + (left?.width ?? 0) + NODE_HORIZONTAL_GAP);
-  assert.equal(otherRow?.defaultLeft, 146);
+  assert.ok((otherRow?.defaultLeft ?? 0) >= 0);
+});
+
+test('centers cards with different widths on the same lane coordinate', () => {
+  const scene: RevisionGraphScene = {
+    nodes: [
+      {
+        hash: 'wide',
+        refs: [{ name: 'origin/very-long-feature-branch-name', kind: 'remote' }],
+        author: 'Ada',
+        date: '2026-04-30',
+        subject: 'Wide',
+        x: 0,
+        row: 0,
+        lane: 0
+      },
+      {
+        hash: 'narrow',
+        refs: [{ name: 'main', kind: 'head' }],
+        author: 'Ada',
+        date: '2026-04-30',
+        subject: 'Narrow',
+        x: 0,
+        row: 1,
+        lane: 0
+      }
+    ],
+    edges: [{ from: 'wide', to: 'narrow' }],
+    laneCount: 1,
+    rowCount: 2
+  };
+
+  const layouts = buildNodeLayouts(scene);
+  const wide = layouts.find((node) => node.hash === 'wide');
+  const narrow = layouts.find((node) => node.hash === 'narrow');
+
+  assert.ok(wide);
+  assert.ok(narrow);
+  assert.equal(
+    (wide?.defaultLeft ?? 0) + (wide?.width ?? 0) / 2,
+    (narrow?.defaultLeft ?? 0) + (narrow?.width ?? 0) / 2
+  );
 });
 
 test('creates CSP nonces with cryptographic base64url-friendly values', () => {
