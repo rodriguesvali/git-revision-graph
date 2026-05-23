@@ -76,10 +76,12 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     this.controller.dispose();
   }
 
-  async open(): Promise<void> {
+  async open(options: RevisionGraphEditorPanelOpenOptions = {}): Promise<void> {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.One);
-      await this.controller.refresh();
+      if (!options.preserveGraphState) {
+        await this.controller.refresh();
+      }
       return;
     }
 
@@ -114,6 +116,10 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
   prepareRefresh(request?: RevisionGraphRefreshRequestLike) {
     return this.controller.prepareRefresh(request);
   }
+}
+
+export interface RevisionGraphEditorPanelOpenOptions {
+  readonly preserveGraphState?: boolean;
 }
 
 export { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID };

@@ -67,7 +67,7 @@ export async function hideSecondaryView(
   }
 
   if (wasVisible && visibleSecondaryViewIds.size === 0) {
-    await commands.executeCommand('gitRefs.openRevisionGraphEditor');
+    await commands.executeCommand('gitRefs.openRevisionGraphEditor', { preserveGraphState: true });
     await commands.executeCommand(SOURCE_CONTROL_VIEW_COMMAND);
   }
 }

@@ -52,7 +52,7 @@ test('minimizeSecondaryViewThenMaximizeView keeps the graph hidden while compare
   assert.ok(firstIncreaseIndex > compareFocusIndex);
 });
 
-test('hideSecondaryView reopens the editor graph after the last secondary view closes', async () => {
+test('hideSecondaryView restores the editor graph without refreshing after the last secondary view closes', async () => {
   resetViewLayoutStateForTests();
   const harness = createCommandHarness();
 
@@ -61,6 +61,7 @@ test('hideSecondaryView reopens the editor graph after the last secondary view c
 
   assert.deepEqual(harness.contexts.at(-1), { key: 'gitRefs.revisionGraphVisible', value: false });
   assert.equal(harness.calls.at(-2), 'gitRefs.openRevisionGraphEditor');
+  assert.deepEqual(harness.commandArgs.at(-2), [{ preserveGraphState: true }]);
   assert.equal(harness.calls.at(-1), 'workbench.view.scm');
 });
 
@@ -95,17 +96,21 @@ test('detachSecondaryView clears secondary layout state without reopening the ed
 
 function createCommandHarness(failingCommands = new Set<string>()): {
   readonly calls: string[];
+  readonly commandArgs: unknown[][];
   readonly contexts: Array<{ readonly key: string; readonly value: unknown }>;
   readonly commands: ViewCommandExecutor;
 } {
   const calls: string[] = [];
+  const commandArgs: unknown[][] = [];
   const contexts: Array<{ readonly key: string; readonly value: unknown }> = [];
   return {
     calls,
+    commandArgs,
     contexts,
     commands: {
       async executeCommand<T = unknown>(command: string, ...args: unknown[]): Promise<T> {
         calls.push(command);
+        commandArgs.push(args);
         if (failingCommands.has(command)) {
           throw new Error(`Command unavailable: ${command}`);
         }

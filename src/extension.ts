@@ -102,8 +102,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('gitRefs.openRevisionGraph', async () => {
       await revisionGraphEditorPanel.open();
     }),
-    vscode.commands.registerCommand('gitRefs.openRevisionGraphEditor', async () => {
-      await revisionGraphEditorPanel.open();
+    vscode.commands.registerCommand('gitRefs.openRevisionGraphEditor', async (options?: { readonly preserveGraphState?: boolean }) => {
+      await revisionGraphEditorPanel.open(options);
     }),
     vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
       await compareResultsProvider.hide();
