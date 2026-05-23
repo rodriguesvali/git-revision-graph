@@ -90,12 +90,12 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /type: 'loadMore'/);
   assert.match(html, /Open Commit Details/);
   assert.match(html, /Reset to this/);
-  assert.match(html, /const canCompareWithWorktree = isSingleSelectedCommit\(commitHash\);/);
   assert.match(html, /data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>/);
   assert.match(html, /data-menu-action="resetToCommit">Reset to this<\/button>/);
-  assert.match(html, /compareSelection\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>'/s);
-  assert.match(html, /canCompareWithWorktree\s*\?\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>'/s);
-  assert.match(html, /function isSingleSelectedCommit\(commitHash\)/);
+  assert.match(html, /if \(compareSelection\) \{\s*contextMenu\.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>';/s);
+  assert.match(html, /showContextMenuAt\(clientX, clientY\);\s*return;\s*\}\s*contextMenu\.innerHTML = ''\s*\+\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>'/s);
+  assert.doesNotMatch(html, /canCompareWithWorktree/);
+  assert.doesNotMatch(html, /function isSingleSelectedCommit\(commitHash\)/);
   assert.match(html, /data-menu-action="openFile">Compare<\/button>/);
   assert.match(html, /Compare with Worktree/);
   assert.match(html, /Copy to Clipboard/);
