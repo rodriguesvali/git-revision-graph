@@ -51,7 +51,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const compareResultsProvider = new CompareResultsViewProvider();
   await compareResultsProvider.initialize();
   const backend = createRevisionGraphBackend();
-  const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider);
+  let services: RefCommandServices | undefined;
+  const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider, () => services);
   await showLogProvider.initialize();
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
@@ -66,7 +67,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
     backend
   );
-  const services = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);
+  const commandServices = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);
+  services = commandServices;
 
   context.subscriptions.push(
     compareResultsProvider,
@@ -88,16 +90,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
     vscode.commands.registerCommand('gitRefs.compareRefs', async (node?: RefNode) => {
-      await compareRefs(git, node, services);
+      await compareRefs(git, node, commandServices);
     }),
     vscode.commands.registerCommand('gitRefs.compareWithWorktree', async (node?: RefNode) => {
-      await compareWithWorktree(git, node, services);
+      await compareWithWorktree(git, node, commandServices);
     }),
     vscode.commands.registerCommand('gitRefs.checkout', async (node?: RefNode) => {
-      await checkoutReference(git, node, services);
+      await checkoutReference(git, node, commandServices);
     }),
     vscode.commands.registerCommand('gitRefs.merge', async (node?: RefNode) => {
-      await mergeReference(git, node, services);
+      await mergeReference(git, node, commandServices);
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraph', async () => {
       await revisionGraphEditorPanel.open();

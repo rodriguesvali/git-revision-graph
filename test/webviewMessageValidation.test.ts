@@ -80,6 +80,14 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({ type: 'reset-current-workspace', includeUntracked: true }),
     { type: 'reset-current-workspace', includeUntracked: true }
   );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'pull-current-head' }),
+    { type: 'pull-current-head' }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'push-current-head' }),
+    { type: 'push-current-head' }
+  );
 });
 
 test('isRevisionGraphMessageAllowedForState restricts graph actions to known refs and commits', () => {
@@ -159,6 +167,28 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     ),
     false
   );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'pull-current-head' }, state),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'push-current-head' }, state),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'push-current-head' },
+      { ...state, currentHeadUpstreamName: undefined }
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'push-current-head' },
+      { ...state, publishedLocalBranchNames: [] }
+    ),
+    false
+  );
 });
 
 test('validateCompareResultsWebviewMessage rejects malformed compare result messages', () => {
@@ -222,6 +252,13 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
     }),
     undefined
   );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'resetToCommit',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }),
     { type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }
@@ -233,6 +270,10 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'compareCommitWithWorktree', commitHash: 'abc123' }),
     { type: 'compareCommitWithWorktree', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'resetToCommit', commitHash: 'abc123' }),
+    { type: 'resetToCommit', commitHash: 'abc123' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada', sourceToken: '1' }),

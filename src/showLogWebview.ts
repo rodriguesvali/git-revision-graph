@@ -1017,8 +1017,9 @@ export function renderShowLogWebviewHtml(): string {
           ? '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
           : (canCompareWithWorktree
             ? '<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
-              + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
-            : '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'));
+            : ''))
+        + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+        + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>';
       showContextMenuAt(clientX, clientY);
     }
 
@@ -1383,6 +1384,9 @@ export function renderShowLogWebviewHtml(): string {
         }
         if (action === 'compareCommitWithWorktree') {
           vscode.postMessage({ type: 'compareCommitWithWorktree', commitHash: state.commitHash });
+        }
+        if (action === 'resetToCommit') {
+          vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
         }
         return;
       }

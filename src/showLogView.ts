@@ -6,7 +6,11 @@ import type { Change, Repository } from './git';
 import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
 import type { RevisionGraphBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
-import type { CompareResultsPresenter } from './refActions';
+import {
+  resetCurrentBranchToCommit,
+  type CompareResultsPresenter,
+  type RefActionServices
+} from './refActions';
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
@@ -39,7 +43,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
 
   constructor(
     private readonly backend: RevisionGraphBackend & ShowLogBackend,
-    private readonly compareResultsPresenter: CompareResultsPresenter
+    private readonly compareResultsPresenter: CompareResultsPresenter,
+    private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined
   ) {}
 
   async initialize(): Promise<void> {
@@ -188,6 +193,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         return;
       case 'compareCommitWithWorktree':
         await this.compareCommitWithWorktree(message.commitHash);
+        return;
+      case 'resetToCommit':
+        await this.resetToCommit(message.commitHash);
         return;
     }
   }
@@ -588,6 +596,31 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
           await vscode.window.showErrorMessage(message);
         }
       }
+    );
+  }
+
+  private async resetToCommit(commitHash: string): Promise<void> {
+    if (this.state.kind !== 'visible' || !this.state.repository) {
+      return;
+    }
+
+    const entry = this.state.entries.find((item) => item.hash === commitHash);
+    if (!entry) {
+      return;
+    }
+
+    const services = this.getRefActionServices();
+    if (!services) {
+      await vscode.window.showErrorMessage('Could not reset the branch because Git actions are not ready yet.');
+      return;
+    }
+
+    const commitLabel = entry.shortHash || commitHash.slice(0, 8);
+    await resetCurrentBranchToCommit(
+      this.state.repository,
+      commitHash,
+      commitLabel,
+      services
     );
   }
 

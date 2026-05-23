@@ -6,7 +6,7 @@ import { assertCompareResultRestorePlanInsideRepository, buildCompareResultResto
 import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
-import { PreparedRefreshHandle, RefActionServices } from './refActions';
+import { CurrentBranchPushMode, PreparedRefreshHandle, RefActionServices } from './refActions';
 import {
   buildRemoteBranchDeleteRefspec,
   buildRemoteTagDeleteRefspec,
@@ -56,6 +56,33 @@ export function createWorkbenchRefActionServices(
           validateInput: (value) => validateGitTagName(value, options.existingTagNames)
         });
       },
+      async pickCurrentBranchPushMode(options) {
+        const items: Array<vscode.QuickPickItem & { readonly mode: CurrentBranchPushMode }> = [
+          {
+            label: 'Push',
+            description: 'normal',
+            detail: `Push ${options.branchName} to ${options.upstreamLabel}.`,
+            mode: 'normal'
+          },
+          {
+            label: 'Push with Force With Lease',
+            description: 'recommended force option',
+            detail: 'Rewrite the remote branch only if it has not changed since your last fetch.',
+            mode: 'force-with-lease'
+          },
+          {
+            label: 'Push with Force',
+            description: 'unsafe',
+            detail: 'Rewrite the remote branch without checking whether someone else updated it.',
+            mode: 'force'
+          }
+        ];
+        return (await vscode.window.showQuickPick(items, {
+          placeHolder: `Choose how to push ${options.branchName} to ${options.upstreamLabel}`,
+          matchOnDescription: true,
+          matchOnDetail: true
+        }))?.mode;
+      },
       async confirm(options) {
         const confirmation = await vscode.window.showWarningMessage(
           options.message,
@@ -104,6 +131,9 @@ export function createWorkbenchRefActionServices(
       async resetBranch(repository, branchName, refName) {
         await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName]);
       },
+      async resetCurrentBranchToCommit(repository, commitHash) {
+        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', commitHash]);
+      },
       async resetWorkspace(repository, includeUntracked) {
         await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD']);
         if (includeUntracked) {
@@ -112,6 +142,19 @@ export function createWorkbenchRefActionServices(
       },
       async getRemoteNames(repository) {
         return getRepositoryRemoteNames(repository);
+      },
+      async pushCurrentBranch(repository, remoteName, branchName, mode) {
+        if (mode === 'normal') {
+          await repository.push(remoteName, branchName, false);
+          return;
+        }
+
+        await execGitWithResult(repository.rootUri.fsPath, [
+          'push',
+          mode === 'force-with-lease' ? '--force-with-lease' : '--force',
+          remoteName,
+          `HEAD:refs/heads/${branchName}`
+        ]);
       },
       async pushTag(repository, remoteName, tagName) {
         await repository.push(remoteName, buildTagPushRefspec(tagName), false);

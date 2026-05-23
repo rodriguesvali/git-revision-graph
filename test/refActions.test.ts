@@ -17,9 +17,12 @@ import {
   deleteResolvedReference,
   deleteRemoteTagResolvedReference,
   mergeResolvedReference,
+  pullCurrentBranchFromUpstream,
   publishLocalBranchResolvedReference,
+  pushCurrentBranchToUpstream,
   pushTagResolvedReference,
   RefActionServices,
+  resetCurrentBranchToCommit,
   resetCurrentBranchWorkspace,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
@@ -42,6 +45,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
   readonly resetBranches: Array<{ readonly branchName: string; readonly refName: string }>;
+  readonly resetCommits: string[];
+  readonly currentBranchPushes: Array<{ readonly remoteName: string; readonly branchName: string; readonly mode: string }>;
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
@@ -62,6 +67,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
   const resetBranches: Array<{ readonly branchName: string; readonly refName: string }> = [];
+  const resetCommits: string[] = [];
+  const currentBranchPushes: Array<{ readonly remoteName: string; readonly branchName: string; readonly mode: string }> = [];
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
@@ -87,6 +94,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async promptTagName() {
         return 'v1.0.0';
+      },
+      async pickCurrentBranchPushMode() {
+        return 'normal';
       },
       async confirm(options) {
         confirmRequests.push(options);
@@ -155,11 +165,17 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async resetBranch(_repository, branchName, refName) {
         resetBranches.push({ branchName, refName });
       },
+      async resetCurrentBranchToCommit(_repository, commitHash) {
+        resetCommits.push(commitHash);
+      },
       async resetWorkspace(_repository, includeUntracked) {
         workspaceResets.push({ includeUntracked });
       },
       async getRemoteNames() {
         return ['origin'];
+      },
+      async pushCurrentBranch(_repository, remoteName, branchName, mode) {
+        currentBranchPushes.push({ remoteName, branchName, mode });
       },
       async pushTag(_repository, remoteName, tagName) {
         pushedTags.push({ remoteName, tagName });
@@ -200,6 +216,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     compareResultsCalls,
     createdTags,
     resetBranches,
+    resetCommits,
+    currentBranchPushes,
     pushedTags,
     deletedRemoteTags,
     deletedRemoteBranches,
@@ -1705,6 +1723,151 @@ test('resetCurrentBranchWorkspace refuses conflicted merges', async () => {
   assert.deepEqual(harness.workspaceResets, []);
   assert.deepEqual(harness.confirmRequests, []);
   assert.equal(harness.warningMessages[0], 'Abort or resolve the current conflicted merge before resetting the workspace.');
+});
+
+test('resetCurrentBranchToCommit resets a clean current branch and refreshes the graph', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 2, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  const didReset = await resetCurrentBranchToCommit(repository, 'abc123', 'abc123', harness.services);
+
+  assert.equal(didReset, true);
+  assert.deepEqual(harness.resetCommits, ['abc123']);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Reset local branch main to abc123?\n\nThis runs git reset --hard abc123. Local commits after abc123 may be lost if they are not reachable from another ref.',
+      confirmLabel: 'Reset to abc123'
+    }
+  ]);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
+  assert.equal(harness.infoMessages[0], 'main was reset to abc123.');
+});
+
+test('resetCurrentBranchToCommit requires a clean workspace', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })]
+  });
+  const harness = createServices();
+
+  const didReset = await resetCurrentBranchToCommit(repository, 'abc123', 'abc123', harness.services);
+
+  assert.equal(didReset, false);
+  assert.deepEqual(harness.resetCommits, []);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.equal(harness.warningMessages[0], 'The workspace must be clean before resetting main to abc123. Review, stash, or commit the current changes first.');
+});
+
+test('pushCurrentBranchToUpstream pushes the current branch to its upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, true);
+  assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'metadata-patch',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
+  assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
+});
+
+test('pushCurrentBranchToUpstream can force push with lease', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 1, { remote: 'origin', name: 'origin/main' })
+  });
+  const harness = createServices({
+    async pickCurrentBranchPushMode() {
+      return 'force-with-lease';
+    }
+  });
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, true);
+  assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'force-with-lease' }]);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Force push main to origin/main?\n\nThis rewrites the remote branch only if it has not changed since your last fetch. Use this only when you intentionally moved the local branch history.',
+      confirmLabel: 'Force Push With Lease'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'main was force pushed to origin/main.');
+});
+
+test('pushCurrentBranchToUpstream handles upstream names that include the remote prefix', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'origin/main' })
+  });
+  const harness = createServices();
+
+  await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);
+});
+
+test('pushCurrentBranchToUpstream requires upstream tracking', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, false);
+  assert.deepEqual(harness.currentBranchPushes, []);
+  assert.equal(harness.infoMessages[0], 'main has no upstream branch configured for push.');
+});
+
+test('pullCurrentBranchFromUpstream pulls the current branch from its upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+
+  const didPull = await pullCurrentBranchFromUpstream(repository, harness.services);
+
+  assert.equal(didPull, true);
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
+  });
+  assert.equal(harness.infoMessages[0], 'main was pulled from origin/main.');
+});
+
+test('pullCurrentBranchFromUpstream requires a clean workspace', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' }),
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  });
+  const harness = createServices();
+
+  const didPull = await pullCurrentBranchFromUpstream(repository, harness.services);
+
+  assert.equal(didPull, false);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.equal(harness.warningMessages[0], 'The workspace must be clean before pulling origin/main into main. Review, stash, or commit the current changes first.');
 });
 
 test('deleteResolvedReference deletes remote branches through the shared reference manager', async () => {

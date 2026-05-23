@@ -29,6 +29,8 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'choose-repository':
     case 'abort-merge':
     case 'sync-current-head':
+    case 'pull-current-head':
+    case 'push-current-head':
       return { type: message.type };
     case 'set-projection-options': {
       const options = validateProjectionOptions(message.options);
@@ -120,6 +122,13 @@ export function isRevisionGraphMessageAllowedForState(
     case 'set-projection-options':
     case 'sync-current-head':
       return true;
+    case 'pull-current-head':
+    case 'push-current-head':
+      return state.viewMode === 'ready'
+        && !!state.currentHeadName
+        && !!state.currentHeadUpstreamName
+        && state.publishedLocalBranchNames.includes(state.currentHeadName)
+        && state.references.some((ref) => ref.kind === 'head' && ref.name === state.currentHeadName);
     case 'reset-current-workspace':
       return state.viewMode === 'ready'
         && !!state.currentHeadName

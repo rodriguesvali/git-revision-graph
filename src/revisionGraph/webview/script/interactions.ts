@@ -335,6 +335,13 @@ export function renderRevisionGraphScriptInteractions(): string {
           syncSelection();
         });
       } else {
+        if (canSyncCurrentHead) {
+          appendMenuSubmenu('Remote', [
+            { label: 'Pull from ' + currentHeadUpstreamName, onClick: () => postPullCurrentHead() },
+            { label: 'Push to ' + currentHeadUpstreamName, onClick: () => postPushCurrentHead() },
+            { label: 'Sync with ' + currentHeadUpstreamName, onClick: () => postSyncCurrentHead() }
+          ]);
+        }
         appendMenuSection('Inspect');
         appendMenuItem('Show Log', () => postShowLogTarget(target));
         appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
@@ -346,10 +353,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
-        }
-        if (canSyncCurrentHead) {
-          appendMenuSection('Branch Operations');
-          appendMenuItem('Sync with ' + currentHeadUpstreamName, () => postSyncCurrentHead());
         }
         if (canResetCurrentWorkspace) {
           appendMenuSection('Destructive');
@@ -406,6 +409,41 @@ export function renderRevisionGraphScriptInteractions(): string {
       placeContextMenu(clientX, clientY);
     }
 
+    function appendMenuSubmenu(label, entries) {
+      if (!contextMenu || entries.length === 0) {
+        return;
+      }
+
+      delete contextMenu.dataset.currentSection;
+      const group = document.createElement('div');
+      group.className = 'context-menu-group';
+
+      const parent = document.createElement('button');
+      parent.className = 'context-item context-menu-parent';
+      parent.type = 'button';
+      parent.setAttribute('aria-haspopup', 'menu');
+      parent.innerHTML = '<span>' + escapeHtml(label) + '</span><span class="context-menu-chevron">›</span>';
+      group.appendChild(parent);
+
+      const submenu = document.createElement('div');
+      submenu.className = 'context-submenu';
+      submenu.setAttribute('role', 'menu');
+      submenu.setAttribute('aria-label', label);
+      for (const entry of entries) {
+        const button = document.createElement('button');
+        button.className = 'context-item';
+        button.type = 'button';
+        button.textContent = entry.label;
+        button.addEventListener('click', () => {
+          entry.onClick();
+          closeContextMenu();
+        });
+        submenu.appendChild(button);
+      }
+      group.appendChild(submenu);
+      contextMenu.appendChild(group);
+    }
+
     function appendMenuSection(label) {
       if (!contextMenu || contextMenu.dataset.currentSection === label) {
         return;
@@ -435,6 +473,15 @@ export function renderRevisionGraphScriptInteractions(): string {
         closeContextMenu();
       });
       contextMenu.appendChild(button);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function placeContextMenu(clientX, clientY) {
@@ -583,6 +630,14 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function postSyncCurrentHead() {
       vscode.postMessage({ type: 'sync-current-head' });
+    }
+
+    function postPullCurrentHead() {
+      vscode.postMessage({ type: 'pull-current-head' });
+    }
+
+    function postPushCurrentHead() {
+      vscode.postMessage({ type: 'push-current-head' });
     }
 
     function postResetCurrentWorkspace(includeUntracked) {

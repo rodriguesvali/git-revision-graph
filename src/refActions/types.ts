@@ -3,6 +3,7 @@ import { Repository } from '../git';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'commit';
+export type CurrentBranchPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export interface RefSelection {
   readonly refName: string;
@@ -22,6 +23,10 @@ export interface RefActionUi {
   pickRemoteName(items: readonly string[], placeHolder: string): Promise<string | undefined>;
   promptBranchName(options: { readonly prompt: string; readonly value: string }): Promise<string | undefined>;
   promptTagName(options: { readonly prompt: string; readonly value?: string; readonly existingTagNames?: readonly string[] }): Promise<string | undefined>;
+  pickCurrentBranchPushMode(options: {
+    readonly branchName: string;
+    readonly upstreamLabel: string;
+  }): Promise<CurrentBranchPushMode | undefined>;
   confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
   showInformationMessage(message: string): void;
   showWarningMessage(message: string): void;
@@ -62,8 +67,10 @@ export interface RefreshController {
 export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
   resetBranch(repository: Repository, branchName: string, refName: string): Promise<void>;
+  resetCurrentBranchToCommit(repository: Repository, commitHash: string): Promise<void>;
   resetWorkspace(repository: Repository, includeUntracked: boolean): Promise<void>;
   getRemoteNames(repository: Repository): Promise<readonly string[]>;
+  pushCurrentBranch(repository: Repository, remoteName: string, branchName: string, mode: CurrentBranchPushMode): Promise<void>;
   pushTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;

@@ -22,6 +22,7 @@ import { validateGitBranchName } from './refActions/branchValidation';
 import { validateGitTagName } from './refActions/tagValidation';
 import {
   BranchCreationTarget,
+  CurrentBranchPushMode,
   RefActionServices,
   RefActionTarget,
   RefSelection
@@ -39,6 +40,7 @@ export type {
   ReferenceManager,
   AncestryInspector,
   CompareResultsRevealOptions,
+  CurrentBranchPushMode,
   RefActionKind,
   RefActionUi,
   RefActionServices,
@@ -589,6 +591,189 @@ export async function resetCurrentBranchWorkspace(
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not reset the workspace.', error));
   }
+}
+
+export async function resetCurrentBranchToCommit(
+  repository: Repository,
+  commitHash: string,
+  commitLabel: string,
+  services: RefActionServices
+): Promise<boolean> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  try {
+    const currentBranch = repository.state.HEAD?.name;
+    if (!currentBranch) {
+      services.ui.showWarningMessage('A local current branch is required before resetting to a commit.');
+      return false;
+    }
+
+    if (repository.state.HEAD?.commit === commitHash) {
+      services.ui.showInformationMessage(`${currentBranch} is already at ${commitLabel}.`);
+      return false;
+    }
+
+    if (!await ensureWorkspaceReadyForMutation(repository, `resetting ${currentBranch} to ${commitLabel}`, services)) {
+      return false;
+    }
+
+    const confirmed = await services.ui.confirm({
+      message: `Reset local branch ${currentBranch} to ${commitLabel}?\n\nThis runs git reset --hard ${commitLabel}. Local commits after ${commitLabel} may be lost if they are not reachable from another ref.`,
+      confirmLabel: `Reset to ${commitLabel}`
+    });
+    if (!confirmed) {
+      return false;
+    }
+
+    await services.referenceManager.resetCurrentBranchToCommit(repository, commitHash);
+    services.ui.showInformationMessage(`${currentBranch} was reset to ${commitLabel}.`);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+    return true;
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not reset the current branch.', error));
+    return false;
+  }
+}
+
+export async function pullCurrentBranchFromUpstream(
+  repository: Repository,
+  services: RefActionServices
+): Promise<boolean> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  try {
+    const currentBranch = repository.state.HEAD?.name;
+    const upstream = repository.state.HEAD?.upstream;
+    if (!currentBranch) {
+      services.ui.showWarningMessage('A local current branch is required before pulling.');
+      return false;
+    }
+
+    if (!upstream) {
+      services.ui.showInformationMessage(`${currentBranch} has no upstream branch configured for pull.`);
+      return false;
+    }
+
+    const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
+    if (!await ensureWorkspaceReadyForMutation(repository, `pulling ${upstreamLabel} into ${currentBranch}`, services)) {
+      return false;
+    }
+
+    await repository.pull();
+    services.ui.showInformationMessage(`${currentBranch} was pulled from ${upstreamLabel}.`);
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+    return true;
+  } catch (error) {
+    await services.ui.showErrorMessage(toOperationError('Could not pull the current branch.', error));
+    if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
+      await services.ui.showSourceControl();
+    }
+    return false;
+  }
+}
+
+export async function pushCurrentBranchToUpstream(
+  repository: Repository,
+  services: RefActionServices
+): Promise<boolean> {
+  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
+  try {
+    const currentBranch = repository.state.HEAD?.name;
+    const upstream = repository.state.HEAD?.upstream;
+    if (!currentBranch) {
+      services.ui.showWarningMessage('A local current branch is required before pushing.');
+      return false;
+    }
+
+    if (!upstream) {
+      services.ui.showInformationMessage(`${currentBranch} has no upstream branch configured for push.`);
+      return false;
+    }
+
+    if (hasMergeConflicts(repository)) {
+      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing.');
+      await services.ui.showSourceControl();
+      return false;
+    }
+
+    const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
+    const pushMode = await services.ui.pickCurrentBranchPushMode({
+      branchName: currentBranch,
+      upstreamLabel
+    });
+    if (!pushMode) {
+      return false;
+    }
+
+    if (isForcePushMode(pushMode)) {
+      const confirmed = await services.ui.confirm({
+        message: buildForcePushConfirmationMessage(currentBranch, upstreamLabel, pushMode),
+        confirmLabel: pushMode === 'force-with-lease' ? 'Force Push With Lease' : 'Force Push'
+      });
+      if (!confirmed) {
+        return false;
+      }
+    }
+
+    await services.referenceManager.pushCurrentBranch(
+      repository,
+      upstream.remote,
+      getUpstreamBranchName(upstream.remote, upstream.name),
+      pushMode
+    );
+    services.ui.showInformationMessage(buildCurrentBranchPushResultMessage(currentBranch, upstreamLabel, pushMode));
+    services.refreshController.refresh(
+      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
+    );
+    return true;
+  } catch (error) {
+    if (isNonInteractiveGitAuthenticationError(error)) {
+      await services.ui.showErrorMessage(
+        `Open Source Control and run the equivalent Git push command, or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
+      );
+      await services.ui.showSourceControl();
+      return false;
+    }
+
+    await services.ui.showErrorMessage(toOperationError('Could not push the current branch.', error));
+    return false;
+  }
+}
+
+function isForcePushMode(mode: CurrentBranchPushMode): boolean {
+  return mode === 'force-with-lease' || mode === 'force';
+}
+
+function buildForcePushConfirmationMessage(
+  currentBranch: string,
+  upstreamLabel: string,
+  mode: CurrentBranchPushMode
+): string {
+  const safetyNote = mode === 'force-with-lease'
+    ? 'This rewrites the remote branch only if it has not changed since your last fetch.'
+    : 'This rewrites the remote branch without checking whether someone else updated it.';
+  return `Force push ${currentBranch} to ${upstreamLabel}?\n\n${safetyNote} Use this only when you intentionally moved the local branch history.`;
+}
+
+function buildCurrentBranchPushResultMessage(
+  currentBranch: string,
+  upstreamLabel: string,
+  mode: CurrentBranchPushMode
+): string {
+  if (mode === 'normal') {
+    return `${currentBranch} was pushed to ${upstreamLabel}.`;
+  }
+
+  return `${currentBranch} was force pushed to ${upstreamLabel}.`;
+}
+
+function getUpstreamBranchName(remoteName: string, upstreamName: string): string {
+  const remotePrefix = `${remoteName}/`;
+  return upstreamName.startsWith(remotePrefix)
+    ? upstreamName.slice(remotePrefix.length)
+    : upstreamName;
 }
 
 export async function deleteResolvedReference(

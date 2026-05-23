@@ -277,7 +277,8 @@ export function renderRevisionGraphStyles(): string {
     .context-menu {
       position: fixed;
       z-index: 60;
-      min-width: 220px;
+      width: 250px;
+      max-width: calc(100vw - 16px);
       border: 1px solid var(--border);
       border-radius: 10px;
       background: color-mix(in srgb, var(--bg) 96%, var(--panel));
@@ -295,6 +296,9 @@ export function renderRevisionGraphStyles(): string {
       border-radius: 8px;
       padding: 8px 10px;
       cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .context-item.primary {
       font-weight: 700;
@@ -304,6 +308,40 @@ export function renderRevisionGraphStyles(): string {
     }
     .context-item:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .context-item:disabled { opacity: 0.45; cursor: default; }
+    .context-menu-group {
+      position: relative;
+    }
+    .context-menu-parent {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .context-menu-chevron {
+      opacity: 0.72;
+    }
+    .context-submenu {
+      position: absolute;
+      top: -6px;
+      left: calc(100% + 6px);
+      width: 230px;
+      max-width: calc(100vw - 16px);
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-4px);
+      transition: opacity 90ms ease, transform 90ms ease;
+    }
+    .context-menu-group:hover > .context-submenu,
+    .context-menu-group:focus-within > .context-submenu {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
     .context-separator {
       height: 1px;
       margin: 6px 4px;

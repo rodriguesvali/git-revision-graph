@@ -276,6 +276,12 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
   assert.match(html, /const canSyncCurrentHead =\s*target\.kind === 'head' &&\s*!!currentHeadUpstreamName &&\s*publishedLocalBranchNames\.has\(target\.name\);/s);
+  assert.match(html, /appendMenuSubmenu\('Remote', \[/);
+  assert.match(html, /\{ label: 'Pull from ' \+ currentHeadUpstreamName, onClick: \(\) => postPullCurrentHead\(\) \}/);
+  assert.match(html, /\{ label: 'Push to ' \+ currentHeadUpstreamName, onClick: \(\) => postPushCurrentHead\(\) \}/);
+  assert.match(html, /\{ label: 'Sync with ' \+ currentHeadUpstreamName, onClick: \(\) => postSyncCurrentHead\(\) \}/);
+  assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'pull-current-head' \}\);/s);
+  assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'push-current-head' \}\);/s);
   assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(\{ type: 'reset-current-workspace', includeUntracked: !!includeUntracked \}\);/s);
   assert.match(html, /const canResetCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasConflictedMerge;/s);
   assert.match(html, /if \(canResetCurrentWorkspace\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Reset Workspace to HEAD', \(\) => postResetCurrentWorkspace\(false\), \{ destructive: true \}\);\s*appendMenuItem\('Reset Workspace and Remove Untracked Files', \(\) => postResetCurrentWorkspace\(true\), \{ destructive: true \}\);/s);
@@ -305,6 +311,13 @@ test('renders structural commit actions for compare and branch creation', () => 
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /function appendMenuSubmenu\(label, entries\)/);
+  assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
+  assert.match(html, /\.context-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+  assert.match(html, /context-menu-group/);
+  assert.match(html, /context-submenu/);
+  assert.match(html, /\.context-submenu \{[^}]*width: 230px;/s);
+  assert.match(html, /context-menu-chevron/);
   assert.match(html, /function appendMenuSection\(label\)/);
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
