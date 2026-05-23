@@ -1,31 +1,15 @@
 import { createHash } from 'node:crypto';
-import ELK, { ElkNode } from 'elkjs/lib/elk.bundled';
 
 import { ProjectedGraph } from '../model/commitGraphTypes';
+import { calculateGitAwareProjectedGraphLayout } from './gitAwareLayout';
 import {
   estimateRevisionGraphNodeHeight,
   estimateRevisionGraphNodeWidth
 } from './nodeSizing';
 
-const elk = new ELK();
-
-const ELK_FALLBACK_SPACING = 52;
-const ELK_FALLBACK_LAYER_SPACING = 96;
-export const PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES = 1500;
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_OPTIONS: Readonly<Record<string, string>> = {
-  'org.eclipse.elk.algorithm': 'org.eclipse.elk.layered',
-  'org.eclipse.elk.direction': 'DOWN',
-  'org.eclipse.elk.edgeRouting': 'POLYLINE',
-  'org.eclipse.elk.spacing.nodeNode': '52',
-  'org.eclipse.elk.layered.spacing.nodeNodeBetweenLayers': '72',
-  'org.eclipse.elk.layered.layering.strategy': 'NETWORK_SIMPLEX',
-  'org.eclipse.elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-  'org.eclipse.elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-  'org.eclipse.elk.layered.nodePlacement.favorStraightEdges': 'true'
-};
-const PROJECTED_GRAPH_LAYOUT_OPTIONS_KEY = JSON.stringify(PROJECTED_GRAPH_LAYOUT_OPTIONS);
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'git-aware-v2';
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -92,7 +76,7 @@ export async function layoutProjectedGraph(
 
 export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
   const hash = createHash('sha256');
-  hash.update(PROJECTED_GRAPH_LAYOUT_OPTIONS_KEY);
+  hash.update(PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY);
 
   for (const node of projection.nodes) {
     hash.update('\0node\0');
@@ -110,7 +94,7 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
     hash.update(edge.to);
   }
 
-  return `elk-layered-v2:${hash.digest('base64url')}`;
+  return `${PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY}:${hash.digest('base64url')}`;
 }
 
 export function getProjectedGraphLayoutCacheStats(): ProjectedGraphLayoutCacheStats {
@@ -172,122 +156,7 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 async function calculateProjectedGraphLayout(
   projection: ProjectedGraph
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
-  if (projection.nodes.length > PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES) {
-    return calculateFallbackProjectedGraphLayout(projection);
-  }
-
-  const graph: ElkNode = {
-    id: 'root',
-    layoutOptions: PROJECTED_GRAPH_LAYOUT_OPTIONS,
-    children: projection.nodes.map((node) => ({
-      id: node.hash,
-      width: estimateRevisionGraphNodeWidth(node),
-      height: estimateRevisionGraphNodeHeight(node)
-    })),
-    edges: projection.edges.map((edge, index) => ({
-      id: `edge:${index}:${edge.from}:${edge.to}`,
-      sources: [edge.from],
-      targets: [edge.to]
-    }))
-  };
-
-  let layout: ElkNode;
-  try {
-    layout = await elk.layout(graph);
-  } catch (error) {
-    if (!isMaximumCallStackExceededError(error)) {
-      throw error;
-    }
-
-    return calculateFallbackProjectedGraphLayout(projection);
-  }
-
-  const positions = new Map<string, ProjectedGraphLayoutPosition>();
-  const fallbackXByHash = new Map<string, number>();
-  const fallbackYByHash = new Map<string, number>();
-  let nextFallbackX = 0;
-
-  for (const [index, node] of projection.nodes.entries()) {
-    fallbackXByHash.set(node.hash, nextFallbackX);
-    fallbackYByHash.set(node.hash, index * ELK_FALLBACK_LAYER_SPACING);
-    nextFallbackX += estimateRevisionGraphNodeWidth(node) + ELK_FALLBACK_SPACING;
-  }
-
-  for (const [index, node] of (layout.children ?? []).entries()) {
-    positions.set(node.id, {
-      x: node.x ?? fallbackXByHash.get(node.id) ?? index * (220 + ELK_FALLBACK_SPACING),
-      y: node.y ?? fallbackYByHash.get(node.id) ?? index * ELK_FALLBACK_LAYER_SPACING
-    });
-  }
-
-  return positions;
-}
-
-function calculateFallbackProjectedGraphLayout(
-  projection: ProjectedGraph
-): Map<string, ProjectedGraphLayoutPosition> {
-  const parentsByHash = new Map<string, string[]>();
-  for (const node of projection.nodes) {
-    parentsByHash.set(node.hash, []);
-  }
-  for (const edge of projection.edges) {
-    if (!parentsByHash.has(edge.from)) {
-      parentsByHash.set(edge.from, []);
-    }
-    parentsByHash.get(edge.from)?.push(edge.to);
-  }
-
-  let laneWidth = 220;
-  for (const node of projection.nodes) {
-    laneWidth = Math.max(laneWidth, estimateRevisionGraphNodeWidth(node) + ELK_FALLBACK_SPACING);
-  }
-
-  const positions = new Map<string, ProjectedGraphLayoutPosition>();
-  const activeLanes: Array<string | undefined> = [];
-  for (const [row, node] of projection.nodes.entries()) {
-    let nodeLane = activeLanes.indexOf(node.hash);
-    if (nodeLane < 0) {
-      nodeLane = firstEmptyLane(activeLanes);
-      if (nodeLane < 0) {
-        nodeLane = activeLanes.length;
-      }
-    }
-
-    positions.set(node.hash, {
-      x: nodeLane * laneWidth,
-      y: row * ELK_FALLBACK_LAYER_SPACING
-    });
-
-    const nextActiveLanes = [...activeLanes];
-    nextActiveLanes[nodeLane] = undefined;
-    const parents = parentsByHash.get(node.hash) ?? [];
-    if (parents[0]) {
-      nextActiveLanes[nodeLane] = parents[0];
-    }
-
-    for (const parentHash of parents.slice(1)) {
-      let parentLane = nextActiveLanes.indexOf(parentHash);
-      if (parentLane < 0) {
-        parentLane = firstEmptyLane(nextActiveLanes);
-        if (parentLane < 0) {
-          parentLane = nextActiveLanes.length;
-        }
-        nextActiveLanes[parentLane] = parentHash;
-      }
-    }
-
-    activeLanes.splice(0, activeLanes.length, ...nextActiveLanes);
-  }
-
-  return positions;
-}
-
-function firstEmptyLane(lanes: readonly (string | undefined)[]): number {
-  return lanes.findIndex((value) => !value);
-}
-
-function isMaximumCallStackExceededError(error: unknown): boolean {
-  return error instanceof Error && error.message.toLowerCase().includes('maximum call stack');
+  return calculateGitAwareProjectedGraphLayout(projection);
 }
 
 function cloneLayoutPositions(

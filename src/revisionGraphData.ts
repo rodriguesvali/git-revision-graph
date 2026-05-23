@@ -219,7 +219,7 @@ async function layoutCommitLanes(
   const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
   traceDuration(
     trace,
-    'scene.layout.elk',
+    'scene.layout.gitAware',
     startedAt,
     `nodes=${projection.nodes.length}; edges=${projection.edges.length}; cache=${cacheResult}; entries=${cacheStatsAfter.entries}`
   );

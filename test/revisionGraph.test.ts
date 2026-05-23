@@ -27,7 +27,6 @@ import {
   clearProjectedGraphLayoutCache,
   getProjectedGraphLayoutCacheStats,
   layoutProjectedGraph,
-  PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
@@ -418,11 +417,11 @@ test('emits revision graph scene load trace phases when tracing is enabled', asy
   );
 
   assert.equal(scene.nodes.length, 1);
-  assert.ok(events.some((event) => event.phase === 'scene.layout.elk'));
+  assert.ok(events.some((event) => event.phase === 'scene.layout.gitAware'));
   assert.ok(events.some((event) => event.phase === 'scene.total'));
 });
 
-test('reuses cached ELK layout positions for the same projected graph topology', async () => {
+test('reuses cached Git-aware layout positions for the same projected graph topology', async () => {
   clearProjectedGraphLayoutCache();
   const graph = buildCommitGraph([
     {
@@ -461,7 +460,7 @@ test('reuses cached ELK layout positions for the same projected graph topology',
   assert.equal(afterSecondLayout.hits, 1);
 });
 
-test('uses a new layout cache namespace for the OGDF-inspired ELK placement options', () => {
+test('uses a new layout cache namespace for the Git-aware placement strategy', () => {
   const graph = buildCommitGraph([
     {
       hash: 'head1',
@@ -483,12 +482,68 @@ test('uses a new layout cache namespace for the OGDF-inspired ELK placement opti
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^elk-layered-v2:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v2:/);
 });
 
-test('uses fallback lane layout before ELK for oversized projected graphs', async () => {
+test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['rel18', 'sha256'], author: 'Ada', date: '2026-05-23', subject: 'Mainline head', refs: [{ name: 'master', kind: 'head' }] },
+    { hash: 'sha256', parents: ['rel17'], author: 'Ada', date: '2026-05-22', subject: 'Side branch', refs: [{ name: 'origin/sha256', kind: 'remote' }] },
+    { hash: 'rel18', parents: ['rel17'], author: 'Ada', date: '2026-05-21', subject: 'Release 1.8', refs: [{ name: 'REL_1.8.0.0_EXTERNAL', kind: 'tag' }] },
+    { hash: 'rel17', parents: [], author: 'Ada', date: '2026-05-20', subject: 'Release 1.7', refs: [{ name: 'REL_1.7.15.0_EXTERNAL', kind: 'tag' }] }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+
+  const positions = await layoutProjectedGraph(projection);
+
+  assert.equal(positions.get('head1')?.x, positions.get('rel18')?.x);
+  assert.equal(positions.get('rel18')?.x, positions.get('rel17')?.x);
+  assert.notEqual(positions.get('sha256')?.x, positions.get('head1')?.x);
+});
+
+test('balances sibling branch components around the Git-aware mainline', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-05-23', subject: 'Current head', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'leftTip', parents: ['base1'], author: 'Ada', date: '2026-05-22', subject: 'Left topic', refs: [{ name: 'feature/left', kind: 'branch' }] },
+    { hash: 'rightTip', parents: ['base1'], author: 'Ada', date: '2026-05-21', subject: 'Right topic', refs: [{ name: 'origin/right', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-20', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+
+  const positions = await layoutProjectedGraph(projection);
+  const mainlineX = positions.get('head1')?.x ?? 0;
+  const siblingXs = [
+    positions.get('leftTip')?.x ?? mainlineX,
+    positions.get('rightTip')?.x ?? mainlineX
+  ];
+
+  assert.equal(positions.get('base1')?.x, mainlineX);
+  assert.ok(siblingXs.some((x) => x < mainlineX));
+  assert.ok(siblingXs.some((x) => x > mainlineX));
+});
+
+test('places side descendants on the same layer as their mainline sibling descendant', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['mainChild'], author: 'Ada', date: '2026-05-23', subject: 'Head', refs: [{ name: 'master', kind: 'head' }] },
+    { hash: 'mainChild', parents: ['base1'], author: 'Ada', date: '2026-05-22', subject: 'Main child', refs: [{ name: 'REL_2.14.0.0_EXTERNAL', kind: 'tag' }] },
+    { hash: 'sideChild', parents: ['base1'], author: 'Ada', date: '2026-05-21', subject: 'Side child', refs: [{ name: 'origin/side', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-20', subject: 'Base', refs: [{ name: 'REL_2.13.0.0_EXTERNAL', kind: 'tag' }] }
+  ]);
+  const projection = projectDecoratedCommitGraph(graph);
+
+  const scene = await buildRevisionGraphScene(graph, projection);
+  const mainChild = scene.nodes.find((node) => node.hash === 'mainChild');
+  const sideChild = scene.nodes.find((node) => node.hash === 'sideChild');
+
+  assert.ok(mainChild);
+  assert.ok(sideChild);
+  assert.equal(sideChild?.row, mainChild?.row);
+  assert.notEqual(sideChild?.x, mainChild?.x);
+});
+
+test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {
   clearProjectedGraphLayoutCache();
-  const nodeCount = PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES + 1;
+  const nodeCount = 1501;
   const projection: ProjectedGraph = {
     sourceGraph: buildCommitGraph([]),
     nodes: Array.from({ length: nodeCount }, (_, index) => ({
@@ -518,7 +573,7 @@ test('uses fallback lane layout before ELK for oversized projected graphs', asyn
   assert.equal(cacheStats.hits, 0);
 });
 
-test('restores serialized ELK layout cache entries across extension sessions', async () => {
+test('restores serialized Git-aware layout cache entries across extension sessions', async () => {
   clearProjectedGraphLayoutCache();
   const graph = buildCommitGraph([
     {
@@ -560,7 +615,7 @@ test('restores serialized ELK layout cache entries across extension sessions', a
   assert.equal(afterRestoredLayout.misses, 0);
 });
 
-test('ignores oversized serialized ELK layout cache entries', () => {
+test('ignores oversized serialized layout cache entries', () => {
   clearProjectedGraphLayoutCache();
   const oversizedPositions: [string, { readonly x: number; readonly y: number }][] = Array.from(
     { length: PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS + 1 },
@@ -569,7 +624,7 @@ test('ignores oversized serialized ELK layout cache entries', () => {
 
   restoreProjectedGraphLayoutCache([
     {
-      key: 'elk-layered-v1:oversized',
+      key: 'git-aware-v2:oversized',
       positions: oversizedPositions
     }
   ]);
