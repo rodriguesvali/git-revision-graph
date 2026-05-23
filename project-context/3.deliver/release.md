@@ -1,5 +1,79 @@
 # Release Readiness
 
+## 0.0.33 Release Readiness
+
+Current package baseline: `0.0.32`.
+
+Target release: `0.0.33`.
+
+Source baseline for this release review: `e6655f586818d1b01cfe40d928600c1b1059f352`.
+
+Status: Release artifacts are prepared for `0.0.33`. The implemented change set since the `0.0.32` baseline focuses on graph performance, Git-aware layout readability, Show Log reset/compare workflows, tracked-branch remote actions, and smaller graph navigation polish. Version bump to `0.0.33` has been applied after maintainer release-prep request. Marketplace publication has not been performed and remains with the maintainer.
+
+Planning and build references:
+
+- `project-context/2.build/features/revision-graph-performance-tortoisegit-analysis.md`
+- `project-context/2.build/features/revision-graph-git-aware-layout.md`
+- `project-context/2.build/features/0.0.33-show-log-reset-to-commit.md`
+
+Candidate change set:
+
+- Replace the generic ELK layout path with deterministic Git-aware graph layout.
+- Remove the `elkjs` runtime dependency.
+- Replace full primary-ancestor path precomputation with compact next-pointer state.
+- Reduce initial large-graph webview rendering work by removing automatic coordinate mutation and using delegated graph event handling.
+- Replace `Reorganize` with `Center HEAD`.
+- Add reset zoom controls to the graph toolbar and minimap.
+- Center cards with different widths on the same lane coordinate.
+- Preserve graph state when returning from secondary review views where no graph refresh is required.
+- Add `Reset to this` to Show Log commit context menus with clean-worktree and confirmation guards.
+- Add Show Log commit `Compare with Worktree` for unambiguous single-commit actions and show only `Compare` during two-commit selections.
+- Add graph `Remote` submenu actions for the tracked current local `HEAD`: pull, push, and sync.
+- Add normal, force-with-lease, and force push choices for tracked local branches, with destructive confirmation for force modes.
+- Clarify the Marketplace README access path: since `0.0.31`, the graph is launched from VS Code Source Control rather than a dedicated primary Activity Bar icon.
+- Exclude internal AAMAD/agent working artifacts from the VSIX package while preserving README, CHANGELOG, docs, media, and compiled extension output.
+
+Automated verification completed:
+
+- `npm run build` passed after the `0.0.33` version bump and release artifact edits.
+- `npm test` passed with 288 tests after the `0.0.33` version bump and release artifact edits. This includes `npm run build` through the test script.
+- `git diff --check` passed after the `0.0.33` release artifact edits.
+- `npm run package:vsix` generated `git-revision-graph-0.0.33.vsix`.
+- Generated VSIX SHA-256: `febbc4904a4e8f6fbd89239e38d64e4ef849a4c8b192cae2903e35fc1236dc59`.
+- Final VSIX package contents include README, CHANGELOG, docs, media, compiled `out/`, and extension metadata; internal `project-context/`, `AGENTS.md`, and `CHECKLIST.md` are excluded.
+
+Manual validation pending:
+
+- Open TensorFlow, TortoiseGit, Git, VS Code, and another large repository in the Extension Development Host and confirm graph load performance remains acceptable.
+- Confirm `Center HEAD` recenters without changing graph coordinates.
+- Confirm graph and minimap reset zoom buttons return to the default zoom while preserving the viewport center.
+- Confirm cards of different widths remain visually centered on the same lane.
+- Confirm closing Show Log or Compare Results restores Source Control without unnecessarily reloading the graph.
+- In Show Log, right-click a single commit and confirm `Compare with Worktree`, `Open Commit Details`, and `Reset to this` are available.
+- In Show Log, Ctrl/Cmd-click two commits and confirm the commit menu shows only `Compare`.
+- Reset a clean local branch from Show Log, then use graph `Remote > Push` with force-with-lease to intentionally propagate the rewritten branch.
+- Confirm pull and sync remain available under graph `Remote` for a tracked current local `HEAD`.
+- Repeat reset/pull/push flows with dirty workspace or conflicted merge state and confirm guards preserve Source Control handoff.
+
+Release gates pending:
+
+- Complete manual Extension Development Host smoke validation.
+- Review the generated VSIX metadata and package contents before upload.
+- Marketplace publishing remains with the maintainer.
+
+Post-release monitoring focus:
+
+- Reports of graph layout regressions on branch-heavy repositories.
+- Reports of missing or confusing Show Log context-menu actions.
+- Reports of accidental or unclear force-push flows.
+- Large-repository performance regressions around graph loading, minimap rendering, or edge density.
+- Source Control focus restoration after closing secondary review views.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the affected `0.0.33` slice while preserving the `0.0.32` editor graph baseline.
+- Keep the previous `0.0.32` VSIX available for manual rollback guidance if Marketplace publication has already occurred.
+
 ## 0.0.32 Release Readiness
 
 Current package baseline: `0.0.31`.

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.33
+
+### Highlights
+
+- Replaced the generic ELK layout path with a deterministic Git-aware graph layout that keeps the primary trunk stable, balances side branches around it, and centers cards with different widths on their lane coordinates.
+- Improved large-repository performance by removing the `elkjs` runtime dependency, replacing quadratic primary-ancestor path state with compact next pointers, and reducing initial webview render work.
+- Added `Reset to this` to Show Log commits so a clean current local branch can be reset to a selected commit after confirmation.
+- Added explicit `Remote` actions for the current tracked local `HEAD`: pull, push, and sync.
+
+### Workflow & UX
+
+- Replaced the old graph coordinate mutation workflow with `Center HEAD`, preserving graph layout while letting users quickly return to the current branch tip.
+- Added reset zoom controls between zoom-out and zoom-in in both the graph toolbar and minimap.
+- Added Show Log commit `Compare with Worktree` for single-commit actions, while two-commit selections now show only the unambiguous `Compare` action.
+- Added normal, force-with-lease, and force push choices for tracked local branches, with destructive confirmation for force modes.
+- Restoring Source Control after closing secondary review views no longer forces a graph reload when the graph state can be preserved.
+
+### Quality
+
+- Marketplace README now explicitly explains that, since `0.0.31`, the graph is launched from VS Code Source Control instead of a dedicated primary Activity Bar icon.
+- Added regression coverage for Git-aware trunk placement, side descendant layers, oversized graph layout, centered cards, zoom reset controls, Show Log reset/compare actions, and tracked-branch remote operations.
+- `npm run build`, `npm test`, `git diff --check`, and VSIX packaging verification for `0.0.33` are recorded in `project-context/3.deliver/release.md`.
+- Version bump to `0.0.33` has been applied in `package.json` and `package-lock.json`.
+- Marketplace publication remains with the maintainer.
+
 ## 0.0.32
 
 ### Workflow & UX

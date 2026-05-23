@@ -9,6 +9,15 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - From Marketplace: search for `Git Revision Graph`
 - From a package file: install the generated `.vsix` via `Extensions: Install from VSIX...`
 
+## Where To Find The Graph
+
+Since `0.0.31`, Git Revision Graph no longer opens from its own primary Activity Bar icon. Open the graph from VS Code Source Control instead:
+
+- Click `View Git Revision Graph` in the Source Control toolbar.
+- Or run `View Git Revision Graph` from the Command Palette.
+
+The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` still appear as on-demand Activity Bar review views only when those workflows are active.
+
 ## Goals
 
 - Visualize the Git revision graph and its references from VS Code Source Control
@@ -21,11 +30,11 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
-- Curved graph connectors with graph centering inside the board for denser repositories
+- Git-aware graph layout that keeps the primary trunk stable, balances side branches, and centers cards with different widths on their lanes
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
-- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files and double-click file diff opening for the expanded commit
+- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
@@ -34,15 +43,15 @@ It is built on top of the public API exposed by the built-in `vscode.git` extens
 - Publish a local branch to a selected Git remote with upstream tracking
 - Push a local tag to a selected Git remote from the graph context menu when it is not already published
 - Delete a pushed tag from a selected Git remote while keeping the local tag unchanged
-- Sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph
+- Pull, push, and sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph, including confirmed force-push modes when intentionally rewriting remote history
 - Merge a selected reference into the current branch
 - Abort a conflicted merge from the graph toolbar after confirmation
 - Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
-- Automatic graph reorganization on the initial graph load, plus on-demand reorganize and zoom actions
-- Horizontal drag handles plus a board context menu for reorganizing and zooming the graph during a session
+- Graphs load already organized by the extension host, with a `Center HEAD` action and zoom reset controls in both the graph toolbar and minimap
+- Horizontal drag handles plus board and minimap controls for navigating and zooming the graph during a session
 - Minimap overview with visible viewport bounds, click/drag navigation for larger graphs, and a persisted `Show Minimap` view option
 - Client-side search across the loaded graph by branch, tag, hash, subject, and author
 - Actionable empty state for choosing a repository when a multi-repository workspace needs an explicit graph target

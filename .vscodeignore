@@ -4,7 +4,10 @@
 .github/**
 .gitignore
 .vscode/**
+AGENTS.md
+CHECKLIST.md
 coverage/**
+project-context/**
 out-test/**
 src/**
 test/**
