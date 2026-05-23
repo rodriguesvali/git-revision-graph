@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { COMPARE_RESULTS_VIEW_ID, CompareResultsViewProvider } from './compareResultsView';
 import { RefCommandServices } from './refCommands';
 import { API, GitExtension } from './git';
+import { configureGitExecutablePath } from './gitExec';
 import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } from './refContentProvider';
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } from './refCommands';
 import { RefNode } from './refNodes';
@@ -22,9 +23,12 @@ import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY = 'gitRevisionGraph.projectedGraphLayoutCache.v1';
 const PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS = 500;
+const GIT_EXTENSION_CONFIG_SECTION = 'git';
+const GIT_PATH_CONFIG_KEY = 'path';
 let lastPersistedProjectedGraphLayoutCacheJson: string | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  syncConfiguredGitExecutablePath();
   await initializeRevisionGraphVisibility(vscode.commands);
 
   const git = await getGitApi();
@@ -85,6 +89,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         void persistProjectedGraphLayoutCache(context);
       }
     },
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration(`${GIT_EXTENSION_CONFIG_SECTION}.${GIT_PATH_CONFIG_KEY}`)) {
+        syncConfiguredGitExecutablePath();
+      }
+    }),
     vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
     vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
@@ -117,6 +126,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export function deactivate(): void {}
+
+function syncConfiguredGitExecutablePath(): void {
+  const gitPath = vscode.workspace
+    .getConfiguration(GIT_EXTENSION_CONFIG_SECTION)
+    .get<unknown>(GIT_PATH_CONFIG_KEY);
+  configureGitExecutablePath(gitPath);
+}
 
 function restorePersistedProjectedGraphLayoutCache(context: vscode.ExtensionContext): void {
   try {

@@ -6,7 +6,13 @@ import * as path from 'node:path';
 import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import { execGit, execGitBinaryWithResult, execGitWithResult } from '../src/gitExec';
+import {
+  configureGitExecutablePath,
+  execGit,
+  execGitBinaryWithResult,
+  execGitWithResult,
+  getGitExecutablePath
+} from '../src/gitExec';
 
 const execFile = promisify(execFileCallback);
 
@@ -33,10 +39,47 @@ async function withFakeGitScript<T>(script: string, run: (repositoryPath: string
   try {
     return await run(repositoryPath);
   } finally {
+    configureGitExecutablePath(undefined);
     process.env.PATH = originalPath;
     await fs.rm(temporaryRoot, { recursive: true, force: true });
   }
 }
+
+test('configureGitExecutablePath normalizes custom values and falls back to git for empty values', () => {
+  configureGitExecutablePath('  /tmp/custom-git  ');
+  assert.equal(getGitExecutablePath(), '/tmp/custom-git');
+
+  configureGitExecutablePath(['  ', '  /opt/git  ']);
+  assert.equal(getGitExecutablePath(), '/opt/git');
+
+  configureGitExecutablePath('   ');
+  assert.equal(getGitExecutablePath(), 'git');
+
+  configureGitExecutablePath(undefined);
+  assert.equal(getGitExecutablePath(), 'git');
+});
+
+test('execGit uses the configured Git executable path', async () => {
+  const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-custom-git-'));
+  const repositoryPath = path.join(temporaryRoot, 'repo');
+  const customGitPath = path.join(temporaryRoot, 'custom-git');
+
+  await fs.mkdir(repositoryPath, { recursive: true });
+  await fs.writeFile(customGitPath, '#!/bin/sh\nprintf "configured-git\\n"\n', {
+    encoding: 'utf8',
+    mode: 0o755
+  });
+  configureGitExecutablePath(customGitPath);
+
+  try {
+    const stdout = await execGit(repositoryPath, ['status']);
+
+    assert.equal(stdout, 'configured-git\n');
+  } finally {
+    configureGitExecutablePath(undefined);
+    await fs.rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
 
 test('execGit reads large git output without failing on a fixed maxBuffer', async () => {
   const repositoryPath = await createTemporaryRepository();

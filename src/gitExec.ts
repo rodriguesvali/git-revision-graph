@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process';
 
+const DEFAULT_GIT_EXECUTABLE = 'git';
+let configuredGitExecutablePath: string | undefined;
+
 export interface GitExecOptions {
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
@@ -21,6 +24,14 @@ interface GitExecError extends Error {
   signal?: NodeJS.Signals | null;
   stdout?: string | Buffer;
   stderr?: string;
+}
+
+export function configureGitExecutablePath(value: unknown): void {
+  configuredGitExecutablePath = normalizeGitExecutablePath(value);
+}
+
+export function getGitExecutablePath(): string {
+  return configuredGitExecutablePath ?? DEFAULT_GIT_EXECUTABLE;
 }
 
 export async function execGit(
@@ -60,6 +71,30 @@ function createTimeoutError(timeoutMs: number): Error {
   return error;
 }
 
+function normalizeGitExecutablePath(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const normalizedEntry = normalizeGitExecutablePath(entry);
+      if (normalizedEntry) {
+        return normalizedEntry;
+      }
+    }
+
+    return undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue.length > 0 ? trimmedValue : undefined;
+}
+
+function formatGitCommand(gitExecutablePath: string, args: readonly string[]): string {
+  return `${gitExecutablePath} ${args.join(' ')}`;
+}
+
 function execGitCapturedWithResult(
   repositoryPath: string,
   args: readonly string[],
@@ -84,7 +119,8 @@ function execGitCapturedWithResult(
       return;
     }
 
-    const child = spawn('git', [...args], {
+    const gitExecutablePath = getGitExecutablePath();
+    const child = spawn(gitExecutablePath, [...args], {
       cwd: repositoryPath,
       stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -138,7 +174,7 @@ function execGitCapturedWithResult(
       }
 
       const error = new Error(
-        `git ${args.join(' ')} exceeded the maximum captured output of ${options.maxOutputBytes} bytes.`
+        `${formatGitCommand(gitExecutablePath, args)} exceeded the maximum captured output of ${options.maxOutputBytes} bytes.`
       ) as GitExecError;
       error.stdout = currentStdout();
       error.stderr = stderr;
@@ -221,8 +257,8 @@ function execGitCapturedWithResult(
 
       const error = new Error(
         signal
-          ? `git ${args.join(' ')} exited with signal ${signal}.`
-          : `git ${args.join(' ')} exited with code ${code ?? 'unknown'}.`
+          ? `${formatGitCommand(gitExecutablePath, args)} exited with signal ${signal}.`
+          : `${formatGitCommand(gitExecutablePath, args)} exited with code ${code ?? 'unknown'}.`
       ) as GitExecError;
       error.code = code ?? undefined;
       error.signal = signal;
