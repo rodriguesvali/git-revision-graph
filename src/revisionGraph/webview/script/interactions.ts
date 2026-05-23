@@ -378,7 +378,7 @@ export function renderRevisionGraphScriptInteractions(): string {
             appendMenuItem('Push Tag to Remote', () => postPushTag(target));
           } else if (remoteTagState === 'unknown') {
             appendMenuSection('Create And Publish');
-            appendMenuItem('Could Not Check Remote Tag', () => {}, { disabled: true });
+            appendMenuItem('Retry Remote Tag Check', () => retryRemoteTagState(target));
           } else {
             appendMenuSection('Create And Publish');
             appendMenuItem('Checking Remote Tag...', () => {}, { disabled: true });
@@ -672,6 +672,15 @@ export function renderRevisionGraphScriptInteractions(): string {
         label: target.label,
         refKind: target.kind
       });
+    }
+
+    function retryRemoteTagState(target) {
+      if (!target || target.kind !== 'tag') {
+        return;
+      }
+
+      remoteTagPublicationState.delete(target.name);
+      requestRemoteTagState(target);
     }
 
     function requestRemoteTagState(target) {

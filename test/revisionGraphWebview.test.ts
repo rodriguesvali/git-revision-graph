@@ -294,8 +294,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /const remoteTagState = remoteTagPublicationState\.get\(target\.name\);/);
   assert.match(html, /if \(remoteTagState === 'published'\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
   assert.match(html, /} else if \(remoteTagState === 'unpublished'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
-  assert.match(html, /} else if \(remoteTagState === 'unknown'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Could Not Check Remote Tag', \(\) => \{\}, \{ disabled: true \}\);/s);
+  assert.match(html, /} else if \(remoteTagState === 'unknown'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Retry Remote Tag Check', \(\) => retryRemoteTagState\(target\)\);/s);
   assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) => \{\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
+  assert.match(html, /function retryRemoteTagState\(target\) \{\s*if \(!target \|\| target\.kind !== 'tag'\) \{\s*return;\s*\}\s*remoteTagPublicationState\.delete\(target\.name\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function requestRemoteTagState\(target\) \{\s*if \(\s*!target \|\|\s*target\.kind !== 'tag' \|\|\s*remoteTagPublicationState\.has\(target\.name\) \|\|\s*pendingRemoteTagStateRequests\.has\(target\.name\)/s);
   assert.match(html, /type: 'resolve-remote-tag-state',\s*refName: target\.name/s);
   assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'delete-remote-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
