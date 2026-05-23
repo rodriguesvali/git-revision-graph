@@ -95,7 +95,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let searchResultHashes = [];
     let activeSearchResultIndex = -1;
     let toolbarBusy = false;
-    let knownRemoteTagNames = new Set();
     let remoteTagPublicationState = new Map();
     let pendingRemoteTagStateRequests = new Set();
     let activeContextMenuRequest = null;
@@ -424,7 +423,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           applyWorkspaceStatePatch(message.patch);
           return;
         case 'set-remote-tag-state':
-          setRemoteTagState(message.tagName, !!message.isPublished);
+          setRemoteTagState(message.tagName, message.state);
           return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');
@@ -646,18 +645,17 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       hideStatus();
     }
 
-    function setRemoteTagState(tagName, isPublished) {
+    function setRemoteTagState(tagName, state) {
       if (!tagName) {
         return;
       }
 
-      if (isPublished) {
-        knownRemoteTagNames.add(tagName);
-      } else {
-        knownRemoteTagNames.delete(tagName);
-      }
+      const normalizedState = state === 'published' || state === 'unpublished' || state === 'unknown'
+        ? state
+        : 'unknown';
+
       pendingRemoteTagStateRequests.delete(tagName);
-      remoteTagPublicationState.set(tagName, !!isPublished);
+      remoteTagPublicationState.set(tagName, normalizedState);
       if (
         activeContextMenuRequest &&
         activeContextMenuRequest.target &&

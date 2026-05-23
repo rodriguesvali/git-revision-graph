@@ -369,13 +369,16 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuItem('Create Tag', () => postCreateTag(target));
         }
         if (target.kind === 'tag') {
-          const hasResolvedRemoteTagState = remoteTagPublicationState.has(target.name);
-          if (hasResolvedRemoteTagState && knownRemoteTagNames.has(target.name)) {
+          const remoteTagState = remoteTagPublicationState.get(target.name);
+          if (remoteTagState === 'published') {
             appendMenuSection('Destructive');
             appendMenuItem('Delete Remote Tag', () => postDeleteRemoteTag(target), { destructive: true });
-          } else if (hasResolvedRemoteTagState) {
+          } else if (remoteTagState === 'unpublished') {
             appendMenuSection('Create And Publish');
             appendMenuItem('Push Tag to Remote', () => postPushTag(target));
+          } else if (remoteTagState === 'unknown') {
+            appendMenuSection('Create And Publish');
+            appendMenuItem('Could Not Check Remote Tag', () => {}, { disabled: true });
           } else {
             appendMenuSection('Create And Publish');
             appendMenuItem('Checking Remote Tag...', () => {}, { disabled: true });

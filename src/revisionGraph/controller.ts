@@ -56,6 +56,7 @@ import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
   normalizeRevisionGraphProjectionOptionsForScope,
+  RemoteTagPublicationState,
   RevisionGraphViewMetadataPatch,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
@@ -71,6 +72,7 @@ import {
 } from './messageValidation';
 import { ShowLogPresenter } from '../showLogView';
 import { RevisionGraphLoadTraceSink } from './loadTrace';
+import { resolveRemoteTagPublicationState } from './remoteTagState';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -88,8 +90,6 @@ import {
   shouldReloadSnapshotForProjectionOptionsChange
 } from '../revisionGraphRefresh';
 
-const REMOTE_TAG_STATE_MAX_OUTPUT_BYTES = 1024 * 1024;
-const REMOTE_TAG_STATE_TIMEOUT_MS = 3000;
 const FETCH_WITH_TAGS_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
 const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
@@ -121,47 +121,20 @@ function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWeb
   };
 }
 
-async function isTagPublishedToAnyRemote(repository: Repository, tagName: string): Promise<boolean> {
-  const remoteNames = await getRepositoryRemoteNames(repository);
-  for (const remoteName of remoteNames) {
-    if (await remoteHasTag(repository, remoteName, tagName)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-async function remoteHasTag(repository: Repository, remoteName: string, tagName: string): Promise<boolean> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REMOTE_TAG_STATE_TIMEOUT_MS);
+async function resolveTagPublicationStateForRepository(
+  repository: Repository,
+  tagName: string
+): Promise<RemoteTagPublicationState> {
   try {
-    const { stdout } = await execGitWithResult(
-      repository.rootUri.fsPath,
-      ['ls-remote', '--tags', '--refs', remoteName, `refs/tags/${tagName}`],
-      {
-        maxOutputBytes: REMOTE_TAG_STATE_MAX_OUTPUT_BYTES,
-        signal: controller.signal
-      }
-    );
-    return parseRemoteTagNames(stdout).has(tagName);
+    const remoteNames = await getRepositoryRemoteNames(repository);
+    return resolveRemoteTagPublicationState({
+      repositoryPath: repository.rootUri.fsPath,
+      remoteNames,
+      tagName
+    });
   } catch {
-    return false;
-  } finally {
-    clearTimeout(timeout);
+    return 'unknown';
   }
-}
-
-function parseRemoteTagNames(stdout: string): Set<string> {
-  const names = new Set<string>();
-  for (const line of stdout.split(/\r?\n/)) {
-    const [, refName] = line.trim().split(/\s+/);
-    if (refName?.startsWith('refs/tags/')) {
-      names.add(refName.slice('refs/tags/'.length));
-    }
-  }
-
-  return names;
 }
 
 function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number): number {
@@ -551,9 +524,9 @@ export class RevisionGraphController implements vscode.Disposable {
         this.postHostMessage({
           type: 'set-remote-tag-state',
           tagName: message.refName,
-          isPublished: this.currentRepository
-            ? await isTagPublishedToAnyRemote(this.currentRepository, message.refName)
-            : false
+          state: this.currentRepository
+            ? await resolveTagPublicationStateForRepository(this.currentRepository, message.refName)
+            : 'unknown'
         });
         return;
       case 'push-tag':
@@ -564,7 +537,7 @@ export class RevisionGraphController implements vscode.Disposable {
             this.actionServices
           );
           if (pushed) {
-            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, isPublished: true });
+            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, state: 'published' });
           }
         }
         return;
@@ -576,7 +549,7 @@ export class RevisionGraphController implements vscode.Disposable {
             this.actionServices
           );
           if (deleted) {
-            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, isPublished: false });
+            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, state: 'unpublished' });
           }
         }
         return;
