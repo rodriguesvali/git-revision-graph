@@ -42,7 +42,8 @@ export interface RevisionGraphBackend {
     limit: number,
     skip?: number,
     showAllBranches?: boolean,
-    filterText?: string
+    filterText?: string,
+    signal?: AbortSignal
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
@@ -149,11 +150,13 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     limit: number,
     skip = 0,
     showAllBranches = source.kind === 'range',
-    filterText?: string
+    filterText?: string,
+    signal?: AbortSignal
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
   }> {
+    throwIfAborted(signal);
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const normalizedFilterText = normalizeRevisionLogFilterText(filterText);
     if (normalizedFilterText) {
@@ -164,7 +167,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
         skip,
         showAllBranches,
         normalizedFilterText,
-        refKindsByName
+        refKindsByName,
+        signal
       );
     }
 
@@ -172,10 +176,12 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       repository.rootUri.fsPath,
       buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches),
       {
+        signal,
         maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
+    throwIfAborted(signal);
     const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
 
     return {
@@ -191,7 +197,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     skip: number,
     showAllBranches: boolean,
     normalizedFilterText: string,
-    refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>
+    refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>,
+    signal?: AbortSignal
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
@@ -201,16 +208,19 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     let scannedCommits = 0;
 
     while (scannedCommits < REVISION_LOG_FILTER_SCAN_MAX_COMMITS && matchedEntries.length <= limit) {
+      throwIfAborted(signal);
       const remainingScanBudget = REVISION_LOG_FILTER_SCAN_MAX_COMMITS - scannedCommits;
       const batchSize = Math.min(REVISION_LOG_FILTER_SCAN_BATCH_SIZE, remainingScanBudget);
       const stdout = await execGit(
         repository.rootUri.fsPath,
         buildRevisionLogGitArgs(source, batchSize, scannedCommits, showAllBranches),
         {
+          signal,
           maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
           timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
         }
       );
+      throwIfAborted(signal);
       const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
       scannedCommits += parsedEntries.length;
 

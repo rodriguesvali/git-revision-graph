@@ -51,7 +51,7 @@ test('createRepositoryRefreshRequest attaches follow-up suppression only when a 
   });
 });
 
-test('registerPendingFollowUpRefresh suppresses matching event bursts within the suppression window', () => {
+test('registerPendingFollowUpRefresh consumes each prepared follow-up event once', () => {
   const pending = new Map();
   registerPendingFollowUpRefresh(
     pending,
@@ -60,9 +60,27 @@ test('registerPendingFollowUpRefresh suppresses matching event bursts within the
   );
 
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), false);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 400), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), false);
+});
+
+test('registerPendingFollowUpRefresh keeps overlapping prepared entries independent', () => {
+  const pending = new Map();
+  registerPendingFollowUpRefresh(
+    pending,
+    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    100
+  );
+  registerPendingFollowUpRefresh(
+    pending,
+    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    150
+  );
+
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 400), false);
 });
 
 test('cancelPendingFollowUpRefresh removes a prepared suppression entry', () => {

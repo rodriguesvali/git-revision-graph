@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is a VS Code extension named `GIT Revision Graph`. Its active product surface is a revision-graph webview that visualizes Git refs and runs compare, checkout, branch, sync, merge, deletion, and history workflows from a dedicated Activity Bar view.
+This repository is a VS Code extension named `GIT Revision Graph`. Its active product surface is a revision-graph editor webview panel launched from VS Code Source Control. It visualizes Git refs and runs compare, checkout, branch, sync, merge, deletion, and history workflows. Compare Results and Show Logs remain on-demand Activity Bar review views.
 
 ## Main Files
 
@@ -47,21 +47,20 @@ This repository is a VS Code extension named `GIT Revision Graph`. Its active pr
 
 ## Current Product Shape
 
-- Activity Bar container: `gitRefs`
-- Active view: `gitRefs.revisionGraphView`
-- Secondary view: `gitRefs.compareResultsView`
+- Source Control command: `gitRefs.openRevisionGraphEditor`
+- Editor panel view type: `gitRefs.revisionGraphEditorPanel`
+- Review view: `gitRefs.compareResultsView`
+- Review view: `gitRefs.showLogView`
 - Contributed commands:
-  - `gitRefs.refresh`
-  - `gitRefs.fetchCurrentRepository`
   - `gitRefs.compareRefs`
   - `gitRefs.compareWithWorktree`
   - `gitRefs.checkout`
   - `gitRefs.merge`
+  - `gitRefs.openRevisionGraphEditor`
+  - `gitRefs.hideCompareResults`
+  - `gitRefs.hideShowLog`
+- Compatibility command wired at activation:
   - `gitRefs.openRevisionGraph`
-  - `gitRefs.chooseRevisionGraphRepository`
-  - `gitRefs.clearCompareResults`
-- Internal commands wired at activation:
-  - `gitRefs.openCompareResult`
 - Primary graph actions exposed inside the webview:
   - compare selected refs
   - compare selected ref with worktree

@@ -189,8 +189,31 @@ export function consumePendingFollowUpRefresh(
     return false;
   }
 
-  pendingRefreshes.set(repositoryPath, activeEntries);
-  return activeEntries.some((entry) => entry.eventKinds.has(eventKind));
+  let consumed = false;
+  const nextEntries: PendingRevisionGraphFollowUpRefresh[] = [];
+  for (const entry of activeEntries) {
+    if (!consumed && entry.eventKinds.has(eventKind)) {
+      consumed = true;
+      const remainingEventKinds = [...entry.eventKinds].filter((kind) => kind !== eventKind);
+      if (remainingEventKinds.length > 0) {
+        nextEntries.push({
+          ...entry,
+          eventKinds: new Set(remainingEventKinds)
+        });
+      }
+      continue;
+    }
+
+    nextEntries.push(entry);
+  }
+
+  if (nextEntries.length === 0) {
+    pendingRefreshes.delete(repositoryPath);
+  } else {
+    pendingRefreshes.set(repositoryPath, nextEntries);
+  }
+
+  return consumed;
 }
 
 function getActivePendingFollowUpRefreshes(

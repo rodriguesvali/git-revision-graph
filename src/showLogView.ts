@@ -40,6 +40,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   private loadRequestId = 0;
   private expandRequestId = 0;
   private sourceTokenSeed = 0;
+  private activeLogAbortController: AbortController | undefined;
 
   constructor(
     private readonly backend: RevisionGraphBackend & ShowLogBackend,
@@ -52,6 +53,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   }
 
   dispose(): void {
+    this.cancelActiveLogLoad();
     this.disposeViewDisposables();
   }
 
@@ -98,7 +100,11 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     await this.updateVisibility(true);
     this.postState();
     await focusAndMaximizeSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
+    if (requestId !== this.loadRequestId) {
+      return;
+    }
 
+    const abortController = this.beginLogLoadRequest();
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -106,7 +112,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         SHOW_LOG_PAGE_SIZE,
         0,
         this.state.showAllBranches,
-        this.state.filterText
+        this.state.filterText,
+        abortController.signal
       );
       if (requestId !== this.loadRequestId) {
         return;
@@ -123,6 +130,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       if (requestId !== this.loadRequestId) {
         return;
       }
+      if (isAbortError(error)) {
+        return;
+      }
 
       this.state = {
         ...this.state,
@@ -130,12 +140,15 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         errorMessage: toOperationError('Could not load the selected log.', error)
       };
       this.postState();
+    } finally {
+      this.finishLogLoadRequest(abortController);
     }
   }
 
   async hide(): Promise<void> {
     this.loadRequestId += 1;
     this.expandRequestId += 1;
+    this.cancelActiveLogLoad();
     this.state = createHiddenShowLogState();
     this.postState();
     await this.updateVisibility(false);
@@ -145,6 +158,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   async hideWithRevisionGraph(): Promise<void> {
     this.loadRequestId += 1;
     this.expandRequestId += 1;
+    this.cancelActiveLogLoad();
     this.state = createHiddenShowLogState();
     this.postState();
     await this.updateVisibility(false);
@@ -313,6 +327,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     };
     this.postState();
 
+    const abortController = this.beginLogLoadRequest();
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -320,7 +335,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         SHOW_LOG_PAGE_SIZE,
         0,
         value,
-        this.state.filterText
+        this.state.filterText,
+        abortController.signal
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
@@ -337,6 +353,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
       }
+      if (isAbortError(error)) {
+        return;
+      }
 
       this.state = {
         ...this.state,
@@ -344,6 +363,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         errorMessage: toOperationError('Could not update the log scope.', error)
       };
       this.postState();
+    } finally {
+      this.finishLogLoadRequest(abortController);
     }
   }
 
@@ -384,6 +405,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     };
     this.postState();
 
+    const abortController = this.beginLogLoadRequest();
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -391,7 +413,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         SHOW_LOG_PAGE_SIZE,
         0,
         this.state.showAllBranches,
-        filterText
+        filterText,
+        abortController.signal
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
@@ -408,6 +431,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
       }
+      if (isAbortError(error)) {
+        return;
+      }
 
       this.state = {
         ...this.state,
@@ -415,6 +441,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         errorMessage: toOperationError('Could not filter the selected log.', error)
       };
       this.postState();
+    } finally {
+      this.finishLogLoadRequest(abortController);
     }
   }
 
@@ -434,6 +462,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     };
     this.postState();
 
+    const abortController = this.beginLogLoadRequest();
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -441,7 +470,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         SHOW_LOG_PAGE_SIZE,
         skip,
         this.state.showAllBranches,
-        this.state.filterText
+        this.state.filterText,
+        abortController.signal
       );
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
@@ -458,6 +488,9 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
         return;
       }
+      if (isAbortError(error)) {
+        return;
+      }
 
       this.state = {
         ...this.state,
@@ -465,6 +498,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
         errorMessage: toOperationError('Could not load more commits.', error)
       };
       this.postState();
+    } finally {
+      this.finishLogLoadRequest(abortController);
     }
   }
 
@@ -644,6 +679,24 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     return String(this.sourceTokenSeed);
   }
 
+  private beginLogLoadRequest(): AbortController {
+    this.cancelActiveLogLoad();
+    const abortController = new AbortController();
+    this.activeLogAbortController = abortController;
+    return abortController;
+  }
+
+  private finishLogLoadRequest(abortController: AbortController): void {
+    if (this.activeLogAbortController === abortController) {
+      this.activeLogAbortController = undefined;
+    }
+  }
+
+  private cancelActiveLogLoad(): void {
+    this.activeLogAbortController?.abort();
+    this.activeLogAbortController = undefined;
+  }
+
   private disposeViewDisposables(): void {
     while (this.viewDisposables.length > 0) {
       this.viewDisposables.pop()?.dispose();
@@ -658,4 +711,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.isVisible = visible;
     await vscode.commands.executeCommand('setContext', SHOW_LOG_VISIBLE_CONTEXT, visible);
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }

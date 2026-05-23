@@ -168,6 +168,54 @@ export function isRevisionGraphMessageAllowedForState(
   }
 }
 
+export function isRevisionGraphMessageAllowedForCurrentRepository(
+  message: RevisionGraphMessage,
+  state: RevisionGraphViewState,
+  currentRepositoryPath: string | undefined
+): boolean {
+  if (!isRevisionGraphMessageRepositoryScoped(message)) {
+    return true;
+  }
+
+  return state.viewMode === 'ready' &&
+    !state.loading &&
+    !!state.repositoryPath &&
+    state.repositoryPath === currentRepositoryPath;
+}
+
+function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): boolean {
+  switch (message.type) {
+    case 'webview-ready':
+    case 'refresh':
+    case 'open-source-control':
+    case 'choose-repository':
+    case 'set-projection-options':
+      return false;
+    case 'fetch-current-repository':
+    case 'abort-merge':
+    case 'sync-current-head':
+    case 'pull-current-head':
+    case 'push-current-head':
+    case 'reset-current-workspace':
+    case 'compare-selected':
+    case 'show-log':
+    case 'open-unified-diff':
+    case 'compare-with-worktree':
+    case 'copy-commit-hash':
+    case 'copy-ref-name':
+    case 'checkout':
+    case 'create-branch':
+    case 'create-tag':
+    case 'resolve-remote-tag-state':
+    case 'push-tag':
+    case 'delete-remote-tag':
+    case 'publish-branch':
+    case 'delete':
+    case 'merge':
+      return true;
+  }
+}
+
 type MutableProjectionOptions = {
   -readonly [Key in keyof RevisionGraphProjectionOptions]?: RevisionGraphProjectionOptions[Key];
 };

@@ -65,6 +65,7 @@ import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
 import {
+  isRevisionGraphMessageAllowedForCurrentRepository,
   isRevisionGraphMessageAllowedForState,
   validateRevisionGraphMessage
 } from './messageValidation';
@@ -421,7 +422,15 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
     const message = validateRevisionGraphMessage(rawMessage);
-    if (!message || !isRevisionGraphMessageAllowedForState(message, this.currentState)) {
+    if (
+      !message ||
+      !isRevisionGraphMessageAllowedForState(message, this.currentState) ||
+      !isRevisionGraphMessageAllowedForCurrentRepository(
+        message,
+        this.currentState,
+        this.currentRepository?.rootUri.fsPath
+      )
+    ) {
       return;
     }
 

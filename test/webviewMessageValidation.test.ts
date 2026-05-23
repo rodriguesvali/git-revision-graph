@@ -7,6 +7,7 @@ import {
   isBoundedStringArray
 } from '../src/webviewMessageValidation';
 import {
+  isRevisionGraphMessageAllowedForCurrentRepository,
   isRevisionGraphMessageAllowedForState,
   validateRevisionGraphMessage
 } from '../src/revisionGraph/messageValidation';
@@ -188,6 +189,51 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { ...state, publishedLocalBranchNames: [] }
     ),
     false
+  );
+});
+
+test('isRevisionGraphMessageAllowedForCurrentRepository rejects stale repository-scoped graph actions', () => {
+  const state = createReadyRevisionGraphState();
+
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'checkout', refName: 'main', refKind: 'head' },
+      state,
+      '/workspace/repo'
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'checkout', refName: 'main', refKind: 'head' },
+      state,
+      '/workspace/other'
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'checkout', refName: 'main', refKind: 'head' },
+      { ...state, loading: true, loadingLabel: 'Loading revision graph...' },
+      '/workspace/repo'
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'refresh' },
+      { ...state, loading: true, loadingLabel: 'Loading revision graph...' },
+      '/workspace/other'
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'choose-repository' },
+      { ...state, loading: true, loadingLabel: 'Loading revision graph...' },
+      undefined
+    ),
+    true
   );
 });
 
