@@ -37,11 +37,6 @@ export function renderRevisionGraphScriptGraphLogic(): string {
     }
 
     function getPrimaryAncestorPath(startHash) {
-      const precomputedPath = primaryAncestorPathsByHash[startHash];
-      if (Array.isArray(precomputedPath) && precomputedPath.length > 0) {
-        return precomputedPath;
-      }
-
       const compactPath = buildPrimaryAncestorPathFromNextMap(startHash);
       return compactPath.length > 1
         ? compactPath

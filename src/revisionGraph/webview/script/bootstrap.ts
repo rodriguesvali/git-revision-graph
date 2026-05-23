@@ -11,7 +11,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
   return `
     const vscode = acquireVsCodeApi();
     const zoomLevels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5];
-    const LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT = 1000;
     const viewport = document.getElementById('viewport');
     const canvas = document.getElementById('canvas');
     const sceneLayer = document.getElementById('sceneLayer');
@@ -46,7 +45,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const searchPrevButton = document.getElementById('searchPrevButton');
     const searchNextButton = document.getElementById('searchNextButton');
     const searchClearButton = document.getElementById('searchClearButton');
-    const reorganizeButton = document.getElementById('reorganizeButton');
+    const centerHeadButton = document.getElementById('centerHeadButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomInButton = document.getElementById('zoomInButton');
     let currentState = null;
@@ -76,7 +75,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let childMap = new Map();
     let headDistanceByHash = new Map();
     let primaryAncestorNextByHash = {};
-    let primaryAncestorPathsByHash = {};
     let sceneLayoutKey = 'empty';
     let baseCanvasWidth = 880;
     let baseCanvasHeight = 480;
@@ -191,15 +189,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         clearSearchQuery(true);
       });
     }
-    if (reorganizeButton) {
-      reorganizeButton.addEventListener('click', async () => {
-        if (!canAutoArrangeGraph()) {
-          return;
-        }
-        await runWithLoading('Reorganizing graph layout...', async () => {
-          autoArrangeLayout();
+    if (centerHeadButton) {
+      centerHeadButton.addEventListener('click', async () => {
+        await runWithLoading('Centering on HEAD...', async () => {
           centerGraphInViewport();
-        }, reorganizeButton);
+        }, centerHeadButton, 'subtle');
       });
     }
     if (zoomOutButton) {
@@ -451,7 +445,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       graphEdges = (nextState.scene && nextState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       primaryAncestorNextByHash = nextState.primaryAncestorNextByHash || {};
-      primaryAncestorPathsByHash = nextState.primaryAncestorPathsByHash || {};
       sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
       baseCanvasWidth = nextState.baseCanvasWidth || 880;
       baseCanvasHeight = nextState.baseCanvasHeight || 480;
@@ -504,10 +497,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         syncSearchResults({ preserveActiveHash: true, focusActive: false });
       }
       requestAnimationFrame(() => {
-        if (nextState.autoArrangeOnInit && canAutoArrangeGraph()) {
-          autoArrangeLayout();
-          centerGraphInViewport();
-        } else if (viewportSnapshot) {
+        if (viewportSnapshot) {
           restoreScenePlacementSnapshot(scenePlacementSnapshot);
           restoreViewportSnapshot(viewportSnapshot);
         } else if (shouldRecenter) {
@@ -581,7 +571,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       graphEdges = (currentState.scene && currentState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       primaryAncestorNextByHash = currentState.primaryAncestorNextByHash || {};
-      primaryAncestorPathsByHash = currentState.primaryAncestorPathsByHash || {};
       baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
       baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
 
@@ -787,10 +776,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function hasStoredNodeOffsets() {
       return Object.values(nodeOffsets).some((offset) => Math.abs(Number(offset) || 0) > 0.5);
-    }
-
-    function canAutoArrangeGraph() {
-      return graphNodes.length <= LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT;
     }
 
     function updateChrome(state) {

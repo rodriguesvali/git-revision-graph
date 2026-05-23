@@ -8,7 +8,7 @@ Improve card organization by making the base graph layout aware of Git concepts 
 
 - Replace the default projected-graph coordinate calculation with a deterministic Git-aware layout.
 - Keep the existing extension-host cache and scene-building pipeline.
-- Keep the webview `Reorganize` action as a client-side offset routine for now.
+- Replace the webview `Reorganize` action with a lightweight `Center HEAD` viewport action.
 - Avoid new runtime dependencies and preserve performance on large repositories.
 
 ## Design
@@ -23,6 +23,8 @@ The layout now runs in `src/revisionGraph/layout/gitAwareLayout.ts`:
 6. Reuse lateral lanes when component row intervals do not overlap.
 7. Emit stable `x`/`y` coordinates for the existing scene builder.
 
+The graph is now loaded already organized by the extension host. The webview keeps manual drag offsets and viewport centering behavior, but no longer owns a separate auto-arrange routine.
+
 ## Acceptance
 
 - First-parent trunk nodes remain horizontally aligned.
@@ -30,6 +32,7 @@ The layout now runs in `src/revisionGraph/layout/gitAwareLayout.ts`:
 - Independent side branch components are distributed on both sides of the trunk.
 - Large linear histories render without invoking ELK.
 - Layout cache keys use a new `git-aware-v2` namespace after the side-descendant row propagation fix.
+- The toolbar action centers the viewport on `HEAD` instead of mutating graph coordinates.
 
 ## Verification
 
@@ -41,4 +44,3 @@ The layout now runs in `src/revisionGraph/layout/gitAwareLayout.ts`:
 - Add screenshot/manual validation against the TortoiseGit and TensorFlow repositories.
 - Add a minimap simplification path for large graphs so long edges do not dominate the overview.
 - Consider renaming `layeredLayout.ts` after the Git-aware strategy settles, since it now owns cache orchestration rather than ELK execution.
-- Decide whether to remove the unused `elkjs` dependency in a later dependency-change pass.

@@ -125,14 +125,14 @@ export function renderRevisionGraphShellHtml(): string {
         <span>Abort Merge</span>
       </button>
       <button
-        id="reorganizeButton"
+        id="centerHeadButton"
         class="toolbar-button"
         type="button"
-        title="Reorganize graph layout"
-        aria-label="Reorganize graph layout"
+        title="Center on HEAD"
+        aria-label="Center on HEAD"
       >
-        <span class="button-icon">=</span>
-        <span>Reorganize</span>
+        <span class="button-icon">&#9678;</span>
+        <span>Center HEAD</span>
       </button>
       <button
         id="zoomOutButton"

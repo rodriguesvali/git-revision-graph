@@ -680,8 +680,8 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showMinimapToggle) {
         showMinimapToggle.disabled = toolbarBusy;
       }
-      if (reorganizeButton) {
-        reorganizeButton.disabled = toolbarBusy || !canAutoArrangeGraph();
+      if (centerHeadButton) {
+        centerHeadButton.disabled = toolbarBusy;
       }
       if (zoomInButton) {
         zoomInButton.disabled = toolbarBusy || !canZoomIn;
@@ -711,7 +711,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchNextButton,
         searchClearButton,
         reloadButton,
-        reorganizeButton,
+        centerHeadButton,
         zoomOutButton,
         zoomInButton,
         minimapZoomOutButton,

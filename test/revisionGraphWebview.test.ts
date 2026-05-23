@@ -97,13 +97,14 @@ test('keeps loading and error primitives in the shell runtime', () => {
   assert.match(html, /body\.loading-subtle \.loading-overlay/);
 });
 
-test('shows loading feedback while reorganizing the graph layout client-side', () => {
+test('shows loading feedback while centering the graph on HEAD', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(
     html,
-    /reorganizeButton\.addEventListener\('click', async \(\) => \{\s*if \(!canAutoArrangeGraph\(\)\) \{\s*return;\s*\}\s*await runWithLoading\('Reorganizing graph layout\.\.\.', async \(\) => \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);\s*\}, reorganizeButton\);/s
+    /centerHeadButton\.addEventListener\('click', async \(\) => \{\s*await runWithLoading\('Centering on HEAD\.\.\.', async \(\) => \{\s*centerGraphInViewport\(\);\s*\}, centerHeadButton, 'subtle'\);/s
   );
+  assert.doesNotMatch(html, /autoArrangeLayout\(\)/);
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
 });
 
@@ -116,7 +117,7 @@ test('reloads the graph from the webview toolbar', () => {
     /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'refresh' \}, 'Reloading revision graph\.\.\.', reloadButton\);/s
   );
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /searchClearButton,\s*reloadButton,\s*reorganizeButton,/s);
+  assert.match(html, /searchClearButton,\s*reloadButton,\s*centerHeadButton,/s);
 });
 
 test('preserves the current viewport when zooming from toolbar buttons', () => {
@@ -151,7 +152,7 @@ test('does not recenter the graph when zooming from toolbar buttons', () => {
   );
 });
 
-test('reorganize button does not crash when clustering by ref families', async () => {
+test('center HEAD button does not crash when refs are grouped by families', async () => {
   const runtime = createWebviewRuntime();
 
   runtime.context.handleHostMessage({
@@ -174,8 +175,7 @@ test('reorganize button does not crash when clustering by ref families', async (
         showCurrentBranchDescendants: true
       },
       mergeBlockedTargets: [],
-      primaryAncestorPathsByHash: {},
-      autoArrangeOnInit: false,
+      primaryAncestorNextByHash: {},
       scene: {
         nodes: [
           {
@@ -230,10 +230,10 @@ test('reorganize button does not crash when clustering by ref families', async (
     }
   });
 
-  const reorganize = runtime.elements.get('reorganizeButton')?.listeners.click?.[0];
-  assert.ok(reorganize);
+  const centerHead = runtime.elements.get('centerHeadButton')?.listeners.click?.[0];
+  assert.ok(centerHead);
   await assert.doesNotReject(async () => {
-    await reorganize();
+    await centerHead();
   });
 });
 
@@ -377,25 +377,23 @@ test('renders single-bend edges and compact structural node styling in the shell
   assert.match(html, /min-width: 78px;/);
 });
 
-test('keeps a single auto-arrange layout routine in the shell runtime', () => {
+test('does not keep the legacy client-side auto-arrange routine in the shell runtime', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function autoArrangeLayout\(\)/);
-  assert.match(html, /return getNodeWidth\(leftHash\) \+ 28;/);
-  assert.match(html, /const leftEdgeShift = -minNumber\(resolved, 0\);/);
-  assert.match(html, /function minNumber\(values, fallback\)/);
+  assert.doesNotMatch(html, /function autoArrangeLayout\(\)/);
+  assert.doesNotMatch(html, /function canAutoArrangeGraph\(\)/);
   assert.doesNotMatch(html, /function autoArrangeTortoiseLayout\(\)/);
   assert.doesNotMatch(html, /function buildNodeFamilyAssignments\(neighborMap\)/);
   assert.doesNotMatch(html, /function buildFamilyAnchorMap\(familyAssignments\)/);
 });
 
-test('recenters after auto-arranging the initial graph state', () => {
+test('recenters on initial graph state and exposes a center HEAD action', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /const LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT = 1000;/);
-  assert.match(html, /function canAutoArrangeGraph\(\) \{\s*return graphNodes\.length <= LARGE_GRAPH_AUTO_ARRANGE_NODE_LIMIT;\s*\}/);
-  assert.match(html, /if \(nextState\.autoArrangeOnInit && canAutoArrangeGraph\(\)\) \{\s*autoArrangeLayout\(\);\s*centerGraphInViewport\(\);/);
-  assert.match(html, /reorganizeButton\.disabled = toolbarBusy \|\| !canAutoArrangeGraph\(\);/);
+  assert.match(html, /id="centerHeadButton"/);
+  assert.match(html, /Center HEAD/);
+  assert.match(html, /else if \(shouldRecenter\) \{\s*centerGraphInViewport\(\);/);
+  assert.match(html, /centerHeadButton\.disabled = toolbarBusy;/);
 });
 
 test('preserves viewport and selection during metadata patches', () => {
@@ -610,7 +608,7 @@ function createWebviewRuntime() {
     'searchPrevButton',
     'searchNextButton',
     'searchClearButton',
-    'reorganizeButton',
+    'centerHeadButton',
     'zoomOutButton',
     'zoomInButton'
   ] as const;

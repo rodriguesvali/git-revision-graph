@@ -264,8 +264,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showCurrentBranchDescendants: true
     },
     mergeBlockedTargets: [],
-    primaryAncestorPathsByHash: {},
-    autoArrangeOnInit: false,
+    primaryAncestorNextByHash: {},
     scene: {
       nodes: [
         {

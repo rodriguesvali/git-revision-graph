@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import {
   buildPrimaryAncestorNextByHash,
-  buildPrimaryAncestorPaths,
   buildRevisionGraphScene,
   parseDecorationRefs,
   parseRevisionGraphLog
@@ -1040,23 +1039,6 @@ test('can hide remote refs and stash refs from the projection', () => {
       { hash: 'base1', refs: [] }
     ]
   );
-});
-
-test('builds primary ancestor paths from the full graph for the visible scene', async () => {
-  const graph = buildCommitGraph([
-    { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },
-    { hash: 'n1', parents: ['b1'], author: 'Ada', date: '2026-04-06', subject: 'Main work', refs: [] },
-    { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
-    { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
-  ]);
-  const projection = projectDecoratedCommitGraph(graph);
-  const scene = await buildRevisionGraphScene(graph, projection);
-
-  assert.deepEqual(buildPrimaryAncestorPaths(graph, scene), {
-    m1: ['m1', 'b1'],
-    s1: ['s1', 'b1'],
-    b1: ['b1']
-  });
 });
 
 test('builds compact primary ancestor next pointers for the visible scene', async () => {

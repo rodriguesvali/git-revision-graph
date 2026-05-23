@@ -72,7 +72,6 @@ test('builds a serializable ready state for the persistent webview shell', async
   const state = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -81,11 +80,9 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.currentHeadName, 'main');
   assert.equal(state.currentHeadUpstreamName, 'origin/main');
   assert.deepEqual(state.publishedLocalBranchNames, ['main']);
-  assert.equal(state.autoArrangeOnInit, true);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
   assert.deepEqual(state.primaryAncestorNextByHash, {});
-  assert.deepEqual(state.primaryAncestorPathsByHash, {});
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
@@ -161,7 +158,6 @@ test('applies repository overlay refs before projecting a ready graph state', as
   const state = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -228,7 +224,6 @@ test('repository overlays prefer getRefs for current head commit when repository
   const state = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -246,7 +241,6 @@ test('repository overlays prefer getRefs for current head commit when repository
     false
   );
   assert.deepEqual(state.primaryAncestorNextByHash, {});
-  assert.deepEqual(state.primaryAncestorPathsByHash, {});
 });
 
 test('metadata patches remove deleted local branch refs without changing graph topology', async () => {
@@ -297,7 +291,6 @@ test('metadata patches remove deleted local branch refs without changing graph t
   const initialState = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -430,7 +423,6 @@ test('does not mark branches with inherited upstream tracking as published', asy
   const state = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -490,7 +482,6 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
   const initialState = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -521,7 +512,6 @@ test('patches visible refs and head metadata without rebuilding the scene topolo
   assert.ok(patchedState);
   assert.equal(patchedState?.currentHeadName, 'release/2026');
   assert.equal(patchedState?.isWorkspaceDirty, true);
-  assert.equal(patchedState?.autoArrangeOnInit, false);
   assert.equal(patchedState?.sceneLayoutKey, initialState.sceneLayoutKey);
   assert.deepEqual(
     patchedState?.scene.nodes[0]?.refs,
@@ -587,7 +577,6 @@ test('metadata patches load the complete repository refs instead of relying only
   const initialState = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -660,7 +649,6 @@ test('metadata patches ignore non-head refs whose tips are missing from the curr
       refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
     }),
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -732,7 +720,6 @@ test('metadata patches still decline when the current head is missing from the c
       refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
     }),
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -782,7 +769,6 @@ test('metadata patch ref loading rethrows abort errors instead of silently falli
       refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
     }),
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     {
       async loadGraphSnapshot() {
         return {
@@ -883,7 +869,6 @@ test('recognizes when a ready-state refresh can preserve the current graph conte
   const initialState = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -961,7 +946,6 @@ test('patched metadata fingerprints match the already-applied ready state when n
   const readyState = await buildReadyRevisionGraphViewState(
     repository,
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );
@@ -1031,7 +1015,6 @@ test('metadata patch fingerprints use the same complete ref set as the applied p
       refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
     }),
     createDefaultRevisionGraphProjectionOptions(),
-    true,
     backend,
     LIMIT_POLICY
   );

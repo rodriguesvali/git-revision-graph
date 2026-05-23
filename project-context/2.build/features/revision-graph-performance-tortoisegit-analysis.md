@@ -28,7 +28,7 @@ The extension loads the graph with a targeted CLI command:
 - `git log --all|--branches --topo-order --simplify-by-decoration --decorate=short --max-count=6000`
 - If the visible graph is too small, it can retry with `12000`.
 
-The resulting text is parsed into a `CommitGraph`, projected to visible decorated commits plus structural connectors, laid out with `elkjs` layered layout, converted into a scene, enriched with precomputed primary ancestor paths, serialized to the webview, and rendered as DOM nodes plus SVG edges.
+The resulting text is parsed into a `CommitGraph`, projected to visible decorated commits plus structural connectors, laid out with the deterministic Git-aware layout, converted into a scene, enriched with a compact primary-ancestor next map, serialized to the webview, and rendered as DOM nodes plus SVG edges.
 
 The default graph window is bounded, but the state payload can still become large when many visible commits exist.
 
@@ -51,9 +51,9 @@ Measured after `npm run build` using the compiled local modules.
 
 ### Performance Baseline
 
-Use the TensorFlow repository available in the test environment as the standard real-world performance baseline for follow-up graph-load traces. It should be measured with the extension's current default graph options first, then with any optimization candidate, capturing `snapshot.gitLog`, `snapshot.parseCommitGraph`, `state.projectGraph`, `scene.layout.elk`, `state.primaryAncestorPaths`, `state.readyViewState`, and webview update behavior.
+Use the TensorFlow repository available in the test environment as the standard real-world performance baseline for follow-up graph-load traces. It should be measured with the extension's current default graph options first, then with any optimization candidate, capturing `snapshot.gitLog`, `snapshot.parseCommitGraph`, `state.projectGraph`, `scene.layout.gitAware`, `state.primaryAncestorNext`, `state.readyViewState`, and webview update behavior.
 
-After the first optimization, `state.primaryAncestorPaths` is expected to report compact `next-map` construction rather than full path precomputation.
+After the first optimization, `state.primaryAncestorNext` reports compact `next-map` construction rather than full path precomputation.
 
 Initial TensorFlow trace from the Extension Development Host showed:
 
@@ -63,9 +63,9 @@ Initial TensorFlow trace from the Extension Development Host showed:
 | `snapshot.parseCommitGraph` | 161 ms | `commits=4627` |
 | `state.projectGraph` | 31 ms | `nodes=4619; edges=4624` |
 
-The load stalled after `state.projectGraph`, before `scene.layout.elk` emitted, confirming that cold ELK layout is the blocking phase for this baseline. A follow-up guard now bypasses ELK for projected graphs above `PROJECTED_GRAPH_ELK_LAYOUT_MAX_NODES` and uses the deterministic lane fallback immediately.
+The load stalled after `state.projectGraph`, before `scene.layout.elk` emitted, confirming that cold ELK layout was the blocking phase for this baseline. The current implementation replaces that path with Git-aware layout during graph load.
 
-A second TensorFlow trace after the ELK guard reached `scene.total` and `state.primaryAncestorPaths`, then surfaced `Maximum call stack size exceeded` while assembling the ready view state. That was a separate large-graph implementation issue: host and webview layout code used spread calls over generated row/gap arrays. The layout helpers now scan numeric arrays iteratively instead of calling `Math.min(...largeArray)`.
+A second TensorFlow trace after the ELK guard reached `scene.total` and `state.primaryAncestorNext`, then surfaced `Maximum call stack size exceeded` while assembling the ready view state. That was a separate large-graph implementation issue: host and webview layout code used spread calls over generated row/gap arrays. The layout helpers now scan numeric arrays iteratively instead of calling `Math.min(...largeArray)`.
 
 ### Real Repositories
 
@@ -123,11 +123,10 @@ But the larger current problem is implementation/architecture:
 1. Replace precomputed full ancestor paths with on-demand or compact parent pointers.
    - Keep parent/child adjacency in the webview and compute the highlighted path for the selected node only.
    - This removes the O(n^2) payload risk and should be a low-risk first win.
-   - Implemented as a compact `primaryAncestorNextByHash` map while keeping `primaryAncestorPathsByHash` empty for compatibility.
+   - Implemented as a compact `primaryAncestorNextByHash` map. The legacy full-path state field has been removed.
 2. Add a specialized Git-revision lane layout for the common revision graph case.
    - Use topological order plus active lanes and parent continuation.
-   - Keep ELK only as an optional/fallback layout mode if visual quality requires it.
-   - Interim guard implemented: projected graphs larger than the ELK threshold use the existing lane fallback instead of waiting indefinitely on ELK.
+   - Current implementation uses a deterministic Git-aware layout as the graph-load layout path and removes the `elkjs` runtime dependency.
 3. Preserve routed edge geometry if a layered layout engine remains.
    - Use layout bend points instead of rebuilding simple direct/one-bend SVG paths.
 4. Reduce full webview replacement on topology-stable changes.
@@ -137,11 +136,11 @@ But the larger current problem is implementation/architecture:
 
 ## Implemented Follow-up Fixes
 
-- Added an ELK size guard so large projected graphs use deterministic fallback lane layout before entering `elkjs`.
-- Replaced large-array spread minimum calculations in shared host layout and webview auto-arrange layout with iterative scans.
-- Reduced initial webview render work for large graphs by skipping automatic auto-arrange above 1000 nodes, disabling the manual reorganize action at that scale, avoiding redundant edge layout when no saved offsets exist, and using delegated node/ref/grip event handlers instead of per-card listeners.
+- Replaced the ELK-backed layout path with deterministic Git-aware layout and removed the unused `elkjs` dependency.
+- Replaced large-array spread minimum calculations in shared host layout with iterative scans.
+- Reduced initial webview render work for large graphs by removing automatic auto-arrange, replacing `Reorganize` with `Center HEAD`, avoiding redundant edge layout when no saved offsets exist, and using delegated node/ref/grip event handlers instead of per-card listeners.
 - Added regression coverage for oversized projected graphs and long fan-out layout corridors.
-- Verification: `npm run build` passed; `npm test` passed with 277 tests.
+- Verification: `npm run build` passed; `npm test` passed with 279 tests.
 
 ## Answer
 

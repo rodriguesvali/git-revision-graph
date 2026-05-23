@@ -177,7 +177,6 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly viewDisposables: vscode.Disposable[] = [];
   private currentRepository: Repository | undefined;
   private projectionOptions = createDefaultRevisionGraphProjectionOptions();
-  private autoArrangeOnNextRender = true;
   private currentLoadingLabel: string | undefined;
   private currentLoadingMode: 'blocking' | 'subtle' | undefined;
   private currentErrorMessage: string | undefined;
@@ -466,7 +465,6 @@ export class RevisionGraphController implements vscode.Disposable {
           }
           this.projectionOptions = nextProjectionOptions;
         }
-        this.autoArrangeOnNextRender = true;
         await this.refresh('projection-rebuild');
         return;
       case 'compare-selected':
@@ -655,14 +653,12 @@ export class RevisionGraphController implements vscode.Disposable {
       const state = await buildReadyRevisionGraphViewStateFromSnapshot(
         this.currentRepository,
         this.projectionOptions,
-        this.autoArrangeOnNextRender,
         this.backend,
         currentSnapshot.snapshot,
         signal,
         trace
       );
       if (requestId === this.renderCoordinator.getCurrentRequestId()) {
-        this.autoArrangeOnNextRender = false;
       }
 
       return state;
@@ -672,7 +668,6 @@ export class RevisionGraphController implements vscode.Disposable {
     const bundle = await buildReadyRevisionGraphViewStateBundle(
       this.currentRepository,
       this.projectionOptions,
-      this.autoArrangeOnNextRender,
       this.backend,
       this.resolveLimitPolicy(),
       signal,
@@ -680,7 +675,6 @@ export class RevisionGraphController implements vscode.Disposable {
     );
 
     if (requestId === this.renderCoordinator.getCurrentRequestId()) {
-      this.autoArrangeOnNextRender = false;
       this.currentSnapshot = {
         repositoryPath,
         snapshot: bundle.snapshot
@@ -844,7 +838,6 @@ export class RevisionGraphController implements vscode.Disposable {
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
-      this.autoArrangeOnNextRender = true;
       this.currentSnapshot = undefined;
       this.snapshotReloadSemaphore.markReloadRequired();
     }
@@ -965,8 +958,6 @@ export class RevisionGraphController implements vscode.Disposable {
       projectionOptions: state.projectionOptions,
       mergeBlockedTargets: state.mergeBlockedTargets,
       primaryAncestorNextByHash: state.primaryAncestorNextByHash,
-      primaryAncestorPathsByHash: state.primaryAncestorPathsByHash,
-      autoArrangeOnInit: state.autoArrangeOnInit,
       scene: state.scene,
       nodeLayouts: state.nodeLayouts,
       references: state.references,

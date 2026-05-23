@@ -1,5 +1,4 @@
 import { buildCommitGraph } from './revisionGraph/model/commitGraph';
-import { buildFirstParentVisiblePath } from './revisionGraph/model/commitGraphQueries';
 import {
   CommitGraph,
   ParsedRevisionGraphCommit,
@@ -118,21 +117,6 @@ export async function buildRevisionGraphScene(
   };
   traceDuration(trace, 'scene.total', startedAt, `nodes=${nodes.length}; edges=${edges.length}`);
   return scene;
-}
-
-export function buildPrimaryAncestorPaths(
-  source: CommitGraph | readonly ParsedRevisionGraphCommit[],
-  scene: RevisionGraphScene
-): Record<string, string[]> {
-  const graph = toCommitGraph(source);
-  const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
-  const pathsByHash: Record<string, string[]> = {};
-
-  for (const node of scene.nodes) {
-    pathsByHash[node.hash] = buildFirstParentVisiblePath(graph, node.hash, visibleHashes);
-  }
-
-  return pathsByHash;
 }
 
 export function buildPrimaryAncestorNextByHash(

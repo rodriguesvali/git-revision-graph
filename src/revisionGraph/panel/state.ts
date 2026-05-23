@@ -45,7 +45,6 @@ export interface RevisionGraphRepositoryOverlay {
 export async function buildReadyRevisionGraphViewStateBundle(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
@@ -56,7 +55,6 @@ export async function buildReadyRevisionGraphViewStateBundle(
   return buildReadyRevisionGraphViewStateBundleFromSnapshot(
     repository,
     projectionOptions,
-    autoArrangeOnInit,
     backend,
     snapshot,
     signal,
@@ -67,7 +65,6 @@ export async function buildReadyRevisionGraphViewStateBundle(
 export async function buildReadyRevisionGraphViewState(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
@@ -77,7 +74,6 @@ export async function buildReadyRevisionGraphViewState(
     await buildReadyRevisionGraphViewStateBundle(
       repository,
       projectionOptions,
-      autoArrangeOnInit,
       backend,
       limitPolicy,
       signal,
@@ -89,7 +85,6 @@ export async function buildReadyRevisionGraphViewState(
 export async function buildReadyRevisionGraphViewStateFromSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
@@ -99,7 +94,6 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
     await buildReadyRevisionGraphViewStateBundleFromSnapshot(
       repository,
       projectionOptions,
-      autoArrangeOnInit,
       backend,
       snapshot,
       signal,
@@ -111,7 +105,6 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
 async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
@@ -127,7 +120,6 @@ async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   const state = await buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     repository,
     projectionOptions,
-    autoArrangeOnInit,
     backend,
     overlayedSnapshot,
     signal,
@@ -143,7 +135,6 @@ async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
 async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
@@ -157,14 +148,13 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(snapshot.graph, scene);
   traceDuration(
     trace,
-    'state.primaryAncestorPaths',
+    'state.primaryAncestorNext',
     ancestorsStartedAt,
     `mode=next-map; nodes=${scene.nodes.length}; entries=${Object.keys(primaryAncestorNextByHash).length}`
   );
   return buildReadyRevisionGraphViewStateFromParts(
     repository,
     projectionOptions,
-    autoArrangeOnInit,
     backend,
     snapshot,
     scene,
@@ -204,11 +194,10 @@ export async function buildMetadataPatchedRevisionGraphViewState(
   return buildReadyRevisionGraphViewStateFromParts(
     repository,
     previousState.projectionOptions,
-    false,
     backend,
     snapshot,
     patchedScene,
-    previousState.primaryAncestorNextByHash ?? {},
+    previousState.primaryAncestorNextByHash,
     signal
   );
 }
@@ -448,8 +437,6 @@ export function buildEmptyRevisionGraphViewState(
     projectionOptions,
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},
-    primaryAncestorPathsByHash: {},
-    autoArrangeOnInit: false,
     scene: {
       nodes: [],
       edges: [],
@@ -473,7 +460,6 @@ export function buildEmptyRevisionGraphViewState(
 async function buildReadyRevisionGraphViewStateFromParts(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  autoArrangeOnInit: boolean,
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   scene: RevisionGraphScene,
@@ -519,8 +505,6 @@ async function buildReadyRevisionGraphViewStateFromParts(
     projectionOptions,
     mergeBlockedTargets,
     primaryAncestorNextByHash,
-    primaryAncestorPathsByHash: {},
-    autoArrangeOnInit,
     scene,
     nodeLayouts,
     references,
