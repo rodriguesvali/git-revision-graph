@@ -453,6 +453,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
       references = nextState.references || [];
+      syncRemoteTagStateCache(nextState, previousRepositoryPath);
       graphNodes = nextState.nodeLayouts || [];
       graphEdges = (nextState.scene && nextState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
@@ -579,6 +580,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentProjectionOptions = currentState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(currentState.mergeBlockedTargets || []);
       references = currentState.references || [];
+      syncRemoteTagStateCache(currentState, currentState.repositoryPath || null);
       graphNodes = nextGraphNodes;
       graphEdges = (currentState.scene && currentState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
@@ -617,6 +619,29 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       hideLoading();
       hideStatus();
       return true;
+    }
+
+    function syncRemoteTagStateCache(nextState, previousRepositoryPath) {
+      const nextRepositoryPath = nextState && nextState.repositoryPath ? nextState.repositoryPath : null;
+      if (previousRepositoryPath !== nextRepositoryPath) {
+        remoteTagPublicationState.clear();
+        pendingRemoteTagStateRequests.clear();
+        return;
+      }
+
+      const currentTagNames = new Set(((nextState && nextState.references) || [])
+        .filter((ref) => ref.kind === 'tag')
+        .map((ref) => ref.name));
+      for (const tagName of remoteTagPublicationState.keys()) {
+        if (!currentTagNames.has(tagName)) {
+          remoteTagPublicationState.delete(tagName);
+        }
+      }
+      for (const tagName of pendingRemoteTagStateRequests.keys()) {
+        if (!currentTagNames.has(tagName)) {
+          pendingRemoteTagStateRequests.delete(tagName);
+        }
+      }
     }
 
     function haveSameNodeHashes(currentNodes, nextNodes) {
