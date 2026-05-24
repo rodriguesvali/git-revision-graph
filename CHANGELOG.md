@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.34
+
+### Release Preparation
+
+- Version bump to `0.0.34` has been applied in `package.json` and `package-lock.json`.
+- Release readiness artifacts have been updated for `0.0.34`.
+- Marketplace publication remains with the maintainer.
+
 ## 0.0.33
 
 ### Highlights

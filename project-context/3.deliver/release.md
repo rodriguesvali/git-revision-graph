@@ -1,5 +1,44 @@
 # Release Readiness
 
+## 0.0.34 Release Readiness
+
+Current package baseline: `0.0.33`.
+
+Target release: `0.0.34`.
+
+Status: Release artifacts are prepared for `0.0.34`. The current release candidate is based on the same `0.0.33` implementation baseline, with the version bump to `0.0.34` applied after maintainer release-prep request. Marketplace publication has not been performed and remains with the maintainer.
+
+Automated verification completed:
+
+- `npm run build` passed after the `0.0.34` version bump and release artifact edits.
+- `npm test` passed with 288 tests after the `0.0.34` version bump and release artifact edits. This includes `npm run build` through the test script.
+- `git diff --check` passed after the `0.0.34` release artifact edits.
+- `npm run package:vsix` generated `git-revision-graph-0.0.34.vsix`.
+
+Manual validation pending:
+
+- Confirm the editor graph, Show Log, Compare Results, and Remote workflows behave as expected after the version update.
+- Confirm VSIX package contents and metadata before upload.
+
+Release gates pending:
+
+- Complete manual Extension Development Host smoke validation.
+- Review the generated VSIX metadata and package contents before upload.
+- Marketplace publishing remains with the maintainer.
+
+Post-release monitoring focus:
+
+- Reports of graph layout regressions on branch-heavy repositories.
+- Reports of missing or confusing Show Log context-menu actions.
+- Reports of accidental or unclear force-push flows.
+- Large-repository performance regressions around graph loading, minimap rendering, or edge density.
+- Source Control focus restoration after closing secondary review views.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the affected `0.0.34` slice while preserving the `0.0.32` editor graph baseline.
+- Keep the previous `0.0.32` VSIX available for manual rollback guidance if Marketplace publication has already occurred.
+
 ## 0.0.33 Release Readiness
 
 Current package baseline: `0.0.32`.
@@ -433,6 +472,7 @@ Residual risks:
 - Direct branch-line removal assumes the deleted local branch is visible in the current scene; hidden/off-snapshot branches should continue to rely on later normal refresh behavior.
 
 ## Version / Change Set
+
 Previous package baseline: `0.0.26`.
 
 Target release: `0.0.27`.
@@ -466,6 +506,7 @@ Planning references:
 - `project-context/2.build/features/0.0.27-refs-only-merge-simplification.md`
 
 ## Verification Summary
+
 - Required for meaningful changes: `npm run build`.
 - Required for behavior, command, graph, controller, Git workflow, or user-visible changes: `npm test`.
 - Recommended for release candidates: manual Extension Development Host smoke test.
@@ -494,6 +535,7 @@ Release preparation status:
 - Marketplace publishing is complete for `0.0.27`.
 
 ## Deployment Steps
+
 Release commands available in `package.json`:
 
 - `npm run package:vsix`
@@ -505,14 +547,17 @@ Release commands available in `package.json`:
 Packaging and publishing for `0.0.27` have been completed.
 
 ## Configuration
+
 The extension depends on the built-in `vscode.git` extension and supports VS Code `^1.90.0`.
 
 Runtime dependency audit status for `0.0.27` stabilization is clean. Dev-tooling audit remediation is pending approval.
 
 ## Monitoring
+
 Post-release monitoring should prioritize Git command timeout/output-limit reports, option-like ref handling, compare restore failures, ref-backed diff content loading, cache freshness or stale graph reports, layout-offset/fan-out disposition regressions, refs-only merge simplification feedback, Marketplace feedback, and regressions reported against graph/show-log/compare workflows.
 
 ## Rollback
+
 Rollback options depend on Marketplace state:
 
 - Publish a patch release that reverts or fixes the regression.
@@ -520,6 +565,7 @@ Rollback options depend on Marketplace state:
 - Revert the offending code in Git and prepare a follow-up release.
 
 ## Approvals
+
 Human approval is required before:
 
 - Future VSIX release packaging.
