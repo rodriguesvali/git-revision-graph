@@ -291,8 +291,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, message\.state\);/);
   assert.match(html, /remoteTagPublicationState\.set\(tagName, normalizedState\);/);
-  assert.match(html, /syncRemoteTagStateCache\(nextState, previousRepositoryPath\);/);
-  assert.match(html, /if \(previousRepositoryPath !== nextRepositoryPath\) \{\s*remoteTagPublicationState\.clear\(\);\s*pendingRemoteTagStateRequests\.clear\(\);\s*return;/s);
+  assert.match(html, /case 'update-state':\s*applyState\(message\.state, false, \{ invalidateRemoteTagState: true \}\);/s);
+  assert.match(html, /syncRemoteTagStateCache\(nextState, previousRepositoryPath, !!options\.invalidateRemoteTagState\);/);
+  assert.match(html, /if \(previousRepositoryPath !== nextRepositoryPath \|\| invalidateRemoteTagState\) \{\s*remoteTagPublicationState\.clear\(\);\s*pendingRemoteTagStateRequests\.clear\(\);\s*return;/s);
   assert.match(html, /const currentTagNames = new Set\(\(\(nextState && nextState\.references\) \|\| \[\]\)\s*\.filter\(\(ref\) => ref\.kind === 'tag'\)\s*\.map\(\(ref\) => ref\.name\)\);/s);
   assert.match(html, /const remoteTagState = remoteTagPublicationState\.get\(target\.name\);/);
   assert.match(html, /if \(remoteTagState === 'published'\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);

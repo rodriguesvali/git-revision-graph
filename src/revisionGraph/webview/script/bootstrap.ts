@@ -414,7 +414,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           applyState(message.state, true);
           return;
         case 'update-state':
-          applyState(message.state, false);
+          applyState(message.state, false, { invalidateRemoteTagState: true });
           return;
         case 'patch-metadata':
           applyMetadataPatch(message.patch);
@@ -453,7 +453,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
       mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
       references = nextState.references || [];
-      syncRemoteTagStateCache(nextState, previousRepositoryPath);
+      syncRemoteTagStateCache(nextState, previousRepositoryPath, !!options.invalidateRemoteTagState);
       graphNodes = nextState.nodeLayouts || [];
       graphEdges = (nextState.scene && nextState.scene.edges) || [];
       graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
@@ -621,9 +621,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return true;
     }
 
-    function syncRemoteTagStateCache(nextState, previousRepositoryPath) {
+    function syncRemoteTagStateCache(nextState, previousRepositoryPath, invalidateRemoteTagState) {
       const nextRepositoryPath = nextState && nextState.repositoryPath ? nextState.repositoryPath : null;
-      if (previousRepositoryPath !== nextRepositoryPath) {
+      if (previousRepositoryPath !== nextRepositoryPath || invalidateRemoteTagState) {
         remoteTagPublicationState.clear();
         pendingRemoteTagStateRequests.clear();
         return;
