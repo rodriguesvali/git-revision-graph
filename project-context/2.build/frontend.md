@@ -21,6 +21,7 @@ Record frontend changes here only when they affect shared webview behavior. Pref
 - 2026-05-16 `0.0.31` review polish: Compare Results file context menus use `Compare` as the primary action and show `Compare with Worktree` only when the result set is ref-to-ref.
 - 2026-05-16 `0.0.31` graph navigation: the `View` menu includes a persisted `Show Minimap` checkbox so users can hide or restore the minimap without resetting graph layout.
 - 2026-05-16 `0.0.31` product surface: the graph now renders in an editor panel launched from Source Control, while Compare Results and Show Logs remain as on-demand review views.
+- 2026-05-24 graph navigation: new webview sessions default the persisted `Show Minimap` option to off; users can still enable it from the `View` menu and keep that preference in webview state.
 
 ## Verification
 - Run `npm run build`.

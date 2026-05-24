@@ -84,7 +84,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4, 5, 6.5, 8, 10, 12.5, 15, 18, 22, 26, 30];
     const initialWebviewState = vscode.getState() || {};
     let minimapZoom = 1;
-    let minimapEnabled = initialWebviewState.showMinimap !== false;
+    let minimapEnabled = initialWebviewState.showMinimap === true;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;
     let dragState = null;

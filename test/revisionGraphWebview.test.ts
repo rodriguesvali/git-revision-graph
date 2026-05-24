@@ -341,7 +341,7 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /viewBox="0 0 180 240"/);
   assert.match(html, /class="minimap-controls"/);
   assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\];/);
-  assert.match(html, /let minimapEnabled = initialWebviewState\.showMinimap !== false;/);
+  assert.match(html, /let minimapEnabled = initialWebviewState\.showMinimap === true;/);
   assert.match(html, /function syncMinimapPreference\(\)/);
   assert.match(html, /function setMinimapEnabled\(enabled\)/);
   assert.match(html, /showMinimapToggle\.addEventListener\('change'/);
