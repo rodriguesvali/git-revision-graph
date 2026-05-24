@@ -308,40 +308,6 @@ export function renderRevisionGraphStyles(): string {
     }
     .context-item:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .context-item:disabled { opacity: 0.45; cursor: default; }
-    .context-menu-group {
-      position: relative;
-    }
-    .context-menu-parent {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .context-menu-chevron {
-      opacity: 0.72;
-    }
-    .context-submenu {
-      position: absolute;
-      top: -6px;
-      left: calc(100% + 6px);
-      width: 230px;
-      max-width: calc(100vw - 16px);
-      padding: 6px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(-4px);
-      transition: opacity 90ms ease, transform 90ms ease;
-    }
-    .context-menu-group:hover > .context-submenu,
-    .context-menu-group:focus-within > .context-submenu {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateX(0);
-    }
     .context-separator {
       height: 1px;
       margin: 6px 4px;
@@ -650,6 +616,16 @@ export function renderRevisionGraphStyles(): string {
       flex-wrap: wrap;
       justify-content: flex-end;
     }
+    .view-controls .toolbar-action-slot {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      height: 34px;
+      padding: 2px;
+      border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--panel-strong) 52%, transparent);
+    }
     .view-controls .toolbar-button {
       display: inline-flex;
       align-items: center;
@@ -670,8 +646,18 @@ export function renderRevisionGraphStyles(): string {
       width: 32px;
       min-width: 32px;
       padding: 0;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
+    }
+    .view-controls .toolbar-action-slot .toolbar-button {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-controls .toolbar-action-slot .toolbar-button:not(:disabled):hover {
+      border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      box-shadow: none;
     }
     .view-controls .toolbar-button.destructive:not([hidden]) {
       border-color: var(--merge-conflict-border);
@@ -685,6 +671,17 @@ export function renderRevisionGraphStyles(): string {
       width: 12px;
       font-size: 15px;
       line-height: 1;
+    }
+    .view-controls .toolbar-icon {
+      width: 16px;
+      height: 16px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.35;
+      overflow: visible;
     }
     .graph-minimap {
       position: fixed;

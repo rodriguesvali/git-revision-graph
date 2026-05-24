@@ -416,35 +416,35 @@ function buildPublishBranchConfirmationMessage(
 export async function syncCurrentHeadWithUpstream(
   repository: Repository,
   services: RefActionServices
-): Promise<void> {
+): Promise<boolean> {
   try {
     const head = repository.state.HEAD;
     if (head?.name && head.upstream && !isBranchTrackingMatchingUpstream(head.name, head.upstream)) {
       services.ui.showInformationMessage(
         `${head.name} is tracking ${formatUpstreamLabel(head.upstream.remote, head.upstream.name)}. Publish the branch to update upstream tracking before synchronizing.`
       );
-      return;
+      return false;
     }
 
     const syncState = getCurrentHeadSyncState(repository);
     if (!syncState) {
       services.ui.showInformationMessage('The current branch is not tracking a remote branch.');
-      return;
+      return false;
     }
 
     if (syncState.ahead <= 0 && syncState.behind <= 0) {
       services.ui.showInformationMessage(`${syncState.branchName} is already synchronized with ${syncState.upstreamLabel}.`);
-      return;
+      return false;
     }
 
     if (hasMergeConflicts(repository)) {
       services.ui.showWarningMessage('Resolve the current conflicts in Source Control before synchronizing the current branch.');
       await services.ui.showSourceControl();
-      return;
+      return false;
     }
 
     if (syncState.behind > 0 && !await ensureWorkspaceReadyForMutation(repository, 'synchronizing the current branch', services)) {
-      return;
+      return false;
     }
 
     if (syncState.behind > 0) {
@@ -465,11 +465,13 @@ export async function syncCurrentHeadWithUpstream(
         : createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
     );
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
+    return true;
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
       await services.ui.showSourceControl();
     }
+    return false;
   }
 }
 

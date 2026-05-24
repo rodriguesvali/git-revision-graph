@@ -296,10 +296,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         && !!currentHeadName
         && target.name === currentHeadName
       );
-      const canSyncCurrentHead =
-        target.kind === 'head' &&
-        !!currentHeadUpstreamName &&
-        publishedLocalBranchNames.has(target.name);
       const canPublishBranch =
         (target.kind === 'head' || target.kind === 'branch') &&
         !publishedLocalBranchNames.has(target.name);
@@ -335,13 +331,6 @@ export function renderRevisionGraphScriptInteractions(): string {
           syncSelection();
         });
       } else {
-        if (canSyncCurrentHead) {
-          appendMenuSubmenu('Remote', [
-            { label: 'Pull from ' + currentHeadUpstreamName, onClick: () => postPullCurrentHead() },
-            { label: 'Push to ' + currentHeadUpstreamName, onClick: () => postPushCurrentHead() },
-            { label: 'Sync with ' + currentHeadUpstreamName, onClick: () => postSyncCurrentHead() }
-          ]);
-        }
         appendMenuSection('Inspect');
         appendMenuItem('Show Log', () => postShowLogTarget(target));
         appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
@@ -410,41 +399,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       contextMenu.classList.add('open');
       placeContextMenu(clientX, clientY);
-    }
-
-    function appendMenuSubmenu(label, entries) {
-      if (!contextMenu || entries.length === 0) {
-        return;
-      }
-
-      delete contextMenu.dataset.currentSection;
-      const group = document.createElement('div');
-      group.className = 'context-menu-group';
-
-      const parent = document.createElement('button');
-      parent.className = 'context-item context-menu-parent';
-      parent.type = 'button';
-      parent.setAttribute('aria-haspopup', 'menu');
-      parent.innerHTML = '<span>' + escapeHtml(label) + '</span><span class="context-menu-chevron">›</span>';
-      group.appendChild(parent);
-
-      const submenu = document.createElement('div');
-      submenu.className = 'context-submenu';
-      submenu.setAttribute('role', 'menu');
-      submenu.setAttribute('aria-label', label);
-      for (const entry of entries) {
-        const button = document.createElement('button');
-        button.className = 'context-item';
-        button.type = 'button';
-        button.textContent = entry.label;
-        button.addEventListener('click', () => {
-          entry.onClick();
-          closeContextMenu();
-        });
-        submenu.appendChild(button);
-      }
-      group.appendChild(submenu);
-      contextMenu.appendChild(group);
     }
 
     function appendMenuSection(label) {
@@ -643,6 +597,20 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage({ type: 'push-current-head' });
     }
 
+    function getCurrentHeadRemoteActionState() {
+      const canUseCurrentHeadRemote =
+        currentState &&
+        currentState.viewMode === 'ready' &&
+        !!currentHeadName &&
+        !!currentHeadUpstreamName &&
+        publishedLocalBranchNames.has(currentHeadName) &&
+        references.some((ref) => ref.kind === 'head' && ref.name === currentHeadName);
+      return {
+        canUseCurrentHeadRemote: !!canUseCurrentHeadRemote,
+        upstreamLabel: currentHeadUpstreamName || 'upstream'
+      };
+    }
+
     function postResetCurrentWorkspace(includeUntracked) {
       vscode.postMessage({ type: 'reset-current-workspace', includeUntracked: !!includeUntracked });
     }
@@ -733,6 +701,8 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canZoomInMinimap = minimapZoomLevels.some((value) => value > minimapZoom);
       const canZoomOutMinimap = minimapZoomLevels.some((value) => value < minimapZoom);
       const canResetMinimapZoom = minimapZoom !== 1;
+      const remoteActionState = getCurrentHeadRemoteActionState();
+      const hasRepository = !!currentState?.repositoryPath && !currentState?.loading;
       if (scopeSelect) {
         scopeSelect.disabled = toolbarBusy;
       }
@@ -741,6 +711,24 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       if (reloadButton) {
         reloadButton.disabled = toolbarBusy;
+      }
+      if (fetchAllButton) {
+        fetchAllButton.disabled = toolbarBusy || !hasRepository;
+      }
+      if (pullButton) {
+        pullButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
+        pullButton.title = 'Pull from ' + remoteActionState.upstreamLabel;
+        pullButton.setAttribute('aria-label', pullButton.title);
+      }
+      if (pushButton) {
+        pushButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
+        pushButton.title = 'Push to ' + remoteActionState.upstreamLabel;
+        pushButton.setAttribute('aria-label', pushButton.title);
+      }
+      if (syncButton) {
+        syncButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
+        syncButton.title = 'Sync with ' + remoteActionState.upstreamLabel;
+        syncButton.setAttribute('aria-label', syncButton.title);
       }
       if (abortMergeButton) {
         abortMergeButton.disabled = toolbarBusy || !currentState?.hasConflictedMerge;
@@ -794,6 +782,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchNextButton,
         searchClearButton,
         reloadButton,
+        fetchAllButton,
+        pullButton,
+        pushButton,
+        syncButton,
         centerHeadButton,
         zoomOutButton,
         zoomResetButton,

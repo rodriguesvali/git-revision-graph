@@ -32,6 +32,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const reloadButton = document.getElementById('reloadButton');
+    const fetchAllButton = document.getElementById('fetchAllButton');
+    const pullButton = document.getElementById('pullButton');
+    const pushButton = document.getElementById('pushButton');
+    const syncButton = document.getElementById('syncButton');
     const workspaceLed = document.getElementById('workspaceLed');
     const abortMergeButton = document.getElementById('abortMergeButton');
     const scopeSelect = document.getElementById('scopeSelect');
@@ -114,6 +118,26 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (reloadButton) {
       reloadButton.addEventListener('click', () => {
         postMessageWithLoading({ type: 'refresh' }, 'Reloading revision graph...', reloadButton);
+      });
+    }
+    if (fetchAllButton) {
+      fetchAllButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching remotes...', fetchAllButton);
+      });
+    }
+    if (pullButton) {
+      pullButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'pull-current-head' }, 'Pulling current branch...', pullButton);
+      });
+    }
+    if (pushButton) {
+      pushButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'push-current-head' }, 'Pushing current branch...', pushButton);
+      });
+    }
+    if (syncButton) {
+      syncButton.addEventListener('click', () => {
+        postMessageWithLoading({ type: 'sync-current-head' }, 'Synchronizing current branch...', syncButton);
       });
     }
     if (workspaceLed) {

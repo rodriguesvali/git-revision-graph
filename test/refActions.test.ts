@@ -1398,8 +1398,9 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, true);
   assert.deepEqual(repository.calls.pull, [true]);
   assert.deepEqual(repository.calls.push, [
     { remoteName: undefined, branchName: undefined, setUpstream: undefined }
@@ -1420,8 +1421,9 @@ test('syncCurrentHeadWithUpstream uses a metadata patch after push-only sync', a
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, true);
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, [
     { remoteName: undefined, branchName: undefined, setUpstream: undefined }
@@ -1442,8 +1444,9 @@ test('syncCurrentHeadWithUpstream uses a full rebuild after pull-only sync', asy
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, true);
   assert.deepEqual(repository.calls.pull, [true]);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(harness.infoMessages[0], 'main was updated from origin/main.');
@@ -1461,8 +1464,9 @@ test('syncCurrentHeadWithUpstream reports when the current branch is already syn
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, false);
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(harness.infoMessages[0], 'main is already synchronized with origin/main.');
@@ -1476,8 +1480,9 @@ test('syncCurrentHeadWithUpstream refuses when the current branch has no upstrea
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, false);
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(harness.infoMessages[0], 'The current branch is not tracking a remote branch.');
@@ -1490,8 +1495,9 @@ test('syncCurrentHeadWithUpstream refuses inherited upstream tracking for a newl
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, false);
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(
@@ -1508,8 +1514,9 @@ test('syncCurrentHeadWithUpstream blocks pull-based sync while the workspace is 
   });
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, false);
   assert.deepEqual(repository.calls.pull, []);
   assert.deepEqual(repository.calls.push, []);
   assert.equal(
@@ -1535,8 +1542,9 @@ test('syncCurrentHeadWithUpstream opens Source Control when pull leaves conflict
   };
   const harness = createServices();
 
-  await syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
+  assert.equal(didSync, false);
   assert.equal(
     harness.errorMessages[0],
     'Could not synchronize the current branch. Pull stopped because there are merge conflicts. [Conflict]'

@@ -2,6 +2,58 @@ import { renderRevisionGraphScript } from './revisionGraph/webview/script';
 import { renderRevisionGraphStyles } from './revisionGraph/webview/styles';
 import { createNonce } from './revisionGraph/webview/shared';
 
+type ToolbarIconName =
+  | 'cloud-download'
+  | 'refresh'
+  | 'repo-pull'
+  | 'repo-push'
+  | 'sync'
+  | 'target';
+
+function renderToolbarIcon(iconName: ToolbarIconName): string {
+  switch (iconName) {
+    case 'target':
+      return `<svg class="toolbar-icon" data-icon="target" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="5.3"></circle>
+          <circle cx="8" cy="8" r="1.65"></circle>
+        </svg>`;
+    case 'sync':
+      return `<svg class="toolbar-icon" data-icon="sync" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M12.4 5.2A4.8 4.8 0 0 0 4.1 3.9L3 5"></path>
+          <path d="M3 2.2V5h2.8"></path>
+          <path d="M3.6 10.8a4.8 4.8 0 0 0 8.3 1.3L13 11"></path>
+          <path d="M13 13.8V11h-2.8"></path>
+        </svg>`;
+    case 'repo-pull':
+      return `<svg class="toolbar-icon" data-icon="repo-pull" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 2v8.2"></path>
+          <path d="M5.2 7.6 8 10.4l2.8-2.8"></path>
+          <path d="M4 13.2h8"></path>
+          <circle cx="4" cy="13.2" r="1"></circle>
+          <circle cx="12" cy="13.2" r="1"></circle>
+        </svg>`;
+    case 'repo-push':
+      return `<svg class="toolbar-icon" data-icon="repo-push" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 14V5.8"></path>
+          <path d="M5.2 8.4 8 5.6l2.8 2.8"></path>
+          <path d="M4 2.8h8"></path>
+          <circle cx="4" cy="2.8" r="1"></circle>
+          <circle cx="12" cy="2.8" r="1"></circle>
+        </svg>`;
+    case 'cloud-download':
+      return `<svg class="toolbar-icon" data-icon="cloud-download" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M5.2 12.4H4.4a3 3 0 0 1-.2-6 4.1 4.1 0 0 1 7.8-1 3.4 3.4 0 0 1 .5 6.9h-1.7"></path>
+          <path d="M8 6.7v6.1"></path>
+          <path d="M5.6 10.4 8 12.8l2.4-2.4"></path>
+        </svg>`;
+    case 'refresh':
+      return `<svg class="toolbar-icon" data-icon="refresh" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M12.6 6.2A4.7 4.7 0 1 0 13 8"></path>
+          <path d="M12.8 2.8v3.6H9.2"></path>
+        </svg>`;
+  }
+}
+
 export function renderRevisionGraphShellHtml(): string {
   const nonce = createNonce();
 
@@ -16,6 +68,14 @@ export function renderRevisionGraphShellHtml(): string {
 </head>
 <body class="loading" aria-busy="true">
   <div class="view-controls" aria-label="Revision graph view controls">
+    <button
+      class="workspace-led clean"
+      id="workspaceLed"
+      type="button"
+      disabled
+      aria-label="Workspace clean: no pending changes."
+      title="Workspace clean: no pending changes."
+    ></button>
     <label for="scopeSelect">
       <span class="control-caption">Scope</span>
       <select id="scopeSelect">
@@ -95,24 +155,50 @@ export function renderRevisionGraphShellHtml(): string {
       >&times;</button>
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">
-      <button
-        id="reloadButton"
-        class="toolbar-button"
-        type="button"
-        title="Reload revision graph"
-        aria-label="Reload revision graph"
-      >
-        <span class="button-icon">&#8635;</span>
-        <span>Reload</span>
-      </button>
-      <button
-        class="workspace-led clean"
-        id="workspaceLed"
-        type="button"
-        disabled
-        aria-label="Workspace clean: no pending changes."
-        title="Workspace clean: no pending changes."
-      ></button>
+      <div class="toolbar-action-slot" aria-label="Repository actions">
+        <button
+          id="centerHeadButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Center on HEAD"
+          aria-label="Center on HEAD"
+        >${renderToolbarIcon('target')}</button>
+        <button
+          id="syncButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Sync current branch"
+          aria-label="Sync current branch"
+        >${renderToolbarIcon('sync')}</button>
+        <button
+          id="pullButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Pull current branch"
+          aria-label="Pull current branch"
+        >${renderToolbarIcon('repo-pull')}</button>
+        <button
+          id="pushButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Push current branch"
+          aria-label="Push current branch"
+        >${renderToolbarIcon('repo-push')}</button>
+        <button
+          id="fetchAllButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Fetch all remotes"
+          aria-label="Fetch all remotes"
+        >${renderToolbarIcon('cloud-download')}</button>
+        <button
+          id="reloadButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Reload revision graph"
+          aria-label="Reload revision graph"
+        >${renderToolbarIcon('refresh')}</button>
+      </div>
       <button
         id="abortMergeButton"
         class="toolbar-button destructive"
@@ -123,16 +209,6 @@ export function renderRevisionGraphShellHtml(): string {
       >
         <span class="button-icon">!</span>
         <span>Abort Merge</span>
-      </button>
-      <button
-        id="centerHeadButton"
-        class="toolbar-button"
-        type="button"
-        title="Center on HEAD"
-        aria-label="Center on HEAD"
-      >
-        <span class="button-icon">&#9678;</span>
-        <span>Center HEAD</span>
       </button>
       <button
         id="zoomOutButton"

@@ -570,18 +570,33 @@ export class RevisionGraphController implements vscode.Disposable {
         }
         return;
       case 'sync-current-head':
-        if (this.currentRepository) {
-          await syncCurrentHeadWithUpstream(this.currentRepository, this.actionServices);
+        {
+          const didScheduleRefresh = this.currentRepository
+            ? await syncCurrentHeadWithUpstream(this.currentRepository, this.actionServices)
+            : false;
+          if (!didScheduleRefresh) {
+            this.postCurrentState();
+          }
         }
         return;
       case 'pull-current-head':
-        if (this.currentRepository) {
-          await pullCurrentBranchFromUpstream(this.currentRepository, this.actionServices);
+        {
+          const didScheduleRefresh = this.currentRepository
+            ? await pullCurrentBranchFromUpstream(this.currentRepository, this.actionServices)
+            : false;
+          if (!didScheduleRefresh) {
+            this.postCurrentState();
+          }
         }
         return;
       case 'push-current-head':
-        if (this.currentRepository) {
-          await pushCurrentBranchToUpstream(this.currentRepository, this.actionServices);
+        {
+          const didScheduleRefresh = this.currentRepository
+            ? await pushCurrentBranchToUpstream(this.currentRepository, this.actionServices)
+            : false;
+          if (!didScheduleRefresh) {
+            this.postCurrentState();
+          }
         }
         return;
       case 'reset-current-workspace':
@@ -927,6 +942,10 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
     void this.view?.webview.postMessage(this.withHostTraceContext(message));
+  }
+
+  private postCurrentState(): void {
+    this.postHostMessage({ type: 'update-state', state: this.currentState });
   }
 
   private rehydrateWebview(): void {

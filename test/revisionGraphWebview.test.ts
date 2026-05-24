@@ -27,12 +27,22 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchPrevButton"/);
   assert.match(html, /id="searchNextButton"/);
   assert.match(html, /id="searchClearButton"/);
+  assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
-  assert.doesNotMatch(html, />\s*<span class="button-icon">↓<\/span>\s*<span>Fetch<\/span>/);
   assert.match(html, /id="reloadButton"/);
-  assert.match(html, />\s*<span class="button-icon">&#8635;<\/span>\s*<span>Reload<\/span>/);
+  assert.doesNotMatch(html, />\s*<span>Reload<\/span>/);
+  assert.match(html, /id="pullButton"/);
+  assert.match(html, /id="pushButton"/);
+  assert.match(html, /id="syncButton"/);
+  assert.match(html, /id="centerHeadButton"[\s\S]*?data-icon="target"/);
+  assert.match(html, /id="syncButton"[\s\S]*?data-icon="sync"/);
+  assert.match(html, /id="pullButton"[\s\S]*?data-icon="repo-pull"/);
+  assert.match(html, /id="pushButton"[\s\S]*?data-icon="repo-push"/);
+  assert.match(html, /id="fetchAllButton"[\s\S]*?data-icon="cloud-download"/);
+  assert.match(html, /id="reloadButton"[\s\S]*?data-icon="refresh"/);
   assert.match(html, /class="workspace-led clean"/);
-  assert.match(html, /<div class="toolbar-actions" aria-label="Graph actions">\s*<button\s+id="reloadButton"/);
+  assert.match(html, /<button\s+class="workspace-led clean"\s+id="workspaceLed"[\s\S]*?<label for="scopeSelect">/);
+  assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"/);
   assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="abortMergeButton"/);
   assert.match(html, /Abort Merge/);
@@ -125,12 +135,20 @@ test('reloads the graph from the webview toolbar', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /const reloadButton = document\.getElementById\('reloadButton'\);/);
+  assert.match(html, /const fetchAllButton = document\.getElementById\('fetchAllButton'\);/);
+  assert.match(html, /const pullButton = document\.getElementById\('pullButton'\);/);
+  assert.match(html, /const pushButton = document\.getElementById\('pushButton'\);/);
+  assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
   assert.match(
     html,
     /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'refresh' \}, 'Reloading revision graph\.\.\.', reloadButton\);/s
   );
+  assert.match(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}, 'Fetching remotes\.\.\.', fetchAllButton\);/);
+  assert.match(html, /postMessageWithLoading\(\{ type: 'pull-current-head' \}, 'Pulling current branch\.\.\.', pullButton\);/);
+  assert.match(html, /postMessageWithLoading\(\{ type: 'push-current-head' \}, 'Pushing current branch\.\.\.', pushButton\);/);
+  assert.match(html, /postMessageWithLoading\(\{ type: 'sync-current-head' \}, 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /searchClearButton,\s*reloadButton,\s*centerHeadButton,/s);
+  assert.match(html, /searchClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
 });
@@ -284,11 +302,12 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
-  assert.match(html, /const canSyncCurrentHead =\s*target\.kind === 'head' &&\s*!!currentHeadUpstreamName &&\s*publishedLocalBranchNames\.has\(target\.name\);/s);
-  assert.match(html, /appendMenuSubmenu\('Remote', \[/);
-  assert.match(html, /\{ label: 'Pull from ' \+ currentHeadUpstreamName, onClick: \(\) => postPullCurrentHead\(\) \}/);
-  assert.match(html, /\{ label: 'Push to ' \+ currentHeadUpstreamName, onClick: \(\) => postPushCurrentHead\(\) \}/);
-  assert.match(html, /\{ label: 'Sync with ' \+ currentHeadUpstreamName, onClick: \(\) => postSyncCurrentHead\(\) \}/);
+  assert.doesNotMatch(html, /appendMenuSubmenu\('Remote'/);
+  assert.doesNotMatch(html, /context-menu-chevron/);
+  assert.match(html, /function getCurrentHeadRemoteActionState\(\)/);
+  assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
+  assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
+  assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'pull-current-head' \}\);/s);
   assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'push-current-head' \}\);/s);
   assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(\{ type: 'reset-current-workspace', includeUntracked: !!includeUntracked \}\);/s);
@@ -325,13 +344,12 @@ test('renders structural commit actions for compare and branch creation', () => 
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function appendMenuSubmenu\(label, entries\)/);
+  assert.doesNotMatch(html, /function appendMenuSubmenu\(label, entries\)/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
   assert.match(html, /\.context-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
-  assert.match(html, /context-menu-group/);
-  assert.match(html, /context-submenu/);
-  assert.match(html, /\.context-submenu \{[^}]*width: 230px;/s);
-  assert.match(html, /context-menu-chevron/);
+  assert.doesNotMatch(html, /context-menu-group/);
+  assert.doesNotMatch(html, /context-submenu/);
+  assert.doesNotMatch(html, /context-menu-chevron/);
   assert.match(html, /function appendMenuSection\(label\)/);
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
@@ -463,7 +481,7 @@ test('recenters on initial graph state and exposes a center HEAD action', () => 
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /id="centerHeadButton"/);
-  assert.match(html, /Center HEAD/);
+  assert.match(html, /Center on HEAD/);
   assert.match(html, /const shouldPrecenterViewport = shouldRecenter && !hasRestoredNodeOffsets;/);
   assert.match(html, /renderScene\(nextState, \{ precenterViewport: shouldPrecenterViewport \}\)/);
   assert.match(html, /updateScenePlacement\(\{ source: 'layout' \}\);/);
@@ -673,6 +691,11 @@ function createWebviewRuntime() {
     'minimapZoomInButton',
     'loadingOverlay',
     'loadingMessage',
+    'reloadButton',
+    'fetchAllButton',
+    'pullButton',
+    'pushButton',
+    'syncButton',
     'workspaceLed',
     'abortMergeButton',
     'scopeSelect',
