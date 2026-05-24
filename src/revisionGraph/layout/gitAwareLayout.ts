@@ -101,6 +101,8 @@ function buildLayerRows(
     }
   }
 
+  enforceTopologicalRowOrder(rawRowByHash, projection.edges);
+
   const orderedRows = [...new Set(rawRowByHash.values())].sort((left, right) => left - right);
   const compactRowByRawRow = new Map(orderedRows.map((row, index) => [row, index] as const));
   return new Map(
@@ -128,6 +130,29 @@ function buildFallbackLayerRows(
   }
 
   return rawRowByHash;
+}
+
+function enforceTopologicalRowOrder(
+  rowByHash: Map<string, number>,
+  edges: readonly ProjectedGraphEdge[]
+): void {
+  for (let iteration = 0; iteration < rowByHash.size; iteration += 1) {
+    let changed = false;
+    for (const edge of edges) {
+      const childRow = rowByHash.get(edge.from);
+      const parentRow = rowByHash.get(edge.to);
+      if (childRow === undefined || parentRow === undefined || parentRow > childRow) {
+        continue;
+      }
+
+      rowByHash.set(edge.to, childRow + 1);
+      changed = true;
+    }
+
+    if (!changed) {
+      return;
+    }
+  }
 }
 
 function detectMainlinePath(projection: ProjectedGraph): string[] {

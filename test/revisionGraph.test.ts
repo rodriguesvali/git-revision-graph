@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v2:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v3:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -542,6 +542,43 @@ test('places side descendants on the same layer as their mainline sibling descen
   assert.ok(sideChild);
   assert.equal(sideChild?.row, mainChild?.row);
   assert.notEqual(sideChild?.x, mainChild?.x);
+});
+
+test('keeps projected descendants above every visible parent in the Git-aware layout', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head1', author: 'Ada', date: '2026-05-24', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'trunk1', author: 'Ada', date: '2026-05-23', subject: 'Trunk', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'mergeBase94', author: 'Ada', date: '2026-05-22', subject: 'Shared ancestor', refs: [], isBoundary: false },
+      { hash: 'mainlineMid', author: 'Ada', date: '2026-05-21', subject: 'Mainline middle', refs: [], isBoundary: false },
+      { hash: 'deepBase', author: 'Ada', date: '2026-05-20', subject: 'Deep base', refs: [{ name: 'v1.0.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'childAbove', author: 'Ada', date: '2026-05-19', subject: 'Child anchored by the shared ancestor', refs: [{ name: 'origin/feature/above', kind: 'remote' }], isBoundary: false },
+      { hash: 'childBelow', author: 'Ada', date: '2026-05-18', subject: 'Child first anchored by an older parent', refs: [{ name: 'origin/feature/below', kind: 'remote' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head1', to: 'trunk1', through: [] },
+      { from: 'trunk1', to: 'mergeBase94', through: [] },
+      { from: 'mergeBase94', to: 'mainlineMid', through: [] },
+      { from: 'mainlineMid', to: 'deepBase', through: [] },
+      { from: 'childAbove', to: 'mergeBase94', through: [] },
+      { from: 'childBelow', to: 'deepBase', through: [] },
+      { from: 'childBelow', to: 'mergeBase94', through: [] }
+    ],
+    visibleHashes: new Set(['head1', 'trunk1', 'mergeBase94', 'mainlineMid', 'deepBase', 'childAbove', 'childBelow'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const getRow = (hash: string) => positions.get(hash)?.y ?? Number.NaN;
+
+  assert.ok(getRow('childAbove') < getRow('mergeBase94'));
+  assert.ok(getRow('childBelow') < getRow('mergeBase94'));
+  for (const edge of projection.edges) {
+    assert.ok(
+      getRow(edge.from) < getRow(edge.to),
+      `${edge.from} should be rendered above ${edge.to}`
+    );
+  }
 });
 
 test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {
