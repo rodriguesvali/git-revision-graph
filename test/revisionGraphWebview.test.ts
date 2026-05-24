@@ -40,6 +40,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="pushButton"[\s\S]*?data-icon="repo-push"/);
   assert.match(html, /id="fetchAllButton"[\s\S]*?data-icon="cloud-download"/);
   assert.match(html, /id="reloadButton"[\s\S]*?data-icon="refresh"/);
+  assert.match(html, /\.view-controls \.toolbar-icon \{\s*position: static;\s*inset: auto;/);
   assert.match(html, /class="workspace-led clean"/);
   assert.match(html, /<button\s+class="workspace-led clean"\s+id="workspaceLed"[\s\S]*?<label for="scopeSelect">/);
   assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"/);

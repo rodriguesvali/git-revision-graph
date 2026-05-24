@@ -673,6 +673,8 @@ export function renderRevisionGraphStyles(): string {
       line-height: 1;
     }
     .view-controls .toolbar-icon {
+      position: static;
+      inset: auto;
       width: 16px;
       height: 16px;
       display: block;
