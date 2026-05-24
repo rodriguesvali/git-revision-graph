@@ -588,23 +588,32 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
       baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
 
+      let replacedNodeCount = 0;
       sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
       for (const node of sceneNodes) {
         const element = nodeElements.get(node.hash);
         const layout = layoutByHash.get(node.hash);
+        const nextRenderKey = getNodeRenderKey(node, layout);
+        if (element.getAttribute('data-node-render-key') === nextRenderKey) {
+          continue;
+        }
+
         const previousLeft = element.style.left;
         const container = document.createElement('div');
-        container.innerHTML = renderNodeMarkup(node, layout);
+        container.innerHTML = renderNodeMarkup(node, layout, nextRenderKey);
         const nextElement = container.firstElementChild;
         if (!nextElement) {
           return false;
         }
         nextElement.style.left = previousLeft;
         element.replaceWith(nextElement);
+        replacedNodeCount += 1;
       }
 
       refreshGraphCaches();
-      bindSceneEventHandlers();
+      if (replacedNodeCount > 0) {
+        bindSceneEventHandlers();
+      }
       if (patch.preserveSelection) {
         restoreSelectionSnapshot(selectionSnapshot);
       } else {
@@ -997,10 +1006,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return element && nodeLayer && nodeLayer.contains(element) ? element : null;
     }
 
-    function renderNodeMarkup(node, layout) {
+    function renderNodeMarkup(node, layout, renderKey = undefined) {
       if (!layout) {
         return '';
       }
+      const nodeRenderKey = renderKey || getNodeRenderKey(node, layout);
       const y = layout.defaultTop;
       const summary = node.refs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
@@ -1013,12 +1023,30 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         })
         .join('');
 
-      return '<div class="node ' + getNodeClass(node) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node)) + '">' +
+      return '<div class="node ' + getNodeClass(node) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node)) + '">' +
         '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
         refLines +
         summary +
         baseBadge +
       '</div>';
+    }
+
+    function getNodeRenderKey(node, layout) {
+      if (!node || !layout) {
+        return '';
+      }
+
+      return JSON.stringify({
+        hash: node.hash,
+        className: getNodeClass(node),
+        width: layout.width,
+        height: layout.height,
+        defaultLeft: layout.defaultLeft,
+        defaultTop: layout.defaultTop,
+        refs: node.refs.map((ref) => [ref.kind, ref.name]),
+        title: formatNodeTitle(node),
+        summary: node.refs.length === 0 ? formatNodeSummary(node) : ''
+      });
     }
 
     function renderEdgeMarkup(edge, layoutByHash) {

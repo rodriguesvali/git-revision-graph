@@ -451,10 +451,13 @@ test('patches reference metadata without rerendering graph edges', () => {
   assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
   assert.match(html, /if \(patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey\) \{\s*return false;\s*\}/);
   assert.match(html, /if \(!haveSameNodeHashes\(\(currentState\.scene && currentState\.scene\.nodes\) \|\| \[\], sceneNodes\)\) \{\s*return false;\s*\}/);
-  assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout\);/);
+  assert.match(html, /const nextRenderKey = getNodeRenderKey\(node, layout\);/);
+  assert.match(html, /if \(element\.getAttribute\('data-node-render-key'\) === nextRenderKey\) \{\s*continue;\s*\}/s);
+  assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout, nextRenderKey\);/);
   assert.match(html, /nextElement\.style\.left = previousLeft;/);
   assert.match(html, /element\.replaceWith\(nextElement\);/);
-  assert.match(html, /refreshGraphCaches\(\);\s*bindSceneEventHandlers\(\);/s);
+  assert.match(html, /data-node-render-key="/);
+  assert.match(html, /refreshGraphCaches\(\);\s*if \(replacedNodeCount > 0\) \{\s*bindSceneEventHandlers\(\);/s);
   assert.match(html, /nodeLayer\.addEventListener\('click',/);
   assert.match(html, /nodeLayer\.addEventListener\('contextmenu',/);
   assert.match(html, /nodeLayer\.addEventListener\('mousedown',/);
