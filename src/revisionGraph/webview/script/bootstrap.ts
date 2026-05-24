@@ -566,8 +566,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
       }
 
+      const shouldResetSearch =
+        nextState.viewMode !== 'ready' ||
+        (!!previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null));
+      const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
+      const hasRestoredNodeOffsets = hasStoredNodeOffsets();
+      const shouldPrecenterViewport = shouldRecenter && !hasRestoredNodeOffsets;
+
       traceWebviewPhase('webview.apply.update-chrome', () => updateChrome(nextState));
-      traceWebviewPhase('webview.apply.render-scene', () => renderScene(nextState));
+      traceWebviewPhase('webview.apply.render-scene', () => renderScene(nextState, { precenterViewport: shouldPrecenterViewport }));
       traceWebviewPhase('webview.apply.loading-status', () => {
         if (nextState.loading) {
           hideStatus();
@@ -588,11 +595,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         }
       });
 
-      const shouldResetSearch =
-        nextState.viewMode !== 'ready' ||
-        (!!previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null));
-      const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
-      if (hasStoredNodeOffsets()) {
+      if (hasRestoredNodeOffsets) {
         traceWebviewPhase('webview.apply.node-offsets', () => applyNodeLayout(false));
       }
       traceWebviewPhase('webview.apply.selection', () => syncSelection());
@@ -609,10 +612,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           if (viewportSnapshot) {
             restoreScenePlacementSnapshot(scenePlacementSnapshot);
             restoreViewportSnapshot(viewportSnapshot);
-          } else if (shouldRecenter) {
+          } else if (shouldRecenter && !shouldPrecenterViewport) {
             centerGraphInViewport();
           }
-        }, shouldRecenter ? 'action=recenter' : viewportSnapshot ? 'action=restore' : 'action=none');
+        }, viewportSnapshot ? 'action=restore' : shouldPrecenterViewport ? 'action=precentered' : shouldRecenter ? 'action=recenter' : 'action=none');
       });
     }
 
@@ -953,7 +956,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncViewOptionsButton();
     }
 
-    function renderScene(state) {
+    function renderScene(state, options = {}) {
       traceWebviewPhase('webview.render-scene.geometry', () => {
         canvas.style.width = baseCanvasWidth + 'px';
         canvas.style.height = baseCanvasHeight + 'px';
@@ -982,6 +985,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
         nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       });
+      if (options.precenterViewport) {
+        traceWebviewPhase('webview.render-scene.viewport-precenter', () => {
+          syncCanvasSize();
+          updateScenePlacement({ source: 'layout' });
+          centerGraphInViewport({ source: 'layout', syncMinimap: false });
+        }, 'action=recenter');
+      }
       traceWebviewPhase('webview.render-scene.edges-html', () => {
         edgeLayer.innerHTML = graphEdges
           .map((edge) => renderEdgeMarkup(edge, nodeByHash))
@@ -1006,11 +1016,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
       );
       edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
-      const headReference =
-        references.find((ref) => ref.kind === 'head') ||
-        references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
-        null;
-      headNodeHash = headReference ? headReference.hash : null;
+      headNodeHash = getCurrentHeadNodeHash();
       parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
       childMap = buildDirectionalMap(graphEdges, 'to', 'from');
       headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();

@@ -102,12 +102,13 @@ export function renderRevisionGraphScriptLayout(): string {
       });
     }
 
-    function updateScenePlacement() {
+    function updateScenePlacement(options = {}) {
       traceWebviewPhase('webview.canvas-layout.scene-placement', () => {
-        const bounds = getGraphBounds();
+        const useLayoutSource = options.source === 'layout';
+        const bounds = useLayoutSource ? getGraphLayoutBounds() : getGraphBounds();
         const canvasWidth = getCanvasWidth();
         const canvasHeight = getCanvasHeight();
-        const headAnchor = getHeadAnchorBounds();
+        const headAnchor = useLayoutSource ? getHeadLayoutAnchorBounds() : getHeadAnchorBounds();
         const preferredCenterX = headAnchor ? headAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
         const preferredCenterY = headAnchor ? headAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
         const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
@@ -118,12 +119,13 @@ export function renderRevisionGraphScriptLayout(): string {
       });
     }
 
-    function centerGraphInViewport() {
-      const bounds = getDisplayedGraphBounds();
-      const displayedHeadAnchor = getDisplayedHeadAnchorBounds();
+    function centerGraphInViewport(options = {}) {
+      const useLayoutSource = options.source === 'layout';
+      const bounds = useLayoutSource ? getDisplayedGraphLayoutBounds() : getDisplayedGraphBounds();
+      const displayedHeadAnchor = useLayoutSource ? getDisplayedHeadLayoutAnchorBounds() : getDisplayedHeadAnchorBounds();
       const targetCenterX = displayedHeadAnchor ? displayedHeadAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
       const targetCenterY = displayedHeadAnchor ? displayedHeadAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
-      centerViewportOnPoint(targetCenterX, targetCenterY);
+      centerViewportOnPoint(targetCenterX, targetCenterY, options);
     }
 
     function centerNodeInViewport(hash) {
@@ -137,19 +139,34 @@ export function renderRevisionGraphScriptLayout(): string {
       );
     }
 
-    function centerViewportOnPoint(targetCenterX, targetCenterY) {
+    function centerViewportOnPoint(targetCenterX, targetCenterY, options = {}) {
       const visibleSize = getVisibleViewportSize();
       const visibleWidth = visibleSize.width;
       const visibleHeight = visibleSize.height;
-      viewport.scrollLeft = Math.max(
+      const nextScrollLeft = Math.max(
         0,
         ${VIEWPORT_PADDING_LEFT} + targetCenterX * currentZoom - visibleWidth / 2
       );
-      viewport.scrollTop = Math.max(
+      const nextScrollTop = Math.max(
         0,
         ${VIEWPORT_PADDING_TOP} + targetCenterY * currentZoom - visibleHeight / 2
       );
-      syncMinimap();
+      const shouldScroll =
+        Math.abs(viewport.scrollLeft - nextScrollLeft) > 0.5 ||
+        Math.abs(viewport.scrollTop - nextScrollTop) > 0.5;
+      traceWebviewPhase('webview.viewport-frame.scroll', () => {
+        if (shouldScroll) {
+          if (typeof viewport.scrollTo === 'function') {
+            viewport.scrollTo({ left: nextScrollLeft, top: nextScrollTop, behavior: 'auto' });
+          } else {
+            viewport.scrollLeft = nextScrollLeft;
+            viewport.scrollTop = nextScrollTop;
+          }
+        }
+      }, shouldScroll ? 'action=scroll' : 'action=skip');
+      if (options.syncMinimap !== false) {
+        syncMinimap('viewport');
+      }
     }
 
     function getGraphBounds() {
@@ -181,6 +198,35 @@ export function renderRevisionGraphScriptLayout(): string {
       };
     }
 
+    function getGraphLayoutBounds() {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const layout of graphNodes) {
+        const left = layout.defaultLeft + Number(nodeOffsets[layout.hash] || 0);
+        const top = layout.defaultTop;
+        minX = Math.min(minX, left);
+        maxX = Math.max(maxX, left + layout.width);
+        minY = Math.min(minY, top);
+        maxY = Math.max(maxY, top + layout.height);
+      }
+      if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        return { minX: 0, maxX: baseCanvasWidth, minY: 0, maxY: baseCanvasHeight };
+      }
+      return { minX, maxX, minY, maxY };
+    }
+
+    function getDisplayedGraphLayoutBounds() {
+      const bounds = getGraphLayoutBounds();
+      return {
+        minX: bounds.minX + layoutOffsetX,
+        maxX: bounds.maxX + layoutOffsetX,
+        minY: bounds.minY + layoutOffsetY,
+        maxY: bounds.maxY + layoutOffsetY
+      };
+    }
+
     function getHeadAnchorBounds() {
       if (!headNodeHash || !nodeElements.has(headNodeHash)) {
         return null;
@@ -191,6 +237,38 @@ export function renderRevisionGraphScriptLayout(): string {
         centerX: left + getNodeWidth(headNodeHash) / 2,
         centerY: top + getNodeHeight(headNodeHash) / 2
       };
+    }
+
+    function getHeadLayoutAnchorBounds() {
+      const currentHeadHash = getCurrentHeadNodeHash();
+      const layout = currentHeadHash ? graphNodeByHash.get(currentHeadHash) : null;
+      if (!layout) {
+        return null;
+      }
+      const left = layout.defaultLeft + Number(nodeOffsets[layout.hash] || 0);
+      return {
+        centerX: left + layout.width / 2,
+        centerY: layout.defaultTop + layout.height / 2
+      };
+    }
+
+    function getDisplayedHeadLayoutAnchorBounds() {
+      const headBounds = getHeadLayoutAnchorBounds();
+      if (!headBounds) {
+        return null;
+      }
+      return {
+        centerX: headBounds.centerX + layoutOffsetX,
+        centerY: headBounds.centerY + layoutOffsetY
+      };
+    }
+
+    function getCurrentHeadNodeHash() {
+      const headReference =
+        references.find((ref) => ref.kind === 'head') ||
+        references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
+        null;
+      return headReference ? headReference.hash : null;
     }
 
     function getDisplayedHeadAnchorBounds() {
@@ -211,7 +289,8 @@ export function renderRevisionGraphScriptLayout(): string {
     function getNodeLeft(hash) {
       const element = nodeElements.get(hash);
       if (!element) {
-        return 0;
+        const layout = graphNodeByHash.get(hash);
+        return layout ? layout.defaultLeft + Number(nodeOffsets[hash] || 0) : 0;
       }
       return Number(element.style.left.replace('px', '')) || getDefaultNodeLeft(hash);
     }
@@ -219,7 +298,8 @@ export function renderRevisionGraphScriptLayout(): string {
     function getNodeTop(hash) {
       const element = nodeElements.get(hash);
       if (!element) {
-        return 0;
+        const layout = graphNodeByHash.get(hash);
+        return layout ? layout.defaultTop : 0;
       }
       return Number(element.dataset.defaultTop || 0);
     }

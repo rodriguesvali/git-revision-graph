@@ -62,6 +62,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function traceWebviewPhase\(phase, work, detail = ''\)/);
   assert.match(html, /webview\.canvas-layout\.sync-size/);
   assert.match(html, /webview\.canvas-layout\.scene-placement/);
+  assert.match(html, /webview\.render-scene\.viewport-precenter/);
+  assert.match(html, /webview\.viewport-frame\.scroll/);
   assert.match(html, /webview\.render-scene\.nodes-html/);
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /type: 'load-trace'/);
@@ -462,7 +464,11 @@ test('recenters on initial graph state and exposes a center HEAD action', () => 
 
   assert.match(html, /id="centerHeadButton"/);
   assert.match(html, /Center HEAD/);
-  assert.match(html, /else if \(shouldRecenter\) \{\s*centerGraphInViewport\(\);/);
+  assert.match(html, /const shouldPrecenterViewport = shouldRecenter && !hasRestoredNodeOffsets;/);
+  assert.match(html, /renderScene\(nextState, \{ precenterViewport: shouldPrecenterViewport \}\)/);
+  assert.match(html, /updateScenePlacement\(\{ source: 'layout' \}\);/);
+  assert.match(html, /centerGraphInViewport\(\{ source: 'layout', syncMinimap: false \}\);/);
+  assert.match(html, /shouldPrecenterViewport \? 'action=precentered'/);
   assert.match(html, /centerHeadButton\.disabled = toolbarBusy;/);
 });
 
