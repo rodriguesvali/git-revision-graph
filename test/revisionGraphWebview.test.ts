@@ -397,6 +397,7 @@ test('uses principal path highlight for single selection and compare-only highli
   assert.match(html, /const ancestorPath = anchorHash \? getPrimaryAncestorPath\(anchorHash\) : \[\];/);
   assert.match(html, /function buildPrimaryAncestorPathFromNextMap\(startHash\)/);
   assert.match(html, /const nextHash = primaryAncestorNextByHash\[currentHash\];/);
+  assert.match(html, /let queueIndex = 0;\s*while \(queueIndex < queue\.length\) \{\s*const hash = queue\[queueIndex\];\s*queueIndex \+= 1;/s);
   assert.match(html, /element\.classList\.toggle\('selected', anchorHash === hash\);/);
   assert.match(html, /element\.classList\.toggle\('related', !!anchorHash && anchorHash !== hash && relatedHashes\.has\(hash\)\);/);
   assert.match(html, /element\.classList\.toggle\('muted', !!anchorHash && !isRelated\);/);

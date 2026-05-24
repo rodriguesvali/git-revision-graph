@@ -10,7 +10,11 @@ import {
 import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { getMergeBlockedTargetsFromGraph } from '../src/revisionGraph/backend';
 import { buildCommitGraph, buildCommitGraphWithSimplification } from '../src/revisionGraph/model/commitGraph';
-import { collectAncestorHashes, findCommitHashesByRef } from '../src/revisionGraph/model/commitGraphQueries';
+import {
+  collectAncestorHashes,
+  collectDescendantHashes,
+  findCommitHashesByRef
+} from '../src/revisionGraph/model/commitGraphQueries';
 import {
   projectDecoratedCommitGraph
 } from '../src/revisionGraph/projection/graphProjection';
@@ -772,6 +776,17 @@ test('can find commits by ref and collect their ancestor hashes from the full DA
 
   assert.deepEqual(startHashes, ['s1']);
   assert.deepEqual([...ancestorHashes], ['s1', 'b1']);
+});
+
+test('collects descendant hashes from the full DAG', () => {
+  const graph = buildCommitGraph([
+    { hash: 'tip', parents: ['mid'], author: 'Ada', date: '2026-05-04', subject: 'Tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'side', parents: ['mid'], author: 'Ada', date: '2026-05-03', subject: 'Side', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'mid', parents: ['base'], author: 'Ada', date: '2026-05-02', subject: 'Middle', refs: [] },
+    { hash: 'base', parents: [], author: 'Ada', date: '2026-05-01', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  assert.deepEqual([...collectDescendantHashes(graph, ['base'])], ['base', 'mid', 'tip', 'side']);
 });
 
 test('marks visible refs as merge-blocked when their tips are already in the HEAD ancestry', () => {

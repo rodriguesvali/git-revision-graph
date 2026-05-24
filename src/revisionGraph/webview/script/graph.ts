@@ -19,8 +19,10 @@ export function renderRevisionGraphScriptGraphLogic(): string {
     function buildDistanceMap(startHash, adjacencyMap) {
       const distances = new Map([[startHash, 0]]);
       const queue = [startHash];
-      while (queue.length > 0) {
-        const hash = queue.shift();
+      let queueIndex = 0;
+      while (queueIndex < queue.length) {
+        const hash = queue[queueIndex];
+        queueIndex += 1;
         if (!hash) {
           continue;
         }

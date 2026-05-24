@@ -22,9 +22,11 @@ export function collectAncestorHashes(
 ): Set<string> {
   const reachable = new Set<string>();
   const queue = [...startHashes];
+  let queueIndex = 0;
 
-  while (queue.length > 0) {
-    const hash = queue.shift();
+  while (queueIndex < queue.length) {
+    const hash = queue[queueIndex];
+    queueIndex += 1;
     if (!hash || reachable.has(hash)) {
       continue;
     }
@@ -47,9 +49,11 @@ export function collectDescendantHashes(
 ): Set<string> {
   const reachable = new Set<string>();
   const queue = [...startHashes];
+  let queueIndex = 0;
 
-  while (queue.length > 0) {
-    const hash = queue.shift();
+  while (queueIndex < queue.length) {
+    const hash = queue[queueIndex];
+    queueIndex += 1;
     if (!hash || reachable.has(hash)) {
       continue;
     }
