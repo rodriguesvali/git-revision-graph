@@ -254,6 +254,13 @@ function buildBranchComponents(
       .filter((hash) => !mainlineHashes.has(hash))
   );
   const adjacency = buildNonMainlineAdjacency(projection, nonMainlineHashes);
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  const mainlineAnchorRowsByHash = buildMainlineAnchorRowsByHash(
+    projection,
+    rowByHash,
+    mainlineHashes,
+    nonMainlineHashes
+  );
   const visited = new Set<string>();
   const components: BranchComponent[] = [];
 
@@ -278,10 +285,32 @@ function buildBranchComponents(
       }
     }
 
-    components.push(buildBranchComponent(projection, rowByHash, mainlineHashes, hashes));
+    components.push(buildBranchComponent(rowByHash, nodeByHash, mainlineAnchorRowsByHash, hashes));
   }
 
   return components.sort(compareBranchComponents);
+}
+
+function buildMainlineAnchorRowsByHash(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  mainlineHashes: ReadonlySet<string>,
+  nonMainlineHashes: ReadonlySet<string>
+): Map<string, number[]> {
+  const anchorRowsByHash = new Map<string, number[]>();
+  for (const edge of projection.edges) {
+    if (nonMainlineHashes.has(edge.from) && mainlineHashes.has(edge.to)) {
+      const anchorRows = anchorRowsByHash.get(edge.from) ?? [];
+      anchorRows.push(rowByHash.get(edge.to) ?? 0);
+      anchorRowsByHash.set(edge.from, anchorRows);
+    } else if (mainlineHashes.has(edge.from) && nonMainlineHashes.has(edge.to)) {
+      const anchorRows = anchorRowsByHash.get(edge.to) ?? [];
+      anchorRows.push(rowByHash.get(edge.from) ?? 0);
+      anchorRowsByHash.set(edge.to, anchorRows);
+    }
+  }
+
+  return anchorRowsByHash;
 }
 
 function buildNonMainlineAdjacency(
@@ -302,19 +331,19 @@ function buildNonMainlineAdjacency(
 }
 
 function buildBranchComponent(
-  projection: ProjectedGraph,
   rowByHash: ReadonlyMap<string, number>,
-  mainlineHashes: ReadonlySet<string>,
+  nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
+  mainlineAnchorRowsByHash: ReadonlyMap<string, readonly number[]>,
   hashes: readonly string[]
 ): BranchComponent {
-  const hashSet = new Set(hashes);
-  const rows = hashes.map((hash) => rowByHash.get(hash) ?? 0);
+  const rows: number[] = [];
   const anchorRows: number[] = [];
-  for (const edge of projection.edges) {
-    if (hashSet.has(edge.from) && mainlineHashes.has(edge.to)) {
-      anchorRows.push(rowByHash.get(edge.to) ?? 0);
-    } else if (mainlineHashes.has(edge.from) && hashSet.has(edge.to)) {
-      anchorRows.push(rowByHash.get(edge.from) ?? 0);
+  let refWeight = 0;
+  for (const hash of hashes) {
+    rows.push(rowByHash.get(hash) ?? 0);
+    refWeight += (nodeByHash.get(hash)?.refs.length ?? 0) * 0.25;
+    for (const anchorRow of mainlineAnchorRowsByHash.get(hash) ?? []) {
+      anchorRows.push(anchorRow);
     }
   }
 
@@ -324,20 +353,9 @@ function buildBranchComponent(
     minRow: minNumber(rows, 0),
     maxRow: maxNumber(rows, 0),
     anchorRow: minNumber(anchorRows, minNumber(rows, 0)),
-    weight: hashes.length + getComponentRefWeight(projection, hashSet),
+    weight: hashes.length + refWeight,
     key: sortedHashes.join('\0')
   };
-}
-
-function getComponentRefWeight(projection: ProjectedGraph, hashes: ReadonlySet<string>): number {
-  let weight = 0;
-  for (const node of projection.nodes) {
-    if (hashes.has(node.hash)) {
-      weight += node.refs.length * 0.25;
-    }
-  }
-
-  return weight;
 }
 
 function compareBranchComponents(left: BranchComponent, right: BranchComponent): number {
