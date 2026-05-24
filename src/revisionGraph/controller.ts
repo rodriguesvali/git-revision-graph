@@ -415,6 +415,9 @@ export class RevisionGraphController implements vscode.Disposable {
       case 'webview-ready':
         this.rehydrateWebview();
         return;
+      case 'load-trace':
+        this.traceWebviewLoadEvent(message.phase, message.durationMs, message.detail, message.requestId);
+        return;
       case 'refresh':
         await this.refresh('full-rebuild');
         return;
@@ -923,7 +926,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
-    void this.view?.webview.postMessage(message);
+    void this.view?.webview.postMessage(this.withHostTraceContext(message));
   }
 
   private rehydrateWebview(): void {
@@ -1036,7 +1039,7 @@ export class RevisionGraphController implements vscode.Disposable {
     intent: RevisionGraphRefreshIntent,
     requestId: number
   ): RevisionGraphLoadTraceSink | undefined {
-    if (!vscode.workspace.getConfiguration('gitRevisionGraph').get<boolean>('traceLoading', false)) {
+    if (!this.isLoadTracingEnabled()) {
       return undefined;
     }
 
@@ -1058,5 +1061,50 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     return this.traceOutput;
+  }
+
+  private withHostTraceContext(message: RevisionGraphViewHostMessage): RevisionGraphViewHostMessage {
+    if (!this.isLoadTracingEnabled()) {
+      return message;
+    }
+
+    switch (message.type) {
+      case 'init-state':
+      case 'update-state':
+      case 'patch-metadata':
+      case 'patch-workspace-state':
+        return {
+          ...message,
+          trace: {
+            requestId: this.renderCoordinator.getCurrentRequestId(),
+            sentAtMs: Date.now()
+          }
+        };
+      case 'set-loading':
+      case 'set-error':
+      case 'set-remote-tag-state':
+        return message;
+    }
+  }
+
+  private traceWebviewLoadEvent(
+    phase: string,
+    durationMs: number,
+    detail: string | undefined,
+    requestId: number | undefined
+  ): void {
+    if (!this.isLoadTracingEnabled()) {
+      return;
+    }
+
+    const output = this.getTraceOutput();
+    const resolvedRequestId = requestId ?? this.renderCoordinator.getCurrentRequestId();
+    output.appendLine(
+      `[revision-graph-load] request=${resolvedRequestId} phase=${phase} duration=${durationMs}ms${detail ? ` ${detail}` : ''}`
+    );
+  }
+
+  private isLoadTracingEnabled(): boolean {
+    return vscode.workspace.getConfiguration('gitRevisionGraph').get<boolean>('traceLoading', false);
   }
 }

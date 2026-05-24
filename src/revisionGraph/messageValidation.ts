@@ -32,6 +32,19 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'pull-current-head':
     case 'push-current-head':
       return { type: message.type };
+    case 'load-trace':
+      return isBoundedNonEmptyString(message.phase, 120)
+        && isNonNegativeFiniteNumber(message.durationMs)
+        && (message.detail === undefined || isBoundedString(message.detail, 2048))
+        && (message.requestId === undefined || isNonNegativeFiniteNumber(message.requestId))
+        ? {
+          type: 'load-trace',
+          phase: message.phase,
+          durationMs: Math.round(message.durationMs),
+          detail: message.detail,
+          requestId: message.requestId === undefined ? undefined : Math.round(message.requestId)
+        }
+        : undefined;
     case 'set-projection-options': {
       const options = validateProjectionOptions(message.options);
       return options ? { type: 'set-projection-options', options } : undefined;
@@ -115,6 +128,7 @@ export function isRevisionGraphMessageAllowedForState(
 ): boolean {
   switch (message.type) {
     case 'webview-ready':
+    case 'load-trace':
     case 'refresh':
     case 'fetch-current-repository':
     case 'open-source-control':
@@ -186,6 +200,7 @@ export function isRevisionGraphMessageAllowedForCurrentRepository(
 function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): boolean {
   switch (message.type) {
     case 'webview-ready':
+    case 'load-trace':
     case 'refresh':
     case 'open-source-control':
     case 'choose-repository':
@@ -219,6 +234,10 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
 type MutableProjectionOptions = {
   -readonly [Key in keyof RevisionGraphProjectionOptions]?: RevisionGraphProjectionOptions[Key];
 };
+
+function isNonNegativeFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
 
 function validateProjectionOptions(value: unknown): Partial<RevisionGraphProjectionOptions> | undefined {
   if (!isRecord(value)) {

@@ -58,6 +58,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'update-state'/);
   assert.match(html, /case 'patch-metadata'/);
   assert.match(html, /case 'patch-workspace-state'/);
+  assert.match(html, /function applyTracedHostMessage\(message, phase, apply\)/);
+  assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
@@ -291,7 +293,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, message\.state\);/);
   assert.match(html, /remoteTagPublicationState\.set\(tagName, normalizedState\);/);
-  assert.match(html, /case 'update-state':\s*applyState\(message\.state, false, \{ invalidateRemoteTagState: true \}\);/s);
+  assert.match(html, /case 'update-state':\s*applyTracedHostMessage\(message, 'webview\.apply\.update-state', \(\) => \{\s*applyState\(message\.state, false, \{ invalidateRemoteTagState: true \}\);/s);
   assert.match(html, /syncRemoteTagStateCache\(nextState, previousRepositoryPath, !!options\.invalidateRemoteTagState\);/);
   assert.match(html, /if \(previousRepositoryPath !== nextRepositoryPath \|\| invalidateRemoteTagState\) \{\s*remoteTagPublicationState\.clear\(\);\s*pendingRemoteTagStateRequests\.clear\(\);\s*return;/s);
   assert.match(html, /const currentTagNames = new Set\(\(\(nextState && nextState\.references\) \|\| \[\]\)\s*\.filter\(\(ref\) => ref\.kind === 'tag'\)\s*\.map\(\(ref\) => ref\.name\)\);/s);

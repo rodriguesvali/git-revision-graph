@@ -31,6 +31,23 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     validateRevisionGraphMessage({ type: 'copy-ref-name', refName: 'main', refKind: 'commit' }),
     undefined
   );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'load-trace', phase: '', durationMs: 1 }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'load-trace', phase: 'webview.apply.update-state', durationMs: Infinity }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'load-trace',
+      phase: 'webview.apply.update-state',
+      durationMs: 1,
+      detail: 'a'.repeat(2049)
+    }),
+    undefined
+  );
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -89,11 +106,31 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({ type: 'push-current-head' }),
     { type: 'push-current-head' }
   );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'load-trace',
+      phase: 'webview.apply.update-state',
+      durationMs: 4.6,
+      requestId: 7.2,
+      detail: 'message=update-state; deliveryMs=3'
+    }),
+    {
+      type: 'load-trace',
+      phase: 'webview.apply.update-state',
+      durationMs: 5,
+      requestId: 7,
+      detail: 'message=update-state; deliveryMs=3'
+    }
+  );
 });
 
 test('isRevisionGraphMessageAllowedForState restricts graph actions to known refs and commits', () => {
   const state = createReadyRevisionGraphState();
 
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'load-trace', phase: 'webview.apply.update-state', durationMs: 1 }, state),
+    true
+  );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'checkout', refName: 'main', refKind: 'head' },

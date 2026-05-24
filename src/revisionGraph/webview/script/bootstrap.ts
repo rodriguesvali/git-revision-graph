@@ -411,16 +411,24 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
       switch (message.type) {
         case 'init-state':
-          applyState(message.state, true);
+          applyTracedHostMessage(message, 'webview.apply.init-state', () => {
+            applyState(message.state, true);
+          });
           return;
         case 'update-state':
-          applyState(message.state, false, { invalidateRemoteTagState: true });
+          applyTracedHostMessage(message, 'webview.apply.update-state', () => {
+            applyState(message.state, false, { invalidateRemoteTagState: true });
+          });
           return;
         case 'patch-metadata':
-          applyMetadataPatch(message.patch);
+          applyTracedHostMessage(message, 'webview.apply.patch-metadata', () => {
+            applyMetadataPatch(message.patch);
+          });
           return;
         case 'patch-workspace-state':
-          applyWorkspaceStatePatch(message.patch);
+          applyTracedHostMessage(message, 'webview.apply.patch-workspace-state', () => {
+            applyWorkspaceStatePatch(message.patch);
+          });
           return;
         case 'set-remote-tag-state':
           setRemoteTagState(message.tagName, message.state);
@@ -432,6 +440,52 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           showError(message.message);
           return;
       }
+    }
+
+    function applyTracedHostMessage(message, phase, apply) {
+      const startedAt = getTraceNow();
+      try {
+        apply();
+      } finally {
+        postWebviewLoadTrace(message, phase, startedAt);
+      }
+    }
+
+    function postWebviewLoadTrace(message, phase, startedAt) {
+      if (!message || !message.trace || typeof message.trace.requestId !== 'number' || typeof message.trace.sentAtMs !== 'number') {
+        return;
+      }
+
+      const finishedAt = getTraceNow();
+      const durationMs = Math.max(0, finishedAt - startedAt);
+      const deliveryMs = Math.max(0, startedAt - message.trace.sentAtMs);
+      vscode.postMessage({
+        type: 'load-trace',
+        phase,
+        durationMs,
+        requestId: message.trace.requestId,
+        detail: buildWebviewLoadTraceDetail(message, deliveryMs)
+      });
+    }
+
+    function buildWebviewLoadTraceDetail(message, deliveryMs) {
+      const details = [
+        'message=' + message.type,
+        'deliveryMs=' + Math.round(deliveryMs)
+      ];
+      const payload = message.state || message.patch;
+      if (payload && payload.scene) {
+        details.push('nodes=' + ((payload.scene.nodes && payload.scene.nodes.length) || 0));
+        details.push('edges=' + ((payload.scene.edges && payload.scene.edges.length) || 0));
+      }
+      if (payload && payload.references) {
+        details.push('refs=' + payload.references.length);
+      }
+      return details.join('; ');
+    }
+
+    function getTraceNow() {
+      return Date.now();
     }
 
     function applyState(nextState, isInit, options = {}) {
