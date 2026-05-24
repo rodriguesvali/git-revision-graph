@@ -69,6 +69,18 @@ type HorizontalLayoutCandidate = {
   readonly initialLeft: number;
 };
 
+type DynamicVerticalGapRange = {
+  readonly start: number;
+  readonly endExclusive: number;
+};
+
+type FanOutSourceStats = {
+  readonly row: number;
+  readonly targets: Set<string>;
+  readonly ranges: DynamicVerticalGapRange[];
+  minCrossedGap: number;
+};
+
 export function buildNodeLayouts(scene: RevisionGraphScene): readonly RevisionGraphNodeLayout[] {
   const dimensionsByHash = new Map(
     scene.nodes.map((node) => [
@@ -183,8 +195,7 @@ function getRowCenter(nodes: readonly HorizontalLayoutCandidate[], lefts: readon
 function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, number> {
   const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
   const fanOutEdgesByGap = new Map<number, number>();
-  const fanOutTargetsBySourceNode = new Map<string, Set<string>>();
-  const crossedGapsBySourceNode = new Map<string, number[]>();
+  const fanOutStatsBySourceNode = new Map<string, FanOutSourceStats>();
 
   for (const edge of scene.edges) {
     const sourceHash = edge.to;
@@ -198,30 +209,30 @@ function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, nu
     const upperRow = Math.min(sourceRow, targetRow);
     const lowerRow = Math.max(sourceRow, targetRow);
     const sourceNodeKey = `${sourceRow}:${sourceHash}`;
+    let sourceStats = fanOutStatsBySourceNode.get(sourceNodeKey);
+    if (!sourceStats) {
+      sourceStats = {
+        row: sourceRow,
+        targets: new Set(),
+        ranges: [],
+        minCrossedGap: Infinity
+      };
+      fanOutStatsBySourceNode.set(sourceNodeKey, sourceStats);
+    }
 
-    if (!fanOutTargetsBySourceNode.has(sourceNodeKey)) {
-      fanOutTargetsBySourceNode.set(sourceNodeKey, new Set());
-    }
-    fanOutTargetsBySourceNode.get(sourceNodeKey)?.add(targetHash);
-
-    if (!crossedGapsBySourceNode.has(sourceNodeKey)) {
-      crossedGapsBySourceNode.set(sourceNodeKey, []);
-    }
-    const crossedGaps = crossedGapsBySourceNode.get(sourceNodeKey);
-    for (let row = upperRow; row < lowerRow; row += 1) {
-      crossedGaps?.push(row);
-    }
+    sourceStats.targets.add(targetHash);
+    sourceStats.ranges.push({ start: upperRow, endExclusive: lowerRow });
+    sourceStats.minCrossedGap = Math.min(sourceStats.minCrossedGap, upperRow);
   }
 
   const maxExtraDescendantsBySourceGap = new Map<number, number>();
-  for (const [key, targets] of fanOutTargetsBySourceNode.entries()) {
-    const row = Number(key.slice(0, key.indexOf(':')));
-    const crossedGaps = crossedGapsBySourceNode.get(key) ?? [];
-    if (!Number.isFinite(row) || targets.size <= 1 || crossedGaps.length === 0) {
+  for (const sourceStats of fanOutStatsBySourceNode.values()) {
+    const { row, ranges, targets } = sourceStats;
+    if (!Number.isFinite(row) || targets.size <= 1 || ranges.length === 0) {
       continue;
     }
 
-    const sourceAdjacentGap = row <= minNumber(crossedGaps, row) ? row : row - 1;
+    const sourceAdjacentGap = row <= sourceStats.minCrossedGap ? row : row - 1;
     if (sourceAdjacentGap >= 0 && sourceAdjacentGap < scene.rowCount - 1) {
       maxExtraDescendantsBySourceGap.set(
         sourceAdjacentGap,
@@ -229,23 +240,62 @@ function buildDynamicVerticalGapByRow(scene: RevisionGraphScene): Map<number, nu
       );
     }
 
-    const crossedGapSet = new Set(crossedGaps);
-    for (const crossedGap of crossedGapSet) {
-      fanOutEdgesByGap.set(crossedGap, (fanOutEdgesByGap.get(crossedGap) ?? 0) + targets.size);
+    for (const range of mergeDynamicVerticalGapRanges(ranges)) {
+      for (let rowIndex = range.start; rowIndex < range.endExclusive; rowIndex += 1) {
+        fanOutEdgesByGap.set(rowIndex, (fanOutEdgesByGap.get(rowIndex) ?? 0) + targets.size);
+      }
     }
   }
 
   const gapByRow = new Map<number, number>();
-  for (let row = 0; row < scene.rowCount - 1; row += 1) {
+  const candidateRows = new Set<number>();
+  for (const row of fanOutEdgesByGap.keys()) {
+    candidateRows.add(row);
+  }
+  for (const row of maxExtraDescendantsBySourceGap.keys()) {
+    candidateRows.add(row);
+  }
+  for (const row of candidateRows) {
+    if (row < 0 || row >= scene.rowCount - 1) {
+      continue;
+    }
     const extraGap = Math.min(
       ROW_DYNAMIC_VERTICAL_GAP_MAX,
       Math.max(0, (fanOutEdgesByGap.get(row) ?? 0) - 1) * ROW_CORRIDOR_EDGE_EXTRA_GAP +
       (maxExtraDescendantsBySourceGap.get(row) ?? 0) * ROW_FAN_OUT_EXTRA_GAP
     );
-    gapByRow.set(row, ROW_VERTICAL_GAP + extraGap);
+    if (extraGap > 0) {
+      gapByRow.set(row, ROW_VERTICAL_GAP + extraGap);
+    }
   }
 
   return gapByRow;
+}
+
+function mergeDynamicVerticalGapRanges(ranges: DynamicVerticalGapRange[]): DynamicVerticalGapRange[] {
+  if (ranges.length <= 1) {
+    return ranges;
+  }
+
+  ranges.sort((left, right) => left.start - right.start || left.endExclusive - right.endExclusive);
+  const merged: DynamicVerticalGapRange[] = [];
+  let currentStart = ranges[0].start;
+  let currentEndExclusive = ranges[0].endExclusive;
+
+  for (let index = 1; index < ranges.length; index += 1) {
+    const range = ranges[index];
+    if (range.start <= currentEndExclusive) {
+      currentEndExclusive = Math.max(currentEndExclusive, range.endExclusive);
+      continue;
+    }
+
+    merged.push({ start: currentStart, endExclusive: currentEndExclusive });
+    currentStart = range.start;
+    currentEndExclusive = range.endExclusive;
+  }
+
+  merged.push({ start: currentStart, endExclusive: currentEndExclusive });
+  return merged;
 }
 
 function minNumber(values: readonly number[], fallback: number): number {
