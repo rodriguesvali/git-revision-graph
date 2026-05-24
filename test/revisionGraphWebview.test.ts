@@ -82,8 +82,11 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'set-error'/);
   assert.match(html, /--node-branch: #19d60f;/);
   assert.match(html, /--node-stash: #8c8f97;/);
-  assert.match(html, /--toolbar-safe-height: 68px/);
+  assert.match(html, /--toolbar-top-offset: 0px/);
+  assert.match(html, /--toolbar-safe-height: 56px/);
   assert.match(html, /--graph-top-offset: calc\(var\(--toolbar-safe-height\) \+ 1px\)/);
+  assert.match(html, /\.view-controls \{\s*position: fixed;\s*top: var\(--toolbar-top-offset\);\s*left: 0;\s*right: 0;[\s\S]*?border-radius: 0;[\s\S]*?box-shadow: none;/);
+  assert.match(html, /\.view-controls \.toolbar-button \{[\s\S]*?border-radius: 0;/);
   assert.match(html, /top: var\(--graph-top-offset\);/);
   assert.match(html, /right: 0;/);
   assert.match(html, /bottom: 0;/);
@@ -144,7 +147,8 @@ test('reloads the graph from the webview toolbar', () => {
     html,
     /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'refresh' \}, 'Reloading revision graph\.\.\.', reloadButton\);/s
   );
-  assert.match(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}, 'Fetching remotes\.\.\.', fetchAllButton\);/);
+  assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(\{ type: 'fetch-current-repository' \}\);/s);
+  assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(html, /postMessageWithLoading\(\{ type: 'pull-current-head' \}, 'Pulling current branch\.\.\.', pullButton\);/);
   assert.match(html, /postMessageWithLoading\(\{ type: 'push-current-head' \}, 'Pushing current branch\.\.\.', pushButton\);/);
   assert.match(html, /postMessageWithLoading\(\{ type: 'sync-current-head' \}, 'Synchronizing current branch\.\.\.', syncButton\);/);

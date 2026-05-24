@@ -728,6 +728,8 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
+    this.postActionLoading('Fetching remotes...');
+
     try {
       if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
         await execGitWithResult(
@@ -747,7 +749,7 @@ export class RevisionGraphController implements vscode.Disposable {
       await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
     } catch (error) {
       await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
-      this.postHostMessage({ type: 'update-state', state: this.currentState });
+      this.postCurrentState();
     }
   }
 
@@ -945,7 +947,29 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private postCurrentState(): void {
+    this.currentLoadingLabel = undefined;
+    this.currentLoadingMode = undefined;
+    this.currentErrorMessage = undefined;
+    this.currentState = {
+      ...this.currentState,
+      loading: false,
+      loadingLabel: undefined,
+      errorMessage: undefined
+    };
     this.postHostMessage({ type: 'update-state', state: this.currentState });
+  }
+
+  private postActionLoading(label: string, mode: 'blocking' | 'subtle' = 'blocking'): void {
+    this.currentLoadingLabel = label;
+    this.currentLoadingMode = mode;
+    this.currentErrorMessage = undefined;
+    this.currentState = {
+      ...this.currentState,
+      loading: true,
+      loadingLabel: label,
+      errorMessage: undefined
+    };
+    this.postHostMessage({ type: 'set-loading', label, mode });
   }
 
   private rehydrateWebview(): void {

@@ -32,8 +32,8 @@ export function renderRevisionGraphStyles(): string {
       --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
       --merge-conflict-border: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
-      --toolbar-top-offset: 14px;
-      --toolbar-safe-height: 68px;
+      --toolbar-top-offset: 0px;
+      --toolbar-safe-height: 56px;
       --graph-top-offset: calc(var(--toolbar-safe-height) + 1px);
       --viewport-scrollbar-gutter-right: 15px;
       --viewport-scrollbar-gutter-bottom: 13px;
@@ -502,8 +502,8 @@ export function renderRevisionGraphStyles(): string {
     .view-controls {
       position: fixed;
       top: var(--toolbar-top-offset);
-      left: 14px;
-      right: 14px;
+      left: 0;
+      right: 0;
       z-index: 70;
       display: flex;
       align-items: center;
@@ -513,10 +513,10 @@ export function renderRevisionGraphStyles(): string {
       max-width: none;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 0;
       background: color-mix(in srgb, var(--panel) 94%, var(--bg));
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
-      backdrop-filter: blur(2px);
+      box-shadow: none;
+      backdrop-filter: none;
     }
     .view-controls label {
       display: inline-flex;
@@ -537,6 +537,7 @@ export function renderRevisionGraphStyles(): string {
     .view-controls select {
       min-width: 152px;
       padding-right: 28px;
+      border-radius: 0;
     }
     .view-controls input[type="checkbox"] {
       margin: 0;
@@ -588,6 +589,7 @@ export function renderRevisionGraphStyles(): string {
       flex: 1 1 auto;
       height: 32px;
       padding: 0 10px;
+      border-radius: 0;
       font-size: 12px;
       line-height: 1;
     }
@@ -599,7 +601,7 @@ export function renderRevisionGraphStyles(): string {
       height: 32px;
       padding: 0 10px;
       border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-      border-radius: 9px;
+      border-radius: 0;
       background: color-mix(in srgb, var(--panel-strong) 76%, transparent);
       color: var(--muted);
       font-size: 11px;
@@ -623,7 +625,7 @@ export function renderRevisionGraphStyles(): string {
       height: 34px;
       padding: 2px;
       border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-      border-radius: 9px;
+      border-radius: 0;
       background: color-mix(in srgb, var(--panel-strong) 52%, transparent);
     }
     .view-controls .toolbar-button {
@@ -634,7 +636,7 @@ export function renderRevisionGraphStyles(): string {
       min-width: 32px;
       height: 32px;
       padding: 0 10px;
-      border-radius: 9px;
+      border-radius: 0;
       font-size: 12px;
       line-height: 1;
       font-weight: 600;
@@ -759,7 +761,7 @@ export function renderRevisionGraphStyles(): string {
     }
     @media (max-width: 1100px) {
       :root {
-        --toolbar-safe-height: 108px;
+        --toolbar-safe-height: 96px;
       }
     }
     @media (max-width: 620px) {
@@ -770,7 +772,7 @@ export function renderRevisionGraphStyles(): string {
     }
     @media (max-width: 820px) {
       :root {
-        --toolbar-safe-height: 132px;
+        --toolbar-safe-height: 120px;
       }
     }
     .node-summary {

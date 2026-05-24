@@ -122,7 +122,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (fetchAllButton) {
       fetchAllButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'fetch-current-repository' }, 'Fetching remotes...', fetchAllButton);
+        vscode.postMessage({ type: 'fetch-current-repository' });
       });
     }
     if (pullButton) {
