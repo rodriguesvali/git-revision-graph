@@ -479,7 +479,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     references,
     signal
   );
-  traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}`);
+  traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
   throwIfAborted(signal);
   const baseCanvasWidth = Math.max(
     880,

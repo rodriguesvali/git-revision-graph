@@ -6,7 +6,7 @@ import {
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from './model/commitGraphTypes';
-import { collectAncestorHashes, findCommitHashesByRef } from './model/commitGraphQueries';
+import { collectAncestorHashes } from './model/commitGraphQueries';
 import { projectDecoratedCommitGraph } from './projection/graphProjection';
 import { buildRevisionGraphRefKinds } from './source/refIndex';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
@@ -299,14 +299,20 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       ).values()
     ];
 
-    const blockedFromGraph = getMergeBlockedTargetsFromGraph(snapshot.graph, currentHeadName, uniqueReferences);
+    const commitHashesByRef = buildCommitHashesByRefKey(snapshot.graph);
+    const blockedFromGraph = getMergeBlockedTargetsFromGraph(
+      snapshot.graph,
+      currentHeadName,
+      uniqueReferences,
+      commitHashesByRef
+    );
     const blockedSet = new Set(blockedFromGraph);
 
     const unresolvedReferences = uniqueReferences.filter((ref) =>
       ref.kind !== 'head' &&
       ref.name !== currentHeadName &&
       !blockedSet.has(`${ref.kind}::${ref.name}`) &&
-      findCommitHashesByRef(snapshot.graph, ref.name, ref.kind).length === 0
+      (commitHashesByRef.get(createRefKey(ref.kind, ref.name)) ?? []).length === 0
     );
 
     const fallbackResults = await Promise.all(
@@ -390,12 +396,13 @@ export function createRevisionGraphBackend(): RevisionGraphBackend & ShowLogBack
 export function getMergeBlockedTargetsFromGraph(
   graph: CommitGraph,
   currentHeadName: string,
-  visibleReferences: readonly Pick<RevisionGraphViewReference, 'kind' | 'name'>[]
+  visibleReferences: readonly Pick<RevisionGraphViewReference, 'kind' | 'name'>[],
+  commitHashesByRef = buildCommitHashesByRefKey(graph)
 ): string[] {
-  const headStartHashes = findCommitHashesByRef(graph, currentHeadName, 'head');
+  const headStartHashes = commitHashesByRef.get(createRefKey('head', currentHeadName)) ?? [];
   const fallbackHeadHashes = headStartHashes.length > 0
     ? headStartHashes
-    : findCommitHashesByRef(graph, currentHeadName, 'branch');
+    : commitHashesByRef.get(createRefKey('branch', currentHeadName)) ?? [];
 
   if (fallbackHeadHashes.length === 0) {
     return [];
@@ -409,13 +416,34 @@ export function getMergeBlockedTargetsFromGraph(
       continue;
     }
 
-    const tipHashes = findCommitHashesByRef(graph, ref.name, ref.kind);
+    const tipHashes = commitHashesByRef.get(createRefKey(ref.kind, ref.name)) ?? [];
     if (tipHashes.some((hash) => headAncestors.has(hash))) {
       blockedTargets.add(`${ref.kind}::${ref.name}`);
     }
   }
 
   return [...blockedTargets];
+}
+
+function buildCommitHashesByRefKey(graph: CommitGraph): Map<string, string[]> {
+  const commitHashesByRef = new Map<string, string[]>();
+  for (const commit of graph.orderedCommits) {
+    for (const ref of commit.refs) {
+      const key = createRefKey(ref.kind, ref.name);
+      const hashes = commitHashesByRef.get(key);
+      if (hashes) {
+        hashes.push(commit.hash);
+      } else {
+        commitHashesByRef.set(key, [commit.hash]);
+      }
+    }
+  }
+
+  return commitHashesByRef;
+}
+
+function createRefKey(kind: RevisionGraphRef['kind'], name: string): string {
+  return `${kind}::${name}`;
 }
 
 function countVisibleNodes(graph: CommitGraph, options: RevisionGraphProjectionOptions): number {
