@@ -624,7 +624,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncSelection();
       syncToolbarActions();
       syncSearchResults({ preserveActiveHash: true, focusActive: false });
-      syncMinimap('full');
+      syncMinimap(replacedNodeCount > 0 ? 'full' : 'viewport');
       hideLoading();
       hideStatus();
       return true;

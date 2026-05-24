@@ -464,7 +464,7 @@ test('patches reference metadata without rerendering graph edges', () => {
   assert.match(html, /nodeLayer\.addEventListener\('mousedown',/);
   assert.match(html, /if \(sceneEventHandlersBound \|\| !nodeLayer\) \{/);
   assert.doesNotMatch(html, /for \(const element of document\.querySelectorAll\('\\[data-ref-id\\]'\)\) \{\s*element\.addEventListener\('click'/);
-  assert.match(html, /syncMinimap\('full'\);/);
+  assert.match(html, /syncMinimap\(replacedNodeCount > 0 \? 'full' : 'viewport'\);/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?renderScene[\s\S]*?function applyWorkspaceStatePatch/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
 });
