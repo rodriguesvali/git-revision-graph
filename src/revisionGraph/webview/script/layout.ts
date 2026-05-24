@@ -67,31 +67,55 @@ export function renderRevisionGraphScriptLayout(): string {
 	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
+    function readViewportLayoutSize() {
+      const width = viewport ? viewport.clientWidth : 0;
+      const height = viewport ? viewport.clientHeight : 0;
+      viewportClientWidth = Math.max(0, Number(width) || 0);
+      viewportClientHeight = Math.max(0, Number(height) || 0);
+      return { width: viewportClientWidth, height: viewportClientHeight };
+    }
+
+    function getViewportLayoutSize() {
+      const fallbackWidth = Math.max(0, Number(window.innerWidth) || 0);
+      const fallbackHeight = Math.max(0, Number(window.innerHeight) || 0);
+      return {
+        width: viewportClientWidth > 0 ? viewportClientWidth : fallbackWidth,
+        height: viewportClientHeight > 0 ? viewportClientHeight : fallbackHeight
+      };
+    }
+
+    function getVisibleViewportSize() {
+      const viewportSize = getViewportLayoutSize();
+      return {
+        width: Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}),
+        height: Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM})
+      };
+    }
+
     function syncCanvasSize() {
-      const availableWidth = Math.max(
-        baseCanvasWidth,
-        Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}) / currentZoom
-      );
-      const availableHeight = Math.max(
-        baseCanvasHeight,
-        Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / currentZoom
-      );
-      canvas.style.width = availableWidth + 'px';
-      canvas.style.height = availableHeight + 'px';
+      traceWebviewPhase('webview.canvas-layout.sync-size', () => {
+        const visibleSize = getVisibleViewportSize();
+        const availableWidth = Math.max(baseCanvasWidth, visibleSize.width / currentZoom);
+        const availableHeight = Math.max(baseCanvasHeight, visibleSize.height / currentZoom);
+        canvas.style.width = availableWidth + 'px';
+        canvas.style.height = availableHeight + 'px';
+      });
     }
 
     function updateScenePlacement() {
-      const bounds = getGraphBounds();
-      const canvasWidth = getCanvasWidth();
-      const canvasHeight = getCanvasHeight();
-      const headAnchor = getHeadAnchorBounds();
-      const preferredCenterX = headAnchor ? headAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
-      const preferredCenterY = headAnchor ? headAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
-      const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
-      const maxOffsetY = Math.max(0, canvasHeight - baseCanvasHeight);
-      layoutOffsetX = clamp(preferredCenterX ? canvasWidth / 2 - preferredCenterX : 0, 0, maxOffsetX);
-      layoutOffsetY = clamp(preferredCenterY ? canvasHeight / 2 - preferredCenterY : 0, 0, maxOffsetY);
-      sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
+      traceWebviewPhase('webview.canvas-layout.scene-placement', () => {
+        const bounds = getGraphBounds();
+        const canvasWidth = getCanvasWidth();
+        const canvasHeight = getCanvasHeight();
+        const headAnchor = getHeadAnchorBounds();
+        const preferredCenterX = headAnchor ? headAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
+        const preferredCenterY = headAnchor ? headAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
+        const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
+        const maxOffsetY = Math.max(0, canvasHeight - baseCanvasHeight);
+        layoutOffsetX = clamp(preferredCenterX ? canvasWidth / 2 - preferredCenterX : 0, 0, maxOffsetX);
+        layoutOffsetY = clamp(preferredCenterY ? canvasHeight / 2 - preferredCenterY : 0, 0, maxOffsetY);
+        sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
+      });
     }
 
     function centerGraphInViewport() {
@@ -114,8 +138,9 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function centerViewportOnPoint(targetCenterX, targetCenterY) {
-      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
-      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const visibleSize = getVisibleViewportSize();
+      const visibleWidth = visibleSize.width;
+      const visibleHeight = visibleSize.height;
       viewport.scrollLeft = Math.max(
         0,
         ${VIEWPORT_PADDING_LEFT} + targetCenterX * currentZoom - visibleWidth / 2
@@ -210,7 +235,7 @@ export function renderRevisionGraphScriptLayout(): string {
     function getNodeWidth(hash) {
       const element = nodeElements.get(hash);
       if (element) {
-        return element.offsetWidth || Number(element.dataset.nodeWidth || 0) || ${NODE_MIN_WIDTH};
+        return Number(element.dataset.nodeWidth || 0) || element.offsetWidth || ${NODE_MIN_WIDTH};
       }
       const node = graphNodeByHash.get(hash);
       return node ? node.width : ${NODE_MIN_WIDTH};
@@ -219,7 +244,7 @@ export function renderRevisionGraphScriptLayout(): string {
     function getNodeHeight(hash) {
       const element = nodeElements.get(hash);
       if (element) {
-        return element.offsetHeight || Number(element.dataset.nodeHeight || 0) || ${REF_LINE_HEIGHT};
+        return Number(element.dataset.nodeHeight || 0) || element.offsetHeight || ${REF_LINE_HEIGHT};
       }
       const node = graphNodeByHash.get(hash);
       return node ? node.height : ${REF_LINE_HEIGHT};
@@ -335,8 +360,9 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function syncMinimapViewport(transform) {
-      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}) / currentZoom;
-      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM}) / currentZoom;
+      const visibleSize = getVisibleViewportSize();
+      const visibleWidth = visibleSize.width / currentZoom;
+      const visibleHeight = visibleSize.height / currentZoom;
       const visibleLeft = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / currentZoom);
       const visibleTop = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / currentZoom);
       const visibleRight = visibleLeft + visibleWidth;

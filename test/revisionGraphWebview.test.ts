@@ -60,6 +60,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'patch-workspace-state'/);
   assert.match(html, /function applyTracedHostMessage\(message, phase, apply\)/);
   assert.match(html, /function traceWebviewPhase\(phase, work, detail = ''\)/);
+  assert.match(html, /webview\.canvas-layout\.sync-size/);
+  assert.match(html, /webview\.canvas-layout\.scene-placement/);
   assert.match(html, /webview\.render-scene\.nodes-html/);
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /type: 'load-trace'/);
@@ -415,6 +417,34 @@ test('renders single-bend edges and compact structural node styling in the shell
   assert.match(html, /const bendY = targetY - direction \* approachLength;/);
   assert.match(html, /return describeEdgePath\(sourceX, sourceY, targetX, targetY\);/);
   assert.match(html, /min-width: 78px;/);
+});
+
+test('uses estimated node dimensions before layout reads in the shell runtime', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /return Number\(element\.dataset\.nodeWidth \|\| 0\) \|\| element\.offsetWidth \|\| 128;/);
+  assert.match(html, /return Number\(element\.dataset\.nodeHeight \|\| 0\) \|\| element\.offsetHeight \|\| 25;/);
+});
+
+test('uses cached viewport dimensions for render-time canvas sizing', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /let viewportClientWidth = 0;/);
+  assert.match(html, /let viewportClientHeight = 0;/);
+  assert.match(html, /function readViewportLayoutSize\(\)/);
+  assert.match(html, /function getVisibleViewportSize\(\)/);
+  assert.match(
+    html,
+    /window\.addEventListener\('resize', \(\) => \{\s*readViewportLayoutSize\(\);\s*syncCanvasSize\(\);/s
+  );
+  assert.match(
+    html,
+    /function syncCanvasSize\(\) \{[\s\S]*?const visibleSize = getVisibleViewportSize\(\);[\s\S]*?const availableWidth = Math\.max\(baseCanvasWidth, visibleSize\.width \/ currentZoom\);/s
+  );
+  assert.doesNotMatch(
+    html,
+    /function syncCanvasSize\(\) \{[\s\S]*?viewport\.clientWidth[\s\S]*?\n    \}/s
+  );
 });
 
 test('does not keep the legacy client-side auto-arrange routine in the shell runtime', () => {

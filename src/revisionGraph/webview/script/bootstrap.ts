@@ -103,6 +103,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let pendingMinimapSyncMode = 'none';
     let sceneEventHandlersBound = false;
     let activeWebviewTraceMessage = null;
+    let viewportClientWidth = 0;
+    let viewportClientHeight = 0;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -277,6 +279,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     viewport.addEventListener('scroll', () => syncMinimap('viewport'));
     viewport.addEventListener('scroll', closeContextMenu);
     window.addEventListener('resize', () => {
+      readViewportLayoutSize();
       syncCanvasSize();
       updateScenePlacement();
       syncMinimap();
@@ -400,6 +403,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     });
 
     syncMinimapPreference();
+    readViewportLayoutSize();
     setZoom(1, { preserveViewport: false });
     syncCanvasSize();
     updateScenePlacement();
@@ -863,8 +867,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function captureViewportSnapshot() {
-      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
-      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const viewportSize = getViewportLayoutSize();
+      const visibleWidth = Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
+      const visibleHeight = Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
       return {
         sceneCenterX: ((viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT} + visibleWidth / 2) / currentZoom) - layoutOffsetX,
         sceneCenterY: ((viewport.scrollTop - ${VIEWPORT_PADDING_TOP} + visibleHeight / 2) / currentZoom) - layoutOffsetY
@@ -897,8 +902,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return;
       }
 
-      const visibleWidth = Math.max(0, viewport.clientWidth - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
-      const visibleHeight = Math.max(0, viewport.clientHeight - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const viewportSize = getViewportLayoutSize();
+      const visibleWidth = Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
+      const visibleHeight = Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
       const nextScrollLeft = Math.max(
         0,
         ${VIEWPORT_PADDING_LEFT} + (snapshot.sceneCenterX + layoutOffsetX) * currentZoom - visibleWidth / 2
