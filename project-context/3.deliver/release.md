@@ -1,5 +1,57 @@
 # Release Readiness
 
+## 0.0.35 Release Readiness
+
+Current package baseline: `0.0.34`.
+
+Target release: `0.0.35`.
+
+Status: Delivery phase opened for the Git-aware row monotonicity patch. The implementation is complete and verified locally, but the package version has not been bumped yet. VSIX packaging and Marketplace publication are intentionally pending explicit maintainer approval after the version bump.
+
+Planning and build references:
+
+- `project-context/2.build/features/0.0.35-git-aware-row-monotonicity.md`
+
+Candidate change set:
+
+- Enforce topological row order after initial Git-aware row assignment so every projected edge renders descendants above visible parents.
+- Prevent shared structural ancestor commits, such as an unlabeled `94...` connector, from appearing above one descendant and below another.
+- Move the layout cache namespace to `git-aware-v3` to avoid reusing persisted positions from the previous row strategy.
+- Add regression coverage for the structural ancestor row monotonicity case.
+- Update CHANGELOG notes for the patch candidate.
+
+Automated verification completed:
+
+- `npm run build` passed for the row monotonicity patch.
+- `npm test` passed with 302 tests for the row monotonicity patch. This includes `npm run build` through the test script.
+- `git diff --check` passed before release artifact updates.
+
+Manual validation pending:
+
+- Install the `0.0.35` VSIX in an Extension Development Host or local VS Code profile after the version bump.
+- Open the private repository that exposed the divergence.
+- Confirm the structural `94...` commit renders below both descendant refs that point to it.
+- Compare the same region against TortoiseGit and confirm the remaining difference is limited to horizontal lane/routing quality, not inverted ancestry.
+- Confirm graph loading, scope changes, search, minimap, and selection still behave normally on the same repository.
+
+Release gates pending:
+
+- Apply the version bump to `0.0.35` in `package.json` and `package-lock.json` after maintainer approval.
+- Re-run `npm run build`, `npm test`, and `git diff --check` after the version bump.
+- Run `npm run package:vsix` after the version bump and review generated metadata/package contents.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after the VSIX/manual smoke check is acceptable.
+
+Post-release monitoring focus:
+
+- Reports of revision graph ancestors appearing above descendants or between descendant refs.
+- Reports of new vertical spacing regressions in merge-heavy histories.
+- Reports that the graph still differs from TortoiseGit due to horizontal lane assignment or edge crossings around structural commits.
+
+Rollback:
+
+- If a published regression is confirmed, prepare a patch release that reverts the row monotonicity pass and returns the layout cache namespace to the previous strategy only if needed.
+- If the issue is limited to a layout readability regression, prefer a follow-up patch that adjusts horizontal placement of structural commits while keeping descendant-above-parent ordering.
+
 ## 0.0.34 Release Readiness
 
 Current package baseline: `0.0.33`.

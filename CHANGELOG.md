@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.35
+
+### Fixes
+
+- Fixed Git-aware revision graph row ordering so projected descendants always render above their visible parents.
+- Prevented shared structural ancestors from appearing between descendants in contradictory vertical positions.
+
+### Quality
+
+- Added regression coverage for structural ancestor row monotonicity.
+- Layout cache keys now use `git-aware-v3` so older persisted positions are not reused for the corrected strategy.
+- Version bump, VSIX packaging, and Marketplace publication remain with the maintainer.
+
 ## 0.0.34
 
 ### Release Preparation
