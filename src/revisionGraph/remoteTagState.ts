@@ -17,6 +17,11 @@ export interface ResolveRemoteTagPublicationStateOptions {
   ) => Promise<GitExecResult>;
 }
 
+export interface RemoteTagPublicationRequestContext {
+  readonly repositoryPath: string | undefined;
+  readonly state: object;
+}
+
 export async function resolveRemoteTagPublicationState(
   options: ResolveRemoteTagPublicationStateOptions
 ): Promise<RemoteTagPublicationState> {
@@ -34,6 +39,16 @@ export async function resolveRemoteTagPublicationState(
   }
 
   return sawUnknown ? 'unknown' : 'unpublished';
+}
+
+export function isRemoteTagPublicationStateResponseCurrent(
+  requestContext: RemoteTagPublicationRequestContext,
+  currentRepositoryPath: string | undefined,
+  currentState: object
+): boolean {
+  return !!requestContext.repositoryPath
+    && requestContext.repositoryPath === currentRepositoryPath
+    && requestContext.state === currentState;
 }
 
 function parseRemoteTagNames(stdout: string): Set<string> {

@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveRemoteTagPublicationState } from '../src/revisionGraph/remoteTagState';
+import {
+  isRemoteTagPublicationStateResponseCurrent,
+  resolveRemoteTagPublicationState
+} from '../src/revisionGraph/remoteTagState';
 
 test('resolveRemoteTagPublicationState returns published when any remote contains the tag', async () => {
   const calls: string[] = [];
@@ -68,4 +71,46 @@ test('resolveRemoteTagPublicationState lets a published remote override earlier 
   });
 
   assert.equal(state, 'published');
+});
+
+test('isRemoteTagPublicationStateResponseCurrent accepts the original repository and state', () => {
+  const state = {};
+
+  assert.equal(
+    isRemoteTagPublicationStateResponseCurrent(
+      { repositoryPath: '/repo', state },
+      '/repo',
+      state
+    ),
+    true
+  );
+});
+
+test('isRemoteTagPublicationStateResponseCurrent rejects stale repository or state responses', () => {
+  const state = {};
+
+  assert.equal(
+    isRemoteTagPublicationStateResponseCurrent(
+      { repositoryPath: '/repo', state },
+      '/other',
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRemoteTagPublicationStateResponseCurrent(
+      { repositoryPath: '/repo', state },
+      '/repo',
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    isRemoteTagPublicationStateResponseCurrent(
+      { repositoryPath: undefined, state },
+      '/repo',
+      state
+    ),
+    false
+  );
 });

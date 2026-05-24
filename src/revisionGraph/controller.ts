@@ -72,7 +72,11 @@ import {
 } from './messageValidation';
 import { ShowLogPresenter } from '../showLogView';
 import { RevisionGraphLoadTraceSink } from './loadTrace';
-import { resolveRemoteTagPublicationState } from './remoteTagState';
+import {
+  RemoteTagPublicationRequestContext,
+  isRemoteTagPublicationStateResponseCurrent,
+  resolveRemoteTagPublicationState
+} from './remoteTagState';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -521,35 +525,35 @@ export class RevisionGraphController implements vscode.Disposable {
         }
         return;
       case 'resolve-remote-tag-state':
-        this.postHostMessage({
-          type: 'set-remote-tag-state',
-          tagName: message.refName,
-          state: this.currentRepository
-            ? await resolveTagPublicationStateForRepository(this.currentRepository, message.refName)
-            : 'unknown'
-        });
+        if (this.currentRepository) {
+          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
+          const state = await resolveTagPublicationStateForRepository(this.currentRepository, message.refName);
+          this.postRemoteTagStateIfCurrent(requestContext, message.refName, state);
+        }
         return;
       case 'push-tag':
         if (this.currentRepository) {
+          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
           const pushed = await pushTagResolvedReference(
             this.currentRepository,
             { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
             this.actionServices
           );
           if (pushed) {
-            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, state: 'published' });
+            this.postRemoteTagStateIfCurrent(requestContext, message.refName, 'published');
           }
         }
         return;
       case 'delete-remote-tag':
         if (this.currentRepository) {
+          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
           const deleted = await deleteRemoteTagResolvedReference(
             this.currentRepository,
             { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
             this.actionServices
           );
           if (deleted) {
-            this.postHostMessage({ type: 'set-remote-tag-state', tagName: message.refName, state: 'unpublished' });
+            this.postRemoteTagStateIfCurrent(requestContext, message.refName, 'unpublished');
           }
         }
         return;
@@ -887,6 +891,35 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     return fingerprint === buildRevisionGraphViewFingerprint(this.currentState);
+  }
+
+  private createRemoteTagPublicationRequestContext(
+    repository: Repository
+  ): RemoteTagPublicationRequestContext {
+    return {
+      repositoryPath: repository.rootUri.fsPath,
+      state: this.currentState
+    };
+  }
+
+  private postRemoteTagStateIfCurrent(
+    requestContext: RemoteTagPublicationRequestContext,
+    tagName: string,
+    state: RemoteTagPublicationState
+  ): void {
+    if (!isRemoteTagPublicationStateResponseCurrent(
+      requestContext,
+      this.currentRepository?.rootUri.fsPath,
+      this.currentState
+    )) {
+      return;
+    }
+
+    this.postHostMessage({
+      type: 'set-remote-tag-state',
+      tagName,
+      state
+    });
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
