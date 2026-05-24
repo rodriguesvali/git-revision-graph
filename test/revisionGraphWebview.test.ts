@@ -59,6 +59,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'patch-metadata'/);
   assert.match(html, /case 'patch-workspace-state'/);
   assert.match(html, /function applyTracedHostMessage\(message, phase, apply\)/);
+  assert.match(html, /function traceWebviewPhase\(phase, work, detail = ''\)/);
+  assert.match(html, /webview\.render-scene\.nodes-html/);
+  assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);

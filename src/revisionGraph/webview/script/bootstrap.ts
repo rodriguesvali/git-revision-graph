@@ -102,6 +102,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
     let sceneEventHandlersBound = false;
+    let activeWebviewTraceMessage = null;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -443,16 +444,36 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function applyTracedHostMessage(message, phase, apply) {
+      const previousTraceMessage = activeWebviewTraceMessage;
+      activeWebviewTraceMessage = hasWebviewTraceContext(message) ? message : null;
       const startedAt = getTraceNow();
       try {
         apply();
       } finally {
-        postWebviewLoadTrace(message, phase, startedAt);
+        postWebviewLoadTrace(message, phase, startedAt, { includeDelivery: true });
+        activeWebviewTraceMessage = previousTraceMessage;
       }
     }
 
-    function postWebviewLoadTrace(message, phase, startedAt) {
-      if (!message || !message.trace || typeof message.trace.requestId !== 'number' || typeof message.trace.sentAtMs !== 'number') {
+    function traceWebviewPhase(phase, work, detail = '') {
+      return traceWebviewPhaseForMessage(activeWebviewTraceMessage, phase, work, detail);
+    }
+
+    function traceWebviewPhaseForMessage(traceMessage, phase, work, detail = '') {
+      if (!traceMessage) {
+        return work();
+      }
+
+      const startedAt = getTraceNow();
+      try {
+        return work();
+      } finally {
+        postWebviewLoadTrace(traceMessage, phase, startedAt, { detail });
+      }
+    }
+
+    function postWebviewLoadTrace(message, phase, startedAt, options = {}) {
+      if (!hasWebviewTraceContext(message)) {
         return;
       }
 
@@ -464,15 +485,21 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         phase,
         durationMs,
         requestId: message.trace.requestId,
-        detail: buildWebviewLoadTraceDetail(message, deliveryMs)
+        detail: buildWebviewLoadTraceDetail(message, options.includeDelivery ? deliveryMs : null, options.detail || '')
       });
     }
 
-    function buildWebviewLoadTraceDetail(message, deliveryMs) {
+    function hasWebviewTraceContext(message) {
+      return !!message && !!message.trace && typeof message.trace.requestId === 'number' && typeof message.trace.sentAtMs === 'number';
+    }
+
+    function buildWebviewLoadTraceDetail(message, deliveryMs, extraDetail) {
       const details = [
-        'message=' + message.type,
-        'deliveryMs=' + Math.round(deliveryMs)
+        'message=' + message.type
       ];
+      if (deliveryMs !== null) {
+        details.push('deliveryMs=' + Math.round(deliveryMs));
+      }
       const payload = message.state || message.patch;
       if (payload && payload.scene) {
         details.push('nodes=' + ((payload.scene.nodes && payload.scene.nodes.length) || 0));
@@ -480,6 +507,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (payload && payload.references) {
         details.push('refs=' + payload.references.length);
+      }
+      if (extraDetail) {
+        details.push(extraDetail);
       }
       return details.join('; ');
     }
@@ -498,23 +528,25 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const scenePlacementSnapshot = options.preserveViewport ? captureScenePlacementSnapshot() : null;
       const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
       const previousSceneLayoutKey = sceneLayoutKey;
-      currentState = nextState;
-      currentHeadName = nextState.currentHeadName || null;
-      currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
-      publishedLocalBranchNames = new Set(nextState.publishedLocalBranchNames || []);
-      isWorkspaceDirty = !!nextState.isWorkspaceDirty;
-      hasConflictedMerge = !!nextState.hasConflictedMerge;
-      currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
-      mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
-      references = nextState.references || [];
-      syncRemoteTagStateCache(nextState, previousRepositoryPath, !!options.invalidateRemoteTagState);
-      graphNodes = nextState.nodeLayouts || [];
-      graphEdges = (nextState.scene && nextState.scene.edges) || [];
-      graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
-      primaryAncestorNextByHash = nextState.primaryAncestorNextByHash || {};
-      sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
-      baseCanvasWidth = nextState.baseCanvasWidth || 880;
-      baseCanvasHeight = nextState.baseCanvasHeight || 480;
+      traceWebviewPhase('webview.apply.state-model', () => {
+        currentState = nextState;
+        currentHeadName = nextState.currentHeadName || null;
+        currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
+        publishedLocalBranchNames = new Set(nextState.publishedLocalBranchNames || []);
+        isWorkspaceDirty = !!nextState.isWorkspaceDirty;
+        hasConflictedMerge = !!nextState.hasConflictedMerge;
+        currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
+        mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
+        references = nextState.references || [];
+        syncRemoteTagStateCache(nextState, previousRepositoryPath, !!options.invalidateRemoteTagState);
+        graphNodes = nextState.nodeLayouts || [];
+        graphEdges = (nextState.scene && nextState.scene.edges) || [];
+        graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+        primaryAncestorNextByHash = nextState.primaryAncestorNextByHash || {};
+        sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
+        baseCanvasWidth = nextState.baseCanvasWidth || 880;
+        baseCanvasHeight = nextState.baseCanvasHeight || 480;
+      });
 
       const storedState = vscode.getState() || {};
       if (previousSceneLayoutKey !== sceneLayoutKey) {
@@ -530,46 +562,53 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
       }
 
-      updateChrome(nextState);
-      renderScene(nextState);
-      if (nextState.loading) {
-        hideStatus();
-        showLoading(nextState.loadingLabel || 'Loading revision graph...', null, 'blocking');
-      } else {
-        hideLoading();
-      }
-      if (nextState.errorMessage) {
-        showError(nextState.errorMessage);
-      } else if (!nextState.loading && nextState.viewMode === 'empty') {
-        showStatus(
-          nextState.emptyMessage || 'No revision graph available.',
-          false,
-          nextState.hasRepositories ? { action: 'choose-repository', label: 'Choose Repository' } : null
-        );
-      } else if (!nextState.loading) {
-        hideStatus();
-      }
+      traceWebviewPhase('webview.apply.update-chrome', () => updateChrome(nextState));
+      traceWebviewPhase('webview.apply.render-scene', () => renderScene(nextState));
+      traceWebviewPhase('webview.apply.loading-status', () => {
+        if (nextState.loading) {
+          hideStatus();
+          showLoading(nextState.loadingLabel || 'Loading revision graph...', null, 'blocking');
+        } else {
+          hideLoading();
+        }
+        if (nextState.errorMessage) {
+          showError(nextState.errorMessage);
+        } else if (!nextState.loading && nextState.viewMode === 'empty') {
+          showStatus(
+            nextState.emptyMessage || 'No revision graph available.',
+            false,
+            nextState.hasRepositories ? { action: 'choose-repository', label: 'Choose Repository' } : null
+          );
+        } else if (!nextState.loading) {
+          hideStatus();
+        }
+      });
 
       const shouldResetSearch =
         nextState.viewMode !== 'ready' ||
         (!!previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null));
       const shouldRecenter = !options.preserveViewport && (isInit || previousSceneLayoutKey !== sceneLayoutKey);
       if (hasStoredNodeOffsets()) {
-        applyNodeLayout(false);
+        traceWebviewPhase('webview.apply.node-offsets', () => applyNodeLayout(false));
       }
-      syncSelection();
-      if (shouldResetSearch) {
-        clearSearchQuery(false);
-      } else {
-        syncSearchResults({ preserveActiveHash: true, focusActive: false });
-      }
-      requestAnimationFrame(() => {
-        if (viewportSnapshot) {
-          restoreScenePlacementSnapshot(scenePlacementSnapshot);
-          restoreViewportSnapshot(viewportSnapshot);
-        } else if (shouldRecenter) {
-          centerGraphInViewport();
+      traceWebviewPhase('webview.apply.selection', () => syncSelection());
+      traceWebviewPhase('webview.apply.search', () => {
+        if (shouldResetSearch) {
+          clearSearchQuery(false);
+        } else {
+          syncSearchResults({ preserveActiveHash: true, focusActive: false });
         }
+      });
+      const viewportTraceMessage = activeWebviewTraceMessage;
+      requestAnimationFrame(() => {
+        traceWebviewPhaseForMessage(viewportTraceMessage, 'webview.apply.viewport-frame', () => {
+          if (viewportSnapshot) {
+            restoreScenePlacementSnapshot(scenePlacementSnapshot);
+            restoreViewportSnapshot(viewportSnapshot);
+          } else if (shouldRecenter) {
+            centerGraphInViewport();
+          }
+        }, shouldRecenter ? 'action=recenter' : viewportSnapshot ? 'action=restore' : 'action=none');
       });
     }
 
@@ -909,36 +948,51 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function renderScene(state) {
-      canvas.style.width = baseCanvasWidth + 'px';
-      canvas.style.height = baseCanvasHeight + 'px';
-      sceneLayer.style.width = baseCanvasWidth + 'px';
-      sceneLayer.style.height = baseCanvasHeight + 'px';
-      graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
+      traceWebviewPhase('webview.render-scene.geometry', () => {
+        canvas.style.width = baseCanvasWidth + 'px';
+        canvas.style.height = baseCanvasHeight + 'px';
+        sceneLayer.style.width = baseCanvasWidth + 'px';
+        sceneLayer.style.height = baseCanvasHeight + 'px';
+        graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
+      });
 
       if (state.viewMode !== 'ready') {
-        edgeLayer.innerHTML = '';
-        nodeLayer.innerHTML = '';
-        sceneNodeByHash = new Map();
-        refreshGraphCaches();
-        syncCanvasSize();
-        updateScenePlacement();
+        traceWebviewPhase('webview.render-scene.clear', () => {
+          edgeLayer.innerHTML = '';
+          nodeLayer.innerHTML = '';
+          sceneNodeByHash = new Map();
+        });
+        traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
+        traceWebviewPhase('webview.render-scene.canvas-layout', () => {
+          syncCanvasSize();
+          updateScenePlacement();
+        });
         return;
       }
 
       const sceneNodes = (state.scene && state.scene.nodes) || [];
-      sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-      const nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
-      edgeLayer.innerHTML = graphEdges
-        .map((edge) => renderEdgeMarkup(edge, nodeByHash))
-        .join('');
-      nodeLayer.innerHTML = sceneNodes
-        .map((node) => renderNodeMarkup(node, nodeByHash.get(node.hash)))
-        .join('');
+      let nodeByHash = new Map();
+      traceWebviewPhase('webview.render-scene.indexes', () => {
+        sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
+        nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
+      });
+      traceWebviewPhase('webview.render-scene.edges-html', () => {
+        edgeLayer.innerHTML = graphEdges
+          .map((edge) => renderEdgeMarkup(edge, nodeByHash))
+          .join('');
+      }, 'edges=' + graphEdges.length);
+      traceWebviewPhase('webview.render-scene.nodes-html', () => {
+        nodeLayer.innerHTML = sceneNodes
+          .map((node) => renderNodeMarkup(node, nodeByHash.get(node.hash)))
+          .join('');
+      }, 'nodes=' + sceneNodes.length);
 
-      refreshGraphCaches();
-      bindSceneEventHandlers();
-      syncCanvasSize();
-      updateScenePlacement();
+      traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
+      traceWebviewPhase('webview.render-scene.bind-handlers', () => bindSceneEventHandlers());
+      traceWebviewPhase('webview.render-scene.canvas-layout', () => {
+        syncCanvasSize();
+        updateScenePlacement();
+      });
     }
 
     function refreshGraphCaches() {
