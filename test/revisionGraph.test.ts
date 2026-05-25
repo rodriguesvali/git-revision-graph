@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v3:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v4:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -579,6 +579,35 @@ test('keeps projected descendants above every visible parent in the Git-aware la
       `${edge.from} should be rendered above ${edge.to}`
     );
   }
+});
+
+test('centers structural commits between lateral descendants and the mainline', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head1', author: 'Ada', date: '2026-05-24', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'mainBase', author: 'Ada', date: '2026-05-23', subject: 'Mainline base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'leftChild', author: 'Ada', date: '2026-05-22', subject: 'Left descendant', refs: [{ name: 'origin/feature/left', kind: 'remote' }], isBoundary: false },
+      { hash: 'rightChild', author: 'Ada', date: '2026-05-21', subject: 'Right descendant', refs: [{ name: 'origin/feature/right', kind: 'remote' }], isBoundary: false },
+      { hash: 'structural94', author: 'Ada', date: '2026-05-20', subject: 'Shared structural ancestor', refs: [], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head1', to: 'mainBase', through: [] },
+      { from: 'leftChild', to: 'structural94', through: [] },
+      { from: 'rightChild', to: 'structural94', through: [] },
+      { from: 'structural94', to: 'mainBase', through: [] }
+    ],
+    visibleHashes: new Set(['head1', 'mainBase', 'leftChild', 'rightChild', 'structural94'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const sideX = positions.get('leftChild')?.x ?? Number.NaN;
+  const structuralX = positions.get('structural94')?.x ?? Number.NaN;
+  const mainlineX = positions.get('mainBase')?.x ?? Number.NaN;
+
+  assert.equal(positions.get('rightChild')?.x, sideX);
+  assert.ok(structuralX > Math.min(sideX, mainlineX));
+  assert.ok(structuralX < Math.max(sideX, mainlineX));
 });
 
 test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {

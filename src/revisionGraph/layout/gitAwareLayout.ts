@@ -56,6 +56,8 @@ export function calculateGitAwareProjectedGraphLayout(
     }
   }
 
+  applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
+
   const positions = new Map<string, GitAwareProjectedGraphLayoutPosition>();
   for (const node of projection.nodes) {
     positions.set(node.hash, {
@@ -268,6 +270,51 @@ function buildChildEdgesByHash(projection: ProjectedGraph): Map<string, Projecte
   return edgesByHash;
 }
 
+function applyStructuralBarycenterLanes(
+  projection: ProjectedGraph,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const structuralHashes = new Set(
+    projection.nodes
+      .filter((node) => node.refs.length === 0 && !node.isBoundary && !mainlineHashes.has(node.hash))
+      .map((node) => node.hash)
+  );
+  if (structuralHashes.size === 0) {
+    return;
+  }
+
+  const neighborLanesByHash = new Map<string, number[]>();
+  for (const edge of projection.edges) {
+    if (structuralHashes.has(edge.from)) {
+      const neighborLane = laneByHash.get(edge.to);
+      if (neighborLane !== undefined) {
+        const lanes = neighborLanesByHash.get(edge.from) ?? [];
+        lanes.push(neighborLane);
+        neighborLanesByHash.set(edge.from, lanes);
+      }
+    }
+
+    if (structuralHashes.has(edge.to)) {
+      const neighborLane = laneByHash.get(edge.from);
+      if (neighborLane !== undefined) {
+        const lanes = neighborLanesByHash.get(edge.to) ?? [];
+        lanes.push(neighborLane);
+        neighborLanesByHash.set(edge.to, lanes);
+      }
+    }
+  }
+
+  for (const hash of structuralHashes) {
+    const neighborLanes = uniqueNumbers(neighborLanesByHash.get(hash) ?? []);
+    if (neighborLanes.length < 2) {
+      continue;
+    }
+
+    laneByHash.set(hash, medianNumber(neighborLanes));
+  }
+}
+
 function buildBranchComponents(
   projection: ProjectedGraph,
   rowByHash: ReadonlyMap<string, number>,
@@ -466,4 +513,18 @@ function maxNumber(values: readonly number[], fallback: number): number {
   }
 
   return Number.isFinite(max) ? max : fallback;
+}
+
+function uniqueNumbers(values: readonly number[]): number[] {
+  return [...new Set(values)];
+}
+
+function medianNumber(values: readonly number[]): number {
+  const ordered = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(ordered.length / 2);
+  if (ordered.length % 2 === 1) {
+    return ordered[middle] ?? 0;
+  }
+
+  return ((ordered[middle - 1] ?? 0) + (ordered[middle] ?? 0)) / 2;
 }

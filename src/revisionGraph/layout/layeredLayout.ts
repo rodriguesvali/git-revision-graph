@@ -9,7 +9,7 @@ import {
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'git-aware-v3';
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'git-aware-v4';
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
