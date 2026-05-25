@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v6:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v9:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -610,6 +610,143 @@ test('centers structural commits between lateral descendants and the mainline', 
   assert.ok(structuralX < Math.max(sideX, mainlineX));
 });
 
+test('pulls isolated lateral refs near their visible ancestor after shared ancestors move down', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'side1', author: 'Ada', date: '2026-05-23', subject: 'Side 1', refs: [], isBoundary: false },
+      { hash: 'side2', author: 'Ada', date: '2026-05-22', subject: 'Side 2', refs: [], isBoundary: false },
+      { hash: 'side3', author: 'Ada', date: '2026-05-21', subject: 'Side 3', refs: [], isBoundary: false },
+      { hash: 'side4', author: 'Ada', date: '2026-05-20', subject: 'Side 4', refs: [], isBoundary: false },
+      { hash: 'ancestor', author: 'Ada', date: '2026-05-19', subject: 'Shared ancestor', refs: [{ name: 'v0.7.3', kind: 'tag' }], isBoundary: false },
+      { hash: 'release', author: 'Ada', date: '2026-05-18', subject: 'Release branch', refs: [{ name: 'origin/v0.7.4-release', kind: 'remote' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'base', through: [] },
+      { from: 'head', to: 'side1', through: [] },
+      { from: 'side1', to: 'side2', through: [] },
+      { from: 'side2', to: 'side3', through: [] },
+      { from: 'side3', to: 'side4', through: [] },
+      { from: 'side4', to: 'ancestor', through: [] },
+      { from: 'ancestor', to: 'base', through: [] },
+      { from: 'release', to: 'ancestor', through: [] }
+    ],
+    visibleHashes: new Set(['head', 'base', 'side1', 'side2', 'side3', 'side4', 'ancestor', 'release'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const releaseY = positions.get('release')?.y ?? Number.NaN;
+  const ancestorY = positions.get('ancestor')?.y ?? Number.NaN;
+
+  assert.equal(ancestorY - releaseY, 96);
+  assert.equal(releaseY, positions.get('side4')?.y);
+});
+
+test('keeps isolated lateral refs above all visible parents while moving them closer', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'side1', author: 'Ada', date: '2026-05-23', subject: 'Side 1', refs: [], isBoundary: false },
+      { hash: 'side2', author: 'Ada', date: '2026-05-22', subject: 'Side 2', refs: [], isBoundary: false },
+      { hash: 'side3', author: 'Ada', date: '2026-05-21', subject: 'Side 3', refs: [], isBoundary: false },
+      { hash: 'side4', author: 'Ada', date: '2026-05-20', subject: 'Side 4', refs: [], isBoundary: false },
+      { hash: 'ancestor', author: 'Ada', date: '2026-05-19', subject: 'Shared ancestor', refs: [{ name: 'v0.7.3', kind: 'tag' }], isBoundary: false },
+      { hash: 'olderParent', author: 'Ada', date: '2026-05-18', subject: 'Older parent', refs: [{ name: 'v0.7.2', kind: 'tag' }], isBoundary: false },
+      { hash: 'release', author: 'Ada', date: '2026-05-17', subject: 'Release branch', refs: [{ name: 'origin/v0.7.4-release', kind: 'remote' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'base', through: [] },
+      { from: 'head', to: 'side1', through: [] },
+      { from: 'side1', to: 'side2', through: [] },
+      { from: 'side2', to: 'side3', through: [] },
+      { from: 'side3', to: 'side4', through: [] },
+      { from: 'side4', to: 'ancestor', through: [] },
+      { from: 'ancestor', to: 'base', through: [] },
+      { from: 'ancestor', to: 'olderParent', through: [] },
+      { from: 'release', to: 'ancestor', through: [] },
+      { from: 'release', to: 'olderParent', through: [] }
+    ],
+    visibleHashes: new Set(['head', 'base', 'side1', 'side2', 'side3', 'side4', 'ancestor', 'olderParent', 'release'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const releaseY = positions.get('release')?.y ?? Number.NaN;
+  const ancestorY = positions.get('ancestor')?.y ?? Number.NaN;
+  const olderParentY = positions.get('olderParent')?.y ?? Number.NaN;
+
+  assert.equal(ancestorY - releaseY, 96);
+  assert.ok(releaseY < olderParentY);
+});
+
+test('pulls lateral branch components near the visible fork point', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'v030', author: 'Ada', date: '2026-05-24', subject: 'v0.3.0', refs: [{ name: 'v0.3.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'fork', author: 'Ada', date: '2026-05-23', subject: 'v0.2.0', refs: [{ name: 'v0.2.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-22', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'side1', author: 'Ada', date: '2026-05-21', subject: 'Side 1', refs: [], isBoundary: false },
+      { hash: 'side2', author: 'Ada', date: '2026-05-20', subject: 'Side 2', refs: [], isBoundary: false },
+      { hash: 'side3', author: 'Ada', date: '2026-05-19', subject: 'Side 3', refs: [], isBoundary: false },
+      { hash: 'side4', author: 'Ada', date: '2026-05-18', subject: 'Side 4', refs: [], isBoundary: false },
+      { hash: 'v026', author: 'Ada', date: '2026-05-17', subject: 'v0.2.6', refs: [{ name: 'v0.2.6', kind: 'tag' }], isBoundary: false },
+      { hash: 'v025', author: 'Ada', date: '2026-05-16', subject: 'v0.2.5', refs: [{ name: 'v0.2.5', kind: 'tag' }], isBoundary: false },
+      { hash: 'v024', author: 'Ada', date: '2026-05-15', subject: 'v0.2.4', refs: [{ name: 'v0.2.4', kind: 'tag' }], isBoundary: false },
+      { hash: 'v023', author: 'Ada', date: '2026-05-14', subject: 'v0.2.3', refs: [{ name: 'v0.2.3', kind: 'tag' }], isBoundary: false },
+      { hash: 'v022', author: 'Ada', date: '2026-05-13', subject: 'v0.2.2', refs: [{ name: 'v0.2.2', kind: 'tag' }], isBoundary: false },
+      { hash: 'v021', author: 'Ada', date: '2026-05-12', subject: 'v0.2.1', refs: [{ name: 'v0.2.1', kind: 'tag' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'v030', through: [] },
+      { from: 'v030', to: 'fork', through: [] },
+      { from: 'fork', to: 'base', through: [] },
+      { from: 'head', to: 'side1', through: [] },
+      { from: 'side1', to: 'side2', through: [] },
+      { from: 'side2', to: 'side3', through: [] },
+      { from: 'side3', to: 'side4', through: [] },
+      { from: 'side4', to: 'fork', through: [] },
+      { from: 'v026', to: 'v025', through: [] },
+      { from: 'v025', to: 'v024', through: [] },
+      { from: 'v024', to: 'v023', through: [] },
+      { from: 'v023', to: 'v022', through: [] },
+      { from: 'v022', to: 'v021', through: [] },
+      { from: 'v021', to: 'fork', through: [] }
+    ],
+    visibleHashes: new Set([
+      'head',
+      'v030',
+      'fork',
+      'base',
+      'side1',
+      'side2',
+      'side3',
+      'side4',
+      'v026',
+      'v025',
+      'v024',
+      'v023',
+      'v022',
+      'v021'
+    ])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+  const forkY = positions.get('fork')?.y ?? Number.NaN;
+  const branchRootY = positions.get('v021')?.y ?? Number.NaN;
+
+  assert.equal(forkY - branchRootY, 96);
+  assert.equal(branchRootY - (positions.get('v022')?.y ?? Number.NaN), 96);
+  assert.equal(
+    (positions.get('v022')?.y ?? Number.NaN) - (positions.get('v023')?.y ?? Number.NaN),
+    96
+  );
+});
+
 test('keeps referenced version sequences on stable lanes during layer ordering', async () => {
   const projection: ProjectedGraph = {
     sourceGraph: buildCommitGraph([]),
@@ -639,6 +776,33 @@ test('keeps referenced version sequences on stable lanes during layer ordering',
   assert.equal(positions.get('v48')?.x, positions.get('v47')?.x);
   assert.equal(positions.get('other48')?.x, positions.get('other47')?.x);
   assert.notEqual(positions.get('v48')?.x, positions.get('other48')?.x);
+});
+
+test('keeps simple non-mainline linear paths on stable lanes across adjacent refs', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'v150', author: 'Ada', date: '2026-05-23', subject: 'v1.5.0', refs: [{ name: 'v1.5.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'v143', author: 'Ada', date: '2026-05-22', subject: 'v1.4.3', refs: [{ name: 'v1.4.3', kind: 'tag' }], isBoundary: false },
+      { hash: 'v142', author: 'Ada', date: '2026-05-21', subject: 'v1.4.2', refs: [{ name: 'v1.4.2', kind: 'tag' }], isBoundary: false },
+      { hash: 'sibling', author: 'Ada', date: '2026-05-20', subject: 'Sibling', refs: [{ name: 'origin/sibling', kind: 'remote' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'base', through: [] },
+      { from: 'v150', to: 'v143', through: [] },
+      { from: 'v143', to: 'v142', through: [] },
+      { from: 'v142', to: 'base', through: [] },
+      { from: 'sibling', to: 'base', through: [] }
+    ],
+    visibleHashes: new Set(['head', 'base', 'v150', 'v143', 'v142', 'sibling'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+
+  assert.equal(positions.get('v150')?.x, positions.get('v143')?.x);
+  assert.equal(positions.get('v143')?.x, positions.get('v142')?.x);
 });
 
 test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {

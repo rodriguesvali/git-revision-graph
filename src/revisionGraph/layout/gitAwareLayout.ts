@@ -57,6 +57,7 @@ export function calculateGitAwareProjectedGraphLayout(
   }
 
   applyVersionFamilyContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
+  applyLinearPathContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
   applyLayerBarycenterOrdering(projection, rowByHash, laneByHash, mainlineHashes);
 
@@ -77,6 +78,7 @@ function buildLayerRows(
 ): Map<string, number> {
   const rawRowByHash = new Map<string, number>();
   const childEdgesByHash = buildChildEdgesByHash(projection);
+  const mainlineHashes = new Set(mainlinePath);
 
   for (const [row, hash] of mainlinePath.entries()) {
     rawRowByHash.set(hash, row);
@@ -106,6 +108,8 @@ function buildLayerRows(
   }
 
   enforceTopologicalRowOrder(rawRowByHash, projection.edges);
+  pullLateralComponentsTowardVisibleForks(rawRowByHash, projection, mainlineHashes);
+  pullIsolatedRefsTowardVisibleParents(rawRowByHash, projection, mainlineHashes);
 
   const orderedRows = [...new Set(rawRowByHash.values())].sort((left, right) => left - right);
   const compactRowByRawRow = new Map(orderedRows.map((row, index) => [row, index] as const));
@@ -155,6 +159,109 @@ function enforceTopologicalRowOrder(
 
     if (!changed) {
       return;
+    }
+  }
+}
+
+function pullLateralComponentsTowardVisibleForks(
+  rowByHash: Map<string, number>,
+  projection: ProjectedGraph,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const nonMainlineHashes = new Set(
+    projection.nodes
+      .map((node) => node.hash)
+      .filter((hash) => !mainlineHashes.has(hash))
+  );
+  const adjacency = buildNonMainlineAdjacency(projection, nonMainlineHashes);
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  const visited = new Set<string>();
+
+  for (const hash of nonMainlineHashes) {
+    if (visited.has(hash)) {
+      continue;
+    }
+
+    const component = collectRelatedComponent(hash, adjacency, visited);
+    const hasVisibleRef = component.some((componentHash) =>
+      (nodeByHash.get(componentHash)?.refs.length ?? 0) > 0
+    );
+    if (component.length < 2 || !hasVisibleRef) {
+      continue;
+    }
+
+    const safeShift = getSafeComponentRowShift(new Set(component), rowByHash, projection.edges);
+    if (safeShift <= 0) {
+      continue;
+    }
+
+    for (const componentHash of component) {
+      const row = rowByHash.get(componentHash);
+      if (row !== undefined) {
+        rowByHash.set(componentHash, row + safeShift);
+      }
+    }
+  }
+}
+
+function getSafeComponentRowShift(
+  componentHashes: ReadonlySet<string>,
+  rowByHash: ReadonlyMap<string, number>,
+  edges: readonly ProjectedGraphEdge[]
+): number {
+  let safeShift = Number.POSITIVE_INFINITY;
+
+  for (const edge of edges) {
+    if (!componentHashes.has(edge.from) || componentHashes.has(edge.to)) {
+      continue;
+    }
+
+    const childRow = rowByHash.get(edge.from);
+    const parentRow = rowByHash.get(edge.to);
+    if (childRow === undefined || parentRow === undefined) {
+      continue;
+    }
+
+    safeShift = Math.min(safeShift, parentRow - childRow - 1);
+  }
+
+  return Number.isFinite(safeShift) ? safeShift : 0;
+}
+
+function pullIsolatedRefsTowardVisibleParents(
+  rowByHash: Map<string, number>,
+  projection: ProjectedGraph,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const parentEdgesByHash = buildChildEdgesByHash(projection);
+  const childCountByHash = new Map<string, number>();
+
+  for (const edge of projection.edges) {
+    childCountByHash.set(edge.to, (childCountByHash.get(edge.to) ?? 0) + 1);
+  }
+
+  for (const node of projection.nodes) {
+    const currentRow = rowByHash.get(node.hash);
+    if (
+      currentRow === undefined ||
+      node.refs.length === 0 ||
+      node.isBoundary ||
+      mainlineHashes.has(node.hash) ||
+      (childCountByHash.get(node.hash) ?? 0) > 0
+    ) {
+      continue;
+    }
+
+    const parentRows = (parentEdgesByHash.get(node.hash) ?? [])
+      .map((edge) => rowByHash.get(edge.to))
+      .filter((row): row is number => row !== undefined);
+    if (parentRows.length === 0) {
+      continue;
+    }
+
+    const closestAllowedRow = Math.min(...parentRows) - 1;
+    if (closestAllowedRow > currentRow) {
+      rowByHash.set(node.hash, closestAllowedRow);
     }
   }
 }
@@ -306,6 +413,113 @@ function chooseVersionFamilyAnchorLane(
   return candidates
     .sort((left, right) =>
       Number(right.isMainline) - Number(left.isMainline) ||
+      getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
+      left.row - right.row ||
+      left.hash.localeCompare(right.hash)
+    )[0]?.lane;
+}
+
+function applyLinearPathContinuityLanes(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  const parentCountByHash = new Map<string, number>();
+  const childCountByHash = new Map<string, number>();
+
+  for (const edge of projection.edges) {
+    parentCountByHash.set(edge.from, (parentCountByHash.get(edge.from) ?? 0) + 1);
+    childCountByHash.set(edge.to, (childCountByHash.get(edge.to) ?? 0) + 1);
+  }
+
+  const relatedByHash = new Map<string, string[]>();
+  for (const edge of projection.edges) {
+    const child = nodeByHash.get(edge.from);
+    const parent = nodeByHash.get(edge.to);
+    if (!child || !parent || child.isBoundary || parent.isBoundary) {
+      continue;
+    }
+
+    if (mainlineHashes.has(edge.from) || mainlineHashes.has(edge.to)) {
+      continue;
+    }
+
+    if ((parentCountByHash.get(edge.from) ?? 0) !== 1 || (childCountByHash.get(edge.to) ?? 0) !== 1) {
+      continue;
+    }
+
+    appendRelatedHash(relatedByHash, edge.from, edge.to);
+    appendRelatedHash(relatedByHash, edge.to, edge.from);
+  }
+
+  const visited = new Set<string>();
+  for (const hash of relatedByHash.keys()) {
+    if (visited.has(hash)) {
+      continue;
+    }
+
+    const component = collectRelatedComponent(hash, relatedByHash, visited);
+    if (component.length < 2) {
+      continue;
+    }
+
+    const anchorLane = chooseLinearPathAnchorLane(component, nodeByHash, rowByHash, laneByHash);
+    if (anchorLane === undefined) {
+      continue;
+    }
+
+    for (const componentHash of component) {
+      laneByHash.set(componentHash, anchorLane);
+    }
+  }
+}
+
+function chooseLinearPathAnchorLane(
+  hashes: readonly string[],
+  nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: ReadonlyMap<string, number>
+): number | undefined {
+  const laneCounts = new Map<number, number>();
+  for (const hash of hashes) {
+    const lane = laneByHash.get(hash);
+    if (lane !== undefined) {
+      laneCounts.set(lane, (laneCounts.get(lane) ?? 0) + 1);
+    }
+  }
+
+  if (laneCounts.size === 0) {
+    return undefined;
+  }
+
+  const strongestLaneCount = maxNumber([...laneCounts.values()], 0);
+  const strongestLanes = [...laneCounts.entries()]
+    .filter(([, count]) => count === strongestLaneCount)
+    .map(([lane]) => lane);
+  if (strongestLanes.length === 1) {
+    return strongestLanes[0];
+  }
+
+  return hashes
+    .map((hash) => ({
+      hash,
+      lane: laneByHash.get(hash),
+      node: nodeByHash.get(hash),
+      row: rowByHash.get(hash) ?? Number.MAX_SAFE_INTEGER
+    }))
+    .filter((candidate): candidate is {
+      readonly hash: string;
+      readonly lane: number;
+      readonly node: ProjectedGraphNode;
+      readonly row: number;
+    } =>
+      candidate.lane !== undefined &&
+      candidate.node !== undefined &&
+      strongestLanes.includes(candidate.lane)
+    )
+    .sort((left, right) =>
       getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
       left.row - right.row ||
       left.hash.localeCompare(right.hash)

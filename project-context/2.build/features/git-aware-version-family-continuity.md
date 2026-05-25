@@ -11,7 +11,7 @@ Keep visible version-reference families, such as `origin/v0.10`, `v0.10.48`, and
 - Anchor the family lane by mainline membership first, then by higher-priority refs such as branches/remotes before tags, then by the newest row.
 - Preserve mainline lanes and move only non-mainline family members.
 - Keep layer barycenter ordering limited to non-boundary structural nodes so referenced cards do not get swapped by local crossing heuristics.
-- Move the layout cache namespace to `git-aware-v6` so persisted `git-aware-v5` positions are not reused.
+- Move the layout cache namespace to `git-aware-v6` so persisted `git-aware-v5` positions are not reused. Later layout follow-ups may supersede the active namespace.
 
 ## Acceptance
 

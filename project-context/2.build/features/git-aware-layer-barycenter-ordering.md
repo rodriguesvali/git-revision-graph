@@ -11,7 +11,7 @@ Reduce horizontal inversions inside each projected graph row by ordering non-mai
 - Reuse the existing lane slots in each row instead of inventing new columns.
 - Only reorder structural, non-boundary nodes without refs; referenced cards are preserved by the version-family continuity rule.
 - Only reorder a row when every candidate has a distinct slot, avoiding accidental node collapse.
-- Superseded cache namespace note: this landed with `git-aware-v5`, then the version-family continuity follow-up moved the active namespace to `git-aware-v6`.
+- Superseded cache namespace note: this landed with `git-aware-v5`, then later layout follow-ups moved the active namespace beyond it.
 
 ## Acceptance
 
