@@ -56,7 +56,9 @@ export function calculateGitAwareProjectedGraphLayout(
     }
   }
 
+  applyVersionFamilyContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
+  applyLayerBarycenterOrdering(projection, rowByHash, laneByHash, mainlineHashes);
 
   const positions = new Map<string, GitAwareProjectedGraphLayoutPosition>();
   for (const node of projection.nodes) {
@@ -155,6 +157,243 @@ function enforceTopologicalRowOrder(
       return;
     }
   }
+}
+
+function applyVersionFamilyContinuityLanes(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const familyByHash = buildVersionFamilyByHash(projection.nodes);
+  const relatedByHash = new Map<string, string[]>();
+
+  for (const edge of projection.edges) {
+    const fromFamily = familyByHash.get(edge.from);
+    const toFamily = familyByHash.get(edge.to);
+    if (!fromFamily || fromFamily !== toFamily) {
+      continue;
+    }
+
+    appendRelatedHash(relatedByHash, edge.from, edge.to);
+    appendRelatedHash(relatedByHash, edge.to, edge.from);
+  }
+
+  const visited = new Set<string>();
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  for (const hash of familyByHash.keys()) {
+    if (visited.has(hash)) {
+      continue;
+    }
+
+    const component = collectRelatedComponent(hash, relatedByHash, visited);
+    if (component.length < 2) {
+      continue;
+    }
+
+    const anchorLane = chooseVersionFamilyAnchorLane(component, nodeByHash, rowByHash, laneByHash, mainlineHashes);
+    if (anchorLane === undefined) {
+      continue;
+    }
+
+    for (const componentHash of component) {
+      if (!mainlineHashes.has(componentHash)) {
+        laneByHash.set(componentHash, anchorLane);
+      }
+    }
+  }
+}
+
+function buildVersionFamilyByHash(nodes: readonly ProjectedGraphNode[]): Map<string, string> {
+  const familyByHash = new Map<string, string>();
+  for (const node of nodes) {
+    const family = getNodeVersionFamily(node);
+    if (family) {
+      familyByHash.set(node.hash, family);
+    }
+  }
+
+  return familyByHash;
+}
+
+function getNodeVersionFamily(node: ProjectedGraphNode): string | undefined {
+  const candidates = node.refs
+    .map((ref) => ({ family: getRefVersionFamily(ref.name), score: getVersionFamilyRefScore(ref.kind) }))
+    .filter((candidate): candidate is { readonly family: string; readonly score: number } =>
+      candidate.family !== undefined
+    )
+    .sort((left, right) => right.score - left.score || left.family.localeCompare(right.family));
+  return candidates[0]?.family;
+}
+
+function getRefVersionFamily(refName: string): string | undefined {
+  const normalizedName = refName.toLowerCase().replace(/^origin\//, '');
+  const match = normalizedName.match(/^v?(\d+)\.(\d+)(?:\.|$)/);
+  return match ? `${match[1]}.${match[2]}` : undefined;
+}
+
+function getVersionFamilyRefScore(kind: ProjectedGraphNode['refs'][number]['kind']): number {
+  switch (kind) {
+    case 'head':
+    case 'branch':
+    case 'remote':
+      return 3;
+    case 'tag':
+      return 2;
+    case 'stash':
+      return 1;
+  }
+}
+
+function appendRelatedHash(
+  relatedByHash: Map<string, string[]>,
+  hash: string,
+  relatedHash: string
+): void {
+  const related = relatedByHash.get(hash) ?? [];
+  related.push(relatedHash);
+  relatedByHash.set(hash, related);
+}
+
+function collectRelatedComponent(
+  startHash: string,
+  relatedByHash: ReadonlyMap<string, readonly string[]>,
+  visited: Set<string>
+): string[] {
+  const queue = [startHash];
+  const component: string[] = [];
+  visited.add(startHash);
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const hash = queue[index];
+    component.push(hash);
+    for (const relatedHash of relatedByHash.get(hash) ?? []) {
+      if (visited.has(relatedHash)) {
+        continue;
+      }
+
+      visited.add(relatedHash);
+      queue.push(relatedHash);
+    }
+  }
+
+  return component;
+}
+
+function chooseVersionFamilyAnchorLane(
+  hashes: readonly string[],
+  nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: ReadonlyMap<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): number | undefined {
+  const candidates = hashes
+    .map((hash) => ({
+      hash,
+      lane: laneByHash.get(hash),
+      node: nodeByHash.get(hash),
+      row: rowByHash.get(hash) ?? Number.MAX_SAFE_INTEGER,
+      isMainline: mainlineHashes.has(hash)
+    }))
+    .filter((candidate): candidate is {
+      readonly hash: string;
+      readonly lane: number;
+      readonly node: ProjectedGraphNode;
+      readonly row: number;
+      readonly isMainline: boolean;
+    } => candidate.lane !== undefined && candidate.node !== undefined);
+
+  return candidates
+    .sort((left, right) =>
+      Number(right.isMainline) - Number(left.isMainline) ||
+      getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
+      left.row - right.row ||
+      left.hash.localeCompare(right.hash)
+    )[0]?.lane;
+}
+
+function applyLayerBarycenterOrdering(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const rows = new Map<number, ProjectedGraphNode[]>();
+  for (const node of projection.nodes) {
+    const row = rowByHash.get(node.hash);
+    if (row === undefined || mainlineHashes.has(node.hash) || node.refs.length > 0 || node.isBoundary) {
+      continue;
+    }
+
+    const nodes = rows.get(row) ?? [];
+    nodes.push(node);
+    rows.set(row, nodes);
+  }
+
+  const neighborLanesByHash = buildNeighborLanesByHash(projection, laneByHash);
+  for (const nodes of rows.values()) {
+    const candidates = nodes.filter((node) =>
+      laneByHash.has(node.hash) &&
+      (neighborLanesByHash.get(node.hash)?.length ?? 0) > 0
+    );
+    const laneSlots = uniqueNumbers(
+      candidates
+        .map((node) => laneByHash.get(node.hash))
+        .filter((lane): lane is number => lane !== undefined)
+    ).sort((left, right) => left - right);
+    if (candidates.length < 2 || laneSlots.length !== candidates.length) {
+      continue;
+    }
+
+    const orderedCandidates = [...candidates].sort((left, right) =>
+      getNodeBarycenter(left.hash, neighborLanesByHash, laneByHash) -
+      getNodeBarycenter(right.hash, neighborLanesByHash, laneByHash) ||
+      (laneByHash.get(left.hash) ?? 0) - (laneByHash.get(right.hash) ?? 0) ||
+      left.hash.localeCompare(right.hash)
+    );
+
+    for (const [index, node] of orderedCandidates.entries()) {
+      laneByHash.set(node.hash, laneSlots[index] ?? (laneByHash.get(node.hash) ?? 0));
+    }
+  }
+}
+
+function buildNeighborLanesByHash(
+  projection: ProjectedGraph,
+  laneByHash: ReadonlyMap<string, number>
+): Map<string, number[]> {
+  const neighborLanesByHash = new Map<string, number[]>();
+  for (const edge of projection.edges) {
+    appendNeighborLane(neighborLanesByHash, edge.from, laneByHash.get(edge.to));
+    appendNeighborLane(neighborLanesByHash, edge.to, laneByHash.get(edge.from));
+  }
+
+  return neighborLanesByHash;
+}
+
+function appendNeighborLane(
+  neighborLanesByHash: Map<string, number[]>,
+  hash: string,
+  lane: number | undefined
+): void {
+  if (lane === undefined) {
+    return;
+  }
+
+  const lanes = neighborLanesByHash.get(hash) ?? [];
+  lanes.push(lane);
+  neighborLanesByHash.set(hash, lanes);
+}
+
+function getNodeBarycenter(
+  hash: string,
+  neighborLanesByHash: ReadonlyMap<string, readonly number[]>,
+  laneByHash: ReadonlyMap<string, number>
+): number {
+  const neighborLanes = neighborLanesByHash.get(hash);
+  return neighborLanes && neighborLanes.length > 0
+    ? medianNumber(neighborLanes)
+    : (laneByHash.get(hash) ?? 0);
 }
 
 function detectMainlinePath(projection: ProjectedGraph): string[] {

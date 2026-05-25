@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v4:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v6:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -608,6 +608,37 @@ test('centers structural commits between lateral descendants and the mainline', 
   assert.equal(positions.get('rightChild')?.x, sideX);
   assert.ok(structuralX > Math.min(sideX, mainlineX));
   assert.ok(structuralX < Math.max(sideX, mainlineX));
+});
+
+test('keeps referenced version sequences on stable lanes during layer ordering', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'v10Remote', author: 'Ada', date: '2026-05-24', subject: 'origin/v0.10', refs: [{ name: 'origin/v0.10', kind: 'remote' }], isBoundary: false },
+      { hash: 'v47', author: 'Ada', date: '2026-05-23', subject: 'v0.10.47', refs: [{ name: 'v0.10.47', kind: 'tag' }], isBoundary: false },
+      { hash: 'v48', author: 'Ada', date: '2026-05-22', subject: 'v0.10.48', refs: [{ name: 'v0.10.48', kind: 'tag' }], isBoundary: false },
+      { hash: 'other47', author: 'Ada', date: '2026-05-21', subject: 'v0.12.13', refs: [{ name: 'v0.12.13', kind: 'tag' }], isBoundary: false },
+      { hash: 'other48', author: 'Ada', date: '2026-05-20', subject: 'v0.12.14', refs: [{ name: 'v0.12.14', kind: 'tag' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'base', through: [] },
+      { from: 'v10Remote', to: 'v48', through: [] },
+      { from: 'v48', to: 'v47', through: [] },
+      { from: 'v47', to: 'base', through: [] },
+      { from: 'other48', to: 'other47', through: [] },
+      { from: 'other47', to: 'base', through: [] }
+    ],
+    visibleHashes: new Set(['head', 'base', 'v10Remote', 'v47', 'v48', 'other47', 'other48'])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+
+  assert.equal(positions.get('v10Remote')?.x, positions.get('v48')?.x);
+  assert.equal(positions.get('v48')?.x, positions.get('v47')?.x);
+  assert.equal(positions.get('other48')?.x, positions.get('other47')?.x);
+  assert.notEqual(positions.get('v48')?.x, positions.get('other48')?.x);
 });
 
 test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {
