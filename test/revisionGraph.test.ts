@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v11:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v12:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -842,6 +842,48 @@ test('keeps the dominant successor lane through a merge without collapsing compe
   assert.equal(positions.get('successor')?.x, positions.get('mergeChild')?.x);
   assert.equal(positions.get('mergeChild')?.x, positions.get('primaryParent')?.x);
   assert.notEqual(positions.get('mergeChild')?.x, positions.get('secondaryParent')?.x);
+});
+
+test('keeps first-parent merge convergence on the dominant parent lane during fan-out ordering', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'primaryParent', author: 'Ada', date: '2026-05-23', subject: 'v1.4.0', refs: [{ name: 'v1.4.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'competitor', author: 'Ada', date: '2026-05-22', subject: 'v0.10.44', refs: [{ name: 'v0.10.44', kind: 'tag' }], isBoundary: false },
+      { hash: 'competitorTip', author: 'Ada', date: '2026-05-21', subject: 'v0.10.45', refs: [{ name: 'v0.10.45', kind: 'tag' }], isBoundary: false },
+      { hash: 'secondaryParent', author: 'Ada', date: '2026-05-20', subject: 'v1.3.0', refs: [{ name: 'v1.3.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'mergeChild', author: 'Ada', date: '2026-05-19', subject: 'v1.5.0', refs: [{ name: 'v1.5.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'successor', author: 'Ada', date: '2026-05-18', subject: 'v1.5.1', refs: [{ name: 'v1.5.1', kind: 'tag' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'base', through: [] },
+      { from: 'primaryParent', to: 'base', through: [] },
+      { from: 'competitor', to: 'primaryParent', through: [] },
+      { from: 'competitorTip', to: 'competitor', through: [] },
+      { from: 'secondaryParent', to: 'base', through: [] },
+      { from: 'mergeChild', to: 'primaryParent', through: [] },
+      { from: 'mergeChild', to: 'secondaryParent', through: [] },
+      { from: 'successor', to: 'mergeChild', through: [] }
+    ],
+    visibleHashes: new Set([
+      'head',
+      'base',
+      'primaryParent',
+      'competitor',
+      'competitorTip',
+      'secondaryParent',
+      'mergeChild',
+      'successor'
+    ])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+
+  assert.equal(positions.get('mergeChild')?.x, positions.get('primaryParent')?.x);
+  assert.equal(positions.get('successor')?.x, positions.get('mergeChild')?.x);
+  assert.notEqual(positions.get('competitor')?.x, positions.get('primaryParent')?.x);
 });
 
 test('orders fan-out descendants around the fork while preserving the primary successor lane', async () => {

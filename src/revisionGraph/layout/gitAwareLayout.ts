@@ -35,6 +35,7 @@ interface FanOutCandidate {
   readonly currentLane: number;
   readonly row: number;
   readonly parentEdgeIndex: number;
+  readonly isFirstParentMerge: boolean;
   readonly subtreeWeight: number;
   readonly sameLane: boolean;
 }
@@ -68,6 +69,7 @@ export function calculateGitAwareProjectedGraphLayout(
 
   applyVersionFamilyContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyFanOutOrderingLanes(projection, rowByHash, laneByHash, mainlineHashes);
+  applyMergeFanInOrderingLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyDominantSuccessionContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
   applyLayerBarycenterOrdering(projection, rowByHash, laneByHash, mainlineHashes);
@@ -459,7 +461,8 @@ function applyFanOutOrderingLanes(
           return undefined;
         }
 
-        const parentEdgeIndex = (parentEdgesByChildHash.get(edge.from) ?? []).findIndex((parentEdge) =>
+        const parentEdges = parentEdgesByChildHash.get(edge.from) ?? [];
+        const parentEdgeIndex = parentEdges.findIndex((parentEdge) =>
           parentEdge.to === parentHash
         );
         return {
@@ -468,6 +471,7 @@ function applyFanOutOrderingLanes(
           currentLane,
           row: rowByHash.get(edge.from) ?? Number.MAX_SAFE_INTEGER,
           parentEdgeIndex: parentEdgeIndex >= 0 ? parentEdgeIndex : edgeOrder,
+          isFirstParentMerge: parentEdges.length > 1 && parentEdgeIndex === 0,
           subtreeWeight: countVisibleDescendants(edge.from, childEdgesByParentHash),
           sameLane: currentLane === parentLane
         };
@@ -492,6 +496,7 @@ function applyFanOutOrderingLanes(
 
 function compareFanOutCandidates(left: FanOutCandidate, right: FanOutCandidate): number {
   return left.parentEdgeIndex - right.parentEdgeIndex ||
+    Number(right.isFirstParentMerge) - Number(left.isFirstParentMerge) ||
     Number(right.sameLane) - Number(left.sameLane) ||
     right.subtreeWeight - left.subtreeWeight ||
     getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
@@ -524,6 +529,80 @@ function countVisibleDescendants(
 function getFanOutLaneOffset(index: number): number {
   const distance = Math.floor(index / 2) + 1;
   return index % 2 === 0 ? -distance : distance;
+}
+
+function applyMergeFanInOrderingLanes(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  const parentEdgesByChildHash = buildChildEdgesByHash(projection);
+
+  for (const child of projection.nodes) {
+    if (child.isBoundary || mainlineHashes.has(child.hash) || !laneByHash.has(child.hash)) {
+      continue;
+    }
+
+    const parentEdges = parentEdgesByChildHash.get(child.hash) ?? [];
+    if (parentEdges.length < 2) {
+      continue;
+    }
+
+    const dominantParentLane = chooseMergeFanInParentLane(
+      child,
+      parentEdges,
+      nodeByHash,
+      rowByHash,
+      laneByHash,
+      mainlineHashes
+    );
+    if (dominantParentLane !== undefined) {
+      laneByHash.set(child.hash, dominantParentLane);
+    }
+  }
+}
+
+function chooseMergeFanInParentLane(
+  child: ProjectedGraphNode,
+  parentEdges: readonly ProjectedGraphEdge[],
+  nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: ReadonlyMap<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): number | undefined {
+  const childLane = laneByHash.get(child.hash);
+  const childRow = rowByHash.get(child.hash) ?? 0;
+
+  return parentEdges
+    .map((edge, index) => {
+      const parent = nodeByHash.get(edge.to);
+      const lane = laneByHash.get(edge.to);
+      return parent && lane !== undefined && !parent.isBoundary && !mainlineHashes.has(parent.hash)
+        ? {
+          index,
+          lane,
+          parent,
+          sameLane: childLane !== undefined && childLane === lane,
+          rowDistance: Math.abs((rowByHash.get(parent.hash) ?? childRow) - childRow)
+        }
+        : undefined;
+    })
+    .filter((candidate): candidate is {
+      readonly index: number;
+      readonly lane: number;
+      readonly parent: ProjectedGraphNode;
+      readonly sameLane: boolean;
+      readonly rowDistance: number;
+    } => candidate !== undefined)
+    .sort((left, right) =>
+      left.index - right.index ||
+      Number(right.sameLane) - Number(left.sameLane) ||
+      getRefPriorityScore(right.parent) - getRefPriorityScore(left.parent) ||
+      left.rowDistance - right.rowDistance ||
+      left.parent.hash.localeCompare(right.parent.hash)
+    )[0]?.lane;
 }
 
 function applyDominantSuccessionContinuityLanes(
