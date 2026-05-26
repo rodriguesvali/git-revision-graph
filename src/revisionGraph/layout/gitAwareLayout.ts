@@ -29,6 +29,16 @@ interface AssignedBranchComponent extends BranchComponent {
   readonly distance: number;
 }
 
+interface FanOutCandidate {
+  readonly edge: ProjectedGraphEdge;
+  readonly node: ProjectedGraphNode;
+  readonly currentLane: number;
+  readonly row: number;
+  readonly parentEdgeIndex: number;
+  readonly subtreeWeight: number;
+  readonly sameLane: boolean;
+}
+
 export function calculateGitAwareProjectedGraphLayout(
   projection: ProjectedGraph
 ): Map<string, GitAwareProjectedGraphLayoutPosition> {
@@ -57,6 +67,7 @@ export function calculateGitAwareProjectedGraphLayout(
   }
 
   applyVersionFamilyContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
+  applyFanOutOrderingLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyDominantSuccessionContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
   applyLayerBarycenterOrdering(projection, rowByHash, laneByHash, mainlineHashes);
@@ -419,6 +430,102 @@ function chooseVersionFamilyAnchorLane(
     )[0]?.lane;
 }
 
+function applyFanOutOrderingLanes(
+  projection: ProjectedGraph,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: Map<string, number>,
+  mainlineHashes: ReadonlySet<string>
+): void {
+  const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
+  const parentEdgesByChildHash = buildChildEdgesByHash(projection);
+  const childEdgesByParentHash = buildDescendantEdgesByHash(projection);
+
+  for (const [parentHash, childEdges] of childEdgesByParentHash.entries()) {
+    if (childEdges.length < 2) {
+      continue;
+    }
+
+    const parent = nodeByHash.get(parentHash);
+    const parentLane = laneByHash.get(parentHash);
+    if (!parent || parent.isBoundary || parent.refs.length === 0 || parentLane === undefined) {
+      continue;
+    }
+
+    const candidates = childEdges
+      .map((edge, edgeOrder) => {
+        const node = nodeByHash.get(edge.from);
+        const currentLane = laneByHash.get(edge.from);
+        if (!node || node.isBoundary || currentLane === undefined || mainlineHashes.has(edge.from)) {
+          return undefined;
+        }
+
+        const parentEdgeIndex = (parentEdgesByChildHash.get(edge.from) ?? []).findIndex((parentEdge) =>
+          parentEdge.to === parentHash
+        );
+        return {
+          edge,
+          node,
+          currentLane,
+          row: rowByHash.get(edge.from) ?? Number.MAX_SAFE_INTEGER,
+          parentEdgeIndex: parentEdgeIndex >= 0 ? parentEdgeIndex : edgeOrder,
+          subtreeWeight: countVisibleDescendants(edge.from, childEdgesByParentHash),
+          sameLane: currentLane === parentLane
+        };
+      })
+      .filter((candidate): candidate is FanOutCandidate => candidate !== undefined)
+      .sort(compareFanOutCandidates);
+
+    if (candidates.length < 2) {
+      continue;
+    }
+
+    const lateralCandidates = mainlineHashes.has(parentHash) ? candidates : candidates.slice(1);
+    if (!mainlineHashes.has(parentHash)) {
+      laneByHash.set(candidates[0].edge.from, parentLane);
+    }
+
+    for (const [index, candidate] of lateralCandidates.entries()) {
+      laneByHash.set(candidate.edge.from, parentLane + getFanOutLaneOffset(index));
+    }
+  }
+}
+
+function compareFanOutCandidates(left: FanOutCandidate, right: FanOutCandidate): number {
+  return left.parentEdgeIndex - right.parentEdgeIndex ||
+    Number(right.sameLane) - Number(left.sameLane) ||
+    right.subtreeWeight - left.subtreeWeight ||
+    getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
+    left.row - right.row ||
+    left.currentLane - right.currentLane ||
+    left.node.hash.localeCompare(right.node.hash);
+}
+
+function countVisibleDescendants(
+  startHash: string,
+  childEdgesByParentHash: ReadonlyMap<string, readonly ProjectedGraphEdge[]>
+): number {
+  const queue = [startHash];
+  const visited = new Set(queue);
+
+  for (let index = 0; index < queue.length; index += 1) {
+    for (const edge of childEdgesByParentHash.get(queue[index]) ?? []) {
+      if (visited.has(edge.from)) {
+        continue;
+      }
+
+      visited.add(edge.from);
+      queue.push(edge.from);
+    }
+  }
+
+  return visited.size;
+}
+
+function getFanOutLaneOffset(index: number): number {
+  const distance = Math.floor(index / 2) + 1;
+  return index % 2 === 0 ? -distance : distance;
+}
+
 function applyDominantSuccessionContinuityLanes(
   projection: ProjectedGraph,
   rowByHash: ReadonlyMap<string, number>,
@@ -558,7 +665,7 @@ function chooseSuccessionAnchorLane(
       Number(right.isMainline) - Number(left.isMainline) ||
       (laneCounts.get(right.lane) ?? 0) - (laneCounts.get(left.lane) ?? 0) ||
       getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
-      left.row - right.row ||
+      right.row - left.row ||
       left.hash.localeCompare(right.hash)
     )[0]?.lane;
 }
@@ -754,6 +861,20 @@ function buildChildEdgesByHash(projection: ProjectedGraph): Map<string, Projecte
       edges.push(edge);
     } else {
       edgesByHash.set(edge.from, [edge]);
+    }
+  }
+
+  return edgesByHash;
+}
+
+function buildDescendantEdgesByHash(projection: ProjectedGraph): Map<string, ProjectedGraphEdge[]> {
+  const edgesByHash = new Map<string, ProjectedGraphEdge[]>();
+  for (const edge of projection.edges) {
+    const edges = edgesByHash.get(edge.to);
+    if (edges) {
+      edges.push(edge);
+    } else {
+      edgesByHash.set(edge.to, [edge]);
     }
   }
 
