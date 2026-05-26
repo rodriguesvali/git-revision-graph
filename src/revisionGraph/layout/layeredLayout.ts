@@ -85,6 +85,14 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
     hash.update(String(estimateRevisionGraphNodeWidth(node)));
     hash.update('\0');
     hash.update(String(estimateRevisionGraphNodeHeight(node)));
+    hash.update('\0');
+    hash.update(node.isBoundary ? 'boundary' : 'commit');
+    for (const ref of [...node.refs].sort(compareLayoutCacheRefs)) {
+      hash.update('\0ref\0');
+      hash.update(ref.kind);
+      hash.update('\0');
+      hash.update(ref.name);
+    }
   }
 
   for (const edge of projection.edges) {
@@ -157,6 +165,14 @@ async function calculateProjectedGraphLayout(
   projection: ProjectedGraph
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   return calculateGitAwareProjectedGraphLayout(projection);
+}
+
+function compareLayoutCacheRefs(
+  left: ProjectedGraph['nodes'][number]['refs'][number],
+  right: ProjectedGraph['nodes'][number]['refs'][number]
+): number {
+  return left.kind.localeCompare(right.kind) ||
+    left.name.localeCompare(right.name);
 }
 
 function cloneLayoutPositions(

@@ -488,6 +488,58 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
   assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v12:/);
 });
 
+test('layout cache key includes ref metadata used by Git-aware placement', async () => {
+  const createProjection = (mainlineHash: 'branchA' | 'branchB'): ProjectedGraph => ({
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      {
+        hash: 'branchA',
+        author: 'Ada',
+        date: '2026-05-25',
+        subject: 'Branch A',
+        refs: [{ name: mainlineHash === 'branchA' ? 'origin/main' : 'origin/dev2', kind: 'remote' }],
+        isBoundary: false
+      },
+      {
+        hash: 'branchB',
+        author: 'Ada',
+        date: '2026-05-24',
+        subject: 'Branch B',
+        refs: [{ name: mainlineHash === 'branchB' ? 'origin/main' : 'origin/dev2', kind: 'remote' }],
+        isBoundary: false
+      },
+      {
+        hash: 'base',
+        author: 'Ada',
+        date: '2026-05-23',
+        subject: 'Base',
+        refs: [{ name: 'v1.0.0', kind: 'tag' }],
+        isBoundary: false
+      }
+    ],
+    edges: [
+      { from: 'branchA', to: 'base', through: [] },
+      { from: 'branchB', to: 'base', through: [] }
+    ],
+    visibleHashes: new Set(['branchA', 'branchB', 'base'])
+  });
+  const branchAMainline = createProjection('branchA');
+  const branchBMainline = createProjection('branchB');
+
+  clearProjectedGraphLayoutCache();
+  const branchAPositions = await layoutProjectedGraph(branchAMainline);
+  const branchBPositions = await layoutProjectedGraph(branchBMainline);
+  const layoutCacheStats = getProjectedGraphLayoutCacheStats();
+
+  assert.notEqual(
+    buildProjectedGraphLayoutCacheKey(branchAMainline),
+    buildProjectedGraphLayoutCacheKey(branchBMainline)
+  );
+  assert.equal(layoutCacheStats.misses, 2);
+  assert.notEqual(branchAPositions.get('branchA')?.x, branchBPositions.get('branchA')?.x);
+  assert.notEqual(branchAPositions.get('branchB')?.x, branchBPositions.get('branchB')?.x);
+});
+
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['rel18', 'sha256'], author: 'Ada', date: '2026-05-23', subject: 'Mainline head', refs: [{ name: 'master', kind: 'head' }] },
