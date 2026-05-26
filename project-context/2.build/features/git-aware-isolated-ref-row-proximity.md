@@ -10,7 +10,7 @@ Reduce long vertical jumps for isolated lateral refs whose visible ancestor is p
 - Only move non-boundary refs with no visible descendants.
 - Move the ref down to the closest valid row above its nearest visible parent.
 - Preserve the invariant that every descendant remains above every visible parent.
-- Move the layout cache namespace to `git-aware-v8`. Later lateral-component proximity work moved the active namespace to `git-aware-v9`.
+- Move the layout cache namespace to `git-aware-v8`. Later layout follow-ups moved the active namespace beyond it.
 
 ## Acceptance
 

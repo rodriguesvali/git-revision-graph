@@ -10,7 +10,7 @@ Move whole lateral branch components closer to their visible fork point so a bra
 - Shift only components with visible refs and at least two visible nodes.
 - Use outgoing ancestry edges from the component to visible parents outside the component as fork anchors.
 - Apply the largest safe downward shift that keeps every component descendant above every visible parent.
-- Move the layout cache namespace to `git-aware-v9`.
+- Move the layout cache namespace to `git-aware-v9`. Later dominant succession continuity moved the active namespace to `git-aware-v10`.
 
 ## Acceptance
 

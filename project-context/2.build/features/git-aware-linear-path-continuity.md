@@ -10,7 +10,7 @@ Keep simple non-mainline DAG paths visually stable when commits form a direct li
 - Only connect projected edges where the child has exactly one visible parent and the parent has exactly one visible child.
 - Skip mainline commits and boundary nodes.
 - Preserve merge and fan-out structures for the existing branch component, structural barycenter, and layer barycenter passes.
-- Move the layout cache namespace to `git-aware-v7`. Later row-proximity work moved the active namespace to `git-aware-v8`.
+- Move the layout cache namespace to `git-aware-v7`. Later row-proximity work moved the active namespace to `git-aware-v8`, and dominant succession continuity superseded this rule with `git-aware-v10`.
 
 ## Acceptance
 

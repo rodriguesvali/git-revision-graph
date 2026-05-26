@@ -57,7 +57,7 @@ export function calculateGitAwareProjectedGraphLayout(
   }
 
   applyVersionFamilyContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
-  applyLinearPathContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
+  applyDominantSuccessionContinuityLanes(projection, rowByHash, laneByHash, mainlineHashes);
   applyStructuralBarycenterLanes(projection, laneByHash, mainlineHashes);
   applyLayerBarycenterOrdering(projection, rowByHash, laneByHash, mainlineHashes);
 
@@ -419,34 +419,38 @@ function chooseVersionFamilyAnchorLane(
     )[0]?.lane;
 }
 
-function applyLinearPathContinuityLanes(
+function applyDominantSuccessionContinuityLanes(
   projection: ProjectedGraph,
   rowByHash: ReadonlyMap<string, number>,
   laneByHash: Map<string, number>,
   mainlineHashes: ReadonlySet<string>
 ): void {
   const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
-  const parentCountByHash = new Map<string, number>();
-  const childCountByHash = new Map<string, number>();
+  const parentEdgesByChildHash = buildChildEdgesByHash(projection);
+  const childCountByParentHash = new Map<string, number>();
 
   for (const edge of projection.edges) {
-    parentCountByHash.set(edge.from, (parentCountByHash.get(edge.from) ?? 0) + 1);
-    childCountByHash.set(edge.to, (childCountByHash.get(edge.to) ?? 0) + 1);
+    childCountByParentHash.set(edge.to, (childCountByParentHash.get(edge.to) ?? 0) + 1);
   }
 
   const relatedByHash = new Map<string, string[]>();
-  for (const edge of projection.edges) {
-    const child = nodeByHash.get(edge.from);
-    const parent = nodeByHash.get(edge.to);
-    if (!child || !parent || child.isBoundary || parent.isBoundary) {
-      continue;
-    }
+  for (const child of projection.nodes) {
+    const candidateEdges = (parentEdgesByChildHash.get(child.hash) ?? []).filter((edge) => {
+      const parent = nodeByHash.get(edge.to);
+      return !!parent &&
+        !child.isBoundary &&
+        !parent.isBoundary &&
+        (childCountByParentHash.get(edge.to) ?? 0) === 1;
+    });
 
-    if (mainlineHashes.has(edge.from) || mainlineHashes.has(edge.to)) {
-      continue;
-    }
-
-    if ((parentCountByHash.get(edge.from) ?? 0) !== 1 || (childCountByHash.get(edge.to) ?? 0) !== 1) {
+    const edge = chooseDominantSuccessionParentEdge(
+      child.hash,
+      candidateEdges,
+      nodeByHash,
+      rowByHash,
+      laneByHash
+    );
+    if (!edge) {
       continue;
     }
 
@@ -465,22 +469,63 @@ function applyLinearPathContinuityLanes(
       continue;
     }
 
-    const anchorLane = chooseLinearPathAnchorLane(component, nodeByHash, rowByHash, laneByHash);
+    const anchorLane = chooseSuccessionAnchorLane(component, nodeByHash, rowByHash, laneByHash, mainlineHashes);
     if (anchorLane === undefined) {
       continue;
     }
 
     for (const componentHash of component) {
-      laneByHash.set(componentHash, anchorLane);
+      if (!mainlineHashes.has(componentHash)) {
+        laneByHash.set(componentHash, anchorLane);
+      }
     }
   }
 }
 
-function chooseLinearPathAnchorLane(
-  hashes: readonly string[],
+function chooseDominantSuccessionParentEdge(
+  childHash: string,
+  candidateEdges: readonly ProjectedGraphEdge[],
   nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
   rowByHash: ReadonlyMap<string, number>,
   laneByHash: ReadonlyMap<string, number>
+): ProjectedGraphEdge | undefined {
+  const childLane = laneByHash.get(childHash);
+  const childRow = rowByHash.get(childHash) ?? 0;
+  return candidateEdges
+    .map((edge, index) => {
+      const parent = nodeByHash.get(edge.to);
+      return parent
+        ? {
+          edge,
+          index,
+          parent,
+          sameLane: childLane !== undefined && laneByHash.get(edge.to) === childLane,
+          rowDistance: Math.abs((rowByHash.get(edge.to) ?? childRow) - childRow)
+        }
+        : undefined;
+    })
+    .filter((candidate): candidate is {
+      readonly edge: ProjectedGraphEdge;
+      readonly index: number;
+      readonly parent: ProjectedGraphNode;
+      readonly sameLane: boolean;
+      readonly rowDistance: number;
+    } => candidate !== undefined)
+    .sort((left, right) =>
+      left.index - right.index ||
+      Number(right.sameLane) - Number(left.sameLane) ||
+      left.rowDistance - right.rowDistance ||
+      getRefPriorityScore(right.parent) - getRefPriorityScore(left.parent) ||
+      left.edge.to.localeCompare(right.edge.to)
+    )[0]?.edge;
+}
+
+function chooseSuccessionAnchorLane(
+  hashes: readonly string[],
+  nodeByHash: ReadonlyMap<string, ProjectedGraphNode>,
+  rowByHash: ReadonlyMap<string, number>,
+  laneByHash: ReadonlyMap<string, number>,
+  mainlineHashes: ReadonlySet<string>
 ): number | undefined {
   const laneCounts = new Map<number, number>();
   for (const hash of hashes) {
@@ -494,32 +539,24 @@ function chooseLinearPathAnchorLane(
     return undefined;
   }
 
-  const strongestLaneCount = maxNumber([...laneCounts.values()], 0);
-  const strongestLanes = [...laneCounts.entries()]
-    .filter(([, count]) => count === strongestLaneCount)
-    .map(([lane]) => lane);
-  if (strongestLanes.length === 1) {
-    return strongestLanes[0];
-  }
-
   return hashes
     .map((hash) => ({
       hash,
       lane: laneByHash.get(hash),
       node: nodeByHash.get(hash),
-      row: rowByHash.get(hash) ?? Number.MAX_SAFE_INTEGER
+      row: rowByHash.get(hash) ?? Number.MAX_SAFE_INTEGER,
+      isMainline: mainlineHashes.has(hash)
     }))
     .filter((candidate): candidate is {
       readonly hash: string;
       readonly lane: number;
       readonly node: ProjectedGraphNode;
       readonly row: number;
-    } =>
-      candidate.lane !== undefined &&
-      candidate.node !== undefined &&
-      strongestLanes.includes(candidate.lane)
-    )
+      readonly isMainline: boolean;
+    } => candidate.lane !== undefined && candidate.node !== undefined)
     .sort((left, right) =>
+      Number(right.isMainline) - Number(left.isMainline) ||
+      (laneCounts.get(right.lane) ?? 0) - (laneCounts.get(left.lane) ?? 0) ||
       getRefPriorityScore(right.node) - getRefPriorityScore(left.node) ||
       left.row - right.row ||
       left.hash.localeCompare(right.hash)

@@ -485,7 +485,7 @@ test('uses a new layout cache namespace for the Git-aware placement strategy', (
 
   const projection = projectDecoratedCommitGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v9:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^git-aware-v10:/);
 });
 
 test('keeps the first-parent mainline aligned in the Git-aware projected graph layout', async () => {
@@ -803,6 +803,45 @@ test('keeps simple non-mainline linear paths on stable lanes across adjacent ref
 
   assert.equal(positions.get('v150')?.x, positions.get('v143')?.x);
   assert.equal(positions.get('v143')?.x, positions.get('v142')?.x);
+});
+
+test('keeps the dominant successor lane through a merge without collapsing competing descendants', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-05-25', subject: 'Head', refs: [{ name: 'master', kind: 'head' }], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-05-24', subject: 'Base', refs: [{ name: 'origin/master', kind: 'remote' }], isBoundary: false },
+      { hash: 'secondaryParent', author: 'Ada', date: '2026-05-23', subject: 'v0.10.44', refs: [{ name: 'v0.10.44', kind: 'tag' }], isBoundary: false },
+      { hash: 'primaryParent', author: 'Ada', date: '2026-05-22', subject: 'v1.4.3', refs: [{ name: 'v1.4.3', kind: 'tag' }], isBoundary: false },
+      { hash: 'competitor', author: 'Ada', date: '2026-05-21', subject: 'v0.10.45', refs: [{ name: 'v0.10.45', kind: 'tag' }], isBoundary: false },
+      { hash: 'mergeChild', author: 'Ada', date: '2026-05-20', subject: 'v1.5.0', refs: [{ name: 'v1.5.0', kind: 'tag' }], isBoundary: false },
+      { hash: 'successor', author: 'Ada', date: '2026-05-19', subject: 'v1.5.1', refs: [{ name: 'v1.5.1', kind: 'tag' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'secondaryParent', through: [] },
+      { from: 'secondaryParent', to: 'base', through: [] },
+      { from: 'primaryParent', to: 'base', through: [] },
+      { from: 'competitor', to: 'secondaryParent', through: [] },
+      { from: 'mergeChild', to: 'primaryParent', through: [] },
+      { from: 'mergeChild', to: 'secondaryParent', through: [] },
+      { from: 'successor', to: 'mergeChild', through: [] }
+    ],
+    visibleHashes: new Set([
+      'head',
+      'base',
+      'primaryParent',
+      'secondaryParent',
+      'competitor',
+      'mergeChild',
+      'successor'
+    ])
+  };
+
+  const positions = await layoutProjectedGraph(projection);
+
+  assert.equal(positions.get('successor')?.x, positions.get('mergeChild')?.x);
+  assert.equal(positions.get('mergeChild')?.x, positions.get('primaryParent')?.x);
+  assert.notEqual(positions.get('mergeChild')?.x, positions.get('secondaryParent')?.x);
 });
 
 test('uses Git-aware linear layout for oversized projected graphs without invoking ELK', async () => {
