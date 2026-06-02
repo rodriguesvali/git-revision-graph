@@ -292,23 +292,3 @@ test('package manifest contributes graph git command timeout configuration', () 
   assert.equal(timeout?.minimum, 5000);
   assert.equal(timeout?.maximum, 300000);
 });
-
-test('package manifest contributes graph organization strategy configuration', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly configuration?: {
-        readonly properties?: Record<string, {
-          readonly type?: string;
-          readonly default?: unknown;
-          readonly enum?: readonly unknown[];
-        }>;
-      };
-    };
-  };
-
-  const strategy = manifest.contributes.configuration?.properties?.['gitRevisionGraph.graphOrganizationStrategy'];
-
-  assert.equal(strategy?.type, 'string');
-  assert.equal(strategy?.default, 'gitAware');
-  assert.deepEqual(strategy?.enum, ['gitAware', 'portedTortoiseMajorOps', 'd3DagSugiyama']);
-});

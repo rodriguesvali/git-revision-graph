@@ -7,7 +7,7 @@ import {
   RevisionGraphRef
 } from './model/commitGraphTypes';
 import { collectAncestorHashes } from './model/commitGraphQueries';
-import { projectDecoratedCommitGraph } from './projection/graphProjection';
+import { projectTortoiseMajorOpsGraph } from './projection/graphProjection';
 import { buildRevisionGraphRefKinds } from './source/refIndex';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
@@ -447,7 +447,7 @@ function createRefKey(kind: RevisionGraphRef['kind'], name: string): string {
 }
 
 function countVisibleNodes(graph: CommitGraph, options: RevisionGraphProjectionOptions): number {
-  return projectDecoratedCommitGraph(graph, options).nodes.length;
+  return projectTortoiseMajorOpsGraph(graph, options).nodes.length;
 }
 
 function buildSnapshotCacheKey(

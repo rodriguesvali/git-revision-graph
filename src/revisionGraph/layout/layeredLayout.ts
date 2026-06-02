@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
 
-import { ProjectedGraph, RevisionGraphOrganizationStrategy } from '../model/commitGraphTypes';
+import { ProjectedGraph } from '../model/commitGraphTypes';
 import { calculateD3DagSugiyamaLayout } from './d3DagSugiyamaLayout';
-import { calculateGitAwareProjectedGraphLayout } from './gitAwareLayout';
-import { calculatePortedTortoiseMajorOpsLayout } from './portedTortoiseMajorOpsLayout';
 import {
   estimateRevisionGraphNodeHeight,
   estimateRevisionGraphNodeWidth
@@ -11,12 +9,7 @@ import {
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY: RevisionGraphOrganizationStrategy = 'gitAware';
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_VERSION: Record<RevisionGraphOrganizationStrategy, string> = {
-  gitAware: 'git-aware-v12',
-  portedTortoiseMajorOps: 'ported-tortoise-major-ops-v1',
-  d3DagSugiyama: 'd3-dag-sugiyama-v1'
-};
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v1';
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -45,15 +38,12 @@ export interface ProjectedGraphLayoutPosition {
   readonly y: number;
 }
 
-export async function layoutProjectedGraph(
-  projection: ProjectedGraph,
-  strategy: RevisionGraphOrganizationStrategy = PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY
-): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+export async function layoutProjectedGraph(projection: ProjectedGraph): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   if (projection.nodes.length === 0) {
     return new Map();
   }
 
-  const cacheKey = buildProjectedGraphLayoutCacheKey(projection, strategy);
+  const cacheKey = buildProjectedGraphLayoutCacheKey(projection);
   const cachedLayoutEntry = projectedGraphLayoutCache.get(cacheKey);
   if (cachedLayoutEntry) {
     projectedGraphLayoutCache.delete(cacheKey);
@@ -64,7 +54,7 @@ export async function layoutProjectedGraph(
 
   projectedGraphLayoutCacheMisses += 1;
   const cacheEntry: ProjectedGraphLayoutCacheEntry = {
-    promise: calculateProjectedGraphLayout(projection, strategy)
+    promise: calculateProjectedGraphLayout(projection)
   };
   cacheEntry.promise = cacheEntry.promise
     .then((positions) => {
@@ -82,13 +72,9 @@ export async function layoutProjectedGraph(
   return cloneLayoutPositions(await cacheEntry.promise);
 }
 
-export function buildProjectedGraphLayoutCacheKey(
-  projection: ProjectedGraph,
-  strategy: RevisionGraphOrganizationStrategy = PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY
-): string {
+export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
   const hash = createHash('sha256');
-  const strategyKey = PROJECTED_GRAPH_LAYOUT_STRATEGY_VERSION[strategy];
-  hash.update(strategyKey);
+  hash.update(PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY);
 
   for (const node of projection.nodes) {
     hash.update('\0node\0');
@@ -114,7 +100,7 @@ export function buildProjectedGraphLayoutCacheKey(
     hash.update(edge.to);
   }
 
-  return `${strategyKey}:${hash.digest('base64url')}`;
+  return `${PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY}:${hash.digest('base64url')}`;
 }
 
 export function getProjectedGraphLayoutCacheStats(): ProjectedGraphLayoutCacheStats {
@@ -174,17 +160,9 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 }
 
 async function calculateProjectedGraphLayout(
-  projection: ProjectedGraph,
-  strategy: RevisionGraphOrganizationStrategy
+  projection: ProjectedGraph
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
-  switch (strategy) {
-    case 'd3DagSugiyama':
-      return calculateD3DagSugiyamaLayout(projection);
-    case 'portedTortoiseMajorOps':
-      return calculatePortedTortoiseMajorOpsLayout(projection);
-    case 'gitAware':
-      return calculateGitAwareProjectedGraphLayout(projection);
-  }
+  return calculateD3DagSugiyamaLayout(projection);
 }
 
 function compareLayoutCacheRefs(

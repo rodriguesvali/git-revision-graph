@@ -240,7 +240,7 @@ test('repository overlays prefer getRefs for current head commit when repository
     state.references.some((ref) => ref.name === 'master' && ref.kind === 'head' && ref.hash === 'old-head'),
     false
   );
-  assert.deepEqual(state.primaryAncestorNextByHash, {});
+  assert.deepEqual(state.primaryAncestorNextByHash, { 'new-head': 'old-head' });
 });
 
 test('metadata patches remove deleted local branch refs without changing graph topology', async () => {

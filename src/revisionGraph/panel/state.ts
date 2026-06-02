@@ -6,9 +6,7 @@ import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
   CommitGraph,
-  projectDecoratedCommitGraph,
   projectTortoiseMajorOpsGraph,
-  RevisionGraphOrganizationStrategy,
   RevisionGraphRef,
   RevisionGraphEdge,
   RevisionGraphScene
@@ -50,8 +48,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink,
-  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal);
   const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace);
@@ -61,8 +58,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
     backend,
     snapshot,
     signal,
-    trace,
-    organizationStrategy
+    trace
   );
 }
 
@@ -72,8 +68,7 @@ export async function buildReadyRevisionGraphViewState(
   backend: RevisionGraphBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink,
-  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   return (
     await buildReadyRevisionGraphViewStateBundle(
@@ -82,8 +77,7 @@ export async function buildReadyRevisionGraphViewState(
       backend,
       limitPolicy,
       signal,
-      trace,
-      organizationStrategy
+      trace
     )
   ).state;
 }
@@ -94,8 +88,7 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink,
-  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   return (
     await buildReadyRevisionGraphViewStateBundleFromSnapshot(
@@ -104,8 +97,7 @@ export async function buildReadyRevisionGraphViewStateFromSnapshot(
       backend,
       snapshot,
       signal,
-      trace,
-      organizationStrategy
+      trace
     )
   ).state;
 }
@@ -116,8 +108,7 @@ async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink,
-  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   const overlayedSnapshot = await buildGraphSnapshotWithRepositoryOverlay(
     repository,
@@ -132,8 +123,7 @@ async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
     backend,
     overlayedSnapshot,
     signal,
-    trace,
-    organizationStrategy
+    trace
   );
 
   return {
@@ -148,13 +138,12 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   backend: RevisionGraphBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink,
-  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
+  trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   const projectionStartedAt = nowMs();
-  const projection = projectRevisionGraph(snapshot.graph, projectionOptions, organizationStrategy);
-  traceDuration(trace, 'state.projectGraph', projectionStartedAt, `strategy=${organizationStrategy}; nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
-  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace, organizationStrategy);
+  const projection = projectTortoiseMajorOpsGraph(snapshot.graph, projectionOptions);
+  traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
+  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace);
   const ancestorsStartedAt = nowMs();
   const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(snapshot.graph, scene);
   traceDuration(
@@ -173,20 +162,6 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     signal,
     trace
   );
-}
-
-function projectRevisionGraph(
-  graph: CommitGraph,
-  projectionOptions: RevisionGraphViewState['projectionOptions'],
-  organizationStrategy: RevisionGraphOrganizationStrategy
-) {
-  switch (organizationStrategy) {
-    case 'd3DagSugiyama':
-    case 'portedTortoiseMajorOps':
-      return projectTortoiseMajorOpsGraph(graph, projectionOptions);
-    case 'gitAware':
-      return projectDecoratedCommitGraph(graph, projectionOptions);
-  }
 }
 
 export async function buildMetadataPatchedRevisionGraphViewState(

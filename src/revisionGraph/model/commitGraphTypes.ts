@@ -52,5 +52,3 @@ export interface ProjectedGraph {
   readonly edges: readonly ProjectedGraphEdge[];
   readonly visibleHashes: ReadonlySet<string>;
 }
-
-export type RevisionGraphOrganizationStrategy = 'gitAware' | 'portedTortoiseMajorOps' | 'd3DagSugiyama';
