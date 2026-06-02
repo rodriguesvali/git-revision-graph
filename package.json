@@ -152,6 +152,16 @@
           "minimum": 5000,
           "maximum": 300000,
           "description": "Maximum time in milliseconds allowed for the revision graph Git log command."
+        },
+        "gitRevisionGraph.graphOrganizationStrategy": {
+          "type": "string",
+          "enum": [
+            "gitAware",
+            "portedTortoiseMajorOps",
+            "d3DagSugiyama"
+          ],
+          "default": "gitAware",
+          "description": "Revision graph organization algorithm. Use gitAware for the current production layout, portedTortoiseMajorOps for the dependency-free alternate layout, or d3DagSugiyama to test the TortoiseGit-inspired simplification with d3-dag Sugiyama layout."
         }
       }
     }
@@ -172,5 +182,8 @@
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.9.1",
     "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "d3-dag": "^1.2.1"
   }
 }

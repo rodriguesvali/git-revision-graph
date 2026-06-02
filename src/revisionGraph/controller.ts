@@ -30,6 +30,7 @@ import {
 } from '../refActions';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
+import { RevisionGraphOrganizationStrategy } from './model/commitGraphTypes';
 import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
@@ -150,6 +151,16 @@ function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number
     MAX_GRAPH_COMMAND_TIMEOUT_MS,
     Math.max(MIN_GRAPH_COMMAND_TIMEOUT_MS, Math.trunc(configuredValue))
   );
+}
+
+function resolveGraphOrganizationStrategy(configuredValue: unknown): RevisionGraphOrganizationStrategy {
+  switch (configuredValue) {
+    case 'd3DagSugiyama':
+    case 'portedTortoiseMajorOps':
+      return configuredValue;
+    default:
+      return 'gitAware';
+  }
 }
 
 export class RevisionGraphController implements vscode.Disposable {
@@ -672,7 +683,8 @@ export class RevisionGraphController implements vscode.Disposable {
         this.backend,
         currentSnapshot.snapshot,
         signal,
-        trace
+        trace,
+        this.resolveGraphOrganizationStrategy()
       );
       if (requestId === this.renderCoordinator.getCurrentRequestId()) {
       }
@@ -687,7 +699,8 @@ export class RevisionGraphController implements vscode.Disposable {
       this.backend,
       this.resolveLimitPolicy(),
       signal,
-      trace
+      trace,
+      this.resolveGraphOrganizationStrategy()
     );
 
     if (requestId === this.renderCoordinator.getCurrentRequestId()) {
@@ -713,6 +726,14 @@ export class RevisionGraphController implements vscode.Disposable {
         this.limitPolicy.graphCommandTimeoutMs
       )
     };
+  }
+
+  private resolveGraphOrganizationStrategy(): RevisionGraphOrganizationStrategy {
+    return resolveGraphOrganizationStrategy(
+      vscode.workspace
+        .getConfiguration('gitRevisionGraph')
+        .get<unknown>('graphOrganizationStrategy', 'gitAware')
+    );
   }
 
   private async runFetchCurrentRepository(): Promise<void> {

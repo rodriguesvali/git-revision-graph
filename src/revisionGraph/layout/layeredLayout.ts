@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import { ProjectedGraph } from '../model/commitGraphTypes';
+import { ProjectedGraph, RevisionGraphOrganizationStrategy } from '../model/commitGraphTypes';
+import { calculateD3DagSugiyamaLayout } from './d3DagSugiyamaLayout';
 import { calculateGitAwareProjectedGraphLayout } from './gitAwareLayout';
+import { calculatePortedTortoiseMajorOpsLayout } from './portedTortoiseMajorOpsLayout';
 import {
   estimateRevisionGraphNodeHeight,
   estimateRevisionGraphNodeWidth
@@ -9,7 +11,12 @@ import {
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'git-aware-v12';
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY: RevisionGraphOrganizationStrategy = 'gitAware';
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_VERSION: Record<RevisionGraphOrganizationStrategy, string> = {
+  gitAware: 'git-aware-v12',
+  portedTortoiseMajorOps: 'ported-tortoise-major-ops-v1',
+  d3DagSugiyama: 'd3-dag-sugiyama-v1'
+};
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -39,13 +46,14 @@ export interface ProjectedGraphLayoutPosition {
 }
 
 export async function layoutProjectedGraph(
-  projection: ProjectedGraph
+  projection: ProjectedGraph,
+  strategy: RevisionGraphOrganizationStrategy = PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   if (projection.nodes.length === 0) {
     return new Map();
   }
 
-  const cacheKey = buildProjectedGraphLayoutCacheKey(projection);
+  const cacheKey = buildProjectedGraphLayoutCacheKey(projection, strategy);
   const cachedLayoutEntry = projectedGraphLayoutCache.get(cacheKey);
   if (cachedLayoutEntry) {
     projectedGraphLayoutCache.delete(cacheKey);
@@ -56,7 +64,7 @@ export async function layoutProjectedGraph(
 
   projectedGraphLayoutCacheMisses += 1;
   const cacheEntry: ProjectedGraphLayoutCacheEntry = {
-    promise: calculateProjectedGraphLayout(projection)
+    promise: calculateProjectedGraphLayout(projection, strategy)
   };
   cacheEntry.promise = cacheEntry.promise
     .then((positions) => {
@@ -74,9 +82,13 @@ export async function layoutProjectedGraph(
   return cloneLayoutPositions(await cacheEntry.promise);
 }
 
-export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
+export function buildProjectedGraphLayoutCacheKey(
+  projection: ProjectedGraph,
+  strategy: RevisionGraphOrganizationStrategy = PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY
+): string {
   const hash = createHash('sha256');
-  hash.update(PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY);
+  const strategyKey = PROJECTED_GRAPH_LAYOUT_STRATEGY_VERSION[strategy];
+  hash.update(strategyKey);
 
   for (const node of projection.nodes) {
     hash.update('\0node\0');
@@ -102,7 +114,7 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
     hash.update(edge.to);
   }
 
-  return `${PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY}:${hash.digest('base64url')}`;
+  return `${strategyKey}:${hash.digest('base64url')}`;
 }
 
 export function getProjectedGraphLayoutCacheStats(): ProjectedGraphLayoutCacheStats {
@@ -162,9 +174,17 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 }
 
 async function calculateProjectedGraphLayout(
-  projection: ProjectedGraph
+  projection: ProjectedGraph,
+  strategy: RevisionGraphOrganizationStrategy
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
-  return calculateGitAwareProjectedGraphLayout(projection);
+  switch (strategy) {
+    case 'd3DagSugiyama':
+      return calculateD3DagSugiyamaLayout(projection);
+    case 'portedTortoiseMajorOps':
+      return calculatePortedTortoiseMajorOpsLayout(projection);
+    case 'gitAware':
+      return calculateGitAwareProjectedGraphLayout(projection);
+  }
 }
 
 function compareLayoutCacheRefs(

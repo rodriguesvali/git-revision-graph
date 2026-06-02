@@ -27,6 +27,16 @@ export function projectDecoratedCommitGraph(
   return projectCommitGraph(graph, visibleHashes, options);
 }
 
+export function projectTortoiseMajorOpsGraph(
+  graph: CommitGraph,
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+): ProjectedGraph {
+  const scopeHashes = getScopeHashes(graph, options);
+  const visibleHashes = buildTortoiseMajorOpsVisibleHashes(graph, scopeHashes, options);
+
+  return projectCommitGraph(graph, visibleHashes, options);
+}
+
 export function projectCommitGraph(
   graph: CommitGraph,
   visibleHashes: ReadonlySet<string>,
@@ -153,6 +163,38 @@ function buildVisibleHashes(
   );
 
   return expandVisibleHashesWithStructuralConnectors(graph, candidateHashes, visibleHashes);
+}
+
+function buildTortoiseMajorOpsVisibleHashes(
+  graph: CommitGraph,
+  candidateHashes: ReadonlySet<string>,
+  options: RevisionGraphProjectionOptions
+): Set<string> {
+  const candidateCommits = graph.orderedCommits.filter((commit) =>
+    candidateHashes.has(commit.hash) && !commit.isBoundary
+  );
+  const candidateHashSet = new Set(candidateCommits.map((commit) => commit.hash));
+  const childCountByHash = new Map<string, number>();
+
+  for (const commit of candidateCommits) {
+    for (const parentHash of commit.parents) {
+      if (!candidateHashSet.has(parentHash)) {
+        continue;
+      }
+
+      childCountByHash.set(parentHash, (childCountByHash.get(parentHash) ?? 0) + 1);
+    }
+  }
+
+  return new Set(
+    candidateCommits
+      .filter((commit) =>
+        filterRefs(commit.refs, options).length > 0 ||
+        commit.parents.filter((parentHash) => candidateHashSet.has(parentHash)).length !== 1 ||
+        (childCountByHash.get(commit.hash) ?? 0) !== 1
+      )
+      .map((commit) => commit.hash)
+  );
 }
 
 function buildVisibleHashesFromGitSimplifiedGraph(

@@ -3,11 +3,13 @@ import {
   CommitGraph,
   ParsedRevisionGraphCommit,
   ProjectedGraph,
+  RevisionGraphOrganizationStrategy,
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from './revisionGraph/model/commitGraphTypes';
 import {
-  projectDecoratedCommitGraph
+  projectDecoratedCommitGraph,
+  projectTortoiseMajorOpsGraph
 } from './revisionGraph/projection/graphProjection';
 import {
   getRevisionGraphGitFormat,
@@ -24,11 +26,12 @@ export type {
   CommitGraph,
   ParsedRevisionGraphCommit as RevisionGraphCommit,
   ProjectedGraph,
+  RevisionGraphOrganizationStrategy,
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 };
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
-export { projectDecoratedCommitGraph };
+export { projectDecoratedCommitGraph, projectTortoiseMajorOpsGraph };
 
 export interface RevisionGraphNode {
   readonly hash: string;
@@ -63,12 +66,13 @@ interface CommitLaneLayout {
 export async function buildRevisionGraphScene(
   source: CommitGraph | readonly ParsedRevisionGraphCommit[],
   projection?: ProjectedGraph,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
 ): Promise<RevisionGraphScene> {
   const startedAt = nowMs();
   const graph = toCommitGraph(source);
   const activeProjection = projection ?? projectDecoratedCommitGraph(graph);
-  const commitLayout = await layoutCommitLanes(activeProjection, trace);
+  const commitLayout = await layoutCommitLanes(activeProjection, trace, organizationStrategy);
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 
   const rawNodes = activeProjection.nodes.map<RevisionGraphNode>((node) => {
@@ -194,16 +198,17 @@ function isCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[
 
 async function layoutCommitLanes(
   projection: ProjectedGraph,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  organizationStrategy: RevisionGraphOrganizationStrategy = 'gitAware'
 ): Promise<CommitLaneLayout[]> {
   const startedAt = nowMs();
   const cacheStatsBefore = getProjectedGraphLayoutCacheStats();
-  const positionByHash = await layoutProjectedGraph(projection);
+  const positionByHash = await layoutProjectedGraph(projection, organizationStrategy);
   const cacheStatsAfter = getProjectedGraphLayoutCacheStats();
   const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
   traceDuration(
     trace,
-    'scene.layout.gitAware',
+    `scene.layout.${organizationStrategy}`,
     startedAt,
     `nodes=${projection.nodes.length}; edges=${projection.edges.length}; cache=${cacheResult}; entries=${cacheStatsAfter.entries}`
   );

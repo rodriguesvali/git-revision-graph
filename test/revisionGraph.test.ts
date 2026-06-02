@@ -5,7 +5,8 @@ import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
   parseDecorationRefs,
-  parseRevisionGraphLog
+  parseRevisionGraphLog,
+  projectTortoiseMajorOpsGraph
 } from '../src/revisionGraphData';
 import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { getMergeBlockedTargetsFromGraph } from '../src/revisionGraph/backend';
@@ -369,6 +370,78 @@ test('rewrites linear unlabeled commits on git-simplified graphs when tags are h
     [
       { from: 'head1', to: 'branch1', through: ['mid1'] }
     ]
+  );
+});
+
+test('projects a Tortoise-style major-operations graph with critical commits and compressed linear paths', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['linear2', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
+    { hash: 'linear2', parents: ['fork1'], author: 'Ada', date: '2026-05-06', subject: 'Linear mainline', refs: [] },
+    { hash: 'topic1', parents: ['fork1'], author: 'Ada', date: '2026-05-05', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
+    { hash: 'fork1', parents: ['linear1'], author: 'Ada', date: '2026-05-04', subject: 'Fork point', refs: [] },
+    { hash: 'linear1', parents: ['root1'], author: 'Ada', date: '2026-05-03', subject: 'Linear base', refs: [] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-05-02', subject: 'Root', refs: [] }
+  ]);
+
+  const projection = projectTortoiseMajorOpsGraph(graph);
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'fork1', 'root1']);
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'head1', to: 'merge1', through: [] },
+      { from: 'merge1', to: 'fork1', through: ['linear2'] },
+      { from: 'merge1', to: 'topic1', through: [] },
+      { from: 'topic1', to: 'fork1', through: [] },
+      { from: 'fork1', to: 'root1', through: ['linear1'] }
+    ]
+  );
+});
+
+test('uses the ported Tortoise major-operations layout strategy for scene rows', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-05-06', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-05', subject: 'Base', refs: [] }
+  ]);
+  const projection = projectTortoiseMajorOpsGraph(graph);
+  const scene = await buildRevisionGraphScene(graph, projection, undefined, 'portedTortoiseMajorOps');
+  const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
+
+  for (const edge of scene.edges) {
+    assert.ok(
+      (rowByHash.get(edge.from) ?? 0) < (rowByHash.get(edge.to) ?? 0),
+      `${edge.from} should render above ${edge.to}`
+    );
+  }
+  assert.equal(scene.nodes.length, 4);
+  assert.equal(scene.edges.length, 4);
+});
+
+test('uses the d3-dag Sugiyama layout strategy for the Tortoise major-operations projection', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-05-06', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-05', subject: 'Base', refs: [] }
+  ]);
+  const projection = projectTortoiseMajorOpsGraph(graph);
+  const scene = await buildRevisionGraphScene(graph, projection, undefined, 'd3DagSugiyama');
+  const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
+
+  for (const edge of scene.edges) {
+    assert.ok(
+      (rowByHash.get(edge.from) ?? 0) < (rowByHash.get(edge.to) ?? 0),
+      `${edge.from} should render above ${edge.to}`
+    );
+  }
+  assert.equal(scene.nodes.length, 4);
+  assert.equal(scene.edges.length, 4);
+  assert.notEqual(
+    buildProjectedGraphLayoutCacheKey(projection, 'gitAware'),
+    buildProjectedGraphLayoutCacheKey(projection, 'd3DagSugiyama')
   );
 });
 
