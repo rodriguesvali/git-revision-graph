@@ -300,7 +300,7 @@ test('keeps merge parent lines while hiding merge-only cards in refs-only projec
   );
 });
 
-test('hides hidden merge connectors in refs-only projection', () => {
+test('keeps hidden merge connectors in the major-operations projection', () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Hidden merge', refs: [] },
@@ -310,18 +310,19 @@ test('hides hidden merge connectors in refs-only projection', () => {
 
   const projection = projectTortoiseMajorOpsGraph(graph);
 
-  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'topic1', 'base1']);
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
   assert.deepEqual(
     projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
     [
-      { from: 'head1', to: 'base1', through: ['merge1'] },
-      { from: 'head1', to: 'topic1', through: ['merge1'] },
+      { from: 'head1', to: 'merge1', through: [] },
+      { from: 'merge1', to: 'base1', through: [] },
+      { from: 'merge1', to: 'topic1', through: [] },
       { from: 'topic1', to: 'base1', through: [] }
     ]
   );
 });
 
-test('hides sync merges in refs-only git-simplified graphs', () => {
+test('keeps sync merges in git-simplified major-operations graphs', () => {
   const graph = buildCommitGraphWithSimplification([
     { hash: 'rel2501', parents: ['sync2491'], author: 'Ada', date: '2026-04-08', subject: 'Git 2.50.1', refs: [{ name: 'v2.50.1', kind: 'tag' }] },
     { hash: 'sync2491', parents: ['rel2500', 'rel2491'], author: 'Ada', date: '2026-04-07', subject: 'Sync with 2.49.1', refs: [] },
@@ -336,15 +337,17 @@ test('hides sync merges in refs-only git-simplified graphs', () => {
 
   assert.deepEqual(
     projection.nodes.map((node) => node.hash),
-    ['rel2501', 'rel2500', 'rel2491', 'rel2490', 'rel2482']
+    ['rel2501', 'sync2491', 'rel2500', 'rel2491', 'sync2482', 'rel2490', 'rel2482']
   );
   assert.deepEqual(
     projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
     [
-      { from: 'rel2501', to: 'rel2500', through: ['sync2491'] },
-      { from: 'rel2501', to: 'rel2491', through: ['sync2491'] },
-      { from: 'rel2491', to: 'rel2490', through: ['sync2482'] },
-      { from: 'rel2491', to: 'rel2482', through: ['sync2482'] }
+      { from: 'rel2501', to: 'sync2491', through: [] },
+      { from: 'sync2491', to: 'rel2500', through: [] },
+      { from: 'sync2491', to: 'rel2491', through: [] },
+      { from: 'rel2491', to: 'sync2482', through: [] },
+      { from: 'sync2482', to: 'rel2490', through: [] },
+      { from: 'sync2482', to: 'rel2482', through: [] }
     ]
   );
 });

@@ -160,11 +160,18 @@ function buildTortoiseMajorOpsVisibleHashes(
 
   return new Set(
     candidateCommits
-      .filter((commit) =>
-        filterRefs(commit.refs, options).length > 0 ||
-        commit.parents.filter((parentHash) => candidateHashSet.has(parentHash)).length !== 1 ||
-        (childCountByHash.get(commit.hash) ?? 0) !== 1
-      )
+      .filter((commit) => {
+        const parentCount = commit.parents.filter((parentHash) => candidateHashSet.has(parentHash)).length;
+        const childCount = childCountByHash.get(commit.hash) ?? 0;
+        const hasVisibleRef = filterRefs(commit.refs, options).length > 0 ||
+          (options.refScope === 'remoteHead' && commit.refs.some(isDefaultRemoteHeadRef));
+        const isMerge = parentCount > 1;
+        const isFork = childCount > 1;
+        const isRoot = parentCount === 0;
+        const isUnreferencedTip = childCount === 0 && commit.refs.length === 0;
+
+        return hasVisibleRef || isMerge || isFork || isRoot || isUnreferencedTip;
+      })
       .map((commit) => commit.hash)
   );
 }
