@@ -75,7 +75,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /webview\.canvas-layout\.scene-placement/);
   assert.match(html, /webview\.render-scene\.viewport-precenter/);
   assert.match(html, /webview\.viewport-frame\.scroll/);
-  assert.match(html, /webview\.render-scene\.nodes-html/);
+  assert.match(html, /webview\.render-scene\.virtual-html/);
+  assert.match(html, /webview\.render-scene\.virtual-frame/);
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
@@ -393,7 +394,7 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /pendingMinimapSyncFrame = requestAnimationFrame/);
   assert.match(html, /function renderMinimap\(mode = 'full'\)/);
   assert.match(html, /const shouldRenderContent = mode === 'full' \|\| minimapNodeLayer\.innerHTML\.length === 0;/);
-  assert.match(html, /viewport\.addEventListener\('scroll', \(\) => syncMinimap\('viewport'\)\);/);
+  assert.match(html, /viewport\.addEventListener\('scroll', \(\) => \{\s*scheduleVirtualSceneRender\('scroll'\);\s*syncMinimap\('viewport'\);\s*\}\);/);
   assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
   assert.match(html, /function renderMinimapNode\(hash, transform\)/);
   assert.match(html, /function syncMinimapViewport\(transform\)/);
@@ -510,25 +511,23 @@ test('preserves viewport and selection during metadata patches', () => {
   assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
 });
 
-test('patches reference metadata without rerendering graph edges', () => {
+test('patches reference metadata through the virtualized graph window', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
   assert.match(html, /if \(patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey\) \{\s*return false;\s*\}/);
   assert.match(html, /if \(!haveSameNodeHashes\(\(currentState\.scene && currentState\.scene\.nodes\) \|\| \[\], sceneNodes\)\) \{\s*return false;\s*\}/);
-  assert.match(html, /const nextRenderKey = getNodeRenderKey\(node, layout\);/);
-  assert.match(html, /if \(element\.getAttribute\('data-node-render-key'\) === nextRenderKey\) \{\s*continue;\s*\}/s);
-  assert.match(html, /container\.innerHTML = renderNodeMarkup\(node, layout, nextRenderKey\);/);
-  assert.match(html, /nextElement\.style\.left = previousLeft;/);
-  assert.match(html, /element\.replaceWith\(nextElement\);/);
+  assert.match(html, /sceneNodeByHash = new Map\(sceneNodes\.map\(\(node\) => \[node\.hash, node\]\)\);/);
+  assert.match(html, /renderVirtualScene\(\{ force: true, reason: 'metadata-patch' \}\);/);
+  assert.match(html, /syncMinimap\('full'\);/);
+  assert.match(html, /function renderVirtualScene\(options = \{\}\)/);
+  assert.match(html, /visibleLayouts = graphNodes\.filter/);
   assert.match(html, /data-node-render-key="/);
-  assert.match(html, /refreshGraphCaches\(\);\s*if \(replacedNodeCount > 0\) \{\s*bindSceneEventHandlers\(\);/s);
   assert.match(html, /nodeLayer\.addEventListener\('click',/);
   assert.match(html, /nodeLayer\.addEventListener\('contextmenu',/);
   assert.match(html, /nodeLayer\.addEventListener\('mousedown',/);
   assert.match(html, /if \(sceneEventHandlersBound \|\| !nodeLayer\) \{/);
   assert.doesNotMatch(html, /for \(const element of document\.querySelectorAll\('\\[data-ref-id\\]'\)\) \{\s*element\.addEventListener\('click'/);
-  assert.match(html, /syncMinimap\(replacedNodeCount > 0 \? 'full' : 'viewport'\);/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?renderScene[\s\S]*?function applyWorkspaceStatePatch/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
 });

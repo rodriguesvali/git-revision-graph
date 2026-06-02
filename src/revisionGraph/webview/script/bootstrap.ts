@@ -109,6 +109,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let activeWebviewTraceMessage = null;
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
+    const VIRTUAL_RENDER_OVERSCAN_PX = 900;
+    let pendingVirtualSceneRenderFrame = 0;
+    let lastVirtualSceneKey = '';
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -300,12 +303,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       closeContextMenu();
       event.preventDefault();
     });
-    viewport.addEventListener('scroll', () => syncMinimap('viewport'));
+    viewport.addEventListener('scroll', () => {
+      scheduleVirtualSceneRender('scroll');
+      syncMinimap('viewport');
+    });
     viewport.addEventListener('scroll', closeContextMenu);
     window.addEventListener('resize', () => {
       readViewportLayoutSize();
       syncCanvasSize();
       updateScenePlacement();
+      scheduleVirtualSceneRender('resize', true);
       syncMinimap();
       closeContextMenu();
     });
@@ -685,7 +692,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const nextGraphNodes = patch.nodeLayouts || [];
       const layoutByHash = new Map(nextGraphNodes.map((node) => [node.hash, node]));
       for (const node of sceneNodes) {
-        if (!nodeElements.get(node.hash) || !layoutByHash.get(node.hash)) {
+        if (!layoutByHash.get(node.hash)) {
           return false;
         }
       }
@@ -712,32 +719,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
       baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
 
-      let replacedNodeCount = 0;
       sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-      for (const node of sceneNodes) {
-        const element = nodeElements.get(node.hash);
-        const layout = layoutByHash.get(node.hash);
-        const nextRenderKey = getNodeRenderKey(node, layout);
-        if (element.getAttribute('data-node-render-key') === nextRenderKey) {
-          continue;
-        }
-
-        const previousLeft = element.style.left;
-        const container = document.createElement('div');
-        container.innerHTML = renderNodeMarkup(node, layout, nextRenderKey);
-        const nextElement = container.firstElementChild;
-        if (!nextElement) {
-          return false;
-        }
-        nextElement.style.left = previousLeft;
-        element.replaceWith(nextElement);
-        replacedNodeCount += 1;
-      }
-
-      refreshGraphCaches();
-      if (replacedNodeCount > 0) {
-        bindSceneEventHandlers();
-      }
+      renderVirtualScene({ force: true, reason: 'metadata-patch' });
+      bindSceneEventHandlers();
       if (patch.preserveSelection) {
         restoreSelectionSnapshot(selectionSnapshot);
       } else {
@@ -748,7 +732,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncSelection();
       syncToolbarActions();
       syncSearchResults({ preserveActiveHash: true, focusActive: false });
-      syncMinimap(replacedNodeCount > 0 ? 'full' : 'viewport');
+      syncMinimap('full');
       hideLoading();
       hideStatus();
       return true;
@@ -1004,10 +988,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const sceneNodes = (state.scene && state.scene.nodes) || [];
-      let nodeByHash = new Map();
       traceWebviewPhase('webview.render-scene.indexes', () => {
         sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-        nodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
       });
       if (options.precenterViewport) {
         traceWebviewPhase('webview.render-scene.viewport-precenter', () => {
@@ -1016,16 +998,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           centerGraphInViewport({ source: 'layout', syncMinimap: false });
         }, 'action=recenter');
       }
-      traceWebviewPhase('webview.render-scene.edges-html', () => {
-        edgeLayer.innerHTML = graphEdges
-          .map((edge) => renderEdgeMarkup(edge, nodeByHash))
-          .join('');
-      }, 'edges=' + graphEdges.length);
-      traceWebviewPhase('webview.render-scene.nodes-html', () => {
-        nodeLayer.innerHTML = sceneNodes
-          .map((node) => renderNodeMarkup(node, nodeByHash.get(node.hash)))
-          .join('');
-      }, 'nodes=' + sceneNodes.length);
+      traceWebviewPhase('webview.render-scene.virtual-html', () => {
+        renderVirtualScene({ force: true });
+      }, 'nodes=' + sceneNodes.length + '; edges=' + graphEdges.length);
 
       traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
       traceWebviewPhase('webview.render-scene.bind-handlers', () => bindSceneEventHandlers());
@@ -1033,6 +1008,109 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         syncCanvasSize();
         updateScenePlacement();
       });
+    }
+
+    function scheduleVirtualSceneRender(reason = 'viewport', force = false) {
+      if (force) {
+        lastVirtualSceneKey = '';
+      }
+      if (pendingVirtualSceneRenderFrame) {
+        return;
+      }
+
+      pendingVirtualSceneRenderFrame = requestAnimationFrame(() => {
+        pendingVirtualSceneRenderFrame = 0;
+        traceWebviewPhase('webview.render-scene.virtual-frame', () => {
+          renderVirtualScene({ reason, force });
+        }, 'reason=' + reason);
+      });
+    }
+
+    function renderVirtualScene(options = {}) {
+      if (!currentState || currentState.viewMode !== 'ready') {
+        edgeLayer.innerHTML = '';
+        nodeLayer.innerHTML = '';
+        lastVirtualSceneKey = '';
+        refreshGraphCaches();
+        return;
+      }
+
+      const viewportBounds = getVirtualViewportBounds();
+      const visibleLayouts = graphNodes.filter((layout) =>
+        sceneNodeByHash.has(layout.hash) && isLayoutVisible(layout, viewportBounds)
+      );
+      const visibleHashes = new Set(visibleLayouts.map((layout) => layout.hash));
+      const visibleEdges = graphEdges.filter((edge) => isEdgeVisible(edge, viewportBounds, visibleHashes));
+      const nextVirtualSceneKey = buildVirtualSceneKey(visibleHashes, visibleEdges);
+
+      if (!options.force && nextVirtualSceneKey === lastVirtualSceneKey) {
+        return;
+      }
+
+      const layoutByHash = graphNodeByHash;
+      nodeLayer.innerHTML = visibleLayouts
+        .map((layout) => renderNodeMarkup(sceneNodeByHash.get(layout.hash), layout))
+        .join('');
+      edgeLayer.innerHTML = visibleEdges
+        .map((edge) => renderEdgeMarkup(edge, layoutByHash))
+        .join('');
+      lastVirtualSceneKey = nextVirtualSceneKey;
+      refreshGraphCaches();
+      applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false });
+      syncSelection();
+      syncSearchHighlights();
+    }
+
+    function getVirtualViewportBounds() {
+      const visibleSize = getVisibleViewportSize();
+      const visibleLeft = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / currentZoom - layoutOffsetX);
+      const visibleTop = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / currentZoom - layoutOffsetY);
+      const visibleWidth = visibleSize.width / currentZoom;
+      const visibleHeight = visibleSize.height / currentZoom;
+      const overscan = VIRTUAL_RENDER_OVERSCAN_PX / Math.max(currentZoom, 0.1);
+
+      return {
+        left: Math.max(0, visibleLeft - overscan),
+        top: Math.max(0, visibleTop - overscan),
+        right: visibleLeft + visibleWidth + overscan,
+        bottom: visibleTop + visibleHeight + overscan
+      };
+    }
+
+    function isLayoutVisible(layout, bounds) {
+      const left = layout.defaultLeft + Number(nodeOffsets[layout.hash] || 0);
+      const right = left + layout.width;
+      const top = layout.defaultTop;
+      const bottom = top + layout.height;
+      return right >= bounds.left && left <= bounds.right && bottom >= bounds.top && top <= bounds.bottom;
+    }
+
+    function isEdgeVisible(edge, bounds, visibleHashes) {
+      if (visibleHashes.has(edge.from) || visibleHashes.has(edge.to)) {
+        return true;
+      }
+
+      const fromLayout = graphNodeByHash.get(edge.from);
+      const toLayout = graphNodeByHash.get(edge.to);
+      if (!fromLayout || !toLayout) {
+        return false;
+      }
+
+      const fromX = fromLayout.defaultLeft + Number(nodeOffsets[fromLayout.hash] || 0) + fromLayout.width / 2;
+      const fromY = fromLayout.defaultTop + fromLayout.height / 2;
+      const toX = toLayout.defaultLeft + Number(nodeOffsets[toLayout.hash] || 0) + toLayout.width / 2;
+      const toY = toLayout.defaultTop + toLayout.height / 2;
+      return Math.max(fromX, toX) >= bounds.left &&
+        Math.min(fromX, toX) <= bounds.right &&
+        Math.max(fromY, toY) >= bounds.top &&
+        Math.min(fromY, toY) <= bounds.bottom;
+    }
+
+    function buildVirtualSceneKey(visibleHashes, visibleEdges) {
+      return [
+        [...visibleHashes].sort().join(','),
+        visibleEdges.map((edge) => edge.from + '->' + edge.to).sort().join(',')
+      ].join('|');
     }
 
     function refreshGraphCaches() {
@@ -1415,6 +1493,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       hideLoading();
       edgeLayer.innerHTML = '';
       nodeLayer.innerHTML = '';
+      lastVirtualSceneKey = '';
       refreshGraphCaches();
       showStatus(message, true);
     }

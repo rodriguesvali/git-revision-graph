@@ -10,7 +10,7 @@ import {
 
 export function renderRevisionGraphScriptLayout(): string {
   return `
-    function applyNodeLayout(persist = true) {
+    function applyNodeLayout(persist = true, options = {}) {
       for (const [hash, element] of nodeElements.entries()) {
         const defaultLeft = getDefaultNodeLeft(hash);
         const left = clampNodeLeft(hash, defaultLeft + Number(nodeOffsets[hash] || 0));
@@ -18,19 +18,23 @@ export function renderRevisionGraphScriptLayout(): string {
         element.style.left = left + 'px';
       }
       updateEdges(edgeElements);
-      updateScenePlacement();
+      if (options.updateScenePlacement !== false) {
+        updateScenePlacement();
+      }
       if (persist) {
         persistNodeLayout();
       }
-      syncMinimap();
+      if (options.syncMinimap !== false) {
+        syncMinimap();
+      }
     }
 
     function persistNodeLayout() {
       const normalizedOffsets = {};
-      for (const [hash] of nodeElements.entries()) {
-        const offset = Number(nodeOffsets[hash] || 0);
+      for (const layout of graphNodes) {
+        const offset = Number(nodeOffsets[layout.hash] || 0);
         if (Math.abs(offset) > 0.5) {
-          normalizedOffsets[hash] = offset;
+          normalizedOffsets[layout.hash] = offset;
         }
       }
       const existingState = vscode.getState() || {};
@@ -129,7 +133,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function centerNodeInViewport(hash) {
-      if (!hash || !nodeElements.has(hash)) {
+      if (!hash || !graphNodeByHash.has(hash)) {
         return;
       }
 
@@ -170,22 +174,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function getGraphBounds() {
-      let minX = Infinity;
-      let maxX = -Infinity;
-      let minY = Infinity;
-      let maxY = -Infinity;
-      for (const [hash] of nodeElements.entries()) {
-        const left = getNodeLeft(hash);
-        const top = getNodeTop(hash);
-        minX = Math.min(minX, left);
-        maxX = Math.max(maxX, left + getNodeWidth(hash));
-        minY = Math.min(minY, top);
-        maxY = Math.max(maxY, top + getNodeHeight(hash));
-      }
-      if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
-        return { minX: 0, maxX: baseCanvasWidth, minY: 0, maxY: baseCanvasHeight };
-      }
-      return { minX, maxX, minY, maxY };
+      return getGraphLayoutBounds();
     }
 
     function getDisplayedGraphBounds() {
@@ -228,7 +217,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function getHeadAnchorBounds() {
-      if (!headNodeHash || !nodeElements.has(headNodeHash)) {
+      if (!headNodeHash || !graphNodeByHash.has(headNodeHash)) {
         return null;
       }
       const top = getNodeTop(headNodeHash);
@@ -307,7 +296,8 @@ export function renderRevisionGraphScriptLayout(): string {
     function getDefaultNodeLeft(hash) {
       const element = nodeElements.get(hash);
       if (!element) {
-        return 0;
+        const layout = graphNodeByHash.get(hash);
+        return layout ? layout.defaultLeft : 0;
       }
       return Number(element.dataset.defaultLeft || 0);
     }
@@ -383,7 +373,7 @@ export function renderRevisionGraphScriptLayout(): string {
         !minimapEnabled ||
         !currentState ||
         currentState.viewMode !== 'ready' ||
-        nodeElements.size === 0
+        graphNodes.length === 0
       ) {
         if (graphMinimap) {
           graphMinimap.hidden = true;
@@ -406,8 +396,8 @@ export function renderRevisionGraphScriptLayout(): string {
         minimapEdgeLayer.innerHTML = graphEdges
           .map((edge) => renderMinimapEdge(edge, transform))
           .join('');
-        minimapNodeLayer.innerHTML = Array.from(nodeElements.keys())
-          .map((hash) => renderMinimapNode(hash, transform))
+        minimapNodeLayer.innerHTML = graphNodes
+          .map((layout) => renderMinimapNode(layout.hash, transform))
           .join('');
       }
       syncMinimapViewport(transform);
@@ -417,7 +407,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function renderMinimapEdge(edge, transform) {
-      if (!nodeElements.has(edge.from) || !nodeElements.has(edge.to)) {
+      if (!graphNodeByHash.has(edge.from) || !graphNodeByHash.has(edge.to)) {
         return '';
       }
 

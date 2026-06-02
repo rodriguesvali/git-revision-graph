@@ -7,6 +7,7 @@ export function renderRevisionGraphScriptInteractions(): string {
       currentZoom = zoom;
       canvas.style.transform = 'scale(' + zoom + ')';
       syncCanvasSize();
+      scheduleVirtualSceneRender('zoom', true);
       applyNodeLayout(false);
       if (shouldPreserveViewport) {
         restoreScenePlacementSnapshot(scenePlacementSnapshot);
