@@ -17,12 +17,12 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
 };
 const DEFAULT_REMOTE_HEAD_REF_NAMES = ['origin/HEAD', 'origin/main', 'origin/master'];
 
-export function projectTortoiseMajorOpsGraph(
+export function projectMajorOperationsGraph(
   graph: CommitGraph,
   options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
 ): ProjectedGraph {
   const scopeHashes = getScopeHashes(graph, options);
-  const visibleHashes = buildTortoiseMajorOpsVisibleHashes(graph, scopeHashes, options);
+  const visibleHashes = buildMajorOperationsVisibleHashes(graph, scopeHashes, options);
 
   return projectCommitGraph(graph, visibleHashes, options);
 }
@@ -137,7 +137,7 @@ function collectDescendantRefTipHashes(
     .map((commit) => commit.hash);
 }
 
-function buildTortoiseMajorOpsVisibleHashes(
+function buildMajorOperationsVisibleHashes(
   graph: CommitGraph,
   candidateHashes: ReadonlySet<string>,
   options: RevisionGraphProjectionOptions

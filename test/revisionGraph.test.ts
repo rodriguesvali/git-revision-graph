@@ -6,7 +6,7 @@ import {
   buildRevisionGraphScene,
   parseDecorationRefs,
   parseRevisionGraphLog,
-  projectTortoiseMajorOpsGraph
+  projectMajorOperationsGraph
 } from '../src/revisionGraphData';
 import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { getMergeBlockedTargetsFromGraph } from '../src/revisionGraph/backend';
@@ -288,7 +288,7 @@ test('keeps merge parent lines while hiding merge-only cards in refs-only projec
     { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['m1', 'a1', 'b1']);
   assert.deepEqual(
@@ -308,7 +308,7 @@ test('keeps hidden merge connectors in the major-operations projection', () => {
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
   assert.deepEqual(
@@ -333,7 +333,7 @@ test('keeps sync merges in git-simplified major-operations graphs', () => {
     { hash: 'rel2482', parents: [], author: 'Ada', date: '2026-04-02', subject: 'Git 2.48.2', refs: [{ name: 'v2.48.2', kind: 'tag' }] }
   ], 'git-decoration');
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   assert.deepEqual(
     projection.nodes.map((node) => node.hash),
@@ -359,7 +359,7 @@ test('rewrites linear unlabeled commits on git-simplified graphs when tags are h
     { hash: 'branch1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Branch tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] }
   ], 'git-decoration');
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     showTags: false
   });
@@ -373,7 +373,7 @@ test('rewrites linear unlabeled commits on git-simplified graphs when tags are h
   );
 });
 
-test('projects a Tortoise-style major-operations graph with critical commits and compressed linear paths', () => {
+test('projects a major-operations graph with critical commits and compressed linear paths', () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'merge1', parents: ['linear2', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
@@ -384,7 +384,7 @@ test('projects a Tortoise-style major-operations graph with critical commits and
     { hash: 'root1', parents: [], author: 'Ada', date: '2026-05-02', subject: 'Root', refs: [] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'fork1', 'root1']);
   assert.deepEqual(
@@ -399,14 +399,14 @@ test('projects a Tortoise-style major-operations graph with critical commits and
   );
 });
 
-test('uses the d3-dag Sugiyama layout for the Tortoise major-operations projection', async () => {
+test('uses the d3-dag Sugiyama layout for the major-operations projection', async () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
     { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-05-06', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-05', subject: 'Base', refs: [] }
   ]);
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
   const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
 
@@ -429,7 +429,7 @@ test('builds a scene from the refs-only projected graph while preserving merge e
     { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Topic tip', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
 
   assert.equal(scene.nodes.length, 3);
@@ -493,7 +493,7 @@ test('reuses cached d3-dag layout positions for the same projected graph topolog
       refs: [{ name: 'origin/main', kind: 'remote' }]
     }
   ]);
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   const firstScene = await buildRevisionGraphScene(graph, projection);
   const afterFirstLayout = getProjectedGraphLayoutCacheStats();
@@ -532,7 +532,7 @@ test('uses the d3-dag layout cache namespace', () => {
     }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v1:/);
 });
@@ -596,7 +596,7 @@ test('places side descendants on the same layer as their mainline sibling descen
     { hash: 'sideChild', parents: ['base1'], author: 'Ada', date: '2026-05-21', subject: 'Side child', refs: [{ name: 'origin/side', kind: 'remote' }] },
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-20', subject: 'Base', refs: [{ name: 'REL_2.13.0.0_EXTERNAL', kind: 'tag' }] }
   ]);
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   const scene = await buildRevisionGraphScene(graph, projection);
   const mainChild = scene.nodes.find((node) => node.hash === 'mainChild');
@@ -723,7 +723,7 @@ test('restores serialized d3-dag layout cache entries across extension sessions'
       refs: [{ name: 'origin/main', kind: 'remote' }]
     }
   ]);
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
 
   const firstScene = await buildRevisionGraphScene(graph, projection);
   const serializedCache = serializeProjectedGraphLayoutCache();
@@ -771,7 +771,7 @@ test('gives distinct horizontal positions to wide visible branches in the same s
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
   const leftNode = scene.nodes.find((node) => node.hash === 'left1');
   const rightNode = scene.nodes.find((node) => node.hash === 'right1');
@@ -790,7 +790,7 @@ test('uses layered layout rows instead of forcing every commit into a unique log
     { hash: 'rightBase', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Right base', refs: [{ name: 'right-base', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
   const leftTip = scene.nodes.find((node) => node.hash === 'leftTip');
   const leftBase = scene.nodes.find((node) => node.hash === 'leftBase');
@@ -831,7 +831,7 @@ test('adds vertical clearance when a card grows with many refs', async () => {
     }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
   const nodeLayouts = buildNodeLayouts(scene);
   const headLayout = nodeLayouts.find((node) => node.hash === 'head1');
@@ -1000,7 +1000,7 @@ test('can scope the projection to the current branch ancestry and descendant ref
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'current'
   });
@@ -1021,7 +1021,7 @@ test('keeps current branch descendants enabled for legacy descendant option mess
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'current',
     showCurrentBranchDescendants: true
@@ -1045,7 +1045,7 @@ test('can scope the projection to origin head ancestry and descendant refs', () 
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'remoteHead'
   });
@@ -1066,7 +1066,7 @@ test('can scope the projection to origin main when origin head decoration is mis
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'remoteHead'
   });
@@ -1082,7 +1082,7 @@ test('keeps the origin head anchor visible when remote branch labels are hidden'
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'remoteHead',
     showRemoteBranches: false
@@ -1106,7 +1106,7 @@ test('can scope the projection to local branches', () => {
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     refScope: 'local'
   });
@@ -1121,7 +1121,7 @@ test('can hide tag refs and tag-only commits from the projection', () => {
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     showTags: false
   });
@@ -1168,7 +1168,7 @@ test('can hide remote refs and stash refs from the projection', () => {
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [] }
   ]);
 
-  const projection = projectTortoiseMajorOpsGraph(graph, {
+  const projection = projectMajorOperationsGraph(graph, {
     ...createDefaultRevisionGraphProjectionOptions(),
     showRemoteBranches: false,
     showStashes: false
@@ -1190,7 +1190,7 @@ test('builds compact primary ancestor next pointers for the visible scene', asyn
     { hash: 's1', parents: ['b1'], author: 'Ada', date: '2026-04-05', subject: 'Side ref', refs: [{ name: 'origin/feature/demo', kind: 'remote' }] },
     { hash: 'b1', parents: [], author: 'Ada', date: '2026-04-04', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
   ]);
-  const projection = projectTortoiseMajorOpsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph);
   const scene = await buildRevisionGraphScene(graph, projection);
 
   assert.deepEqual(buildPrimaryAncestorNextByHash(graph, scene), {

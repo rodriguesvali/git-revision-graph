@@ -21,7 +21,7 @@ There is no runtime Python, no Graphviz dependency, and no user-facing strategy 
 - Added `d3-dag` as the runtime layout dependency.
 - Added `src/revisionGraph/layout/d3DagSugiyamaLayout.ts`.
 - Kept `src/revisionGraph/layout/layeredLayout.ts` as the layout cache/coordinator, now delegating only to `d3-dag`.
-- Added `projectTortoiseMajorOpsGraph` in `src/revisionGraph/projection/graphProjection.ts`.
+- Added `projectMajorOperationsGraph` in `src/revisionGraph/projection/graphProjection.ts`.
 - Updated ready-state building and backend visible-node counting to use the major-operations projection.
 - Removed the previous layout alternatives from production code.
 - Removed the graph organization strategy setting from `package.json`.

@@ -7,7 +7,7 @@ import {
   RevisionGraphRef
 } from './revisionGraph/model/commitGraphTypes';
 import {
-  projectTortoiseMajorOpsGraph
+  projectMajorOperationsGraph
 } from './revisionGraph/projection/graphProjection';
 import {
   getRevisionGraphGitFormat,
@@ -28,7 +28,7 @@ export type {
   RevisionGraphRef
 };
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
-export { projectTortoiseMajorOpsGraph };
+export { projectMajorOperationsGraph };
 
 export interface RevisionGraphNode {
   readonly hash: string;
@@ -67,7 +67,7 @@ export async function buildRevisionGraphScene(
 ): Promise<RevisionGraphScene> {
   const startedAt = nowMs();
   const graph = toCommitGraph(source);
-  const activeProjection = projection ?? projectTortoiseMajorOpsGraph(graph);
+  const activeProjection = projection ?? projectMajorOperationsGraph(graph);
   const commitLayout = await layoutCommitLanes(activeProjection, trace);
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 

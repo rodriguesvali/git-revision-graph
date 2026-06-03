@@ -6,7 +6,7 @@ import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
   CommitGraph,
-  projectTortoiseMajorOpsGraph,
+  projectMajorOperationsGraph,
   RevisionGraphRef,
   RevisionGraphEdge,
   RevisionGraphScene
@@ -141,7 +141,7 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
   const projectionStartedAt = nowMs();
-  const projection = projectTortoiseMajorOpsGraph(snapshot.graph, projectionOptions);
+  const projection = projectMajorOperationsGraph(snapshot.graph, projectionOptions);
   traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
   const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace);
   const ancestorsStartedAt = nowMs();
