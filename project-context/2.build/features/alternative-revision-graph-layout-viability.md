@@ -21,6 +21,7 @@ There is no runtime Python, no Graphviz dependency, and no user-facing strategy 
 - Added `d3-dag` as the runtime layout dependency.
 - Added `src/revisionGraph/layout/d3DagSugiyamaLayout.ts`.
 - Kept `src/revisionGraph/layout/layeredLayout.ts` as the layout cache/coordinator, now delegating only to `d3-dag`.
+- Tuned the `d3-dag` decross phase to use fewer two-layer passes in normal graphs and a fast DFS decross operator for very wide layers, preserving Sugiyama layout while avoiding pathological two-layer decross cost.
 - Added `projectMajorOperationsGraph` in `src/revisionGraph/projection/graphProjection.ts`.
 - Updated ready-state building and backend visible-node counting to use the major-operations projection.
 - Removed the previous layout alternatives from production code.
@@ -35,4 +36,4 @@ There is no runtime Python, no Graphviz dependency, and no user-facing strategy 
 
 - Manually validate in Extension Development Host against branch-heavy and merge-heavy repositories.
 - Use `gitRevisionGraph.traceLoading` on large repositories to compare `scene.layout.d3DagSugiyama` cost against render cost.
-- If large-repository layout cost becomes too high, tune `d3-dag` operators before changing product behavior.
+- If very wide layer output is still too coarse, tune the adaptive decross threshold before changing product behavior.

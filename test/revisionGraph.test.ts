@@ -418,7 +418,7 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
   }
   assert.equal(scene.nodes.length, 4);
   assert.equal(scene.edges.length, 4);
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v1:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v2:/);
 });
 
 test('builds a scene from the refs-only projected graph while preserving merge edges', async () => {
@@ -534,7 +534,7 @@ test('uses the d3-dag layout cache namespace', () => {
 
   const projection = projectMajorOperationsGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v1:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v2:/);
 });
 
 test('layout cache key includes ref metadata used by d3-dag placement', async () => {
@@ -754,7 +754,7 @@ test('ignores oversized serialized layout cache entries', () => {
 
   restoreProjectedGraphLayoutCache([
     {
-      key: 'd3-dag-sugiyama-v1:oversized',
+      key: 'd3-dag-sugiyama-v2:oversized',
       positions: oversizedPositions
     }
   ]);
