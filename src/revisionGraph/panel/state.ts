@@ -143,7 +143,7 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   const projectionStartedAt = nowMs();
   const projection = projectMajorOperationsGraph(snapshot.graph, projectionOptions);
   traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
-  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace);
+  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace, signal);
   const ancestorsStartedAt = nowMs();
   const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(snapshot.graph, scene);
   traceDuration(

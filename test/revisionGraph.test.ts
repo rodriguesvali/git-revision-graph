@@ -32,6 +32,7 @@ import {
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
 } from '../src/revisionGraph/layout/layeredLayout';
+import { calculateD3DagSugiyamaLayoutInWorker } from '../src/revisionGraph/layout/d3DagSugiyamaLayoutWorkerHost';
 import { ProjectedGraph } from '../src/revisionGraph/model/commitGraphTypes';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
@@ -419,6 +420,23 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
   assert.equal(scene.nodes.length, 4);
   assert.equal(scene.edges.length, 4);
   assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v2:/);
+});
+
+test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['base1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-07', subject: 'Base', refs: [] }
+  ]);
+  const projection = projectMajorOperationsGraph(graph);
+
+  const positions = await calculateD3DagSugiyamaLayoutInWorker({
+    nodes: projection.nodes,
+    edges: projection.edges
+  });
+
+  assert.equal(positions.size, projection.nodes.length);
+  assert.ok(positions.has('head1'));
+  assert.ok(positions.has('base1'));
 });
 
 test('builds a scene from the refs-only projected graph while preserving merge edges', async () => {

@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 
 import { ProjectedGraph } from '../model/commitGraphTypes';
-import { calculateD3DagSugiyamaLayout } from './d3DagSugiyamaLayout';
+import {
+  calculateD3DagSugiyamaLayout,
+  D3DagSugiyamaLayoutInput
+} from './d3DagSugiyamaLayout';
+import { calculateD3DagSugiyamaLayoutInWorker } from './d3DagSugiyamaLayoutWorkerHost';
 import {
   estimateRevisionGraphNodeHeight,
   estimateRevisionGraphNodeWidth
@@ -38,23 +42,28 @@ export interface ProjectedGraphLayoutPosition {
   readonly y: number;
 }
 
-export async function layoutProjectedGraph(projection: ProjectedGraph): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+export async function layoutProjectedGraph(
+  projection: ProjectedGraph,
+  signal?: AbortSignal
+): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   if (projection.nodes.length === 0) {
     return new Map();
   }
 
+  throwIfAborted(signal);
   const cacheKey = buildProjectedGraphLayoutCacheKey(projection);
   const cachedLayoutEntry = projectedGraphLayoutCache.get(cacheKey);
   if (cachedLayoutEntry) {
     projectedGraphLayoutCache.delete(cacheKey);
     projectedGraphLayoutCache.set(cacheKey, cachedLayoutEntry);
     projectedGraphLayoutCacheHits += 1;
+    throwIfAborted(signal);
     return cloneLayoutPositions(await cachedLayoutEntry.promise);
   }
 
   projectedGraphLayoutCacheMisses += 1;
   const cacheEntry: ProjectedGraphLayoutCacheEntry = {
-    promise: calculateProjectedGraphLayout(projection)
+    promise: calculateProjectedGraphLayout(projection, signal)
   };
   cacheEntry.promise = cacheEntry.promise
     .then((positions) => {
@@ -160,9 +169,27 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 }
 
 async function calculateProjectedGraphLayout(
-  projection: ProjectedGraph
+  projection: ProjectedGraph,
+  signal: AbortSignal | undefined
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
-  return calculateD3DagSugiyamaLayout(projection);
+  const layoutInput = createD3DagSugiyamaLayoutInput(projection);
+  try {
+    return await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal);
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+
+    throwIfAborted(signal);
+    return calculateD3DagSugiyamaLayout(layoutInput);
+  }
+}
+
+function createD3DagSugiyamaLayoutInput(projection: ProjectedGraph): D3DagSugiyamaLayoutInput {
+  return {
+    nodes: projection.nodes,
+    edges: projection.edges
+  };
 }
 
 function compareLayoutCacheRefs(
@@ -220,4 +247,16 @@ function isSerializedPositionEntry(entry: unknown): entry is [string, ProjectedG
     typeof (entry[1] as { x?: unknown }).x === 'number' &&
     typeof (entry[1] as { y?: unknown }).y === 'number'
   );
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    const error = new Error('The d3-dag layout was aborted.');
+    error.name = 'AbortError';
+    throw error;
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }

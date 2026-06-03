@@ -63,12 +63,13 @@ interface CommitLaneLayout {
 export async function buildRevisionGraphScene(
   source: CommitGraph | readonly ParsedRevisionGraphCommit[],
   projection?: ProjectedGraph,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  signal?: AbortSignal
 ): Promise<RevisionGraphScene> {
   const startedAt = nowMs();
   const graph = toCommitGraph(source);
   const activeProjection = projection ?? projectMajorOperationsGraph(graph);
-  const commitLayout = await layoutCommitLanes(activeProjection, trace);
+  const commitLayout = await layoutCommitLanes(activeProjection, trace, signal);
   const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
 
   const rawNodes = activeProjection.nodes.map<RevisionGraphNode>((node) => {
@@ -194,11 +195,12 @@ function isCommitGraph(source: CommitGraph | readonly ParsedRevisionGraphCommit[
 
 async function layoutCommitLanes(
   projection: ProjectedGraph,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  signal?: AbortSignal
 ): Promise<CommitLaneLayout[]> {
   const startedAt = nowMs();
   const cacheStatsBefore = getProjectedGraphLayoutCacheStats();
-  const positionByHash = await layoutProjectedGraph(projection);
+  const positionByHash = await layoutProjectedGraph(projection, signal);
   const cacheStatsAfter = getProjectedGraphLayoutCacheStats();
   const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
   traceDuration(

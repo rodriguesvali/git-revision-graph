@@ -22,8 +22,10 @@ export interface D3DagSugiyamaLayoutPosition {
   readonly y: number;
 }
 
+export type D3DagSugiyamaLayoutInput = Pick<ProjectedGraph, 'nodes' | 'edges'>;
+
 export function calculateD3DagSugiyamaLayout(
-  projection: ProjectedGraph
+  projection: D3DagSugiyamaLayoutInput
 ): Map<string, D3DagSugiyamaLayoutPosition> {
   if (projection.nodes.length === 0) {
     return new Map();
