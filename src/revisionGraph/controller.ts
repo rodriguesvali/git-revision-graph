@@ -105,6 +105,11 @@ interface RevisionGraphWebviewSurface {
   setTitle(title: string): void;
 }
 
+interface RevisionGraphRenderRequestContext {
+  readonly requestId: number;
+  readonly intent: RevisionGraphRefreshIntent;
+}
+
 function createWebviewViewSurface(view: vscode.WebviewView): RevisionGraphWebviewSurface {
   return {
     webview: view.webview,
@@ -371,10 +376,17 @@ export class RevisionGraphController implements vscode.Disposable {
 
     this.latestRefreshIntent = request.intent;
     const preparedRefresh = this.prepareRefresh(request);
+    const renderIntent = request.intent;
 
     const outcome = await this.renderCoordinator.schedule(
-      getRefreshLoadingLabel(request.intent),
-      async (requestId, signal) => this.buildNextState(requestId, signal)
+      getRefreshLoadingLabel(renderIntent),
+      async (requestId, signal) => this.buildNextState(
+        {
+          requestId,
+          intent: renderIntent
+        },
+        signal
+      )
     );
     if (outcome !== 'applied') {
       preparedRefresh?.cancel();
@@ -630,7 +642,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private async buildNextState(
-    requestId: number,
+    renderRequest: RevisionGraphRenderRequestContext,
     signal: AbortSignal
   ): Promise<RevisionGraphViewState | undefined> {
     if (!this.view) {
@@ -642,13 +654,13 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const repositoryPath = this.currentRepository.rootUri.fsPath;
-    const trace = this.createLoadTraceSink(repositoryPath, this.latestRefreshIntent, requestId);
+    const trace = this.createLoadTraceSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
     const currentSnapshot = this.currentSnapshot;
     const canReuseCurrentSnapshot =
       currentSnapshot?.repositoryPath === repositoryPath
       && this.snapshotReloadSemaphore.canReuseSnapshot(repositoryPath);
     const canPatchMetadata =
-      this.latestRefreshIntent === 'metadata-patch' &&
+      renderRequest.intent === 'metadata-patch' &&
       this.currentState.viewMode === 'ready' &&
       canReuseCurrentSnapshot;
 
@@ -660,12 +672,16 @@ export class RevisionGraphController implements vscode.Disposable {
         currentSnapshot.snapshot,
         signal
       );
+      if (!this.isRenderRequestCurrent(renderRequest)) {
+        return undefined;
+      }
+
       if (patchedState) {
         return patchedState;
       }
     }
 
-    if (this.latestRefreshIntent === 'projection-rebuild' && canReuseCurrentSnapshot) {
+    if (renderRequest.intent === 'projection-rebuild' && canReuseCurrentSnapshot) {
       const state = await buildReadyRevisionGraphViewStateFromSnapshot(
         this.currentRepository,
         this.projectionOptions,
@@ -674,7 +690,8 @@ export class RevisionGraphController implements vscode.Disposable {
         signal,
         trace
       );
-      if (requestId === this.renderCoordinator.getCurrentRequestId()) {
+      if (!this.isRenderRequestCurrent(renderRequest)) {
+        return undefined;
       }
 
       return state;
@@ -690,15 +707,21 @@ export class RevisionGraphController implements vscode.Disposable {
       trace
     );
 
-    if (requestId === this.renderCoordinator.getCurrentRequestId()) {
-      this.currentSnapshot = {
-        repositoryPath,
-        snapshot: bundle.snapshot
-      };
-      this.snapshotReloadSemaphore.markReloadComplete(repositoryPath);
+    if (!this.isRenderRequestCurrent(renderRequest)) {
+      return undefined;
     }
 
+    this.currentSnapshot = {
+      repositoryPath,
+      snapshot: bundle.snapshot
+    };
+    this.snapshotReloadSemaphore.markReloadComplete(repositoryPath);
+
     return bundle.state;
+  }
+
+  private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {
+    return renderRequest.requestId === this.renderCoordinator.getCurrentRequestId();
   }
 
   private resolveLimitPolicy(): RevisionGraphLimitPolicy {

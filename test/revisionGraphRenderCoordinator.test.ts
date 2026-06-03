@@ -137,3 +137,19 @@ test('reports failed when the latest render throws', async () => {
   assert.deepEqual(appliedResults, []);
   assert.equal(receivedErrors.length, 1);
 });
+
+test('treats undefined render results as discarded', async () => {
+  const appliedResults: string[] = [];
+  const receivedErrors: unknown[] = [];
+  const coordinator = new RevisionGraphRenderCoordinator<string>(
+    () => {},
+    (result) => appliedResults.push(result),
+    (error) => receivedErrors.push(error)
+  );
+
+  const outcome = await coordinator.schedule('Loading revision graph...', async () => undefined);
+
+  assert.equal(outcome, 'discarded');
+  assert.deepEqual(appliedResults, []);
+  assert.deepEqual(receivedErrors, []);
+});
