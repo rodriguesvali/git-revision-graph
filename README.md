@@ -30,7 +30,8 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` s
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
-- Git-aware graph layout that keeps the primary trunk stable, balances side branches, and centers cards with different widths on their lanes
+- `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
+- Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
@@ -50,7 +51,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` s
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
-- Graphs load already organized by the extension host, with a `Center HEAD` action and zoom reset controls in both the graph toolbar and minimap
+- Graphs load already organized by the extension host, with layout cache misses calculated in a worker thread plus a `Center HEAD` action and zoom reset controls in both the graph toolbar and minimap
 - Horizontal drag handles plus board and minimap controls for navigating and zooming the graph during a session
 - Minimap overview with visible viewport bounds, click/drag navigation for larger graphs, and a persisted `Show Minimap` view option
 - Client-side search across the loaded graph by branch, tag, hash, subject, and author
@@ -91,9 +92,11 @@ At a high level:
 1. The extension gets the Git API through `vscode.git`.
 2. It reads repositories from the current workspace.
 3. It loads references with `getRefs(...)`.
-4. It renders the active repository through an editor `WebviewPanel`.
-5. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
-6. It executes workflows such as compare, checkout, branch creation, merge, sync, and deletion by using the Git API where available.
+4. It projects the history into a major-operations graph and coordinates graph layout from the extension host, offloading expensive `d3-dag` cache misses to a worker thread.
+5. It renders the active repository through an editor `WebviewPanel`.
+6. It virtualizes the graph DOM so large scenes remain navigable while scrolling and zooming.
+7. It listens to repository open/close, checkout, and state-change events to keep the view synchronized.
+8. It executes workflows such as compare, checkout, branch creation, merge, sync, and deletion by using the Git API where available.
 
 This approach keeps the extension lightweight for reference workflows. The revision graph view uses targeted `git log`, `git diff`, and `git show` calls only where the public `vscode.git` API does not expose enough commit graph or textual history data.
 
@@ -134,18 +137,20 @@ This approach keeps the extension lightweight for reference workflows. The revis
 - `src/git.ts`
   - minimal TypeScript interfaces for the Git extension API used by this project
 
-- `src/refCommands.ts`
-  - compare, checkout, and merge workflows
-  - repository/reference resolution
-  - command-side UX messages and refresh behavior
+- `src/refActions.ts`, `src/workbenchRefActionServices.ts`
+  - compare, checkout, branch, tag, sync, merge, delete, reset, and restore workflows
+  - native VS Code UI adapters for QuickPick, confirmations, Source Control handoff, and diffs
 
-- `src/refPresentation.ts`, `src/changePresentation.ts`
-  - pure helpers for labels, sorting, and diff item presentation
+- `src/revisionGraph/controller.ts`, `src/revisionGraphPanel.ts`, `src/revisionGraphWebview.ts`
+  - editor graph panel lifecycle
+  - repository synchronization and webview message handling
+  - persistent webview shell generation
 
-- `src/revisionGraphData.ts`, `src/revisionGraphPanel.ts`, `src/revisionGraphRepository.ts`, `src/revisionGraphWebview.ts`
-  - commit graph parsing and lane layout
-  - editor graph panel lifecycle, repository helpers, and webview rendering
-  - commit selection and compare/checkout actions from the graph
+- `src/revisionGraphData.ts`, `src/revisionGraph/layout/*`, `src/revisionGraph/projection/*`
+  - commit graph parsing, major-operations projection, layout cache, `d3-dag` layout, and worker-thread layout execution
+
+- `src/revisionGraph/webview/script/*`, `src/revisionGraph/webview/shared.ts`
+  - browser-side graph rendering, virtualization, viewport behavior, minimap, search, selection, and context menus
 
 - `test/*.test.ts`
   - automated coverage for labels, compare flows, checkout behavior, merge protections, and empty states

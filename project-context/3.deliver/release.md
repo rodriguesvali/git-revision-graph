@@ -1,5 +1,73 @@
 # Release Readiness
 
+## 0.0.36 Release Readiness
+
+Current package baseline: `0.0.35`.
+
+Target release: `0.0.36`.
+
+Source baseline for this release review: `c4746ffe2b55a130183def5e95d366efaa4e17fd`.
+
+Status: Release artifacts are prepared for `0.0.36`. The implemented change set since the source baseline focuses on graph layout readability, large-graph webview responsiveness, extension-host responsiveness during layout, and stale render result hardening. Version bump to `0.0.36` has been applied after the maintainer release-prep request. VSIX packaging has generated `git-revision-graph-0.0.36.vsix`. Marketplace publication has not been performed and remains with the maintainer.
+
+Planning and build references:
+
+- `docs/release-0.0.36-prioritization.md`
+- `project-context/2.build/features/alternative-revision-graph-layout-viability.md`
+- `project-context/2.build/features/0.0.35-webview-virtualized-rendering.md`
+- `project-context/2.build/features/0.0.35-render-request-stale-guard.md`
+- `project-context/2.build/features/0.0.35-d3-dag-layout-worker.md`
+
+Candidate change set:
+
+- Replace the prior Git-aware layout implementation with a `d3-dag` Sugiyama layout over the major-operations projection.
+- Preserve visible refs, merge commits, fork commits, roots, tips, and compressed hidden linear paths in the projected graph.
+- Tune the `d3-dag` decrossing phase with fewer default two-layer passes and a faster DFS decross path for very wide layers.
+- Move cache-miss `d3-dag` layout calculation to a Node worker thread and propagate render cancellation through the layout path.
+- Add virtualized webview graph rendering so large scenes render the visible node and edge window rather than the full DOM at once.
+- Add render request stale guards so obsolete async refreshes cannot apply state or snapshot side effects after a newer refresh supersedes them.
+- Rename `projectTortoiseMajorOpsGraph` to `projectMajorOperationsGraph` to remove projection API coupling to TortoiseGit.
+- Add regression coverage for the `d3-dag` layout path, worker-thread execution, cache identity, render coordination, and virtualized graph rendering.
+- Update README and CHANGELOG for the `0.0.36` release candidate.
+
+Automated verification completed:
+
+- `npm run build` passed after the `0.0.36` version bump and release artifact edits.
+- `npm test` passed with 306 tests after the `0.0.36` version bump and release artifact edits. This includes `npm run build` through the test script.
+- `git diff --check` passed after the release artifact edits.
+- `npm run package:vsix` generated `git-revision-graph-0.0.36.vsix`.
+- Generated VSIX SHA-256: `4813c8615967142931cb38b3163a6464b5c5d2237082bff39d66b09b12cff876`.
+- Generated VSIX package contents include compiled worker files under `out/revisionGraph/layout/`.
+
+Manual validation pending:
+
+- Install `git-revision-graph-0.0.36.vsix` in an Extension Development Host or local VS Code profile.
+- Open a branch-heavy and merge-heavy repository and confirm graph loading, scope changes, search, minimap, scroll, zoom, and `Center HEAD` behavior.
+- Confirm the extension host remains responsive during a large uncached graph layout.
+- Confirm compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, merge, delete, reset, and conflict guards still work.
+- Confirm `gitRevisionGraph.traceLoading` reports layout and webview timing on a large repository.
+- Review generated VSIX metadata before Marketplace upload.
+
+Release gates pending:
+
+- Complete manual Extension Development Host smoke validation.
+- Review generated VSIX metadata/package contents before upload.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+
+Post-release monitoring focus:
+
+- Reports of blank, partially rendered, or incorrectly virtualized graph regions while scrolling or zooming.
+- Reports of graph layout regressions on branch-heavy, merge-heavy, or wide fan-out repositories.
+- Reports of stale graph state after rapid repository events, scope changes, refreshes, or fetches.
+- Reports of extension-host freezes during large uncached graph loads.
+- Reports that compiled worker files are missing from packaged installations.
+
+Rollback:
+
+- If a published regression is isolated to worker execution, prepare a patch release that temporarily routes cache-miss layout back through the synchronous `calculateD3DagSugiyamaLayout` path.
+- If a published regression is isolated to virtualized rendering, prepare a patch release that fixes viewport-window calculations or disables the problematic virtualized path while preserving the `d3-dag` layout.
+- If a published regression is layout correctness-related, prepare a patch release that adjusts the `d3-dag` strategy or reverts the `0.0.36` layout slice while keeping unrelated render coordination fixes if safe.
+
 ## 0.0.35 Release Readiness
 
 Current package baseline: `0.0.34`.

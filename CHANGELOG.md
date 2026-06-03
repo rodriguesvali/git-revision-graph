@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.36
+
+### Highlights
+
+- Replaced the experimental Git-aware layout path with a `d3-dag` Sugiyama layout over the major-operations projection, improving graph ordering consistency while keeping merge, fork, root, tip, and referenced commits visible.
+- Added virtualized graph rendering so large revision graphs render only the visible node and edge window instead of pushing the entire scene into the DOM at once.
+- Moved cache-miss `d3-dag` layout calculation to a Node worker thread so expensive layout work no longer blocks the VS Code extension host thread.
+
+### Performance & Reliability
+
+- Tuned the `d3-dag` decrossing phase with fewer default two-layer passes and a faster DFS decross path for very wide layers.
+- Added render request stale guards so obsolete async refresh results are discarded before they can apply stale state or snapshot side effects.
+- Propagated refresh cancellation through graph scene layout so superseded renders can terminate layout worker work.
+- Updated layout cache keys for the new `d3-dag` strategy so older persisted positions are not reused.
+
+### Quality
+
+- Added regression coverage for the `d3-dag` layout path, worker-thread layout execution, wide fan-out graphs, cache identity, render coordination, and virtualized webview rendering.
+- `npm run build`, `npm test`, `git diff --check`, and VSIX packaging verification for the `0.0.36` release candidate are recorded in `project-context/3.deliver/release.md`.
+- Version bump to `0.0.36` has been applied in `package.json` and `package-lock.json`.
+- Manual smoke validation and Marketplace publication remain with the maintainer.
+
 ## 0.0.35
 
 ### Fixes

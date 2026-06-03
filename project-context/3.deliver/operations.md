@@ -6,14 +6,14 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-preparation focus for `0.0.31`:
+Current release-preparation focus for `0.0.36`:
 
-- Source Control toolbar launch and singleton editor graph reveal behavior.
-- Removed side-bar graph contributions after upgrade from the old Activity Bar graph surface.
-- Compare Results and Show Log lifecycle after editor graph panel close.
-- Focus restoration after closing the last secondary review view.
-- Compare Results and Show Log double-click diff routing.
-- Persisted `Show Minimap` behavior and layout-state reuse.
+- Large graph loading with `d3-dag` layout and major-operations projection.
+- Worker-thread layout execution on uncached graph layouts.
+- Webview graph virtualization while scrolling, zooming, searching, and using the minimap.
+- Stale render discard behavior after rapid repository events, refreshes, fetches, and scope changes.
+- Existing compare, Show Log, checkout, branch, sync, merge, delete, reset, and conflict-guard workflows.
+- VSIX contents for compiled worker files under `out/revisionGraph/layout/`.
 
 ## Alerts
 No automated alerting is configured. Treat regressions in graph loading, repository switching, compare/diff, checkout, branch, merge, sync, delete, and log workflows as release-impacting.
