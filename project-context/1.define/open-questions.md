@@ -1,5 +1,12 @@
 # Open Questions
 
+## 0.0.37
+
+- Decided on 2026-06-04: `0.0.37` will not be stabilization-only. The cycle may include small visual and functional product improvements selected one by one from maintainer review, with each item scoped individually.
+- Which branch-heavy or merge-heavy repository should become the standard manual benchmark for `0.0.37` large-graph validation?
+- Should worker-layout fallback or cancellation paths emit clearer output-channel diagnostics before the next package candidate?
+- Which `0.0.36` manual smoke findings, if any, should be promoted into focused `0.0.37` feature artifacts?
+
 ## 0.0.32
 
 - Should `0.0.32` be primarily a stabilization release, or include one small visible graph-parity improvement?

@@ -39,6 +39,15 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
+## 0.0.37 Release Define
+- Current package baseline on 2026-06-04: `0.0.36`.
+- Target release: `0.0.37`.
+- Product goal: deliver small visual and functional product improvements from maintainer review while preserving the `0.0.36` graph layout, virtualized rendering, worker-thread layout, and stale render coordination changes.
+- Recommended scope: review and select improvements item by item; collect `0.0.36` VSIX/manual smoke findings; fix regressions in virtualized node/edge visibility, minimap/scroll/zoom synchronization, worker fallback, cancellation, stale refresh handling, and large-repository responsiveness; add focused regression coverage for any confirmed issue.
+- Non-goals: changing the Source Control/editor graph product surface, adding new commands or view containers, replacing the renderer, expanding full-history graph scope, dependency changes, publishing, or version bumping without approval.
+- Success condition: users get focused visual or functional polish without destabilizing the post-`0.0.36` graph experience on branch-heavy and merge-heavy repositories, and maintainers have a clear go/no-go path for packaging `0.0.37`.
+- Planning reference: `project-context/docs/release-0.0.37-prioritization.md`.
+
 ## 0.0.32 Release Define
 - Current package baseline on 2026-05-21: `0.0.31`.
 - Target release: `0.0.32`.
@@ -111,6 +120,8 @@ The extension is already published and feature-rich enough that new work can aff
 - Contributors will use AAMAD artifacts as living working notes, not as formal documents detached from implementation.
 
 ## Open Questions
+- Which repository should be the standard manual benchmark for `0.0.37` large-graph validation?
+- Should `0.0.37` improve worker fallback diagnostics even if no packaged-worker failure is reproduced?
 - Should `0.0.32` be primarily a stabilization release, or include one small visible graph-parity improvement?
 - Which graph-parity foundation slice should lead `0.0.32`: fixture coverage, model boundary types, refresh intent instrumentation, or one metadata-only patch path?
 - What repository fixture should become the standard manual smoke sample for graph correctness?

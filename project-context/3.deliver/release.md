@@ -1,5 +1,62 @@
 # Release Readiness
 
+## 0.0.37 Release Readiness
+
+Current package baseline: `0.0.36`.
+
+Target release: `0.0.37`.
+
+Status: Define phase opened on 2026-06-04. Maintainer review has set the cycle direction toward small visual and functional improvements selected item by item, while preserving post-`0.0.36` regression control. No implementation changes, version bump, VSIX packaging, or Marketplace publication have been performed for `0.0.37`.
+
+Planning and build references:
+
+- `project-context/docs/release-0.0.37-prioritization.md`
+
+Candidate direction:
+
+- Treat `0.0.37` as a post-`0.0.36` product-polish and regression-control cycle.
+- Implement small visual and functional improvements from maintainer review as individually scoped feature slices.
+- Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
+- Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
+- Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
+- Add focused regression coverage for any confirmed issue found during `0.0.36` smoke validation.
+- Keep the Source Control-launched singleton editor graph and on-demand Compare Results/Show Log review surfaces unchanged.
+
+Automated verification pending:
+
+- `npm run build`
+- `npm test`
+- `git diff --check`
+
+Manual validation pending:
+
+- Run the `0.0.36` VSIX or equivalent baseline in an Extension Development Host or local VS Code profile.
+- Open a branch-heavy and merge-heavy repository and confirm graph loading, scope changes, search, minimap, scroll, zoom, and `Center HEAD` behavior.
+- Confirm the extension host remains responsive during a large uncached graph layout.
+- Confirm compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, merge, delete, reset, and conflict guards still work.
+- Confirm `gitRevisionGraph.traceLoading` reports enough timing detail to diagnose layout, worker, and webview rendering outliers.
+
+Release gates pending:
+
+- Select or confirm the `0.0.37` implementation scope from smoke findings and maintainer priorities.
+- Implement focused fixes with feature artifacts under `project-context/2.build/features/`.
+- Update README and CHANGELOG only if user-visible behavior or release notes change.
+- Obtain maintainer approval before a version bump, VSIX packaging, or Marketplace publication.
+
+Post-release monitoring focus:
+
+- Reports of blank, partially rendered, or incorrectly virtualized graph regions while scrolling, zooming, searching, or navigating through the minimap.
+- Reports of graph layout regressions on branch-heavy, merge-heavy, or wide fan-out repositories.
+- Reports of stale graph state after rapid repository events, scope changes, refreshes, or fetches.
+- Reports of extension-host freezes during large uncached graph loads.
+- Reports that packaged worker files are missing or worker fallback is silently masking runtime failures.
+
+Rollback:
+
+- If a published regression is isolated to worker execution, prepare a patch that routes affected cache-miss layout calls through the synchronous `calculateD3DagSugiyamaLayout` path while preserving the rest of the `d3-dag` layout stack.
+- If a published regression is isolated to virtualized rendering, prepare a patch that corrects viewport-window calculations or temporarily disables the problematic virtualized path while preserving graph layout correctness.
+- If a published regression is layout correctness-related, prepare a patch that adjusts the `d3-dag` strategy or reverts the affected layout slice while keeping unrelated render coordination fixes if safe.
+
 ## 0.0.36 Release Readiness
 
 Current package baseline: `0.0.35`.

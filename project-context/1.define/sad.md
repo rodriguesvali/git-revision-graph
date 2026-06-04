@@ -124,6 +124,8 @@ With the editor graph panel:
 - Review containers can remain in the Activity Bar, but their titles must identify the active review use case: `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
 - Compare Results and Show Log remain on-demand secondary review views until they are intentionally redesigned, but they should return focus to the editor graph command after user-initiated secondary close and should close with the editor graph panel after graph-panel close.
 - The `0.0.31` release candidate should document the final Source Control/editor graph product surface and should not present the superseded companion graph as a shipped feature.
+- The `0.0.37` Define cycle should prioritize stabilization of the `0.0.36` `d3-dag`, worker-thread layout, virtualized rendering, and stale render guard architecture before accepting a broader graph-parity slice.
+- The `0.0.37` cycle should keep the Source Control-launched singleton editor graph and on-demand Compare Results/Show Log review surfaces unchanged unless a confirmed regression requires a scoped fix.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -168,6 +170,9 @@ For Source Control product surface Phase 3, add manual validation for:
 - New features will continue to use the existing extension host plus webview architecture unless explicitly approved otherwise.
 
 ## Open Questions
+- Should `0.0.37` stay patch-sized and regression-driven, or reserve room for one low-risk graph-parity improvement after smoke validation?
+- Which large repository, fixture, or synthetic graph should become the repeatable manual benchmark for worker-layout and virtualization validation?
+- Do worker-layout fallbacks need more explicit output-channel diagnostics before publication?
 - Which `0.0.32` graph foundation slice should be implemented first: graph fixtures, model boundary types, refresh intent instrumentation, or a narrow metadata-only patch path?
 - Should `0.0.32` keep Compare Results and Show Log as Activity Bar review surfaces while the primary graph remains in an editor panel?
 - Which graph parity gaps should be prioritized after the current release baseline?
