@@ -3,15 +3,51 @@ import { renderRevisionGraphStyles } from './revisionGraph/webview/styles';
 import { createNonce } from './revisionGraph/webview/shared';
 
 type ToolbarIconName =
+  | 'arrow-down'
+  | 'arrow-up'
   | 'cloud-download'
+  | 'close'
+  | 'minus'
+  | 'plus'
   | 'refresh'
   | 'repo-pull'
   | 'repo-push'
+  | 'reset'
   | 'sync'
   | 'target';
 
 function renderToolbarIcon(iconName: ToolbarIconName): string {
   switch (iconName) {
+    case 'arrow-up':
+      return `<svg class="toolbar-icon" data-icon="arrow-up" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 13V3"></path>
+          <path d="M4.4 6.6 8 3l3.6 3.6"></path>
+        </svg>`;
+    case 'arrow-down':
+      return `<svg class="toolbar-icon" data-icon="arrow-down" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 3v10"></path>
+          <path d="M4.4 9.4 8 13l3.6-3.6"></path>
+        </svg>`;
+    case 'close':
+      return `<svg class="toolbar-icon" data-icon="close" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M4.4 4.4 11.6 11.6"></path>
+          <path d="M11.6 4.4 4.4 11.6"></path>
+        </svg>`;
+    case 'minus':
+      return `<svg class="toolbar-icon" data-icon="minus" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M4 8h8"></path>
+        </svg>`;
+    case 'plus':
+      return `<svg class="toolbar-icon" data-icon="plus" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 4v8"></path>
+          <path d="M4 8h8"></path>
+        </svg>`;
+    case 'reset':
+      return `<svg class="toolbar-icon" data-icon="reset" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="4.8"></circle>
+          <path d="M8 5.4v3.1"></path>
+          <path d="M8 10.8h.01"></path>
+        </svg>`;
     case 'target':
       return `<svg class="toolbar-icon" data-icon="target" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <circle cx="8" cy="8" r="5.3"></circle>
@@ -117,7 +153,7 @@ export function renderRevisionGraphShellHtml(): string {
         </label>
       </div>
     </div>
-    <div class="search-controls" aria-label="Search the loaded revision graph">
+    <div class="search-controls toolbar-action-slot" aria-label="Search the loaded revision graph">
       <label class="search-field" for="searchInput">
         <span class="control-caption">Find</span>
         <input
@@ -138,21 +174,21 @@ export function renderRevisionGraphShellHtml(): string {
         type="button"
         title="Previous Search Result (Shift+Enter)"
         aria-label="Previous Search Result"
-      >&uarr;</button>
+      >${renderToolbarIcon('arrow-up')}</button>
       <button
         id="searchNextButton"
         class="toolbar-button icon-only"
         type="button"
         title="Next Search Result (Enter)"
         aria-label="Next Search Result"
-      >&darr;</button>
+      >${renderToolbarIcon('arrow-down')}</button>
       <button
         id="searchClearButton"
         class="toolbar-button icon-only"
         type="button"
         title="Clear Search"
         aria-label="Clear Search"
-      >&times;</button>
+      >${renderToolbarIcon('close')}</button>
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <div class="toolbar-action-slot" aria-label="Repository actions">
@@ -210,27 +246,29 @@ export function renderRevisionGraphShellHtml(): string {
         <span class="button-icon">!</span>
         <span>Abort Merge</span>
       </button>
-      <button
-        id="zoomOutButton"
-        class="toolbar-button icon-only"
-        type="button"
-        title="Zoom Out (Alt -)"
-        aria-label="Zoom Out"
-      >-</button>
-      <button
-        id="zoomResetButton"
-        class="toolbar-button icon-only"
-        type="button"
-        title="Reset Zoom (Alt 0)"
-        aria-label="Reset Zoom"
-      >0</button>
-      <button
-        id="zoomInButton"
-        class="toolbar-button icon-only"
-        type="button"
-        title="Zoom In (Alt +)"
-        aria-label="Zoom In"
-      >+</button>
+      <div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">
+        <button
+          id="zoomOutButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Zoom Out (Alt -)"
+          aria-label="Zoom Out"
+        >${renderToolbarIcon('minus')}</button>
+        <button
+          id="zoomResetButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Reset Zoom (Alt 0)"
+          aria-label="Reset Zoom"
+        >${renderToolbarIcon('reset')}</button>
+        <button
+          id="zoomInButton"
+          class="toolbar-button icon-only"
+          type="button"
+          title="Zoom In (Alt +)"
+          aria-label="Zoom In"
+        >${renderToolbarIcon('plus')}</button>
+      </div>
     </div>
   </div>
   <div

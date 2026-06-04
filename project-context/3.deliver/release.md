@@ -6,26 +6,36 @@ Current package baseline: `0.0.36`.
 
 Target release: `0.0.37`.
 
-Status: Define phase opened on 2026-06-04. Maintainer review has set the cycle direction toward small visual and functional improvements selected item by item, while preserving post-`0.0.36` regression control. No implementation changes, version bump, VSIX packaging, or Marketplace publication have been performed for `0.0.37`.
+Status: Build phase opened on 2026-06-04 with the first maintainer-selected visual improvement implemented. Version bump, VSIX packaging, and Marketplace publication have not been performed for `0.0.37`.
 
 Planning and build references:
 
 - `project-context/docs/release-0.0.37-prioritization.md`
+- `project-context/2.build/features/0.0.37-toolbar-visual-harmonization.md`
+- `project-context/2.build/features/0.0.37-search-toolbar-icons.md`
+- `project-context/2.build/features/0.0.37-zoom-toolbar-icons.md`
 
 Candidate direction:
 
 - Treat `0.0.37` as a post-`0.0.36` product-polish and regression-control cycle.
 - Implement small visual and functional improvements from maintainer review as individually scoped feature slices.
+- Harmonize the revision graph toolbar by giving search and main graph zoom controls the same grouped slot visual treatment as repository actions.
+- Replace search navigation and clear glyphs with SVG toolbar icons aligned to the repository-action controls.
+- Replace main graph zoom glyphs with SVG toolbar icons aligned to the repository-action and search controls.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
 - Add focused regression coverage for any confirmed issue found during `0.0.36` smoke validation.
 - Keep the Source Control-launched singleton editor graph and on-demand Compare Results/Show Log review surfaces unchanged.
 
+Automated verification completed:
+
+- `npm run build` passed for the toolbar visual harmonization slice.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/revisionGraphWebview.test.js` passed for focused webview coverage.
+- `npm test` passed with 306 tests for the toolbar visual harmonization, search toolbar icon, and zoom toolbar icon slices. This includes `npm run build` through the test script.
+
 Automated verification pending:
 
-- `npm run build`
-- `npm test`
 - `git diff --check`
 
 Manual validation pending:

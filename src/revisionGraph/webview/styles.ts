@@ -572,9 +572,10 @@ export function renderRevisionGraphStyles(): string {
     .view-controls .search-controls {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 2px;
       flex: 1 1 360px;
       min-width: min(100%, 320px);
+      max-width: 560px;
     }
     .view-controls .search-field {
       display: inline-flex;
@@ -590,8 +591,20 @@ export function renderRevisionGraphStyles(): string {
       height: 32px;
       padding: 0 10px;
       border-radius: 0;
+      border-color: transparent;
+      background: transparent;
       font-size: 12px;
       line-height: 1;
+    }
+    .view-controls .search-input:not(:disabled):hover {
+      border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      box-shadow: none;
+    }
+    .view-controls .search-input:focus-visible {
+      outline-offset: -2px;
+      border-color: color-mix(in srgb, var(--accent) 44%, transparent);
+      background: color-mix(in srgb, var(--panel) 62%, transparent);
     }
     .view-controls .search-result-badge {
       display: inline-flex;
@@ -600,9 +613,9 @@ export function renderRevisionGraphStyles(): string {
       min-width: 68px;
       height: 32px;
       padding: 0 10px;
-      border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+      border: 1px solid transparent;
       border-radius: 0;
-      background: color-mix(in srgb, var(--panel-strong) 76%, transparent);
+      background: transparent;
       color: var(--muted);
       font-size: 11px;
       font-weight: 700;
@@ -660,6 +673,9 @@ export function renderRevisionGraphStyles(): string {
       border-color: color-mix(in srgb, var(--accent) 26%, transparent);
       background: color-mix(in srgb, var(--accent) 12%, transparent);
       box-shadow: none;
+    }
+    .view-controls .zoom-action-slot {
+      flex: 0 0 auto;
     }
     .view-controls .toolbar-button.destructive:not([hidden]) {
       border-color: var(--merge-conflict-border);

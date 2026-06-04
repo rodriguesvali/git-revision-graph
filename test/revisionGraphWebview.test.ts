@@ -22,11 +22,15 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
   assert.doesNotMatch(html, /Show Current Branch Descendants/);
   assert.match(html, /id="searchInput"/);
+  assert.match(html, /<div class="search-controls toolbar-action-slot" aria-label="Search the loaded revision graph">/);
   assert.match(html, /Find in graph\.\.\./);
   assert.match(html, /id="searchResultBadge"/);
   assert.match(html, /id="searchPrevButton"/);
   assert.match(html, /id="searchNextButton"/);
   assert.match(html, /id="searchClearButton"/);
+  assert.match(html, /id="searchPrevButton"[\s\S]*?data-icon="arrow-up"/);
+  assert.match(html, /id="searchNextButton"[\s\S]*?data-icon="arrow-down"/);
+  assert.match(html, /id="searchClearButton"[\s\S]*?data-icon="close"/);
   assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.match(html, /id="reloadButton"/);
@@ -50,6 +54,10 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="zoomOutButton"/);
   assert.match(html, /id="zoomResetButton"/);
   assert.match(html, /id="zoomInButton"/);
+  assert.match(html, /<div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">[\s\S]*?id="zoomOutButton"[\s\S]*?id="zoomResetButton"[\s\S]*?id="zoomInButton"/);
+  assert.match(html, /id="zoomOutButton"[\s\S]*?data-icon="minus"/);
+  assert.match(html, /id="zoomResetButton"[\s\S]*?data-icon="reset"/);
+  assert.match(html, /id="zoomInButton"[\s\S]*?data-icon="plus"/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
   assert.match(html, /id="nodeLayer"/);
