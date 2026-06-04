@@ -15,6 +15,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.37-search-toolbar-icons.md`
 - `project-context/2.build/features/0.0.37-zoom-toolbar-icons.md`
 - `project-context/2.build/features/0.0.37-central-review-panels.md`
+- `project-context/2.build/features/0.0.37-merge-node-and-top-edge-polish.md`
 
 Candidate direction:
 
@@ -24,6 +25,7 @@ Candidate direction:
 - Replace search navigation and clear glyphs with SVG toolbar icons aligned to the repository-action controls.
 - Replace main graph zoom glyphs with SVG toolbar icons aligned to the repository-action and search controls.
 - Move Compare Results and Show Log from left-side Activity Bar review views into on-demand editor panels.
+- Distinguish merge commits from normal commits in the Show Log compact graph, use solid simple commit markers, and make the top visible Show Log commit read as a graph endpoint.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
@@ -37,10 +39,19 @@ Automated verification completed:
 - `npm test` passed with 306 tests for the toolbar visual harmonization, search toolbar icon, and zoom toolbar icon slices. This includes `npm run build` through the test script.
 - `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/packageManifest.test.js out-test/test/viewLayout.test.js out-test/test/revisionGraphWebview.test.js out-test/test/showLogWebview.test.js out-test/test/compareResultsWebview.test.js out-test/test/showLogCommitCompare.test.js` passed for the central review panels slice.
 - `npm test` passed with 301 tests after moving Compare Results and Show Log to editor panels and removing obsolete side-view layout tests. This includes `npm run build` through the test script.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/showLogShared.test.js out-test/test/showLogWebview.test.js out-test/test/showLogLanes.test.js` passed for the Show Log compact graph merge marker and top-lane endpoint correction.
+- `npm test` passed with 302 tests after the Show Log compact graph correction. This includes `npm run build` through the test script.
+- `git diff --check` passed after the Show Log compact graph correction.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/showLogShared.test.js out-test/test/showLogWebview.test.js out-test/test/showLogLanes.test.js` passed after solid simple commit markers.
+- `npm test` passed with 302 tests after solid simple commit markers. This includes `npm run build` through the test script.
+- `git diff --check` passed after solid simple commit markers.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/showLogShared.test.js out-test/test/showLogWebview.test.js out-test/test/showLogLanes.test.js` passed after reverting all main Revision Graph changes.
+- `npm test` passed with 301 tests after reverting all main Revision Graph changes. This includes `npm run build` through the test script.
+- `git diff --check` passed after reverting all main Revision Graph changes.
 
 Automated verification pending:
 
-- `git diff --check`
+- None for the completed `0.0.37` slices so far.
 
 Manual validation pending:
 

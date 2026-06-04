@@ -9,11 +9,13 @@ All notable changes to this project will be documented in this file.
 - Moved `Compare Results` and `Show Log` from left-side Activity Bar review views into on-demand editor panels, matching the central placement of the main revision graph.
 - Harmonized the revision graph toolbar so search, repository actions, and main zoom controls use consistent grouped toolbar styling.
 - Replaced search navigation, clear, and main zoom text glyphs with consistent SVG toolbar icons.
+- Distinguished merge commits in the Show Log compact graph with a larger double-ring marker, made simple commit markers solid, and stopped the first visible lane at the top commit.
 
 ### Quality
 
 - Updated manifest coverage to assert that Compare Results and Show Log are no longer contributed as Activity Bar webviews.
 - Added webview shell coverage for the new toolbar grouping and icons.
+- Added Show Log state and webview coverage for merge-commit metadata, merge markers, and top-row lane endpoint rendering.
 
 ## 0.0.36
 

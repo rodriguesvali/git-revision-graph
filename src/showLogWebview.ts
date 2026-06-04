@@ -359,9 +359,19 @@ export function renderShowLogWebviewHtml(): string {
       fill: var(--vscode-sideBar-background);
       stroke-width: 1.35;
     }
+    .graph-node-solid {
+      stroke-width: 1.2;
+    }
     .graph-node-core {
       fill: var(--vscode-sideBar-background);
       opacity: 0.92;
+    }
+    .graph-node-merge-ring {
+      fill: var(--vscode-sideBar-background);
+      stroke-width: 2;
+    }
+    .graph-node-merge-core {
+      opacity: 0.96;
     }
     .subject-cell,
     .author-cell,
@@ -787,20 +797,20 @@ export function renderShowLogWebviewHtml(): string {
     function renderCommitList(commits) {
       return ''
         + '<div class="commit-list">'
-        + commits.map((commit) => ''
-          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '">'
-          + renderCommit(commit)
+        + commits.map((commit, index) => ''
+          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '" data-merge="' + (commit.isMerge ? 'true' : 'false') + '">'
+          + renderCommit(commit, index)
           + '</div>'
         ).join('')
         + '</div>';
     }
 
-    function renderCommit(commit) {
+    function renderCommit(commit, index) {
       return ''
         + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '">'
         + '  <div class="graph-cell">'
         + '    <div class="graph-stack">'
-        + '      <div class="graph-main">' + renderTopology(commit.topology) + '</div>'
+        + '      <div class="graph-main">' + renderTopology(commit.topology, commit.isMerge, index === 0) + '</div>'
         + (commit.expanded
           ? '      <div class="graph-continuation">' + renderContinuationRows(commit) + '</div>'
           : '')
@@ -832,7 +842,7 @@ export function renderShowLogWebviewHtml(): string {
       return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '" title="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.label) + '</span>';
     }
 
-    function renderTopology(topology) {
+    function renderTopology(topology, isMerge, isFirstVisible) {
       const laneSpacing = GRAPH_LANE_SPACING;
       const width = getGraphContentWidth(topology.laneCount, laneSpacing);
       const height = 34;
@@ -847,7 +857,8 @@ export function renderShowLogWebviewHtml(): string {
         }
         const color = getLaneColor(topology.colorByLane[lane]);
         const x = laneX(lane, laneSpacing);
-        lineParts.push('<path class="graph-line" d="M ' + x + ' ' + topY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
+        const laneTopY = isFirstVisible && lane === topology.nodeLane ? centerY : topY;
+        lineParts.push('<path class="graph-line" d="M ' + x + ' ' + laneTopY + ' L ' + x + ' ' + bottomY + '" stroke="' + color + '" />');
       }
 
       for (const lane of topology.secondaryParentLanes) {
@@ -865,8 +876,13 @@ export function renderShowLogWebviewHtml(): string {
 
       const nodeColor = getLaneColor(topology.colorByLane[topology.nodeLane]);
       const nodeX = laneX(topology.nodeLane, laneSpacing);
-      lineParts.push('<circle class="graph-node-ring" cx="' + nodeX + '" cy="' + centerY + '" r="3.65" stroke="' + nodeColor + '" />');
-      lineParts.push('<circle class="graph-node-core" cx="' + nodeX + '" cy="' + centerY + '" r="1.45" fill="' + nodeColor + '" />');
+      if (isMerge) {
+        lineParts.push('<circle class="graph-node-merge-ring" cx="' + nodeX + '" cy="' + centerY + '" r="5.1" stroke="' + nodeColor + '" />');
+        lineParts.push('<circle class="graph-node-ring" cx="' + nodeX + '" cy="' + centerY + '" r="3.05" stroke="' + nodeColor + '" />');
+        lineParts.push('<circle class="graph-node-merge-core" cx="' + nodeX + '" cy="' + centerY + '" r="1.85" fill="' + nodeColor + '" />');
+      } else {
+        lineParts.push('<circle class="graph-node-solid" cx="' + nodeX + '" cy="' + centerY + '" r="3.85" fill="' + nodeColor + '" stroke="' + nodeColor + '" />');
+      }
 
       return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
     }

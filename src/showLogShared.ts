@@ -41,6 +41,7 @@ export interface ShowLogWebviewCommitItem {
   readonly subject: string;
   readonly author: string;
   readonly date: string;
+  readonly isMerge: boolean;
   readonly refs: readonly ShowLogWebviewReferenceItem[];
   readonly stats: string | undefined;
   readonly topology: ShowLogLaneRow;
@@ -186,6 +187,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
         subject: entry.subject,
         author: entry.author,
         date: entry.date,
+        isMerge: entry.parentHashes.length > 1,
         refs: entry.references.map((ref) => ({
           name: ref.name,
           label: formatShowLogRef(ref.name, ref.kind),

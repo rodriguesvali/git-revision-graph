@@ -48,7 +48,7 @@ test('builds expanded show log webview commits with inline file changes and lane
         date: '2026-04-18',
         subject: 'Tip commit',
         message: 'Tip commit',
-        parentHashes: ['b'.repeat(40)],
+        parentHashes: ['b'.repeat(40), 'c'.repeat(40)],
         references: [{ name: 'main', kind: 'head' as const }],
         shortStat: { files: 1, insertions: 3, deletions: 1 }
       },
@@ -88,11 +88,13 @@ test('builds expanded show log webview commits with inline file changes and lane
   assert.equal(webviewState.canToggleAllBranches, true);
   assert.equal(webviewState.filterText, '');
   assert.equal(webviewState.commits[0]?.expanded, true);
+  assert.equal(webviewState.commits[0]?.isMerge, true);
+  assert.equal(webviewState.commits[1]?.isMerge, false);
   assert.equal(webviewState.commits[0]?.changes[0]?.path, 'src/demo.ts');
   assert.equal(webviewState.commits[0]?.changes[0]?.status, 'Modified');
   assert.equal(webviewState.commits[0]?.topology.nodeLane, 0);
-  assert.deepEqual(webviewState.commits[0]?.topology.continuingLanes, [0]);
-  assert.deepEqual(webviewState.commits[0]?.topology.secondaryParentLanes, []);
+  assert.deepEqual(webviewState.commits[0]?.topology.continuingLanes, [0, 1]);
+  assert.deepEqual(webviewState.commits[0]?.topology.secondaryParentLanes, [1]);
   assert.equal(webviewState.commits[0]?.topology.colorByLane[0], 0);
   assert.deepEqual(webviewState.commits[0]?.refs, [
     { name: 'main', label: 'HEAD → main', kind: 'head' }

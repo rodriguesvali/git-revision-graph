@@ -37,8 +37,17 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function renderRefBadge\(ref\)/);
   assert.match(html, /data-ref-kind="' \+ escapeHtml\(ref\.kind\)/);
   assert.match(html, /escapeHtml\(ref\.label\)/);
-  assert.match(html, /function renderTopology\(topology\)/);
+  assert.match(html, /function renderTopology\(topology, isMerge, isFirstVisible\)/);
   assert.match(html, /function renderContinuationTopology\(topology\)/);
+  assert.match(html, /data-merge="' \+ \(commit\.isMerge \? 'true' : 'false'\)/);
+  assert.match(html, /renderCommit\(commit, index\)/);
+  assert.match(html, /renderTopology\(commit\.topology, commit\.isMerge, index === 0\)/);
+  assert.match(html, /const laneTopY = isFirstVisible && lane === topology\.nodeLane \? centerY : topY;/);
+  assert.match(html, /\.graph-node-solid/);
+  assert.match(html, /class="graph-node-solid"/);
+  assert.match(html, /\.graph-node-merge-ring/);
+  assert.match(html, /class="graph-node-merge-ring"/);
+  assert.match(html, /class="graph-node-merge-core"/);
   assert.match(html, /\.commit-row:not\(\[data-expanded="true"\]\) \.graph-main \{\s*flex: 1 1 auto;\s*\}/);
   assert.match(html, /const LANE_COLORS = \[/);
   assert.match(html, /const GRAPH_LANE_SPACING = 10;/);
