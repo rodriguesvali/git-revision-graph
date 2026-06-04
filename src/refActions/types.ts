@@ -18,11 +18,25 @@ export interface RefActionTarget extends RefSelection {
   readonly kind: RefActionKind;
 }
 
+export interface RemoteCheckoutOptions {
+  readonly overrideBranchIfExists: boolean;
+}
+
+export interface RemoteCheckoutInput extends RemoteCheckoutOptions {
+  readonly branchName: string;
+}
+
 export interface RefActionUi {
   pickChange(items: readonly ChangeQuickPickItem[], placeHolder: string): Promise<ChangeQuickPickItem | undefined>;
   pickRemoteName(items: readonly string[], placeHolder: string): Promise<string | undefined>;
   promptBranchName(options: { readonly prompt: string; readonly value: string }): Promise<string | undefined>;
   promptTagName(options: { readonly prompt: string; readonly value?: string; readonly existingTagNames?: readonly string[] }): Promise<string | undefined>;
+  promptRemoteBranchCheckout(options: {
+    readonly prompt: string;
+    readonly value: string;
+    readonly startPointRefName: string;
+    readonly upstreamRefName: string | undefined;
+  }): Promise<RemoteCheckoutInput | undefined>;
   pickCurrentBranchPushMode(options: {
     readonly branchName: string;
     readonly upstreamLabel: string;
@@ -67,7 +81,7 @@ export interface RefreshController {
 export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
   resetBranch(repository: Repository, branchName: string, refName: string): Promise<void>;
-  resetCurrentBranchToCommit(repository: Repository, commitHash: string): Promise<void>;
+  resetCurrentBranch(repository: Repository, refName: string): Promise<void>;
   resetWorkspace(repository: Repository, includeUntracked: boolean): Promise<void>;
   getRemoteNames(repository: Repository): Promise<readonly string[]>;
   pushCurrentBranch(repository: Repository, remoteName: string, branchName: string, mode: CurrentBranchPushMode): Promise<void>;

@@ -38,7 +38,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references
-- Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
+- Guided checkout flow for remote branches with an explicit `Override branch if exists` option when the local branch name already exists or is currently checked out
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
 - Create a local tag from a branch, tag, remote branch, or visible unreferenced commit
 - Publish a local branch to a selected Git remote with upstream tracking

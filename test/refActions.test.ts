@@ -41,11 +41,17 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly errorMessages: string[];
   readonly sourceControlOpens: number;
   readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
+  readonly remoteCheckoutInputRequests: Array<{
+    readonly prompt: string;
+    readonly value: string;
+    readonly startPointRefName: string;
+    readonly upstreamRefName: string | undefined;
+  }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
   readonly resetBranches: Array<{ readonly branchName: string; readonly refName: string }>;
-  readonly resetCommits: string[];
+  readonly resetCurrentBranchRefs: string[];
   readonly currentBranchPushes: Array<{ readonly remoteName: string; readonly branchName: string; readonly mode: string }>;
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
@@ -63,11 +69,17 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const warningMessages: string[] = [];
   const errorMessages: string[] = [];
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const remoteCheckoutInputRequests: Array<{
+    readonly prompt: string;
+    readonly value: string;
+    readonly startPointRefName: string;
+    readonly upstreamRefName: string | undefined;
+  }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
   const resetBranches: Array<{ readonly branchName: string; readonly refName: string }> = [];
-  const resetCommits: string[] = [];
+  const resetCurrentBranchRefs: string[] = [];
   const currentBranchPushes: Array<{ readonly remoteName: string; readonly branchName: string; readonly mode: string }> = [];
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
@@ -94,6 +106,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async promptTagName() {
         return 'v1.0.0';
+      },
+      async promptRemoteBranchCheckout(options) {
+        remoteCheckoutInputRequests.push(options);
+        return { branchName: options.value, overrideBranchIfExists: false };
       },
       async pickCurrentBranchPushMode() {
         return 'normal';
@@ -165,8 +181,8 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async resetBranch(_repository, branchName, refName) {
         resetBranches.push({ branchName, refName });
       },
-      async resetCurrentBranchToCommit(_repository, commitHash) {
-        resetCommits.push(commitHash);
+      async resetCurrentBranch(_repository, refName) {
+        resetCurrentBranchRefs.push(refName);
       },
       async resetWorkspace(_repository, includeUntracked) {
         workspaceResets.push({ includeUntracked });
@@ -212,11 +228,12 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       return sourceControlOpens;
     },
     confirmRequests,
+    remoteCheckoutInputRequests,
     diffCalls,
     compareResultsCalls,
     createdTags,
     resetBranches,
-    resetCommits,
+    resetCurrentBranchRefs,
     currentBranchPushes,
     pushedTags,
     deletedRemoteTags,
@@ -591,7 +608,46 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   assert.equal(harness.refreshCalls, 0);
 });
 
-test('createBranchFromResolvedReference overwrites an existing local branch for remote refs when confirmed', async () => {
+test('createBranchFromResolvedReference overwrites an existing local branch for remote refs when override is selected', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('develop'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'feature/demo' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
+    ]
+  });
+  const harness = createServices({
+    async promptRemoteBranchCheckout(options) {
+      assert.deepEqual(options, {
+        prompt: 'Create a New Local Branch Tracking origin/feature/demo',
+        value: 'feature/demo',
+        startPointRefName: 'origin/feature/demo',
+        upstreamRefName: 'origin/feature/demo'
+      });
+      return { branchName: options.value, overrideBranchIfExists: true };
+    }
+  });
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.resetBranches, [
+    { branchName: 'feature/demo', refName: 'origin/feature/demo' }
+  ]);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, ['feature/demo']);
+  assert.deepEqual(repository.calls.setBranchUpstream, [
+    { name: 'feature/demo', upstream: 'origin/feature/demo' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'Branch feature/demo was overwritten, checked out, and set to track origin/feature/demo.');
+});
+
+test('createBranchFromResolvedReference checks out an existing local branch when override is not selected', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('develop'),
@@ -608,24 +664,14 @@ test('createBranchFromResolvedReference overwrites an existing local branch for 
     harness.services
   );
 
-  assert.deepEqual(harness.confirmRequests, [
-    {
-      message: 'Overwrite local branch feature/demo with origin/feature/demo?\n\nThis resets feature/demo to origin/feature/demo before checking it out. Local commits on feature/demo that are not reachable from another ref may be lost.',
-      confirmLabel: 'Overwrite Branch: feature/demo'
-    }
-  ]);
-  assert.deepEqual(harness.resetBranches, [
-    { branchName: 'feature/demo', refName: 'origin/feature/demo' }
-  ]);
+  assert.deepEqual(harness.resetBranches, []);
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.checkout, ['feature/demo']);
-  assert.deepEqual(repository.calls.setBranchUpstream, [
-    { name: 'feature/demo', upstream: 'origin/feature/demo' }
-  ]);
-  assert.equal(harness.infoMessages[0], 'Branch feature/demo was overwritten, checked out, and set to track origin/feature/demo.');
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.deepEqual(harness.infoMessages, ['Branch feature/demo was checked out without overwriting it.']);
 });
 
-test('createBranchFromResolvedReference cancels remote branch overwrite when not confirmed', async () => {
+test('createBranchFromResolvedReference cancels existing branch checkout options without mutation', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('develop'),
@@ -635,8 +681,8 @@ test('createBranchFromResolvedReference cancels remote branch overwrite when not
     ]
   });
   const harness = createServices({
-    async confirm() {
-      return false;
+    async promptRemoteBranchCheckout() {
+      return undefined;
     }
   });
 
@@ -653,7 +699,7 @@ test('createBranchFromResolvedReference cancels remote branch overwrite when not
   assert.deepEqual(harness.infoMessages, []);
 });
 
-test('createBranchFromResolvedReference refuses to overwrite the current branch from a remote ref', async () => {
+test('checkoutResolvedReference overwrites the current local branch from a remote ref when override is selected', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('feature/demo'),
@@ -662,9 +708,19 @@ test('createBranchFromResolvedReference refuses to overwrite the current branch 
       createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
     ]
   });
-  const harness = createServices();
+  const harness = createServices({
+    async promptRemoteBranchCheckout(options) {
+      assert.deepEqual(options, {
+        prompt: 'Create a New Local Branch Tracking origin/feature/demo',
+        value: 'feature/demo',
+        startPointRefName: 'origin/feature/demo',
+        upstreamRefName: 'origin/feature/demo'
+      });
+      return { branchName: options.value, overrideBranchIfExists: true };
+    }
+  });
 
-  await createBranchFromResolvedReference(
+  await checkoutResolvedReference(
     repository,
     { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
     harness.services
@@ -672,13 +728,42 @@ test('createBranchFromResolvedReference refuses to overwrite the current branch 
 
   assert.deepEqual(harness.confirmRequests, []);
   assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(harness.resetCurrentBranchRefs, ['origin/feature/demo']);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.setBranchUpstream, [
+    { name: 'feature/demo', upstream: 'origin/feature/demo' }
+  ]);
+  assert.deepEqual(harness.warningMessages, []);
+  assert.equal(
+    harness.infoMessages[0],
+    'Current branch feature/demo was overwritten and set to track origin/feature/demo.'
+  );
+});
+
+test('checkoutResolvedReference leaves current local branch untouched when override is not selected', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main' })
+    ]
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'origin/main', label: 'origin/main', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(harness.resetCurrentBranchRefs, []);
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.checkout, []);
   assert.deepEqual(repository.calls.setBranchUpstream, []);
-  assert.equal(
-    harness.warningMessages[0],
-    'The current branch feature/demo cannot be overwritten from origin/feature/demo. Check out another branch first.'
-  );
+  assert.deepEqual(harness.infoMessages, ['main is already checked out. Branch was not overwritten.']);
 });
 
 test('createBranchFromResolvedReference cancels a prepared refresh when branch creation fails', async () => {
@@ -1743,7 +1828,7 @@ test('resetCurrentBranchToCommit resets a clean current branch and refreshes the
   const didReset = await resetCurrentBranchToCommit(repository, 'abc123', 'abc123', harness.services);
 
   assert.equal(didReset, true);
-  assert.deepEqual(harness.resetCommits, ['abc123']);
+  assert.deepEqual(harness.resetCurrentBranchRefs, ['abc123']);
   assert.deepEqual(harness.confirmRequests, [
     {
       message: 'Reset local branch main to abc123?\n\nThis runs git reset --hard abc123. Local commits after abc123 may be lost if they are not reachable from another ref.',
@@ -1769,7 +1854,7 @@ test('resetCurrentBranchToCommit requires a clean workspace', async () => {
   const didReset = await resetCurrentBranchToCommit(repository, 'abc123', 'abc123', harness.services);
 
   assert.equal(didReset, false);
-  assert.deepEqual(harness.resetCommits, []);
+  assert.deepEqual(harness.resetCurrentBranchRefs, []);
   assert.deepEqual(harness.confirmRequests, []);
   assert.equal(harness.warningMessages[0], 'The workspace must be clean before resetting main to abc123. Review, stash, or commit the current changes first.');
 });

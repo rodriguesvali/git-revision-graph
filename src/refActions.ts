@@ -45,6 +45,7 @@ export type {
   RefActionUi,
   RefActionServices,
   RefActionTarget,
+  RemoteCheckoutInput,
   RefSelection
 } from './refActions/types';
 export type { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
@@ -130,22 +131,26 @@ export async function createBranchFromResolvedReference(
     }
 
     const branchCreation = await getBranchCreationTarget(repository, target);
-    const branchName = await services.ui.promptBranchName({
-      prompt: branchCreation.prompt,
-      value: branchCreation.suggestedLocalName
-    });
+    const branchInput = target.kind === 'remote'
+      ? await services.ui.promptRemoteBranchCheckout({
+        prompt: branchCreation.prompt,
+        value: branchCreation.suggestedLocalName,
+        startPointRefName: branchCreation.startPointRefName,
+        upstreamRefName: branchCreation.upstreamRefName
+      })
+      : await promptNewBranchName(branchCreation, services);
 
-    if (!branchName) {
+    if (!branchInput) {
       return;
     }
 
-    const validationMessage = validateGitBranchName(branchName);
+    const validationMessage = validateGitBranchName(branchInput.branchName);
     if (validationMessage) {
       await services.ui.showErrorMessage(`Could not create the branch. ${validationMessage}`);
       return;
     }
 
-    const normalizedBranchName = branchName.trim();
+    const normalizedBranchName = branchInput.branchName.trim();
     if (normalizedBranchName.length === 0) {
       return;
     }
@@ -153,25 +158,38 @@ export async function createBranchFromResolvedReference(
     const existingLocalBranch = target.kind === 'remote'
       ? await getLocalBranch(repository, normalizedBranchName)
       : undefined;
-    const didOverwrite = !!existingLocalBranch;
+    const didOverwriteCurrentBranch = !!existingLocalBranch && repository.state.HEAD?.name === normalizedBranchName;
     if (existingLocalBranch) {
-      if (repository.state.HEAD?.name === normalizedBranchName) {
-        services.ui.showWarningMessage(
-          `The current branch ${normalizedBranchName} cannot be overwritten from ${branchCreation.startPointRefName}. Check out another branch first.`
-        );
+      if (!branchInput.overrideBranchIfExists) {
+        if (didOverwriteCurrentBranch) {
+          services.ui.showInformationMessage(`${normalizedBranchName} is already checked out. Branch was not overwritten.`);
+          return;
+        }
+
+        await repository.checkout(normalizedBranchName);
+        services.ui.showInformationMessage(`Branch ${normalizedBranchName} was checked out without overwriting it.`);
         return;
       }
 
-      const confirmed = await services.ui.confirm({
-        message: buildOverwriteBranchConfirmationMessage(normalizedBranchName, branchCreation.startPointRefName),
-        confirmLabel: `Overwrite Branch: ${normalizedBranchName}`
-      });
-      if (!confirmed) {
-        return;
+      if (didOverwriteCurrentBranch) {
+        await services.referenceManager.resetCurrentBranch(repository, branchCreation.startPointRefName);
+      } else {
+        await services.referenceManager.resetBranch(repository, normalizedBranchName, branchCreation.startPointRefName);
+        await repository.checkout(normalizedBranchName);
       }
 
-      await services.referenceManager.resetBranch(repository, normalizedBranchName, branchCreation.startPointRefName);
-      await repository.checkout(normalizedBranchName);
+      if (branchCreation.upstreamRefName) {
+        await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
+      }
+
+      services.ui.showInformationMessage(
+        didOverwriteCurrentBranch && branchCreation.upstreamRefName
+          ? `Current branch ${normalizedBranchName} was overwritten and set to track ${branchCreation.upstreamRefName}.`
+          : branchCreation.upstreamRefName
+            ? `Branch ${normalizedBranchName} was overwritten, checked out, and set to track ${branchCreation.upstreamRefName}.`
+            : `Branch ${normalizedBranchName} was overwritten and checked out from ${target.label}.`
+      );
+      return;
     } else {
       await repository.createBranch(normalizedBranchName, true, branchCreation.startPointRefName);
     }
@@ -183,11 +201,9 @@ export async function createBranchFromResolvedReference(
     }
 
     services.ui.showInformationMessage(
-      didOverwrite && branchCreation.upstreamRefName
-        ? `Branch ${normalizedBranchName} was overwritten, checked out, and set to track ${branchCreation.upstreamRefName}.`
-        : branchCreation.upstreamRefName
-          ? `Branch ${normalizedBranchName} was created and checked out from ${branchCreation.upstreamRefName}.`
-          : `Branch ${normalizedBranchName} was created and checked out from ${target.label}.`
+      branchCreation.upstreamRefName
+        ? `Branch ${normalizedBranchName} was created and checked out from ${branchCreation.upstreamRefName}.`
+        : `Branch ${normalizedBranchName} was created and checked out from ${target.label}.`
     );
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
@@ -240,16 +256,24 @@ async function getLocalTagNames(repository: Repository): Promise<readonly string
     .map((ref) => ref.name as string);
 }
 
+async function promptNewBranchName(
+  branchCreation: BranchCreationTarget,
+  services: RefActionServices
+): Promise<{ readonly branchName: string; readonly overrideBranchIfExists: false } | undefined> {
+  const branchName = await services.ui.promptBranchName({
+    prompt: branchCreation.prompt,
+    value: branchCreation.suggestedLocalName
+  });
+
+  return branchName ? { branchName, overrideBranchIfExists: false } : undefined;
+}
+
 async function getLocalBranch(repository: Repository, branchName: string): Promise<unknown | undefined> {
   try {
     return await repository.getBranch(branchName);
   } catch {
     return undefined;
   }
-}
-
-function buildOverwriteBranchConfirmationMessage(branchName: string, startPointRefName: string): string {
-  return `Overwrite local branch ${branchName} with ${startPointRefName}?\n\nThis resets ${branchName} to ${startPointRefName} before checking it out. Local commits on ${branchName} that are not reachable from another ref may be lost.`;
 }
 
 export async function pushTagResolvedReference(
@@ -626,7 +650,7 @@ export async function resetCurrentBranchToCommit(
       return false;
     }
 
-    await services.referenceManager.resetCurrentBranchToCommit(repository, commitHash);
+    await services.referenceManager.resetCurrentBranch(repository, commitHash);
     services.ui.showInformationMessage(`${currentBranch} was reset to ${commitLabel}.`);
     services.refreshController.refresh(
       createActionRefreshRequest(refreshIntent, repository.rootUri.toString())

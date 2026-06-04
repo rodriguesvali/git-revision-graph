@@ -46,6 +46,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       async promptTagName() {
         return 'v1.0.0';
       },
+      async promptRemoteBranchCheckout(options) {
+        return { branchName: options.value, overrideBranchIfExists: false };
+      },
       async pickCurrentBranchPushMode() {
         return 'normal';
       },
@@ -102,7 +105,7 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
     referenceManager: {
       async createTag() {},
       async resetBranch() {},
-      async resetCurrentBranchToCommit() {},
+      async resetCurrentBranch() {},
       async resetWorkspace() {},
       async getRemoteNames() {
         return ['origin'];

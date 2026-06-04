@@ -6,7 +6,7 @@ import { assertCompareResultRestorePlanInsideRepository, buildCompareResultResto
 import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
-import { CurrentBranchPushMode, PreparedRefreshHandle, RefActionServices } from './refActions';
+import { CurrentBranchPushMode, PreparedRefreshHandle, RefActionServices, RemoteCheckoutInput } from './refActions';
 import {
   buildRemoteBranchDeleteRefspec,
   buildRemoteTagDeleteRefspec,
@@ -54,6 +54,61 @@ export function createWorkbenchRefActionServices(
           prompt: options.prompt,
           value: options.value,
           validateInput: (value) => validateGitTagName(value, options.existingTagNames)
+        });
+      },
+      async promptRemoteBranchCheckout(options) {
+        type RemoteCheckoutQuickPickItem = vscode.QuickPickItem & {
+          readonly option: 'overrideBranchIfExists';
+        };
+        const overrideItem: RemoteCheckoutQuickPickItem = {
+          label: 'Override branch if exists',
+          description: 'reset local branch',
+          detail: `Reset the local branch to ${options.startPointRefName}. Local commits that are not reachable from another ref may be lost.`,
+          option: 'overrideBranchIfExists',
+          alwaysShow: true
+        };
+        const quickPick = vscode.window.createQuickPick<RemoteCheckoutQuickPickItem>();
+        quickPick.title = options.prompt;
+        quickPick.placeholder = 'Enter a local branch name';
+        quickPick.value = options.value;
+        quickPick.canSelectMany = true;
+        quickPick.matchOnDescription = true;
+        quickPick.matchOnDetail = true;
+        quickPick.items = [overrideItem];
+
+        return await new Promise<RemoteCheckoutInput | undefined>((resolve) => {
+          let isDone = false;
+          const finish = (value: RemoteCheckoutInput | undefined) => {
+            if (isDone) {
+              return;
+            }
+
+            isDone = true;
+            quickPick.hide();
+            quickPick.dispose();
+            resolve(value);
+          };
+
+          quickPick.onDidChangeValue(() => {
+            quickPick.placeholder = 'Enter a local branch name';
+          });
+          quickPick.onDidAccept(() => {
+            const branchName = quickPick.value;
+            const validationMessage = validateGitBranchName(branchName);
+            if (validationMessage) {
+              quickPick.placeholder = validationMessage;
+              return;
+            }
+
+            finish({
+              branchName: branchName.trim(),
+              overrideBranchIfExists: quickPick.selectedItems.some((item) => item.option === 'overrideBranchIfExists')
+            });
+          });
+          quickPick.onDidHide(() => {
+            finish(undefined);
+          });
+          quickPick.show();
         });
       },
       async pickCurrentBranchPushMode(options) {
@@ -131,8 +186,8 @@ export function createWorkbenchRefActionServices(
       async resetBranch(repository, branchName, refName) {
         await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName]);
       },
-      async resetCurrentBranchToCommit(repository, commitHash) {
-        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', commitHash]);
+      async resetCurrentBranch(repository, refName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', refName]);
       },
       async resetWorkspace(repository, includeUntracked) {
         await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD']);
