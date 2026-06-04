@@ -31,7 +31,6 @@ export type RevisionGraphMessage =
   }
   | { readonly type: 'refresh' }
   | { readonly type: 'fetch-current-repository' }
-  | { readonly type: 'open-source-control' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'abort-merge' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }

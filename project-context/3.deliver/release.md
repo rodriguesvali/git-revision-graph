@@ -18,6 +18,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.37-merge-node-and-top-edge-polish.md`
 - `project-context/2.build/features/0.0.37-show-log-hover-tooltip.md`
 - `project-context/2.build/features/0.0.37-compare-results-review-ux.md`
+- `project-context/2.build/features/0.0.37-remove-workspace-led.md`
 
 Candidate direction:
 
@@ -30,6 +31,7 @@ Candidate direction:
 - Distinguish merge commits from normal commits in the Show Log compact graph, use solid simple commit markers, and make the top visible Show Log commit read as a graph endpoint.
 - Add a Source Control-style hover tooltip for Show Log commit rows using loaded commit metadata, with copy-hash and GitHub commit actions.
 - Redesign Compare Results as a compact review queue with explicit comparison context, status filters, rename paths, and visible diff actions.
+- Remove the revision graph toolbar workspace-status LED and its redundant Source Control shortcut while preserving dirty-workspace guards.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
@@ -62,6 +64,8 @@ Automated verification completed:
 - `npm test` passed with 305 tests after redesigning Compare Results as a compact review queue. This includes `npm run build` through the test script.
 - `git diff --check` passed after the Compare Results review UX slice.
 - Focused Compare Results verification, `npm test` with 305 tests, and `git diff --check` passed after removing the visible `Open Diff` row button and centering the `...` actions menu.
+- `npm run clean:test && npm run build && npx tsc -p ./tsconfig.test.json && node --test out-test/test/revisionGraphWebview.test.js out-test/test/webviewMessageValidation.test.js out-test/test/revisionGraphState.test.js` passed with 50 tests after removing the workspace-status LED and its graph webview Source Control shortcut.
+- `npm test` passed with 305 tests and `git diff --check` passed after removing the workspace-status LED and its graph webview Source Control shortcut.
 
 Automated verification pending:
 

@@ -25,7 +25,6 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'webview-ready':
     case 'refresh':
     case 'fetch-current-repository':
-    case 'open-source-control':
     case 'choose-repository':
     case 'abort-merge':
     case 'sync-current-head':
@@ -131,7 +130,6 @@ export function isRevisionGraphMessageAllowedForState(
     case 'load-trace':
     case 'refresh':
     case 'fetch-current-repository':
-    case 'open-source-control':
     case 'choose-repository':
     case 'set-projection-options':
     case 'sync-current-head':
@@ -202,7 +200,6 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'webview-ready':
     case 'load-trace':
     case 'refresh':
-    case 'open-source-control':
     case 'choose-repository':
     case 'set-projection-options':
       return false;

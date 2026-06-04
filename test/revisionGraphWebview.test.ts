@@ -45,10 +45,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="fetchAllButton"[\s\S]*?data-icon="cloud-download"/);
   assert.match(html, /id="reloadButton"[\s\S]*?data-icon="refresh"/);
   assert.match(html, /\.view-controls \.toolbar-icon \{\s*position: static;\s*inset: auto;/);
-  assert.match(html, /class="workspace-led clean"/);
-  assert.match(html, /<button\s+class="workspace-led clean"\s+id="workspaceLed"[\s\S]*?<label for="scopeSelect">/);
+  assert.doesNotMatch(html, /workspace-led/);
+  assert.doesNotMatch(html, /id="workspaceLed"/);
   assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"/);
-  assert.match(html, /id="workspaceLed"/);
   assert.match(html, /id="abortMergeButton"/);
   assert.match(html, /Abort Merge/);
   assert.match(html, /id="zoomOutButton"/);
@@ -595,10 +594,8 @@ test('renders merge abort controls only for conflicted merge state', () => {
   assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasConflictedMerge;/);
   assert.match(html, /\.view-controls \.toolbar-button\[hidden\]\s*\{\s*display: none;/);
   assert.match(html, /--merge-conflict-border: color-mix\(in srgb, var\(--workspace-dirty\) 72%, var\(--border\)\);/);
-  assert.match(html, /\.workspace-led\.dirty\s*\{[^}]*border-color: var\(--merge-conflict-border\);[^}]*background: var\(--merge-conflict-border\);/s);
-  assert.match(html, /\.workspace-led\.dirty:hover\s*\{[^}]*border-color: var\(--workspace-dirty\);[^}]*background: var\(--workspace-dirty\);/s);
   assert.match(html, /\.view-controls \.toolbar-button\.destructive:not\(\[hidden\]\)\s*\{[^}]*border-color: var\(--merge-conflict-border\);/s);
-  assert.match(html, /Merge conflicts detected: click to open Source Control\./);
+  assert.doesNotMatch(html, /open-source-control/);
 });
 
 test('does not render a current branch descendants view option', () => {
@@ -708,7 +705,6 @@ function createWebviewRuntime() {
     'pullButton',
     'pushButton',
     'syncButton',
-    'workspaceLed',
     'abortMergeButton',
     'scopeSelect',
     'viewOptions',

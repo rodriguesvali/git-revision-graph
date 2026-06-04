@@ -18,6 +18,7 @@ import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(validateRevisionGraphMessage(undefined), undefined);
   assert.equal(validateRevisionGraphMessage({}), undefined);
+  assert.equal(validateRevisionGraphMessage({ type: 'open-source-control' }), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'checkout', refName: 'main', refKind: 'evil' }), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'set-projection-options', options: { showTags: 'yes' } }), undefined);
   assert.equal(

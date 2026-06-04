@@ -36,7 +36,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const pullButton = document.getElementById('pullButton');
     const pushButton = document.getElementById('pushButton');
     const syncButton = document.getElementById('syncButton');
-    const workspaceLed = document.getElementById('workspaceLed');
     const abortMergeButton = document.getElementById('abortMergeButton');
     const scopeSelect = document.getElementById('scopeSelect');
     const viewOptionsButton = document.getElementById('viewOptionsButton');
@@ -141,13 +140,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (syncButton) {
       syncButton.addEventListener('click', () => {
         postMessageWithLoading({ type: 'sync-current-head' }, 'Synchronizing current branch...', syncButton);
-      });
-    }
-    if (workspaceLed) {
-      workspaceLed.addEventListener('click', () => {
-        if (isWorkspaceDirty) {
-          vscode.postMessage({ type: 'open-source-control' });
-        }
       });
     }
     if (abortMergeButton) {
@@ -945,18 +937,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showStashesToggle) {
         showStashesToggle.checked = !!state.projectionOptions.showStashes;
-      }
-      if (workspaceLed) {
-        const tooltip = state.hasMergeConflicts
-          ? 'Merge conflicts detected: click to open Source Control.'
-          : state.isWorkspaceDirty
-            ? 'Workspace dirty: click to open Source Control Changes.'
-            : 'Workspace clean: no pending changes.';
-        workspaceLed.classList.toggle('dirty', !!state.isWorkspaceDirty);
-        workspaceLed.classList.toggle('clean', !state.isWorkspaceDirty);
-        workspaceLed.disabled = !state.isWorkspaceDirty;
-        workspaceLed.setAttribute('aria-label', tooltip);
-        workspaceLed.title = tooltip;
       }
       if (abortMergeButton) {
         abortMergeButton.hidden = !state.hasConflictedMerge;

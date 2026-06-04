@@ -436,9 +436,6 @@ export class RevisionGraphController implements vscode.Disposable {
       case 'fetch-current-repository':
         await this.runFetchCurrentRepository();
         return;
-      case 'open-source-control':
-        await this.actionServices.ui.showSourceControl();
-        return;
       case 'abort-merge':
         if (this.currentRepository) {
           await abortCurrentMerge(this.currentRepository, this.actionServices);

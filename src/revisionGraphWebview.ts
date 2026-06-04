@@ -104,14 +104,6 @@ export function renderRevisionGraphShellHtml(): string {
 </head>
 <body class="loading" aria-busy="true">
   <div class="view-controls" aria-label="Revision graph view controls">
-    <button
-      class="workspace-led clean"
-      id="workspaceLed"
-      type="button"
-      disabled
-      aria-label="Workspace clean: no pending changes."
-      title="Workspace clean: no pending changes."
-    ></button>
     <label for="scopeSelect">
       <span class="control-caption">Scope</span>
       <select id="scopeSelect">

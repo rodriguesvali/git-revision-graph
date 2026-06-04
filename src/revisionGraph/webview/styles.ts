@@ -29,7 +29,6 @@ export function renderRevisionGraphStyles(): string {
       --node-stash: #8c8f97;
       --node-mixed: color-mix(in srgb, var(--panel) 98%, white 2%);
       --node-text-dark: #181818;
-      --workspace-clean: #2dff63;
       --workspace-dirty: #ff3b30;
       --merge-conflict-border: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
       --toolbar-top-offset: 0px;
@@ -441,63 +440,6 @@ export function renderRevisionGraphStyles(): string {
     .node-grip:active,
     .node.dragging .node-grip {
       cursor: grabbing;
-    }
-    .workspace-led {
-      position: relative;
-      z-index: 1;
-      width: 30px;
-      height: 30px;
-      padding: 0;
-      border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--bg) 30%, black 28%);
-      background: var(--workspace-clean);
-      box-shadow:
-        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-        0 0 20px color-mix(in srgb, var(--workspace-clean) 62%, transparent),
-        inset 0 1px 2px rgba(255, 255, 255, 0.35);
-      appearance: none;
-      -webkit-appearance: none;
-      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
-    }
-    .workspace-led.clean {
-      cursor: default;
-    }
-    .workspace-led.dirty {
-      border-color: var(--merge-conflict-border);
-      background: var(--merge-conflict-border);
-      box-shadow:
-        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-        0 0 22px color-mix(in srgb, var(--merge-conflict-border) 68%, transparent),
-        inset 0 1px 2px rgba(255, 255, 255, 0.25);
-      cursor: pointer;
-      animation: workspace-led-pulse 1.7s ease-in-out infinite;
-    }
-    .workspace-led.dirty:hover {
-      border-color: var(--workspace-dirty);
-      background: var(--workspace-dirty);
-      box-shadow:
-        0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-        0 0 28px color-mix(in srgb, var(--workspace-dirty) 82%, transparent),
-        inset 0 1px 2px rgba(255, 255, 255, 0.34);
-      transform: scale(1.08);
-    }
-    .workspace-led:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--accent) 78%, white 8%);
-      outline-offset: 3px;
-    }
-    @keyframes workspace-led-pulse {
-      0%, 100% {
-        box-shadow:
-          0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-          0 0 18px color-mix(in srgb, var(--merge-conflict-border) 58%, transparent),
-          inset 0 1px 2px rgba(255, 255, 255, 0.24);
-      }
-      50% {
-        box-shadow:
-          0 0 0 2px color-mix(in srgb, var(--bg) 78%, transparent),
-          0 0 30px color-mix(in srgb, var(--merge-conflict-border) 82%, transparent),
-        inset 0 1px 2px rgba(255, 255, 255, 0.32);
-      }
     }
     .view-controls {
       position: fixed;
