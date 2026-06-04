@@ -342,6 +342,20 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
     }),
     undefined
   );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'copyCommitHash',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'openCommitOnGitHub',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }),
     { type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }
@@ -357,6 +371,14 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'resetToCommit', commitHash: 'abc123' }),
     { type: 'resetToCommit', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'copyCommitHash', commitHash: 'abc123' }),
+    { type: 'copyCommitHash', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'openCommitOnGitHub', commitHash: 'abc123' }),
+    { type: 'openCommitOnGitHub', commitHash: 'abc123' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada', sourceToken: '1' }),

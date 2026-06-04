@@ -665,6 +665,117 @@ export function renderShowLogWebviewHtml(): string {
       pointer-events: auto;
       transform: translateX(0);
     }
+    .commit-tooltip {
+      position: fixed;
+      z-index: 1200;
+      width: min(520px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
+      padding: 10px 12px;
+      border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-widget-border, transparent));
+      border-radius: 3px;
+      color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+      background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--vscode-widget-shadow, #000) 42%, transparent);
+      font-size: 12px;
+      line-height: 1.35;
+      pointer-events: auto;
+    }
+    .commit-tooltip[hidden] { display: none; }
+    .commit-tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      margin-bottom: 7px;
+    }
+    .commit-tooltip-avatar {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      color: var(--vscode-button-foreground);
+      background: color-mix(in srgb, var(--vscode-textLink-foreground) 70%, var(--vscode-button-background));
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .commit-tooltip-author-line {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .commit-tooltip-author {
+      color: var(--vscode-textLink-foreground);
+      font-weight: 600;
+    }
+    .commit-tooltip-muted {
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+    .commit-tooltip-subject {
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+    .commit-tooltip-body {
+      margin: 0 0 8px;
+      color: color-mix(in srgb, var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground)) 88%, var(--vscode-descriptionForeground));
+      white-space: pre-wrap;
+    }
+    .commit-tooltip-coauthor {
+      margin: 0 0 8px;
+      color: var(--vscode-textLink-foreground);
+      font-weight: 600;
+    }
+    .commit-tooltip-stats {
+      margin: 8px 0;
+      color: var(--vscode-descriptionForeground);
+    }
+    .commit-tooltip-insertions {
+      color: var(--vscode-gitDecoration-addedResourceForeground, #3fb950);
+    }
+    .commit-tooltip-deletions {
+      color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149);
+    }
+    .commit-tooltip-refs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .commit-tooltip-footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+    .commit-tooltip-hash {
+      color: var(--vscode-textLink-foreground);
+      font-family: var(--vscode-editor-font-family, monospace);
+    }
+    .commit-tooltip-action {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      padding: 2px 6px;
+      border: 0;
+      border-radius: 3px;
+      color: var(--vscode-textLink-foreground);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+    .commit-tooltip-action:hover,
+    .commit-tooltip-action:focus-visible {
+      outline: none;
+      color: var(--vscode-button-foreground);
+      background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+    }
   </style>
 </head>
 <body>
@@ -687,6 +798,7 @@ export function renderShowLogWebviewHtml(): string {
     <div class="content" id="content"></div>
   </div>
   <div class="context-menu" id="contextMenu" hidden></div>
+  <div class="commit-tooltip" id="commitTooltip" role="tooltip" hidden></div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     let currentState = null;
@@ -696,6 +808,7 @@ export function renderShowLogWebviewHtml(): string {
     const content = document.getElementById('content');
     const loadingChip = document.getElementById('loadingChip');
     const contextMenu = document.getElementById('contextMenu');
+    const commitTooltip = document.getElementById('commitTooltip');
     const showAllBranchesControl = document.getElementById('showAllBranchesControl');
     const showAllBranchesToggle = document.getElementById('showAllBranchesToggle');
     const filterInput = document.getElementById('filterInput');
@@ -714,6 +827,12 @@ export function renderShowLogWebviewHtml(): string {
     );
     let loadMoreObserver = null;
     let filterDebounceTimer = 0;
+    let tooltipCommitHash = '';
+    let pendingTooltipCommitHash = '';
+    let tooltipShowTimer = 0;
+    let tooltipShowClientX = 0;
+    let tooltipShowClientY = 0;
+    let tooltipHideTimer = 0;
 
     applyGraphColumnWidth(graphWidth);
 
@@ -777,6 +896,7 @@ export function renderShowLogWebviewHtml(): string {
           + '</div>'
         );
       }
+      hideCommitTooltip();
       content.innerHTML = sections.join('');
       syncLoadMoreObserver();
     }
@@ -840,6 +960,10 @@ export function renderShowLogWebviewHtml(): string {
 
     function renderRefBadge(ref) {
       return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '" title="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.label) + '</span>';
+    }
+
+    function renderTooltipRefBadge(ref) {
+      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.label) + '</span>';
     }
 
     function renderTopology(topology, isMerge, isFirstVisible) {
@@ -1014,6 +1138,194 @@ export function renderShowLogWebviewHtml(): string {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function renderCommitTooltip(commit) {
+      const coAuthors = parseCoAuthors(commit.message);
+      const body = getTooltipBody(commit.message, commit.subject);
+      const refs = commit.refs && commit.refs.length
+        ? '<div class="commit-tooltip-refs">' + commit.refs.map(renderTooltipRefBadge).join('') + '</div>'
+        : '';
+      const stats = renderTooltipStats(commit.stats);
+      return ''
+        + '<div class="commit-tooltip-header">'
+        + '  <span class="commit-tooltip-avatar">' + escapeHtml(getAuthorInitials(commit.author)) + '</span>'
+        + '  <div class="commit-tooltip-author-line">'
+        + '    <span class="commit-tooltip-author">' + escapeHtml(commit.author || 'Unknown author') + '</span>'
+        + '    <span class="commit-tooltip-muted">committed on ' + escapeHtml(commit.date || 'unknown date') + '</span>'
+        + '  </div>'
+        + '</div>'
+        + refs
+        + '<p class="commit-tooltip-subject">' + escapeHtml(commit.subject) + '</p>'
+        + (body ? '<p class="commit-tooltip-body">' + escapeHtml(body) + '</p>' : '')
+        + coAuthors.map((coAuthor) => '<p class="commit-tooltip-coauthor">' + escapeHtml(coAuthor.name) + ' <span class="commit-tooltip-muted">(Co-author)</span><br><span class="commit-tooltip-muted">' + escapeHtml(coAuthor.email) + '</span></p>').join('')
+        + stats
+        + '<div class="commit-tooltip-footer">'
+        + '  <span class="commit-tooltip-hash">' + escapeHtml(commit.shortHash) + '</span>'
+        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="copyCommitHash" data-commit-hash="' + escapeHtml(commit.hash) + '">Copy Hash</button>'
+        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="openCommitOnGitHub" data-commit-hash="' + escapeHtml(commit.hash) + '">Open on GitHub</button>'
+        + '</div>';
+    }
+
+    function renderTooltipStats(stats) {
+      const parsed = parseTooltipStats(stats);
+      if (!parsed) {
+        return '';
+      }
+      const fileLabel = parsed.files === 1 ? 'file' : 'files';
+      const parts = [parsed.files + ' ' + fileLabel + ' changed'];
+      if (parsed.insertions > 0) {
+        parts.push('<span class="commit-tooltip-insertions">' + parsed.insertions + ' insertion(+)</span>');
+      }
+      if (parsed.deletions > 0) {
+        parts.push('<span class="commit-tooltip-deletions">' + parsed.deletions + ' deletion(-)</span>');
+      }
+      return '<div class="commit-tooltip-stats">' + parts.join(', ') + '</div>';
+    }
+
+    function parseTooltipStats(stats) {
+      if (!stats) {
+        return null;
+      }
+      const files = Number(stats.match(/^(\\d+)\\s+files?/)?.[1] || 0);
+      const insertions = Number(stats.match(/\\+(\\d+)/)?.[1] || 0);
+      const deletions = Number(stats.match(/-(\\d+)/)?.[1] || 0);
+      return files > 0 ? { files, insertions, deletions } : null;
+    }
+
+    function parseCoAuthors(message) {
+      return String(message || '')
+        .split('\\n')
+        .map((line) => line.match(/^Co-authored-by:\\s*(.+?)\\s*<([^>]+)>\\s*$/i))
+        .filter(Boolean)
+        .map((match) => ({ name: match[1], email: match[2] }));
+    }
+
+    function getTooltipBody(message, subject) {
+      const lines = String(message || '')
+        .split('\\n')
+        .filter((line) => !/^Co-authored-by:/i.test(line.trim()));
+      if (lines[0] === subject) {
+        lines.shift();
+      }
+      while (lines.length > 0 && lines[0].trim() === '') {
+        lines.shift();
+      }
+      return lines.join('\\n').trim();
+    }
+
+    function getAuthorInitials(author) {
+      const parts = String(author || '')
+        .trim()
+        .split(/\\s+/)
+        .filter(Boolean);
+      if (parts.length === 0) {
+        return '?';
+      }
+      return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+    }
+
+    function findCommitByHash(commitHash) {
+      const commits = (currentState && currentState.commits) || [];
+      return commits.find((commit) => commit.hash === commitHash) || null;
+    }
+
+    function showCommitTooltip(commitHash, event) {
+      if (!commitTooltip) {
+        return;
+      }
+      cancelCommitTooltipShow();
+      cancelCommitTooltipHide();
+      const commit = findCommitByHash(commitHash);
+      if (!commit) {
+        hideCommitTooltip();
+        return;
+      }
+      const shouldPosition = tooltipCommitHash !== commitHash || commitTooltip.hidden;
+      if (tooltipCommitHash !== commitHash) {
+        tooltipCommitHash = commitHash;
+        commitTooltip.innerHTML = renderCommitTooltip(commit);
+      }
+      commitTooltip.hidden = false;
+      if (shouldPosition) {
+        positionCommitTooltip(event.clientX, event.clientY);
+      }
+    }
+
+    function positionCommitTooltip(clientX, clientY) {
+      if (!commitTooltip || commitTooltip.hidden) {
+        return;
+      }
+      const margin = 12;
+      const offset = 14;
+      const rect = commitTooltip.getBoundingClientRect();
+      const preferredLeft = clientX + offset;
+      const preferredTop = clientY + offset;
+      const left = preferredLeft + rect.width + margin <= window.innerWidth
+        ? preferredLeft
+        : Math.max(margin, clientX - rect.width - offset);
+      const top = Math.min(
+        Math.max(margin, preferredTop),
+        Math.max(margin, window.innerHeight - rect.height - margin)
+      );
+      commitTooltip.style.left = left + 'px';
+      commitTooltip.style.top = top + 'px';
+    }
+
+    function hideCommitTooltip() {
+      cancelCommitTooltipShow();
+      cancelCommitTooltipHide();
+      tooltipCommitHash = '';
+      if (commitTooltip) {
+        commitTooltip.hidden = true;
+        commitTooltip.innerHTML = '';
+      }
+    }
+
+    function scheduleShowCommitTooltip(commitHash, event) {
+      cancelCommitTooltipHide();
+      tooltipShowClientX = event.clientX;
+      tooltipShowClientY = event.clientY;
+      if (tooltipCommitHash === commitHash && commitTooltip && !commitTooltip.hidden) {
+        return;
+      }
+      if (tooltipShowTimer && pendingTooltipCommitHash === commitHash) {
+        return;
+      }
+
+      cancelCommitTooltipShow();
+      pendingTooltipCommitHash = commitHash;
+      tooltipShowTimer = window.setTimeout(() => {
+        const pendingCommitHash = pendingTooltipCommitHash;
+        const clientX = tooltipShowClientX;
+        const clientY = tooltipShowClientY;
+        tooltipShowTimer = 0;
+        pendingTooltipCommitHash = '';
+        showCommitTooltip(pendingCommitHash, { clientX, clientY });
+      }, 500);
+    }
+
+    function cancelCommitTooltipShow() {
+      if (tooltipShowTimer) {
+        window.clearTimeout(tooltipShowTimer);
+        tooltipShowTimer = 0;
+      }
+      pendingTooltipCommitHash = '';
+    }
+
+    function scheduleHideCommitTooltip() {
+      cancelCommitTooltipShow();
+      cancelCommitTooltipHide();
+      tooltipHideTimer = window.setTimeout(() => {
+        hideCommitTooltip();
+      }, 160);
+    }
+
+    function cancelCommitTooltipHide() {
+      if (tooltipHideTimer) {
+        window.clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = 0;
+      }
     }
 
     function handleContextMenu(commitHash, clientX, clientY) {
@@ -1215,6 +1527,7 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     content.addEventListener('click', (event) => {
+      hideCommitTooltip();
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -1245,6 +1558,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     content.addEventListener('dblclick', (event) => {
+      hideCommitTooltip();
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -1266,6 +1580,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     content.addEventListener('mousedown', (event) => {
+      hideCommitTooltip();
       if (event.button !== 1) {
         return;
       }
@@ -1277,6 +1592,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     content.addEventListener('auxclick', (event) => {
+      hideCommitTooltip();
       if (event.button !== 1) {
         return;
       }
@@ -1288,6 +1604,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     content.addEventListener('keydown', (event) => {
+      hideCommitTooltip();
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -1347,6 +1664,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     content.addEventListener('contextmenu', (event) => {
+      hideCommitTooltip();
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
         return;
@@ -1372,6 +1690,53 @@ export function renderShowLogWebviewHtml(): string {
       }
       event.preventDefault();
       handleContextMenu(commitRow.getAttribute('data-commit-hash') || '', event.clientX, event.clientY);
+    });
+
+    content.addEventListener('mousemove', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        scheduleHideCommitTooltip();
+        return;
+      }
+      const row = target.closest('.commit-row[data-commit-hash]');
+      if (!(row instanceof HTMLElement) || target.closest('[data-change-id]')) {
+        scheduleHideCommitTooltip();
+        return;
+      }
+      const commitHash = row.dataset.commitHash || '';
+      if (!commitHash) {
+        scheduleHideCommitTooltip();
+        return;
+      }
+      scheduleShowCommitTooltip(commitHash, event);
+    });
+
+    content.addEventListener('mouseleave', () => {
+      scheduleHideCommitTooltip();
+    });
+
+    commitTooltip?.addEventListener('mouseenter', () => {
+      cancelCommitTooltipShow();
+      cancelCommitTooltipHide();
+    });
+
+    commitTooltip?.addEventListener('mouseleave', () => {
+      scheduleHideCommitTooltip();
+    });
+
+    commitTooltip?.addEventListener('click', (event) => {
+      const action = event.target?.closest?.('[data-tooltip-action]')?.getAttribute('data-tooltip-action');
+      const commitHash = event.target?.closest?.('[data-commit-hash]')?.getAttribute('data-commit-hash') || tooltipCommitHash;
+      if (!action || !commitHash) {
+        return;
+      }
+      event.preventDefault();
+      if (action === 'copyCommitHash') {
+        vscode.postMessage({ type: 'copyCommitHash', commitHash });
+      }
+      if (action === 'openCommitOnGitHub') {
+        vscode.postMessage({ type: 'openCommitOnGitHub', commitHash });
+      }
     });
 
     contextMenu.addEventListener('click', (event) => {

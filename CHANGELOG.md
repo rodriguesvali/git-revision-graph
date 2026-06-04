@@ -10,12 +10,14 @@ All notable changes to this project will be documented in this file.
 - Harmonized the revision graph toolbar so search, repository actions, and main zoom controls use consistent grouped toolbar styling.
 - Replaced search navigation, clear, and main zoom text glyphs with consistent SVG toolbar icons.
 - Distinguished merge commits in the Show Log compact graph with a larger double-ring marker, made simple commit markers solid, and stopped the first visible lane at the top commit.
+- Added a Source Control-style hover tooltip for Show Log commits with author, refs, message, stats, co-author, short-hash details, copy-hash, and GitHub commit actions.
 
 ### Quality
 
 - Updated manifest coverage to assert that Compare Results and Show Log are no longer contributed as Activity Bar webviews.
 - Added webview shell coverage for the new toolbar grouping and icons.
 - Added Show Log state and webview coverage for merge-commit metadata, merge markers, and top-row lane endpoint rendering.
+- Added Show Log state, webview shell, message validation, and GitHub remote URL coverage for commit hover tooltip rendering and actions.
 
 ## 0.0.36
 

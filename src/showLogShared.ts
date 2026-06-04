@@ -39,6 +39,7 @@ export interface ShowLogWebviewCommitItem {
   readonly hash: string;
   readonly shortHash: string;
   readonly subject: string;
+  readonly message: string;
   readonly author: string;
   readonly date: string;
   readonly isMerge: boolean;
@@ -185,6 +186,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
         hash: entry.hash,
         shortHash: entry.shortHash,
         subject: entry.subject,
+        message: entry.message,
         author: entry.author,
         date: entry.date,
         isMerge: entry.parentHashes.length > 1,

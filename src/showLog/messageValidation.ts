@@ -13,6 +13,8 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'copyFileName'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'copyFullPath'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'openCommitDetails'; readonly commitHash: string }
+  | { readonly type: 'copyCommitHash'; readonly commitHash: string }
+  | { readonly type: 'openCommitOnGitHub'; readonly commitHash: string }
   | { readonly type: 'resetToCommit'; readonly commitHash: string };
 
 export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewMessage | undefined {
@@ -35,6 +37,8 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'toggleCommit':
     case 'compareCommitWithWorktree':
     case 'openCommitDetails':
+    case 'copyCommitHash':
+    case 'openCommitOnGitHub':
     case 'resetToCommit':
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: message.type, commitHash: message.commitHash }

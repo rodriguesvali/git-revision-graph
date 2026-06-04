@@ -14,6 +14,7 @@ import {
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
+import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
 import {
   addShowLogCachedChanges,
   buildShowLogWebviewState,
@@ -177,6 +178,12 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         return;
       case 'copyFullPath':
         await this.copyFullPath(message.commitHash, message.changeId);
+        return;
+      case 'copyCommitHash':
+        await this.copyCommitHash(message.commitHash);
+        return;
+      case 'openCommitOnGitHub':
+        await this.openCommitOnGitHub(message.commitHash);
         return;
       case 'openCommitDetails':
         await this.openCommitDetails(message.commitHash);
@@ -530,6 +537,29 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     await vscode.env.clipboard.writeText(change.renameUri?.fsPath ?? change.uri.fsPath);
+  }
+
+  private async copyCommitHash(commitHash: string): Promise<void> {
+    if (!this.isLoadedCommitHash(commitHash)) {
+      return;
+    }
+
+    await vscode.env.clipboard.writeText(commitHash);
+  }
+
+  private async openCommitOnGitHub(commitHash: string): Promise<void> {
+    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    if (!repository || !this.isLoadedCommitHash(commitHash)) {
+      return;
+    }
+
+    const url = buildGitHubCommitUrl(repository, commitHash);
+    if (!url) {
+      await vscode.window.showInformationMessage('No GitHub remote is configured for this repository.');
+      return;
+    }
+
+    await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 
   private findChange(commitHash: string, changeId: string): Change | undefined {

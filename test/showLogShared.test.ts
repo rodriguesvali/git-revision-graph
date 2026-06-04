@@ -88,6 +88,7 @@ test('builds expanded show log webview commits with inline file changes and lane
   assert.equal(webviewState.canToggleAllBranches, true);
   assert.equal(webviewState.filterText, '');
   assert.equal(webviewState.commits[0]?.expanded, true);
+  assert.equal(webviewState.commits[0]?.message, 'Tip commit');
   assert.equal(webviewState.commits[0]?.isMerge, true);
   assert.equal(webviewState.commits[1]?.isMerge, false);
   assert.equal(webviewState.commits[0]?.changes[0]?.path, 'src/demo.ts');
