@@ -26,7 +26,14 @@ export function getRepositoryRelativeChangePath(
   change: Change
 ): string {
   const fileUri = getTargetUri(change);
-  const relativePath = path.relative(repositoryRootPath, fileUri.fsPath);
+  return getRepositoryRelativeUriPath(repositoryRootPath, fileUri.fsPath);
+}
+
+export function getRepositoryRelativeUriPath(
+  repositoryRootPath: string,
+  filePath: string
+): string {
+  const relativePath = path.relative(repositoryRootPath, filePath);
   if (
     relativePath &&
     relativePath !== '..' &&
@@ -36,7 +43,7 @@ export function getRepositoryRelativeChangePath(
     return relativePath;
   }
 
-  return fileUri.fsPath;
+  return filePath;
 }
 
 export function isAddition(status: Status): boolean {

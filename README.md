@@ -34,7 +34,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
-- On-demand `Compare Results` editor panel that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
+- On-demand `Compare Results` editor panel that presents comparisons as a compact review queue with source/target context, status filters, rename paths, visible diff actions, double-click file diff opening, and context actions for compare with worktree and worktree restore flows
 - On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references

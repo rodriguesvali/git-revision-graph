@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 
+import { getRepositoryRelativeUriPath } from './changePresentation';
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
 import {
@@ -115,12 +116,14 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       return;
     }
 
+    const restoreSource = item.worktreeLabel ?? item.worktreeRef;
+    const confirmationAction = 'Restore File';
     const confirmation = await vscode.window.showWarningMessage(
-      `Restore ${item.label} in the worktree to match ${item.worktreeLabel ?? item.worktreeRef}?`,
+      `Restore ${item.label} in the worktree from ${restoreSource}?`,
       { modal: true },
-      'Revert to This'
+      confirmationAction
     );
-    if (confirmation !== 'Revert to This') {
+    if (confirmation !== confirmationAction) {
       return;
     }
 
@@ -162,14 +165,21 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     return {
       kind: 'results',
       summary: buildCompareResultsMessage(this.state),
+      sourceLabel: this.state.kind === 'between' ? this.state.left.label : this.state.target.label,
+      targetLabel: this.state.kind === 'between' ? this.state.right.label : 'Worktree',
       items: this.getItems().map((item) => this.toWebviewItem(item))
     };
   }
 
   private toWebviewItem(item: CompareResultItem): CompareResultsWebviewItem {
+    const originalPath = getRepositoryRelativeUriPath(item.repository.rootUri.fsPath, item.change.originalUri.fsPath);
+    const isRename = !!item.change.renameUri && originalPath !== item.label;
     return {
       id: item.id,
       path: item.label,
+      originalPath: isRename ? originalPath : undefined,
+      name: path.basename(item.label),
+      directory: path.dirname(item.label) === '.' ? '' : path.dirname(item.label),
       fullPath: item.change.renameUri?.fsPath ?? item.change.uri.fsPath,
       status: item.detail,
       leftRef: item.leftRef,

@@ -17,6 +17,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.37-central-review-panels.md`
 - `project-context/2.build/features/0.0.37-merge-node-and-top-edge-polish.md`
 - `project-context/2.build/features/0.0.37-show-log-hover-tooltip.md`
+- `project-context/2.build/features/0.0.37-compare-results-review-ux.md`
 
 Candidate direction:
 
@@ -28,6 +29,7 @@ Candidate direction:
 - Move Compare Results and Show Log from left-side Activity Bar review views into on-demand editor panels.
 - Distinguish merge commits from normal commits in the Show Log compact graph, use solid simple commit markers, and make the top visible Show Log commit read as a graph endpoint.
 - Add a Source Control-style hover tooltip for Show Log commit rows using loaded commit metadata, with copy-hash and GitHub commit actions.
+- Redesign Compare Results as a compact review queue with explicit comparison context, status filters, rename paths, and visible diff actions.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
@@ -56,6 +58,10 @@ Automated verification completed:
 - `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/showLogShared.test.js out-test/test/showLogWebview.test.js out-test/test/showLogLanes.test.js out-test/test/showLogRemoteCommitUrl.test.js out-test/test/webviewMessageValidation.test.js` passed after making the Show Log hover tooltip interactive.
 - `npm test` passed with 304 tests after making the Show Log hover tooltip interactive. This includes `npm run build` through the test script.
 - `git diff --check` passed after making the Show Log hover tooltip interactive.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/compareResultsShared.test.js out-test/test/compareResultsWebview.test.js out-test/test/refPresentation.test.js out-test/test/compareResultRestore.test.js out-test/test/webviewMessageValidation.test.js` passed for the Compare Results review UX slice.
+- `npm test` passed with 305 tests after redesigning Compare Results as a compact review queue. This includes `npm run build` through the test script.
+- `git diff --check` passed after the Compare Results review UX slice.
+- Focused Compare Results verification, `npm test` with 305 tests, and `git diff --check` passed after removing the visible `Open Diff` row button and centering the `...` actions menu.
 
 Automated verification pending:
 

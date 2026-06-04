@@ -6,20 +6,43 @@ import { renderCompareResultsWebviewHtml } from '../src/compareResultsWebview';
 test('renders compare results webview shell with inline search', () => {
   const html = renderCompareResultsWebviewHtml();
 
-  assert.match(html, /placeholder="Filter files by path or status\.\.\."/);
+  assert.match(html, /placeholder="Filter files\.\.\."/);
   assert.match(html, /id="clearSearchButton"/);
-  assert.match(html, /id="summary"/);
-  assert.match(html, /id="countBadge"/);
+  assert.match(html, /id="comparisonDirection"/);
+  assert.match(html, /id="sourceLabel"/);
+  assert.match(html, /id="targetLabel"/);
+  assert.match(html, /class="comparison-arrow" aria-hidden="true">→<\/span>/);
+  assert.match(html, /id="resultCount"/);
+  assert.match(html, /id="statusFilters"/);
+  assert.match(html, /id="selectionSummary"/);
   assert.match(html, /id="contextMenu"/);
   assert.match(html, /selectedItemIds = \[\]/);
-  assert.match(html, /function filterItems\(items, query\)/);
+  assert.match(html, /currentState\.items\.length === 1 \? \[currentState\.items\[0\]\.id\] : \[\]/);
+  assert.match(html, /function filterItems\(items, query, statusFilter\)/);
   assert.match(html, /function getVisibleItemIds\(\)/);
+  assert.match(html, /function renderStatusFilters\(items\)/);
+  assert.match(html, /function countItemsByStatus\(items\)/);
+  assert.match(html, /function formatSelectionSummary\(totalCount, visibleCount, selectedCount\)/);
+  assert.match(html, /data-status-filter="/);
   assert.match(html, /No files match/);
 });
 
-test('renders compare result actions through a context menu in the webview', () => {
+test('renders a dense compare review list with visible and contextual actions', () => {
   const html = renderCompareResultsWebviewHtml();
 
+  assert.match(html, /class="list-header"/);
+  assert.match(html, /grid-template-columns: 88px minmax\(180px, 1\.4fr\) minmax\(120px, 0\.8fr\) 116px;/);
+  assert.match(html, /class="status-badge"/);
+  assert.match(html, /class="status-dot"/);
+  assert.match(html, /class="file-name"/);
+  assert.match(html, /class="folder-cell"/);
+  assert.match(html, /class="rename-path"/);
+  assert.match(html, /item\.originalPath \+ ' → ' \+ item\.path/);
+  assert.match(html, /data-row-action="menu"/);
+  assert.doesNotMatch(html, /data-row-action="base"/);
+  assert.match(html, /class="actions-column">Actions<\/div>/);
+  assert.match(html, /\.actions-cell \{[\s\S]*?justify-content: center;/);
+  assert.match(html, /\.actions-column \{\s*text-align: center;/);
   assert.match(html, /content\.addEventListener\('click'/);
   assert.match(html, /content\.addEventListener\('mousedown'/);
   assert.match(html, /content\.addEventListener\('auxclick'/);
@@ -38,24 +61,22 @@ test('renders compare result actions through a context menu in the webview', () 
   assert.match(html, /cursor: pointer;/);
   assert.match(html, /user-select: none;/);
   assert.match(html, /event\.button !== 1/);
-  assert.match(html, /Double-click to compare\. Press Shift\+F10 or Enter for actions\./);
+  assert.match(html, /Double-click to open diff\. Press Shift\+F10 or Enter for actions\./);
   assert.match(html, /function openContextMenuForElement\(items, element\)/);
   assert.match(html, /function updateSelection\(itemId, event\)/);
   assert.match(html, /function extendSelectionWithArrow\(itemId, direction\)/);
   assert.match(html, /focusItem\(targetItemId\)/);
   assert.match(html, /function getSelectionForContextMenu\(itemId\)/);
-  assert.match(html, /\{ action: 'base', label: 'Compare' \}/);
-  assert.doesNotMatch(html, /Open File Diff/);
-  assert.doesNotMatch(html, /Open Diff File/);
+  assert.match(html, /\{ action: 'base', label: 'Open Diff' \}/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /File Name/);
   assert.match(html, /Full Path/);
   assert.match(html, /else if \(item\.leftRef \|\| item\.rightRef\) \{\s*actions\.push\(\{ action: 'worktree', label: 'Compare with Worktree' \}\);/s);
-  assert.match(html, /Revert to This/);
+  assert.match(html, /Restore from /);
   assert.match(html, /context-menu-group/);
   assert.match(html, /context-submenu/);
   assert.match(html, /function openContextMenu\(items, x, y\)/);
-  assert.match(html, /countBadge\.textContent = totalCount \+ '\/' \+ selectedCount/);
+  assert.match(html, /selectionSummary\.textContent = formatSelectionSummary/);
   assert.match(html, /function postSingleAction\(type, itemId\)/);
   assert.match(html, /postSingleAction\('base', itemId\)/);
   assert.match(html, /function resetDoubleClickTracking\(\)/);

@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Replaced search navigation, clear, and main zoom text glyphs with consistent SVG toolbar icons.
 - Distinguished merge commits in the Show Log compact graph with a larger double-ring marker, made simple commit markers solid, and stopped the first visible lane at the top commit.
 - Added a Source Control-style hover tooltip for Show Log commits with author, refs, message, stats, co-author, short-hash details, copy-hash, and GitHub commit actions.
+- Redesigned Compare Results as a compact review queue with directional comparison context, status filters, explicit counts, rename paths, and centered row action menus.
 
 ### Quality
 
@@ -18,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Added webview shell coverage for the new toolbar grouping and icons.
 - Added Show Log state and webview coverage for merge-commit metadata, merge markers, and top-row lane endpoint rendering.
 - Added Show Log state, webview shell, message validation, and GitHub remote URL coverage for commit hover tooltip rendering and actions.
+- Added Compare Results webview coverage for the dense review layout, status filters, single-result selection, rename presentation, and visible actions.
 
 ## 0.0.36
 

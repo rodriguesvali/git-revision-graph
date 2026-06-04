@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
 import { getReferenceDescription, getReferenceHandle, getReferenceShortLabel, getReferenceTooltip, getSuggestedLocalBranchName } from '../src/refPresentation';
-import { getRepositoryRelativeChangePath, getStatusLabel, toChangeQuickPickItems } from '../src/changePresentation';
+import { getRepositoryRelativeChangePath, getRepositoryRelativeUriPath, getStatusLabel, toChangeQuickPickItems } from '../src/changePresentation';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
 test('formats current branch description with ahead/behind counters', () => {
@@ -67,5 +67,16 @@ test('builds repository-relative change paths from the target file location', ()
       })
     ),
     'docs/release/notes-v2.md'
+  );
+});
+
+test('builds repository-relative paths for explicit file locations', () => {
+  assert.equal(
+    getRepositoryRelativeUriPath('/workspace/repo', '/workspace/repo/src/old-name.ts'),
+    'src/old-name.ts'
+  );
+  assert.equal(
+    getRepositoryRelativeUriPath('/workspace/repo', '/workspace/other/file.ts'),
+    '/workspace/other/file.ts'
   );
 });
