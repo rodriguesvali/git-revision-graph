@@ -116,7 +116,7 @@ Status: Release artifacts are prepared for `0.0.36`. The implemented change set 
 
 Planning and build references:
 
-- `docs/release-0.0.36-prioritization.md`
+- `project-context/docs/release-0.0.36-prioritization.md`
 - `project-context/2.build/features/alternative-revision-graph-layout-viability.md`
 - `project-context/2.build/features/0.0.35-webview-virtualized-rendering.md`
 - `project-context/2.build/features/0.0.35-render-request-stale-guard.md`
@@ -355,7 +355,7 @@ Release direction:
 
 Planning and build references:
 
-- `docs/release-0.0.32-prioritization.md`
+- `project-context/docs/release-0.0.32-prioritization.md`
 - `project-context/2.build/features/0.0.32-editor-panel-reload-button.md`
 
 Candidate change set:
@@ -723,7 +723,7 @@ Version bump to `0.0.27` has been applied in `package.json` and `package-lock.js
 
 Planning references:
 
-- `docs/release-0.0.27-prioritization.md`
+- `project-context/docs/release-0.0.27-prioritization.md`
 - `project-context/2.build/features/0.0.27-stabilization-hardening.md`
 - `project-context/2.build/features/0.0.27-cache-stabilization.md`
 - `project-context/2.build/features/0.0.27-graph-layout-stabilization.md`

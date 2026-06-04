@@ -9,7 +9,7 @@ Start `0.0.15` with a clear working scope that builds on the `0.0.14` trust and 
 - Current extension surface from `package.json`
 - Current product story and known gaps from `README.md`
 - Recent delivery focus from `CHANGELOG.md`
-- Longer-term architectural targets from `docs/revision-graph-parity-plan.md`
+- Longer-term architectural targets from `project-context/docs/revision-graph-parity-plan.md`
 
 ## Current Starting Point
 

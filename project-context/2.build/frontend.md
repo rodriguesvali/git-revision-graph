@@ -4,7 +4,7 @@
 Revision graph webview, compare/log webview surfaces, browser-side graph interactions, theming, layout, filters, context menus, and user-visible copy.
 
 ## Inputs
-Use `README.md`, `docs/revision-graph-parity-plan.md`, feature artifacts in `project-context/2.build/features/`, and existing webview code as sources.
+Use `README.md`, `project-context/docs/revision-graph-parity-plan.md`, feature artifacts in `project-context/2.build/features/`, and existing webview code as sources.
 
 ## Changes
 Record frontend changes here only when they affect shared webview behavior. Prefer feature-specific files under `project-context/2.build/features/` for individual feature notes.

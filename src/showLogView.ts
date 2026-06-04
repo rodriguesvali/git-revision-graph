@@ -24,7 +24,6 @@ import {
 import { renderShowLogWebviewHtml } from './showLogWebview';
 import { validateShowLogWebviewMessage } from './showLog/messageValidation';
 
-export const SHOW_LOG_VISIBLE_CONTEXT = 'gitRefs.showLogVisible';
 const SHOW_LOG_PAGE_SIZE = 50;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
@@ -36,7 +35,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private state: ShowLogState = createHiddenShowLogState();
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
-  private isVisible: boolean | undefined;
   private loadRequestId = 0;
   private expandRequestId = 0;
   private sourceTokenSeed = 0;
@@ -48,10 +46,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     private readonly compareResultsPresenter: CompareResultsPresenter,
     private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined
   ) {}
-
-  async initialize(): Promise<void> {
-    await this.updateVisibility(false);
-  }
 
   dispose(): void {
     this.cancelActiveLogLoad();
@@ -77,7 +71,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       expandedCommitError: undefined,
       cachedChanges: {}
     };
-    await this.updateVisibility(true);
     this.revealPanel();
     this.postState();
     if (requestId !== this.loadRequestId) {
@@ -125,16 +118,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
   }
 
-  async hide(): Promise<void> {
-    this.loadRequestId += 1;
-    this.expandRequestId += 1;
-    this.cancelActiveLogLoad();
-    this.state = createHiddenShowLogState();
-    this.postState();
-    this.disposePanel();
-    await this.updateVisibility(false);
-  }
-
   async hideWithRevisionGraph(): Promise<void> {
     this.loadRequestId += 1;
     this.expandRequestId += 1;
@@ -142,7 +125,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     this.state = createHiddenShowLogState();
     this.postState();
     this.disposePanel();
-    await this.updateVisibility(false);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -735,7 +717,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
           this.expandRequestId += 1;
           this.cancelActiveLogLoad();
           this.state = createHiddenShowLogState();
-          void this.updateVisibility(false);
         }
         this.disposePanelDisposables();
       }),
@@ -756,15 +737,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     while (this.panelDisposables.length > 0) {
       this.panelDisposables.pop()?.dispose();
     }
-  }
-
-  private async updateVisibility(visible: boolean): Promise<void> {
-    if (this.isVisible === visible) {
-      return;
-    }
-
-    this.isVisible = visible;
-    await vscode.commands.executeCommand('setContext', SHOW_LOG_VISIBLE_CONTEXT, visible);
   }
 }
 

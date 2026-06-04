@@ -21,19 +21,13 @@ import {
 } from './workbenchRefActionServices';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
-export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
 
 export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
-  private isVisible: boolean | undefined;
 
   constructor(private readonly extensionUri: vscode.Uri) {}
-
-  async initialize(): Promise<void> {
-    await this.updateVisibility(false);
-  }
 
   dispose(): void {
     this.disposePanel();
@@ -52,7 +46,6 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       right,
       changes: [...changes]
     };
-    await this.updateVisibility(true);
     this.revealPanel();
     this.refresh();
   }
@@ -68,23 +61,14 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       target,
       changes: [...changes]
     };
-    await this.updateVisibility(true);
     this.revealPanel();
     this.refresh();
-  }
-
-  async hide(): Promise<void> {
-    this.state = { kind: 'empty' };
-    this.refresh();
-    this.disposePanel();
-    await this.updateVisibility(false);
   }
 
   async hideWithRevisionGraph(): Promise<void> {
     this.state = { kind: 'empty' };
     this.refresh();
     this.disposePanel();
-    await this.updateVisibility(false);
   }
 
   async openItem(item: CompareResultItem): Promise<void> {
@@ -291,7 +275,6 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     if (this.state.kind === 'empty') {
       this.refresh();
       this.disposePanel();
-      await this.updateVisibility(false);
       if (outcome.infoMessage) {
         void vscode.window.showInformationMessage(outcome.infoMessage);
       }
@@ -330,7 +313,6 @@ export class CompareResultsViewProvider implements vscode.Disposable {
         if (this.panel === panel) {
           this.panel = undefined;
           this.state = { kind: 'empty' };
-          void this.updateVisibility(false);
         }
         this.disposePanelDisposables();
       }),
@@ -351,14 +333,5 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     while (this.panelDisposables.length > 0) {
       this.panelDisposables.pop()?.dispose();
     }
-  }
-
-  private async updateVisibility(visible: boolean): Promise<void> {
-    if (this.isVisible === visible) {
-      return;
-    }
-
-    this.isVisible = visible;
-    await vscode.commands.executeCommand('setContext', COMPARE_RESULTS_VISIBLE_CONTEXT, visible);
   }
 }

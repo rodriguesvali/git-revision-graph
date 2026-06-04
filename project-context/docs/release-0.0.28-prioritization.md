@@ -11,8 +11,8 @@ The goal is to make repeated graph refreshes faster and less disruptive in large
 - `package.json` baseline version `0.0.27`
 - `project-context/3.deliver/release.md` current release readiness state for `0.0.27`
 - `project-context/2.build/features/0.0.27-cache-stabilization.md`
-- `docs/release-0.0.27-prioritization.md`
-- `docs/revision-graph-parity-plan.md`
+- `project-context/docs/release-0.0.27-prioritization.md`
+- `project-context/docs/revision-graph-parity-plan.md`
 - Current cache touchpoints in `src/revisionGraph/backend.ts`, `src/revisionGraph/controller.ts`, `src/revisionGraph/panel/state.ts`, `src/revisionGraph/layout/layeredLayout.ts`, `src/revisionGraphData.ts`, and `src/extension.ts`
 
 ## Product Observations

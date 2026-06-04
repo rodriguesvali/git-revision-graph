@@ -55,7 +55,7 @@ The extension is already published and feature-rich enough that new work can aff
 - Recommended scope: treat the `0.0.31` Source Control/editor graph workflows as the regression baseline; patch discovered lifecycle, focus, or review-view issues; update user-facing docs/copy if needed; and select one low-risk foundation slice such as graph fixtures, `CommitGraph` / `ProjectedGraph` boundaries, refresh intent instrumentation, or a proven metadata-only refresh path.
 - Non-goals: broad graph renderer replacement, moving Compare Results or Show Log into editor panels without a separate decision, making revision selection the primary interaction model in one release, broad cache architecture replacement, dependency changes, publishing, or version bumping without approval.
 - Success condition: users can trust the Source Control launch and editor graph workflow, and maintainers have measured groundwork for the next graph-parity step without destabilizing the published extension.
-- Planning reference: `docs/release-0.0.32-prioritization.md`.
+- Planning reference: `project-context/docs/release-0.0.32-prioritization.md`.
 
 ## 0.0.31 Release Define
 - Current package baseline on 2026-05-17: `0.0.30`.
@@ -77,7 +77,7 @@ The extension is already published and feature-rich enough that new work can aff
   - `project-context/2.build/features/source-control-companion-view.md`
   - `project-context/2.build/features/source-control-editor-panel.md`
   - `project-context/2.build/features/source-control-product-surface.md`
-  - `docs/release-0.0.31-prioritization.md`
+  - `project-context/docs/release-0.0.31-prioritization.md`
 
 ## Recent 0.0.30 Completed Scope
 - Restored full graph rebuilds after local branch deletion and pull-based sync to prioritize visual correctness when Git topology changes.
@@ -113,7 +113,7 @@ The extension is already published and feature-rich enough that new work can aff
 - `package.json`
 - `.codex/skills/vscode-extension-developer/SKILL.md`
 - `.codex/skills/vscode-extension-developer/references/project-map.md`
-- `docs/revision-graph-parity-plan.md`
+- `project-context/docs/revision-graph-parity-plan.md`
 
 ## Assumptions
 - Future releases will continue to prioritize graph and Git workflow parity while preserving a lightweight extension.

@@ -15,7 +15,7 @@ This is a published VS Code extension. Apply AAMAD as lightweight product and re
 - Package manager: npm with `package-lock.json`.
 - Primary verification commands: `npm run build` and `npm test`.
 - Packaging and release commands: `npm run package:vsix`, `npm run publish:current`, `npm run publish:patch`, `npm run publish:minor`, and `npm run publish:major`.
-- Product planning references: `README.md`, `docs/revision-graph-parity-plan.md`, and release prioritization documents in `docs/`.
+- Product planning references: `README.md`, `project-context/docs/revision-graph-parity-plan.md`, and release prioritization documents in `project-context/docs/`.
 - Repository-specific Codex skill: `.codex/skills/vscode-extension-developer/SKILL.md`.
 
 ### Phases

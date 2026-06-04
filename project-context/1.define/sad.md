@@ -156,9 +156,9 @@ For Source Control product surface Phase 3, add manual validation for:
 - `project-context/1.define/source-control-integration-viability.md`
 - `project-context/2.build/features/source-control-editor-panel.md`
 - `project-context/2.build/features/source-control-product-surface.md`
-- `docs/release-0.0.31-prioritization.md`
+- `project-context/docs/release-0.0.31-prioritization.md`
 - `.codex/skills/vscode-extension-developer/references/project-map.md`
-- `docs/revision-graph-parity-plan.md`
+- `project-context/docs/revision-graph-parity-plan.md`
 - VS Code Extension API documentation for `contributes.views`, `contributes.menus`, `WebviewViewProvider`, and editor `WebviewPanel` usage.
 
 ## Assumptions

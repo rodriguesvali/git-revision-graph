@@ -11,7 +11,7 @@ The release should avoid broad feature work and focus on reducing security, reli
 - `package.json` baseline version `0.0.26`
 - `project-context/3.deliver/release.md` current release readiness state for `0.0.26`
 - `README.md` known limitations and validation strategy
-- `docs/revision-graph-parity-plan.md`
+- `project-context/docs/revision-graph-parity-plan.md`
 - Existing runtime surfaces in `src/extension.ts`, `src/revisionGraph/controller.ts`, `src/revisionGraph/backend.ts`, `src/revisionGraph/layout/layeredLayout.ts`, `src/revisionGraph/source/graphGit.ts`, `src/compareResultsView.ts`, `src/showLogView.ts`, `src/gitExec.ts`, and `src/workbenchRefActionServices.ts`
 - `npm audit --omit=dev --json`
 - `npm audit --json`

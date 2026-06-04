@@ -8,7 +8,7 @@ Choose the best candidate features for `0.0.14` by ranking them on potential use
 
 - Current product scope and known limitations from `README.md`
 - Recent delivery focus from `CHANGELOG.md`
-- Architectural direction from `docs/revision-graph-parity-plan.md`
+- Architectural direction from `project-context/docs/revision-graph-parity-plan.md`
 - Marketplace page for `GIT Revision Graph` on April 14, 2026
   - 8 installs
   - 1 rating
@@ -101,7 +101,7 @@ That message is easier to communicate than a broad "more features" release and i
 
 - Project README: current features, known limitations, and next steps
 - Project changelog: recent stability and graph UX work
-- `docs/revision-graph-parity-plan.md`: parity targets for filtering, overview, and navigation
+- `project-context/docs/revision-graph-parity-plan.md`: parity targets for filtering, overview, and navigation
 - Marketplace page for `rodriguesvali.git-revision-graph` reviewed on April 14, 2026:
   https://marketplace.visualstudio.com/items?itemName=rodriguesvali.git-revision-graph
 - GitLens Commit Graph docs: https://help.gitkraken.com/gitlens/gitlens-features/

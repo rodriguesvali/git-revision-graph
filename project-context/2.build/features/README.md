@@ -21,4 +21,4 @@ Each feature artifact should include:
 - Release-note impact
 - Handoff notes
 
-Keep these files concise. Link to broader docs such as `README.md` or `docs/revision-graph-parity-plan.md` instead of duplicating them.
+Keep these files concise. Link to broader docs such as `README.md` or `project-context/docs/revision-graph-parity-plan.md` instead of duplicating them.

@@ -10,7 +10,7 @@ The release should avoid adding a new Git mutation workflow by default. The prod
 
 - `package.json` baseline version `0.0.21`
 - `README.md` current feature set and next-step list
-- `docs/revision-graph-parity-plan.md` UX and navigation targets
+- `project-context/docs/revision-graph-parity-plan.md` UX and navigation targets
 - `project-context/3.deliver/release.md` current release readiness state
 - Revision graph shell, styles, browser-side interactions, controller message handling, compare results webview, and show log webview source
 

@@ -3,7 +3,7 @@
 ## Status
 Historical Phase 1 artifact.
 
-Phase 1 is complete and superseded by the Phase 3 product surface decision for `0.0.31`. The temporary Source Control companion graph view is not part of the release surface. The shipped direction is tracked in `project-context/2.build/features/source-control-editor-panel.md`, `project-context/2.build/features/source-control-product-surface.md`, and `docs/release-0.0.31-prioritization.md`.
+Phase 1 is complete and superseded by the Phase 3 product surface decision for `0.0.31`. The temporary Source Control companion graph view is not part of the release surface. The shipped direction is tracked in `project-context/2.build/features/source-control-editor-panel.md`, `project-context/2.build/features/source-control-product-surface.md`, and `project-context/docs/release-0.0.31-prioritization.md`.
 
 The scope and acceptance criteria below document the original companion-view experiment and should not be read as the final `0.0.31` ship plan.
 

@@ -160,13 +160,13 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - Source Control toolbar contribution and on-demand editor review panels
   - commands and context menus
 
-- `docs/revision-graph-parity-plan.md`
+- `project-context/docs/revision-graph-parity-plan.md`
   - architectural review distilled into a phased plan for reproducing the TortoiseGit Revision Graph in VS Code
   - target module boundaries, parity goals, and acceptance criteria
 
 ## Architecture Plan
 
-The current redesign roadmap lives in [docs/revision-graph-parity-plan.md](docs/revision-graph-parity-plan.md).
+The current redesign roadmap lives in [project-context/docs/revision-graph-parity-plan.md](project-context/docs/revision-graph-parity-plan.md).
 
 That document is the working reference for:
 

@@ -33,8 +33,8 @@ The extension competes with Git graph extensions, standalone Git GUIs, and IDE-i
 ## Sources
 - `README.md`
 - `package.json`
-- `docs/revision-graph-parity-plan.md`
-- `docs/release-0.0.14-prioritization.md` through `docs/release-0.0.17-prioritization.md`
+- `project-context/docs/revision-graph-parity-plan.md`
+- `project-context/docs/release-0.0.14-prioritization.md` through `project-context/docs/release-0.0.17-prioritization.md`
 - `project-context/3.deliver/release.md`
 
 ## Assumptions

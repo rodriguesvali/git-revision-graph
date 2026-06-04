@@ -52,11 +52,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   };
 
   const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri);
-  await compareResultsProvider.initialize();
   const backend = createRevisionGraphBackend();
   let services: RefCommandServices | undefined;
   const showLogProvider = new ShowLogViewProvider(context.extensionUri, backend, compareResultsProvider, () => services);
-  await showLogProvider.initialize();
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
     git,
@@ -112,12 +110,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraphEditor', async (options?: { readonly preserveGraphState?: boolean }) => {
       await revisionGraphEditorPanel.open(options);
-    }),
-    vscode.commands.registerCommand('gitRefs.hideCompareResults', async () => {
-      await compareResultsProvider.hide();
-    }),
-    vscode.commands.registerCommand('gitRefs.hideShowLog', async () => {
-      await showLogProvider.hide();
     })
   );
 }
