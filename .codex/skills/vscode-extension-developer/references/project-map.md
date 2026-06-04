@@ -2,24 +2,23 @@
 
 ## Overview
 
-This repository is a VS Code extension named `GIT Revision Graph`. Its active product surface is a revision-graph editor webview panel launched from VS Code Source Control. It visualizes Git refs and runs compare, checkout, branch, sync, merge, deletion, and history workflows. Compare Results and Show Logs remain on-demand Activity Bar review views.
+This repository is a VS Code extension named `GIT Revision Graph`. Its active product surface is a revision-graph editor webview panel launched from VS Code Source Control. It visualizes Git refs and runs compare, checkout, branch, sync, merge, deletion, and history workflows. Compare Results and Show Log open as on-demand editor webview panels.
 
 ## Main Files
 
 - `package.json`
   - Extension manifest
-  - Contributed commands, menus, view container, and view
+  - Contributed commands and menus
   - Activation events and extension dependency on `vscode.git`
 - `src/extension.ts`
   - Activation entrypoint
-  - View provider registration
   - Contributed command registration
   - Content providers for ref-backed diffs
 - `src/revisionGraphPanel.ts`
   - Thin `WebviewViewProvider` wrapper for the revision graph view
   - Public entrypoints used by activation and command wiring
 - `src/compareResultsView.ts`
-  - Tree view provider for persistent compare results
+  - Singleton editor `WebviewPanel` presenter for persistent compare results
   - Compare result file opening and view messaging
 - `src/revisionGraph/controller.ts`
   - Active revision graph controller and repository event handling
@@ -49,16 +48,14 @@ This repository is a VS Code extension named `GIT Revision Graph`. Its active pr
 
 - Source Control command: `gitRefs.openRevisionGraphEditor`
 - Editor panel view type: `gitRefs.revisionGraphEditorPanel`
-- Review view: `gitRefs.compareResultsView`
-- Review view: `gitRefs.showLogView`
+- Compare Results editor panel view type: `gitRefs.compareResultsView`
+- Show Log editor panel view type: `gitRefs.showLogView`
 - Contributed commands:
   - `gitRefs.compareRefs`
   - `gitRefs.compareWithWorktree`
   - `gitRefs.checkout`
   - `gitRefs.merge`
   - `gitRefs.openRevisionGraphEditor`
-  - `gitRefs.hideCompareResults`
-  - `gitRefs.hideShowLog`
 - Compatibility command wired at activation:
   - `gitRefs.openRevisionGraph`
 - Primary graph actions exposed inside the webview:
@@ -74,7 +71,7 @@ This repository is a VS Code extension named `GIT Revision Graph`. Its active pr
 
 The current implementation uses a dedicated webview surface for graph navigation and native VS Code UX for surrounding actions:
 
-- `WebviewViewProvider` for graph navigation
+- `WebviewPanel` for graph navigation and on-demand Compare Results / Show Log review surfaces
 - `QuickPick` for reference and file selection
 - `showInputBox` for branch naming
 - `showWarningMessage` and `showInformationMessage` for confirmations and feedback
@@ -94,7 +91,7 @@ The current implementation uses a dedicated webview surface for graph navigation
 - Automated tests cover pure helpers, repository selection, ref actions, graph state shaping, render coordination, and the persistent webview shell.
 - Manual Extension Development Host validation is still needed for end-to-end integration with the real `vscode.git` extension and workbench UX.
 - Graph behavior is spread across `src/revisionGraph/controller.ts`, `src/revisionGraph/backend.ts`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/webview/script/*`, so larger changes should preserve those boundaries unless simplification is part of the task.
-- Compare results already persist in a dedicated tree view, but the review workflow is still intentionally lightweight.
+- Compare results and Show Log persist in dedicated editor panels, but the review workflow is still intentionally lightweight.
 - UX around merge conflicts and detached/tag workflows is intentionally minimal.
 - The revision graph still renders a bounded recent-commit window rather than the full repository history.
 
@@ -103,5 +100,5 @@ The current implementation uses a dedicated webview surface for graph navigation
 - Minimum validation: `npm run build`
 - For command, graph, or UX changes, run `npm test`.
 - For command or UX changes, manually test in an Extension Development Host.
-- If compare flows changed, verify the `Compare Results` view updates and opens diffs correctly.
+- If compare flows changed, verify the `Compare Results` editor panel updates and opens diffs correctly.
 - If changing manifest contributions, verify the command IDs and view IDs still match code registrations exactly.

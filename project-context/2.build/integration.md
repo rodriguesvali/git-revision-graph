@@ -15,7 +15,7 @@ Record integration decisions when a feature touches more than one surface.
 - No README or CHANGELOG release-note update was made yet because versioning/release packaging has not been approved.
 - 2026-05-16 `0.0.31` Source Control integration touched `package.json`, activation command wiring, graph panel lifecycle, review view lifecycle, README, release docs, and manifest tests.
 - The final `0.0.31` product surface removes the primary graph Activity Bar view and temporary Source Control companion graph view, then routes Source Control launch to `gitRefs.openRevisionGraphEditor`.
-- Compare Results and Show Log remain on-demand review views with dedicated Activity Bar labels and explicit hide commands.
+- Compare Results and Show Log now open as on-demand editor panels and no longer contribute dedicated Activity Bar review containers.
 - Release documentation now treats Phase 1 companion-view artifacts as historical and Phase 3 product surface cleanup as the release-bound behavior.
 
 ## Verification

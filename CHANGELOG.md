@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.37
+
+### Workflow & UX
+
+- Moved `Compare Results` and `Show Log` from left-side Activity Bar review views into on-demand editor panels, matching the central placement of the main revision graph.
+- Harmonized the revision graph toolbar so search, repository actions, and main zoom controls use consistent grouped toolbar styling.
+- Replaced search navigation, clear, and main zoom text glyphs with consistent SVG toolbar icons.
+
+### Quality
+
+- Updated manifest coverage to assert that Compare Results and Show Log are no longer contributed as Activity Bar webviews.
+- Added webview shell coverage for the new toolbar grouping and icons.
+
 ## 0.0.36
 
 ### Highlights

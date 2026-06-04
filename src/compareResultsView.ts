@@ -12,14 +12,7 @@ import {
 } from './compareResultsShared';
 import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
 import { validateCompareResultsWebviewMessage } from './compareResults/messageValidation';
-import type { CompareResultsRevealOptions, RefSelection } from './refActions';
-import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
-import {
-  detachSecondaryView,
-  focusAndMaximizeSecondaryView,
-  hideSecondaryView,
-  minimizeSecondaryViewThenMaximizeView
-} from './viewLayout';
+import type { RefSelection } from './refActions';
 import {
   openChangeDiffBetweenRefs,
   openChangeDiffWithWorktree,
@@ -29,48 +22,27 @@ import {
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 export const COMPARE_RESULTS_VISIBLE_CONTEXT = 'gitRefs.compareResultsVisible';
 
-export class CompareResultsViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
-  private view: vscode.WebviewView | undefined;
-  private readonly viewDisposables: vscode.Disposable[] = [];
+  private panel: vscode.WebviewPanel | undefined;
+  private readonly panelDisposables: vscode.Disposable[] = [];
   private isVisible: boolean | undefined;
-  private restoreShowLogOnHide = false;
+
+  constructor(private readonly extensionUri: vscode.Uri) {}
 
   async initialize(): Promise<void> {
     await this.updateVisibility(false);
   }
 
   dispose(): void {
-    this.disposeViewDisposables();
-  }
-
-  async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
-    this.disposeViewDisposables();
-    this.view = view;
-    view.webview.options = {
-      enableScripts: true
-    };
-    view.webview.html = renderCompareResultsWebviewHtml();
-    this.viewDisposables.push(
-      view.onDidDispose(() => {
-        if (this.view === view) {
-          this.view = undefined;
-        }
-        this.disposeViewDisposables();
-      }),
-      view.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.handleMessage(message);
-      })
-    );
-    this.postState();
+    this.disposePanel();
   }
 
   async showBetweenRefs(
     repository: Repository,
     left: RefSelection,
     right: RefSelection,
-    changes: readonly Change[],
-    options: CompareResultsRevealOptions = {}
+    changes: readonly Change[]
   ): Promise<void> {
     this.state = {
       kind: 'between',
@@ -79,17 +51,15 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
       right,
       changes: [...changes]
     };
-    this.restoreShowLogOnHide = options.source === 'showLog';
     await this.updateVisibility(true);
+    this.revealPanel();
     this.refresh();
-    await this.reveal(options);
   }
 
   async showWithWorktree(
     repository: Repository,
     target: RefSelection,
-    changes: readonly Change[],
-    options: CompareResultsRevealOptions = {}
+    changes: readonly Change[]
   ): Promise<void> {
     this.state = {
       kind: 'worktree',
@@ -97,32 +67,23 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
       target,
       changes: [...changes]
     };
-    this.restoreShowLogOnHide = options.source === 'showLog';
     await this.updateVisibility(true);
+    this.revealPanel();
     this.refresh();
-    await this.reveal(options);
   }
 
   async hide(): Promise<void> {
-    const shouldRestoreShowLog = this.restoreShowLogOnHide;
-    this.restoreShowLogOnHide = false;
     this.state = { kind: 'empty' };
     this.refresh();
+    this.disposePanel();
     await this.updateVisibility(false);
-    if (shouldRestoreShowLog) {
-      await hideSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands, SHOW_LOG_VIEW_ID);
-      return;
-    }
-
-    await hideSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   async hideWithRevisionGraph(): Promise<void> {
-    this.restoreShowLogOnHide = false;
     this.state = { kind: 'empty' };
     this.refresh();
+    this.disposePanel();
     await this.updateVisibility(false);
-    await detachSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   async openItem(item: CompareResultItem): Promise<void> {
@@ -178,11 +139,11 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
   }
 
   private postState(): void {
-    if (!this.view) {
+    if (!this.panel) {
       return;
     }
 
-    void this.view.webview.postMessage({
+    void this.panel.webview.postMessage({
       type: 'state',
       state: this.createWebviewState()
     });
@@ -241,15 +202,6 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
           this.state.target.label
         );
     }
-  }
-
-  private async reveal(options: CompareResultsRevealOptions): Promise<void> {
-    if (options.source === 'showLog') {
-      await minimizeSecondaryViewThenMaximizeView(SHOW_LOG_VIEW_ID, COMPARE_RESULTS_VIEW_ID, vscode.commands);
-      return;
-    }
-
-    await focusAndMaximizeSecondaryView(COMPARE_RESULTS_VIEW_ID, vscode.commands);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -328,6 +280,7 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     this.state = outcome.nextState;
     if (this.state.kind === 'empty') {
       this.refresh();
+      this.disposePanel();
       await this.updateVisibility(false);
       if (outcome.infoMessage) {
         void vscode.window.showInformationMessage(outcome.infoMessage);
@@ -341,9 +294,52 @@ export class CompareResultsViewProvider implements vscode.WebviewViewProvider, v
     }
   }
 
-  private disposeViewDisposables(): void {
-    while (this.viewDisposables.length > 0) {
-      this.viewDisposables.pop()?.dispose();
+  private revealPanel(): void {
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.One);
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      COMPARE_RESULTS_VIEW_ID,
+      'Compare Results',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    panel.iconPath = {
+      light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),
+      dark: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-dark.svg')
+    };
+    panel.webview.html = renderCompareResultsWebviewHtml();
+    this.panel = panel;
+    this.panelDisposables.push(
+      panel.onDidDispose(() => {
+        if (this.panel === panel) {
+          this.panel = undefined;
+          this.state = { kind: 'empty' };
+          void this.updateVisibility(false);
+        }
+        this.disposePanelDisposables();
+      }),
+      panel.webview.onDidReceiveMessage(async (message: unknown) => {
+        await this.handleMessage(message);
+      })
+    );
+  }
+
+  private disposePanel(): void {
+    const panel = this.panel;
+    this.panel = undefined;
+    this.disposePanelDisposables();
+    panel?.dispose();
+  }
+
+  private disposePanelDisposables(): void {
+    while (this.panelDisposables.length > 0) {
+      this.panelDisposables.pop()?.dispose();
     }
   }
 

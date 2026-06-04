@@ -32,7 +32,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Added editor graph panel opening/reveal lifecycle through `gitRefs.openRevisionGraphEditor`.
   - Kept `gitRefs.openRevisionGraph` as a compatibility alias for the editor graph path.
   - Removed graph `WebviewViewProvider` registrations for the old side-bar graph placements.
-  - Wired editor graph disposal to close dependent Compare Results and Show Log review views.
+  - Wired editor graph disposal to close dependent Compare Results and Show Log review panels.
   - Updated focus restoration so closing the last secondary review view returns to Source Control.
 
 ## Verification

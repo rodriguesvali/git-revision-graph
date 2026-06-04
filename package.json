@@ -42,40 +42,6 @@
     "vscode.git"
   ],
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "gitRefsCompare",
-          "title": "Git Revision Graph - Compare",
-          "icon": "media/icon-source.svg"
-        },
-        {
-          "id": "gitRefsShowLogs",
-          "title": "Git Revision Graph - Show Logs",
-          "icon": "media/icon-source.svg"
-        }
-      ]
-    },
-    "views": {
-      "gitRefsCompare": [
-        {
-          "id": "gitRefs.compareResultsView",
-          "name": "Compare Results",
-          "type": "webview",
-          "visibility": "collapsed",
-          "when": "gitRefs.compareResultsVisible"
-        }
-      ],
-      "gitRefsShowLogs": [
-        {
-          "id": "gitRefs.showLogView",
-          "name": "Show Logs",
-          "type": "webview",
-          "visibility": "collapsed",
-          "when": "gitRefs.showLogVisible"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "gitRefs.compareRefs",
@@ -100,16 +66,6 @@
           "light": "media/icon-source-light.svg",
           "dark": "media/icon-source-dark.svg"
         }
-      },
-      {
-        "command": "gitRefs.hideCompareResults",
-        "title": "Hide Compare Results",
-        "icon": "$(close)"
-      },
-      {
-        "command": "gitRefs.hideShowLog",
-        "title": "Hide Show Log",
-        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -124,16 +80,6 @@
         {
           "command": "gitRefs.openRevisionGraphEditor",
           "when": "view == scm",
-          "group": "navigation"
-        },
-        {
-          "command": "gitRefs.hideCompareResults",
-          "when": "view == gitRefs.compareResultsView",
-          "group": "navigation"
-        },
-        {
-          "command": "gitRefs.hideShowLog",
-          "when": "view == gitRefs.showLogView",
           "group": "navigation"
         }
       ]

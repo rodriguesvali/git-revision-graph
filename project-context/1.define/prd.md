@@ -43,9 +43,9 @@ The extension is already published and feature-rich enough that new work can aff
 - Current package baseline on 2026-06-04: `0.0.36`.
 - Target release: `0.0.37`.
 - Product goal: deliver small visual and functional product improvements from maintainer review while preserving the `0.0.36` graph layout, virtualized rendering, worker-thread layout, and stale render coordination changes.
-- Recommended scope: review and select improvements item by item; collect `0.0.36` VSIX/manual smoke findings; fix regressions in virtualized node/edge visibility, minimap/scroll/zoom synchronization, worker fallback, cancellation, stale refresh handling, and large-repository responsiveness; add focused regression coverage for any confirmed issue.
+- Recommended scope: review and select improvements item by item; move Compare Results and Show Log into editor-area panels; collect `0.0.36` VSIX/manual smoke findings; fix regressions in virtualized node/edge visibility, minimap/scroll/zoom synchronization, worker fallback, cancellation, stale refresh handling, and large-repository responsiveness; add focused regression coverage for any confirmed issue.
 - Non-goals: changing the Source Control/editor graph product surface, adding new commands or view containers, replacing the renderer, expanding full-history graph scope, dependency changes, publishing, or version bumping without approval.
-- Success condition: users get focused visual or functional polish without destabilizing the post-`0.0.36` graph experience on branch-heavy and merge-heavy repositories, and maintainers have a clear go/no-go path for packaging `0.0.37`.
+- Success condition: users get focused visual or functional polish, including central editor review panels, without destabilizing the post-`0.0.36` graph experience on branch-heavy and merge-heavy repositories, and maintainers have a clear go/no-go path for packaging `0.0.37`.
 - Planning reference: `project-context/docs/release-0.0.37-prioritization.md`.
 
 ## 0.0.32 Release Define
@@ -127,5 +127,5 @@ The extension is already published and feature-rich enough that new work can aff
 - What repository fixture should become the standard manual smoke sample for graph correctness?
 - What manual Extension Development Host smoke matrix is mandatory before `0.0.31` packaging?
 - Should Marketplace screenshots be refreshed for the Source Control toolbar and editor graph panel before publication?
-- Should future releases redesign Compare Results and Show Log as editor surfaces, or keep them as on-demand Activity Bar review views?
+- Decided on 2026-06-04: Compare Results and Show Log move to on-demand editor panels for `0.0.37`.
 - Which graph parity gap should be prioritized after the Source Control surface change ships?

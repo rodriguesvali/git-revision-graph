@@ -6,7 +6,7 @@ Current package baseline: `0.0.36`.
 
 Target release: `0.0.37`.
 
-Status: Build phase opened on 2026-06-04 with the first maintainer-selected visual improvement implemented. Version bump, VSIX packaging, and Marketplace publication have not been performed for `0.0.37`.
+Status: Build phase is in progress with maintainer-selected visual and functional improvements implemented. Version bump, VSIX packaging, and Marketplace publication have not been performed for `0.0.37`.
 
 Planning and build references:
 
@@ -14,6 +14,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.37-toolbar-visual-harmonization.md`
 - `project-context/2.build/features/0.0.37-search-toolbar-icons.md`
 - `project-context/2.build/features/0.0.37-zoom-toolbar-icons.md`
+- `project-context/2.build/features/0.0.37-central-review-panels.md`
 
 Candidate direction:
 
@@ -22,17 +23,20 @@ Candidate direction:
 - Harmonize the revision graph toolbar by giving search and main graph zoom controls the same grouped slot visual treatment as repository actions.
 - Replace search navigation and clear glyphs with SVG toolbar icons aligned to the repository-action controls.
 - Replace main graph zoom glyphs with SVG toolbar icons aligned to the repository-action and search controls.
+- Move Compare Results and Show Log from left-side Activity Bar review views into on-demand editor panels.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
 - Add focused regression coverage for any confirmed issue found during `0.0.36` smoke validation.
-- Keep the Source Control-launched singleton editor graph and on-demand Compare Results/Show Log review surfaces unchanged.
+- Keep the Source Control-launched singleton editor graph and close dependent editor review panels when the graph panel closes.
 
 Automated verification completed:
 
 - `npm run build` passed for the toolbar visual harmonization slice.
 - `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/revisionGraphWebview.test.js` passed for focused webview coverage.
 - `npm test` passed with 306 tests for the toolbar visual harmonization, search toolbar icon, and zoom toolbar icon slices. This includes `npm run build` through the test script.
+- `npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node --test out-test/test/packageManifest.test.js out-test/test/viewLayout.test.js out-test/test/revisionGraphWebview.test.js out-test/test/showLogWebview.test.js out-test/test/compareResultsWebview.test.js out-test/test/showLogCommitCompare.test.js` passed for the central review panels slice.
+- `npm test` passed with 301 tests after moving Compare Results and Show Log to editor panels and removing obsolete side-view layout tests. This includes `npm run build` through the test script.
 
 Automated verification pending:
 

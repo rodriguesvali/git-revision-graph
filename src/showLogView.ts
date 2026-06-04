@@ -22,7 +22,6 @@ import {
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
 import { validateShowLogWebviewMessage } from './showLog/messageValidation';
-import { detachSecondaryView, focusAndMaximizeSecondaryView, hideSecondaryView } from './viewLayout';
 
 export const SHOW_LOG_VISIBLE_CONTEXT = 'gitRefs.showLogVisible';
 const SHOW_LOG_PAGE_SIZE = 50;
@@ -32,10 +31,10 @@ export interface ShowLogPresenter {
   showSource(repository: Repository, source: RevisionLogSource): Promise<void>;
 }
 
-export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, ShowLogPresenter {
+export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter {
   private state: ShowLogState = createHiddenShowLogState();
-  private view: vscode.WebviewView | undefined;
-  private readonly viewDisposables: vscode.Disposable[] = [];
+  private panel: vscode.WebviewPanel | undefined;
+  private readonly panelDisposables: vscode.Disposable[] = [];
   private isVisible: boolean | undefined;
   private loadRequestId = 0;
   private expandRequestId = 0;
@@ -43,6 +42,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   private activeLogAbortController: AbortController | undefined;
 
   constructor(
+    private readonly extensionUri: vscode.Uri,
     private readonly backend: RevisionGraphBackend & ShowLogBackend,
     private readonly compareResultsPresenter: CompareResultsPresenter,
     private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined
@@ -54,28 +54,7 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
 
   dispose(): void {
     this.cancelActiveLogLoad();
-    this.disposeViewDisposables();
-  }
-
-  async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
-    this.disposeViewDisposables();
-    this.view = view;
-    view.webview.options = {
-      enableScripts: true
-    };
-    view.webview.html = renderShowLogWebviewHtml();
-    this.viewDisposables.push(
-      view.onDidDispose(() => {
-        if (this.view === view) {
-          this.view = undefined;
-        }
-        this.disposeViewDisposables();
-      }),
-      view.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.handleMessage(message);
-      })
-    );
-    this.postState();
+    this.disposePanel();
   }
 
   async showSource(repository: Repository, source: RevisionLogSource): Promise<void> {
@@ -98,8 +77,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
       cachedChanges: {}
     };
     await this.updateVisibility(true);
+    this.revealPanel();
     this.postState();
-    await focusAndMaximizeSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
     if (requestId !== this.loadRequestId) {
       return;
     }
@@ -151,8 +130,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.cancelActiveLogLoad();
     this.state = createHiddenShowLogState();
     this.postState();
+    this.disposePanel();
     await this.updateVisibility(false);
-    await hideSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
   }
 
   async hideWithRevisionGraph(): Promise<void> {
@@ -161,8 +140,8 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.cancelActiveLogLoad();
     this.state = createHiddenShowLogState();
     this.postState();
+    this.disposePanel();
     await this.updateVisibility(false);
-    await detachSecondaryView(SHOW_LOG_VIEW_ID, vscode.commands);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -664,11 +643,11 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
   }
 
   private postState(): void {
-    if (!this.view) {
+    if (!this.panel) {
       return;
     }
 
-    void this.view.webview.postMessage({
+    void this.panel.webview.postMessage({
       type: 'state',
       state: buildShowLogWebviewState(this.state)
     });
@@ -697,9 +676,55 @@ export class ShowLogViewProvider implements vscode.WebviewViewProvider, vscode.D
     this.activeLogAbortController = undefined;
   }
 
-  private disposeViewDisposables(): void {
-    while (this.viewDisposables.length > 0) {
-      this.viewDisposables.pop()?.dispose();
+  private revealPanel(): void {
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.One);
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      SHOW_LOG_VIEW_ID,
+      'Show Log',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    panel.iconPath = {
+      light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),
+      dark: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-dark.svg')
+    };
+    panel.webview.html = renderShowLogWebviewHtml();
+    this.panel = panel;
+    this.panelDisposables.push(
+      panel.onDidDispose(() => {
+        if (this.panel === panel) {
+          this.panel = undefined;
+          this.loadRequestId += 1;
+          this.expandRequestId += 1;
+          this.cancelActiveLogLoad();
+          this.state = createHiddenShowLogState();
+          void this.updateVisibility(false);
+        }
+        this.disposePanelDisposables();
+      }),
+      panel.webview.onDidReceiveMessage(async (message: unknown) => {
+        await this.handleMessage(message);
+      })
+    );
+  }
+
+  private disposePanel(): void {
+    const panel = this.panel;
+    this.panel = undefined;
+    this.disposePanelDisposables();
+    panel?.dispose();
+  }
+
+  private disposePanelDisposables(): void {
+    while (this.panelDisposables.length > 0) {
+      this.panelDisposables.pop()?.dispose();
     }
   }
 

@@ -16,7 +16,7 @@ Since `0.0.31`, Git Revision Graph no longer opens from its own primary Activity
 - Click `View Git Revision Graph` in the Source Control toolbar.
 - Or run `View Git Revision Graph` from the Command Palette.
 
-The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` still appear as on-demand Activity Bar review views only when those workflows are active.
+The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` also open as on-demand editor panels when those workflows are active.
 
 ## Goals
 
@@ -34,8 +34,8 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` s
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Compare a selected reference or unreferenced commit against the current worktree
-- On-demand `Compare Results` view that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
-- On-demand `Show Log` view that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
+- On-demand `Compare Results` editor panel that appears when a compare produces results, with an inline filter box, double-click file diff opening, and context menu actions for compare, compare with worktree when applicable, and worktree restore flows
+- On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches by creating a local tracking branch, including explicit overwrite confirmation when the local branch name already exists
@@ -157,7 +157,7 @@ This approach keeps the extension lightweight for reference workflows. The revis
 
 - `package.json`
   - extension metadata
-  - Source Control toolbar contribution and on-demand review view containers
+  - Source Control toolbar contribution and on-demand editor review panels
   - commands and context menus
 
 - `docs/revision-graph-parity-plan.md`
@@ -257,12 +257,12 @@ Additional actions are available directly inside the Revision Graph context menu
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
-The extension also includes two on-demand secondary review views with dedicated Activity Bar labels:
+The extension also includes two on-demand editor review panels:
 
-- `Git Revision Graph - Compare`, which appears when a compare produces results and keeps the latest compare session available for multi-file review while the graph panel is open
-- `Git Revision Graph - Show Logs`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline while the graph panel is open
+- `Compare Results`, which appears when a compare produces results and keeps the latest compare session available for multi-file review while the graph panel is open
+- `Show Log`, which appears from the graph context menu and shows a compact log for a selected target or range, with commit expansion inline while the graph panel is open
 
-Closing the editor graph panel also closes these secondary review views.
+Closing the editor graph panel also closes these secondary review panels.
 
 ## Known Limitations
 

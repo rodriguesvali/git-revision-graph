@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { COMPARE_RESULTS_VIEW_ID, CompareResultsViewProvider } from './compareResultsView';
+import { CompareResultsViewProvider } from './compareResultsView';
 import { RefCommandServices } from './refCommands';
 import { API, GitExtension } from './git';
 import { configureGitExecutablePath } from './gitExec';
@@ -14,7 +14,6 @@ import {
   serializeProjectedGraphLayoutCache
 } from './revisionGraph/layout/layeredLayout';
 import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
-import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
@@ -52,11 +51,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }, PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS);
   };
 
-  const compareResultsProvider = new CompareResultsViewProvider();
+  const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri);
   await compareResultsProvider.initialize();
   const backend = createRevisionGraphBackend();
   let services: RefCommandServices | undefined;
-  const showLogProvider = new ShowLogViewProvider(backend, compareResultsProvider, () => services);
+  const showLogProvider = new ShowLogViewProvider(context.extensionUri, backend, compareResultsProvider, () => services);
   await showLogProvider.initialize();
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
@@ -94,8 +93,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         syncConfiguredGitExecutablePath();
       }
     }),
-    vscode.window.registerWebviewViewProvider(COMPARE_RESULTS_VIEW_ID, compareResultsProvider),
-    vscode.window.registerWebviewViewProvider(SHOW_LOG_VIEW_ID, showLogProvider),
     vscode.workspace.registerTextDocumentContentProvider(EMPTY_SCHEME, new EmptyContentProvider()),
     vscode.workspace.registerTextDocumentContentProvider(REF_SCHEME, new RefContentProvider(git)),
     vscode.commands.registerCommand('gitRefs.compareRefs', async (node?: RefNode) => {

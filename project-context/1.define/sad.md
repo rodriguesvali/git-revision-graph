@@ -17,12 +17,12 @@ After Source Control integration Phase 3, keep one graph product surface:
 - Primary entry point: `View Git Revision Graph` from the built-in Source Control toolbar or Command Palette.
 - Primary graph surface: an editor-area `WebviewPanel`.
 - Removed graph surfaces: the dedicated Activity Bar graph and the Source Control companion graph view.
-- On-demand secondary review views remain available for Compare Results and Show Log while the editor graph panel is open.
-- The remaining Activity Bar review containers are explicitly labeled `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs` so they read as review surfaces, not the primary graph entry point.
+- On-demand editor review panels remain available for Compare Results and Show Log while the editor graph panel is open.
+- Compare Results and Show Log no longer contribute left-side Activity Bar review containers.
 - Shared services remain shared where they are already cross-surface concepts: Git API access, graph backend/cache services, Compare Results presenter, Show Log presenter, text document content providers, and workbench action services.
 
 ## Components
-- Extension manifest: commands, menus, views, container, dependency on `vscode.git`, package metadata.
+- Extension manifest: commands, menus, dependency on `vscode.git`, package metadata.
 - Extension host orchestration: activation, command registration, repository and provider wiring.
 - Git integration: public `vscode.git` API for repository state and mutations, targeted Git CLI for graph/history data.
 - Webview UI: revision graph rendering, interactions, filtering, context menus, compare/log surfaces.
@@ -36,27 +36,24 @@ Phase 3 uses a single graph placement architecture:
 - `package.json`
   - Do not contribute `gitRefs.revisionGraphView`.
   - Do not contribute `gitRefs.sourceControlRevisionGraphView`.
-  - Keep Activity Bar containers only for on-demand review views.
-  - Label the compare container `Git Revision Graph - Compare`.
-  - Label the show-log container `Git Revision Graph - Show Logs`.
+  - Do not contribute Compare Results or Show Log Activity Bar containers.
   - Keep the Source Control title action wired to `gitRefs.openRevisionGraphEditor`.
-  - Keep Compare Results and Show Log as on-demand secondary views.
+  - Keep Compare Results and Show Log as on-demand editor panels.
 - `src/revisionGraphTypes.ts`
   - Keep the editor panel view type as the graph surface identifier.
   - Keep legacy view IDs only where still needed by compatibility code or tests.
 - `src/revisionGraphPanel.ts` and `src/revisionGraph/controller.ts`
   - Keep a singleton editor `WebviewPanel` that reveals the existing panel when invoked again.
   - Reuse the existing graph controller, webview shell, backend, and message contract.
-  - Notify dependent review views when the editor graph panel is disposed.
+  - Notify dependent review panels when the editor graph panel is disposed.
 - `src/extension.ts`
-  - Register Compare Results and Show Log view providers.
+  - Construct Compare Results and Show Log panel presenters.
   - Register `gitRefs.openRevisionGraphEditor` and keep `gitRefs.openRevisionGraph` as a compatibility alias to the editor panel.
   - Do not register graph `WebviewViewProvider` instances for removed side-bar graph placements.
-  - Wire graph-panel disposal to hide Compare Results and Show Log without reopening the graph.
+  - Wire graph-panel disposal to dispose Compare Results and Show Log without reopening the graph.
 - `src/viewLayout.ts`
   - Keep the removed side-bar graph hidden.
-  - Return focus to `gitRefs.openRevisionGraphEditor` after the last secondary view closes.
-  - Allow secondary views to detach when their owning graph panel closes.
+  - Preserve the legacy visibility context reset without owning secondary review focus.
 
 The architectural intent is to keep one graph workspace while preserving existing review workflows. Git data loading and action execution remain shared extension capabilities.
 
@@ -74,14 +71,13 @@ With the editor graph panel:
 2. The graph controller reconciles its current repository against the shared `vscode.git` repository list.
 3. Repository events can trigger refresh preparation in the resolved editor graph.
 4. Compare, diff, checkout, branch, sync, merge, delete, and log actions still flow through the existing shared workbench action services.
-5. Compare Results and Show Log remain single shared secondary review surfaces while the graph panel is open.
+5. Compare Results and Show Log remain single shared editor review panels while the graph panel is open.
 6. Closing the graph panel hides Compare Results and Show Log without triggering the editor graph open command.
 
 ## Interfaces
 - VS Code extension API.
 - VS Code `contributes.menus` contribution points for Source Control toolbar access.
-- VS Code `WebviewPanel` for the editor graph.
-- VS Code `WebviewViewProvider` for remaining secondary review views.
+- VS Code `WebviewPanel` for the editor graph, Compare Results, and Show Log.
 - Built-in `vscode.git` extension API.
 - Targeted `git` CLI calls for log, diff, show, and graph/history data.
 - Webview post-message contracts between extension host and browser-side graph scripts.
@@ -121,11 +117,11 @@ With the editor graph panel:
 - Phase 2 adds an editor-area `WebviewPanel` graph surface as a third placement. The panel uses its own graph controller instance, reuses the existing graph webview shell and shared backend/action services, and is opened or revealed through a dedicated command instead of replacing the primary Activity Bar graph command.
 - The Source Control toolbar entry should launch the editor panel in Phase 2, while the Phase 1 companion view remains available as a collapsible Source Control view for users who want an embedded side-bar graph.
 - Phase 3 product surface decision removes the dedicated Activity Bar graph and Source Control companion graph contributions. Source Control toolbar access becomes the primary entry point, and the editor `WebviewPanel` becomes the single graph surface.
-- Review containers can remain in the Activity Bar, but their titles must identify the active review use case: `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
-- Compare Results and Show Log remain on-demand secondary review views until they are intentionally redesigned, but they should return focus to the editor graph command after user-initiated secondary close and should close with the editor graph panel after graph-panel close.
+- `0.0.37` redesigns Compare Results and Show Log as editor-area panels and removes their Activity Bar review containers.
+- Compare Results and Show Log should close with the editor graph panel after graph-panel close.
 - The `0.0.31` release candidate should document the final Source Control/editor graph product surface and should not present the superseded companion graph as a shipped feature.
 - The `0.0.37` Define cycle should prioritize stabilization of the `0.0.36` `d3-dag`, worker-thread layout, virtualized rendering, and stale render guard architecture before accepting a broader graph-parity slice.
-- The `0.0.37` cycle should keep the Source Control-launched singleton editor graph and on-demand Compare Results/Show Log review surfaces unchanged unless a confirmed regression requires a scoped fix.
+- The `0.0.37` cycle should keep the Source Control-launched singleton editor graph while moving on-demand Compare Results/Show Log review surfaces into editor panels.
 
 ## Risks
 - Manifest and command registrations can drift without explicit checks.
@@ -134,7 +130,7 @@ With the editor graph panel:
 - Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
 - Optimistic reference patches can compromise visual integrity after deletion by leaving stale scene geometry, empty cards, or preserved viewport/selection context that no longer matches repository truth.
 - Pull-based sync metadata patches can preserve stale layout context when newly pulled commits change topology, even when a fallback exists for unresolved `HEAD` cases.
-- Shared Compare Results and Show Log remain review surfaces while the graph itself lives in the editor area; their lifecycle is owned by the graph panel and this split needs manual UX validation.
+- Shared Compare Results and Show Log now live in the editor area with the graph; their singleton panel lifecycle still needs manual UX validation.
 - Legacy side-bar graph command IDs can cause drift if future code assumes `gitRefs.revisionGraphView` still exists in the manifest.
 
 ## Verification Strategy
@@ -146,11 +142,11 @@ For Source Control product surface Phase 3, add manual validation for:
 
 - Source Control toolbar opens the editor graph panel.
 - Repeated toolbar clicks reveal the same editor panel.
-- No dedicated primary graph Activity Bar entry appears on a fresh workspace; review Activity Bar entries are labeled `Git Revision Graph - Compare` and `Git Revision Graph - Show Logs`.
+- No dedicated primary graph Activity Bar entry appears on a fresh workspace, and no Compare Results or Show Log review Activity Bar entries are contributed.
 - No Source Control companion graph view appears below Changes.
 - Refresh, fetch, repository selection, compare, diff, checkout, branch creation, sync, merge, delete, Show Log, and Compare Results still work from the editor graph.
-- Closing Compare Results or Show Log returns to the editor graph entry point.
-- Closing the editor graph panel hides Compare Results and Show Log and does not reopen the graph.
+- Closing Compare Results or Show Log closes only that editor review panel.
+- Closing the editor graph panel closes Compare Results and Show Log and does not reopen the graph.
 - Zero-repository and multi-repository workspaces behave consistently.
 
 ## Sources
@@ -174,7 +170,7 @@ For Source Control product surface Phase 3, add manual validation for:
 - Which large repository, fixture, or synthetic graph should become the repeatable manual benchmark for worker-layout and virtualization validation?
 - Do worker-layout fallbacks need more explicit output-channel diagnostics before publication?
 - Which `0.0.32` graph foundation slice should be implemented first: graph fixtures, model boundary types, refresh intent instrumentation, or a narrow metadata-only patch path?
-- Should `0.0.32` keep Compare Results and Show Log as Activity Bar review surfaces while the primary graph remains in an editor panel?
+- Decided on 2026-06-04: Compare Results and Show Log move to on-demand editor panels for `0.0.37`.
 - Which graph parity gaps should be prioritized after the current release baseline?
 - Should release validation include a fixed sample repository fixture for manual testing?
 - Should Git argument hardening normalize all known refs to full ref names before command execution?
