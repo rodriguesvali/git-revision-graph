@@ -35,6 +35,10 @@ Automated verification completed:
 - Focused handler/dispatcher/message validation tests passed with 14 tests after adding current-repository guard coverage.
 - `npm test` passed with 298 tests after the third revision graph controller cohesion slice. This includes `npm run build` through the test script.
 - `git diff --check` passed after the third revision graph controller cohesion slice and verification artifact updates.
+- `npm run build` passed after the fourth revision graph controller cohesion slice extracted remote tag publication handling.
+- Focused handler/remote-tag/message validation tests passed with 24 tests after extracting `RevisionGraphRemoteTagWorkflow`.
+- `npm test` passed with 302 tests after the fourth revision graph controller cohesion slice. This includes `npm run build` through the test script.
+- `git diff --check` passed after the fourth revision graph controller cohesion slice and verification artifact updates.
 
 Automated verification pending:
 

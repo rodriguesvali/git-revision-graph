@@ -6,21 +6,17 @@ import {
   checkoutResolvedReference,
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
-  deleteRemoteTagResolvedReference,
   deleteResolvedReference,
   mergeResolvedReference,
   pullCurrentBranchFromUpstream,
   publishLocalBranchResolvedReference,
   pushCurrentBranchToUpstream,
-  pushTagResolvedReference,
   RefActionKind,
-  RefActionServices,
   resetCurrentBranchWorkspace,
   syncCurrentHeadWithUpstream
 } from '../refActions';
 import {
   normalizeRevisionGraphProjectionOptionsForScope,
-  RemoteTagPublicationState,
   RevisionGraphMessage,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
@@ -28,19 +24,16 @@ import {
 import { ShowLogPresenter } from '../showLogView';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 import {
-  RemoteTagPublicationRequestContext,
-  resolveRemoteTagPublicationState
-} from './remoteTagState';
-import { getRepositoryRemoteNames } from '../refActions/shared';
+  RevisionGraphRemoteTagWorkflow,
+  RevisionGraphRemoteTagWorkflowHost
+} from './remoteTagWorkflow';
 
-export interface RevisionGraphMessageHandlerHost {
-  readonly actionServices: RefActionServices;
+export interface RevisionGraphMessageHandlerHost extends RevisionGraphRemoteTagWorkflowHost {
   readonly showLogPresenter: ShowLogPresenter;
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
   pickRepository(): Promise<Repository | undefined>;
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
-  getCurrentRepository(): Repository | undefined;
   setCurrentRepository(repository: Repository | undefined): void;
   getCurrentState(): RevisionGraphViewState;
   getProjectionOptions(): RevisionGraphViewState['projectionOptions'];
@@ -55,16 +48,14 @@ export interface RevisionGraphMessageHandlerHost {
     detail: string | undefined,
     requestId: number | undefined
   ): void;
-  createRemoteTagPublicationRequestContext(repository: Repository): RemoteTagPublicationRequestContext;
-  postRemoteTagStateIfCurrent(
-    requestContext: RemoteTagPublicationRequestContext,
-    tagName: string,
-    state: RemoteTagPublicationState
-  ): void;
 }
 
 export class RevisionGraphMessageHandler {
-  constructor(private readonly host: RevisionGraphMessageHandlerHost) {}
+  private readonly remoteTagWorkflow: RevisionGraphRemoteTagWorkflow;
+
+  constructor(private readonly host: RevisionGraphMessageHandlerHost) {
+    this.remoteTagWorkflow = new RevisionGraphRemoteTagWorkflow(host);
+  }
 
   async handleMessage(message: RevisionGraphMessage): Promise<void> {
     switch (message.type) {
@@ -172,13 +163,13 @@ export class RevisionGraphMessageHandler {
         );
         return;
       case 'resolve-remote-tag-state':
-        await this.resolveRemoteTagState(message.refName);
+        await this.remoteTagWorkflow.resolveRemoteTagState(message.refName);
         return;
       case 'push-tag':
-        await this.pushTag(message.refName, message.label, message.refKind as RefActionKind);
+        await this.remoteTagWorkflow.pushTag(message.refName, message.label, message.refKind as RefActionKind);
         return;
       case 'delete-remote-tag':
-        await this.deleteRemoteTag(message.refName, message.label, message.refKind as RefActionKind);
+        await this.remoteTagWorkflow.deleteRemoteTag(message.refName, message.label, message.refKind as RefActionKind);
         return;
       case 'publish-branch':
         await this.runWithCurrentRepository((repository) =>
@@ -249,72 +240,4 @@ export class RevisionGraphMessageHandler {
     }
   }
 
-  private async resolveRemoteTagState(refName: string): Promise<void> {
-    const repository = this.host.getCurrentRepository();
-    if (!repository) {
-      return;
-    }
-
-    const requestContext = this.host.createRemoteTagPublicationRequestContext(repository);
-    const state = await resolveTagPublicationStateForRepository(repository, refName);
-    this.host.postRemoteTagStateIfCurrent(requestContext, refName, state);
-  }
-
-  private async pushTag(
-    refName: string,
-    label: string,
-    refKind: RefActionKind
-  ): Promise<void> {
-    const repository = this.host.getCurrentRepository();
-    if (!repository) {
-      return;
-    }
-
-    const requestContext = this.host.createRemoteTagPublicationRequestContext(repository);
-    const pushed = await pushTagResolvedReference(
-      repository,
-      { refName, label, kind: refKind },
-      this.host.actionServices
-    );
-    if (pushed) {
-      this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'published');
-    }
-  }
-
-  private async deleteRemoteTag(
-    refName: string,
-    label: string,
-    refKind: RefActionKind
-  ): Promise<void> {
-    const repository = this.host.getCurrentRepository();
-    if (!repository) {
-      return;
-    }
-
-    const requestContext = this.host.createRemoteTagPublicationRequestContext(repository);
-    const deleted = await deleteRemoteTagResolvedReference(
-      repository,
-      { refName, label, kind: refKind },
-      this.host.actionServices
-    );
-    if (deleted) {
-      this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'unpublished');
-    }
-  }
-}
-
-async function resolveTagPublicationStateForRepository(
-  repository: Repository,
-  tagName: string
-): Promise<RemoteTagPublicationState> {
-  try {
-    const remoteNames = await getRepositoryRemoteNames(repository);
-    return resolveRemoteTagPublicationState({
-      repositoryPath: repository.rootUri.fsPath,
-      remoteNames,
-      tagName
-    });
-  } catch {
-    return 'unknown';
-  }
 }
