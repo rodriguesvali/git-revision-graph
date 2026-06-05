@@ -11,6 +11,7 @@ Status: Define phase is open for `0.0.39`. The target direction is a cohesion an
 Planning and build references:
 
 - `project-context/docs/release-0.0.39-prioritization.md`
+- `project-context/2.build/features/0.0.39-ref-actions-cohesion.md`
 
 Candidate direction:
 
@@ -51,6 +52,10 @@ Automated verification completed:
 - Focused handler/view-state/ref-action/current-head/remote-tag/message validation tests passed with 117 tests after extracting `RevisionGraphViewStateWorkflow`.
 - `npm test` passed with 312 tests after the seventh revision graph controller cohesion slice. This includes `npm run build` through the test script.
 - `git diff --check` passed after the seventh revision graph controller cohesion slice and verification artifact updates.
+- `npm run build` passed after the first ref actions cohesion slice extracted compare workflows.
+- Focused ref action/ref command/revision graph workflow tests passed with 98 tests after extracting compare workflows.
+- `npm test` passed with 312 tests after the first ref actions cohesion slice. This includes `npm run build` through the test script.
+- `git diff --check` passed after the first ref actions cohesion slice and verification artifact updates.
 
 Automated verification pending:
 
