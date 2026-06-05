@@ -31,6 +31,10 @@ Automated verification completed:
 - Focused handler/dispatcher/message validation tests passed with 12 tests after extracting `RevisionGraphMessageHandler`.
 - `npm test` passed with 296 tests after the second revision graph controller cohesion slice. This includes `npm run build` through the test script.
 - `git diff --check` passed after the second revision graph controller cohesion slice and verification artifact updates.
+- `npm run build` passed after consolidating repository-required handler actions in the third revision graph controller cohesion slice.
+- Focused handler/dispatcher/message validation tests passed with 14 tests after adding current-repository guard coverage.
+- `npm test` passed with 298 tests after the third revision graph controller cohesion slice. This includes `npm run build` through the test script.
+- `git diff --check` passed after the third revision graph controller cohesion slice and verification artifact updates.
 
 Automated verification pending:
 

@@ -81,9 +81,9 @@ export class RevisionGraphMessageHandler {
         await this.host.runFetchCurrentRepository();
         return;
       case 'abort-merge':
-        if (this.host.getCurrentRepository()) {
-          await abortCurrentMerge(this.host.getCurrentRepository() as Repository, this.host.actionServices);
-        }
+        await this.runWithCurrentRepository((repository) =>
+          abortCurrentMerge(repository, this.host.actionServices)
+        );
         return;
       case 'choose-repository':
         {
@@ -108,37 +108,33 @@ export class RevisionGraphMessageHandler {
         await this.host.refresh('full-rebuild');
         return;
       case 'compare-selected':
-        if (this.host.getCurrentRepository()) {
-          await compareResolvedRefs(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          compareResolvedRefs(
+            repository,
             { refName: message.baseRevision, label: message.baseLabel },
             { refName: message.compareRevision, label: message.compareLabel },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'show-log':
-        if (this.host.getCurrentRepository()) {
-          await this.host.showLogPresenter.showSource(this.host.getCurrentRepository() as Repository, message.source);
-        }
+        await this.runWithCurrentRepository((repository) =>
+          this.host.showLogPresenter.showSource(repository, message.source)
+        );
         return;
       case 'open-unified-diff':
-        if (this.host.getCurrentRepository()) {
-          await this.host.openUnifiedDiff(
-            this.host.getCurrentRepository() as Repository,
-            message.baseRevision,
-            message.compareRevision
-          );
-        }
+        await this.runWithCurrentRepository((repository) =>
+          this.host.openUnifiedDiff(repository, message.baseRevision, message.compareRevision)
+        );
         return;
       case 'compare-with-worktree':
-        if (this.host.getCurrentRepository()) {
-          await compareResolvedRefWithWorktree(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          compareResolvedRefWithWorktree(
+            repository,
             { refName: message.revision, label: message.label },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'copy-commit-hash':
         await this.host.writeClipboard(message.commitHash);
@@ -149,31 +145,31 @@ export class RevisionGraphMessageHandler {
         this.host.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
         return;
       case 'checkout':
-        if (this.host.getCurrentRepository()) {
-          await checkoutResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          checkoutResolvedReference(
+            repository,
             { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'create-branch':
-        if (this.host.getCurrentRepository()) {
-          await createBranchFromResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          createBranchFromResolvedReference(
+            repository,
             { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'create-tag':
-        if (this.host.getCurrentRepository()) {
-          await createTagFromResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          createTagFromResolvedReference(
+            repository,
             { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'resolve-remote-tag-state':
         await this.resolveRemoteTagState(message.refName);
@@ -185,13 +181,13 @@ export class RevisionGraphMessageHandler {
         await this.deleteRemoteTag(message.refName, message.label, message.refKind as RefActionKind);
         return;
       case 'publish-branch':
-        if (this.host.getCurrentRepository()) {
-          await publishLocalBranchResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          publishLocalBranchResolvedReference(
+            repository,
             { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'sync-current-head':
         await this.runCurrentHeadAction((repository) => syncCurrentHeadWithUpstream(repository, this.host.actionServices));
@@ -203,38 +199,50 @@ export class RevisionGraphMessageHandler {
         await this.runCurrentHeadAction((repository) => pushCurrentBranchToUpstream(repository, this.host.actionServices));
         return;
       case 'reset-current-workspace':
-        if (this.host.getCurrentRepository()) {
-          await resetCurrentBranchWorkspace(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          resetCurrentBranchWorkspace(
+            repository,
             message.includeUntracked,
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'delete':
-        if (this.host.getCurrentRepository()) {
-          await deleteResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          deleteResolvedReference(
+            repository,
             { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
       case 'merge':
-        if (this.host.getCurrentRepository()) {
-          await mergeResolvedReference(
-            this.host.getCurrentRepository() as Repository,
+        await this.runWithCurrentRepository((repository) =>
+          mergeResolvedReference(
+            repository,
             { refName: message.refName, label: message.refName },
             this.host.actionServices
-          );
-        }
+          )
+        );
         return;
     }
   }
 
+  private async runWithCurrentRepository(
+    action: (repository: Repository) => Promise<unknown> | unknown
+  ): Promise<void> {
+    const repository = this.host.getCurrentRepository();
+    if (!repository) {
+      return;
+    }
+
+    await action(repository);
+  }
+
   private async runCurrentHeadAction(action: (repository: Repository) => Promise<boolean>): Promise<void> {
-    const didScheduleRefresh = this.host.getCurrentRepository()
-      ? await action(this.host.getCurrentRepository() as Repository)
+    const repository = this.host.getCurrentRepository();
+    const didScheduleRefresh = repository
+      ? await action(repository)
       : false;
     if (!didScheduleRefresh) {
       this.host.postCurrentState();

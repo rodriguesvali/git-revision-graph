@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Repository } from '../src/git';
 import { RefActionServices } from '../src/refActions';
 import {
   RevisionGraphMessageHandler,
@@ -62,6 +63,50 @@ test('RevisionGraphMessageHandler handles clipboard copy actions through the hos
 
   assert.deepEqual(clipboardWrites, ['abcdef1234567890', 'main']);
   assert.deepEqual(informationMessages, ['Copied commit abcdef12.', 'Copied ref main.']);
+});
+
+test('RevisionGraphMessageHandler runs repository-scoped host actions with the current repository', async () => {
+  const repository = createRepository('/workspace/repo');
+  const openedDiffs: Array<{ repositoryPath: string; left: string; right: string }> = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    getCurrentRepository: () => repository,
+    async openUnifiedDiff(currentRepository, left, right) {
+      openedDiffs.push({
+        repositoryPath: currentRepository.rootUri.fsPath,
+        left,
+        right
+      });
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'open-unified-diff',
+    baseRevision: 'main',
+    compareRevision: 'feature'
+  });
+
+  assert.deepEqual(openedDiffs, [{
+    repositoryPath: '/workspace/repo',
+    left: 'main',
+    right: 'feature'
+  }]);
+});
+
+test('RevisionGraphMessageHandler skips repository-scoped host actions without a current repository', async () => {
+  let openedDiffCount = 0;
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async openUnifiedDiff() {
+      openedDiffCount += 1;
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'open-unified-diff',
+    baseRevision: 'main',
+    compareRevision: 'feature'
+  });
+
+  assert.equal(openedDiffCount, 0);
 });
 
 function createHost(
@@ -217,4 +262,12 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     loadingLabel: undefined,
     errorMessage: undefined
   };
+}
+
+function createRepository(repositoryPath: string): Repository {
+  return {
+    rootUri: {
+      fsPath: repositoryPath
+    }
+  } as Repository;
 }
