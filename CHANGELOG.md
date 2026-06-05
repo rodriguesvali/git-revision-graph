@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.38
+
+### Performance & Reliability
+
+- Removed incremental revision graph update paths so repository changes, graph actions, scope changes, and manual reloads all use the full graph load path.
+- Removed host and webview metadata/workspace patch message handling in favor of complete graph state reloads.
+- Prepared repository event suppression before explicit Git mutations so graph actions avoid scheduling an early event-driven load followed by a later explicit load.
+- Kept prepared repository event suppression active through the suppression window so repeated repository `state` or `checkout` events from one operation do not schedule extra graph loads.
+
+### Quality
+
+- Added refresh controller coverage for load-only refresh behavior and repeated follow-up event suppression.
+- Added ref action coverage to assert explicit Git mutations prepare refresh suppression before push/pull-style operations and refresh only after the mutation completes.
+- Added webview shell coverage that locks the absence of incremental revision graph patch handlers.
+- Version bump to `0.0.38` has been applied in `package.json` and `package-lock.json`; VSIX packaging, manual smoke validation, and Marketplace publication remain with the maintainer.
+
 ## 0.0.37
 
 ### Workflow & UX

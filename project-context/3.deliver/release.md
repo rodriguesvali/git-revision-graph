@@ -19,6 +19,7 @@ Candidate change set:
 - Prepare repository event suppression before explicit Git mutations so a single graph action does not schedule an early event-driven load plus a later explicit load.
 - Keep prepared repository event suppression active through the suppression window so repeated `state` or `checkout` events from one operation do not schedule extra graph loads.
 - Update tests to assert load-only refresh behavior and absence of incremental patch handlers.
+- Update `CHANGELOG.md` with the `0.0.38` release notes.
 
 Automated verification completed:
 
