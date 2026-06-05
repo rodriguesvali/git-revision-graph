@@ -5,6 +5,7 @@ import {
   RevisionGraphViewState
 } from '../revisionGraphTypes';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
+import { createRevisionGraphUpdateStateMessage } from './hostMessages';
 
 export interface RevisionGraphViewStateWorkflowHost {
   pickRepository(): Promise<Repository | undefined>;
@@ -22,7 +23,7 @@ export class RevisionGraphViewStateWorkflow {
   async chooseRepository(): Promise<void> {
     const pickedRepository = await this.host.pickRepository();
     if (!pickedRepository) {
-      this.host.postHostMessage({ type: 'update-state', state: this.host.getCurrentState() });
+      this.host.postHostMessage(createRevisionGraphUpdateStateMessage(this.host.getCurrentState()));
       return;
     }
 

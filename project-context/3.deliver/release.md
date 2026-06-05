@@ -13,6 +13,7 @@ Planning and build references:
 - `project-context/docs/release-0.0.39-prioritization.md`
 - `project-context/2.build/features/0.0.39-ref-actions-cohesion.md`
 - `project-context/2.build/features/0.0.39-revision-graph-backend-cohesion.md`
+- `project-context/2.build/features/0.0.39-webview-message-contract-cohesion.md`
 
 Candidate direction:
 
@@ -87,6 +88,9 @@ Automated verification completed:
 - Focused backend tests passed with 7 tests after the fourth revision graph backend cohesion slice extracted graph snapshot loading and caching.
 - `npm test` passed with 315 tests after the fourth revision graph backend cohesion slice extracted graph snapshot loading and caching. This includes `npm run build` through the test script.
 - `git diff --check` passed after the fourth revision graph backend cohesion slice extracted graph snapshot loading and caching and updated verification artifacts.
+- Focused host message, view-state workflow, and revision graph webview tests passed with 29 tests after the first webview message contract cohesion slice added host message builders.
+- `npm test` passed with 318 tests after the first webview message contract cohesion slice added host message builders. This includes `npm run build` through the test script.
+- `git diff --check` passed after the first webview message contract cohesion slice added host message builders and updated verification artifacts.
 
 Automated verification pending:
 

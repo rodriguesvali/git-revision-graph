@@ -41,6 +41,13 @@ import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
 import {
+  createRevisionGraphErrorMessage,
+  createRevisionGraphInitStateMessage,
+  createRevisionGraphLoadingMessage,
+  createRevisionGraphRemoteTagStateMessage,
+  createRevisionGraphUpdateStateMessage
+} from './hostMessages';
+import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
   createRepositoryRefreshRequest,
@@ -131,11 +138,7 @@ export class RevisionGraphController implements vscode.Disposable {
         errorMessage: undefined
       };
       if (shouldPostLoading) {
-        this.postHostMessage({
-          type: 'set-loading',
-          label,
-          mode: this.currentLoadingMode
-        });
+        this.postHostMessage(createRevisionGraphLoadingMessage(label, this.currentLoadingMode));
       }
     },
     (state) => {
@@ -143,10 +146,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
       this.currentState = state;
-      this.postHostMessage({
-        type: 'update-state',
-        state
-      });
+      this.postHostMessage(createRevisionGraphUpdateStateMessage(state));
     },
     (error) => {
       this.currentLoadingLabel = undefined;
@@ -158,10 +158,7 @@ export class RevisionGraphController implements vscode.Disposable {
         loadingLabel: undefined,
         errorMessage: this.currentErrorMessage
       };
-      this.postHostMessage({
-        type: 'set-error',
-        message: this.currentErrorMessage
-      });
+      this.postHostMessage(createRevisionGraphErrorMessage(this.currentErrorMessage));
     }
   );
   private readonly loadTrace = new RevisionGraphLoadTraceService(() => this.renderCoordinator.getCurrentRequestId());
@@ -565,11 +562,7 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    this.postHostMessage({
-      type: 'set-remote-tag-state',
-      tagName,
-      state
-    });
+    this.postHostMessage(createRevisionGraphRemoteTagStateMessage(tagName, state));
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
@@ -586,7 +579,7 @@ export class RevisionGraphController implements vscode.Disposable {
       loadingLabel: undefined,
       errorMessage: undefined
     };
-    this.postHostMessage({ type: 'update-state', state: this.currentState });
+    this.postHostMessage(createRevisionGraphUpdateStateMessage(this.currentState));
   }
 
   private postActionLoading(label: string, mode: 'blocking' | 'subtle' = 'blocking'): void {
@@ -599,29 +592,19 @@ export class RevisionGraphController implements vscode.Disposable {
       loadingLabel: label,
       errorMessage: undefined
     };
-    this.postHostMessage({ type: 'set-loading', label, mode });
+    this.postHostMessage(createRevisionGraphLoadingMessage(label, mode));
   }
 
   private rehydrateWebview(): void {
-    this.postHostMessage({
-      type: 'init-state',
-      state: this.currentState
-    });
+    this.postHostMessage(createRevisionGraphInitStateMessage(this.currentState));
 
     if (this.currentLoadingLabel) {
-      this.postHostMessage({
-        type: 'set-loading',
-        label: this.currentLoadingLabel,
-        mode: this.currentLoadingMode
-      });
+      this.postHostMessage(createRevisionGraphLoadingMessage(this.currentLoadingLabel, this.currentLoadingMode));
       return;
     }
 
     if (this.currentErrorMessage) {
-      this.postHostMessage({
-        type: 'set-error',
-        message: this.currentErrorMessage
-      });
+      this.postHostMessage(createRevisionGraphErrorMessage(this.currentErrorMessage));
     }
   }
 
