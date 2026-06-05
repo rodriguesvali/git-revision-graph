@@ -1,17 +1,5 @@
 import { Repository } from '../git';
-import {
-  abortCurrentMerge,
-  createBranchFromResolvedReference,
-  createTagFromResolvedReference,
-  checkoutResolvedReference,
-  compareResolvedRefs,
-  compareResolvedRefWithWorktree,
-  deleteResolvedReference,
-  mergeResolvedReference,
-  publishLocalBranchResolvedReference,
-  RefActionKind,
-  resetCurrentBranchWorkspace,
-} from '../refActions';
+import { RefActionKind } from '../refActions';
 import {
   normalizeRevisionGraphProjectionOptionsForScope,
   RevisionGraphMessage,
@@ -28,9 +16,15 @@ import {
   RevisionGraphCurrentHeadWorkflow,
   RevisionGraphCurrentHeadWorkflowHost
 } from './currentHeadWorkflow';
+import {
+  RevisionGraphRefActionWorkflow,
+  RevisionGraphRefActionWorkflowHost
+} from './refActionWorkflow';
 
 export interface RevisionGraphMessageHandlerHost
-  extends RevisionGraphRemoteTagWorkflowHost, RevisionGraphCurrentHeadWorkflowHost {
+  extends RevisionGraphRemoteTagWorkflowHost,
+    RevisionGraphCurrentHeadWorkflowHost,
+    RevisionGraphRefActionWorkflowHost {
   readonly showLogPresenter: ShowLogPresenter;
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
@@ -54,10 +48,12 @@ export interface RevisionGraphMessageHandlerHost
 
 export class RevisionGraphMessageHandler {
   private readonly currentHeadWorkflow: RevisionGraphCurrentHeadWorkflow;
+  private readonly refActionWorkflow: RevisionGraphRefActionWorkflow;
   private readonly remoteTagWorkflow: RevisionGraphRemoteTagWorkflow;
 
   constructor(private readonly host: RevisionGraphMessageHandlerHost) {
     this.currentHeadWorkflow = new RevisionGraphCurrentHeadWorkflow(host);
+    this.refActionWorkflow = new RevisionGraphRefActionWorkflow(host);
     this.remoteTagWorkflow = new RevisionGraphRemoteTagWorkflow(host);
   }
 
@@ -76,9 +72,7 @@ export class RevisionGraphMessageHandler {
         await this.host.runFetchCurrentRepository();
         return;
       case 'abort-merge':
-        await this.runWithCurrentRepository((repository) =>
-          abortCurrentMerge(repository, this.host.actionServices)
-        );
+        await this.refActionWorkflow.abortMerge();
         return;
       case 'choose-repository':
         {
@@ -103,13 +97,11 @@ export class RevisionGraphMessageHandler {
         await this.host.refresh('full-rebuild');
         return;
       case 'compare-selected':
-        await this.runWithCurrentRepository((repository) =>
-          compareResolvedRefs(
-            repository,
-            { refName: message.baseRevision, label: message.baseLabel },
-            { refName: message.compareRevision, label: message.compareLabel },
-            this.host.actionServices
-          )
+        await this.refActionWorkflow.compareSelected(
+          message.baseRevision,
+          message.baseLabel,
+          message.compareRevision,
+          message.compareLabel
         );
         return;
       case 'show-log':
@@ -123,13 +115,7 @@ export class RevisionGraphMessageHandler {
         );
         return;
       case 'compare-with-worktree':
-        await this.runWithCurrentRepository((repository) =>
-          compareResolvedRefWithWorktree(
-            repository,
-            { refName: message.revision, label: message.label },
-            this.host.actionServices
-          )
-        );
+        await this.refActionWorkflow.compareWithWorktree(message.revision, message.label);
         return;
       case 'copy-commit-hash':
         await this.host.writeClipboard(message.commitHash);
@@ -140,30 +126,20 @@ export class RevisionGraphMessageHandler {
         this.host.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
         return;
       case 'checkout':
-        await this.runWithCurrentRepository((repository) =>
-          checkoutResolvedReference(
-            repository,
-            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-            this.host.actionServices
-          )
-        );
+        await this.refActionWorkflow.checkout(message.refName, message.refKind as RefActionKind);
         return;
       case 'create-branch':
-        await this.runWithCurrentRepository((repository) =>
-          createBranchFromResolvedReference(
-            repository,
-            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
-            this.host.actionServices
-          )
+        await this.refActionWorkflow.createBranch(
+          message.revision,
+          message.label,
+          message.refKind as RefActionKind
         );
         return;
       case 'create-tag':
-        await this.runWithCurrentRepository((repository) =>
-          createTagFromResolvedReference(
-            repository,
-            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
-            this.host.actionServices
-          )
+        await this.refActionWorkflow.createTag(
+          message.revision,
+          message.label,
+          message.refKind as RefActionKind
         );
         return;
       case 'resolve-remote-tag-state':
@@ -176,12 +152,10 @@ export class RevisionGraphMessageHandler {
         await this.remoteTagWorkflow.deleteRemoteTag(message.refName, message.label, message.refKind as RefActionKind);
         return;
       case 'publish-branch':
-        await this.runWithCurrentRepository((repository) =>
-          publishLocalBranchResolvedReference(
-            repository,
-            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
-            this.host.actionServices
-          )
+        await this.refActionWorkflow.publishBranch(
+          message.refName,
+          message.label,
+          message.refKind as RefActionKind
         );
         return;
       case 'sync-current-head':
@@ -194,31 +168,13 @@ export class RevisionGraphMessageHandler {
         await this.currentHeadWorkflow.pushCurrentHead();
         return;
       case 'reset-current-workspace':
-        await this.runWithCurrentRepository((repository) =>
-          resetCurrentBranchWorkspace(
-            repository,
-            message.includeUntracked,
-            this.host.actionServices
-          )
-        );
+        await this.refActionWorkflow.resetCurrentWorkspace(message.includeUntracked);
         return;
       case 'delete':
-        await this.runWithCurrentRepository((repository) =>
-          deleteResolvedReference(
-            repository,
-            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-            this.host.actionServices
-          )
-        );
+        await this.refActionWorkflow.deleteReference(message.refName, message.refKind as RefActionKind);
         return;
       case 'merge':
-        await this.runWithCurrentRepository((repository) =>
-          mergeResolvedReference(
-            repository,
-            { refName: message.refName, label: message.refName },
-            this.host.actionServices
-          )
-        );
+        await this.refActionWorkflow.merge(message.refName);
         return;
     }
   }
@@ -233,5 +189,4 @@ export class RevisionGraphMessageHandler {
 
     await action(repository);
   }
-
 }
