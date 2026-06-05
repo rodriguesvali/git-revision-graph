@@ -4,7 +4,7 @@ import {
   toErrorDetail,
   toOperationError
 } from './errorDetail';
-import { RefType, Repository } from './git';
+import { Repository } from './git';
 import { formatUpstreamLabel, hasMergeConflicts, isBranchTrackingMatchingUpstream } from './gitState';
 import {
   buildDeleteBranchConfirmationMessage,
@@ -14,12 +14,13 @@ import {
   getCurrentHeadSyncState,
   getLocalBranchForDeletion,
   getSuggestedNewBranchName,
+  pickRemote,
   parseRemoteReferenceTarget,
+  prepareFullRebuildRefresh,
   resolveRemoteCheckoutTarget,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './refActions/shared';
 import { validateGitBranchName } from './refActions/branchValidation';
-import { validateGitTagName } from './refActions/tagValidation';
 import {
   BranchCreationTarget,
   CurrentBranchPushMode,
@@ -27,9 +28,6 @@ import {
   RefActionTarget,
   RefSelection
 } from './refActions/types';
-import {
-  createActionRefreshRequest
-} from './revisionGraphRefresh';
 
 export type {
   CompareResultsPresenter,
@@ -52,22 +50,11 @@ export {
   compareResolvedRefs,
   compareResolvedRefWithWorktree
 } from './refActions/compare';
-
-function prepareFullRebuildRefresh(
-  repository: Repository,
-  services: RefActionServices
-): {
-  readonly request: ReturnType<typeof createActionRefreshRequest>;
-  readonly cancel: () => void;
-} {
-  const request = createActionRefreshRequest('full-rebuild', repository.rootUri.toString());
-  const preparedRefresh = services.refreshController.prepare(request);
-
-  return {
-    request,
-    cancel: () => preparedRefresh?.cancel()
-  };
-}
+export {
+  createTagFromResolvedReference,
+  deleteRemoteTagResolvedReference,
+  pushTagResolvedReference
+} from './refActions/tags';
 
 export async function checkoutResolvedReference(
   repository: Repository,
@@ -194,55 +181,6 @@ export async function createBranchFromResolvedReference(
   }
 }
 
-export async function createTagFromResolvedReference(
-  repository: Repository,
-  target: RefActionTarget,
-  services: RefActionServices
-): Promise<void> {
-  try {
-    if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before creating a new tag.');
-      await services.ui.showSourceControl();
-      return;
-    }
-
-    const existingTagNames = await getLocalTagNames(repository);
-    const tagName = await services.ui.promptTagName({
-      prompt: `Create a New Tag from ${target.label}`,
-      existingTagNames
-    });
-
-    if (!tagName) {
-      return;
-    }
-
-    const validationMessage = validateGitTagName(tagName, existingTagNames);
-    if (validationMessage) {
-      await services.ui.showErrorMessage(`Could not create the tag. ${validationMessage}`);
-      return;
-    }
-
-    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
-    try {
-      await services.referenceManager.createTag(repository, tagName, target.refName);
-    } catch (error) {
-      preparedRefresh.cancel();
-      throw error;
-    }
-    services.ui.showInformationMessage(`Tag ${tagName} was created from ${target.label}.`);
-    services.refreshController.refresh(preparedRefresh.request);
-  } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not create the tag.', error));
-  }
-}
-
-async function getLocalTagNames(repository: Repository): Promise<readonly string[]> {
-  const refs = await repository.getRefs();
-  return refs
-    .filter((ref) => ref.type === RefType.Tag && !!ref.name)
-    .map((ref) => ref.name as string);
-}
-
 async function promptNewBranchName(
   branchCreation: BranchCreationTarget,
   services: RefActionServices
@@ -260,92 +198,6 @@ async function getLocalBranch(repository: Repository, branchName: string): Promi
     return await repository.getBranch(branchName);
   } catch {
     return undefined;
-  }
-}
-
-export async function pushTagResolvedReference(
-  repository: Repository,
-  target: RefActionTarget,
-  services: RefActionServices
-): Promise<boolean> {
-  try {
-    if (target.kind !== 'tag') {
-      services.ui.showInformationMessage(`${target.label} is not a local tag.`);
-      return false;
-    }
-
-    if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing a tag.');
-      await services.ui.showSourceControl();
-      return false;
-    }
-
-    const remoteName = await pickTagPushRemote(repository, services);
-    if (!remoteName) {
-      return false;
-    }
-
-    const confirmed = await services.ui.confirm({
-      message: `Push tag ${target.label} to ${remoteName}?`,
-      confirmLabel: `Push Tag: ${target.label}`
-    });
-    if (!confirmed) {
-      return false;
-    }
-
-    await services.referenceManager.pushTag(repository, remoteName, target.refName);
-    services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
-    return true;
-  } catch (error) {
-    if (isNonInteractiveGitAuthenticationError(error)) {
-      await services.ui.showErrorMessage(
-        'Could not push the tag. Git authentication is unavailable for this operation. ' +
-        `Open Source Control and run "Git: Push Tags", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
-      );
-      await services.ui.showSourceControl();
-    } else {
-      await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
-    }
-    return false;
-  }
-}
-
-export async function deleteRemoteTagResolvedReference(
-  repository: Repository,
-  target: RefActionTarget,
-  services: RefActionServices
-): Promise<boolean> {
-  try {
-    if (target.kind !== 'tag') {
-      services.ui.showInformationMessage(`${target.label} is not a local tag.`);
-      return false;
-    }
-
-    if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before deleting a remote tag.');
-      await services.ui.showSourceControl();
-      return false;
-    }
-
-    const remoteName = await pickRemote(repository, services, 'Choose a remote to delete the tag from');
-    if (!remoteName) {
-      return false;
-    }
-
-    const confirmed = await services.ui.confirm({
-      message: `Delete tag ${target.label} from ${remoteName}?\n\nThis removes the tag from the remote repository for everyone. The local tag will remain unchanged.`,
-      confirmLabel: `Delete Remote Tag: ${target.label}`
-    });
-    if (!confirmed) {
-      return false;
-    }
-
-    await services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName);
-    services.ui.showInformationMessage(`Tag ${target.label} was deleted from ${remoteName}.`);
-    return true;
-  } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not delete the remote tag.', error));
-    return false;
   }
 }
 
@@ -851,31 +703,6 @@ async function getBranchCreationTarget(
     suggestedLocalName: getSuggestedNewBranchName(target.refName, target.kind),
     prompt: `Create a New Local Branch from ${target.label}`
   };
-}
-
-async function pickTagPushRemote(
-  repository: Repository,
-  services: RefActionServices
-): Promise<string | undefined> {
-  return pickRemote(repository, services, 'Choose a remote for the tag push');
-}
-
-async function pickRemote(
-  repository: Repository,
-  services: RefActionServices,
-  placeHolder: string
-): Promise<string | undefined> {
-  const remoteNames = await services.referenceManager.getRemoteNames(repository);
-  if (remoteNames.length === 0) {
-    services.ui.showInformationMessage('No Git remote is configured for this repository.');
-    return undefined;
-  }
-
-  if (remoteNames.length === 1) {
-    return remoteNames[0];
-  }
-
-  return services.ui.pickRemoteName(remoteNames, placeHolder);
 }
 
 async function deleteRemoteReference(

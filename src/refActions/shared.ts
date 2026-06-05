@@ -1,6 +1,7 @@
 import { Branch, Repository, RefType } from '../git';
 import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
 import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
+import { createActionRefreshRequest } from '../revisionGraphRefresh';
 import { HeadSyncState, RefActionKind, RefActionServices } from './types';
 
 export function parseRemoteReferenceTarget(refName: string): { remoteName: string; branchName: string } | undefined {
@@ -108,6 +109,40 @@ export function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, 
     || matchesGitErrorCode(error, 'Conflict')
     || matchesGitErrorCode(error, 'UnmergedChanges')
   );
+}
+
+export function prepareFullRebuildRefresh(
+  repository: Repository,
+  services: RefActionServices
+): {
+  readonly request: ReturnType<typeof createActionRefreshRequest>;
+  readonly cancel: () => void;
+} {
+  const request = createActionRefreshRequest('full-rebuild', repository.rootUri.toString());
+  const preparedRefresh = services.refreshController.prepare(request);
+
+  return {
+    request,
+    cancel: () => preparedRefresh?.cancel()
+  };
+}
+
+export async function pickRemote(
+  repository: Repository,
+  services: RefActionServices,
+  placeHolder: string
+): Promise<string | undefined> {
+  const remoteNames = await services.referenceManager.getRemoteNames(repository);
+  if (remoteNames.length === 0) {
+    services.ui.showInformationMessage('No Git remote is configured for this repository.');
+    return undefined;
+  }
+
+  if (remoteNames.length === 1) {
+    return remoteNames[0];
+  }
+
+  return services.ui.pickRemoteName(remoteNames, placeHolder);
 }
 
 export function isMissingUpstreamConfigurationError(error: unknown): boolean {
