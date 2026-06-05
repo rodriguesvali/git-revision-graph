@@ -15,7 +15,6 @@ import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import {
   RevisionGraphViewReference,
-  RevisionGraphWorkspaceStatePatch,
   RevisionGraphViewState
 } from '../../revisionGraphTypes';
 import {
@@ -82,26 +81,6 @@ export async function buildReadyRevisionGraphViewState(
   ).state;
 }
 
-export async function buildReadyRevisionGraphViewStateFromSnapshot(
-  repository: Repository,
-  projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
-  snapshot: RevisionGraphSnapshot,
-  signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
-): Promise<RevisionGraphViewState> {
-  return (
-    await buildReadyRevisionGraphViewStateBundleFromSnapshot(
-      repository,
-      projectionOptions,
-      backend,
-      snapshot,
-      signal,
-      trace
-    )
-  ).state;
-}
-
 async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
@@ -161,142 +140,6 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     primaryAncestorNextByHash,
     signal,
     trace
-  );
-}
-
-export async function buildMetadataPatchedRevisionGraphViewState(
-  previousState: RevisionGraphViewState,
-  repository: Repository,
-  backend: RevisionGraphBackend,
-  snapshot: RevisionGraphSnapshot,
-  signal?: AbortSignal
-): Promise<RevisionGraphViewState | undefined> {
-  throwIfAborted(signal);
-  if (
-    previousState.viewMode !== 'ready' ||
-    previousState.repositoryPath !== repository.rootUri.fsPath
-  ) {
-    return undefined;
-  }
-
-  const repositoryRefs = await loadRepositoryRefs(repository, signal);
-  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
-  const patchedScene = patchSceneReferences(
-    previousState.scene,
-    snapshot.graph,
-    overlay,
-    previousState.projectionOptions
-  );
-  if (!patchedScene) {
-    return undefined;
-  }
-
-  return buildReadyRevisionGraphViewStateFromParts(
-    repository,
-    previousState.projectionOptions,
-    backend,
-    snapshot,
-    patchedScene,
-    previousState.primaryAncestorNextByHash,
-    signal
-  );
-}
-
-export function buildRevisionGraphWorkspaceStatePatch(
-  repository: Repository
-): RevisionGraphWorkspaceStatePatch {
-  return {
-    isWorkspaceDirty: hasWorkspaceChanges(repository),
-    hasMergeConflicts: hasMergeConflicts(repository),
-    hasConflictedMerge: hasConflictedMerge(repository)
-  };
-}
-
-export async function buildMetadataPatchedRevisionGraphViewFingerprint(
-  previousState: RevisionGraphViewState,
-  repository: Repository,
-  snapshot: RevisionGraphSnapshot,
-  signal?: AbortSignal
-): Promise<string | undefined> {
-  if (
-    previousState.viewMode !== 'ready' ||
-    previousState.repositoryPath !== repository.rootUri.fsPath
-  ) {
-    return undefined;
-  }
-
-  const repositoryRefs = await loadRepositoryRefs(repository, signal);
-  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
-  const patchedScene = patchSceneReferences(
-    previousState.scene,
-    snapshot.graph,
-    overlay,
-    previousState.projectionOptions
-  );
-  if (!patchedScene) {
-    return undefined;
-  }
-
-  const references = buildViewReferences(patchedScene);
-  const nodeLayouts = buildNodeLayouts(patchedScene);
-
-  return buildRevisionGraphViewFingerprint({
-    repositoryPath: repository.rootUri.fsPath,
-    currentHeadName: repository.state.HEAD?.name,
-    currentHeadUpstreamName: repository.state.HEAD?.upstream
-      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
-      : undefined,
-    publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
-    isWorkspaceDirty: hasWorkspaceChanges(repository),
-    hasMergeConflicts: hasMergeConflicts(repository),
-    hasConflictedMerge: hasConflictedMerge(repository),
-    sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, patchedScene.edges),
-    references
-  });
-}
-
-export function buildRevisionGraphViewFingerprint(
-  state: Pick<
-    RevisionGraphViewState,
-    | 'repositoryPath'
-    | 'currentHeadName'
-    | 'currentHeadUpstreamName'
-    | 'publishedLocalBranchNames'
-    | 'isWorkspaceDirty'
-    | 'hasMergeConflicts'
-    | 'hasConflictedMerge'
-    | 'sceneLayoutKey'
-    | 'references'
-  >
-): string {
-  return JSON.stringify({
-    repositoryPath: state.repositoryPath,
-    currentHeadName: state.currentHeadName,
-    currentHeadUpstreamName: state.currentHeadUpstreamName,
-    publishedLocalBranchNames: [...state.publishedLocalBranchNames].sort(),
-    isWorkspaceDirty: state.isWorkspaceDirty,
-    hasMergeConflicts: state.hasMergeConflicts,
-    hasConflictedMerge: state.hasConflictedMerge,
-    sceneLayoutKey: state.sceneLayoutKey,
-    references: state.references.map((reference) => ({
-      id: reference.id,
-      hash: reference.hash,
-      name: reference.name,
-      kind: reference.kind
-    }))
-  });
-}
-
-export function canPreserveRevisionGraphContext(
-  previousState: RevisionGraphViewState,
-  nextState: RevisionGraphViewState
-): boolean {
-  return (
-    previousState.viewMode === 'ready' &&
-    nextState.viewMode === 'ready' &&
-    !!previousState.repositoryPath &&
-    previousState.repositoryPath === nextState.repositoryPath &&
-    previousState.sceneLayoutKey === nextState.sceneLayoutKey
   );
 }
 
@@ -583,33 +426,6 @@ function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewRefere
       title: ref.name
     }))
   );
-}
-
-function patchSceneReferences(
-  scene: RevisionGraphScene,
-  graph: CommitGraph,
-  overlay: RevisionGraphRepositoryOverlay,
-  projectionOptions: RevisionGraphViewState['projectionOptions']
-): RevisionGraphScene | undefined {
-  const visibleHashes = new Set(scene.nodes.map((node) => node.hash));
-  const refsByHash = buildOverlayRefsByHash(
-    graph,
-    visibleHashes,
-    scene.nodes,
-    overlay,
-    projectionOptions
-  );
-  if (!refsByHash) {
-    return undefined;
-  }
-
-  return {
-    ...scene,
-    nodes: scene.nodes.map((node) => ({
-      ...node,
-      refs: sortRevisionGraphRefs(refsByHash.get(node.hash) ?? [])
-    }))
-  };
 }
 
 function buildOverlayRefsByHash(

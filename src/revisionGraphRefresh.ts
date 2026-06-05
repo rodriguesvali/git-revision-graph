@@ -1,10 +1,4 @@
-import type { RevisionGraphProjectionOptions } from './revisionGraph/model/commitGraphTypes';
-
-export type RevisionGraphRefreshIntent =
-  | 'full-rebuild'
-  | 'projection-rebuild'
-  | 'metadata-patch'
-  | 'overlay-patch';
+export type RevisionGraphRefreshIntent = 'full-rebuild';
 
 export type RevisionGraphRepositoryEventKind = 'state' | 'checkout';
 
@@ -30,60 +24,15 @@ export interface PreparedPendingRevisionGraphRefresh {
   readonly id: number;
 }
 
-export class RevisionGraphSnapshotReloadSemaphore {
-  private reusableRepositoryPath: string | undefined;
-
-  markReloadRequired(): void {
-    this.reusableRepositoryPath = undefined;
-  }
-
-  markReloadComplete(repositoryPath: string): void {
-    this.reusableRepositoryPath = repositoryPath;
-  }
-
-  canReuseSnapshot(repositoryPath: string | undefined): boolean {
-    return !!repositoryPath && this.reusableRepositoryPath === repositoryPath;
-  }
-
-  requiresReload(repositoryPath: string | undefined): boolean {
-    return !this.canReuseSnapshot(repositoryPath);
-  }
-}
-
-export function shouldReloadSnapshotForProjectionOptionsChange(
-  previousOptions: RevisionGraphProjectionOptions,
-  nextOptions: RevisionGraphProjectionOptions
-): boolean {
-  return previousOptions.refScope !== nextOptions.refScope ||
-    previousOptions.showTags !== nextOptions.showTags ||
-    previousOptions.showRemoteBranches !== nextOptions.showRemoteBranches ||
-    previousOptions.showStashes !== nextOptions.showStashes;
-}
-
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;
 let nextPendingFollowUpRefreshId = 0;
 
-export function getRefreshLoadingLabel(intent: RevisionGraphRefreshIntent): string {
-  switch (intent) {
-    case 'projection-rebuild':
-      return 'Updating revision graph view...';
-    case 'metadata-patch':
-    case 'overlay-patch':
-      return 'Updating revision graph...';
-    case 'full-rebuild':
-      return 'Loading revision graph...';
-  }
+export function getRefreshLoadingLabel(_intent: RevisionGraphRefreshIntent): string {
+  return 'Loading revision graph...';
 }
 
-export function getRefreshLoadingMode(intent: RevisionGraphRefreshIntent): 'blocking' | 'subtle' {
-  switch (intent) {
-    case 'metadata-patch':
-    case 'overlay-patch':
-      return 'subtle';
-    case 'projection-rebuild':
-    case 'full-rebuild':
-      return 'blocking';
-  }
+export function getRefreshLoadingMode(_intent: RevisionGraphRefreshIntent): 'blocking' {
+  return 'blocking';
 }
 
 export function normalizeRefreshRequest(
@@ -123,16 +72,9 @@ export function createRepositoryRefreshRequest(
 }
 
 export function getDefaultFollowUpEventsForIntent(
-  intent: RevisionGraphRefreshIntent
+  _intent: RevisionGraphRefreshIntent
 ): readonly RevisionGraphRepositoryEventKind[] {
-  switch (intent) {
-    case 'metadata-patch':
-    case 'full-rebuild':
-      return ['state', 'checkout'];
-    case 'projection-rebuild':
-    case 'overlay-patch':
-      return [];
-  }
+  return ['state', 'checkout'];
 }
 
 export function registerPendingFollowUpRefresh(
@@ -190,28 +132,13 @@ export function consumePendingFollowUpRefresh(
   }
 
   let consumed = false;
-  const nextEntries: PendingRevisionGraphFollowUpRefresh[] = [];
   for (const entry of activeEntries) {
     if (!consumed && entry.eventKinds.has(eventKind)) {
       consumed = true;
-      const remainingEventKinds = [...entry.eventKinds].filter((kind) => kind !== eventKind);
-      if (remainingEventKinds.length > 0) {
-        nextEntries.push({
-          ...entry,
-          eventKinds: new Set(remainingEventKinds)
-        });
-      }
-      continue;
     }
-
-    nextEntries.push(entry);
   }
 
-  if (nextEntries.length === 0) {
-    pendingRefreshes.delete(repositoryPath);
-  } else {
-    pendingRefreshes.set(repositoryPath, nextEntries);
-  }
+  pendingRefreshes.set(repositoryPath, activeEntries);
 
   return consumed;
 }

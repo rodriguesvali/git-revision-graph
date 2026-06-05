@@ -33,17 +33,10 @@ import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
-  buildMetadataPatchedRevisionGraphViewFingerprint,
   buildEmptyRevisionGraphViewState,
-  buildMetadataPatchedRevisionGraphViewState,
-  buildReadyRevisionGraphViewStateFromSnapshot,
-  buildRevisionGraphWorkspaceStatePatch,
-  canPreserveRevisionGraphContext,
-  buildRevisionGraphViewFingerprint,
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
-import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   buildRevisionGraphFetchArgs,
   buildRevisionGraphFetchOptions,
@@ -57,7 +50,6 @@ import {
   createDefaultRevisionGraphProjectionOptions,
   normalizeRevisionGraphProjectionOptionsForScope,
   RemoteTagPublicationState,
-  RevisionGraphViewMetadataPatch,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -89,9 +81,7 @@ import {
   RevisionGraphRefreshIntent,
   RevisionGraphRefreshRequestLike,
   RevisionGraphRepositoryEventKind,
-  RevisionGraphSnapshotReloadSemaphore,
-  registerPendingFollowUpRefresh,
-  shouldReloadSnapshotForProjectionOptionsChange
+  registerPendingFollowUpRefresh
 } from '../revisionGraphRefresh';
 
 const FETCH_WITH_TAGS_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
@@ -166,7 +156,6 @@ export class RevisionGraphController implements vscode.Disposable {
   private currentLoadingMode: 'blocking' | 'subtle' | undefined;
   private currentErrorMessage: string | undefined;
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
-  private readonly snapshotReloadSemaphore = new RevisionGraphSnapshotReloadSemaphore();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly actionServices: ReturnType<typeof createWorkbenchRefActionServices>;
@@ -198,16 +187,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
-      const previousState = this.currentState;
       this.currentState = state;
-      if (this.shouldPostMetadataPatch(previousState, state)) {
-        this.postHostMessage({
-          type: 'patch-metadata',
-          patch: this.createMetadataPatch(state)
-        });
-        return;
-      }
-
       this.postHostMessage({
         type: 'update-state',
         state
@@ -230,12 +210,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   );
   private currentState: RevisionGraphViewState;
-  private currentSnapshot:
-    | {
-      readonly repositoryPath: string;
-      readonly snapshot: RevisionGraphSnapshot;
-    }
-    | undefined;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   private traceOutput: vscode.OutputChannel | undefined;
 
@@ -361,19 +335,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const request = this.resolveRefreshRequest(requestLike);
-    if (request.intent === 'overlay-patch') {
-      const preparedRefresh = this.prepareRefresh(request);
-      const applied = this.applyCurrentRepositoryWorkspaceStatePatch();
-      if (!applied) {
-        preparedRefresh?.cancel();
-      }
-      return;
-    }
-
-    if (request.intent === 'full-rebuild') {
-      this.snapshotReloadSemaphore.markReloadRequired();
-    }
-
     this.latestRefreshIntent = request.intent;
     const preparedRefresh = this.prepareRefresh(request);
     const renderIntent = request.intent;
@@ -459,13 +420,9 @@ export class RevisionGraphController implements vscode.Disposable {
             ...this.projectionOptions,
             ...message.options
           });
-          if (shouldReloadSnapshotForProjectionOptionsChange(this.projectionOptions, nextProjectionOptions)) {
-            this.currentSnapshot = undefined;
-            this.snapshotReloadSemaphore.markReloadRequired();
-          }
           this.projectionOptions = nextProjectionOptions;
         }
-        await this.refresh('projection-rebuild');
+        await this.refresh('full-rebuild');
         return;
       case 'compare-selected':
         if (this.currentRepository) {
@@ -652,49 +609,6 @@ export class RevisionGraphController implements vscode.Disposable {
 
     const repositoryPath = this.currentRepository.rootUri.fsPath;
     const trace = this.createLoadTraceSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
-    const currentSnapshot = this.currentSnapshot;
-    const canReuseCurrentSnapshot =
-      currentSnapshot?.repositoryPath === repositoryPath
-      && this.snapshotReloadSemaphore.canReuseSnapshot(repositoryPath);
-    const canPatchMetadata =
-      renderRequest.intent === 'metadata-patch' &&
-      this.currentState.viewMode === 'ready' &&
-      canReuseCurrentSnapshot;
-
-    if (canPatchMetadata) {
-      const patchedState = await buildMetadataPatchedRevisionGraphViewState(
-        this.currentState,
-        this.currentRepository,
-        this.backend,
-        currentSnapshot.snapshot,
-        signal
-      );
-      if (!this.isRenderRequestCurrent(renderRequest)) {
-        return undefined;
-      }
-
-      if (patchedState) {
-        return patchedState;
-      }
-    }
-
-    if (renderRequest.intent === 'projection-rebuild' && canReuseCurrentSnapshot) {
-      const state = await buildReadyRevisionGraphViewStateFromSnapshot(
-        this.currentRepository,
-        this.projectionOptions,
-        this.backend,
-        currentSnapshot.snapshot,
-        signal,
-        trace
-      );
-      if (!this.isRenderRequestCurrent(renderRequest)) {
-        return undefined;
-      }
-
-      return state;
-    }
-
-    this.snapshotReloadSemaphore.markReloadRequired();
     const bundle = await buildReadyRevisionGraphViewStateBundle(
       this.currentRepository,
       this.projectionOptions,
@@ -707,12 +621,6 @@ export class RevisionGraphController implements vscode.Disposable {
     if (!this.isRenderRequestCurrent(renderRequest)) {
       return undefined;
     }
-
-    this.currentSnapshot = {
-      repositoryPath,
-      snapshot: bundle.snapshot
-    };
-    this.snapshotReloadSemaphore.markReloadComplete(repositoryPath);
 
     return bundle.state;
   }
@@ -808,10 +716,10 @@ export class RevisionGraphController implements vscode.Disposable {
       key,
       vscode.Disposable.from(
         repository.state.onDidChange(() => {
-          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'state');
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'state');
         }),
         repository.onDidCheckout(() => {
-          void this.handleRepositoryStateChange(repository, 'metadata-patch', 'checkout');
+          void this.handleRepositoryStateChange(repository, 'full-rebuild', 'checkout');
         })
       )
     );
@@ -855,20 +763,6 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
-      if (intent === 'metadata-patch' && eventKind === 'state') {
-        const workspacePatch = buildRevisionGraphWorkspaceStatePatch(repository);
-        if (
-          (workspacePatch.hasMergeConflicts || this.currentState.hasMergeConflicts || this.currentState.hasConflictedMerge) &&
-          this.applyCurrentRepositoryWorkspaceStatePatch(workspacePatch)
-        ) {
-          return;
-        }
-      }
-
-      if (await this.isRedundantRepositoryRefresh(repository, intent)) {
-        return;
-      }
-
       await this.refresh(this.createCurrentRepositoryRefreshRequest(intent));
     }
   }
@@ -876,8 +770,6 @@ export class RevisionGraphController implements vscode.Disposable {
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
-      this.currentSnapshot = undefined;
-      this.snapshotReloadSemaphore.markReloadRequired();
     }
 
     this.currentRepository = repository;
@@ -905,32 +797,6 @@ export class RevisionGraphController implements vscode.Disposable {
       repositoryPath: enrichedRequest.repositoryPath,
       followUpEvents: request.followUpEvents ?? enrichedRequest.followUpEvents
     };
-  }
-
-  private async isRedundantRepositoryRefresh(
-    repository: Repository,
-    intent: RevisionGraphRefreshIntent
-  ): Promise<boolean> {
-    if (
-      (intent !== 'full-rebuild' && intent !== 'metadata-patch')
-      || this.currentState.viewMode !== 'ready'
-      || !isSameRepositoryPath(repository, this.currentRepository)
-      || this.currentSnapshot?.repositoryPath !== repository.rootUri.fsPath
-      || this.snapshotReloadSemaphore.requiresReload(repository.rootUri.fsPath)
-    ) {
-      return false;
-    }
-
-    const fingerprint = await buildMetadataPatchedRevisionGraphViewFingerprint(
-      this.currentState,
-      repository,
-      this.currentSnapshot.snapshot
-    );
-    if (!fingerprint) {
-      return false;
-    }
-
-    return fingerprint === buildRevisionGraphViewFingerprint(this.currentState);
   }
 
   private createRemoteTagPublicationRequestContext(
@@ -1021,74 +887,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   }
 
-  private shouldPostMetadataPatch(
-    previousState: RevisionGraphViewState,
-    nextState: RevisionGraphViewState
-  ): boolean {
-    if (
-      this.latestRefreshIntent === 'metadata-patch' &&
-      previousState.viewMode === 'ready' &&
-      nextState.viewMode === 'ready' &&
-      !!previousState.repositoryPath &&
-      previousState.repositoryPath === nextState.repositoryPath
-    ) {
-      return true;
-    }
-
-    return canPreserveRevisionGraphContext(previousState, nextState);
-  }
-
-  private createMetadataPatch(state: RevisionGraphViewState): RevisionGraphViewMetadataPatch {
-    return {
-      preserveSelection: true,
-      preserveViewport: true,
-      currentHeadName: state.currentHeadName,
-      currentHeadUpstreamName: state.currentHeadUpstreamName,
-      publishedLocalBranchNames: state.publishedLocalBranchNames,
-      isWorkspaceDirty: state.isWorkspaceDirty,
-      hasMergeConflicts: state.hasMergeConflicts,
-      hasConflictedMerge: state.hasConflictedMerge,
-      projectionOptions: state.projectionOptions,
-      mergeBlockedTargets: state.mergeBlockedTargets,
-      primaryAncestorNextByHash: state.primaryAncestorNextByHash,
-      scene: state.scene,
-      nodeLayouts: state.nodeLayouts,
-      references: state.references,
-      sceneLayoutKey: state.sceneLayoutKey,
-      baseCanvasWidth: state.baseCanvasWidth,
-      baseCanvasHeight: state.baseCanvasHeight
-    };
-  }
-
-  private applyCurrentRepositoryWorkspaceStatePatch(
-    patch = this.currentRepository ? buildRevisionGraphWorkspaceStatePatch(this.currentRepository) : undefined
-  ): boolean {
-    if (
-      !this.currentRepository ||
-      !patch ||
-      this.currentState.viewMode !== 'ready' ||
-      this.currentState.repositoryPath !== this.currentRepository.rootUri.fsPath
-    ) {
-      return false;
-    }
-
-    this.currentLoadingLabel = undefined;
-    this.currentLoadingMode = undefined;
-    this.currentErrorMessage = undefined;
-    this.currentState = {
-      ...this.currentState,
-      ...patch,
-      loading: false,
-      loadingLabel: undefined,
-      errorMessage: undefined
-    };
-    this.postHostMessage({
-      type: 'patch-workspace-state',
-      patch
-    });
-    return true;
-  }
-
   private syncViewTitle(): void {
     if (!this.view) {
       return;
@@ -1134,8 +932,6 @@ export class RevisionGraphController implements vscode.Disposable {
     switch (message.type) {
       case 'init-state':
       case 'update-state':
-      case 'patch-metadata':
-      case 'patch-workspace-state':
         return {
           ...message,
           trace: {

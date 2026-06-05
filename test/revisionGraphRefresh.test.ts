@@ -8,9 +8,7 @@ import {
   createRepositoryRefreshRequest,
   getDefaultFollowUpEventsForIntent,
   normalizeRefreshRequest,
-  RevisionGraphSnapshotReloadSemaphore,
-  registerPendingFollowUpRefresh,
-  shouldReloadSnapshotForProjectionOptionsChange
+  registerPendingFollowUpRefresh
 } from '../src/revisionGraphRefresh';
 import {
   createDefaultRevisionGraphProjectionOptions,
@@ -19,22 +17,14 @@ import {
 
 test('createActionRefreshRequest attaches the default follow-up repository events', () => {
   assert.deepEqual(
-    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    createActionRefreshRequest('full-rebuild', '/workspace/repo'),
     {
-      intent: 'metadata-patch',
+      intent: 'full-rebuild',
       repositoryPath: '/workspace/repo',
       followUpEvents: ['state', 'checkout']
     }
   );
-  assert.deepEqual(
-    createActionRefreshRequest('overlay-patch', '/workspace/repo'),
-    {
-      intent: 'overlay-patch',
-      repositoryPath: '/workspace/repo',
-      followUpEvents: []
-    }
-  );
-  assert.deepEqual(getDefaultFollowUpEventsForIntent('projection-rebuild'), []);
+  assert.deepEqual(getDefaultFollowUpEventsForIntent('full-rebuild'), ['state', 'checkout']);
 });
 
 test('createRepositoryRefreshRequest attaches follow-up suppression only when a repository path is available', () => {
@@ -51,36 +41,37 @@ test('createRepositoryRefreshRequest attaches follow-up suppression only when a 
   });
 });
 
-test('registerPendingFollowUpRefresh consumes each prepared follow-up event once', () => {
+test('registerPendingFollowUpRefresh suppresses prepared follow-up events during the active window', () => {
   const pending = new Map();
   registerPendingFollowUpRefresh(
     pending,
-    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    createActionRefreshRequest('full-rebuild', '/workspace/repo'),
     100
   );
 
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), false);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 400), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), false);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'checkout', 500), true);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 5200), false);
 });
 
 test('registerPendingFollowUpRefresh keeps overlapping prepared entries independent', () => {
   const pending = new Map();
   registerPendingFollowUpRefresh(
     pending,
-    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    createActionRefreshRequest('full-rebuild', '/workspace/repo'),
     100
   );
   registerPendingFollowUpRefresh(
     pending,
-    createActionRefreshRequest('metadata-patch', '/workspace/repo'),
+    createActionRefreshRequest('full-rebuild', '/workspace/repo'),
     150
   );
 
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 200), true);
   assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 300), true);
-  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 400), false);
+  assert.equal(consumePendingFollowUpRefresh(pending, '/workspace/repo', 'state', 400), true);
 });
 
 test('cancelPendingFollowUpRefresh removes a prepared suppression entry', () => {
@@ -110,47 +101,11 @@ test('consumePendingFollowUpRefresh expires old suppressions and ignores other r
 });
 
 test('normalizeRefreshRequest preserves object requests and defaults missing requests to full rebuild', () => {
-  const request = createActionRefreshRequest('metadata-patch', '/workspace/repo');
+  const request = createActionRefreshRequest('full-rebuild', '/workspace/repo');
 
   assert.deepEqual(normalizeRefreshRequest(undefined), { intent: 'full-rebuild' });
-  assert.deepEqual(normalizeRefreshRequest('projection-rebuild'), { intent: 'projection-rebuild' });
+  assert.deepEqual(normalizeRefreshRequest('full-rebuild'), { intent: 'full-rebuild' });
   assert.equal(normalizeRefreshRequest(request), request);
-});
-
-test('RevisionGraphSnapshotReloadSemaphore tracks when a repository snapshot can be reused', () => {
-  const semaphore = new RevisionGraphSnapshotReloadSemaphore();
-
-  assert.equal(semaphore.requiresReload('/workspace/repo'), true);
-  assert.equal(semaphore.canReuseSnapshot('/workspace/repo'), false);
-
-  semaphore.markReloadComplete('/workspace/repo');
-
-  assert.equal(semaphore.requiresReload('/workspace/repo'), false);
-  assert.equal(semaphore.canReuseSnapshot('/workspace/repo'), true);
-  assert.equal(semaphore.canReuseSnapshot('/workspace/other'), false);
-  assert.equal(semaphore.requiresReload(undefined), true);
-
-  semaphore.markReloadRequired();
-
-  assert.equal(semaphore.requiresReload('/workspace/repo'), true);
-});
-
-test('projection option changes require a fresh graph snapshot', () => {
-  const defaultOptions = createDefaultRevisionGraphProjectionOptions();
-
-  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, defaultOptions), false);
-  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
-    ...defaultOptions,
-    refScope: 'current'
-  }), true);
-  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
-    ...defaultOptions,
-    showRemoteBranches: false
-  }), true);
-  assert.equal(shouldReloadSnapshotForProjectionOptionsChange(defaultOptions, {
-    ...defaultOptions,
-    showCurrentBranchDescendants: true
-  }), false);
 });
 
 test('projection options keep descendants as core current branch behavior', () => {

@@ -28,8 +28,7 @@ import {
   RefSelection
 } from './refActions/types';
 import {
-  createActionRefreshRequest,
-  RevisionGraphRefreshIntent
+  createActionRefreshRequest
 } from './revisionGraphRefresh';
 
 export type {
@@ -49,6 +48,22 @@ export type {
   RefSelection
 } from './refActions/types';
 export type { RevisionGraphRefreshIntent } from './revisionGraphRefresh';
+
+function prepareFullRebuildRefresh(
+  repository: Repository,
+  services: RefActionServices
+): {
+  readonly request: ReturnType<typeof createActionRefreshRequest>;
+  readonly cancel: () => void;
+} {
+  const request = createActionRefreshRequest('full-rebuild', repository.rootUri.toString());
+  const preparedRefresh = services.refreshController.prepare(request);
+
+  return {
+    request,
+    cancel: () => preparedRefresh?.cancel()
+  };
+}
 
 export async function compareResolvedRefs(
   repository: Repository,
@@ -215,7 +230,6 @@ export async function createTagFromResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     if (hasMergeConflicts(repository)) {
       services.ui.showWarningMessage('Resolve the current conflicts in Source Control before creating a new tag.');
@@ -239,11 +253,15 @@ export async function createTagFromResolvedReference(
       return;
     }
 
-    await services.referenceManager.createTag(repository, tagName, target.refName);
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await services.referenceManager.createTag(repository, tagName, target.refName);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(`Tag ${tagName} was created from ${target.label}.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the tag.', error));
   }
@@ -367,7 +385,6 @@ export async function publishLocalBranchResolvedReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<boolean> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     if (target.kind !== 'head' && target.kind !== 'branch') {
       services.ui.showInformationMessage(`${target.label} is not a local branch.`);
@@ -404,10 +421,14 @@ export async function publishLocalBranchResolvedReference(
       return false;
     }
 
-    await repository.push(remoteName, target.refName, true);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await repository.push(remoteName, target.refName, true);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
+    services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(`Branch ${target.label} was published to ${remoteName}/${target.refName}.`);
     return true;
   } catch (error) {
@@ -471,23 +492,21 @@ export async function syncCurrentHeadWithUpstream(
       return false;
     }
 
-    if (syncState.behind > 0) {
-      await repository.pull();
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      if (syncState.behind > 0) {
+        await repository.pull();
+      }
+
+      if (syncState.ahead > 0) {
+        await repository.push();
+      }
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
     }
 
-    if (syncState.ahead > 0) {
-      await repository.push();
-    }
-
-    const refreshIntent: RevisionGraphRefreshIntent =
-      syncState.behind > 0
-        ? 'full-rebuild'
-        : 'metadata-patch';
-    services.refreshController.refresh(
-      syncState.behind > 0
-        ? { intent: refreshIntent, repositoryPath: repository.rootUri.toString() }
-        : createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
     return true;
   } catch (error) {
@@ -504,7 +523,6 @@ export async function mergeResolvedReference(
   target: RefSelection,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
     if (repository.state.HEAD?.name === target.refName) {
@@ -532,19 +550,22 @@ export async function mergeResolvedReference(
       return;
     }
 
-    await repository.merge(target.refName);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await repository.merge(target.refName);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
+    services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
     await services.ui.showErrorMessage(
       toOperationError('Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.', error)
     );
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
-      services.refreshController.refresh(
-        { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
-      );
+      const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+      services.refreshController.refresh(preparedRefresh.request);
     }
   }
 }
@@ -567,10 +588,14 @@ export async function abortCurrentMerge(
       return;
     }
 
-    await services.referenceManager.abortMerge(repository);
-    services.refreshController.refresh(
-      { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
-    );
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await services.referenceManager.abortMerge(repository);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
+    services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage('Merge aborted. Workspace restored to the pre-merge state.');
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not abort the current merge.', error));
@@ -605,10 +630,14 @@ export async function resetCurrentBranchWorkspace(
       return;
     }
 
-    await services.referenceManager.resetWorkspace(repository, includeUntracked);
-    services.refreshController.refresh(
-      { intent: 'overlay-patch', repositoryPath: repository.rootUri.toString() }
-    );
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await services.referenceManager.resetWorkspace(repository, includeUntracked);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
+    services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(
       includeUntracked
         ? `Workspace reset to ${currentBranch} HEAD. Untracked files were removed.`
@@ -625,7 +654,6 @@ export async function resetCurrentBranchToCommit(
   commitLabel: string,
   services: RefActionServices
 ): Promise<boolean> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const currentBranch = repository.state.HEAD?.name;
     if (!currentBranch) {
@@ -650,11 +678,15 @@ export async function resetCurrentBranchToCommit(
       return false;
     }
 
-    await services.referenceManager.resetCurrentBranch(repository, commitHash);
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await services.referenceManager.resetCurrentBranch(repository, commitHash);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(`${currentBranch} was reset to ${commitLabel}.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
     return true;
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not reset the current branch.', error));
@@ -666,7 +698,6 @@ export async function pullCurrentBranchFromUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<boolean> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   try {
     const currentBranch = repository.state.HEAD?.name;
     const upstream = repository.state.HEAD?.upstream;
@@ -685,11 +716,15 @@ export async function pullCurrentBranchFromUpstream(
       return false;
     }
 
-    await repository.pull();
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await repository.pull();
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(`${currentBranch} was pulled from ${upstreamLabel}.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
     return true;
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not pull the current branch.', error));
@@ -704,7 +739,6 @@ export async function pushCurrentBranchToUpstream(
   repository: Repository,
   services: RefActionServices
 ): Promise<boolean> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'metadata-patch';
   try {
     const currentBranch = repository.state.HEAD?.name;
     const upstream = repository.state.HEAD?.upstream;
@@ -743,16 +777,20 @@ export async function pushCurrentBranchToUpstream(
       }
     }
 
-    await services.referenceManager.pushCurrentBranch(
-      repository,
-      upstream.remote,
-      getUpstreamBranchName(upstream.remote, upstream.name),
-      pushMode
-    );
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await services.referenceManager.pushCurrentBranch(
+        repository,
+        upstream.remote,
+        getUpstreamBranchName(upstream.remote, upstream.name),
+        pushMode
+      );
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(buildCurrentBranchPushResultMessage(currentBranch, upstreamLabel, pushMode));
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
     return true;
   } catch (error) {
     if (isNonInteractiveGitAuthenticationError(error)) {
@@ -876,7 +914,6 @@ async function deleteRemoteReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const remoteTarget = parseRemoteReferenceTarget(target.refName);
   if (!remoteTarget || remoteTarget.branchName === 'HEAD') {
     services.ui.showInformationMessage(`The remote reference ${target.label} cannot be deleted from this view.`);
@@ -891,11 +928,15 @@ async function deleteRemoteReference(
     return;
   }
 
-  await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
+  const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+  try {
+    await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
+  } catch (error) {
+    preparedRefresh.cancel();
+    throw error;
+  }
   services.ui.showInformationMessage(`Remote branch ${target.label} was deleted from ${remoteTarget.remoteName}.`);
-  services.refreshController.refresh(
-    createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-  );
+  services.refreshController.refresh(preparedRefresh.request);
 }
 
 async function deleteTagReference(
@@ -903,7 +944,6 @@ async function deleteTagReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const confirmed = await services.ui.confirm({
     message: `Delete the Tag ${target.label}?`,
     confirmLabel: `Delete Tag: ${target.label}`
@@ -912,11 +952,15 @@ async function deleteTagReference(
     return;
   }
 
-  await repository.deleteTag(target.refName);
+  const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+  try {
+    await repository.deleteTag(target.refName);
+  } catch (error) {
+    preparedRefresh.cancel();
+    throw error;
+  }
   services.ui.showInformationMessage(`Tag ${target.label} was deleted.`);
-  services.refreshController.refresh(
-    createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-  );
+  services.refreshController.refresh(preparedRefresh.request);
 }
 
 async function deleteBranchReference(
@@ -924,7 +968,6 @@ async function deleteBranchReference(
   target: RefActionTarget,
   services: RefActionServices
 ): Promise<void> {
-  const refreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   const branch = await getLocalBranchForDeletion(repository, target.refName);
   const upstreamLabel = branch?.upstream
     ? formatUpstreamLabel(branch.upstream.remote, branch.upstream.name)
@@ -939,11 +982,15 @@ async function deleteBranchReference(
   }
 
   try {
-    await repository.deleteBranch(target.refName, false);
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await repository.deleteBranch(target.refName, false);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(`Branch ${target.label} was deleted.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
   } catch (error) {
     if (!matchesGitErrorCode(error, 'BranchNotFullyMerged')) {
       throw error;
@@ -957,10 +1004,14 @@ async function deleteBranchReference(
       return;
     }
 
-    await repository.deleteBranch(target.refName, true);
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    try {
+      await repository.deleteBranch(target.refName, true);
+    } catch (error) {
+      preparedRefresh.cancel();
+      throw error;
+    }
     services.ui.showInformationMessage(`Branch ${target.label} was force deleted.`);
-    services.refreshController.refresh(
-      createActionRefreshRequest(refreshIntent, repository.rootUri.toString())
-    );
+    services.refreshController.refresh(preparedRefresh.request);
   }
 }

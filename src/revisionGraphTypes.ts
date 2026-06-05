@@ -103,32 +103,6 @@ export interface RevisionGraphViewState {
   readonly errorMessage: string | undefined;
 }
 
-export interface RevisionGraphViewMetadataPatch {
-  readonly preserveSelection: boolean;
-  readonly preserveViewport: boolean;
-  readonly currentHeadName: string | undefined;
-  readonly currentHeadUpstreamName: string | undefined;
-  readonly publishedLocalBranchNames: readonly string[];
-  readonly isWorkspaceDirty: boolean;
-  readonly hasMergeConflicts: boolean;
-  readonly hasConflictedMerge: boolean;
-  readonly projectionOptions: RevisionGraphProjectionOptions;
-  readonly mergeBlockedTargets: readonly string[];
-  readonly primaryAncestorNextByHash: Readonly<Record<string, string>>;
-  readonly scene: RevisionGraphScene;
-  readonly nodeLayouts: readonly RevisionGraphNodeLayout[];
-  readonly references: readonly RevisionGraphViewReference[];
-  readonly sceneLayoutKey: string;
-  readonly baseCanvasWidth: number;
-  readonly baseCanvasHeight: number;
-}
-
-export interface RevisionGraphWorkspaceStatePatch {
-  readonly isWorkspaceDirty: boolean;
-  readonly hasMergeConflicts: boolean;
-  readonly hasConflictedMerge: boolean;
-}
-
 export type RemoteTagPublicationState = 'published' | 'unpublished' | 'unknown';
 
 export interface RevisionGraphHostTraceContext {
@@ -139,8 +113,6 @@ export interface RevisionGraphHostTraceContext {
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
-  | { readonly type: 'patch-metadata'; readonly patch: RevisionGraphViewMetadataPatch; readonly trace?: RevisionGraphHostTraceContext }
-  | { readonly type: 'patch-workspace-state'; readonly patch: RevisionGraphWorkspaceStatePatch; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: RemoteTagPublicationState }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };

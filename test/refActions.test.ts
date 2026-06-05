@@ -1495,16 +1495,22 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
-    repositoryPath: '/workspace/repo'
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
   });
 });
 
-test('syncCurrentHeadWithUpstream uses a metadata patch after push-only sync', async () => {
+test('syncCurrentHeadWithUpstream uses a full rebuild after push-only sync', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('main', 2, 0, { remote: 'origin', name: 'main' })
   });
   const harness = createServices();
+  repository.push = async (remoteName?: string, branchName?: string, setUpstream?: boolean) => {
+    assert.equal(harness.prepareRequests.length, 1);
+    assert.equal(harness.refreshCalls, 0);
+    repository.calls.push.push({ remoteName, branchName, setUpstream });
+  };
 
   const didSync = await syncCurrentHeadWithUpstream(repository, harness.services);
 
@@ -1516,7 +1522,7 @@ test('syncCurrentHeadWithUpstream uses a metadata patch after push-only sync', a
   assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });
@@ -1538,7 +1544,8 @@ test('syncCurrentHeadWithUpstream uses a full rebuild after pull-only sync', asy
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
-    repositoryPath: '/workspace/repo'
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
   });
 });
 
@@ -1699,8 +1706,9 @@ test('mergeResolvedReference updates graph state without opening Source Control 
     'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. Automatic merge failed; fix conflicts and then commit the result. [Conflict]'
   );
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'overlay-patch',
-    repositoryPath: '/workspace/repo'
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
   });
   assert.equal(harness.sourceControlOpens, 0);
 });
@@ -1723,8 +1731,9 @@ test('abortCurrentMerge aborts conflicted merges after confirmation', async () =
   ]);
   assert.equal(harness.infoMessages[0], 'Merge aborted. Workspace restored to the pre-merge state.');
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'overlay-patch',
-    repositoryPath: '/workspace/repo'
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
   });
 });
 
@@ -1776,8 +1785,9 @@ test('resetCurrentBranchWorkspace resets tracked workspace changes and keeps unt
     }
   ]);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'overlay-patch',
-    repositoryPath: '/workspace/repo'
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout']
   });
   assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were kept.');
 });
@@ -1872,7 +1882,7 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
   assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);
   assert.deepEqual(harness.confirmRequests, []);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'metadata-patch',
+    intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout']
   });

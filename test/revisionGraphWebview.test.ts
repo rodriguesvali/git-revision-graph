@@ -74,8 +74,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /vscode\.postMessage\(\{ type: 'webview-ready' \}\);/);
   assert.match(html, /case 'init-state'/);
   assert.match(html, /case 'update-state'/);
-  assert.match(html, /case 'patch-metadata'/);
-  assert.match(html, /case 'patch-workspace-state'/);
+  assert.doesNotMatch(html, /case 'patch-metadata'/);
+  assert.doesNotMatch(html, /case 'patch-workspace-state'/);
   assert.match(html, /function applyTracedHostMessage\(message, phase, apply\)/);
   assert.match(html, /function traceWebviewPhase\(phase, work, detail = ''\)/);
   assert.match(html, /webview\.canvas-layout\.sync-size/);
@@ -503,30 +503,13 @@ test('recenters on initial graph state and exposes a center HEAD action', () => 
   assert.match(html, /centerHeadButton\.disabled = toolbarBusy;/);
 });
 
-test('preserves viewport and selection during metadata patches', () => {
+test('omits incremental revision graph patch handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /function applyMetadataPatch\(patch\)/);
-  assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}/);
-  assert.match(html, /preserveSelection: !!patch\.preserveSelection/);
-  assert.match(html, /preserveViewport: !!patch\.preserveViewport/);
-  assert.match(html, /function captureSelectionSnapshot\(\)/);
-  assert.match(html, /function restoreSelectionSnapshot\(snapshot\)/);
-  assert.match(html, /function captureScenePlacementSnapshot\(\)/);
-  assert.match(html, /function restoreScenePlacementSnapshot\(snapshot\)/);
-  assert.match(html, /function captureViewportSnapshot\(\)/);
-  assert.match(html, /function restoreViewportSnapshot\(snapshot\)/);
-});
-
-test('patches reference metadata through the virtualized graph window', () => {
-  const html = renderRevisionGraphShellHtml();
-
-  assert.match(html, /function applyReferenceMetadataPatch\(patch\)/);
-  assert.match(html, /if \(patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey\) \{\s*return false;\s*\}/);
-  assert.match(html, /if \(!haveSameNodeHashes\(\(currentState\.scene && currentState\.scene\.nodes\) \|\| \[\], sceneNodes\)\) \{\s*return false;\s*\}/);
-  assert.match(html, /sceneNodeByHash = new Map\(sceneNodes\.map\(\(node\) => \[node\.hash, node\]\)\);/);
-  assert.match(html, /renderVirtualScene\(\{ force: true, reason: 'metadata-patch' \}\);/);
-  assert.match(html, /syncMinimap\('full'\);/);
+  assert.doesNotMatch(html, /function applyMetadataPatch\(patch\)/);
+  assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)/);
+  assert.doesNotMatch(html, /function applyWorkspaceStatePatch\(patch\)/);
+  assert.doesNotMatch(html, /renderVirtualScene\(\{ force: true, reason: 'metadata-patch' \}\);/);
   assert.match(html, /function renderVirtualScene\(options = \{\}\)/);
   assert.match(html, /visibleLayouts = graphNodes\.filter/);
   assert.match(html, /data-node-render-key="/);
@@ -537,31 +520,6 @@ test('patches reference metadata through the virtualized graph window', () => {
   assert.doesNotMatch(html, /for \(const element of document\.querySelectorAll\('\\[data-ref-id\\]'\)\) \{\s*element\.addEventListener\('click'/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?renderScene[\s\S]*?function applyWorkspaceStatePatch/);
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
-});
-
-test('falls back to full state apply when metadata patches change the visible node set', () => {
-  const html = renderRevisionGraphShellHtml();
-
-  assert.match(html, /function haveSameNodeHashes\(currentNodes, nextNodes\)/);
-  assert.match(html, /currentNodes\.length !== nextNodes\.length/);
-  assert.match(html, /nextNodes\.every\(\(node\) => currentHashes\.has\(node\.hash\)\)/);
-  assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}\s*applyState\(Object\.assign/);
-});
-
-test('falls back to full state apply when metadata patches change graph layout', () => {
-  const html = renderRevisionGraphShellHtml();
-
-  assert.match(html, /patch\.sceneLayoutKey && patch\.sceneLayoutKey !== sceneLayoutKey/);
-  assert.match(html, /if \(applyReferenceMetadataPatch\(patch\)\) \{\s*return;\s*\}\s*applyState\(Object\.assign\(\{\}, currentState, patch/);
-});
-
-test('patches workspace state without rerendering the graph scene', () => {
-  const html = renderRevisionGraphShellHtml();
-
-  assert.match(html, /function applyWorkspaceStatePatch\(patch\)/);
-  assert.match(html, /currentState = Object\.assign\(\{\}, currentState, patch,/);
-  assert.match(html, /updateChrome\(currentState\);\s*syncToolbarActions\(\);\s*hideLoading\(\);\s*hideStatus\(\);/s);
-  assert.doesNotMatch(html, /function applyWorkspaceStatePatch\(patch\)[\s\S]*?renderScene[\s\S]*?function setRemoteTagState/);
 });
 
 test('renders client-side graph search controls and runtime handlers', () => {

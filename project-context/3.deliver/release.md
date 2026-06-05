@@ -1,12 +1,66 @@
 # Release Readiness
 
+## 0.0.38 Release Readiness
+
+Current package baseline: `0.0.37`.
+
+Target release: `0.0.38`.
+
+Status: Deliver phase is open for `0.0.38`. The maintainer-approved load-only revision graph refresh simplification is implemented, the package version has been bumped to `0.0.38`, and automated verification is current. VSIX packaging and Marketplace publication have not been performed for `0.0.38`.
+
+Planning and build references:
+
+- `project-context/2.build/features/0.0.38-load-only-revision-graph-refresh.md`
+
+Candidate change set:
+
+- Remove incremental revision graph update paths so repository changes, graph actions, scope changes, and manual reloads all use the full graph load path.
+- Remove host/webview `patch-metadata` and `patch-workspace-state` message handling.
+- Prepare repository event suppression before explicit Git mutations so a single graph action does not schedule an early event-driven load plus a later explicit load.
+- Keep prepared repository event suppression active through the suppression window so repeated `state` or `checkout` events from one operation do not schedule extra graph loads.
+- Update tests to assert load-only refresh behavior and absence of incremental patch handlers.
+
+Automated verification completed:
+
+- `npm run build` passed after removing incremental revision graph update paths.
+- Focused `revisionGraphRefresh` and `refActions` tests passed after verifying prepared event suppression before explicit Git mutations.
+- `npm test` passed with 291 tests after routing revision graph refreshes through the full load path and completing the duplicate-load suppression review. This includes `npm run build` through the test script.
+- `git diff --check` passed after the load-only refresh and version `0.0.38` updates.
+
+Automated verification pending:
+
+- None for the implemented `0.0.38` candidate.
+
+Manual validation pending:
+
+- Open a Git workspace in the Extension Development Host and confirm the graph loads with `Loading revision graph...`.
+- Exercise manual reload, scope/filter changes, sync, push, pull, merge, abort merge, reset workspace, branch/tag create/delete, and fetch; confirm each operation produces one full graph load rather than a load followed by an update.
+- Confirm trace output remains useful with `gitRevisionGraph.traceLoading` enabled.
+
+Release gates pending:
+
+- Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+
+Post-release monitoring focus:
+
+- Reports of duplicate `Loading revision graph...` events for one Git operation.
+- Reports of slower refreshes after metadata-only changes now that those paths intentionally run the full graph load.
+- Reports of stale graph state after rapid repository events, scope changes, refreshes, or fetches.
+- Reports of extension-host freezes during large uncached graph loads.
+
+Rollback:
+
+- If the load-only refresh policy causes unacceptable large-repository latency, prepare a patch that restores a narrowly scoped incremental path only for the confirmed low-risk operation.
+- If duplicate loads still appear for a specific Git action, prepare a patch that tightens the prepared follow-up suppression window or the action-specific refresh timing.
+
 ## 0.0.37 Release Readiness
 
 Current package baseline: `0.0.36`.
 
 Target release: `0.0.37`.
 
-Status: Deliver phase is open for `0.0.37`. The maintainer-selected visual, functional, and cohesion improvements are implemented, the package version has been bumped to `0.0.37`, and automated verification is current. VSIX packaging and Marketplace publication have not been performed for `0.0.37`.
+Status: `0.0.37` has been released. The maintainer-selected visual, functional, and cohesion improvements were implemented, verified, packaged, and published before the current `0.0.38` candidate work.
 
 Planning and build references:
 
@@ -85,19 +139,9 @@ Automated verification pending:
 
 - None for the implemented `0.0.37` slices.
 
-Manual validation pending:
+Manual validation and release gates:
 
-- Run the `0.0.36` VSIX or equivalent baseline in an Extension Development Host or local VS Code profile.
-- Open a branch-heavy and merge-heavy repository and confirm graph loading, scope changes, search, minimap, scroll, zoom, and `Center HEAD` behavior.
-- Confirm the extension host remains responsive during a large uncached graph layout.
-- Confirm compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, merge, delete, reset, and conflict guards still work.
-- Confirm `gitRevisionGraph.traceLoading` reports enough timing detail to diagnose layout, worker, and webview rendering outliers.
-
-Release gates pending:
-
-- Complete manual Extension Development Host smoke validation for the final `0.0.37` candidate.
-- Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
-- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+- Completed for the released `0.0.37` package outside the current Codex turn.
 
 Post-release monitoring focus:
 

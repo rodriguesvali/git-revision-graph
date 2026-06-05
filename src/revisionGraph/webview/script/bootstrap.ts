@@ -448,16 +448,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
             applyState(message.state, false, { invalidateRemoteTagState: true });
           });
           return;
-        case 'patch-metadata':
-          applyTracedHostMessage(message, 'webview.apply.patch-metadata', () => {
-            applyMetadataPatch(message.patch);
-          });
-          return;
-        case 'patch-workspace-state':
-          applyTracedHostMessage(message, 'webview.apply.patch-workspace-state', () => {
-            applyWorkspaceStatePatch(message.patch);
-          });
-          return;
         case 'set-remote-tag-state':
           setRemoteTagState(message.tagName, message.state);
           return;
@@ -642,94 +632,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       });
     }
 
-    function applyMetadataPatch(patch) {
-      if (!patch || !currentState) {
-        return;
-      }
-
-      if (applyReferenceMetadataPatch(patch)) {
-        return;
-      }
-
-      applyState(Object.assign({}, currentState, patch, {
-        loading: false,
-        loadingLabel: undefined,
-        errorMessage: undefined
-      }), false, {
-        preserveSelection: !!patch.preserveSelection,
-        preserveViewport: !!patch.preserveViewport
-      });
-    }
-
-    function applyReferenceMetadataPatch(patch) {
-      if (
-        !patch ||
-        !currentState ||
-        currentState.viewMode !== 'ready' ||
-        !patch.scene ||
-        !patch.nodeLayouts
-      ) {
-        return false;
-      }
-
-      const sceneNodes = (patch.scene && patch.scene.nodes) || [];
-      if (patch.sceneLayoutKey && patch.sceneLayoutKey !== sceneLayoutKey) {
-        return false;
-      }
-
-      if (!haveSameNodeHashes((currentState.scene && currentState.scene.nodes) || [], sceneNodes)) {
-        return false;
-      }
-
-      const nextGraphNodes = patch.nodeLayouts || [];
-      const layoutByHash = new Map(nextGraphNodes.map((node) => [node.hash, node]));
-      for (const node of sceneNodes) {
-        if (!layoutByHash.get(node.hash)) {
-          return false;
-        }
-      }
-
-      const selectionSnapshot = patch.preserveSelection ? captureSelectionSnapshot() : [];
-      currentState = Object.assign({}, currentState, patch, {
-        loading: false,
-        loadingLabel: undefined,
-        errorMessage: undefined
-      });
-      currentHeadName = currentState.currentHeadName || null;
-      currentHeadUpstreamName = currentState.currentHeadUpstreamName || null;
-      publishedLocalBranchNames = new Set(currentState.publishedLocalBranchNames || []);
-      isWorkspaceDirty = !!currentState.isWorkspaceDirty;
-      hasConflictedMerge = !!currentState.hasConflictedMerge;
-      currentProjectionOptions = currentState.projectionOptions || currentProjectionOptions;
-      mergeBlockedTargets = new Set(currentState.mergeBlockedTargets || []);
-      references = currentState.references || [];
-      syncRemoteTagStateCache(currentState, currentState.repositoryPath || null);
-      graphNodes = nextGraphNodes;
-      graphEdges = (currentState.scene && currentState.scene.edges) || [];
-      graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
-      primaryAncestorNextByHash = currentState.primaryAncestorNextByHash || {};
-      baseCanvasWidth = currentState.baseCanvasWidth || baseCanvasWidth;
-      baseCanvasHeight = currentState.baseCanvasHeight || baseCanvasHeight;
-
-      sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-      renderVirtualScene({ force: true, reason: 'metadata-patch' });
-      bindSceneEventHandlers();
-      if (patch.preserveSelection) {
-        restoreSelectionSnapshot(selectionSnapshot);
-      } else {
-        const availableReferenceIds = new Set(references.map((ref) => ref.id));
-        selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
-      }
-      updateChrome(currentState);
-      syncSelection();
-      syncToolbarActions();
-      syncSearchResults({ preserveActiveHash: true, focusActive: false });
-      syncMinimap('full');
-      hideLoading();
-      hideStatus();
-      return true;
-    }
-
     function syncRemoteTagStateCache(nextState, previousRepositoryPath, invalidateRemoteTagState) {
       const nextRepositoryPath = nextState && nextState.repositoryPath ? nextState.repositoryPath : null;
       if (previousRepositoryPath !== nextRepositoryPath || invalidateRemoteTagState) {
@@ -751,32 +653,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           pendingRemoteTagStateRequests.delete(tagName);
         }
       }
-    }
-
-    function haveSameNodeHashes(currentNodes, nextNodes) {
-      if (currentNodes.length !== nextNodes.length) {
-        return false;
-      }
-
-      const currentHashes = new Set(currentNodes.map((node) => node.hash));
-      return nextNodes.every((node) => currentHashes.has(node.hash));
-    }
-
-    function applyWorkspaceStatePatch(patch) {
-      if (!patch || !currentState) {
-        return;
-      }
-
-      currentState = Object.assign({}, currentState, patch, {
-        loading: false,
-        loadingLabel: undefined,
-        errorMessage: undefined
-      });
-      isWorkspaceDirty = !!currentState.isWorkspaceDirty;
-      updateChrome(currentState);
-      syncToolbarActions();
-      hideLoading();
-      hideStatus();
     }
 
     function setRemoteTagState(tagName, state) {
