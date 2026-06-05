@@ -4,6 +4,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import { DefaultRevisionGraphDocumentBackend } from '../src/revisionGraph/backendServices/document';
 import { DefaultRevisionGraphBackend, RevisionGraphLimitPolicy } from '../src/revisionGraph/backend';
 import type { RevisionGraphLoadTraceEvent } from '../src/revisionGraph/loadTrace';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
@@ -248,6 +249,52 @@ test('loads filtered show log pages across message author hashes and refs', asyn
         'tag:v1.0.0'
       );
       assert.deepEqual(tagMatch.entries.map((entry) => entry.shortHash), ['bbb222b']);
+    }
+  );
+});
+
+test('loads unified diffs through the document backend with bounded git args', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf 'diff --git a/file.txt b/file.txt\\n'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const diff = await backend.loadUnifiedDiff(repository, '--option-like-left', 'right1234');
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(diff, 'diff --git a/file.txt b/file.txt\n');
+      assert.equal(
+        calls.trim(),
+        'diff --no-color --end-of-options --option-like-left right1234'
+      );
+    }
+  );
+});
+
+test('loads commit details through the document backend with bounded git args', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf 'commit --option-like-hash\\n'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const details = await backend.loadCommitDetails(repository, '--option-like-hash');
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(details, 'commit --option-like-hash\n');
+      assert.equal(
+        calls.trim(),
+        'show --stat --patch --format=fuller --no-color --end-of-options --option-like-hash'
+      );
     }
   );
 });

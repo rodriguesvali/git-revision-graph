@@ -78,6 +78,9 @@ Automated verification completed:
 - `npm run build` passed after the first revision graph backend cohesion slice extracted revision log loading and narrowed backend contracts.
 - `npm test` passed with 312 tests after the first revision graph backend cohesion slice extracted revision log loading and narrowed backend contracts. This includes `npm run build` through the test script.
 - `git diff --check` passed after the first revision graph backend cohesion slice extracted revision log loading, narrowed backend contracts, and updated verification artifacts.
+- Focused backend tests passed with 6 tests after the second revision graph backend cohesion slice extracted unified diff and commit detail document loading.
+- `npm test` passed with 314 tests after the second revision graph backend cohesion slice extracted unified diff and commit detail document loading. This includes `npm run build` through the test script.
+- `git diff --check` passed after the second revision graph backend cohesion slice extracted unified diff and commit detail document loading and updated verification artifacts.
 
 Automated verification pending:
 
