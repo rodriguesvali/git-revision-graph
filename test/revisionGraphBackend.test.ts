@@ -5,8 +5,10 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { DefaultRevisionGraphDocumentBackend } from '../src/revisionGraph/backendServices/document';
+import { DefaultRevisionGraphMergeAnalysisBackend } from '../src/revisionGraph/backendServices/mergeAnalysis';
 import { DefaultRevisionGraphBackend, RevisionGraphLimitPolicy } from '../src/revisionGraph/backend';
 import type { RevisionGraphLoadTraceEvent } from '../src/revisionGraph/loadTrace';
+import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 import { RefType } from '../src/git';
 import { createBranch, createRef, createRepository } from './fakes';
@@ -294,6 +296,58 @@ test('loads commit details through the document backend with bounded git args', 
       assert.equal(
         calls.trim(),
         'show --stat --patch --format=fuller --no-color --end-of-options --option-like-hash'
+      );
+    }
+  );
+});
+
+test('loads merge-blocked targets through graph analysis and merge-base fallback', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      'case "$*" in',
+      "  'merge-base --is-ancestor --end-of-options release/1.x main') exit 0 ;;",
+      "  'merge-base --is-ancestor --end-of-options topic/demo main') exit 1 ;;",
+      '  *) exit 2 ;;',
+      'esac'
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphMergeAnalysisBackend();
+      const repository = createRepository({ root: repositoryPath });
+      const snapshot = {
+        graph: buildCommitGraph([
+          {
+            hash: 'head1',
+            parents: [],
+            author: 'Ada',
+            date: '2026-06-05',
+            subject: 'HEAD',
+            refs: [{ name: 'main', kind: 'head' }]
+          }
+        ]),
+        loadedAt: Date.now(),
+        requestedLimit: 50
+      };
+
+      const blocked = await backend.getMergeBlockedTargets(
+        repository,
+        snapshot,
+        'main',
+        [
+          { kind: 'branch', name: 'release/1.x', id: 'branch:release/1.x', hash: 'missing-release', title: 'release/1.x' },
+          { kind: 'branch', name: 'topic/demo', id: 'branch:topic/demo', hash: 'missing-topic', title: 'topic/demo' }
+        ]
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.deepEqual(blocked, ['branch::release/1.x']);
+      assert.deepEqual(
+        calls.trim().split('\n').sort(),
+        [
+          'merge-base --is-ancestor --end-of-options release/1.x main',
+          'merge-base --is-ancestor --end-of-options topic/demo main'
+        ]
       );
     }
   );

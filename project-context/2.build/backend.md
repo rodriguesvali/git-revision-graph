@@ -37,6 +37,7 @@ Record shared backend changes here. Feature-specific implementation notes belong
 - 2026-06-05 `0.0.39` revision graph backend cohesion:
   - Extracted Show Log revision history and commit-change loading into `src/revisionGraph/backendServices/revisionLog.ts`.
   - Extracted unified diff and commit detail document loading into `src/revisionGraph/backendServices/document.ts`.
+  - Extracted merge-blocked target analysis into `src/revisionGraph/backendServices/mergeAnalysis.ts`.
   - Split the broad revision graph backend contract into narrower graph state, revision log, document, merge-analysis, and Show Log change ports while preserving the public backend facade.
 
 ## Verification
@@ -54,6 +55,9 @@ Latest automated verification for this backend slice:
 - Focused backend tests passed with 6 tests during the second `0.0.39` revision graph backend cohesion slice.
 - `npm test` passed with 314 tests during the second `0.0.39` revision graph backend cohesion slice.
 - `git diff --check` passed during the second `0.0.39` revision graph backend cohesion slice.
+- Focused backend tests passed with 7 tests during the third `0.0.39` revision graph backend cohesion slice.
+- `npm test` passed with 315 tests during the third `0.0.39` revision graph backend cohesion slice.
+- `git diff --check` passed during the third `0.0.39` revision graph backend cohesion slice.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

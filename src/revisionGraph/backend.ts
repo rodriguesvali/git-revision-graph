@@ -3,10 +3,8 @@ import { Repository } from '../git';
 import { RevisionGraphViewReference, RevisionLogSource } from '../revisionGraphTypes';
 import {
   CommitGraph,
-  RevisionGraphProjectionOptions,
-  RevisionGraphRef
+  RevisionGraphProjectionOptions
 } from './model/commitGraphTypes';
-import { collectAncestorHashes } from './model/commitGraphQueries';
 import { projectMajorOperationsGraph } from './projection/graphProjection';
 import { buildRevisionGraphRefKinds } from './source/refIndex';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
@@ -14,15 +12,18 @@ import {
   buildCommitGraphFromGitLog,
   buildRevisionGraphGitLogArgs
 } from './source/graphGit';
-import { isRefAncestorOfHead } from './repository/snapshot';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './loadTrace';
 import { DefaultRevisionGraphDocumentBackend } from './backendServices/document';
+import { DefaultRevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 import { DefaultRevisionLogBackend } from './backendServices/revisionLog';
 import type { RevisionGraphDocumentBackend } from './backendServices/document';
+import type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
 
 export type { RevisionGraphDocumentBackend } from './backendServices/document';
+export type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 export type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
+export { getMergeBlockedTargetsFromGraph } from './backendServices/mergeAnalysis';
 
 export interface RevisionGraphLimitPolicy {
   readonly initialLimit: number;
@@ -39,16 +40,6 @@ export interface RevisionGraphSnapshotBackend {
     signal?: AbortSignal,
     trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot>;
-}
-
-export interface RevisionGraphMergeAnalysisBackend {
-  getMergeBlockedTargets(
-    repository: Repository,
-    snapshot: RevisionGraphSnapshot,
-    currentHeadName: string | undefined,
-    visibleReferences: readonly RevisionGraphViewReference[],
-    signal?: AbortSignal
-  ): Promise<string[]>;
 }
 
 export type RevisionGraphStateBackend = RevisionGraphSnapshotBackend & RevisionGraphMergeAnalysisBackend;
@@ -75,7 +66,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
 
   constructor(
     private readonly revisionLogBackend: RevisionGraphLogBackend & RevisionLogChangesBackend = new DefaultRevisionLogBackend(),
-    private readonly documentBackend: RevisionGraphDocumentBackend = new DefaultRevisionGraphDocumentBackend()
+    private readonly documentBackend: RevisionGraphDocumentBackend = new DefaultRevisionGraphDocumentBackend(),
+    private readonly mergeAnalysisBackend: RevisionGraphMergeAnalysisBackend = new DefaultRevisionGraphMergeAnalysisBackend()
   ) {}
 
   async loadGraphSnapshot(
@@ -179,56 +171,13 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     visibleReferences: readonly RevisionGraphViewReference[],
     signal?: AbortSignal
   ): Promise<string[]> {
-    throwIfAborted(signal);
-    if (!currentHeadName) {
-      return [];
-    }
-
-    const uniqueReferences = [
-      ...new Map(
-        visibleReferences.map((ref) => [`${ref.kind}::${ref.name}`, ref] as const)
-      ).values()
-    ];
-
-    const commitHashesByRef = buildCommitHashesByRefKey(snapshot.graph);
-    const blockedFromGraph = getMergeBlockedTargetsFromGraph(
-      snapshot.graph,
+    return this.mergeAnalysisBackend.getMergeBlockedTargets(
+      repository,
+      snapshot,
       currentHeadName,
-      uniqueReferences,
-      commitHashesByRef
+      visibleReferences,
+      signal
     );
-    const blockedSet = new Set(blockedFromGraph);
-
-    const unresolvedReferences = uniqueReferences.filter((ref) =>
-      ref.kind !== 'head' &&
-      ref.name !== currentHeadName &&
-      !blockedSet.has(`${ref.kind}::${ref.name}`) &&
-      (commitHashesByRef.get(createRefKey(ref.kind, ref.name)) ?? []).length === 0
-    );
-
-    const fallbackResults = await Promise.all(
-      unresolvedReferences.map(async (ref) => {
-        try {
-          throwIfAborted(signal);
-          const isAncestor = await isRefAncestorOfHead(repository, ref.name, currentHeadName, signal);
-          return isAncestor ? `${ref.kind}::${ref.name}` : undefined;
-        } catch (error) {
-          if (isAbortError(error)) {
-            throw error;
-          }
-
-          return undefined;
-        }
-      })
-    );
-
-    for (const entry of fallbackResults) {
-      if (entry) {
-        blockedSet.add(entry);
-      }
-    }
-
-    return [...blockedSet];
   }
 
   private async loadGraphSnapshotInternal(
@@ -282,59 +231,6 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
 
 export function createRevisionGraphBackend(): RevisionGraphBackend & ShowLogBackend {
   return new DefaultRevisionGraphBackend();
-}
-
-export function getMergeBlockedTargetsFromGraph(
-  graph: CommitGraph,
-  currentHeadName: string,
-  visibleReferences: readonly Pick<RevisionGraphViewReference, 'kind' | 'name'>[],
-  commitHashesByRef = buildCommitHashesByRefKey(graph)
-): string[] {
-  const headStartHashes = commitHashesByRef.get(createRefKey('head', currentHeadName)) ?? [];
-  const fallbackHeadHashes = headStartHashes.length > 0
-    ? headStartHashes
-    : commitHashesByRef.get(createRefKey('branch', currentHeadName)) ?? [];
-
-  if (fallbackHeadHashes.length === 0) {
-    return [];
-  }
-
-  const headAncestors = collectAncestorHashes(graph, fallbackHeadHashes);
-  const blockedTargets = new Set<string>();
-
-  for (const ref of visibleReferences) {
-    if (ref.kind === 'head' || ref.name === currentHeadName) {
-      continue;
-    }
-
-    const tipHashes = commitHashesByRef.get(createRefKey(ref.kind, ref.name)) ?? [];
-    if (tipHashes.some((hash) => headAncestors.has(hash))) {
-      blockedTargets.add(`${ref.kind}::${ref.name}`);
-    }
-  }
-
-  return [...blockedTargets];
-}
-
-function buildCommitHashesByRefKey(graph: CommitGraph): Map<string, string[]> {
-  const commitHashesByRef = new Map<string, string[]>();
-  for (const commit of graph.orderedCommits) {
-    for (const ref of commit.refs) {
-      const key = createRefKey(ref.kind, ref.name);
-      const hashes = commitHashesByRef.get(key);
-      if (hashes) {
-        hashes.push(commit.hash);
-      } else {
-        commitHashesByRef.set(key, [commit.hash]);
-      }
-    }
-  }
-
-  return commitHashesByRef;
-}
-
-function createRefKey(kind: RevisionGraphRef['kind'], name: string): string {
-  return `${kind}::${name}`;
 }
 
 function countVisibleNodes(graph: CommitGraph, options: RevisionGraphProjectionOptions): number {
@@ -458,8 +354,4 @@ function throwIfAborted(signal: AbortSignal | undefined): void {
     error.name = 'AbortError';
     throw error;
   }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }
