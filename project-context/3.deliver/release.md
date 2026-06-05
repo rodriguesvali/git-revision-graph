@@ -47,6 +47,10 @@ Automated verification completed:
 - Focused handler/ref-action/current-head/remote-tag/message validation tests passed with 114 tests after extracting `RevisionGraphRefActionWorkflow`.
 - `npm test` passed with 309 tests after the sixth revision graph controller cohesion slice. This includes `npm run build` through the test script.
 - `git diff --check` passed after the sixth revision graph controller cohesion slice and verification artifact updates.
+- `npm run build` passed after the seventh revision graph controller cohesion slice extracted repository picking and projection option handling.
+- Focused handler/view-state/ref-action/current-head/remote-tag/message validation tests passed with 117 tests after extracting `RevisionGraphViewStateWorkflow`.
+- `npm test` passed with 312 tests after the seventh revision graph controller cohesion slice. This includes `npm run build` through the test script.
+- `git diff --check` passed after the seventh revision graph controller cohesion slice and verification artifact updates.
 
 Automated verification pending:
 

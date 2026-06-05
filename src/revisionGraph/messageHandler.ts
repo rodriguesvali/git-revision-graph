@@ -1,13 +1,7 @@
 import { Repository } from '../git';
 import { RefActionKind } from '../refActions';
-import {
-  normalizeRevisionGraphProjectionOptionsForScope,
-  RevisionGraphMessage,
-  RevisionGraphViewHostMessage,
-  RevisionGraphViewState
-} from '../revisionGraphTypes';
+import { RevisionGraphMessage } from '../revisionGraphTypes';
 import { ShowLogPresenter } from '../showLogView';
-import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 import {
   RevisionGraphRemoteTagWorkflow,
   RevisionGraphRemoteTagWorkflowHost
@@ -20,23 +14,21 @@ import {
   RevisionGraphRefActionWorkflow,
   RevisionGraphRefActionWorkflowHost
 } from './refActionWorkflow';
+import {
+  RevisionGraphViewStateWorkflow,
+  RevisionGraphViewStateWorkflowHost
+} from './viewStateWorkflow';
 
 export interface RevisionGraphMessageHandlerHost
   extends RevisionGraphRemoteTagWorkflowHost,
     RevisionGraphCurrentHeadWorkflowHost,
-    RevisionGraphRefActionWorkflowHost {
+    RevisionGraphRefActionWorkflowHost,
+    RevisionGraphViewStateWorkflowHost {
   readonly showLogPresenter: ShowLogPresenter;
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
-  pickRepository(): Promise<Repository | undefined>;
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
-  setCurrentRepository(repository: Repository | undefined): void;
-  getCurrentState(): RevisionGraphViewState;
-  getProjectionOptions(): RevisionGraphViewState['projectionOptions'];
-  setProjectionOptions(options: RevisionGraphViewState['projectionOptions']): void;
-  refresh(request?: RevisionGraphRefreshRequestLike): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
-  postHostMessage(message: RevisionGraphViewHostMessage): void;
   postCurrentState(): void;
   traceWebviewLoadEvent(
     phase: string,
@@ -50,11 +42,13 @@ export class RevisionGraphMessageHandler {
   private readonly currentHeadWorkflow: RevisionGraphCurrentHeadWorkflow;
   private readonly refActionWorkflow: RevisionGraphRefActionWorkflow;
   private readonly remoteTagWorkflow: RevisionGraphRemoteTagWorkflow;
+  private readonly viewStateWorkflow: RevisionGraphViewStateWorkflow;
 
   constructor(private readonly host: RevisionGraphMessageHandlerHost) {
     this.currentHeadWorkflow = new RevisionGraphCurrentHeadWorkflow(host);
     this.refActionWorkflow = new RevisionGraphRefActionWorkflow(host);
     this.remoteTagWorkflow = new RevisionGraphRemoteTagWorkflow(host);
+    this.viewStateWorkflow = new RevisionGraphViewStateWorkflow(host);
   }
 
   async handleMessage(message: RevisionGraphMessage): Promise<void> {
@@ -75,26 +69,10 @@ export class RevisionGraphMessageHandler {
         await this.refActionWorkflow.abortMerge();
         return;
       case 'choose-repository':
-        {
-          const pickedRepository = await this.host.pickRepository();
-          if (!pickedRepository) {
-            this.host.postHostMessage({ type: 'update-state', state: this.host.getCurrentState() });
-            return;
-          }
-
-          this.host.setCurrentRepository(pickedRepository);
-        }
-        await this.host.refresh('full-rebuild');
+        await this.viewStateWorkflow.chooseRepository();
         return;
       case 'set-projection-options':
-        {
-          const nextProjectionOptions = normalizeRevisionGraphProjectionOptionsForScope({
-            ...this.host.getProjectionOptions(),
-            ...message.options
-          });
-          this.host.setProjectionOptions(nextProjectionOptions);
-        }
-        await this.host.refresh('full-rebuild');
+        await this.viewStateWorkflow.setProjectionOptions(message.options);
         return;
       case 'compare-selected':
         await this.refActionWorkflow.compareSelected(
