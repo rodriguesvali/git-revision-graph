@@ -11,7 +11,7 @@ The release should allow small visual and functional improvements from maintaine
 - Current package baseline: `0.0.36`.
 - Target release: `0.0.37`.
 - Product surface remains unchanged: `View Git Revision Graph` opens or reveals the singleton editor graph panel from Source Control or the Command Palette.
-- Compare Results and Show Logs remain on-demand Activity Bar review views.
+- Compare Results and Show Logs now open as on-demand editor review panels alongside the main revision graph.
 - `0.0.36` introduced the largest recent graph-rendering and layout architecture change set, so `0.0.37` should still treat graph rendering, layout, cancellation, packaging, and large-repository responsiveness as release-risk areas.
 - Maintainer decision on 2026-06-04: `0.0.37` is not stabilization-only. Small visual and functional improvements may be selected and implemented one at a time.
 

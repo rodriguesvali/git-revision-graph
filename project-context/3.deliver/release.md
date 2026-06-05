@@ -6,7 +6,7 @@ Current package baseline: `0.0.36`.
 
 Target release: `0.0.37`.
 
-Status: Build phase is in progress with maintainer-selected visual and functional improvements implemented. Version bump, VSIX packaging, and Marketplace publication have not been performed for `0.0.37`.
+Status: Deliver phase is open for `0.0.37`. The maintainer-selected visual, functional, and cohesion improvements are implemented, the package version has been bumped to `0.0.37`, and automated verification is current. VSIX packaging and Marketplace publication have not been performed for `0.0.37`.
 
 Planning and build references:
 
@@ -20,6 +20,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.37-compare-results-review-ux.md`
 - `project-context/2.build/features/0.0.37-remove-workspace-led.md`
 - `project-context/2.build/features/0.0.37-remote-checkout-current-branch-overwrite.md`
+- `project-context/2.build/features/0.0.37-cohesion-cleanup.md`
 
 Candidate direction:
 
@@ -34,6 +35,8 @@ Candidate direction:
 - Redesign Compare Results as a compact review queue with explicit comparison context, status filters, rename paths, and visible diff actions.
 - Remove the revision graph toolbar workspace-status LED and its redundant Source Control shortcut while preserving dirty-workspace guards.
 - Add an explicit `Override branch if exists` option for remote checkout before resetting an existing local branch.
+- Remove legacy Compare Results and Show Log visibility contexts and unneeded hide command registrations after the review surfaces moved to editor panels.
+- Align active README and AAMAD planning references with the current `project-context/docs/` document location.
 - Validate and harden virtualized graph rendering across scroll, zoom, minimap, search, selection, metadata patches, and repository refresh paths.
 - Validate and harden worker-thread layout execution, cancellation, synchronous fallback, and packaged worker availability.
 - Preserve stale render result guards during rapid refreshes, scope changes, repository events, and manual reloads.
@@ -70,10 +73,17 @@ Automated verification completed:
 - `npm test` passed with 305 tests and `git diff --check` passed after removing the workspace-status LED and its graph webview Source Control shortcut.
 - `npm run clean:test && npm run build && npx tsc -p ./tsconfig.test.json && node --test out-test/test/refActions.test.js out-test/test/refCommands.test.js` passed with 90 tests after adding the remote checkout `Override branch if exists` option.
 - `npm test` passed with 307 tests and `git diff --check` passed after adding the remote checkout `Override branch if exists` option.
+- `npm run build` passed after the delivery cohesion cleanup.
+- `npm test` passed with 307 tests after the delivery cohesion cleanup. This includes `npm run build` through the test script.
+- `git diff --check` passed after the delivery cohesion cleanup.
+- Version bump to `0.0.37` was applied in `package.json` and `package-lock.json`.
+- `git diff --check` passed after the `0.0.37` version bump and release artifact updates.
+- `npm run build` passed after the `0.0.37` version bump and release artifact updates.
+- `npm test` passed with 307 tests after the `0.0.37` version bump and release artifact updates. This includes `npm run build` through the test script.
 
 Automated verification pending:
 
-- None for the completed `0.0.37` slices so far.
+- None for the implemented `0.0.37` slices.
 
 Manual validation pending:
 
@@ -85,10 +95,9 @@ Manual validation pending:
 
 Release gates pending:
 
-- Select or confirm the `0.0.37` implementation scope from smoke findings and maintainer priorities.
-- Implement focused fixes with feature artifacts under `project-context/2.build/features/`.
-- Update README and CHANGELOG only if user-visible behavior or release notes change.
-- Obtain maintainer approval before a version bump, VSIX packaging, or Marketplace publication.
+- Complete manual Extension Development Host smoke validation for the final `0.0.37` candidate.
+- Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
 
 Post-release monitoring focus:
 

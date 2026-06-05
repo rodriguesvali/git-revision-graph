@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Added Compare Results webview coverage for the dense review layout, status filters, single-result selection, rename presentation, and visible actions.
 - Removed the obsolete graph webview `open-source-control` message contract and added coverage that keeps the workspace-status LED out of the toolbar.
 - Added remote checkout regression coverage for the `Override branch if exists` option across existing and currently checked-out local branches.
+- Version bump to `0.0.37` has been applied in `package.json` and `package-lock.json`; VSIX packaging, manual smoke validation, and Marketplace publication remain with the maintainer.
 
 ## 0.0.36
 
