@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
 import { Repository } from '../../git';
-import { RevisionGraphBackend } from '../backend';
+import { RevisionGraphDocumentBackend } from '../backend';
 
 export async function openUnifiedDiffDocument(
   repository: Repository,
   left: string,
   right: string,
-  backend: RevisionGraphBackend
+  backend: RevisionGraphDocumentBackend
 ): Promise<void> {
   try {
     const stdout = await backend.loadUnifiedDiff(repository, left, right);
@@ -34,7 +34,7 @@ export async function openUnifiedDiffDocument(
 export async function openCommitDetails(
   repository: Repository,
   commitHash: string,
-  backend: RevisionGraphBackend
+  backend: RevisionGraphDocumentBackend
 ): Promise<void> {
   try {
     const stdout = await backend.loadCommitDetails(repository, commitHash);

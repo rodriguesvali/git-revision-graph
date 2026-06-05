@@ -4,7 +4,7 @@ import * as path from 'node:path';
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
 import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
-import type { RevisionGraphBackend, ShowLogBackend } from './revisionGraph/backend';
+import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
 import {
   resetCurrentBranchToCommit,
@@ -42,7 +42,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly backend: RevisionGraphBackend & ShowLogBackend,
+    private readonly backend: RevisionGraphLogBackend & RevisionGraphDocumentBackend & ShowLogBackend,
     private readonly compareResultsPresenter: CompareResultsPresenter,
     private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined
   ) {}

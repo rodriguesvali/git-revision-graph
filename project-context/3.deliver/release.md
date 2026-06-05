@@ -12,6 +12,7 @@ Planning and build references:
 
 - `project-context/docs/release-0.0.39-prioritization.md`
 - `project-context/2.build/features/0.0.39-ref-actions-cohesion.md`
+- `project-context/2.build/features/0.0.39-revision-graph-backend-cohesion.md`
 
 Candidate direction:
 
@@ -74,6 +75,9 @@ Automated verification completed:
 - `npm run build` passed after the seventh ref actions cohesion slice extracted delete workflows.
 - `npm test` passed with 312 tests after the seventh ref actions cohesion slice extracted delete workflows. This includes `npm run build` through the test script.
 - `git diff --check` passed after the seventh ref actions cohesion slice extracted delete workflows.
+- `npm run build` passed after the first revision graph backend cohesion slice extracted revision log loading and narrowed backend contracts.
+- `npm test` passed with 312 tests after the first revision graph backend cohesion slice extracted revision log loading and narrowed backend contracts. This includes `npm run build` through the test script.
+- `git diff --check` passed after the first revision graph backend cohesion slice extracted revision log loading, narrowed backend contracts, and updated verification artifacts.
 
 Automated verification pending:
 

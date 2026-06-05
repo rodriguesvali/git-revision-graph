@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType } from '../src/git';
-import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../src/revisionGraph/backend';
+import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../src/revisionGraph/backend';
 import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import {
   buildEmptyRevisionGraphViewState,
@@ -42,22 +42,13 @@ test('builds a serializable ready state for the persistent webview shell', async
       ]
     }
   ]);
-  const backend: RevisionGraphBackend = {
+  const backend: RevisionGraphStateBackend = {
     async loadGraphSnapshot() {
       return {
         graph,
         loadedAt: Date.now(),
         requestedLimit: 6000
       };
-    },
-    async loadRevisionLog() {
-      return { entries: [], hasMore: false };
-    },
-    async loadUnifiedDiff() {
-      return '';
-    },
-    async loadCommitDetails() {
-      return '';
     },
     async getMergeBlockedTargets() {
       return [];
@@ -111,22 +102,13 @@ test('applies repository overlay refs before projecting a ready graph state', as
     }
   ]);
   let mergeBlockedSnapshotRefs: unknown;
-  const backend: RevisionGraphBackend = {
+  const backend: RevisionGraphStateBackend = {
     async loadGraphSnapshot() {
       return {
         graph,
         loadedAt: Date.now(),
         requestedLimit: 6000
       };
-    },
-    async loadRevisionLog() {
-      return { entries: [], hasMore: false };
-    },
-    async loadUnifiedDiff() {
-      return '';
-    },
-    async loadCommitDetails() {
-      return '';
     },
     async getMergeBlockedTargets(_repository, snapshot) {
       mergeBlockedSnapshotRefs = snapshot.graph.orderedCommits[0]?.refs;
@@ -178,22 +160,13 @@ test('repository overlays prefer getRefs for current head commit when repository
       refs: [{ name: 'master', kind: 'head' }]
     }
   ]);
-  const backend: RevisionGraphBackend = {
+  const backend: RevisionGraphStateBackend = {
     async loadGraphSnapshot() {
       return {
         graph,
         loadedAt: Date.now(),
         requestedLimit: 6000
       };
-    },
-    async loadRevisionLog() {
-      return { entries: [], hasMore: false };
-    },
-    async loadUnifiedDiff() {
-      return '';
-    },
-    async loadCommitDetails() {
-      return '';
     },
     async getMergeBlockedTargets() {
       return [];
@@ -303,22 +276,13 @@ test('does not mark branches with inherited upstream tracking as published', asy
       ]
     }
   ]);
-  const backend: RevisionGraphBackend = {
+  const backend: RevisionGraphStateBackend = {
     async loadGraphSnapshot() {
       return {
         graph,
         loadedAt: Date.now(),
         requestedLimit: 6000
       };
-    },
-    async loadRevisionLog() {
-      return { entries: [], hasMore: false };
-    },
-    async loadUnifiedDiff() {
-      return '';
-    },
-    async loadCommitDetails() {
-      return '';
     },
     async getMergeBlockedTargets() {
       return [];

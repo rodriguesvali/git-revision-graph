@@ -1,6 +1,6 @@
 import { execGit } from '../gitExec';
 import { Repository } from '../git';
-import { RevisionLogEntry, RevisionLogSource, RevisionGraphViewReference } from '../revisionGraphTypes';
+import { RevisionGraphViewReference, RevisionLogSource } from '../revisionGraphTypes';
 import {
   CommitGraph,
   RevisionGraphProjectionOptions,
@@ -12,14 +12,14 @@ import { buildRevisionGraphRefKinds } from './source/refIndex';
 import { RevisionGraphSnapshot } from './source/graphSnapshot';
 import {
   buildCommitGraphFromGitLog,
-  buildRevisionGraphGitLogArgs,
-  buildRevisionLogGitArgs,
-  matchesRevisionLogFilter,
-  normalizeRevisionLogFilterText,
-  parseRevisionLogEntries
+  buildRevisionGraphGitLogArgs
 } from './source/graphGit';
 import { isRefAncestorOfHead } from './repository/snapshot';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './loadTrace';
+import { DefaultRevisionLogBackend } from './backendServices/revisionLog';
+import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
+
+export type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
 
 export interface RevisionGraphLimitPolicy {
   readonly initialLimit: number;
@@ -28,7 +28,7 @@ export interface RevisionGraphLimitPolicy {
   readonly graphCommandTimeoutMs: number;
 }
 
-export interface RevisionGraphBackend {
+export interface RevisionGraphSnapshotBackend {
   loadGraphSnapshot(
     repository: Repository,
     options: RevisionGraphProjectionOptions,
@@ -36,20 +36,14 @@ export interface RevisionGraphBackend {
     signal?: AbortSignal,
     trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot>;
-  loadRevisionLog(
-    repository: Repository,
-    source: RevisionLogSource,
-    limit: number,
-    skip?: number,
-    showAllBranches?: boolean,
-    filterText?: string,
-    signal?: AbortSignal
-  ): Promise<{
-    readonly entries: readonly RevisionLogEntry[];
-    readonly hasMore: boolean;
-  }>;
+}
+
+export interface RevisionGraphDocumentBackend {
   loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string>;
   loadCommitDetails(repository: Repository, commitHash: string): Promise<string>;
+}
+
+export interface RevisionGraphMergeAnalysisBackend {
   getMergeBlockedTargets(
     repository: Repository,
     snapshot: RevisionGraphSnapshot,
@@ -59,23 +53,21 @@ export interface RevisionGraphBackend {
   ): Promise<string[]>;
 }
 
-export interface ShowLogBackend {
-  loadRevisionLogChanges(
-    repository: Repository,
-    commitHash: string,
-    parentHash?: string
-  ): Promise<readonly import('../git').Change[]>;
-}
+export type RevisionGraphStateBackend = RevisionGraphSnapshotBackend & RevisionGraphMergeAnalysisBackend;
+
+export interface RevisionGraphBackend extends
+  RevisionGraphSnapshotBackend,
+  RevisionGraphLogBackend,
+  RevisionGraphDocumentBackend,
+  RevisionGraphMergeAnalysisBackend {}
+
+export interface ShowLogBackend extends RevisionLogChangesBackend {}
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
 const GRAPH_SNAPSHOT_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const DEFAULT_GIT_COMMAND_TIMEOUT_MS = 15000;
-const REVISION_LOG_MAX_OUTPUT_BYTES = 12 * 1024 * 1024;
-const REVISION_LOG_FILTER_SCAN_BATCH_SIZE = 200;
-const REVISION_LOG_FILTER_SCAN_MAX_COMMITS = 2000;
 const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
-const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 interface SnapshotCacheEntry {
   readonly createdAt: number;
@@ -85,6 +77,10 @@ interface SnapshotCacheEntry {
 
 export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLogBackend {
   private readonly snapshotCache = new Map<string, SnapshotCacheEntry>();
+
+  constructor(
+    private readonly revisionLogBackend: RevisionGraphLogBackend & RevisionLogChangesBackend = new DefaultRevisionLogBackend()
+  ) {}
 
   async loadGraphSnapshot(
     repository: Repository,
@@ -149,114 +145,27 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     source: RevisionLogSource,
     limit: number,
     skip = 0,
-    showAllBranches = source.kind === 'range',
+    showAllBranches?: boolean,
     filterText?: string,
     signal?: AbortSignal
-  ): Promise<{
-    readonly entries: readonly RevisionLogEntry[];
-    readonly hasMore: boolean;
-  }> {
-    throwIfAborted(signal);
-    const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
-    const normalizedFilterText = normalizeRevisionLogFilterText(filterText);
-    if (normalizedFilterText) {
-      return this.loadFilteredRevisionLog(
-        repository,
-        source,
-        limit,
-        skip,
-        showAllBranches,
-        normalizedFilterText,
-        refKindsByName,
-        signal
-      );
-    }
-
-    const stdout = await execGit(
-      repository.rootUri.fsPath,
-      buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches),
-      {
-        signal,
-        maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
-        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
-      }
+  ): ReturnType<RevisionGraphLogBackend['loadRevisionLog']> {
+    return this.revisionLogBackend.loadRevisionLog(
+      repository,
+      source,
+      limit,
+      skip,
+      showAllBranches,
+      filterText,
+      signal
     );
-    throwIfAborted(signal);
-    const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
-
-    return {
-      entries: parsedEntries.slice(0, limit),
-      hasMore: parsedEntries.length > limit
-    };
-  }
-
-  private async loadFilteredRevisionLog(
-    repository: Repository,
-    source: RevisionLogSource,
-    limit: number,
-    skip: number,
-    showAllBranches: boolean,
-    normalizedFilterText: string,
-    refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>,
-    signal?: AbortSignal
-  ): Promise<{
-    readonly entries: readonly RevisionLogEntry[];
-    readonly hasMore: boolean;
-  }> {
-    const matchedEntries: RevisionLogEntry[] = [];
-    let skippedMatches = 0;
-    let scannedCommits = 0;
-
-    while (scannedCommits < REVISION_LOG_FILTER_SCAN_MAX_COMMITS && matchedEntries.length <= limit) {
-      throwIfAborted(signal);
-      const remainingScanBudget = REVISION_LOG_FILTER_SCAN_MAX_COMMITS - scannedCommits;
-      const batchSize = Math.min(REVISION_LOG_FILTER_SCAN_BATCH_SIZE, remainingScanBudget);
-      const stdout = await execGit(
-        repository.rootUri.fsPath,
-        buildRevisionLogGitArgs(source, batchSize, scannedCommits, showAllBranches),
-        {
-          signal,
-          maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
-          timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
-        }
-      );
-      throwIfAborted(signal);
-      const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
-      scannedCommits += parsedEntries.length;
-
-      for (const entry of parsedEntries) {
-        if (!matchesRevisionLogFilter(entry, normalizedFilterText)) {
-          continue;
-        }
-
-        if (skippedMatches < skip) {
-          skippedMatches += 1;
-          continue;
-        }
-
-        matchedEntries.push(entry);
-        if (matchedEntries.length > limit) {
-          break;
-        }
-      }
-
-      if (parsedEntries.length < batchSize) {
-        break;
-      }
-    }
-
-    return {
-      entries: matchedEntries.slice(0, limit),
-      hasMore: matchedEntries.length > limit
-    };
   }
 
   async loadRevisionLogChanges(
     repository: Repository,
     commitHash: string,
     parentHash?: string
-  ): Promise<readonly import('../git').Change[]> {
-    return repository.diffBetween(parentHash ?? EMPTY_TREE_HASH, commitHash);
+  ): ReturnType<RevisionLogChangesBackend['loadRevisionLogChanges']> {
+    return this.revisionLogBackend.loadRevisionLogChanges(repository, commitHash, parentHash);
   }
 
   async loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string> {

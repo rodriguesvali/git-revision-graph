@@ -34,6 +34,9 @@ Record shared backend changes here. Feature-specific implementation notes belong
   - Removed graph `WebviewViewProvider` registrations for the old side-bar graph placements.
   - Wired editor graph disposal to close dependent Compare Results and Show Log review panels.
   - Updated focus restoration so closing the last secondary review view returns to Source Control.
+- 2026-06-05 `0.0.39` revision graph backend cohesion:
+  - Extracted Show Log revision history and commit-change loading into `src/revisionGraph/backendServices/revisionLog.ts`.
+  - Split the broad revision graph backend contract into narrower graph state, revision log, document, merge-analysis, and Show Log change ports while preserving the public backend facade.
 
 ## Verification
 - Run `npm run build`.
@@ -44,6 +47,9 @@ Latest automated verification for this backend slice:
 
 - `npm run build` passed.
 - `npm test` passed with 273 tests during the `0.0.31` product surface implementation.
+- `npm run build` passed during the first `0.0.39` revision graph backend cohesion slice.
+- `npm test` passed with 312 tests during the first `0.0.39` revision graph backend cohesion slice.
+- `git diff --check` passed during the first `0.0.39` revision graph backend cohesion slice.
 
 ## Decisions
 - Prefer the built-in `vscode.git` API for refs, repository state, checkout, merge, pull, push, and diff workflows.

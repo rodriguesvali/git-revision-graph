@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { Branch, Ref, RefType, Repository } from '../../git';
-import { RevisionGraphBackend, RevisionGraphLimitPolicy } from '../backend';
+import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../backend';
 import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
@@ -44,7 +44,7 @@ export interface RevisionGraphRepositoryOverlay {
 export async function buildReadyRevisionGraphViewStateBundle(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
+  backend: RevisionGraphStateBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
@@ -64,7 +64,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
 export async function buildReadyRevisionGraphViewState(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
+  backend: RevisionGraphStateBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
@@ -84,7 +84,7 @@ export async function buildReadyRevisionGraphViewState(
 async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
+  backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
@@ -114,7 +114,7 @@ async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
 async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
+  backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
@@ -303,7 +303,7 @@ export function buildEmptyRevisionGraphViewState(
 async function buildReadyRevisionGraphViewStateFromParts(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
-  backend: RevisionGraphBackend,
+  backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   scene: RevisionGraphScene,
   primaryAncestorNextByHash: NonNullable<RevisionGraphViewState['primaryAncestorNextByHash']>,
