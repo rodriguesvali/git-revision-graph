@@ -65,6 +65,9 @@ Automated verification completed:
 - `npm run build` passed after the fourth ref actions cohesion slice extracted branch publication and current branch sync/pull/push workflows.
 - `npm test` passed with 312 tests after the fourth ref actions cohesion slice extracted branch publication and current branch sync/pull/push workflows. This includes `npm run build` through the test script.
 - `git diff --check` passed after the fourth ref actions cohesion slice extracted branch publication and current branch sync/pull/push workflows.
+- `npm run build` passed after the fifth ref actions cohesion slice extracted merge and merge-abort workflows.
+- `npm test` passed with 312 tests after the fifth ref actions cohesion slice extracted merge and merge-abort workflows. This includes `npm run build` through the test script.
+- `git diff --check` passed after the fifth ref actions cohesion slice extracted merge and merge-abort workflows.
 
 Automated verification pending:
 
