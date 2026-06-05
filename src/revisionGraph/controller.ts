@@ -9,23 +9,8 @@ import {
   shouldPromptForGraphRepositoryOnOpen
 } from '../repositorySelection';
 import {
-  abortCurrentMerge,
-  createBranchFromResolvedReference,
-  createTagFromResolvedReference,
-  checkoutResolvedReference,
-  compareResolvedRefs,
-  compareResolvedRefWithWorktree,
-  deleteRemoteTagResolvedReference,
-  deleteResolvedReference,
-  mergeResolvedReference,
-  pullCurrentBranchFromUpstream,
-  publishLocalBranchResolvedReference,
-  pushCurrentBranchToUpstream,
-  pushTagResolvedReference,
   CompareResultsPresenter,
-  RefActionKind,
-  resetCurrentBranchWorkspace,
-  syncCurrentHeadWithUpstream
+  RefActionServices
 } from '../refActions';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
@@ -36,12 +21,9 @@ import {
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
-import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
-  normalizeRevisionGraphProjectionOptionsForScope,
   RemoteTagPublicationState,
-  RevisionGraphMessage,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -52,12 +34,12 @@ import { getRevisionGraphViewTitle } from './viewTitle';
 import { ShowLogPresenter } from '../showLogView';
 import {
   RemoteTagPublicationRequestContext,
-  isRemoteTagPublicationStateResponseCurrent,
-  resolveRemoteTagPublicationState
+  isRemoteTagPublicationStateResponseCurrent
 } from './remoteTagState';
 import { runRevisionGraphFetchWorkflow } from './fetchWorkflow';
 import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
+import { RevisionGraphMessageHandler } from './messageHandler';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -107,22 +89,6 @@ function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWeb
   };
 }
 
-async function resolveTagPublicationStateForRepository(
-  repository: Repository,
-  tagName: string
-): Promise<RemoteTagPublicationState> {
-  try {
-    const remoteNames = await getRepositoryRemoteNames(repository);
-    return resolveRemoteTagPublicationState({
-      repositoryPath: repository.rootUri.fsPath,
-      remoteNames,
-      tagName
-    });
-  } catch {
-    return 'unknown';
-  }
-}
-
 function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number): number {
   if (typeof configuredValue !== 'number' || !Number.isFinite(configuredValue)) {
     return fallback;
@@ -145,8 +111,9 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly actionServices: ReturnType<typeof createWorkbenchRefActionServices>;
+  private readonly actionServices: RefActionServices;
   private readonly messageDispatcher = new RevisionGraphMessageDispatcher();
+  private readonly messageHandler: RevisionGraphMessageHandler;
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
       const nextLoadingMode = getRefreshLoadingMode(this.latestRefreshIntent);
@@ -205,7 +172,7 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly git: API,
     private readonly backend: RevisionGraphBackend,
     compareResultsPresenter: CompareResultsPresenter,
-    private readonly showLogPresenter: ShowLogPresenter,
+    showLogPresenter: ShowLogPresenter,
     private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY
   ) {
@@ -218,6 +185,46 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       compareResultsPresenter
     );
+    this.messageHandler = new RevisionGraphMessageHandler({
+      actionServices: this.actionServices,
+      showLogPresenter,
+      rehydrateWebview: () => {
+        this.rehydrateWebview();
+      },
+      writeClipboard: (text) => vscode.env.clipboard.writeText(text),
+      pickRepository: () => pickRevisionGraphRepository(this.git, true),
+      openUnifiedDiff: (repository, left, right) =>
+        openUnifiedDiffDocument(repository, left, right, this.backend),
+      getCurrentRepository: () => this.currentRepository,
+      setCurrentRepository: (repository) => {
+        this.setCurrentRepository(repository);
+      },
+      getCurrentState: () => this.currentState,
+      getProjectionOptions: () => this.projectionOptions,
+      setProjectionOptions: (options) => {
+        this.projectionOptions = options;
+      },
+      refresh: async (request) => {
+        await this.refresh(request);
+      },
+      runFetchCurrentRepository: async () => {
+        await this.runFetchCurrentRepository();
+      },
+      postHostMessage: (message) => {
+        this.postHostMessage(message);
+      },
+      postCurrentState: () => {
+        this.postCurrentState();
+      },
+      traceWebviewLoadEvent: (phase, durationMs, detail, requestId) => {
+        this.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
+      },
+      createRemoteTagPublicationRequestContext: (repository) =>
+        this.createRemoteTagPublicationRequestContext(repository),
+      postRemoteTagStateIfCurrent: (requestContext, tagName, state) => {
+        this.postRemoteTagStateIfCurrent(requestContext, tagName, state);
+      }
+    });
     this.currentRepository = reconcileCurrentRepository(git.repositories, undefined);
     this.currentState = buildEmptyRevisionGraphViewState(
       git.repositories.length > 0,
@@ -276,7 +283,7 @@ export class RevisionGraphController implements vscode.Disposable {
           currentState: this.currentState,
           currentRepositoryPath: this.currentRepository?.rootUri.fsPath,
           handleMessage: async (validatedMessage) => {
-            await this.handleMessage(validatedMessage);
+            await this.messageHandler.handleMessage(validatedMessage);
           }
         });
       })
@@ -362,218 +369,6 @@ export class RevisionGraphController implements vscode.Disposable {
         cancelPendingFollowUpRefresh(this.pendingFollowUpRefreshes, preparedRefresh);
       }
     };
-  }
-
-  private async handleMessage(message: RevisionGraphMessage): Promise<void> {
-    switch (message.type) {
-      case 'webview-ready':
-        this.rehydrateWebview();
-        return;
-      case 'load-trace':
-        this.traceWebviewLoadEvent(message.phase, message.durationMs, message.detail, message.requestId);
-        return;
-      case 'refresh':
-        await this.refresh('full-rebuild');
-        return;
-      case 'fetch-current-repository':
-        await this.runFetchCurrentRepository();
-        return;
-      case 'abort-merge':
-        if (this.currentRepository) {
-          await abortCurrentMerge(this.currentRepository, this.actionServices);
-        }
-        return;
-      case 'choose-repository':
-        {
-          const pickedRepository = await pickRevisionGraphRepository(this.git, true);
-          if (!pickedRepository) {
-            this.postHostMessage({ type: 'update-state', state: this.currentState });
-            return;
-          }
-
-          this.setCurrentRepository(pickedRepository);
-        }
-        await this.refresh('full-rebuild');
-        return;
-      case 'set-projection-options':
-        {
-          const nextProjectionOptions = normalizeRevisionGraphProjectionOptionsForScope({
-            ...this.projectionOptions,
-            ...message.options
-          });
-          this.projectionOptions = nextProjectionOptions;
-        }
-        await this.refresh('full-rebuild');
-        return;
-      case 'compare-selected':
-        if (this.currentRepository) {
-          await compareResolvedRefs(
-            this.currentRepository,
-            { refName: message.baseRevision, label: message.baseLabel },
-            { refName: message.compareRevision, label: message.compareLabel },
-            this.actionServices
-          );
-        }
-        return;
-      case 'show-log':
-        if (this.currentRepository) {
-          await this.showLogPresenter.showSource(this.currentRepository, message.source);
-        }
-        return;
-      case 'open-unified-diff':
-        if (this.currentRepository) {
-          await openUnifiedDiffDocument(
-            this.currentRepository,
-            message.baseRevision,
-            message.compareRevision,
-            this.backend
-          );
-        }
-        return;
-      case 'compare-with-worktree':
-        if (this.currentRepository) {
-          await compareResolvedRefWithWorktree(
-            this.currentRepository,
-            { refName: message.revision, label: message.label },
-            this.actionServices
-          );
-        }
-        return;
-      case 'copy-commit-hash':
-        await vscode.env.clipboard.writeText(message.commitHash);
-        this.actionServices.ui.showInformationMessage(`Copied commit ${message.commitHash.slice(0, 8)}.`);
-        return;
-      case 'copy-ref-name':
-        await vscode.env.clipboard.writeText(message.refName);
-        this.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
-        return;
-      case 'checkout':
-        if (this.currentRepository) {
-          await checkoutResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-        }
-        return;
-      case 'create-branch':
-        if (this.currentRepository) {
-          await createBranchFromResolvedReference(
-            this.currentRepository,
-            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-        }
-        return;
-      case 'create-tag':
-        if (this.currentRepository) {
-          await createTagFromResolvedReference(
-            this.currentRepository,
-            { refName: message.revision, label: message.label, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-        }
-        return;
-      case 'resolve-remote-tag-state':
-        if (this.currentRepository) {
-          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
-          const state = await resolveTagPublicationStateForRepository(this.currentRepository, message.refName);
-          this.postRemoteTagStateIfCurrent(requestContext, message.refName, state);
-        }
-        return;
-      case 'push-tag':
-        if (this.currentRepository) {
-          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
-          const pushed = await pushTagResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-          if (pushed) {
-            this.postRemoteTagStateIfCurrent(requestContext, message.refName, 'published');
-          }
-        }
-        return;
-      case 'delete-remote-tag':
-        if (this.currentRepository) {
-          const requestContext = this.createRemoteTagPublicationRequestContext(this.currentRepository);
-          const deleted = await deleteRemoteTagResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-          if (deleted) {
-            this.postRemoteTagStateIfCurrent(requestContext, message.refName, 'unpublished');
-          }
-        }
-        return;
-      case 'publish-branch':
-        if (this.currentRepository) {
-          await publishLocalBranchResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.label, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-        }
-        return;
-      case 'sync-current-head':
-        {
-          const didScheduleRefresh = this.currentRepository
-            ? await syncCurrentHeadWithUpstream(this.currentRepository, this.actionServices)
-            : false;
-          if (!didScheduleRefresh) {
-            this.postCurrentState();
-          }
-        }
-        return;
-      case 'pull-current-head':
-        {
-          const didScheduleRefresh = this.currentRepository
-            ? await pullCurrentBranchFromUpstream(this.currentRepository, this.actionServices)
-            : false;
-          if (!didScheduleRefresh) {
-            this.postCurrentState();
-          }
-        }
-        return;
-      case 'push-current-head':
-        {
-          const didScheduleRefresh = this.currentRepository
-            ? await pushCurrentBranchToUpstream(this.currentRepository, this.actionServices)
-            : false;
-          if (!didScheduleRefresh) {
-            this.postCurrentState();
-          }
-        }
-        return;
-      case 'reset-current-workspace':
-        if (this.currentRepository) {
-          await resetCurrentBranchWorkspace(
-            this.currentRepository,
-            message.includeUntracked,
-            this.actionServices
-          );
-        }
-        return;
-      case 'delete':
-        if (this.currentRepository) {
-          await deleteResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.refName, kind: message.refKind as RefActionKind },
-            this.actionServices
-          );
-        }
-        return;
-      case 'merge':
-        if (this.currentRepository) {
-          await mergeResolvedReference(
-            this.currentRepository,
-            { refName: message.refName, label: message.refName },
-            this.actionServices
-          );
-        }
-        return;
-    }
   }
 
   private async buildNextState(
