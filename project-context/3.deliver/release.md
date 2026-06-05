@@ -23,12 +23,14 @@ Candidate direction:
 Automated verification completed:
 
 - `git diff --check` passed after opening the `0.0.39` planning artifacts and bumping `package.json` / `package-lock.json`.
+- `npm run build` passed after the first revision graph controller cohesion slice.
+- Focused dispatcher/message/fetch/refresh tests passed with 21 tests after extracting message dispatch, fetch workflow, and load tracing.
+- `npm test` passed with 293 tests after the first revision graph controller cohesion slice. This includes `npm run build` through the test script.
+- `git diff --check` passed after the first revision graph controller cohesion slice and verification artifact updates.
 
 Automated verification pending:
 
-- `npm run build`
-- `npm test`
-- `git diff --check`
+- None for the current implemented `0.0.39` slice. Re-run `npm run build`, `npm test`, and `git diff --check` before release preparation.
 
 Manual validation pending:
 
@@ -40,9 +42,9 @@ Manual validation pending:
 
 Release gates pending:
 
-- Select and approve the first focused `0.0.39` build slice.
-- Create or update a focused feature artifact under `project-context/2.build/features/` for each implemented slice.
-- Run full automated verification after implementation.
+- Select and approve the next focused `0.0.39` build slice.
+- Create or update a focused feature artifact under `project-context/2.build/features/` for each additional implemented slice.
+- Re-run full automated verification after additional implementation.
 - Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
 - Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
 

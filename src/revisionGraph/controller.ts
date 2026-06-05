@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import { API, Repository } from '../git';
 import { toErrorDetail } from '../errorDetail';
-import { execGitWithResult } from '../gitExec';
 import {
   isSameRepositoryPath,
   reconcileCurrentRepository,
@@ -37,19 +36,12 @@ import {
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
-import {
-  buildRevisionGraphFetchArgs,
-  buildRevisionGraphFetchOptions,
-  createRevisionGraphFetchOptionItems,
-  formatRevisionGraphFetchSuccessMessage,
-  RevisionGraphFetchOption,
-  shouldUseGitCliForRevisionGraphFetch
-} from './fetchOptions';
 import { getRepositoryRemoteNames } from '../refActions/shared';
 import {
   createDefaultRevisionGraphProjectionOptions,
   normalizeRevisionGraphProjectionOptionsForScope,
   RemoteTagPublicationState,
+  RevisionGraphMessage,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -57,18 +49,15 @@ import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
-import {
-  isRevisionGraphMessageAllowedForCurrentRepository,
-  isRevisionGraphMessageAllowedForState,
-  validateRevisionGraphMessage
-} from './messageValidation';
 import { ShowLogPresenter } from '../showLogView';
-import { RevisionGraphLoadTraceSink } from './loadTrace';
 import {
   RemoteTagPublicationRequestContext,
   isRemoteTagPublicationStateResponseCurrent,
   resolveRemoteTagPublicationState
 } from './remoteTagState';
+import { runRevisionGraphFetchWorkflow } from './fetchWorkflow';
+import { RevisionGraphLoadTraceService } from './loadTraceService';
+import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
@@ -84,8 +73,6 @@ import {
   registerPendingFollowUpRefresh
 } from '../revisionGraphRefresh';
 
-const FETCH_WITH_TAGS_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
-const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
 
@@ -159,6 +146,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly actionServices: ReturnType<typeof createWorkbenchRefActionServices>;
+  private readonly messageDispatcher = new RevisionGraphMessageDispatcher();
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
     (label) => {
       const nextLoadingMode = getRefreshLoadingMode(this.latestRefreshIntent);
@@ -209,9 +197,9 @@ export class RevisionGraphController implements vscode.Disposable {
       });
     }
   );
+  private readonly loadTrace = new RevisionGraphLoadTraceService(() => this.renderCoordinator.getCurrentRequestId());
   private currentState: RevisionGraphViewState;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
-  private traceOutput: vscode.OutputChannel | undefined;
 
   constructor(
     private readonly git: API,
@@ -252,7 +240,7 @@ export class RevisionGraphController implements vscode.Disposable {
   dispose(): void {
     this.renderCoordinator.cancel();
     this.disposeViewDisposables();
-    this.traceOutput?.dispose();
+    this.loadTrace.dispose();
 
     for (const disposable of this.repoSubscriptions.values()) {
       disposable.dispose();
@@ -284,7 +272,13 @@ export class RevisionGraphController implements vscode.Disposable {
         this.disposeViewDisposables();
       }),
       view.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.handleMessage(message);
+        await this.messageDispatcher.dispatch(message, {
+          currentState: this.currentState,
+          currentRepositoryPath: this.currentRepository?.rootUri.fsPath,
+          handleMessage: async (validatedMessage) => {
+            await this.handleMessage(validatedMessage);
+          }
+        });
       })
     );
     view.webview.options = {
@@ -370,20 +364,7 @@ export class RevisionGraphController implements vscode.Disposable {
     };
   }
 
-  private async handleMessage(rawMessage: unknown): Promise<void> {
-    const message = validateRevisionGraphMessage(rawMessage);
-    if (
-      !message ||
-      !isRevisionGraphMessageAllowedForState(message, this.currentState) ||
-      !isRevisionGraphMessageAllowedForCurrentRepository(
-        message,
-        this.currentState,
-        this.currentRepository?.rootUri.fsPath
-      )
-    ) {
-      return;
-    }
-
+  private async handleMessage(message: RevisionGraphMessage): Promise<void> {
     switch (message.type) {
       case 'webview-ready':
         this.rehydrateWebview();
@@ -608,7 +589,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const repositoryPath = this.currentRepository.rootUri.fsPath;
-    const trace = this.createLoadTraceSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
+    const trace = this.loadTrace.createSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
     const bundle = await buildReadyRevisionGraphViewStateBundle(
       this.currentRepository,
       this.projectionOptions,
@@ -644,52 +625,20 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private async runFetchCurrentRepository(): Promise<void> {
-    if (!this.currentRepository) {
-      this.actionServices.ui.showInformationMessage('Choose a repository before fetching from the revision graph.');
-      this.postHostMessage({ type: 'update-state', state: this.currentState });
-      return;
-    }
-
-    const selectedOptions = await this.pickFetchOptions();
-    if (!selectedOptions) {
-      this.postHostMessage({ type: 'update-state', state: this.currentState });
-      return;
-    }
-
-    this.postActionLoading('Fetching remotes...');
-
-    try {
-      if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
-        await execGitWithResult(
-          this.currentRepository.rootUri.fsPath,
-          buildRevisionGraphFetchArgs(selectedOptions),
-          {
-            maxOutputBytes: FETCH_WITH_TAGS_MAX_OUTPUT_BYTES,
-            timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS
-          }
-        );
-      } else {
-        await this.currentRepository.fetch(buildRevisionGraphFetchOptions(selectedOptions));
-      }
-      this.actionServices.ui.showInformationMessage(
-        formatRevisionGraphFetchSuccessMessage(this.getCurrentRepositoryLabel(), selectedOptions)
-      );
-      await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
-    } catch (error) {
-      await this.actionServices.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
-      this.postCurrentState();
-    }
-  }
-
-  private async pickFetchOptions(): Promise<RevisionGraphFetchOption[] | undefined> {
-    const pickedOptions = await vscode.window.showQuickPick(createRevisionGraphFetchOptionItems(), {
-      canPickMany: true,
-      title: 'Fetch Options',
-      placeHolder: 'Choose optional flags for the current repository fetch',
-      ignoreFocusOut: true
+    await runRevisionGraphFetchWorkflow(this.currentRepository, {
+      ui: this.actionServices.ui,
+      postActionLoading: (label, mode) => {
+        this.postActionLoading(label, mode);
+      },
+      postCurrentState: () => {
+        this.postCurrentState();
+      },
+      refresh: async (request) => {
+        await this.refresh(request);
+      },
+      createCurrentRepositoryRefreshRequest: () => this.createCurrentRepositoryRefreshRequest('full-rebuild'),
+      getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel()
     });
-
-    return pickedOptions?.map((option) => option.id);
   }
 
   private getCurrentRepositoryLabel(): string {
@@ -829,7 +778,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
-    void this.view?.webview.postMessage(this.withHostTraceContext(message));
+    void this.view?.webview.postMessage(this.loadTrace.withHostTraceContext(message));
   }
 
   private postCurrentState(): void {
@@ -895,75 +844,12 @@ export class RevisionGraphController implements vscode.Disposable {
     this.view.setTitle(getRevisionGraphViewTitle(this.currentRepository));
   }
 
-  private createLoadTraceSink(
-    repositoryPath: string,
-    intent: RevisionGraphRefreshIntent,
-    requestId: number
-  ): RevisionGraphLoadTraceSink | undefined {
-    if (!this.isLoadTracingEnabled()) {
-      return undefined;
-    }
-
-    const output = this.getTraceOutput();
-    const repositoryLabel = vscode.workspace.asRelativePath(repositoryPath, false) || repositoryPath;
-    output.appendLine(`[revision-graph-load] request=${requestId} intent=${intent} repository=${repositoryLabel}`);
-
-    return (event) => {
-      const detail = event.detail ? ` ${event.detail}` : '';
-      output.appendLine(
-        `[revision-graph-load] request=${requestId} phase=${event.phase} duration=${event.durationMs}ms${detail}`
-      );
-    };
-  }
-
-  private getTraceOutput(): vscode.OutputChannel {
-    if (!this.traceOutput) {
-      this.traceOutput = vscode.window.createOutputChannel('Git Revision Graph');
-    }
-
-    return this.traceOutput;
-  }
-
-  private withHostTraceContext(message: RevisionGraphViewHostMessage): RevisionGraphViewHostMessage {
-    if (!this.isLoadTracingEnabled()) {
-      return message;
-    }
-
-    switch (message.type) {
-      case 'init-state':
-      case 'update-state':
-        return {
-          ...message,
-          trace: {
-            requestId: this.renderCoordinator.getCurrentRequestId(),
-            sentAtMs: Date.now()
-          }
-        };
-      case 'set-loading':
-      case 'set-error':
-      case 'set-remote-tag-state':
-        return message;
-    }
-  }
-
   private traceWebviewLoadEvent(
     phase: string,
     durationMs: number,
     detail: string | undefined,
     requestId: number | undefined
   ): void {
-    if (!this.isLoadTracingEnabled()) {
-      return;
-    }
-
-    const output = this.getTraceOutput();
-    const resolvedRequestId = requestId ?? this.renderCoordinator.getCurrentRequestId();
-    output.appendLine(
-      `[revision-graph-load] request=${resolvedRequestId} phase=${phase} duration=${durationMs}ms${detail ? ` ${detail}` : ''}`
-    );
-  }
-
-  private isLoadTracingEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gitRevisionGraph').get<boolean>('traceLoading', false);
+    this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
   }
 }

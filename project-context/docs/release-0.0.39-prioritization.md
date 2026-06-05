@@ -34,7 +34,7 @@ Recommended first slices:
 
 ## Exclusions
 
-- No package version bump, VSIX packaging, or Marketplace publication without explicit maintainer approval.
+- No further package version bump, VSIX packaging, or Marketplace publication without explicit maintainer approval.
 - No new commands, menus, view containers, activation events, or contribution points unless a specific approved slice requires it.
 - No change to the Source Control/editor graph product surface.
 - No broad rewrite of the revision graph renderer or webview runtime.
