@@ -1,5 +1,65 @@
 # Release Readiness
 
+## 0.0.39 Release Readiness
+
+Current package baseline: `0.0.38`.
+
+Target release: `0.0.39`.
+
+Status: Define phase is open for `0.0.39`. The target direction is a cohesion and architecture hardening cycle based on the maintainability review of graph orchestration, ref workflows, backend ports, and webview message/runtime boundaries. The package version has been bumped to `0.0.39`; VSIX packaging and Marketplace publication have not been performed for `0.0.39`.
+
+Planning and build references:
+
+- `project-context/docs/release-0.0.39-prioritization.md`
+
+Candidate direction:
+
+- Improve functional cohesion around `RevisionGraphController` by extracting message dispatch, fetch handling, and tracing where a focused slice can preserve behavior.
+- Improve cohesion around ref workflows by splitting broad action families while keeping command-facing APIs stable.
+- Improve architectural cohesion around `RevisionGraphBackend` if a slice needs narrower graph snapshot, log, diff/detail, or ancestry ports.
+- Introduce shared host/webview message builders or constants before renaming or changing message payloads.
+- Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
+
+Automated verification completed:
+
+- `git diff --check` passed after opening the `0.0.39` planning artifacts and bumping `package.json` / `package-lock.json`.
+
+Automated verification pending:
+
+- `npm run build`
+- `npm test`
+- `git diff --check`
+
+Manual validation pending:
+
+- Open a Git workspace in the Extension Development Host and confirm the graph opens from Source Control.
+- Exercise graph load, repository switching, refresh, fetch, scope changes, search, minimap, scroll, zoom, and `Center HEAD`.
+- Exercise compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, pull, push, merge, delete, reset, and conflict guards.
+- Confirm Compare Results and Show Log remain on-demand editor panels and close with the graph panel.
+- Repeat key checks in multi-repository and zero-repository workspaces.
+
+Release gates pending:
+
+- Select and approve the first focused `0.0.39` build slice.
+- Create or update a focused feature artifact under `project-context/2.build/features/` for each implemented slice.
+- Run full automated verification after implementation.
+- Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+
+Post-release monitoring focus:
+
+- Reports of graph actions not routing after controller/message dispatch extraction.
+- Reports of duplicate or missing full graph loads after Git operations.
+- Reports of command, graph, Compare Results, or Show Log workflows drifting after ref action splits.
+- Reports of stale graph, log, diff, or commit detail data after backend port changes.
+- Reports of host/webview message validation rejecting valid shipped actions.
+
+Rollback:
+
+- If a behavior-preserving extraction causes shipped workflow regressions, revert the narrow extraction while preserving unrelated tests and documentation.
+- If backend port extraction changes cancellation or Git command timing, restore the previous shared backend path for the affected operation.
+- If shared message builders cause host/webview compatibility drift, restore the previous literal message contract and reintroduce shared typing in a smaller slice.
+
 ## 0.0.38 Release Readiness
 
 Current package baseline: `0.0.37`.
