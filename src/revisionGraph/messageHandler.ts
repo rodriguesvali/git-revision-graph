@@ -8,12 +8,9 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   mergeResolvedReference,
-  pullCurrentBranchFromUpstream,
   publishLocalBranchResolvedReference,
-  pushCurrentBranchToUpstream,
   RefActionKind,
   resetCurrentBranchWorkspace,
-  syncCurrentHeadWithUpstream
 } from '../refActions';
 import {
   normalizeRevisionGraphProjectionOptionsForScope,
@@ -27,8 +24,13 @@ import {
   RevisionGraphRemoteTagWorkflow,
   RevisionGraphRemoteTagWorkflowHost
 } from './remoteTagWorkflow';
+import {
+  RevisionGraphCurrentHeadWorkflow,
+  RevisionGraphCurrentHeadWorkflowHost
+} from './currentHeadWorkflow';
 
-export interface RevisionGraphMessageHandlerHost extends RevisionGraphRemoteTagWorkflowHost {
+export interface RevisionGraphMessageHandlerHost
+  extends RevisionGraphRemoteTagWorkflowHost, RevisionGraphCurrentHeadWorkflowHost {
   readonly showLogPresenter: ShowLogPresenter;
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
@@ -51,9 +53,11 @@ export interface RevisionGraphMessageHandlerHost extends RevisionGraphRemoteTagW
 }
 
 export class RevisionGraphMessageHandler {
+  private readonly currentHeadWorkflow: RevisionGraphCurrentHeadWorkflow;
   private readonly remoteTagWorkflow: RevisionGraphRemoteTagWorkflow;
 
   constructor(private readonly host: RevisionGraphMessageHandlerHost) {
+    this.currentHeadWorkflow = new RevisionGraphCurrentHeadWorkflow(host);
     this.remoteTagWorkflow = new RevisionGraphRemoteTagWorkflow(host);
   }
 
@@ -181,13 +185,13 @@ export class RevisionGraphMessageHandler {
         );
         return;
       case 'sync-current-head':
-        await this.runCurrentHeadAction((repository) => syncCurrentHeadWithUpstream(repository, this.host.actionServices));
+        await this.currentHeadWorkflow.syncCurrentHead();
         return;
       case 'pull-current-head':
-        await this.runCurrentHeadAction((repository) => pullCurrentBranchFromUpstream(repository, this.host.actionServices));
+        await this.currentHeadWorkflow.pullCurrentHead();
         return;
       case 'push-current-head':
-        await this.runCurrentHeadAction((repository) => pushCurrentBranchToUpstream(repository, this.host.actionServices));
+        await this.currentHeadWorkflow.pushCurrentHead();
         return;
       case 'reset-current-workspace':
         await this.runWithCurrentRepository((repository) =>
@@ -228,16 +232,6 @@ export class RevisionGraphMessageHandler {
     }
 
     await action(repository);
-  }
-
-  private async runCurrentHeadAction(action: (repository: Repository) => Promise<boolean>): Promise<void> {
-    const repository = this.host.getCurrentRepository();
-    const didScheduleRefresh = repository
-      ? await action(repository)
-      : false;
-    if (!didScheduleRefresh) {
-      this.host.postCurrentState();
-    }
   }
 
 }
