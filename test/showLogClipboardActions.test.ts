@@ -7,8 +7,7 @@ import {
   copyShowLogCommitHash
 } from '../src/showLog/clipboardActions';
 import type { ShowLogState } from '../src/showLogShared';
-import type { RevisionLogEntry } from '../src/revisionGraphTypes';
-import { createChange, createRepository } from './fakes';
+import { createChange, createRepository, createRevisionLogEntry } from './fakes';
 
 test('copyShowLogChangeFileName writes the selected file name', async () => {
   const writes: string[] = [];
@@ -83,7 +82,7 @@ function createVisibleState(): ShowLogState {
     source: { kind: 'target', revision: 'main', label: 'main' },
     showAllBranches: false,
     filterText: '',
-    entries: [createEntry('abc123')],
+    entries: [createRevisionLogEntry({ hash: 'abc123' })],
     hasMore: false,
     loading: false,
     loadingMore: false,
@@ -99,19 +98,5 @@ function createVisibleState(): ShowLogState {
         })
       ]
     }
-  };
-}
-
-function createEntry(hash: string): RevisionLogEntry {
-  return {
-    hash,
-    shortHash: hash,
-    author: 'Ada',
-    date: '2026-06-06',
-    subject: 'Change',
-    message: 'Change',
-    parentHashes: [],
-    references: [],
-    shortStat: undefined
   };
 }

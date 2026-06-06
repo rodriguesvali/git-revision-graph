@@ -2,29 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { buildShowLogLaneRows } from '../src/showLog/showLogLanes';
-import type { RevisionLogEntry } from '../src/revisionGraphTypes';
-
-function createEntry(overrides: Partial<RevisionLogEntry> & Pick<RevisionLogEntry, 'hash' | 'shortHash' | 'subject'>): RevisionLogEntry {
-  return {
-    author: 'Ada',
-    date: '2026-04-18',
-    message: overrides.subject,
-    parentHashes: [],
-    references: [],
-    shortStat: undefined,
-    ...overrides
-  };
-}
+import { createRevisionLogEntry } from './fakes';
 
 test('builds a single continuing lane for linear history', () => {
   const rows = buildShowLogLaneRows([
-    createEntry({
+    createRevisionLogEntry({
       hash: 'a'.repeat(40),
       shortHash: 'aaaaaaa',
       subject: 'Tip',
       parentHashes: ['b'.repeat(40)]
     }),
-    createEntry({
+    createRevisionLogEntry({
       hash: 'b'.repeat(40),
       shortHash: 'bbbbbbb',
       subject: 'Base'
@@ -41,19 +29,19 @@ test('builds a single continuing lane for linear history', () => {
 
 test('allocates an extra lane for merge parents', () => {
   const rows = buildShowLogLaneRows([
-    createEntry({
+    createRevisionLogEntry({
       hash: 'm'.repeat(40),
       shortHash: 'mmmmmmm',
       subject: 'Merge',
       parentHashes: ['a'.repeat(40), 'b'.repeat(40)]
     }),
-    createEntry({
+    createRevisionLogEntry({
       hash: 'a'.repeat(40),
       shortHash: 'aaaaaaa',
       subject: 'Mainline',
       parentHashes: ['r'.repeat(40)]
     }),
-    createEntry({
+    createRevisionLogEntry({
       hash: 'b'.repeat(40),
       shortHash: 'bbbbbbb',
       subject: 'Side branch',

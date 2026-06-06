@@ -10,23 +10,16 @@ import {
   SHOW_LOG_EMPTY_TREE_HASH
 } from '../src/showLog/fileActions';
 import type { Change, Repository } from '../src/git';
-import { createChange, createRepository } from './fakes';
+import { createChange, createRepository, createRevisionLogEntry } from './fakes';
 
 test('getShowLogFileChangeParentHash returns the first parent for a commit', () => {
   assert.equal(
     getShowLogFileChangeParentHash(
       [
-        {
+        createRevisionLogEntry({
           hash: 'abc123',
-          shortHash: 'abc123',
-          author: 'Ada',
-          date: '2026-06-06',
-          subject: 'Change',
-          message: 'Change',
-          parentHashes: ['parent1', 'parent2'],
-          references: [],
-          shortStat: undefined
-        }
+          parentHashes: ['parent1', 'parent2']
+        })
       ],
       'abc123'
     ),
@@ -62,7 +55,7 @@ test('openShowLogFileChange opens the diff against the first parent', async () =
 
   await openShowLogFileChange(
     repository,
-    [createEntry('abc123', ['parent1'])],
+    [createRevisionLogEntry({ hash: 'abc123', parentHashes: ['parent1'] })],
     'abc123',
     change,
     {
@@ -103,17 +96,3 @@ test('compareShowLogFileChangeWithWorktree opens the worktree diff', async () =>
     { repository, change, ref: 'abc123' }
   ]);
 });
-
-function createEntry(hash: string, parentHashes: readonly string[]) {
-  return {
-    hash,
-    shortHash: hash.slice(0, 7),
-    author: 'Ada',
-    date: '2026-06-06',
-    subject: 'Change',
-    message: 'Change',
-    parentHashes,
-    references: [],
-    shortStat: undefined
-  };
-}

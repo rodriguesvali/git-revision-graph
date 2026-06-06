@@ -7,15 +7,26 @@ import {
 } from '../src/showLog/resetAction';
 import type { Repository } from '../src/git';
 import type { RefActionServices } from '../src/refActions';
-import type { RevisionLogEntry } from '../src/revisionGraphTypes';
-import { createRepository } from './fakes';
+import { createRepository, createRevisionLogEntry } from './fakes';
 
 test('getShowLogResetCommitLabel prefers the short hash', () => {
-  assert.equal(getShowLogResetCommitLabel(createEntry('abcdef123456', 'abc123'), 'abcdef123456'), 'abc123');
+  assert.equal(
+    getShowLogResetCommitLabel(
+      createRevisionLogEntry({ hash: 'abcdef123456', shortHash: 'abc123' }),
+      'abcdef123456'
+    ),
+    'abc123'
+  );
 });
 
 test('getShowLogResetCommitLabel falls back to the full hash prefix', () => {
-  assert.equal(getShowLogResetCommitLabel(createEntry('abcdef123456', ''), 'abcdef123456'), 'abcdef12');
+  assert.equal(
+    getShowLogResetCommitLabel(
+      createRevisionLogEntry({ hash: 'abcdef123456', shortHash: '' }),
+      'abcdef123456'
+    ),
+    'abcdef12'
+  );
 });
 
 test('resetShowLogCommit ignores commits that are not loaded', async () => {
@@ -37,7 +48,7 @@ test('resetShowLogCommit reports when Git action services are unavailable', asyn
   const errors: string[] = [];
   const didReset = await resetShowLogCommit(
     createRepository({ root: '/workspace/repo' }),
-    [createEntry('abc123', 'abc123')],
+    [createRevisionLogEntry({ hash: 'abc123', shortHash: 'abc123' })],
     'abc123',
     undefined,
     {
@@ -63,7 +74,7 @@ test('resetShowLogCommit calls the reset workflow with the commit label', async 
 
   const didReset = await resetShowLogCommit(
     repository,
-    [createEntry('abcdef123456', 'abc123')],
+    [createRevisionLogEntry({ hash: 'abcdef123456', shortHash: 'abc123' })],
     'abcdef123456',
     services,
     undefined,
@@ -78,17 +89,3 @@ test('resetShowLogCommit calls the reset workflow with the commit label', async 
     { repository, commitHash: 'abcdef123456', commitLabel: 'abc123', services }
   ]);
 });
-
-function createEntry(hash: string, shortHash: string): RevisionLogEntry {
-  return {
-    hash,
-    shortHash,
-    author: 'Ada',
-    date: '2026-06-06',
-    subject: 'Change',
-    message: 'Change',
-    parentHashes: [],
-    references: [],
-    shortStat: undefined
-  };
-}

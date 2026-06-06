@@ -5,8 +5,7 @@ import {
   compareLoadedShowLogCommits,
   compareLoadedShowLogCommitWithWorktree
 } from '../src/showLog/commitCompare';
-import type { RevisionLogEntry } from '../src/revisionGraphTypes';
-import { createChange, createRepository } from './fakes';
+import { createChange, createRepository, createRevisionLogEntry } from './fakes';
 
 test('compares two loaded show log commits through compare results', async () => {
   const change = createChange({ uriPath: '/workspace/repo/src/demo.ts' });
@@ -25,8 +24,8 @@ test('compares two loaded show log commits through compare results', async () =>
   await compareLoadedShowLogCommits(
     repository,
     [
-      createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
-      createLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
+      createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
+      createRevisionLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
     ],
     'a'.repeat(40),
     'b'.repeat(40),
@@ -72,8 +71,8 @@ test('compares two loaded show log commits without a custom UI on non-empty diff
   await compareLoadedShowLogCommits(
     repository,
     [
-      createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
-      createLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
+      createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
+      createRevisionLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
     ],
     'a'.repeat(40),
     'b'.repeat(40),
@@ -103,7 +102,7 @@ test('ignores show log commit comparisons when a commit is not loaded', async ()
 
   await compareLoadedShowLogCommits(
     repository,
-    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    [createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
     'a'.repeat(40),
     'b'.repeat(40),
     {
@@ -131,8 +130,8 @@ test('reports when loaded show log commits have no differences', async () => {
   await compareLoadedShowLogCommits(
     repository,
     [
-      createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
-      createLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
+      createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
+      createRevisionLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
     ],
     'a'.repeat(40),
     'b'.repeat(40),
@@ -169,7 +168,7 @@ test('compares a loaded show log commit with the worktree through compare result
 
   await compareLoadedShowLogCommitWithWorktree(
     repository,
-    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    [createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
     'a'.repeat(40),
     {
       async showBetweenRefs() {},
@@ -205,7 +204,7 @@ test('compares a loaded show log commit with the worktree without a custom UI on
 
   await compareLoadedShowLogCommitWithWorktree(
     repository,
-    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    [createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
     'a'.repeat(40),
     {
       async showBetweenRefs() {},
@@ -232,7 +231,7 @@ test('reports when a loaded show log commit is already aligned with the worktree
 
   await compareLoadedShowLogCommitWithWorktree(
     repository,
-    [createLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
+    [createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' })],
     'a'.repeat(40),
     {
       async showBetweenRefs() {},
@@ -252,19 +251,3 @@ test('reports when a loaded show log commit is already aligned with the worktree
 
   assert.deepEqual(messages, ['The worktree is already aligned with aaaaaaa.']);
 });
-
-function createLogEntry(
-  overrides: Pick<RevisionLogEntry, 'hash' | 'shortHash'>
-): RevisionLogEntry {
-  return {
-    hash: overrides.hash,
-    shortHash: overrides.shortHash,
-    author: 'Ada',
-    date: '2026-05-09',
-    subject: 'Demo commit',
-    message: 'Demo commit',
-    parentHashes: [],
-    references: [],
-    shortStat: undefined
-  };
-}

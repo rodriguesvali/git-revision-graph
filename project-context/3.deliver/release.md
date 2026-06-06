@@ -35,6 +35,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-show-log-compare-ui-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-shared-clipboard-writer-code-quality.md`
 - `project-context/2.build/features/0.0.39-change-target-path-code-quality.md`
+- `project-context/2.build/features/0.0.39-revision-log-entry-test-factory-code-quality.md`
 
 Candidate direction:
 
@@ -63,6 +64,7 @@ Candidate direction:
 - Harden Show Log clipboard architecture by moving selected file/commit copy and clipboard access out of the editor panel provider.
 - Improve clipboard action coding quality by sharing the default VS Code clipboard writer instead of duplicating fallback adapters.
 - Improve renamed-file path coding quality by reusing the shared change target URI helper across Compare Results and Show Log helpers.
+- Improve Show Log test coding quality by sharing a focused `RevisionLogEntry` factory across repeated fixtures.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -199,6 +201,9 @@ Automated verification completed:
 - Focused Compare Results item action, Compare Results view-state, Compare Results clipboard, Show Log file action, and Show Log clipboard tests passed with 24 tests after reusing the shared change target URI helper. This includes `npm run build` through the focused validation sequence.
 - `npm test` passed with 385 tests after reusing the shared change target URI helper. This includes `npm run build` through the test script.
 - `git diff --check` passed after reusing the shared change target URI helper and updating verification artifacts.
+- Focused Show Log commit compare, clipboard, reset, lane, and file action tests passed with 24 tests after sharing the `RevisionLogEntry` test factory. This includes `npm run build` through the focused validation sequence.
+- `npm test` passed with 385 tests after sharing the `RevisionLogEntry` test factory. This includes `npm run build` through the test script.
+- `git diff --check` passed after sharing the `RevisionLogEntry` test factory and updating verification artifacts.
 
 Automated verification pending:
 

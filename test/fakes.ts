@@ -1,4 +1,5 @@
 import { API, Branch, Change, FetchOptions, Ref, RefQuery, RefType, Remote, Repository, RepositoryState, Status } from '../src/git';
+import type { RevisionLogEntry } from '../src/revisionGraphTypes';
 
 type Listener<T> = (event: T) => void;
 
@@ -49,6 +50,23 @@ export function createChange(overrides: Partial<Change> & { readonly uriPath: st
     originalUri: createUri(overrides.originalPath ?? overrides.uriPath),
     renameUri: overrides.renamePath ? createUri(overrides.renamePath) : undefined,
     status: overrides.status ?? Status.MODIFIED
+  };
+}
+
+export function createRevisionLogEntry(
+  overrides: Partial<RevisionLogEntry> & Pick<RevisionLogEntry, 'hash'>
+): RevisionLogEntry {
+  const subject = overrides.subject ?? 'Change';
+  return {
+    hash: overrides.hash,
+    shortHash: overrides.shortHash ?? overrides.hash.slice(0, 7),
+    author: overrides.author ?? 'Ada',
+    date: overrides.date ?? '2026-06-06',
+    subject,
+    message: overrides.message ?? subject,
+    parentHashes: overrides.parentHashes ?? [],
+    references: overrides.references ?? [],
+    shortStat: overrides.shortStat
   };
 }
 
