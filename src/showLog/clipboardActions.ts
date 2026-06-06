@@ -59,3 +59,21 @@ export async function copyShowLogCommitHash(
   await clipboard.writeText(commitHash);
   return true;
 }
+
+export async function copyShowLogReferenceName(
+  state: ShowLogState,
+  commitHash: string,
+  refName: string,
+  services?: ShowLogClipboardServices
+): Promise<boolean> {
+  const entry = state.kind === 'visible'
+    ? state.entries.find((candidate) => candidate.hash === commitHash)
+    : undefined;
+  if (!entry || !entry.references.some((ref) => ref.name === refName)) {
+    return false;
+  }
+
+  const clipboard = services ?? await getDefaultClipboardWriter();
+  await clipboard.writeText(refName);
+  return true;
+}

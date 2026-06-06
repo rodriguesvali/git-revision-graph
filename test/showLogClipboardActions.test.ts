@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import {
   copyShowLogChangeFileName,
   copyShowLogChangeFullPath,
-  copyShowLogCommitHash
+  copyShowLogCommitHash,
+  copyShowLogReferenceName
 } from '../src/showLog/clipboardActions';
 import type { ShowLogState } from '../src/showLogShared';
 import { createChange, createRepository, createRevisionLogEntry } from './fakes';
@@ -59,6 +60,23 @@ test('copyShowLogCommitHash writes loaded commit hashes', async () => {
   assert.deepEqual(writes, ['abc123']);
 });
 
+test('copyShowLogReferenceName writes refs from loaded commits', async () => {
+  const writes: string[] = [];
+  const copied = await copyShowLogReferenceName(
+    createVisibleState(),
+    'abc123',
+    'origin/main',
+    {
+      async writeText(text) {
+        writes.push(text);
+      }
+    }
+  );
+
+  assert.equal(copied, true);
+  assert.deepEqual(writes, ['origin/main']);
+});
+
 test('show log clipboard actions ignore stale selections', async () => {
   const writes: string[] = [];
   const services = {
@@ -70,6 +88,8 @@ test('show log clipboard actions ignore stale selections', async () => {
   assert.equal(await copyShowLogChangeFileName(createVisibleState(), 'missing', 'missing:0', services), false);
   assert.equal(await copyShowLogChangeFullPath(createVisibleState(), 'abc123', 'missing', services), false);
   assert.equal(await copyShowLogCommitHash(createVisibleState(), 'missing', services), false);
+  assert.equal(await copyShowLogReferenceName(createVisibleState(), 'missing', 'origin/main', services), false);
+  assert.equal(await copyShowLogReferenceName(createVisibleState(), 'abc123', 'missing', services), false);
   assert.deepEqual(writes, []);
 });
 
@@ -82,7 +102,15 @@ function createVisibleState(): ShowLogState {
     source: { kind: 'target', revision: 'main', label: 'main' },
     showAllBranches: false,
     filterText: '',
-    entries: [createRevisionLogEntry({ hash: 'abc123' })],
+    entries: [
+      createRevisionLogEntry({
+        hash: 'abc123',
+        references: [
+          { name: 'main', kind: 'head' },
+          { name: 'origin/main', kind: 'remote' }
+        ]
+      })
+    ],
     hasMore: false,
     loading: false,
     loadingMore: false,

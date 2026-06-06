@@ -1383,6 +1383,8 @@ export function renderShowLogWebviewHtml(): string {
 
     function handleContextMenu(commitHash, clientX, clientY) {
       const compareSelection = getCompareSelectionForCommit(commitHash);
+      const commit = findCommitByHash(commitHash);
+      const copyReferenceNameMenu = renderCopyReferenceNameMenu(commit);
       contextMenuState = {
         kind: 'commit',
         commitHash,
@@ -1393,15 +1395,41 @@ export function renderShowLogWebviewHtml(): string {
         return;
       }
       if (compareSelection) {
-        contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>';
+        contextMenu.innerHTML = ''
+          + '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
+          + copyReferenceNameMenu;
         showContextMenuAt(clientX, clientY);
         return;
       }
       contextMenu.innerHTML = ''
         + '<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>';
+        + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>'
+        + copyReferenceNameMenu;
       showContextMenuAt(clientX, clientY);
+    }
+
+    function renderCopyReferenceNameMenu(commit) {
+      const refs = (commit?.refs || []).filter((ref) => ref && ref.name);
+      if (refs.length === 0) {
+        return '';
+      }
+      if (refs.length === 1) {
+        return '<button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(refs[0].name) + '">Copy Reference Name</button>';
+      }
+
+      return ''
+        + '<div class="context-menu-group">'
+        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy Reference Name">'
+        + '    <span>Copy Reference Name</span>'
+        + '    <span class="context-menu-chevron">›</span>'
+        + '  </div>'
+        + '  <div class="context-submenu" role="menu" aria-label="Copy Reference Name">'
+        + refs.map((ref) =>
+          '    <button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.name) + '</button>'
+        ).join('')
+        + '  </div>'
+        + '</div>';
     }
 
     function openFileContextMenu(commitHash, changeId, clientX, clientY) {
@@ -1795,6 +1823,7 @@ export function renderShowLogWebviewHtml(): string {
       }
 
       const state = contextMenuState;
+      const refName = event.target?.closest?.('[data-ref-name]')?.getAttribute('data-ref-name') || '';
       closeContextMenu();
 
       if (state.kind === 'commit') {
@@ -1813,6 +1842,11 @@ export function renderShowLogWebviewHtml(): string {
         }
         if (action === 'resetToCommit') {
           vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
+        }
+        if (action === 'copyReferenceName') {
+          if (refName) {
+            vscode.postMessage({ type: 'copyReferenceName', commitHash: state.commitHash, refName });
+          }
         }
         return;
       }

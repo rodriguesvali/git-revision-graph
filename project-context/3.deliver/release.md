@@ -18,6 +18,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-remote-checkout-overwrite-confirmation.md`
 - `project-context/2.build/features/1.0.0-show-log-expanded-reference-gap-polish.md`
 - `project-context/2.build/features/1.0.0-show-log-comparison-selection-polish.md`
+- `project-context/2.build/features/1.0.0-show-log-copy-reference-name.md`
 
 Release direction:
 
@@ -34,6 +35,7 @@ Implemented polish:
 - Remote checkout now requires a destructive confirmation before `Override branch if exists` resets an existing local branch.
 - Show Log expanded rows now extend the compact graph line through visible reference/stat metadata before the changed-file continuation starts.
 - Show Log comparison selections now use matching row emphasis plus a single `Base` badge instead of relying on the left-edge marker alone, and selection now requires `Ctrl` + left-click so plain clicks only expand commits.
+- Show Log commit context menus now offer `Copy Reference Name` for commits with loaded references.
 
 Automated verification completed:
 
@@ -61,6 +63,9 @@ Automated verification completed:
 - `npm run build` passed after the Show Log comparison selection gesture polish.
 - `npm test` passed with 398 tests after the Show Log comparison selection gesture polish. This includes `npm run build` through the test script.
 - `git diff --check` passed after the Show Log comparison selection gesture polish.
+- Focused Show Log clipboard, message handler, webview shell, and webview message validation tests passed after adding the copy-reference-name context action. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 399 tests after the Show Log copy-reference-name context action. This includes `npm run build` through the test script.
+- `git diff --check` passed after the Show Log copy-reference-name context action.
 
 Automated verification pending:
 

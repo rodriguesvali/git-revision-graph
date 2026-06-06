@@ -20,7 +20,8 @@ import {
 import {
   copyShowLogChangeFileName,
   copyShowLogChangeFullPath,
-  copyShowLogCommitHash
+  copyShowLogCommitHash,
+  copyShowLogReferenceName
 } from './showLog/clipboardActions';
 import {
   dispatchShowLogWebviewMessage,
@@ -71,6 +72,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     copyFileName: (commitHash, changeId) => this.copyFileName(commitHash, changeId),
     copyFullPath: (commitHash, changeId) => this.copyFullPath(commitHash, changeId),
     copyCommitHash: (commitHash) => this.copyCommitHash(commitHash),
+    copyReferenceName: (commitHash, refName) => this.copyReferenceName(commitHash, refName),
     openCommitOnGitHub: (commitHash) => this.openCommitOnGitHub(commitHash),
     openCommitDetails: (commitHash) => this.openCommitDetails(commitHash),
     compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
@@ -496,6 +498,10 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   private async copyCommitHash(commitHash: string): Promise<void> {
     await copyShowLogCommitHash(this.state, commitHash);
+  }
+
+  private async copyReferenceName(commitHash: string, refName: string): Promise<void> {
+    await copyShowLogReferenceName(this.state, commitHash, refName);
   }
 
   private async openCommitOnGitHub(commitHash: string): Promise<void> {

@@ -354,6 +354,22 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   );
   assert.equal(
     validateShowLogWebviewMessage({
+      type: 'copyReferenceName',
+      commitHash: 'abc123',
+      refName: ''
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'copyReferenceName',
+      commitHash: 'abc123',
+      refName: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
       type: 'openCommitOnGitHub',
       commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
@@ -378,6 +394,10 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'copyCommitHash', commitHash: 'abc123' }),
     { type: 'copyCommitHash', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }),
+    { type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openCommitOnGitHub', commitHash: 'abc123' }),

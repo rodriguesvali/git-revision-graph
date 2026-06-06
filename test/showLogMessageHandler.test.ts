@@ -45,6 +45,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyFileName', commitHash: 'abc123', changeId: 'abc123:2' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyFullPath', commitHash: 'abc123', changeId: 'abc123:3' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyCommitHash', commitHash: 'abc123' }, handlers), true);
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'openCommitOnGitHub', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'openCommitDetails', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'compareCommits', baseCommitHash: 'abc123', compareCommitHash: 'def456' }, handlers), true);
@@ -57,6 +58,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
     'copyFileName:abc123:abc123:2',
     'copyFullPath:abc123:abc123:3',
     'copyCommitHash:abc123',
+    'copyReferenceName:abc123:origin/main',
     'openCommitOnGitHub:abc123',
     'openCommitDetails:abc123',
     'compareCommits:abc123:def456',
@@ -96,6 +98,9 @@ function createHandlers(calls: string[]): ShowLogMessageHandlers {
     },
     copyCommitHash(commitHash) {
       calls.push(`copyCommitHash:${commitHash}`);
+    },
+    copyReferenceName(commitHash, refName) {
+      calls.push(`copyReferenceName:${commitHash}:${refName}`);
     },
     openCommitOnGitHub(commitHash) {
       calls.push(`openCommitOnGitHub:${commitHash}`);
