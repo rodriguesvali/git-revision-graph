@@ -642,7 +642,12 @@ test('createBranchFromResolvedReference overwrites an existing local branch for 
     harness.services
   );
 
-  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Overwrite local branch feature/demo with origin/feature/demo? Local commits that are not reachable from another ref may be lost.',
+      confirmLabel: 'Overwrite Branch'
+    }
+  ]);
   assert.deepEqual(harness.resetBranches, [
     { branchName: 'feature/demo', refName: 'origin/feature/demo' }
   ]);
@@ -652,6 +657,46 @@ test('createBranchFromResolvedReference overwrites an existing local branch for 
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was overwritten, checked out, and set to track origin/feature/demo.');
+});
+
+test('createBranchFromResolvedReference cancels existing local branch overwrite when destructive confirmation is dismissed', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('develop'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'feature/demo' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' })
+    ]
+  });
+  const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const harness = createServices({
+    async promptRemoteBranchCheckout(options) {
+      return { branchName: options.value, overrideBranchIfExists: true };
+    },
+    async confirm(options) {
+      confirmRequests.push(options);
+      return false;
+    }
+  });
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(confirmRequests, [
+    {
+      message: 'Overwrite local branch feature/demo with origin/feature/demo? Local commits that are not reachable from another ref may be lost.',
+      confirmLabel: 'Overwrite Branch'
+    }
+  ]);
+  assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(harness.resetCurrentBranchRefs, []);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.deepEqual(harness.infoMessages, []);
 });
 
 test('createBranchFromResolvedReference checks out an existing local branch when override is not selected', async () => {
@@ -733,7 +778,12 @@ test('checkoutResolvedReference overwrites the current local branch from a remot
     harness.services
   );
 
-  assert.deepEqual(harness.confirmRequests, []);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Overwrite current branch feature/demo with origin/feature/demo? Local commits that are not reachable from another ref may be lost.',
+      confirmLabel: 'Overwrite Current Branch'
+    }
+  ]);
   assert.deepEqual(harness.resetBranches, []);
   assert.deepEqual(harness.resetCurrentBranchRefs, ['origin/feature/demo']);
   assert.deepEqual(repository.calls.createBranch, []);
@@ -746,6 +796,46 @@ test('checkoutResolvedReference overwrites the current local branch from a remot
     harness.infoMessages[0],
     'Current branch feature/demo was overwritten and set to track origin/feature/demo.'
   );
+});
+
+test('checkoutResolvedReference cancels current local branch overwrite when destructive confirmation is dismissed', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main' })
+    ]
+  });
+  const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const harness = createServices({
+    async promptRemoteBranchCheckout(options) {
+      return { branchName: options.value, overrideBranchIfExists: true };
+    },
+    async confirm(options) {
+      confirmRequests.push(options);
+      return false;
+    }
+  });
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'origin/main', label: 'origin/main', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(confirmRequests, [
+    {
+      message: 'Overwrite current branch main with origin/main? Local commits that are not reachable from another ref may be lost.',
+      confirmLabel: 'Overwrite Current Branch'
+    }
+  ]);
+  assert.deepEqual(harness.resetBranches, []);
+  assert.deepEqual(harness.resetCurrentBranchRefs, []);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.setBranchUpstream, []);
+  assert.deepEqual(harness.infoMessages, []);
 });
 
 test('checkoutResolvedReference leaves current local branch untouched when override is not selected', async () => {

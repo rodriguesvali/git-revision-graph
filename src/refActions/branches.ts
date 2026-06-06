@@ -94,6 +94,18 @@ export async function createBranchFromResolvedReference(
         return;
       }
 
+      const overwriteConfirmed = await services.ui.confirm({
+        message: buildBranchOverwriteConfirmationMessage(
+          normalizedBranchName,
+          branchCreation.startPointRefName,
+          didOverwriteCurrentBranch
+        ),
+        confirmLabel: didOverwriteCurrentBranch ? 'Overwrite Current Branch' : 'Overwrite Branch'
+      });
+      if (!overwriteConfirmed) {
+        return;
+      }
+
       if (didOverwriteCurrentBranch) {
         await services.referenceManager.resetCurrentBranch(repository, branchCreation.startPointRefName);
       } else {
@@ -131,6 +143,15 @@ export async function createBranchFromResolvedReference(
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
+}
+
+function buildBranchOverwriteConfirmationMessage(
+  branchName: string,
+  startPointRefName: string,
+  isCurrentBranch: boolean
+): string {
+  const subject = isCurrentBranch ? `current branch ${branchName}` : `local branch ${branchName}`;
+  return `Overwrite ${subject} with ${startPointRefName}? Local commits that are not reachable from another ref may be lost.`;
 }
 
 async function promptNewBranchName(
