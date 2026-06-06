@@ -1,5 +1,64 @@
 # Release Readiness
 
+## 1.0.0 Release Readiness
+
+Current package baseline: `0.0.39`.
+
+Target release: `1.0.0`.
+
+Status: Delivery phase opened for `1.0.0` as a small polish release after the published `0.0.39` hardening cycle. The package version has been bumped to `1.0.0` in `package.json` and `package-lock.json`. No VSIX packaging or Marketplace publication has been performed for `1.0.0`.
+
+Planning and build references:
+
+- `project-context/docs/release-1.0.0-prioritization.md`
+- `project-context/2.build/features/1.0.0-polish-opening.md`
+
+Release direction:
+
+- Keep the shipped Source Control/editor graph product surface stable.
+- Limit scope to small polish adjustments selected one by one.
+- Prefer low-risk UX copy, visual consistency, documentation, Marketplace readiness, and release-quality fixes.
+- Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and the `0.0.39` maintainability boundaries.
+
+Automated verification completed:
+
+- Package metadata confirmed at `1.0.0` in `package.json`, root `package-lock.json`, and root `package-lock.json` package metadata after opening the cycle.
+- `git diff --check` passed after opening the `1.0.0` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
+- `npm run build` passed after opening the `1.0.0` cycle.
+- `npm test` passed with 394 tests after opening the `1.0.0` cycle. This includes `npm run build` through the test script.
+
+Automated verification pending:
+
+- None for the opened `1.0.0` baseline. Re-run `npm run build`, `npm test`, and `git diff --check` after selected polish changes and before any `1.0.0` package candidate.
+
+Manual validation pending:
+
+- Define the final polish checklist before packaging.
+- Run Extension Development Host smoke validation after polish changes are complete.
+- Confirm graph launch from Source Control, graph load, repository switching, refresh, fetch, scope changes, search, minimap, scroll, zoom, and `Center HEAD`.
+- Confirm compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, pull, push, merge, delete, reset, and conflict guards.
+- Confirm Compare Results and Show Log remain on-demand editor panels and close with the graph panel.
+- Repeat key checks in multi-repository and zero-repository workspaces.
+
+Release gates pending:
+
+- Select and complete the small `1.0.0` polish adjustments.
+- Review README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents before upload.
+- Run `npm run package:vsix` only after maintainer approval.
+- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+
+Post-release monitoring focus:
+
+- Reports that `1.0.0` polish changed existing graph, Compare Results, Show Log, or Git workflows unexpectedly.
+- Reports that version `1.0.0` metadata, README, changelog, screenshots, or Marketplace copy overstate product scope.
+- Reports of regressions in areas hardened during `0.0.39`: message routing, ref workflows, backend data loading, webview security, and review-panel actions.
+
+Rollback:
+
+- If a polish change introduces workflow regressions, revert that narrow change and preserve the `1.0.0` version/package metadata only if the candidate has not shipped.
+- If generated package contents or Marketplace metadata are incorrect, correct the metadata and regenerate the VSIX before publication.
+- If publication occurs and a regression is found, prepare a narrow `1.0.1` patch or direct affected users to the previous `0.0.39` VSIX depending on severity.
+
 ## 0.0.39 Release Readiness
 
 Current package baseline: `0.0.38`.

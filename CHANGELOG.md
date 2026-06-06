@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0
+
+### Release Preparation
+
+- Opened the `1.0.0` cycle as a small polish release after the published `0.0.39` hardening release.
+- Version bump to `1.0.0` has been applied in `package.json` and `package-lock.json`; VSIX packaging, manual smoke validation, and Marketplace publication have not been performed for `1.0.0`.
+
 ## 0.0.39
 
 ### Reliability & Maintainability
