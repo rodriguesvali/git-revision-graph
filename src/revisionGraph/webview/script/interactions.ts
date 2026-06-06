@@ -226,7 +226,7 @@ export function renderRevisionGraphScriptInteractions(): string {
 
       const candidateValues = [
         node.hash,
-        node.hash.slice(0, 8),
+        formatShortCommitHash(node.hash),
         node.subject || '',
         node.author || '',
         ...node.refs.map((ref) => ref.name)

@@ -304,7 +304,13 @@ test('renders structural commit actions for compare and branch creation', () => 
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /function createCommitSelectionId\(hash\) \{/);
+  assert.match(html, /function formatShortCommitHash\(hash\) \{\s*return String\(hash \|\| ''\)\.slice\(0, 8\);\s*\}/s);
   assert.match(html, /function getStructuralNodeTarget\(hash\) \{/);
+  assert.match(html, /label: formatShortCommitHash\(hash\)/);
+  assert.match(html, /label: formatShortCommitHash\(node\.hash\)/);
+  assert.match(html, /formatShortCommitHash\(node\.hash\),/);
+  assert.doesNotMatch(html, /hash\.slice\(0, 8\)/);
+  assert.doesNotMatch(html, /node\.hash\.slice\(0, 8\)/);
   assert.match(html, /function createRevisionGraphShowLogTargetMessage\(target\)/);
   assert.match(html, /function createRevisionGraphShowLogRangeMessage\(base, compare\)/);
   assert.match(html, /function postShowLogTarget\(target\) \{\s*vscode\.postMessage\(createRevisionGraphShowLogTargetMessage\(target\)\);/s);

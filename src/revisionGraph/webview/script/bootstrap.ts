@@ -1169,7 +1169,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
 	    function formatNodeSummary(node) {
-	      return node.hash.slice(0, 8);
+	      return formatShortCommitHash(node.hash);
 	    }
 
     function formatNodeTitle(node) {
@@ -1211,6 +1211,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return 'commit::' + hash;
     }
 
+    function formatShortCommitHash(hash) {
+      return String(hash || '').slice(0, 8);
+    }
+
     function getSelectionTarget(selectionId) {
       if (!selectionId) {
         return null;
@@ -1227,7 +1231,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           hash,
           name: hash,
           revision: hash,
-          label: hash.slice(0, 8),
+          label: formatShortCommitHash(hash),
           kind: 'commit'
         };
       }
@@ -1263,7 +1267,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           hash: node.hash,
           name: node.hash,
           revision: node.hash,
-          label: node.hash.slice(0, 8),
+          label: formatShortCommitHash(node.hash),
           kind: 'commit'
         }));
 
