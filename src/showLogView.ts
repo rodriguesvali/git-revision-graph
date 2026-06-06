@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
-import type { Change, Repository } from './git';
+import type { Repository } from './git';
 import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
@@ -24,6 +24,11 @@ import {
   ShowLogLoadRequests
 } from './showLog/loadRequests';
 import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
+import {
+  findShowLogChange,
+  getVisibleShowLogRepository,
+  isLoadedShowLogCommitHash
+} from './showLog/stateLookup';
 import { buildShowLogWebviewState } from './showLog/viewState';
 import {
   addShowLogCachedChanges,
@@ -162,7 +167,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    if (!this.isLoadedCommitHash(commitHash)) {
+    if (!isLoadedShowLogCommitHash(this.state, commitHash)) {
       return;
     }
 
@@ -447,12 +452,12 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async openFileChange(commitHash: string, changeId: string): Promise<void> {
-    const change = this.findChange(commitHash, changeId);
+    const change = findShowLogChange(this.state, commitHash, changeId);
     if (!change) {
       return;
     }
 
-    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    const repository = getVisibleShowLogRepository(this.state);
     if (!repository) {
       return;
     }
@@ -463,12 +468,12 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async compareFileChangeWithWorktree(commitHash: string, changeId: string): Promise<void> {
-    const change = this.findChange(commitHash, changeId);
+    const change = findShowLogChange(this.state, commitHash, changeId);
     if (!change) {
       return;
     }
 
-    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    const repository = getVisibleShowLogRepository(this.state);
     if (!repository) {
       return;
     }
@@ -477,7 +482,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
-    const change = this.findChange(commitHash, changeId);
+    const change = findShowLogChange(this.state, commitHash, changeId);
     if (!change) {
       return;
     }
@@ -488,7 +493,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async copyFullPath(commitHash: string, changeId: string): Promise<void> {
-    const change = this.findChange(commitHash, changeId);
+    const change = findShowLogChange(this.state, commitHash, changeId);
     if (!change) {
       return;
     }
@@ -497,7 +502,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async copyCommitHash(commitHash: string): Promise<void> {
-    if (!this.isLoadedCommitHash(commitHash)) {
+    if (!isLoadedShowLogCommitHash(this.state, commitHash)) {
       return;
     }
 
@@ -505,8 +510,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async openCommitOnGitHub(commitHash: string): Promise<void> {
-    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
-    if (!repository || !this.isLoadedCommitHash(commitHash)) {
+    const repository = getVisibleShowLogRepository(this.state);
+    if (!repository || !isLoadedShowLogCommitHash(this.state, commitHash)) {
       return;
     }
 
@@ -519,38 +524,13 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 
-  private findChange(commitHash: string, changeId: string): Change | undefined {
-    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
-    if (!repository) {
-      return undefined;
-    }
-
-    if (!this.isLoadedCommitHash(commitHash)) {
-      return undefined;
-    }
-
-    const match = /^.+:(\d+)$/.exec(changeId);
-    const index = match ? Number(match[1]) : -1;
-    if (!Number.isInteger(index) || index < 0) {
-      return undefined;
-    }
-
-    const changes = this.state.cachedChanges[commitHash];
-    const change = changes?.[index];
-    if (!change) {
-      return undefined;
-    }
-
-    return change;
-  }
-
   private async openCommitDetails(commitHash: string): Promise<void> {
-    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    const repository = getVisibleShowLogRepository(this.state);
     if (!repository) {
       return;
     }
 
-    if (!this.isLoadedCommitHash(commitHash)) {
+    if (!isLoadedShowLogCommitHash(this.state, commitHash)) {
       return;
     }
 
@@ -623,10 +603,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       commitLabel,
       services
     );
-  }
-
-  private isLoadedCommitHash(commitHash: string): boolean {
-    return this.state.kind === 'visible' && this.state.entries.some((entry) => entry.hash === commitHash);
   }
 
   private postState(): void {
