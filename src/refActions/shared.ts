@@ -4,6 +4,8 @@ import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
 import { createActionRefreshRequest } from '../revisionGraphRefresh';
 import { HeadSyncState, RefActionKind, RefActionServices } from './types';
 
+export { isMissingUpstreamConfigurationError } from '../errorDetail';
+
 export function parseRemoteReferenceTarget(refName: string): { remoteName: string; branchName: string } | undefined {
   const firstSlash = refName.indexOf('/');
   if (firstSlash <= 0 || firstSlash === refName.length - 1) {
@@ -143,21 +145,6 @@ export async function pickRemote(
   }
 
   return services.ui.pickRemoteName(remoteNames, placeHolder);
-}
-
-export function isMissingUpstreamConfigurationError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-
-  const stderr = 'stderr' in error && typeof error.stderr === 'string'
-    ? error.stderr
-    : undefined;
-  if (!stderr) {
-    return false;
-  }
-
-  return stderr.toLowerCase().includes('has no upstream information');
 }
 
 export async function getLocalBranchForDeletion(repository: Repository, branchName: string): Promise<Branch | undefined> {

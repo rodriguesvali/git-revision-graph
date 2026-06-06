@@ -38,6 +38,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-revision-log-entry-test-factory-code-quality.md`
 - `project-context/2.build/features/0.0.39-compare-result-item-test-factory-code-quality.md`
 - `project-context/2.build/features/0.0.39-abort-error-helper-code-quality.md`
+- `project-context/2.build/features/0.0.39-git-error-detail-helper-code-quality.md`
 
 Candidate direction:
 
@@ -69,6 +70,7 @@ Candidate direction:
 - Improve Show Log test coding quality by sharing a focused `RevisionLogEntry` factory across repeated fixtures.
 - Improve Compare Results test coding quality by sharing a focused `CompareResultItem` factory across repeated fixtures.
 - Improve cancellation coding quality by sharing AbortError creation, throwing, and detection helpers.
+- Improve Git error coding quality by keeping missing-upstream detection with shared error detail helpers.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -214,6 +216,9 @@ Automated verification completed:
 - Focused error helper, Git exec, render coordinator, revision graph layout/backend, and Show Log load request tests passed with 72 tests after sharing AbortError helpers. This includes `npm run build` through the focused validation sequence.
 - `npm test` passed with 388 tests after sharing AbortError helpers. This includes `npm run build` through the test script.
 - `git diff --check` passed after sharing AbortError helpers and updating verification artifacts.
+- Focused error detail and ref action tests passed with 87 tests after moving missing-upstream detection into the shared error detail helper module. This includes `npm run build` through the focused validation sequence.
+- `npm test` passed with 392 tests after moving missing-upstream detection. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving missing-upstream detection and updating verification artifacts.
 
 Automated verification pending:
 

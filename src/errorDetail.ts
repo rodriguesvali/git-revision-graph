@@ -51,6 +51,12 @@ export function isNonInteractiveGitAuthenticationError(error: unknown): boolean 
   );
 }
 
+export function isMissingUpstreamConfigurationError(error: unknown): boolean {
+  const gitError = asGitLikeError(error);
+  const stderr = normalizeErrorText(gitError?.stderr);
+  return stderr?.toLowerCase().includes('has no upstream information') ?? false;
+}
+
 export function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
   if (!error || typeof error !== 'object') {
     return false;
