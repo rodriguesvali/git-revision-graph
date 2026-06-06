@@ -18,6 +18,10 @@ import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
 } from './showLog/messageHandler';
+import {
+  isAbortError,
+  ShowLogLoadRequests
+} from './showLog/loadRequests';
 import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
 import { buildShowLogWebviewState } from './showLog/viewState';
 import {
@@ -38,10 +42,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private state: ShowLogState = createHiddenShowLogState();
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
-  private loadRequestId = 0;
   private expandRequestId = 0;
   private sourceTokenSeed = 0;
-  private activeLogAbortController: AbortController | undefined;
+  private readonly logLoadRequests = new ShowLogLoadRequests();
   private readonly messageHandlers: ShowLogMessageHandlers = {
     ready: () => {
       this.postState();
@@ -70,12 +73,12 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   ) {}
 
   dispose(): void {
-    this.cancelActiveLogLoad();
+    this.logLoadRequests.cancelActive();
     this.disposePanel();
   }
 
   async showSource(repository: Repository, source: RevisionLogSource): Promise<void> {
-    const requestId = ++this.loadRequestId;
+    const request = this.logLoadRequests.start();
     this.state = {
       kind: 'visible',
       sourceToken: this.createSourceToken(),
@@ -95,11 +98,11 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     };
     this.revealPanel();
     this.postState();
-    if (requestId !== this.loadRequestId) {
+    if (!this.logLoadRequests.isCurrent(request)) {
       return;
     }
 
-    const abortController = this.beginLogLoadRequest();
+    const activeRequest = this.logLoadRequests.activate(request);
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -108,9 +111,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         this.state.showAllBranches,
         this.state.filterText,
-        abortController.signal
+        activeRequest.signal
       );
-      if (requestId !== this.loadRequestId) {
+      if (!this.logLoadRequests.isCurrent(activeRequest)) {
         return;
       }
 
@@ -122,7 +125,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } catch (error) {
-      if (requestId !== this.loadRequestId) {
+      if (!this.logLoadRequests.isCurrent(activeRequest)) {
         return;
       }
       if (isAbortError(error)) {
@@ -136,14 +139,13 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } finally {
-      this.finishLogLoadRequest(abortController);
+      this.logLoadRequests.finish(activeRequest);
     }
   }
 
   async hideWithRevisionGraph(): Promise<void> {
-    this.loadRequestId += 1;
+    this.logLoadRequests.invalidateAndCancel();
     this.expandRequestId += 1;
-    this.cancelActiveLogLoad();
     this.state = createHiddenShowLogState();
     this.postState();
     this.disposePanel();
@@ -249,7 +251,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const requestId = ++this.loadRequestId;
+    const request = this.logLoadRequests.start();
     this.expandRequestId += 1;
     this.state = {
       ...this.state,
@@ -266,7 +268,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     };
     this.postState();
 
-    const abortController = this.beginLogLoadRequest();
+    const activeRequest = this.logLoadRequests.activate(request);
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -275,9 +277,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         value,
         this.state.filterText,
-        abortController.signal
+        activeRequest.signal
       );
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
 
@@ -289,7 +291,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } catch (error) {
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
       if (isAbortError(error)) {
@@ -303,7 +305,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } finally {
-      this.finishLogLoadRequest(abortController);
+      this.logLoadRequests.finish(activeRequest);
     }
   }
 
@@ -327,7 +329,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const requestId = ++this.loadRequestId;
+    const request = this.logLoadRequests.start();
     this.expandRequestId += 1;
     this.state = {
       ...this.state,
@@ -344,7 +346,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     };
     this.postState();
 
-    const abortController = this.beginLogLoadRequest();
+    const activeRequest = this.logLoadRequests.activate(request);
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -353,9 +355,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         this.state.showAllBranches,
         filterText,
-        abortController.signal
+        activeRequest.signal
       );
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
 
@@ -367,7 +369,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } catch (error) {
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
       if (isAbortError(error)) {
@@ -381,7 +383,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } finally {
-      this.finishLogLoadRequest(abortController);
+      this.logLoadRequests.finish(activeRequest);
     }
   }
 
@@ -393,7 +395,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     const repository = this.state.repository;
     const source = this.state.source;
     const skip = this.state.entries.length;
-    const requestId = ++this.loadRequestId;
+    const request = this.logLoadRequests.start();
     this.state = {
       ...this.state,
       loadingMore: true,
@@ -401,7 +403,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     };
     this.postState();
 
-    const abortController = this.beginLogLoadRequest();
+    const activeRequest = this.logLoadRequests.activate(request);
     try {
       const result = await this.backend.loadRevisionLog(
         repository,
@@ -410,9 +412,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         skip,
         this.state.showAllBranches,
         this.state.filterText,
-        abortController.signal
+        activeRequest.signal
       );
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
 
@@ -424,7 +426,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } catch (error) {
-      if (requestId !== this.loadRequestId || this.state.kind !== 'visible') {
+      if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
       }
       if (isAbortError(error)) {
@@ -438,7 +440,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } finally {
-      this.finishLogLoadRequest(abortController);
+      this.logLoadRequests.finish(activeRequest);
     }
   }
 
@@ -641,24 +643,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     return String(this.sourceTokenSeed);
   }
 
-  private beginLogLoadRequest(): AbortController {
-    this.cancelActiveLogLoad();
-    const abortController = new AbortController();
-    this.activeLogAbortController = abortController;
-    return abortController;
-  }
-
-  private finishLogLoadRequest(abortController: AbortController): void {
-    if (this.activeLogAbortController === abortController) {
-      this.activeLogAbortController = undefined;
-    }
-  }
-
-  private cancelActiveLogLoad(): void {
-    this.activeLogAbortController?.abort();
-    this.activeLogAbortController = undefined;
-  }
-
   private revealPanel(): void {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.One);
@@ -684,9 +668,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       panel.onDidDispose(() => {
         if (this.panel === panel) {
           this.panel = undefined;
-          this.loadRequestId += 1;
+          this.logLoadRequests.invalidateAndCancel();
           this.expandRequestId += 1;
-          this.cancelActiveLogLoad();
           this.state = createHiddenShowLogState();
         }
         this.disposePanelDisposables();
@@ -709,8 +692,4 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       this.panelDisposables.pop()?.dispose();
     }
   }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }
