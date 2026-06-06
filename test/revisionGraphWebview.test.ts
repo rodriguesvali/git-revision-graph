@@ -17,6 +17,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Show Remote Branches/);
   assert.match(html, /id="showStashesToggle"/);
   assert.match(html, /Show Stash/);
+  assert.match(html, /id="showMergeCommitsToggle"/);
+  assert.match(html, /Show Merge Commits/);
   assert.match(html, /id="showMinimapToggle"/);
   assert.match(html, /Show Minimap/);
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
@@ -226,6 +228,7 @@ test('center HEAD button does not crash when refs are grouped by families', asyn
         showTags: true,
         showRemoteBranches: true,
         showStashes: true,
+        showMergeCommits: false,
         showCurrentBranchDescendants: true
       },
       mergeBlockedTargets: [],
@@ -539,6 +542,7 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /searchInput\.addEventListener\('input'/);
   assert.match(html, /showRemoteBranchesToggle\.addEventListener\('change'/);
   assert.match(html, /showStashesToggle\.addEventListener\('change'/);
+  assert.match(html, /showMergeCommitsToggle\.addEventListener\('change'/);
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
   assert.match(html, /searchPrevButton\.addEventListener\('click'/);
   assert.match(html, /searchNextButton\.addEventListener\('click'/);
@@ -682,6 +686,7 @@ function createWebviewRuntime() {
     'showTagsToggle',
     'showRemoteBranchesToggle',
     'showStashesToggle',
+    'showMergeCommitsToggle',
     'showMinimapToggle',
     'searchInput',
     'searchResultBadge',

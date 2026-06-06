@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 - Prevented the current-branch `Push` toolbar action from blocking the graph with loading feedback before the user chooses a push mode.
 - Prevented a canceled current-branch push from showing success feedback or reloading the graph when no remote update occurred.
+- Added a default-off `Show Merge Commits` view option so the graph can hide unreferenced merge commits for a cleaner default presentation.
 
 ## 0.0.39
 

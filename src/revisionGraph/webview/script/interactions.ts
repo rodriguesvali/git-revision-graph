@@ -492,6 +492,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         currentProjectionOptions.showTags ? 'tags' : null,
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
         currentProjectionOptions.showStashes ? 'stash' : null,
+        currentProjectionOptions.showMergeCommits ? 'merge commits' : null,
         minimapEnabled ? 'minimap' : null
       ].filter(Boolean);
       viewOptionsButton.title = visibleOptions.length > 0
@@ -689,6 +690,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showStashesToggle) {
         showStashesToggle.disabled = toolbarBusy;
       }
+      if (showMergeCommitsToggle) {
+        showMergeCommitsToggle.disabled = toolbarBusy;
+      }
       if (showMinimapToggle) {
         showMinimapToggle.disabled = toolbarBusy;
       }
@@ -723,6 +727,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         showTagsToggle,
         showRemoteBranchesToggle,
         showStashesToggle,
+        showMergeCommitsToggle,
         abortMergeButton,
         searchInput,
         searchPrevButton,

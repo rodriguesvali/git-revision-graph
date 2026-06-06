@@ -13,6 +13,7 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
+  showMergeCommits: false,
   showCurrentBranchDescendants: false
 };
 const DEFAULT_REMOTE_HEAD_REF_NAMES = ['origin/HEAD', 'origin/main', 'origin/master'];
@@ -170,7 +171,7 @@ function buildMajorOperationsVisibleHashes(
         const isRoot = parentCount === 0;
         const isUnreferencedTip = childCount === 0 && commit.refs.length === 0;
 
-        return hasVisibleRef || isMerge || isFork || isRoot || isUnreferencedTip;
+        return hasVisibleRef || (isMerge && options.showMergeCommits) || isFork || isRoot || isUnreferencedTip;
       })
       .map((commit) => commit.hash)
   );

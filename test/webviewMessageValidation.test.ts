@@ -58,6 +58,7 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       options: {
         refScope: 'local',
         showTags: false,
+        showMergeCommits: true,
         unknown: 'ignored'
       }
     }),
@@ -65,7 +66,8 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       type: 'set-projection-options',
       options: {
         refScope: 'local',
-        showTags: false
+        showTags: false,
+        showMergeCommits: true
       }
     }
   );
@@ -408,6 +410,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
+      showMergeCommits: false,
       showCurrentBranchDescendants: true
     },
     mergeBlockedTargets: [],

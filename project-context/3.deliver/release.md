@@ -14,6 +14,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-polish-opening.md`
 - `project-context/2.build/features/1.0.0-push-choice-loading-polish.md`
 - `project-context/2.build/features/1.0.0-push-cancel-refresh-polish.md`
+- `project-context/2.build/features/1.0.0-show-merge-commits-view-option.md`
 
 Release direction:
 
@@ -26,6 +27,7 @@ Implemented polish:
 
 - The current-branch `Push` toolbar action now opens the push-mode choice without immediately blocking the graph with loading feedback. The existing host-side push workflow and post-push refresh behavior are preserved.
 - A canceled current-branch push no longer shows success feedback or schedules a graph reload when the VS Code Git API returns without a remote update.
+- The revision graph `View` menu now includes a default-off `Show Merge Commits` option that hides unreferenced merge commits by default while preserving ancestry through graph edges.
 
 Automated verification completed:
 
@@ -39,6 +41,9 @@ Automated verification completed:
 - Focused ref action validation passed with 84 tests after adding the canceled push refresh guard. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 395 tests after the canceled push refresh guard. This includes `npm run build` through the test script.
 - `git diff --check` passed after the canceled push refresh guard.
+- Focused graph, webview shell, and message-validation tests passed with 80 tests after adding the `Show Merge Commits` view option. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 396 tests after the `Show Merge Commits` view option. This includes `npm run build` through the test script.
+- `git diff --check` passed after the `Show Merge Commits` view option.
 
 Automated verification pending:
 

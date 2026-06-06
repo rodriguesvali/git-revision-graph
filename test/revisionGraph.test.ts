@@ -87,6 +87,7 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       showTags: false,
       showRemoteBranches: false,
       showStashes: false,
+      showMergeCommits: false,
       showCurrentBranchDescendants: false
     }),
     [
@@ -301,7 +302,7 @@ test('keeps merge parent lines while hiding merge-only cards in refs-only projec
   );
 });
 
-test('keeps hidden merge connectors in the major-operations projection', () => {
+test('hides unreferenced merge commits by default while preserving merge edges', () => {
   const graph = buildCommitGraph([
     { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
     { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Hidden merge', refs: [] },
@@ -311,19 +312,34 @@ test('keeps hidden merge connectors in the major-operations projection', () => {
 
   const projection = projectMajorOperationsGraph(graph);
 
-  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'topic1', 'base1']);
   assert.deepEqual(
     projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
     [
-      { from: 'head1', to: 'merge1', through: [] },
-      { from: 'merge1', to: 'base1', through: [] },
-      { from: 'merge1', to: 'topic1', through: [] },
+      { from: 'head1', to: 'base1', through: ['merge1'] },
+      { from: 'head1', to: 'topic1', through: ['merge1'] },
       { from: 'topic1', to: 'base1', through: [] }
     ]
   );
 });
 
-test('keeps sync merges in git-simplified major-operations graphs', () => {
+test('shows merge commits when the merge commit view option is enabled', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-04-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'merge1', parents: ['base1', 'topic1'], author: 'Ada', date: '2026-04-07', subject: 'Visible merge', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-06', subject: 'Topic tip', refs: [{ name: 'origin/topic/demo', kind: 'remote' }] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] }
+  ]);
+
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showMergeCommits: true
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
+});
+
+test('keeps sync merges in git-simplified major-operations graphs when merge commits are shown', () => {
   const graph = buildCommitGraphWithSimplification([
     { hash: 'rel2501', parents: ['sync2491'], author: 'Ada', date: '2026-04-08', subject: 'Git 2.50.1', refs: [{ name: 'v2.50.1', kind: 'tag' }] },
     { hash: 'sync2491', parents: ['rel2500', 'rel2491'], author: 'Ada', date: '2026-04-07', subject: 'Sync with 2.49.1', refs: [] },
@@ -334,7 +350,10 @@ test('keeps sync merges in git-simplified major-operations graphs', () => {
     { hash: 'rel2482', parents: [], author: 'Ada', date: '2026-04-02', subject: 'Git 2.48.2', refs: [{ name: 'v2.48.2', kind: 'tag' }] }
   ], 'git-decoration');
 
-  const projection = projectMajorOperationsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showMergeCommits: true
+  });
 
   assert.deepEqual(
     projection.nodes.map((node) => node.hash),
@@ -385,7 +404,10 @@ test('projects a major-operations graph with critical commits and compressed lin
     { hash: 'root1', parents: [], author: 'Ada', date: '2026-05-02', subject: 'Root', refs: [] }
   ]);
 
-  const projection = projectMajorOperationsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showMergeCommits: true
+  });
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'fork1', 'root1']);
   assert.deepEqual(
@@ -407,7 +429,10 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
     { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-05-06', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
     { hash: 'base1', parents: [], author: 'Ada', date: '2026-05-05', subject: 'Base', refs: [] }
   ]);
-  const projection = projectMajorOperationsGraph(graph);
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    showMergeCommits: true
+  });
   const scene = await buildRevisionGraphScene(graph, projection);
   const rowByHash = new Map(scene.nodes.map((node) => [node.hash, node.row] as const));
 

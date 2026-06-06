@@ -43,6 +43,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showTagsToggle = document.getElementById('showTagsToggle');
     const showRemoteBranchesToggle = document.getElementById('showRemoteBranchesToggle');
     const showStashesToggle = document.getElementById('showStashesToggle');
+    const showMergeCommitsToggle = document.getElementById('showMergeCommitsToggle');
     const showMinimapToggle = document.getElementById('showMinimapToggle');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
@@ -65,6 +66,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
+      showMergeCommits: false,
       showCurrentBranchDescendants: false
     };
     let mergeBlockedTargets = new Set();
@@ -173,6 +175,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (showStashesToggle) {
       showStashesToggle.addEventListener('change', () => {
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showStashes: showStashesToggle.checked }), showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
+      });
+    }
+    if (showMergeCommitsToggle) {
+      showMergeCommitsToggle.addEventListener('change', () => {
+        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showMergeCommits: showMergeCommitsToggle.checked }), showMergeCommitsToggle.checked ? 'Showing merge commits...' : 'Hiding merge commits...', showMergeCommitsToggle);
       });
     }
     if (showMinimapToggle) {
@@ -800,6 +807,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showStashesToggle) {
         showStashesToggle.checked = !!state.projectionOptions.showStashes;
+      }
+      if (showMergeCommitsToggle) {
+        showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
       if (abortMergeButton) {
         abortMergeButton.hidden = !state.hasConflictedMerge;
