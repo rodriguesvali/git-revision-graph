@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
+import { createAbortError, throwIfAborted } from '../../errors';
 import {
   D3DagSugiyamaLayoutInput,
   D3DagSugiyamaLayoutPosition
@@ -25,7 +26,7 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
   projection: D3DagSugiyamaLayoutInput,
   signal?: AbortSignal
 ): Promise<Map<string, D3DagSugiyamaLayoutPosition>> {
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The d3-dag layout worker was aborted.');
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -46,7 +47,7 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
 
     function abort(): void {
       void worker.terminate();
-      settle(() => reject(createAbortError()));
+      settle(() => reject(createAbortError('The d3-dag layout worker was aborted.')));
     }
 
     signal?.addEventListener('abort', abort, { once: true });
@@ -70,18 +71,6 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
       }
     });
   });
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    throw createAbortError();
-  }
-}
-
-function createAbortError(): Error {
-  const error = new Error('The d3-dag layout worker was aborted.');
-  error.name = 'AbortError';
-  return error;
 }
 
 function createWorkerError(message: D3DagSugiyamaLayoutWorkerErrorMessage): Error {

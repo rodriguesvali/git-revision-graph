@@ -37,6 +37,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-change-target-path-code-quality.md`
 - `project-context/2.build/features/0.0.39-revision-log-entry-test-factory-code-quality.md`
 - `project-context/2.build/features/0.0.39-compare-result-item-test-factory-code-quality.md`
+- `project-context/2.build/features/0.0.39-abort-error-helper-code-quality.md`
 
 Candidate direction:
 
@@ -67,6 +68,7 @@ Candidate direction:
 - Improve renamed-file path coding quality by reusing the shared change target URI helper across Compare Results and Show Log helpers.
 - Improve Show Log test coding quality by sharing a focused `RevisionLogEntry` factory across repeated fixtures.
 - Improve Compare Results test coding quality by sharing a focused `CompareResultItem` factory across repeated fixtures.
+- Improve cancellation coding quality by sharing AbortError creation, throwing, and detection helpers.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -209,6 +211,9 @@ Automated verification completed:
 - Focused Compare Results item action, restore action, clipboard, and message handler tests passed with 18 tests after sharing the `CompareResultItem` test factory. This includes `npm run build` through the focused validation sequence.
 - `npm test` passed with 385 tests after sharing the `CompareResultItem` test factory. This includes `npm run build` through the test script.
 - `git diff --check` passed after sharing the `CompareResultItem` test factory and updating verification artifacts.
+- Focused error helper, Git exec, render coordinator, revision graph layout/backend, and Show Log load request tests passed with 72 tests after sharing AbortError helpers. This includes `npm run build` through the focused validation sequence.
+- `npm test` passed with 388 tests after sharing AbortError helpers. This includes `npm run build` through the test script.
+- `git diff --check` passed after sharing AbortError helpers and updating verification artifacts.
 
 Automated verification pending:
 

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { isAbortError, throwIfAborted } from '../../errors';
 import { Branch, Ref, RefType, Repository } from '../../git';
 import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../backend';
 import {
@@ -49,7 +50,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
 ): Promise<ReadyRevisionGraphViewStateBundle> {
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace);
   return buildReadyRevisionGraphViewStateBundleFromSnapshot(
     repository,
@@ -141,14 +142,6 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     signal,
     trace
   );
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    const error = new Error('The revision graph load was aborted.');
-    error.name = 'AbortError';
-    throw error;
-  }
 }
 
 async function buildGraphSnapshotWithRepositoryOverlay(
@@ -246,10 +239,10 @@ async function loadRepositoryRefs(
   repository: Repository,
   signal: AbortSignal | undefined
 ): Promise<readonly Ref[]> {
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   try {
     const refs = await repository.getRefs();
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The revision graph load was aborted.');
     return refs;
   } catch (error) {
     if (isAbortError(error)) {
@@ -257,10 +250,6 @@ async function loadRepositoryRefs(
     }
     return repository.state.refs;
   }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }
 
 export function buildEmptyRevisionGraphViewState(
@@ -310,7 +299,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphViewState> {
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   const partsStartedAt = nowMs();
   const nodeLayouts = buildNodeLayouts(scene);
   const references = buildViewReferences(scene);
@@ -323,7 +312,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     signal
   );
   traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   const baseCanvasWidth = Math.max(
     880,
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)

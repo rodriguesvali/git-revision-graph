@@ -1,3 +1,4 @@
+import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Change, Repository } from '../../git';
 import { RevisionLogEntry, RevisionLogSource } from '../../revisionGraphTypes';
@@ -52,7 +53,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     readonly entries: readonly RevisionLogEntry[];
     readonly hasMore: boolean;
   }> {
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The revision graph load was aborted.');
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const normalizedFilterText = normalizeRevisionLogFilterText(filterText);
     if (normalizedFilterText) {
@@ -77,7 +78,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The revision graph load was aborted.');
     const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
 
     return {
@@ -112,7 +113,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     let scannedCommits = 0;
 
     while (scannedCommits < REVISION_LOG_FILTER_SCAN_MAX_COMMITS && matchedEntries.length <= limit) {
-      throwIfAborted(signal);
+      throwIfAborted(signal, 'The revision graph load was aborted.');
       const remainingScanBudget = REVISION_LOG_FILTER_SCAN_MAX_COMMITS - scannedCommits;
       const batchSize = Math.min(REVISION_LOG_FILTER_SCAN_BATCH_SIZE, remainingScanBudget);
       const stdout = await execGit(
@@ -124,7 +125,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
           timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
         }
       );
-      throwIfAborted(signal);
+      throwIfAborted(signal, 'The revision graph load was aborted.');
       const parsedEntries = parseRevisionLogEntries(stdout, refKindsByName);
       scannedCommits += parsedEntries.length;
 
@@ -153,13 +154,5 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
       entries: matchedEntries.slice(0, limit),
       hasMore: matchedEntries.length > limit
     };
-  }
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    const error = new Error('The revision graph load was aborted.');
-    error.name = 'AbortError';
-    throw error;
   }
 }

@@ -1,3 +1,5 @@
+import { isAbortError } from '../errors';
+
 export type RevisionGraphRenderScheduleOutcome = 'applied' | 'discarded' | 'failed';
 
 export class RevisionGraphRenderCoordinator<TResult> {
@@ -85,8 +87,4 @@ export class RevisionGraphRenderCoordinator<TResult> {
       }
     }
   }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }

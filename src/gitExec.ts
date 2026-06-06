@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
 
+import { createAbortError } from './errors';
+
 const DEFAULT_GIT_EXECUTABLE = 'git';
 let configuredGitExecutablePath: string | undefined;
 
@@ -59,12 +61,6 @@ export async function execGitBinaryWithResult(
   return execGitCapturedWithResult(repositoryPath, args, options, 'binary');
 }
 
-function createAbortError(): Error {
-  const error = new Error('The git command was aborted.');
-  error.name = 'AbortError';
-  return error;
-}
-
 function createTimeoutError(timeoutMs: number): Error {
   const error = new Error(`The git command exceeded the timeout of ${timeoutMs} ms.`);
   error.name = 'TimeoutError';
@@ -115,7 +111,7 @@ function execGitCapturedWithResult(
 ): Promise<GitExecResult | GitBinaryExecResult> {
   return new Promise<GitExecResult | GitBinaryExecResult>((resolve, reject) => {
     if (options.signal?.aborted) {
-      reject(createAbortError());
+      reject(createAbortError('The git command was aborted.'));
       return;
     }
 
@@ -193,7 +189,7 @@ function execGitCapturedWithResult(
         child.kill();
       }
 
-      rejectOnce(createAbortError());
+      rejectOnce(createAbortError('The git command was aborted.'));
     };
 
     const timeoutChildProcess = () => {

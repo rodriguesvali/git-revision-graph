@@ -1,3 +1,4 @@
+import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Repository } from '../../git';
 import { CommitGraph, RevisionGraphProjectionOptions } from '../model/commitGraphTypes';
@@ -112,7 +113,7 @@ async function loadGraphSnapshotInternal(
 
   let selectedSnapshot: RevisionGraphSnapshot | undefined;
   for (const limit of limits) {
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The revision graph load was aborted.');
     const snapshot = await loadSnapshot(
       repository,
       limit,
@@ -193,7 +194,7 @@ async function loadSnapshot(
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink
 ): Promise<RevisionGraphSnapshot> {
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   const snapshotStartedAt = nowMs();
   const refsStartedAt = nowMs();
   const refsPromise = repository.getRefs()
@@ -210,7 +211,7 @@ async function loadSnapshot(
   )
     .finally(() => traceDuration(trace, 'snapshot.gitLog', gitLogStartedAt, `limit=${limit}; timeoutMs=${graphCommandTimeoutMs}`));
   const [refs, stdout] = await Promise.all([refsPromise, stdoutPromise]);
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The revision graph load was aborted.');
   const parseStartedAt = nowMs();
   const refKindsByName = buildRevisionGraphRefKinds(refs);
   const graph = buildCommitGraphFromGitLog(stdout, refKindsByName, 'git-decoration');
@@ -259,12 +260,4 @@ function traceSnapshotCache(
   }
 
   traceDuration(trace, 'snapshot.cache', startedAt, details.join('; '));
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    const error = new Error('The revision graph load was aborted.');
-    error.name = 'AbortError';
-    throw error;
-  }
 }

@@ -1,3 +1,4 @@
+import { isAbortError, throwIfAborted } from '../../errors';
 import { Repository } from '../../git';
 import { RevisionGraphViewReference } from '../../revisionGraphTypes';
 import { collectAncestorHashes } from '../model/commitGraphQueries';
@@ -23,7 +24,7 @@ export class DefaultRevisionGraphMergeAnalysisBackend implements RevisionGraphMe
     visibleReferences: readonly RevisionGraphViewReference[],
     signal?: AbortSignal
   ): Promise<string[]> {
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The revision graph load was aborted.');
     if (!currentHeadName) {
       return [];
     }
@@ -53,7 +54,7 @@ export class DefaultRevisionGraphMergeAnalysisBackend implements RevisionGraphMe
     const fallbackResults = await Promise.all(
       unresolvedReferences.map(async (ref) => {
         try {
-          throwIfAborted(signal);
+          throwIfAborted(signal, 'The revision graph load was aborted.');
           const isAncestor = await isRefAncestorOfHead(repository, ref.name, currentHeadName, signal);
           return isAncestor ? `${ref.kind}::${ref.name}` : undefined;
         } catch (error) {
@@ -127,16 +128,4 @@ function buildCommitHashesByRefKey(graph: CommitGraph): Map<string, string[]> {
 
 function createRefKey(kind: RevisionGraphRef['kind'], name: string): string {
   return `${kind}::${name}`;
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    const error = new Error('The revision graph load was aborted.');
-    error.name = 'AbortError';
-    throw error;
-  }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }

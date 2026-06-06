@@ -1,3 +1,5 @@
+export { isAbortError } from '../errors';
+
 export interface ShowLogLoadRequest {
   readonly id: number;
 }
@@ -46,8 +48,4 @@ export class ShowLogLoadRequests {
     this.activeAbortController?.abort();
     this.activeAbortController = undefined;
   }
-}
-
-export function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }

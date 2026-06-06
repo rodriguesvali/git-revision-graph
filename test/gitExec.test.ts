@@ -13,6 +13,7 @@ import {
   execGitWithResult,
   getGitExecutablePath
 } from '../src/gitExec';
+import { isAbortError } from '../src/errors';
 
 const execFile = promisify(execFileCallback);
 
@@ -137,10 +138,7 @@ test('execGit aborts an in-flight git process when the signal is cancelled', asy
         abortController.abort();
       }, 25);
 
-      await assert.rejects(
-        execution,
-        (error: unknown) => error instanceof Error && error.name === 'AbortError'
-      );
+      await assert.rejects(execution, isAbortError);
     }
   );
 });
@@ -229,10 +227,7 @@ test('execGitBinaryWithResult aborts an in-flight git process when the signal is
         abortController.abort();
       }, 25);
 
-      await assert.rejects(
-        execution,
-        (error: unknown) => error instanceof Error && error.name === 'AbortError'
-      );
+      await assert.rejects(execution, isAbortError);
     }
   );
 });

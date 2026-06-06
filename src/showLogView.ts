@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { toOperationError } from './errorDetail';
+import { isAbortError } from './errors';
 import type { Repository } from './git';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
@@ -26,7 +27,6 @@ import {
   type ShowLogMessageHandlers
 } from './showLog/messageHandler';
 import {
-  isAbortError,
   ShowLogLoadRequests
 } from './showLog/loadRequests';
 import { openShowLogCommitOnGitHub } from './showLog/remoteCommitAction';

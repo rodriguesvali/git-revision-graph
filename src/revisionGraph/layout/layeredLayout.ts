@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { isAbortError, throwIfAborted } from '../../errors';
 import { ProjectedGraph } from '../model/commitGraphTypes';
 import {
   calculateD3DagSugiyamaLayout,
@@ -50,14 +51,14 @@ export async function layoutProjectedGraph(
     return new Map();
   }
 
-  throwIfAborted(signal);
+  throwIfAborted(signal, 'The d3-dag layout was aborted.');
   const cacheKey = buildProjectedGraphLayoutCacheKey(projection);
   const cachedLayoutEntry = projectedGraphLayoutCache.get(cacheKey);
   if (cachedLayoutEntry) {
     projectedGraphLayoutCache.delete(cacheKey);
     projectedGraphLayoutCache.set(cacheKey, cachedLayoutEntry);
     projectedGraphLayoutCacheHits += 1;
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The d3-dag layout was aborted.');
     return cloneLayoutPositions(await cachedLayoutEntry.promise);
   }
 
@@ -180,7 +181,7 @@ async function calculateProjectedGraphLayout(
       throw error;
     }
 
-    throwIfAborted(signal);
+    throwIfAborted(signal, 'The d3-dag layout was aborted.');
     return calculateD3DagSugiyamaLayout(layoutInput);
   }
 }
@@ -247,16 +248,4 @@ function isSerializedPositionEntry(entry: unknown): entry is [string, ProjectedG
     typeof (entry[1] as { x?: unknown }).x === 'number' &&
     typeof (entry[1] as { y?: unknown }).y === 'number'
   );
-}
-
-function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) {
-    const error = new Error('The d3-dag layout was aborted.');
-    error.name = 'AbortError';
-    throw error;
-  }
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
 }
