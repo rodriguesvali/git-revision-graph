@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import { createChange, createRepository } from './fakes';
 import {
   addShowLogCachedChanges,
-  buildShowLogCommitLabel,
-  getShowLogSourceLabel,
-  buildShowLogWebviewState,
   createHiddenShowLogState
 } from '../src/showLogShared';
+import {
+  buildShowLogCommitLabel,
+  getShowLogSourceLabel,
+  buildShowLogWebviewState
+} from '../src/showLog/viewState';
 
 test('builds show log summaries for target and range sources', () => {
   assert.equal(

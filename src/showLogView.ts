@@ -19,9 +19,9 @@ import {
   type ShowLogMessageHandlers
 } from './showLog/messageHandler';
 import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
+import { buildShowLogWebviewState } from './showLog/viewState';
 import {
   addShowLogCachedChanges,
-  buildShowLogWebviewState,
   createHiddenShowLogState,
   ShowLogState
 } from './showLogShared';
