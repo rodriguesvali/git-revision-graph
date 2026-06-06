@@ -1,21 +1,25 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 
-import { getRepositoryRelativeUriPath } from './changePresentation';
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
 import {
   applyCompareResultsWorktreeRefresh,
-  buildCompareResultItems,
-  buildCompareResultsMessage,
   CompareResultItem,
   CompareResultsState
 } from './compareResultsShared';
-import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
+import {
+  renderCompareResultsWebviewHtml,
+  type CompareResultsWebviewState
+} from './compareResultsWebview';
 import {
   dispatchCompareResultsWebviewMessage,
   type CompareResultsMessageHandlers
 } from './compareResults/messageHandler';
+import {
+  createCompareResultsWebviewState,
+  getCompareResultItems
+} from './compareResults/viewState';
 import type { RefSelection } from './refActions';
 import {
   openChangeDiffBetweenRefs,
@@ -150,65 +154,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private createWebviewState(): CompareResultsWebviewState {
-    if (this.state.kind === 'empty') {
-      return {
-        kind: 'empty',
-        summary: '',
-        emptyMessage: buildCompareResultsMessage(this.state),
-        items: []
-      };
-    }
-
-    return {
-      kind: 'results',
-      summary: buildCompareResultsMessage(this.state),
-      sourceLabel: this.state.kind === 'between' ? this.state.left.label : this.state.target.label,
-      targetLabel: this.state.kind === 'between' ? this.state.right.label : 'Worktree',
-      items: this.getItems().map((item) => this.toWebviewItem(item))
-    };
-  }
-
-  private toWebviewItem(item: CompareResultItem): CompareResultsWebviewItem {
-    const originalPath = getRepositoryRelativeUriPath(item.repository.rootUri.fsPath, item.change.originalUri.fsPath);
-    const isRename = !!item.change.renameUri && originalPath !== item.label;
-    return {
-      id: item.id,
-      path: item.label,
-      originalPath: isRename ? originalPath : undefined,
-      name: path.basename(item.label),
-      directory: path.dirname(item.label) === '.' ? '' : path.dirname(item.label),
-      fullPath: item.change.renameUri?.fsPath ?? item.change.uri.fsPath,
-      status: item.detail,
-      leftRef: item.leftRef,
-      rightRef: item.rightRef,
-      worktreeRef: item.worktreeRef,
-      worktreeLabel: item.worktreeLabel
-    };
-  }
-
-  private getItems(): CompareResultItem[] {
-    switch (this.state.kind) {
-      case 'empty':
-        return [];
-      case 'between':
-        return buildCompareResultItems(
-          this.state.repository,
-          this.state.changes,
-          this.state.left.refName,
-          this.state.right.refName,
-          undefined,
-          undefined
-        );
-      case 'worktree':
-        return buildCompareResultItems(
-          this.state.repository,
-          this.state.changes,
-          undefined,
-          undefined,
-          this.state.target.refName,
-          this.state.target.label
-        );
-    }
+    return createCompareResultsWebviewState(this.state);
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -259,12 +205,12 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private findItem(itemId: string): CompareResultItem | undefined {
-    return this.getItems().find((item) => item.id === itemId);
+    return getCompareResultItems(this.state).find((item) => item.id === itemId);
   }
 
   private findItems(itemIds: readonly string[]): CompareResultItem[] {
     const selectedIds = new Set(itemIds);
-    return this.getItems().filter((item) => selectedIds.has(item.id));
+    return getCompareResultItems(this.state).filter((item) => selectedIds.has(item.id));
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {

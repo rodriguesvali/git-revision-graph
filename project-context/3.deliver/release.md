@@ -16,6 +16,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-webview-message-contract-cohesion.md`
 - `project-context/2.build/features/0.0.39-show-log-message-cohesion.md`
 - `project-context/2.build/features/0.0.39-compare-results-message-cohesion.md`
+- `project-context/2.build/features/0.0.39-compare-results-view-state-cohesion.md`
 
 Candidate direction:
 
@@ -25,6 +26,7 @@ Candidate direction:
 - Introduce shared host/webview message builders or constants before renaming or changing message payloads.
 - Reduce review-panel coupling by extracting Show Log message dispatch from panel lifecycle when the slice can preserve existing behavior.
 - Reduce review-panel coupling by extracting Compare Results message dispatch from panel lifecycle when the slice can preserve existing behavior.
+- Reduce review-panel coupling by extracting Compare Results webview state mapping from panel lifecycle when the slice can preserve existing behavior.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -104,6 +106,9 @@ Automated verification completed:
 - Focused Compare Results message handler, webview message validation, and Compare Results webview tests passed with 11 tests after extracting Compare Results message dispatch from the panel provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 323 tests after extracting Compare Results message dispatch from the panel provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after extracting Compare Results message dispatch and updating verification artifacts.
+- Focused Compare Results view-state, shared-state, webview, and message handler tests passed with 13 tests after extracting Compare Results webview state mapping from the panel provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 327 tests after extracting Compare Results webview state mapping from the panel provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after extracting Compare Results webview state mapping and updating verification artifacts.
 
 Automated verification pending:
 
@@ -134,6 +139,7 @@ Post-release monitoring focus:
 - Reports of host/webview message validation rejecting valid shipped actions.
 - Reports of Show Log panel actions not routing after message dispatch extraction.
 - Reports of Compare Results panel actions not routing after message dispatch extraction.
+- Reports of Compare Results labels, rename paths, or item actions drifting after webview state mapping extraction.
 
 Rollback:
 
@@ -142,6 +148,7 @@ Rollback:
 - If shared message builders cause host/webview compatibility drift, restore the previous literal message contract and reintroduce shared typing in a smaller slice.
 - If Show Log dispatch extraction causes review-panel action regressions, restore the previous provider-local switch while preserving message validation tests.
 - If Compare Results dispatch extraction causes review-panel action regressions, restore the previous provider-local switch while preserving message validation tests.
+- If Compare Results state mapping extraction causes review-panel display or action lookup regressions, restore the previous provider-local mapping while preserving view-state tests.
 
 ## 0.0.38 Release Readiness
 
