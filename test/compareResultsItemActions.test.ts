@@ -10,12 +10,11 @@ import {
   getCompareResultItemWorktreeComparisonRef,
   openCompareResultItem
 } from '../src/compareResults/itemActions';
-import type { CompareResultItem } from '../src/compareResultsShared';
 import type { Change, Repository } from '../src/git';
-import { createChange, createRepository } from './fakes';
+import { createChange, createCompareResultItem } from './fakes';
 
 test('openCompareResultItem opens between-ref items against both refs', async () => {
-  const item = createItem({ leftRef: 'main', rightRef: 'feature' });
+  const item = createCompareResultItem({ leftRef: 'main', rightRef: 'feature' });
   const calls: Array<{ readonly repository: Repository; readonly change: Change; readonly leftRef: string; readonly rightRef: string }> = [];
 
   await openCompareResultItem(item, {
@@ -33,7 +32,7 @@ test('openCompareResultItem opens between-ref items against both refs', async ()
 });
 
 test('openCompareResultItem opens worktree items against the worktree ref', async () => {
-  const item = createItem({ worktreeRef: 'main' });
+  const item = createCompareResultItem({ worktreeRef: 'main' });
   const calls: Array<{ readonly repository: Repository; readonly change: Change; readonly ref: string }> = [];
 
   await openCompareResultItem(item, {
@@ -52,9 +51,13 @@ test('openCompareResultItem opens worktree items against the worktree ref', asyn
 
 test('compareCompareResultItemWithWorktree prefers worktree, right, then left refs', async () => {
   const refs = [
-    createItem({ worktreeRef: 'worktree-ref', rightRef: 'right', leftRef: 'left' }),
-    createItem({ rightRef: 'right', leftRef: 'left' }),
-    createItem({ leftRef: 'left' })
+    createCompareResultItem({
+      worktreeRef: 'worktree-ref',
+      rightRef: 'right',
+      leftRef: 'left'
+    }),
+    createCompareResultItem({ rightRef: 'right', leftRef: 'left' }),
+    createCompareResultItem({ leftRef: 'left' })
   ];
   const calls: string[] = [];
 
@@ -73,7 +76,7 @@ test('compareCompareResultItemWithWorktree prefers worktree, right, then left re
 });
 
 test('compareCompareResultItemWithWorktree ignores items without refs', async () => {
-  await compareCompareResultItemWithWorktree(createItem({}), {
+  await compareCompareResultItemWithWorktree(createCompareResultItem(), {
     async openChangeDiffBetweenRefs() {
       throw new Error('Unexpected ref diff.');
     },
@@ -84,7 +87,7 @@ test('compareCompareResultItemWithWorktree ignores items without refs', async ()
 });
 
 test('compare result item paths prefer rename targets', () => {
-  const item = createItem({
+  const item = createCompareResultItem({
     change: createChange({
       uriPath: '/workspace/repo/src/old-name.ts',
       renamePath: '/workspace/repo/src/new-name.ts'
@@ -97,8 +100,8 @@ test('compare result item paths prefer rename targets', () => {
 
 test('compare result item path lists preserve item order', () => {
   const items = [
-    createItem({ change: createChange({ uriPath: '/workspace/repo/src/a.ts' }) }),
-    createItem({ change: createChange({ uriPath: '/workspace/repo/src/b.ts' }) })
+    createCompareResultItem({ change: createChange({ uriPath: '/workspace/repo/src/a.ts' }) }),
+    createCompareResultItem({ change: createChange({ uriPath: '/workspace/repo/src/b.ts' }) })
   ];
 
   assert.equal(getCompareResultItemFileNameList(items), 'a.ts\nb.ts');
@@ -106,30 +109,21 @@ test('compare result item path lists preserve item order', () => {
 });
 
 test('getCompareResultItemWorktreeComparisonRef exposes the selected fallback ref', () => {
-  assert.equal(getCompareResultItemWorktreeComparisonRef(createItem({ worktreeRef: 'main', rightRef: 'right', leftRef: 'left' })), 'main');
-  assert.equal(getCompareResultItemWorktreeComparisonRef(createItem({ rightRef: 'right', leftRef: 'left' })), 'right');
-  assert.equal(getCompareResultItemWorktreeComparisonRef(createItem({ leftRef: 'left' })), 'left');
-  assert.equal(getCompareResultItemWorktreeComparisonRef(createItem({})), undefined);
+  assert.equal(
+    getCompareResultItemWorktreeComparisonRef(
+      createCompareResultItem({ worktreeRef: 'main', rightRef: 'right', leftRef: 'left' })
+    ),
+    'main'
+  );
+  assert.equal(
+    getCompareResultItemWorktreeComparisonRef(
+      createCompareResultItem({ rightRef: 'right', leftRef: 'left' })
+    ),
+    'right'
+  );
+  assert.equal(
+    getCompareResultItemWorktreeComparisonRef(createCompareResultItem({ leftRef: 'left' })),
+    'left'
+  );
+  assert.equal(getCompareResultItemWorktreeComparisonRef(createCompareResultItem()), undefined);
 });
-
-function createItem(overrides: {
-  readonly change?: Change;
-  readonly leftRef?: string;
-  readonly rightRef?: string;
-  readonly worktreeRef?: string;
-}): CompareResultItem {
-  const repository = createRepository({ root: '/workspace/repo' });
-  const change = overrides.change ?? createChange({ uriPath: '/workspace/repo/src/app.ts' });
-  return {
-    id: 'src/app.ts::Modified::main::feature::',
-    repository,
-    change,
-    label: 'src/app.ts',
-    description: 'src/app.ts',
-    detail: 'Modified',
-    leftRef: overrides.leftRef,
-    rightRef: overrides.rightRef,
-    worktreeRef: overrides.worktreeRef,
-    worktreeLabel: overrides.worktreeRef
-  };
-}

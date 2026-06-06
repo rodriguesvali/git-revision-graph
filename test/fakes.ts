@@ -1,4 +1,5 @@
 import { API, Branch, Change, FetchOptions, Ref, RefQuery, RefType, Remote, Repository, RepositoryState, Status } from '../src/git';
+import type { CompareResultItem } from '../src/compareResultsShared';
 import type { RevisionLogEntry } from '../src/revisionGraphTypes';
 
 type Listener<T> = (event: T) => void;
@@ -67,6 +68,25 @@ export function createRevisionLogEntry(
     parentHashes: overrides.parentHashes ?? [],
     references: overrides.references ?? [],
     shortStat: overrides.shortStat
+  };
+}
+
+export function createCompareResultItem(
+  overrides: Partial<CompareResultItem> = {}
+): CompareResultItem {
+  const repository = overrides.repository ?? createRepository({ root: '/workspace/repo' });
+  const change = overrides.change ?? createChange({ uriPath: '/workspace/repo/src/app.ts' });
+  return {
+    id: overrides.id ?? 'src/app.ts::Modified:::::',
+    repository,
+    change,
+    label: overrides.label ?? 'src/app.ts',
+    description: overrides.description ?? 'src/app.ts',
+    detail: overrides.detail ?? 'Modified',
+    leftRef: overrides.leftRef,
+    rightRef: overrides.rightRef,
+    worktreeRef: overrides.worktreeRef,
+    worktreeLabel: overrides.worktreeLabel
   };
 }
 
