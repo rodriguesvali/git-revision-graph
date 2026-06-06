@@ -43,6 +43,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-remote-name-normalization-code-quality.md`
 - `project-context/2.build/features/0.0.39-short-commit-hash-helper-code-quality.md`
 - `project-context/2.build/features/0.0.39-package-manifest-test-helper-code-quality.md`
+- `project-context/2.build/features/0.0.39-git-error-test-factory-code-quality.md`
 
 Candidate direction:
 
@@ -79,6 +80,7 @@ Candidate direction:
 - Improve ref action coding quality by sharing remote-name normalization across configured remotes and remote-ref fallbacks.
 - Improve commit label coding quality by sharing host-side short hash formatting.
 - Improve package manifest test coding quality by sharing manifest loading and typing in one helper.
+- Improve ref action test coding quality by sharing Git-like error fixtures.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -239,6 +241,9 @@ Automated verification completed:
 - Focused package manifest tests passed with 10 tests after sharing manifest loading and typing in the manifest test suite. This includes `npm run build` through the focused validation sequence.
 - `npm test` passed with 394 tests after sharing package manifest test loading. This includes `npm run build` through the test script.
 - `git diff --check` passed after sharing package manifest test loading and updating verification artifacts.
+- Focused ref action and error detail tests passed with 88 tests after sharing Git-like error fixtures. This includes `npm run build` through the focused validation sequence.
+- `npm test` passed with 394 tests after sharing Git-like error fixtures. This includes `npm run build` through the test script.
+- `git diff --check` passed after sharing Git-like error fixtures and updating verification artifacts.
 
 Automated verification pending:
 

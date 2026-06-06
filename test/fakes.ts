@@ -2,6 +2,13 @@ import { API, Branch, Change, FetchOptions, Ref, RefQuery, RefType, Remote, Repo
 import type { CompareResultItem } from '../src/compareResultsShared';
 import type { RevisionLogEntry } from '../src/revisionGraphTypes';
 
+export type TestGitError = Error & {
+  readonly stderr?: string;
+  readonly gitErrorCode?: string;
+  readonly exitCode?: number;
+  readonly code?: number;
+};
+
 type Listener<T> = (event: T) => void;
 
 export function createEventEmitter<T>(): {
@@ -88,6 +95,10 @@ export function createCompareResultItem(
     worktreeRef: overrides.worktreeRef,
     worktreeLabel: overrides.worktreeLabel
   };
+}
+
+export function createGitError(overrides: Omit<Partial<TestGitError>, 'name'> = {}): TestGitError {
+  return Object.assign(new Error(overrides.message ?? 'Failed to execute git'), overrides);
 }
 
 export function createRepository(options: {

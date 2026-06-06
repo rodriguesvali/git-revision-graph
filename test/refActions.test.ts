@@ -32,7 +32,7 @@ import {
   getRepositoryRemoteNames,
   isMissingUpstreamConfigurationError
 } from '../src/refActions/shared';
-import { createChange, createHead, createRef, createRepository } from './fakes';
+import { createChange, createGitError, createHead, createRef, createRepository } from './fakes';
 
 function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly services: RefActionServices;
@@ -939,7 +939,7 @@ test('createTagFromResolvedReference surfaces tag creation failures', async () =
   });
   const harness = createServices();
   harness.services.referenceManager.createTag = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: "fatal: tag 'v1.0.0' already exists"
     });
   };
@@ -1092,7 +1092,7 @@ test('pushTagResolvedReference surfaces push failures', async () => {
   });
   const harness = createServices();
   harness.services.referenceManager.pushTag = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: 'remote rejected'
     });
   };
@@ -1114,7 +1114,7 @@ test('pushTagResolvedReference opens Source Control when Git authentication need
   });
   const harness = createServices();
   harness.services.referenceManager.pushTag = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
       exitCode: 128
     });
@@ -1278,7 +1278,7 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
   });
   const harness = createServices();
   harness.services.referenceManager.deleteRemoteTag = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: 'remote ref does not exist'
     });
   };
@@ -1459,7 +1459,7 @@ test('publishLocalBranchResolvedReference opens Source Control when Git authenti
   });
   const harness = createServices();
   repository.push = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
       exitCode: 128
     });
@@ -1633,7 +1633,7 @@ test('syncCurrentHeadWithUpstream opens Source Control when pull leaves conflict
   });
   repository.pull = async () => {
     mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       gitErrorCode: 'Conflict',
       stderr: 'Pull stopped because there are merge conflicts.'
     });
@@ -1694,7 +1694,7 @@ test('mergeResolvedReference updates graph state without opening Source Control 
   });
   repository.merge = async () => {
     mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       gitErrorCode: 'Conflict',
       stderr: 'Automatic merge failed; fix conflicts and then commit the result.'
     });
@@ -1761,7 +1761,7 @@ test('abortCurrentMerge keeps conflicts visible when abort fails', async () => {
   });
   const harness = createServices();
   harness.services.referenceManager.abortMerge = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: 'fatal: There is no merge to abort'
     });
   };
@@ -2050,7 +2050,7 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
   repository.deleteBranch = async (name: string, force?: boolean): Promise<void> => {
     repository.calls.deleteBranch.push({ name, force });
     if (!force) {
-      throw Object.assign(new Error('Failed to execute git'), {
+      throw createGitError({
         gitErrorCode: 'BranchNotFullyMerged',
         stderr: "error: the branch 'feature/demo' is not fully merged"
       });
@@ -2085,7 +2085,7 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
 test('deleteResolvedReference surfaces git stderr details for local branch failures', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   repository.deleteBranch = async () => {
-    throw Object.assign(new Error('Failed to execute git'), {
+    throw createGitError({
       stderr: "error: Cannot delete branch 'teste01' checked out at '/tmp/worktree'",
       gitErrorCode: 'WorktreeBranchAlreadyUsed',
       exitCode: 1
