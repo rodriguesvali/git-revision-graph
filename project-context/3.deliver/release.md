@@ -34,6 +34,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-show-log-reset-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-compare-ui-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-shared-clipboard-writer-code-quality.md`
+- `project-context/2.build/features/0.0.39-change-target-path-code-quality.md`
 
 Candidate direction:
 
@@ -61,6 +62,7 @@ Candidate direction:
 - Harden Show Log compare architecture by moving commit-compare UI adapter setup out of the editor panel provider.
 - Harden Show Log clipboard architecture by moving selected file/commit copy and clipboard access out of the editor panel provider.
 - Improve clipboard action coding quality by sharing the default VS Code clipboard writer instead of duplicating fallback adapters.
+- Improve renamed-file path coding quality by reusing the shared change target URI helper across Compare Results and Show Log helpers.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -194,6 +196,9 @@ Automated verification completed:
 - Focused Compare Results clipboard, Show Log clipboard, and message handler tests passed with 12 tests after consolidating the default VS Code clipboard writer. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 385 tests after consolidating the default VS Code clipboard writer. This includes `npm run build` through the test script.
 - `git diff --check` passed after consolidating the default VS Code clipboard writer and updating verification artifacts.
+- Focused Compare Results item action, Compare Results view-state, Compare Results clipboard, Show Log file action, and Show Log clipboard tests passed with 24 tests after reusing the shared change target URI helper. This includes `npm run build` through the focused validation sequence.
+- `npm test` passed with 385 tests after reusing the shared change target URI helper. This includes `npm run build` through the test script.
+- `git diff --check` passed after reusing the shared change target URI helper and updating verification artifacts.
 
 Automated verification pending:
 

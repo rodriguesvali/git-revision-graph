@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 
-import { getRepositoryRelativeUriPath } from '../changePresentation';
+import { getRepositoryRelativeUriPath, getTargetUri } from '../changePresentation';
 import {
   buildCompareResultItems,
   buildCompareResultsMessage,
@@ -72,7 +72,7 @@ export function toCompareResultsWebviewItem(
     originalPath: isRename ? originalPath : undefined,
     name: path.basename(item.label),
     directory: path.dirname(item.label) === '.' ? '' : path.dirname(item.label),
-    fullPath: item.change.renameUri?.fsPath ?? item.change.uri.fsPath,
+    fullPath: getTargetUri(item.change).fsPath,
     status: item.detail,
     leftRef: item.leftRef,
     rightRef: item.rightRef,

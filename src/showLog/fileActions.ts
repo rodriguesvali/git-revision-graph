@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 
+import { getTargetUri } from '../changePresentation';
 import type { Change, Repository } from '../git';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
 
@@ -53,15 +54,11 @@ export function getShowLogFileChangeParentHash(
 }
 
 export function getShowLogChangeFileName(change: Change): string {
-  return path.basename(getShowLogChangeTargetPath(change));
+  return path.basename(getShowLogChangeFullPath(change));
 }
 
 export function getShowLogChangeFullPath(change: Change): string {
-  return getShowLogChangeTargetPath(change);
-}
-
-function getShowLogChangeTargetPath(change: Change): string {
-  return change.renameUri?.fsPath ?? change.uri.fsPath;
+  return getTargetUri(change).fsPath;
 }
 
 async function getDefaultShowLogFileDiffServices(): Promise<ShowLogFileDiffServices> {

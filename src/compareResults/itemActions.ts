@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 
+import { getTargetUri } from '../changePresentation';
 import type { Change, Repository } from '../git';
 import type { CompareResultItem } from '../compareResultsShared';
 
@@ -46,11 +47,11 @@ export async function compareCompareResultItemWithWorktree(
 }
 
 export function getCompareResultItemFileName(item: CompareResultItem): string {
-  return path.basename(getCompareResultItemTargetPath(item));
+  return path.basename(getCompareResultItemFullPath(item));
 }
 
 export function getCompareResultItemFullPath(item: CompareResultItem): string {
-  return getCompareResultItemTargetPath(item);
+  return getTargetUri(item.change).fsPath;
 }
 
 export function getCompareResultItemFileNameList(items: readonly CompareResultItem[]): string {
@@ -65,10 +66,6 @@ export function getCompareResultItemWorktreeComparisonRef(
   item: CompareResultItem
 ): string | undefined {
   return item.worktreeRef ?? item.rightRef ?? item.leftRef;
-}
-
-function getCompareResultItemTargetPath(item: CompareResultItem): string {
-  return item.change.renameUri?.fsPath ?? item.change.uri.fsPath;
 }
 
 async function getDefaultCompareResultsItemDiffServices(): Promise<CompareResultsItemDiffServices> {
