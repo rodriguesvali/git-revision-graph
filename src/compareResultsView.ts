@@ -16,10 +16,12 @@ import {
 import { restoreCompareResultItemToWorktree } from './compareResults/restoreAction';
 import {
   compareCompareResultItemWithWorktree,
-  getCompareResultItemFileNameList,
-  getCompareResultItemFullPathList,
   openCompareResultItem
 } from './compareResults/itemActions';
+import {
+  copyCompareResultFileNames,
+  copyCompareResultFullPaths
+} from './compareResults/clipboardActions';
 import {
   createCompareResultsWebviewState,
   getCompareResultItems
@@ -152,34 +154,15 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async copyFileNames(itemIds: readonly string[]): Promise<void> {
-    const items = this.findItems(itemIds);
-    if (items.length === 0) {
-      return;
-    }
-
-    await vscode.env.clipboard.writeText(
-      getCompareResultItemFileNameList(items)
-    );
+    await copyCompareResultFileNames(this.state, itemIds);
   }
 
   private async copyFullPaths(itemIds: readonly string[]): Promise<void> {
-    const items = this.findItems(itemIds);
-    if (items.length === 0) {
-      return;
-    }
-
-    await vscode.env.clipboard.writeText(
-      getCompareResultItemFullPathList(items)
-    );
+    await copyCompareResultFullPaths(this.state, itemIds);
   }
 
   private findItem(itemId: string): CompareResultItem | undefined {
     return getCompareResultItems(this.state).find((item) => item.id === itemId);
-  }
-
-  private findItems(itemIds: readonly string[]): CompareResultItem[] {
-    const selectedIds = new Set(itemIds);
-    return getCompareResultItems(this.state).filter((item) => selectedIds.has(item.id));
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {

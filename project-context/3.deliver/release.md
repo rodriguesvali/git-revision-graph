@@ -26,6 +26,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-layout-cache-persistence-hardening.md`
 - `project-context/2.build/features/0.0.39-webview-security-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-item-action-hardening.md`
+- `project-context/2.build/features/0.0.39-compare-results-clipboard-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-restore-action-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-worktree-refresh-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-remote-commit-action-hardening.md`
@@ -50,6 +51,7 @@ Candidate direction:
 - Harden activation architecture by moving revision graph layout cache persistence, debounce, and workspace-state recovery out of the extension entrypoint.
 - Harden webview security boundaries by moving nonce and CSP construction out of revision graph renderer internals and into a shared host-facing helper.
 - Harden Compare Results panel architecture by moving item diff and clipboard action policy out of the editor panel provider.
+- Harden Compare Results clipboard architecture by moving selected-item copy and clipboard access out of the editor panel provider.
 - Harden Compare Results restore architecture by moving destructive restore confirmation, execution, and error translation out of the editor panel provider.
 - Harden Compare Results post-restore architecture by moving worktree diff refresh loading out of the editor panel provider.
 - Harden Show Log remote commit architecture by moving GitHub URL opening and no-remote fallback behavior out of the editor panel provider.
@@ -179,6 +181,9 @@ Automated verification completed:
 - Focused Compare Results worktree refresh, shared-state, restore action, message handler, and webview tests passed with 18 tests after moving post-restore worktree diff refresh loading out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 378 tests after moving Compare Results post-restore worktree diff refresh loading out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Compare Results post-restore worktree diff refresh loading out of the provider and updating verification artifacts.
+- Focused Compare Results clipboard, item action, message handler, and webview tests passed with 14 tests after moving selected-item copy and clipboard access out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 381 tests after moving Compare Results selected-item copy and clipboard access out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Compare Results selected-item copy and clipboard access out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
@@ -219,6 +224,7 @@ Post-release monitoring focus:
 - Reports of revision graph layout cache not restoring across extension sessions or writing too often after cache persistence extraction.
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
 - Reports of Compare Results file actions using the wrong diff ref, copied filename, or copied full path after item action helper extraction.
+- Reports of Compare Results copy file name or copy full path actions writing stale, missing, or incorrectly ordered values after clipboard boundary extraction.
 - Reports of Compare Results restore confirmation, restore execution, or post-restore refresh drifting after restore action helper extraction.
 - Reports of Compare Results post-restore refresh not closing when aligned or not retaining remaining worktree differences after worktree refresh extraction.
 - Reports of Show Log GitHub commit links not opening or no-GitHub-remote feedback drifting after remote commit action extraction.
@@ -242,6 +248,7 @@ Rollback:
 - If layout cache persistence extraction causes cache restore or save regressions, restore the previous activation-local persistence flow while preserving focused cache persistence tests.
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.
 - If Compare Results item action extraction causes diff or clipboard regressions, restore the previous provider-local item action logic while preserving item action tests.
+- If Compare Results clipboard boundary extraction causes copy regressions, restore the previous provider-local clipboard writes while preserving clipboard action tests.
 - If Compare Results restore action extraction causes restore or refresh regressions, restore the previous provider-local restore logic while preserving restore action tests.
 - If Compare Results worktree refresh extraction causes post-restore refresh regressions, restore the previous provider-local diff refresh logic while preserving worktree refresh tests.
 - If Show Log remote commit action extraction causes GitHub link regressions, restore the previous provider-local external-open logic while preserving remote commit action tests.
