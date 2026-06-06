@@ -543,15 +543,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       this.state.entries,
       baseCommitHash,
       compareCommitHash,
-      this.compareResultsPresenter,
-      {
-        showInformationMessage(message) {
-          void vscode.window.showInformationMessage(message);
-        },
-        async showErrorMessage(message) {
-          await vscode.window.showErrorMessage(message);
-        }
-      }
+      this.compareResultsPresenter
     );
   }
 
@@ -564,15 +556,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       this.state.repository,
       this.state.entries,
       commitHash,
-      this.compareResultsPresenter,
-      {
-        showInformationMessage(message) {
-          void vscode.window.showInformationMessage(message);
-        },
-        async showErrorMessage(message) {
-          await vscode.window.showErrorMessage(message);
-        }
-      }
+      this.compareResultsPresenter
     );
   }
 

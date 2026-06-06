@@ -14,7 +14,7 @@ export async function compareLoadedShowLogCommits(
   baseCommitHash: string,
   compareCommitHash: string,
   compareResultsPresenter: CompareResultsPresenter,
-  ui: ShowLogCommitCompareUi
+  ui?: ShowLogCommitCompareUi
 ): Promise<void> {
   const base = entries.find((entry) => entry.hash === baseCommitHash);
   const compare = entries.find((entry) => entry.hash === compareCommitHash);
@@ -25,7 +25,8 @@ export async function compareLoadedShowLogCommits(
   try {
     const changes = await repository.diffBetween(base.hash, compare.hash);
     if (changes.length === 0) {
-      ui.showInformationMessage(`No differences found between ${base.shortHash} and ${compare.shortHash}.`);
+      const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+      compareUi.showInformationMessage(`No differences found between ${base.shortHash} and ${compare.shortHash}.`);
       return;
     }
 
@@ -37,7 +38,8 @@ export async function compareLoadedShowLogCommits(
       { source: 'showLog' }
     );
   } catch (error) {
-    await ui.showErrorMessage(toOperationError('Could not compare the selected commits.', error));
+    const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+    await compareUi.showErrorMessage(toOperationError('Could not compare the selected commits.', error));
   }
 }
 
@@ -46,7 +48,7 @@ export async function compareLoadedShowLogCommitWithWorktree(
   entries: readonly RevisionLogEntry[],
   commitHash: string,
   compareResultsPresenter: CompareResultsPresenter,
-  ui: ShowLogCommitCompareUi
+  ui?: ShowLogCommitCompareUi
 ): Promise<void> {
   const entry = entries.find((item) => item.hash === commitHash);
   if (!entry) {
@@ -56,7 +58,8 @@ export async function compareLoadedShowLogCommitWithWorktree(
   try {
     const changes = await repository.diffWith(entry.hash);
     if (changes.length === 0) {
-      ui.showInformationMessage(`The worktree is already aligned with ${entry.shortHash}.`);
+      const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+      compareUi.showInformationMessage(`The worktree is already aligned with ${entry.shortHash}.`);
       return;
     }
 
@@ -67,6 +70,19 @@ export async function compareLoadedShowLogCommitWithWorktree(
       { source: 'showLog' }
     );
   } catch (error) {
-    await ui.showErrorMessage(toOperationError('Could not compare the selected commit with the worktree.', error));
+    const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+    await compareUi.showErrorMessage(toOperationError('Could not compare the selected commit with the worktree.', error));
   }
+}
+
+async function getDefaultShowLogCommitCompareUi(): Promise<ShowLogCommitCompareUi> {
+  const vscode = await import('vscode');
+  return {
+    showInformationMessage(message) {
+      void vscode.window.showInformationMessage(message);
+    },
+    async showErrorMessage(message) {
+      await vscode.window.showErrorMessage(message);
+    }
+  };
 }

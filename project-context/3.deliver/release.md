@@ -29,6 +29,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-compare-results-restore-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-remote-commit-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-reset-action-hardening.md`
+- `project-context/2.build/features/0.0.39-show-log-compare-ui-boundary-hardening.md`
 
 Candidate direction:
 
@@ -51,6 +52,7 @@ Candidate direction:
 - Harden Compare Results restore architecture by moving destructive restore confirmation, execution, and error translation out of the editor panel provider.
 - Harden Show Log remote commit architecture by moving GitHub URL opening and no-remote fallback behavior out of the editor panel provider.
 - Harden Show Log reset architecture by moving reset-to-commit workflow setup out of the editor panel provider.
+- Harden Show Log compare architecture by moving commit-compare UI adapter setup out of the editor panel provider.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -169,10 +171,12 @@ Automated verification completed:
 - Focused Show Log reset action, message handler, state lookup, and webview tests passed with 13 tests after moving reset-to-commit workflow setup out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 373 tests after moving Show Log reset-to-commit workflow setup out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Show Log reset-to-commit workflow setup out of the provider and updating verification artifacts.
+- Focused Show Log commit compare, message handler, and webview tests passed with 11 tests after moving commit-compare UI adapter setup out of the provider. This includes `npm run build` through the focused validation command.
 
 Automated verification pending:
 
-- None for the current implemented `0.0.39` slices. Re-run `npm run build`, `npm test`, and `git diff --check` before release preparation.
+- `npm test` for the Show Log compare UI boundary extraction.
+- `git diff --check` after the Show Log compare UI boundary extraction and verification artifact updates.
 
 Manual validation pending:
 
@@ -212,6 +216,7 @@ Post-release monitoring focus:
 - Reports of Compare Results restore confirmation, restore execution, or post-restore refresh drifting after restore action helper extraction.
 - Reports of Show Log GitHub commit links not opening or no-GitHub-remote feedback drifting after remote commit action extraction.
 - Reports of Show Log reset-to-commit prompts, commit labels, or post-reset refresh behavior drifting after reset action extraction.
+- Reports of Show Log commit compare no-difference messages or compare-error feedback drifting after compare UI boundary extraction.
 
 Rollback:
 
@@ -233,6 +238,7 @@ Rollback:
 - If Compare Results restore action extraction causes restore or refresh regressions, restore the previous provider-local restore logic while preserving restore action tests.
 - If Show Log remote commit action extraction causes GitHub link regressions, restore the previous provider-local external-open logic while preserving remote commit action tests.
 - If Show Log reset action extraction causes reset prompt or refresh regressions, restore the previous provider-local reset setup while preserving reset action tests.
+- If Show Log compare UI boundary extraction causes compare feedback regressions, restore the previous provider-local UI adapter setup while preserving compare helper tests.
 
 ## 0.0.38 Release Readiness
 
