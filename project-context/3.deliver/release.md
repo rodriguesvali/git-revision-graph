@@ -14,6 +14,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-ref-actions-cohesion.md`
 - `project-context/2.build/features/0.0.39-revision-graph-backend-cohesion.md`
 - `project-context/2.build/features/0.0.39-webview-message-contract-cohesion.md`
+- `project-context/2.build/features/0.0.39-show-log-message-cohesion.md`
 
 Candidate direction:
 
@@ -21,6 +22,7 @@ Candidate direction:
 - Improve cohesion around ref workflows by splitting broad action families while keeping command-facing APIs stable.
 - Improve architectural cohesion around `RevisionGraphBackend` if a slice needs narrower graph snapshot, log, diff/detail, or ancestry ports.
 - Introduce shared host/webview message builders or constants before renaming or changing message payloads.
+- Reduce review-panel coupling by extracting Show Log message dispatch from panel lifecycle when the slice can preserve existing behavior.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -94,6 +96,9 @@ Automated verification completed:
 - Focused revision graph webview and webview message validation tests passed with 30 tests after the second webview message contract cohesion slice added webview-to-host message builders.
 - `npm test` passed with 318 tests after the second webview message contract cohesion slice added webview-to-host message builders. This includes `npm run build` through the test script.
 - `git diff --check` passed after the second webview message contract cohesion slice added webview-to-host message builders and updated verification artifacts.
+- Focused Show Log message handler, webview message validation, and Show Log webview tests passed with 11 tests after extracting Show Log message dispatch from the panel provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 321 tests after extracting Show Log message dispatch from the panel provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after extracting Show Log message dispatch and updating verification artifacts.
 
 Automated verification pending:
 
@@ -122,12 +127,14 @@ Post-release monitoring focus:
 - Reports of command, graph, Compare Results, or Show Log workflows drifting after ref action splits.
 - Reports of stale graph, log, diff, or commit detail data after backend port changes.
 - Reports of host/webview message validation rejecting valid shipped actions.
+- Reports of Show Log panel actions not routing after message dispatch extraction.
 
 Rollback:
 
 - If a behavior-preserving extraction causes shipped workflow regressions, revert the narrow extraction while preserving unrelated tests and documentation.
 - If backend port extraction changes cancellation or Git command timing, restore the previous shared backend path for the affected operation.
 - If shared message builders cause host/webview compatibility drift, restore the previous literal message contract and reintroduce shared typing in a smaller slice.
+- If Show Log dispatch extraction causes review-panel action regressions, restore the previous provider-local switch while preserving message validation tests.
 
 ## 0.0.38 Release Readiness
 

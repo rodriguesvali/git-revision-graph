@@ -14,6 +14,10 @@ import {
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
+import {
+  dispatchShowLogWebviewMessage,
+  type ShowLogMessageHandlers
+} from './showLog/messageHandler';
 import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
 import {
   addShowLogCachedChanges,
@@ -22,7 +26,6 @@ import {
   ShowLogState
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
-import { validateShowLogWebviewMessage } from './showLog/messageValidation';
 
 const SHOW_LOG_PAGE_SIZE = 50;
 const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
@@ -39,6 +42,25 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private expandRequestId = 0;
   private sourceTokenSeed = 0;
   private activeLogAbortController: AbortController | undefined;
+  private readonly messageHandlers: ShowLogMessageHandlers = {
+    ready: () => {
+      this.postState();
+    },
+    toggleCommit: (commitHash) => this.toggleCommit(commitHash),
+    toggleShowAllBranches: (value) => this.toggleShowAllBranches(value),
+    setFilterText: (value, sourceToken) => this.setFilterText(value, sourceToken),
+    loadMore: () => this.loadMore(),
+    openFile: (commitHash, changeId) => this.openFileChange(commitHash, changeId),
+    compareWithWorktree: (commitHash, changeId) => this.compareFileChangeWithWorktree(commitHash, changeId),
+    copyFileName: (commitHash, changeId) => this.copyFileName(commitHash, changeId),
+    copyFullPath: (commitHash, changeId) => this.copyFullPath(commitHash, changeId),
+    copyCommitHash: (commitHash) => this.copyCommitHash(commitHash),
+    openCommitOnGitHub: (commitHash) => this.openCommitOnGitHub(commitHash),
+    openCommitDetails: (commitHash) => this.openCommitDetails(commitHash),
+    compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
+    compareCommitWithWorktree: (commitHash) => this.compareCommitWithWorktree(commitHash),
+    resetToCommit: (commitHash) => this.resetToCommit(commitHash)
+  };
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -128,58 +150,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
-    const message = validateShowLogWebviewMessage(rawMessage);
-    if (!message) {
-      return;
-    }
-
-    switch (message.type) {
-      case 'ready':
-        this.postState();
-        return;
-      case 'toggleCommit':
-        await this.toggleCommit(message.commitHash);
-        return;
-      case 'toggleShowAllBranches':
-        await this.toggleShowAllBranches(message.value);
-        return;
-      case 'setFilterText':
-        await this.setFilterText(message.value, message.sourceToken);
-        return;
-      case 'loadMore':
-        await this.loadMore();
-        return;
-      case 'openFile':
-        await this.openFileChange(message.commitHash, message.changeId);
-        return;
-      case 'compareWithWorktree':
-        await this.compareFileChangeWithWorktree(message.commitHash, message.changeId);
-        return;
-      case 'copyFileName':
-        await this.copyFileName(message.commitHash, message.changeId);
-        return;
-      case 'copyFullPath':
-        await this.copyFullPath(message.commitHash, message.changeId);
-        return;
-      case 'copyCommitHash':
-        await this.copyCommitHash(message.commitHash);
-        return;
-      case 'openCommitOnGitHub':
-        await this.openCommitOnGitHub(message.commitHash);
-        return;
-      case 'openCommitDetails':
-        await this.openCommitDetails(message.commitHash);
-        return;
-      case 'compareCommits':
-        await this.compareCommits(message.baseCommitHash, message.compareCommitHash);
-        return;
-      case 'compareCommitWithWorktree':
-        await this.compareCommitWithWorktree(message.commitHash);
-        return;
-      case 'resetToCommit':
-        await this.resetToCommit(message.commitHash);
-        return;
-    }
+    await dispatchShowLogWebviewMessage(rawMessage, this.messageHandlers);
   }
 
   private async toggleCommit(commitHash: string): Promise<void> {
