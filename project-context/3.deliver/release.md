@@ -26,6 +26,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-layout-cache-persistence-hardening.md`
 - `project-context/2.build/features/0.0.39-webview-security-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-item-action-hardening.md`
+- `project-context/2.build/features/0.0.39-compare-results-restore-action-hardening.md`
 
 Candidate direction:
 
@@ -45,6 +46,7 @@ Candidate direction:
 - Harden activation architecture by moving revision graph layout cache persistence, debounce, and workspace-state recovery out of the extension entrypoint.
 - Harden webview security boundaries by moving nonce and CSP construction out of revision graph renderer internals and into a shared host-facing helper.
 - Harden Compare Results panel architecture by moving item diff and clipboard action policy out of the editor panel provider.
+- Harden Compare Results restore architecture by moving destructive restore confirmation, execution, and error translation out of the editor panel provider.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -154,6 +156,9 @@ Automated verification completed:
 - Focused Compare Results item action, view-state, message handler, and webview tests passed with 15 tests after moving item diff and clipboard action policy out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 360 tests after moving Compare Results item diff and clipboard action policy out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Compare Results item action policy out of the provider and updating verification artifacts.
+- Focused Compare Results restore action, item action, view-state, message handler, and webview tests passed with 21 tests after moving restore confirmation and execution policy out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 366 tests after moving Compare Results restore confirmation and execution policy out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Compare Results restore action policy out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
@@ -194,6 +199,7 @@ Post-release monitoring focus:
 - Reports of revision graph layout cache not restoring across extension sessions or writing too often after cache persistence extraction.
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
 - Reports of Compare Results file actions using the wrong diff ref, copied filename, or copied full path after item action helper extraction.
+- Reports of Compare Results restore confirmation, restore execution, or post-restore refresh drifting after restore action helper extraction.
 
 Rollback:
 
@@ -212,6 +218,7 @@ Rollback:
 - If layout cache persistence extraction causes cache restore or save regressions, restore the previous activation-local persistence flow while preserving focused cache persistence tests.
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.
 - If Compare Results item action extraction causes diff or clipboard regressions, restore the previous provider-local item action logic while preserving item action tests.
+- If Compare Results restore action extraction causes restore or refresh regressions, restore the previous provider-local restore logic while preserving restore action tests.
 
 ## 0.0.38 Release Readiness
 

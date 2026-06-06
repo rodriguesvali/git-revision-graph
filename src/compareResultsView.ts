@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 
-import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
 import {
   applyCompareResultsWorktreeRefresh,
@@ -15,6 +14,7 @@ import {
   dispatchCompareResultsWebviewMessage,
   type CompareResultsMessageHandlers
 } from './compareResults/messageHandler';
+import { restoreCompareResultItemToWorktree } from './compareResults/restoreAction';
 import {
   compareCompareResultItemWithWorktree,
   getCompareResultItemFileNameList,
@@ -26,9 +26,6 @@ import {
   getCompareResultItems
 } from './compareResults/viewState';
 import type { RefSelection } from './refActions';
-import {
-  restoreWorktreeChangeFromRef
-} from './workbenchRefActionServices';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
@@ -105,28 +102,8 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async revertToItem(item: CompareResultItem): Promise<void> {
-    if (!item.worktreeRef) {
-      return;
-    }
-
-    const restoreSource = item.worktreeLabel ?? item.worktreeRef;
-    const confirmationAction = 'Restore File';
-    const confirmation = await vscode.window.showWarningMessage(
-      `Restore ${item.label} in the worktree from ${restoreSource}?`,
-      { modal: true },
-      confirmationAction
-    );
-    if (confirmation !== confirmationAction) {
-      return;
-    }
-
-    try {
-      await restoreWorktreeChangeFromRef(item.repository, item.change, item.worktreeRef);
+    if (await restoreCompareResultItemToWorktree(item) && item.worktreeRef) {
       await this.refreshWorktreeComparison(item.repository, item.worktreeRef);
-    } catch (error) {
-      await vscode.window.showErrorMessage(
-        toOperationError('Could not revert the file to the selected revision.', error)
-      );
     }
   }
 
