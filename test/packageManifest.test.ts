@@ -30,6 +30,34 @@ type ViewContainerContribution = {
 
 type ViewContributions = Record<string, ViewContribution[] | undefined>;
 
+type PackageManifest = {
+  readonly icon: string;
+  readonly activationEvents?: string[];
+  readonly contributes: {
+    readonly commands: Array<{
+      readonly command: string;
+      readonly title?: string;
+      readonly icon?: CommandIconContribution;
+    }>;
+    readonly configuration?: {
+      readonly properties?: Record<string, {
+        readonly type?: string;
+        readonly default?: unknown;
+        readonly minimum?: unknown;
+        readonly maximum?: unknown;
+      }>;
+    };
+    readonly menus: {
+      readonly ['scm/title']?: MenuContribution[];
+      readonly ['view/title']: MenuContribution[];
+    };
+    readonly views?: ViewContributions;
+    readonly viewsContainers?: {
+      readonly activitybar?: ViewContainerContribution[];
+    };
+  };
+};
+
 const collectFileIconPaths = (icon?: CommandIconContribution): string[] => {
   if (!icon) {
     return [];
@@ -45,16 +73,12 @@ const collectFileIconPaths = (icon?: CommandIconContribution): string[] => {
 const collectViews = (views: ViewContributions | undefined): ViewContribution[] =>
   Object.values(views ?? {}).flatMap((items) => items ?? []);
 
+function loadPackageManifest(): PackageManifest {
+  return JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as PackageManifest;
+}
+
 test('package manifest keeps secondary editor panels hidden from Command Palette contributions', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly commands: Array<{
-        readonly command: string;
-        readonly title?: string;
-        readonly icon?: CommandIconContribution;
-      }>;
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const commandIds = new Set(manifest.contributes.commands.map((command) => command.command));
   assert.equal(commandIds.has('gitRefs.hideCompareResults'), false);
@@ -62,14 +86,7 @@ test('package manifest keeps secondary editor panels hidden from Command Palette
 });
 
 test('package manifest does not contribute compare results as an Activity Bar webview', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly views?: ViewContributions;
-      readonly menus: {
-        readonly ['view/title']: MenuContribution[];
-      };
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const compareResultsView = collectViews(manifest.contributes.views).find(
     (view) => view.id === 'gitRefs.compareResultsView'
@@ -89,11 +106,7 @@ test('package manifest does not contribute compare results as an Activity Bar we
 });
 
 test('package manifest does not contribute duplicate graph side-bar views', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly views: ViewContributions;
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const graphView = collectViews(manifest.contributes.views).find((view) => view.id === 'gitRefs.revisionGraphView');
   const companionView = manifest.contributes.views?.scm?.find(
@@ -104,13 +117,7 @@ test('package manifest does not contribute duplicate graph side-bar views', () =
 });
 
 test('package manifest does not contribute Activity Bar review containers', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly viewsContainers?: {
-        readonly activitybar?: ViewContainerContribution[];
-      };
-    };
-  };
+  const manifest = loadPackageManifest();
 
   assert.equal(manifest.contributes.viewsContainers?.activitybar?.some(
     (container) => container.id === 'gitRefsCompare' || container.id === 'gitRefsShowLogs'
@@ -118,22 +125,7 @@ test('package manifest does not contribute Activity Bar review containers', () =
 });
 
 test('package manifest routes Source Control graph access to the editor panel', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly views?: {
-        readonly scm?: Array<{ readonly id: string }>;
-      };
-      readonly menus: {
-        readonly ['scm/title']?: MenuContribution[];
-        readonly ['view/title']: MenuContribution[];
-      };
-      readonly commands: Array<{
-        readonly command: string;
-        readonly title?: string;
-        readonly icon?: CommandIconContribution;
-      }>;
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const commandIds = new Set(manifest.contributes.commands.map((command) => command.command));
   assert.equal(commandIds.has('gitRefs.openRevisionGraphEditor'), true);
@@ -173,23 +165,13 @@ test('package manifest routes Source Control graph access to the editor panel', 
 });
 
 test('package manifest activates on startup so graph visibility context is initialized', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly activationEvents?: string[];
-  };
+  const manifest = loadPackageManifest();
 
   assert.ok(manifest.activationEvents?.includes('onStartupFinished'));
 });
 
 test('package manifest does not contribute show log as an Activity Bar webview', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly views?: ViewContributions;
-      readonly menus: {
-        readonly ['view/title']: MenuContribution[];
-      };
-      readonly commands: Array<{ readonly command: string }>;
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const showLogView = collectViews(manifest.contributes.views).find((view) => view.id === 'gitRefs.showLogView');
   assert.equal(showLogView, undefined);
@@ -203,21 +185,11 @@ test('package manifest does not contribute show log as an Activity Bar webview',
 });
 
 test('package manifest icon paths point to files that exist', () => {
-  const manifestPath = path.join(process.cwd(), 'package.json');
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-    readonly icon: string;
-    readonly contributes: {
-      readonly viewsContainers: {
-        readonly activitybar?: Array<{ readonly icon: string }>;
-      };
-      readonly views?: ViewContributions;
-      readonly commands: Array<{ readonly icon?: CommandIconContribution }>;
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const referencedIcons = [
     manifest.icon,
-    ...(manifest.contributes.viewsContainers?.activitybar ?? []).map((item) => item.icon),
+    ...(manifest.contributes.viewsContainers?.activitybar ?? []).flatMap((item) => item.icon ? [item.icon] : []),
     ...collectViews(manifest.contributes.views).flatMap((item) => (item.icon ? [item.icon] : [])),
     ...manifest.contributes.commands.flatMap((command) => collectFileIconPaths(command.icon))
   ];
@@ -228,13 +200,7 @@ test('package manifest icon paths point to files that exist', () => {
 });
 
 test('package manifest contributes opt-in graph loading diagnostics', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly configuration?: {
-        readonly properties?: Record<string, { readonly type?: string; readonly default?: unknown }>;
-      };
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const traceLoading = manifest.contributes.configuration?.properties?.['gitRevisionGraph.traceLoading'];
 
@@ -243,18 +209,7 @@ test('package manifest contributes opt-in graph loading diagnostics', () => {
 });
 
 test('package manifest contributes graph git command timeout configuration', () => {
-  const manifest = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
-    readonly contributes: {
-      readonly configuration?: {
-        readonly properties?: Record<string, {
-          readonly type?: string;
-          readonly default?: unknown;
-          readonly minimum?: unknown;
-          readonly maximum?: unknown;
-        }>;
-      };
-    };
-  };
+  const manifest = loadPackageManifest();
 
   const timeout = manifest.contributes.configuration?.properties?.['gitRevisionGraph.graphCommandTimeoutMs'];
 
