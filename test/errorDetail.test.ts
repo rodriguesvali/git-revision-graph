@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  hasGitExitCode,
   isMissingUpstreamConfigurationError,
   isNonInteractiveGitAuthenticationError,
   toErrorDetail,
@@ -25,6 +26,13 @@ test('toOperationError prefixes normalized error details', () => {
     toOperationError('Could not run Git.', ' command failed\n'),
     'Could not run Git. command failed'
   );
+});
+
+test('hasGitExitCode recognizes Git exit code fields', () => {
+  assert.equal(hasGitExitCode({ exitCode: 1 }, 1), true);
+  assert.equal(hasGitExitCode({ code: 128 }, 128), true);
+  assert.equal(hasGitExitCode({ code: '128' }, 128), false);
+  assert.equal(hasGitExitCode(new Error('Other'), 1), false);
 });
 
 test('isNonInteractiveGitAuthenticationError recognizes disabled credential prompts', () => {

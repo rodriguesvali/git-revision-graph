@@ -1,4 +1,5 @@
 import { Repository } from '../../git';
+import { hasGitExitCode } from '../../errorDetail';
 import { execGit, execGitWithResult } from '../../gitExec';
 import { RevisionGraphProjectionOptions } from '../../revisionGraphData';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
@@ -37,11 +38,7 @@ export async function isRefAncestorOfHead(
     );
     return true;
   } catch (error) {
-    const code = typeof error === 'object' && error !== null && 'code' in error
-      ? (error as { code?: unknown }).code
-      : undefined;
-
-    if (code === 1) {
+    if (hasGitExitCode(error, 1)) {
       return false;
     }
 

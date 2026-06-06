@@ -18,10 +18,9 @@ export function toErrorDetail(error: unknown): string {
     suffixes.push(`[${gitError.gitErrorCode}]`);
   }
 
-  if (typeof gitError?.exitCode === 'number') {
-    suffixes.push(`(exit code: ${gitError.exitCode})`);
-  } else if (typeof gitError?.code === 'number') {
-    suffixes.push(`(exit code: ${gitError.code})`);
+  const exitCode = getGitExitCode(error);
+  if (exitCode !== undefined) {
+    suffixes.push(`(exit code: ${exitCode})`);
   }
 
   return suffixes.length > 0 ? `${primaryDetail} ${suffixes.join(' ')}` : primaryDetail;
@@ -58,11 +57,12 @@ export function isMissingUpstreamConfigurationError(error: unknown): boolean {
 }
 
 export function hasGitErrorCode(error: unknown, gitErrorCode: string): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
+  const gitError = asGitLikeError(error);
+  return gitError?.gitErrorCode === gitErrorCode;
+}
 
-  return 'gitErrorCode' in error && error.gitErrorCode === gitErrorCode;
+export function hasGitExitCode(error: unknown, exitCode: number): boolean {
+  return getGitExitCode(error) === exitCode;
 }
 
 function asGitLikeError(error: unknown): GitLikeError | undefined {
@@ -71,6 +71,19 @@ function asGitLikeError(error: unknown): GitLikeError | undefined {
   }
 
   return error as GitLikeError;
+}
+
+function getGitExitCode(error: unknown): number | undefined {
+  const gitError = asGitLikeError(error);
+  if (typeof gitError?.exitCode === 'number') {
+    return gitError.exitCode;
+  }
+
+  if (typeof gitError?.code === 'number') {
+    return gitError.code;
+  }
+
+  return undefined;
 }
 
 function normalizeErrorText(value: string | undefined): string | undefined {
