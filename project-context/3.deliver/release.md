@@ -6,7 +6,7 @@ Current package baseline: `0.0.38`.
 
 Target release: `0.0.39`.
 
-Status: Define phase is open for `0.0.39`. The target direction is a cohesion and architecture hardening cycle based on the maintainability review of graph orchestration, ref workflows, backend ports, and webview message/runtime boundaries. The package version has been bumped to `0.0.39`; VSIX packaging and Marketplace publication have not been performed for `0.0.39`.
+Status: Release completed for `0.0.39` after maintainer approval. The cohesion, architecture hardening, and coding-practice slices from the maintainability review were implemented, committed, manually smoke-tested in the Extension Development Host, packaged as a VSIX, and published to the Marketplace.
 
 Planning and build references:
 
@@ -45,6 +45,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-package-manifest-test-helper-code-quality.md`
 - `project-context/2.build/features/0.0.39-git-error-test-factory-code-quality.md`
 - `project-context/2.build/features/0.0.39-webview-short-commit-hash-helper-code-quality.md`
+- `project-context/2.build/features/0.0.39-release-readiness-closure.md`
 
 Candidate direction:
 
@@ -83,6 +84,7 @@ Candidate direction:
 - Improve package manifest test coding quality by sharing manifest loading and typing in one helper.
 - Improve ref action test coding quality by sharing Git-like error fixtures.
 - Improve revision graph webview coding quality by sharing short commit hash formatting in the runtime script.
+- Close the `0.0.39` cycle with release-readiness notes, changelog coverage, and final automated verification.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -249,26 +251,28 @@ Automated verification completed:
 - Focused revision graph webview, webview helper, and message handler tests passed with 35 tests after sharing short commit hash formatting in the webview runtime. This includes `npm run build` through the focused validation sequence.
 - `npm test` passed with 394 tests after sharing webview short commit hash formatting. This includes `npm run build` through the test script.
 - `git diff --check` passed after sharing webview short commit hash formatting and updating verification artifacts.
+- `npm run build` passed after adding the `0.0.39` changelog and release-readiness closure notes.
+- `npm test` passed with 394 tests after adding the `0.0.39` changelog and release-readiness closure notes. This includes `npm run build` through the test script.
+- `git diff --check` passed after adding the `0.0.39` changelog and release-readiness closure notes.
 
 Automated verification pending:
 
-- None for the current implemented `0.0.39` slices. Re-run `npm run build`, `npm test`, and `git diff --check` before release preparation.
+- None for the released `0.0.39` state. Re-run `npm run build`, `npm test`, and `git diff --check` if additional source or documentation changes are made for a follow-up release.
 
-Manual validation pending:
+Manual validation completed:
 
-- Open a Git workspace in the Extension Development Host and confirm the graph opens from Source Control.
-- Exercise graph load, repository switching, refresh, fetch, scope changes, search, minimap, scroll, zoom, and `Center HEAD`.
-- Exercise compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, pull, push, merge, delete, reset, and conflict guards.
-- Confirm Compare Results and Show Log remain on-demand editor panels and close with the graph panel.
-- Repeat key checks in multi-repository and zero-repository workspaces.
+- Extension Development Host smoke validation completed before publication.
+- Graph launch from Source Control was verified in a Git workspace.
+- Graph load, repository switching, refresh, fetch, scope changes, search, minimap, scroll, zoom, and `Center HEAD` were covered by the smoke pass.
+- Compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, pull, push, merge, delete, reset, and conflict guards were covered by the smoke pass.
+- Compare Results and Show Log were verified as on-demand editor panels that close with the graph panel.
+- Multi-repository and zero-repository checks were included in the smoke pass.
 
-Release gates pending:
+Release gates completed:
 
-- Select and approve the next focused `0.0.39` build slice.
-- Create or update a focused feature artifact under `project-context/2.build/features/` for each additional implemented slice.
-- Re-run full automated verification after additional implementation.
-- Run `npm run package:vsix` only after maintainer approval and review generated metadata/package contents.
-- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+- Maintainer approval was granted before packaging and publication.
+- VSIX packaging completed and generated metadata/package contents were reviewed before upload.
+- Marketplace publication for `0.0.39` completed.
 
 Post-release monitoring focus:
 

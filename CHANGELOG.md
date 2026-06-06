@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.39
+
+### Reliability & Maintainability
+
+- Refined revision graph orchestration, fetch handling, current `HEAD` actions, reference workflows, and repository selection into smaller behavior-preserving units.
+- Split revision graph backend responsibilities across narrower log, diff/detail, merge-analysis, snapshot, and cache boundaries.
+- Reduced Compare Results and Show Log presenter coupling by moving message dispatch, state mapping, clipboard, restore, reset, remote-commit, compare, file-action, and refresh policies into focused helpers.
+- Hardened webview host boundaries with explicit script-only options, denied local resource roots, and shared nonce/CSP construction.
+- Centralized shared helpers for abort errors, Git error details, Git exit-code checks, remote-name normalization, short commit hash labels, renamed-file target paths, and clipboard writing.
+
+### Quality
+
+- Expanded focused regression coverage around the extracted controller, ref action, backend, webview, Show Log, Compare Results, error, and test fixture boundaries.
+- Shared repeated test fixtures for revision log entries, compare result items, Git-like errors, and package manifest loading.
+- Version bump to `0.0.39` has been applied in `package.json` and `package-lock.json`; VSIX packaging, manual smoke validation, and Marketplace publication are complete.
+
 ## 0.0.38
 
 ### Performance & Reliability

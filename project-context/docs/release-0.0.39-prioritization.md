@@ -13,6 +13,7 @@ The release should reduce maintenance risk in the highest-churn areas without ch
 - `0.0.38` intentionally removed incremental graph patch paths and made graph refresh behavior more predictable.
 - The next risk is maintainability: graph orchestration, ref workflows, webview runtime scripts, and review-panel presenters have grown around the shipped product surface.
 - Automated verification is strong, but several tests assert generated webview script details by regex, so refactors must be staged and behavior-preserving.
+- Release completion note: after maintainer approval, `0.0.39` completed Extension Development Host smoke validation, VSIX packaging, generated package review, and Marketplace publication.
 
 ## Release Direction
 
@@ -89,4 +90,4 @@ Manual Extension Development Host smoke test:
 
 - Marketplace copy and screenshots do not need to change for an internal cohesion release.
 - If the release remains behavior-preserving, release notes should emphasize reliability and maintainability rather than new features.
-- Review generated VSIX contents before publication if packaging is later requested.
+- Generated VSIX contents were reviewed before `0.0.39` Marketplace publication.
