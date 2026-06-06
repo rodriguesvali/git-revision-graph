@@ -19,6 +19,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-compare-results-view-state-cohesion.md`
 - `project-context/2.build/features/0.0.39-show-log-view-state-cohesion.md`
 - `project-context/2.build/features/0.0.39-show-log-load-request-cohesion.md`
+- `project-context/2.build/features/0.0.39-show-log-expansion-request-cohesion.md`
 
 Candidate direction:
 
@@ -31,6 +32,7 @@ Candidate direction:
 - Reduce review-panel coupling by extracting Compare Results webview state mapping from panel lifecycle when the slice can preserve existing behavior.
 - Reduce review-panel coupling by extracting Show Log webview state mapping from shared state/cache helpers and panel lifecycle when the slice can preserve existing behavior.
 - Reduce Show Log load coupling by extracting request sequencing and cancellation from panel lifecycle when the slice can preserve existing behavior.
+- Reduce Show Log expansion coupling by extracting commit changed-file request sequencing from panel lifecycle when the slice can preserve existing behavior.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -119,6 +121,9 @@ Automated verification completed:
 - Focused Show Log load request, shared-state, message handler, and webview tests passed with 15 tests after extracting Show Log load request tracking from the panel provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 332 tests after extracting Show Log load request tracking from the panel provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after extracting Show Log load request tracking and updating verification artifacts.
+- Focused Show Log expansion request, load request, shared-state, message handler, and webview tests passed with 18 tests after extracting Show Log commit expansion request tracking from the panel provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 335 tests after extracting Show Log commit expansion request tracking from the panel provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after extracting Show Log commit expansion request tracking and updating verification artifacts.
 
 Automated verification pending:
 
@@ -152,6 +157,7 @@ Post-release monitoring focus:
 - Reports of Compare Results labels, rename paths, or item actions drifting after webview state mapping extraction.
 - Reports of Show Log summaries, reference labels, inline changes, or lane topology drifting after webview state mapping extraction.
 - Reports of stale Show Log results, stuck loading states, or missing cancellation after load request tracking extraction.
+- Reports of stale Show Log changed-file expansion data after commit expansion request tracking extraction.
 
 Rollback:
 
@@ -163,6 +169,7 @@ Rollback:
 - If Compare Results state mapping extraction causes review-panel display or action lookup regressions, restore the previous provider-local mapping while preserving view-state tests.
 - If Show Log state mapping extraction causes review-panel display regressions, restore the previous shared mapping while preserving view-state tests.
 - If Show Log load request extraction causes stale response or cancellation regressions, restore the previous provider-local request counters while preserving load request tests.
+- If Show Log expansion request extraction causes stale changed-file response regressions, restore the previous provider-local expansion counter while preserving expansion request tests.
 
 ## 0.0.38 Release Readiness
 

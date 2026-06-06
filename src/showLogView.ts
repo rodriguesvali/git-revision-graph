@@ -14,6 +14,7 @@ import {
 import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
+import { ShowLogExpansionRequests } from './showLog/expansionRequests';
 import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
@@ -42,9 +43,9 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private state: ShowLogState = createHiddenShowLogState();
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
-  private expandRequestId = 0;
   private sourceTokenSeed = 0;
   private readonly logLoadRequests = new ShowLogLoadRequests();
+  private readonly expansionRequests = new ShowLogExpansionRequests();
   private readonly messageHandlers: ShowLogMessageHandlers = {
     ready: () => {
       this.postState();
@@ -79,6 +80,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   async showSource(repository: Repository, source: RevisionLogSource): Promise<void> {
     const request = this.logLoadRequests.start();
+    this.expansionRequests.invalidate();
     this.state = {
       kind: 'visible',
       sourceToken: this.createSourceToken(),
@@ -145,7 +147,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   async hideWithRevisionGraph(): Promise<void> {
     this.logLoadRequests.invalidateAndCancel();
-    this.expandRequestId += 1;
+    this.expansionRequests.invalidate();
     this.state = createHiddenShowLogState();
     this.postState();
     this.disposePanel();
@@ -198,7 +200,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const requestId = ++this.expandRequestId;
+    const request = this.expansionRequests.start();
     this.state = {
       ...this.state,
       loadingCommitHash: commitHash,
@@ -212,7 +214,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         commitHash,
         entry.parentHashes[0]
       );
-      if (requestId !== this.expandRequestId || this.state.kind !== 'visible') {
+      if (!this.expansionRequests.isCurrent(request) || this.state.kind !== 'visible') {
         return;
       }
 
@@ -223,7 +225,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       };
       this.postState();
     } catch (error) {
-      if (requestId !== this.expandRequestId || this.state.kind !== 'visible') {
+      if (!this.expansionRequests.isCurrent(request) || this.state.kind !== 'visible') {
         return;
       }
 
@@ -252,7 +254,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     const request = this.logLoadRequests.start();
-    this.expandRequestId += 1;
+    this.expansionRequests.invalidate();
     this.state = {
       ...this.state,
       showAllBranches: value,
@@ -330,7 +332,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     const request = this.logLoadRequests.start();
-    this.expandRequestId += 1;
+    this.expansionRequests.invalidate();
     this.state = {
       ...this.state,
       filterText,
@@ -669,7 +671,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         if (this.panel === panel) {
           this.panel = undefined;
           this.logLoadRequests.invalidateAndCancel();
-          this.expandRequestId += 1;
+          this.expansionRequests.invalidate();
           this.state = createHiddenShowLogState();
         }
         this.disposePanelDisposables();
