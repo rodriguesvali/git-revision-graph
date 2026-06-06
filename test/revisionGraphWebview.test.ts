@@ -71,7 +71,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="minimapNodeLayer"/);
   assert.match(html, /id="minimapViewport"/);
   assert.match(html, /window\.addEventListener\('message'/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'webview-ready' \}\);/);
+  assert.match(html, /function createRevisionGraphWebviewReadyMessage\(\) \{\s*return \{ type: 'webview-ready' \};\s*\}/s);
+  assert.match(html, /vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/);
   assert.match(html, /case 'init-state'/);
   assert.match(html, /case 'update-state'/);
   assert.doesNotMatch(html, /case 'patch-metadata'/);
@@ -85,6 +86,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /webview\.render-scene\.virtual-html/);
   assert.match(html, /webview\.render-scene\.virtual-frame/);
   assert.match(html, /webview\.apply\.viewport-frame/);
+  assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
@@ -106,7 +108,7 @@ test('rehydrates the webview after the shell is recreated', () => {
 
   assert.match(
     html,
-    /window\.addEventListener\('message', \(event\) => \{\s*handleHostMessage\(event\.data\);\s*\}\);\s*vscode\.postMessage\(\{ type: 'webview-ready' \}\);/s
+    /window\.addEventListener\('message', \(event\) => \{\s*handleHostMessage\(event\.data\);\s*\}\);\s*vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/s
   );
 });
 
@@ -153,13 +155,13 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
   assert.match(
     html,
-    /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(\{ type: 'refresh' \}, 'Reloading revision graph\.\.\.', reloadButton\);/s
+    /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(createRevisionGraphRefreshMessage\(\), 'Reloading revision graph\.\.\.', reloadButton\);/s
   );
-  assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(\{ type: 'fetch-current-repository' \}\);/s);
+  assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
-  assert.match(html, /postMessageWithLoading\(\{ type: 'pull-current-head' \}, 'Pulling current branch\.\.\.', pullButton\);/);
-  assert.match(html, /postMessageWithLoading\(\{ type: 'push-current-head' \}, 'Pushing current branch\.\.\.', pushButton\);/);
-  assert.match(html, /postMessageWithLoading\(\{ type: 'sync-current-head' \}, 'Synchronizing current branch\.\.\.', syncButton\);/);
+  assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);
+  assert.match(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
+  assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
   assert.match(html, /searchClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
@@ -303,16 +305,18 @@ test('renders structural commit actions for compare and branch creation', () => 
 
   assert.match(html, /function createCommitSelectionId\(hash\) \{/);
   assert.match(html, /function getStructuralNodeTarget\(hash\) \{/);
-  assert.match(html, /function postShowLogTarget\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'show-log',\s*source: \{\s*kind: 'target',\s*revision: target\.revision,\s*label: target\.label/s);
-  assert.match(html, /function postShowLogRange\(base, compare\) \{\s*vscode\.postMessage\(\{\s*type: 'show-log',\s*source: \{\s*kind: 'range',\s*baseRevision: base\.revision,\s*baseLabel: base\.label,\s*compareRevision: compare\.revision,\s*compareLabel: compare\.label/s);
+  assert.match(html, /function createRevisionGraphShowLogTargetMessage\(target\)/);
+  assert.match(html, /function createRevisionGraphShowLogRangeMessage\(base, compare\)/);
+  assert.match(html, /function postShowLogTarget\(target\) \{\s*vscode\.postMessage\(createRevisionGraphShowLogTargetMessage\(target\)\);/s);
+  assert.match(html, /function postShowLogRange\(base, compare\) \{\s*vscode\.postMessage\(createRevisionGraphShowLogRangeMessage\(base, compare\)\);/s);
   assert.match(html, /base\.hash === target\.hash/);
   assert.match(html, /compare\.hash === target\.hash/);
-  assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(\{ type: 'compare-with-worktree', revision: target\.revision, label: target\.label \}\);/s);
-  assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(\{ type: 'copy-commit-hash', commitHash \}\);/s);
-  assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(\{ type: 'copy-ref-name', refName: target\.name, refKind: target\.kind \}\);/s);
+  assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCompareWithWorktreeMessage\(target\)\);/s);
+  assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(createRevisionGraphCopyCommitHashMessage\(commitHash\)\);/s);
+  assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCopyRefNameMessage\(target\)\);/s);
   assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy ref name to clipboard', \(\) => postCopyRefName\(target\)\);/s);
-  assert.match(html, /type: 'create-branch',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
-  assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'create-tag',\s*revision: target\.revision,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /function createRevisionGraphCreateBranchMessage\(target\)/);
+  assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCreateTagMessage\(target\)\);/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
   assert.doesNotMatch(html, /appendMenuSubmenu\('Remote'/);
@@ -321,9 +325,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
-  assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'pull-current-head' \}\);/s);
-  assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(\{ type: 'push-current-head' \}\);/s);
-  assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(\{ type: 'reset-current-workspace', includeUntracked: !!includeUntracked \}\);/s);
+  assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
+  assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(\)\);/s);
+  assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(createRevisionGraphResetCurrentWorkspaceMessage\(includeUntracked\)\);/s);
   assert.match(html, /const canResetCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasConflictedMerge;/s);
   assert.match(html, /if \(canResetCurrentWorkspace\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Reset Workspace to HEAD', \(\) => postResetCurrentWorkspace\(false\), \{ destructive: true \}\);\s*appendMenuItem\('Reset Workspace and Remove Untracked Files', \(\) => postResetCurrentWorkspace\(true\), \{ destructive: true \}\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
@@ -343,8 +347,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) => \{\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function retryRemoteTagState\(target\) \{\s*if \(!target \|\| target\.kind !== 'tag'\) \{\s*return;\s*\}\s*remoteTagPublicationState\.delete\(target\.name\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function requestRemoteTagState\(target\) \{\s*if \(\s*!target \|\|\s*target\.kind !== 'tag' \|\|\s*remoteTagPublicationState\.has\(target\.name\) \|\|\s*pendingRemoteTagStateRequests\.has\(target\.name\)/s);
-  assert.match(html, /type: 'resolve-remote-tag-state',\s*refName: target\.name/s);
-  assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(\{\s*type: 'delete-remote-tag',\s*refName: target\.name,\s*label: target\.label,\s*refKind: target\.kind/s);
+  assert.match(html, /function createRevisionGraphResolveRemoteTagStateMessage\(target\)/);
+  assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphDeleteRemoteTagMessage\(target\)\);/s);
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
@@ -547,7 +551,7 @@ test('renders merge abort controls only for conflicted merge state', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /const abortMergeButton = document\.getElementById\('abortMergeButton'\);/);
-  assert.match(html, /postMessageWithLoading\(\{ type: 'abort-merge' \}, 'Aborting merge\.\.\.', abortMergeButton\);/);
+  assert.match(html, /postMessageWithLoading\(createRevisionGraphAbortMergeMessage\(\), 'Aborting merge\.\.\.', abortMergeButton\);/);
   assert.match(html, /abortMergeButton\.hidden = !state\.hasConflictedMerge;/);
   assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasConflictedMerge;/);
   assert.match(html, /\.view-controls \.toolbar-button\[hidden\]\s*\{\s*display: none;/);

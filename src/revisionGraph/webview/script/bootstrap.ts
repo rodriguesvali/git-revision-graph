@@ -115,46 +115,43 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
     });
-    vscode.postMessage({ type: 'webview-ready' });
+    vscode.postMessage(createRevisionGraphWebviewReadyMessage());
 
     if (reloadButton) {
       reloadButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'refresh' }, 'Reloading revision graph...', reloadButton);
+        postMessageWithLoading(createRevisionGraphRefreshMessage(), 'Reloading revision graph...', reloadButton);
       });
     }
     if (fetchAllButton) {
       fetchAllButton.addEventListener('click', () => {
-        vscode.postMessage({ type: 'fetch-current-repository' });
+        vscode.postMessage(createRevisionGraphFetchCurrentRepositoryMessage());
       });
     }
     if (pullButton) {
       pullButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'pull-current-head' }, 'Pulling current branch...', pullButton);
+        postMessageWithLoading(createRevisionGraphPullCurrentHeadMessage(), 'Pulling current branch...', pullButton);
       });
     }
     if (pushButton) {
       pushButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'push-current-head' }, 'Pushing current branch...', pushButton);
+        postMessageWithLoading(createRevisionGraphPushCurrentHeadMessage(), 'Pushing current branch...', pushButton);
       });
     }
     if (syncButton) {
       syncButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'sync-current-head' }, 'Synchronizing current branch...', syncButton);
+        postMessageWithLoading(createRevisionGraphSyncCurrentHeadMessage(), 'Synchronizing current branch...', syncButton);
       });
     }
     if (abortMergeButton) {
       abortMergeButton.addEventListener('click', () => {
-        postMessageWithLoading({ type: 'abort-merge' }, 'Aborting merge...', abortMergeButton);
+        postMessageWithLoading(createRevisionGraphAbortMergeMessage(), 'Aborting merge...', abortMergeButton);
       });
     }
     if (scopeSelect) {
       scopeSelect.addEventListener('change', () => {
         const nextRefScope = scopeSelect.value;
         const options = { refScope: nextRefScope };
-        postMessageWithLoading({
-          type: 'set-projection-options',
-          options
-        }, 'Updating graph scope...', scopeSelect);
+        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage(options), 'Updating graph scope...', scopeSelect);
       });
     }
     if (viewOptionsButton) {
@@ -165,26 +162,17 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (showTagsToggle) {
       showTagsToggle.addEventListener('change', () => {
-        postMessageWithLoading({
-          type: 'set-projection-options',
-          options: { showTags: showTagsToggle.checked }
-        }, showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...', showTagsToggle);
+        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showTags: showTagsToggle.checked }), showTagsToggle.checked ? 'Showing tags...' : 'Hiding tags...', showTagsToggle);
       });
     }
     if (showRemoteBranchesToggle) {
       showRemoteBranchesToggle.addEventListener('change', () => {
-        postMessageWithLoading({
-          type: 'set-projection-options',
-          options: { showRemoteBranches: showRemoteBranchesToggle.checked }
-        }, showRemoteBranchesToggle.checked ? 'Showing remote branches...' : 'Hiding remote branches...', showRemoteBranchesToggle);
+        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showRemoteBranches: showRemoteBranchesToggle.checked }), showRemoteBranchesToggle.checked ? 'Showing remote branches...' : 'Hiding remote branches...', showRemoteBranchesToggle);
       });
     }
     if (showStashesToggle) {
       showStashesToggle.addEventListener('change', () => {
-        postMessageWithLoading({
-          type: 'set-projection-options',
-          options: { showStashes: showStashesToggle.checked }
-        }, showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
+        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showStashes: showStashesToggle.checked }), showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
       });
     }
     if (showMinimapToggle) {
@@ -237,7 +225,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (statusActionButton) {
       statusActionButton.addEventListener('click', () => {
         if (statusActionButton.dataset.action === 'choose-repository') {
-          postMessageWithLoading({ type: 'choose-repository' }, 'Choosing repository...', statusActionButton);
+          postMessageWithLoading(createRevisionGraphChooseRepositoryMessage(), 'Choosing repository...', statusActionButton);
         }
       });
     }
@@ -497,13 +485,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const finishedAt = getTraceNow();
       const durationMs = Math.max(0, finishedAt - startedAt);
       const deliveryMs = Math.max(0, startedAt - message.trace.sentAtMs);
-      vscode.postMessage({
-        type: 'load-trace',
+      vscode.postMessage(createRevisionGraphLoadTraceMessage(
         phase,
         durationMs,
-        requestId: message.trace.requestId,
-        detail: buildWebviewLoadTraceDetail(message, options.includeDelivery ? deliveryMs : null, options.detail || '')
-      });
+        buildWebviewLoadTraceDetail(message, options.includeDelivery ? deliveryMs : null, options.detail || ''),
+        message.trace.requestId
+      ));
     }
 
     function hasWebviewTraceContext(message) {

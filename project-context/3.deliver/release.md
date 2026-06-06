@@ -91,6 +91,9 @@ Automated verification completed:
 - Focused host message, view-state workflow, and revision graph webview tests passed with 29 tests after the first webview message contract cohesion slice added host message builders.
 - `npm test` passed with 318 tests after the first webview message contract cohesion slice added host message builders. This includes `npm run build` through the test script.
 - `git diff --check` passed after the first webview message contract cohesion slice added host message builders and updated verification artifacts.
+- Focused revision graph webview and webview message validation tests passed with 30 tests after the second webview message contract cohesion slice added webview-to-host message builders.
+- `npm test` passed with 318 tests after the second webview message contract cohesion slice added webview-to-host message builders. This includes `npm run build` through the test script.
+- `git diff --check` passed after the second webview message contract cohesion slice added webview-to-host message builders and updated verification artifacts.
 
 Automated verification pending:
 

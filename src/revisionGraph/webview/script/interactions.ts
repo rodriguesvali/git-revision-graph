@@ -529,73 +529,47 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function postCompareSelected(base, compare) {
-      vscode.postMessage({
-        type: 'compare-selected',
-        baseRevision: base.revision,
-        baseLabel: base.label,
-        compareRevision: compare.revision,
-        compareLabel: compare.label
-      });
+      vscode.postMessage(createRevisionGraphCompareSelectedMessage(base, compare));
     }
 
     function postShowLogRange(base, compare) {
-      vscode.postMessage({
-        type: 'show-log',
-        source: {
-          kind: 'range',
-          baseRevision: base.revision,
-          baseLabel: base.label,
-          compareRevision: compare.revision,
-          compareLabel: compare.label
-        }
-      });
+      vscode.postMessage(createRevisionGraphShowLogRangeMessage(base, compare));
     }
 
     function postUnifiedDiff(base, compare) {
-      vscode.postMessage({
-        type: 'open-unified-diff',
-        baseRevision: base.revision,
-        compareRevision: compare.revision
-      });
+      vscode.postMessage(createRevisionGraphUnifiedDiffMessage(base, compare));
     }
 
     function postShowLogTarget(target) {
-      vscode.postMessage({
-        type: 'show-log',
-        source: {
-          kind: 'target',
-          revision: target.revision,
-          label: target.label
-        }
-      });
+      vscode.postMessage(createRevisionGraphShowLogTargetMessage(target));
     }
 
     function postCompareWithWorktree(target) {
-      vscode.postMessage({ type: 'compare-with-worktree', revision: target.revision, label: target.label });
+      vscode.postMessage(createRevisionGraphCompareWithWorktreeMessage(target));
     }
 
     function postCopyCommitHash(commitHash) {
-      vscode.postMessage({ type: 'copy-commit-hash', commitHash });
+      vscode.postMessage(createRevisionGraphCopyCommitHashMessage(commitHash));
     }
 
     function postCopyRefName(target) {
-      vscode.postMessage({ type: 'copy-ref-name', refName: target.name, refKind: target.kind });
+      vscode.postMessage(createRevisionGraphCopyRefNameMessage(target));
     }
 
     function postCheckout(target) {
-      vscode.postMessage({ type: 'checkout', refName: target.name, refKind: target.kind });
+      vscode.postMessage(createRevisionGraphCheckoutMessage(target));
     }
 
     function postSyncCurrentHead() {
-      vscode.postMessage({ type: 'sync-current-head' });
+      vscode.postMessage(createRevisionGraphSyncCurrentHeadMessage());
     }
 
     function postPullCurrentHead() {
-      vscode.postMessage({ type: 'pull-current-head' });
+      vscode.postMessage(createRevisionGraphPullCurrentHeadMessage());
     }
 
     function postPushCurrentHead() {
-      vscode.postMessage({ type: 'push-current-head' });
+      vscode.postMessage(createRevisionGraphPushCurrentHeadMessage());
     }
 
     function getCurrentHeadRemoteActionState() {
@@ -613,34 +587,19 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function postResetCurrentWorkspace(includeUntracked) {
-      vscode.postMessage({ type: 'reset-current-workspace', includeUntracked: !!includeUntracked });
+      vscode.postMessage(createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked));
     }
 
     function postPublishBranch(target) {
-      vscode.postMessage({
-        type: 'publish-branch',
-        refName: target.name,
-        label: target.label,
-        refKind: target.kind
-      });
+      vscode.postMessage(createRevisionGraphPublishBranchMessage(target));
     }
 
     function postCreateBranch(target) {
-      vscode.postMessage({
-        type: 'create-branch',
-        revision: target.revision,
-        label: target.label,
-        refKind: target.kind
-      });
+      vscode.postMessage(createRevisionGraphCreateBranchMessage(target));
     }
 
     function postCreateTag(target) {
-      vscode.postMessage({
-        type: 'create-tag',
-        revision: target.revision,
-        label: target.label,
-        refKind: target.kind
-      });
+      vscode.postMessage(createRevisionGraphCreateTagMessage(target));
     }
 
     function retryRemoteTagState(target) {
@@ -663,36 +622,23 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
 
       pendingRemoteTagStateRequests.add(target.name);
-      vscode.postMessage({
-        type: 'resolve-remote-tag-state',
-        refName: target.name
-      });
+      vscode.postMessage(createRevisionGraphResolveRemoteTagStateMessage(target));
     }
 
     function postPushTag(target) {
-      vscode.postMessage({
-        type: 'push-tag',
-        refName: target.name,
-        label: target.label,
-        refKind: target.kind
-      });
+      vscode.postMessage(createRevisionGraphPushTagMessage(target));
     }
 
     function postDeleteRemoteTag(target) {
-      vscode.postMessage({
-        type: 'delete-remote-tag',
-        refName: target.name,
-        label: target.label,
-        refKind: target.kind
-      });
+      vscode.postMessage(createRevisionGraphDeleteRemoteTagMessage(target));
     }
 
     function postDelete(target) {
-      vscode.postMessage({ type: 'delete', refName: target.name, refKind: target.kind });
+      vscode.postMessage(createRevisionGraphDeleteMessage(target));
     }
 
     function postMerge(target) {
-      vscode.postMessage({ type: 'merge', refName: target.name });
+      vscode.postMessage(createRevisionGraphMergeMessage(target));
     }
 
     function syncToolbarActions() {
