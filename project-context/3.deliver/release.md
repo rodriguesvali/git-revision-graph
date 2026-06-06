@@ -12,6 +12,8 @@ Planning and build references:
 
 - `project-context/docs/release-1.0.0-prioritization.md`
 - `project-context/2.build/features/1.0.0-polish-opening.md`
+- `project-context/2.build/features/1.0.0-push-choice-loading-polish.md`
+- `project-context/2.build/features/1.0.0-push-cancel-refresh-polish.md`
 
 Release direction:
 
@@ -20,12 +22,23 @@ Release direction:
 - Prefer low-risk UX copy, visual consistency, documentation, Marketplace readiness, and release-quality fixes.
 - Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and the `0.0.39` maintainability boundaries.
 
+Implemented polish:
+
+- The current-branch `Push` toolbar action now opens the push-mode choice without immediately blocking the graph with loading feedback. The existing host-side push workflow and post-push refresh behavior are preserved.
+- A canceled current-branch push no longer shows success feedback or schedules a graph reload when the VS Code Git API returns without a remote update.
+
 Automated verification completed:
 
 - Package metadata confirmed at `1.0.0` in `package.json`, root `package-lock.json`, and root `package-lock.json` package metadata after opening the cycle.
 - `git diff --check` passed after opening the `1.0.0` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
 - `npm run build` passed after opening the `1.0.0` cycle.
 - `npm test` passed with 394 tests after opening the `1.0.0` cycle. This includes `npm run build` through the test script.
+- Focused webview shell validation passed with 23 tests after the push loading polish. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 394 tests after the push loading polish. This includes `npm run build` through the test script.
+- `git diff --check` passed after the push loading polish.
+- Focused ref action validation passed with 84 tests after adding the canceled push refresh guard. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 395 tests after the canceled push refresh guard. This includes `npm run build` through the test script.
+- `git diff --check` passed after the canceled push refresh guard.
 
 Automated verification pending:
 

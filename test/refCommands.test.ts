@@ -110,7 +110,9 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
       async getRemoteNames() {
         return ['origin'];
       },
-      async pushCurrentBranch() {},
+      async pushCurrentBranch() {
+        return true;
+      },
       async pushTag() {},
       async deleteRemoteTag() {},
       async deleteRemoteBranch() {},

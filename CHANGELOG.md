@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 - Opened the `1.0.0` cycle as a small polish release after the published `0.0.39` hardening release.
 - Version bump to `1.0.0` has been applied in `package.json` and `package-lock.json`; VSIX packaging, manual smoke validation, and Marketplace publication have not been performed for `1.0.0`.
 
+### Polish
+
+- Prevented the current-branch `Push` toolbar action from blocking the graph with loading feedback before the user chooses a push mode.
+- Prevented a canceled current-branch push from showing success feedback or reloading the graph when no remote update occurred.
+
 ## 0.0.39
 
 ### Reliability & Maintainability

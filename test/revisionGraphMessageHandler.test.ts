@@ -208,7 +208,9 @@ function createActionServices(informationMessages: string[]): RefActionServices 
       async getRemoteNames() {
         return [];
       },
-      async pushCurrentBranch() {},
+      async pushCurrentBranch() {
+        return true;
+      },
       async pushTag() {},
       async deleteRemoteTag() {},
       async deleteRemoteBranch() {},

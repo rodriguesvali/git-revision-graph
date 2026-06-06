@@ -134,7 +134,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
     if (pushButton) {
       pushButton.addEventListener('click', () => {
-        postMessageWithLoading(createRevisionGraphPushCurrentHeadMessage(), 'Pushing current branch...', pushButton);
+        vscode.postMessage(createRevisionGraphPushCurrentHeadMessage());
       });
     }
     if (syncButton) {

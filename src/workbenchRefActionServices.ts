@@ -200,8 +200,14 @@ export function createWorkbenchRefActionServices(
       },
       async pushCurrentBranch(repository, remoteName, branchName, mode) {
         if (mode === 'normal') {
+          const beforeAhead = await getCurrentBranchAhead(repository);
           await repository.push(remoteName, branchName, false);
-          return;
+          const afterAhead = await getCurrentBranchAhead(repository);
+          if (beforeAhead === undefined || afterAhead === undefined) {
+            return true;
+          }
+
+          return afterAhead < beforeAhead;
         }
 
         await execGitWithResult(repository.rootUri.fsPath, [
@@ -210,6 +216,7 @@ export function createWorkbenchRefActionServices(
           remoteName,
           `HEAD:refs/heads/${branchName}`
         ]);
+        return true;
       },
       async pushTag(repository, remoteName, tagName) {
         await repository.push(remoteName, buildTagPushRefspec(tagName), false);
@@ -242,6 +249,22 @@ export function createWorkbenchRefActionServices(
       return vscode.workspace.asRelativePath(vscode.Uri.file(fsPath), false);
     }
   };
+}
+
+async function getCurrentBranchAhead(repository: Repository): Promise<number | undefined> {
+  try {
+    const { stdout } = await execGitWithResult(repository.rootUri.fsPath, [
+      'rev-list',
+      '--left-right',
+      '--count',
+      'HEAD...@{upstream}'
+    ]);
+    const [ahead] = stdout.trim().split(/\s+/);
+    const parsedAhead = Number(ahead);
+    return Number.isFinite(parsedAhead) ? parsedAhead : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function buildRefUri(repository: Repository, ref: string, filePath: string): vscode.Uri {

@@ -192,6 +192,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async pushCurrentBranch(_repository, remoteName, branchName, mode) {
         currentBranchPushes.push({ remoteName, branchName, mode });
+        return true;
       },
       async pushTag(_repository, remoteName, tagName) {
         pushedTags.push({ remoteName, tagName });
@@ -1893,6 +1894,30 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
     followUpEvents: ['state', 'checkout']
   });
   assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
+});
+
+test('pushCurrentBranchToUpstream does not refresh when push is canceled outside the extension', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+  let pushAttempts = 0;
+  Object.assign(harness.services.referenceManager, {
+    async pushCurrentBranch() {
+      pushAttempts += 1;
+      return false;
+    }
+  });
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, false);
+  assert.equal(pushAttempts, 1);
+  assert.equal(harness.refreshCalls, 0);
+  assert.equal(harness.prepareRequests.length, 1);
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+  assert.deepEqual(harness.infoMessages, []);
 });
 
 test('pushCurrentBranchToUpstream can force push with lease', async () => {

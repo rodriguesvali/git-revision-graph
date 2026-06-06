@@ -238,12 +238,16 @@ export async function pushCurrentBranchToUpstream(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await services.referenceManager.pushCurrentBranch(
+      const didPush = await services.referenceManager.pushCurrentBranch(
         repository,
         upstream.remote,
         getUpstreamBranchName(upstream.remote, upstream.name),
         pushMode
       );
+      if (!didPush) {
+        preparedRefresh.cancel();
+        return false;
+      }
     } catch (error) {
       preparedRefresh.cancel();
       throw error;

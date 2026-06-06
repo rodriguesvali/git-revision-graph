@@ -160,7 +160,8 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);
-  assert.match(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
+  assert.match(html, /pushButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(\)\);/s);
+  assert.doesNotMatch(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
   assert.match(html, /searchClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
