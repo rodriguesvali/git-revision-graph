@@ -5,7 +5,6 @@ import type { Repository } from './git';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
 import {
-  resetCurrentBranchToCommit,
   type CompareResultsPresenter,
   type RefActionServices
 } from './refActions';
@@ -28,6 +27,7 @@ import {
   ShowLogLoadRequests
 } from './showLog/loadRequests';
 import { openShowLogCommitOnGitHub } from './showLog/remoteCommitAction';
+import { resetShowLogCommit } from './showLog/resetAction';
 import {
   findShowLogChange,
   getVisibleShowLogRepository,
@@ -581,23 +581,11 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const entry = this.state.entries.find((item) => item.hash === commitHash);
-    if (!entry) {
-      return;
-    }
-
-    const services = this.getRefActionServices();
-    if (!services) {
-      await vscode.window.showErrorMessage('Could not reset the branch because Git actions are not ready yet.');
-      return;
-    }
-
-    const commitLabel = entry.shortHash || commitHash.slice(0, 8);
-    await resetCurrentBranchToCommit(
+    await resetShowLogCommit(
       this.state.repository,
+      this.state.entries,
       commitHash,
-      commitLabel,
-      services
+      this.getRefActionServices()
     );
   }
 
