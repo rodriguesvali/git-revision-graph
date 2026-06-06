@@ -23,6 +23,7 @@ import {
   copyShowLogCommitHash,
   copyShowLogReferenceName
 } from './showLog/clipboardActions';
+import { cherryPickShowLogCommits } from './showLog/cherryPickAction';
 import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
@@ -77,6 +78,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     openCommitDetails: (commitHash) => this.openCommitDetails(commitHash),
     compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
     compareCommitWithWorktree: (commitHash) => this.compareCommitWithWorktree(commitHash),
+    cherryPickCommits: (commitHashes) => this.cherryPickCommits(commitHashes),
     resetToCommit: (commitHash) => this.resetToCommit(commitHash)
   };
 
@@ -550,6 +552,20 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       this.state.entries,
       commitHash,
       this.compareResultsPresenter
+    );
+  }
+
+  private async cherryPickCommits(commitHashes: readonly string[]): Promise<void> {
+    if (this.state.kind !== 'visible' || !this.state.repository) {
+      return;
+    }
+
+    const loadedCommitHashes = new Set(this.state.entries.map((entry) => entry.hash));
+    const selectedLoadedHashes = commitHashes.filter((hash) => loadedCommitHashes.has(hash));
+    await cherryPickShowLogCommits(
+      this.state.repository,
+      selectedLoadedHashes,
+      this.getRefActionServices()
     );
   }
 

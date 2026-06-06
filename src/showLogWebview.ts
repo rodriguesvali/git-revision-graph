@@ -256,33 +256,27 @@ export function renderShowLogWebviewHtml(): string {
     .commit-entry {
       position: relative;
     }
+    .commit-entry[data-selected="true"] {
+      --show-log-selection-color: var(--vscode-charts-blue, #3794ff);
+    }
     .commit-entry[data-selected="true"] .commit-row {
-      background: color-mix(in srgb, var(--show-log-row-active) 22%, transparent);
-    }
-    .commit-entry[data-compare-base="true"],
-    .commit-entry[data-compare-target="true"] {
-      --show-log-compare-role-color: var(--vscode-charts-blue, #3794ff);
-    }
-    .commit-entry[data-compare-base="true"] .commit-row,
-    .commit-entry[data-compare-target="true"] .commit-row {
       background:
         linear-gradient(
           90deg,
-          color-mix(in srgb, var(--show-log-compare-role-color) 86%, transparent) 0 3px,
+          color-mix(in srgb, var(--show-log-selection-color) 86%, transparent) 0 3px,
           transparent 3px 100%
         ),
-        color-mix(in srgb, var(--show-log-compare-role-color) 13%, transparent);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--show-log-compare-role-color) 34%, transparent);
+        color-mix(in srgb, var(--show-log-selection-color) 13%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--show-log-selection-color) 34%, transparent);
     }
-    .commit-entry[data-compare-base="true"] .commit-row:hover,
-    .commit-entry[data-compare-target="true"] .commit-row:hover {
+    .commit-entry[data-selected="true"] .commit-row:hover {
       background:
         linear-gradient(
           90deg,
-          color-mix(in srgb, var(--show-log-compare-role-color) 92%, transparent) 0 3px,
+          color-mix(in srgb, var(--show-log-selection-color) 92%, transparent) 0 3px,
           transparent 3px 100%
         ),
-        color-mix(in srgb, var(--show-log-compare-role-color) 18%, var(--show-log-row-hover));
+        color-mix(in srgb, var(--show-log-selection-color) 18%, var(--show-log-row-hover));
     }
     .commit-row {
       position: relative;
@@ -410,10 +404,10 @@ export function renderShowLogWebviewHtml(): string {
       flex: 0 0 auto;
       margin-left: 10px;
       padding: 1px 7px 2px;
-      border: 1px solid color-mix(in srgb, var(--show-log-compare-role-color) 48%, transparent);
+      border: 1px solid color-mix(in srgb, var(--show-log-selection-color) 48%, transparent);
       border-radius: 999px;
-      color: color-mix(in srgb, var(--show-log-compare-role-color) 76%, var(--vscode-foreground));
-      background: color-mix(in srgb, var(--show-log-compare-role-color) 16%, transparent);
+      color: color-mix(in srgb, var(--show-log-selection-color) 76%, var(--vscode-foreground));
+      background: color-mix(in srgb, var(--show-log-selection-color) 16%, transparent);
       font-size: 9px;
       font-weight: 700;
       line-height: 1.25;
@@ -957,10 +951,11 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function renderCommitList(commits) {
+      const canCompareSelection = selectedCommitHashes.length === 2;
       return ''
         + '<div class="commit-list">'
         + commits.map((commit, index) => ''
-          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '" data-merge="' + (commit.isMerge ? 'true' : 'false') + '">'
+          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (canCompareSelection && selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (canCompareSelection && selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '" data-merge="' + (commit.isMerge ? 'true' : 'false') + '">'
           + renderCommit(commit, index)
           + '</div>'
         ).join('')
@@ -1385,18 +1380,26 @@ export function renderShowLogWebviewHtml(): string {
       const compareSelection = getCompareSelectionForCommit(commitHash);
       const commit = findCommitByHash(commitHash);
       const copyReferenceNameMenu = renderCopyReferenceNameMenu(commit);
+      const cherryPickCommitHashes = getCherryPickCommitHashes(commitHash);
       contextMenuState = {
         kind: 'commit',
         commitHash,
+        commitHashes: cherryPickCommitHashes,
         baseCommitHash: compareSelection?.baseCommitHash,
         compareCommitHash: compareSelection?.compareCommitHash
       };
       if (!contextMenu) {
         return;
       }
+      if (isMultiSelectedContext(commitHash)) {
+        contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>';
+        showContextMenuAt(clientX, clientY);
+        return;
+      }
       if (compareSelection) {
         contextMenu.innerHTML = ''
           + '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
+          + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
           + copyReferenceNameMenu;
         showContextMenuAt(clientX, clientY);
         return;
@@ -1404,6 +1407,7 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + '<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+        + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>'
         + copyReferenceNameMenu;
       showContextMenuAt(clientX, clientY);
@@ -1517,7 +1521,7 @@ export function renderShowLogWebviewHtml(): string {
       const rawValues = Array.isArray(value) ? value : (typeof value === 'string' ? [value] : []);
       return rawValues
         .filter((hash, index, values) => typeof hash === 'string' && hash.length > 0 && values.indexOf(hash) === index)
-        .slice(-2);
+        .slice(-1000);
     }
 
     function syncSelectedCommitHashes(commits) {
@@ -1548,8 +1552,18 @@ export function renderShowLogWebviewHtml(): string {
 
       selectedCommitHashes = selectedCommitHashes.filter((hash) => hash !== commitHash);
       selectedCommitHashes.push(commitHash);
-      selectedCommitHashes = selectedCommitHashes.slice(-2);
+      selectedCommitHashes = selectedCommitHashes.slice(-1000);
       persistUiState();
+    }
+
+    function clearSelectedCommitHashes() {
+      if (selectedCommitHashes.length === 0) {
+        return false;
+      }
+
+      selectedCommitHashes = [];
+      persistUiState();
+      return true;
     }
 
     function getCompareSelectionForCommit(commitHash) {
@@ -1561,6 +1575,18 @@ export function renderShowLogWebviewHtml(): string {
         baseCommitHash: selectedCommitHashes[0],
         compareCommitHash: selectedCommitHashes[1]
       };
+    }
+
+    function isMultiSelectedContext(commitHash) {
+      return selectedCommitHashes.length > 1 && selectedCommitHashes.includes(commitHash);
+    }
+
+    function getCherryPickCommitHashes(commitHash) {
+      if (selectedCommitHashes.includes(commitHash)) {
+        return selectedCommitHashes.slice();
+      }
+
+      return [commitHash];
     }
 
     function syncLoadMoreObserver() {
@@ -1632,6 +1658,9 @@ export function renderShowLogWebviewHtml(): string {
           return;
         }
         closeContextMenu();
+        if (event.button === 0 && clearSelectedCommitHashes()) {
+          render();
+        }
         vscode.postMessage({ type: 'toggleCommit', commitHash });
       }
     });
@@ -1839,6 +1868,9 @@ export function renderShowLogWebviewHtml(): string {
         }
         if (action === 'compareCommitWithWorktree') {
           vscode.postMessage({ type: 'compareCommitWithWorktree', commitHash: state.commitHash });
+        }
+        if (action === 'cherryPickCommits') {
+          vscode.postMessage({ type: 'cherryPickCommits', commitHashes: state.commitHashes || [state.commitHash] });
         }
         if (action === 'resetToCommit') {
           vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });

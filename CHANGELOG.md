@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Extended the Show Log compact graph line for expanded commits with references or stats so changed-file rows do not leave a visual gap.
 - Improved Show Log comparison selection styling with matching full-row emphasis, a single `Base` role badge, and `Ctrl` + left-click-only selection so plain clicks only expand commits.
 - Added a Show Log commit context action to copy loaded reference names from commits that have refs.
+- Added Show Log multi-select cherry-pick support with a Cherry Pick-only context menu whenever multiple selected commits are targeted, plus guarded skip/abort paths when Git stops on an empty or already-running cherry-pick.
 
 ## 0.0.39
 

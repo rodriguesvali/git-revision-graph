@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { hasConflictedMerge, isMergeInProgress } from '../src/gitState';
+import { hasConflictedMerge, isCherryPickInProgress, isMergeInProgress } from '../src/gitState';
 import { Status } from '../src/git';
 import { createChange, createRepository } from './fakes';
 
@@ -48,6 +48,29 @@ test('isMergeInProgress supports gitdir files from worktrees', () => {
     assert.equal(isMergeInProgress(createRepository({ root: workspacePath })), true);
   } finally {
     fs.rmSync(workspacePath, { recursive: true, force: true });
+  }
+});
+
+test('isCherryPickInProgress supports normal repositories and gitdir files from worktrees', () => {
+  const workspacePath = createTempWorkspace();
+  const worktreePath = createTempWorkspace();
+  try {
+    fs.mkdirSync(path.join(workspacePath, '.git'));
+    assert.equal(isCherryPickInProgress(createRepository({ root: workspacePath })), false);
+
+    fs.writeFileSync(path.join(workspacePath, '.git/CHERRY_PICK_HEAD'), `${'c'.repeat(40)}\n`);
+    assert.equal(isCherryPickInProgress(createRepository({ root: workspacePath })), true);
+
+    const actualGitDir = path.join(worktreePath, '.git-worktree');
+    fs.mkdirSync(actualGitDir);
+    fs.writeFileSync(path.join(worktreePath, '.git'), `gitdir: ${path.relative(worktreePath, actualGitDir)}\n`);
+    assert.equal(isCherryPickInProgress(createRepository({ root: worktreePath })), false);
+
+    fs.writeFileSync(path.join(actualGitDir, 'CHERRY_PICK_HEAD'), `${'d'.repeat(40)}\n`);
+    assert.equal(isCherryPickInProgress(createRepository({ root: worktreePath })), true);
+  } finally {
+    fs.rmSync(workspacePath, { recursive: true, force: true });
+    fs.rmSync(worktreePath, { recursive: true, force: true });
   }
 });
 

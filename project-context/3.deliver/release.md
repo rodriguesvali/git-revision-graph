@@ -19,6 +19,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-show-log-expanded-reference-gap-polish.md`
 - `project-context/2.build/features/1.0.0-show-log-comparison-selection-polish.md`
 - `project-context/2.build/features/1.0.0-show-log-copy-reference-name.md`
+- `project-context/2.build/features/1.0.0-show-log-multi-select-cherry-pick.md`
 
 Release direction:
 
@@ -36,6 +37,7 @@ Implemented polish:
 - Show Log expanded rows now extend the compact graph line through visible reference/stat metadata before the changed-file continuation starts.
 - Show Log comparison selections now use matching row emphasis plus a single `Base` badge instead of relying on the left-edge marker alone, and selection now requires `Ctrl` + left-click so plain clicks only expand commits.
 - Show Log commit context menus now offer `Copy Reference Name` for commits with loaded references.
+- Show Log now allows multi-selection for cherry-pick workflows. When the context-clicked commit is part of a multi-selection, the context menu offers only `Cherry Pick`; the `Base` badge remains constrained to exactly two selected commits. If Git stops on an empty cherry-pick or a previous cherry-pick is still in progress, the extension now offers guarded skip/abort paths or opens Source Control instead of treating the sequence as a generic failure.
 
 Automated verification completed:
 
@@ -66,6 +68,13 @@ Automated verification completed:
 - Focused Show Log clipboard, message handler, webview shell, and webview message validation tests passed after adding the copy-reference-name context action. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 399 tests after the Show Log copy-reference-name context action. This includes `npm run build` through the test script.
 - `git diff --check` passed after the Show Log copy-reference-name context action.
+- Focused Show Log cherry-pick action, message handler, webview shell, and webview message validation tests passed with 15 tests after adding multi-select cherry-pick support. This includes test compilation through the focused command.
+- `npm run build` passed after the Show Log multi-select cherry-pick action.
+- `npm test` passed with 403 tests after the Show Log multi-select cherry-pick action. This includes `npm run build` through the test script.
+- Focused Git state and Show Log cherry-pick action tests passed with 9 tests after adding the in-progress cherry-pick fallback.
+- `npm test` passed with 406 tests after adding the in-progress cherry-pick fallback. This includes `npm run build` through the test script.
+- Focused Show Log cherry-pick action tests passed with 10 tests after adding the empty cherry-pick skip fallback.
+- `npm test` passed with 410 tests after adding the empty cherry-pick skip fallback. This includes `npm run build` through the test script.
 
 Automated verification pending:
 

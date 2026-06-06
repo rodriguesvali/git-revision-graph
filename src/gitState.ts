@@ -31,6 +31,11 @@ export function isMergeInProgress(repository: Repository): boolean {
   return !!gitDirPath && fs.existsSync(path.join(gitDirPath, 'MERGE_HEAD'));
 }
 
+export function isCherryPickInProgress(repository: Repository): boolean {
+  const gitDirPath = getRepositoryGitDirPath(repository.rootUri.fsPath);
+  return !!gitDirPath && fs.existsSync(path.join(gitDirPath, 'CHERRY_PICK_HEAD'));
+}
+
 export function hasWorkspaceChanges(repository: Repository): boolean {
   return (
     repository.state.mergeChanges.length > 0

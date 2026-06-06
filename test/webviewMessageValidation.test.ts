@@ -370,6 +370,34 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   );
   assert.equal(
     validateShowLogWebviewMessage({
+      type: 'cherryPickCommits',
+      commitHashes: []
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'cherryPickCommits',
+      commitHashes: ['abc123', '']
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'cherryPickCommits',
+      commitHashes: ['abc123', '   ']
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'cherryPickCommits',
+      commitHashes: ['abc123', 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)]
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
       type: 'openCommitOnGitHub',
       commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
@@ -398,6 +426,10 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }),
     { type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'cherryPickCommits', commitHashes: ['abc123', 'def456'] }),
+    { type: 'cherryPickCommits', commitHashes: ['abc123', 'def456'] }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openCommitOnGitHub', commitHash: 'abc123' }),

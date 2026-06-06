@@ -18,6 +18,7 @@ export interface ShowLogMessageHandlers {
   readonly openCommitDetails: (commitHash: string) => MaybePromise<void>;
   readonly compareCommits: (baseCommitHash: string, compareCommitHash: string) => MaybePromise<void>;
   readonly compareCommitWithWorktree: (commitHash: string) => MaybePromise<void>;
+  readonly cherryPickCommits: (commitHashes: readonly string[]) => MaybePromise<void>;
   readonly resetToCommit: (commitHash: string) => MaybePromise<void>;
 }
 
@@ -75,6 +76,9 @@ export async function dispatchShowLogWebviewMessage(
       return true;
     case 'compareCommitWithWorktree':
       await handlers.compareCommitWithWorktree(message.commitHash);
+      return true;
+    case 'cherryPickCommits':
+      await handlers.cherryPickCommits(message.commitHashes);
       return true;
     case 'resetToCommit':
       await handlers.resetToCommit(message.commitHash);

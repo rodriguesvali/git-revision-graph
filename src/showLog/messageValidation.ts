@@ -1,4 +1,4 @@
-import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
+import { isBoolean, isBoundedNonEmptyString, isBoundedString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
@@ -15,6 +15,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'openCommitDetails'; readonly commitHash: string }
   | { readonly type: 'copyCommitHash'; readonly commitHash: string }
   | { readonly type: 'copyReferenceName'; readonly commitHash: string; readonly refName: string }
+  | { readonly type: 'cherryPickCommits'; readonly commitHashes: readonly string[] }
   | { readonly type: 'openCommitOnGitHub'; readonly commitHash: string }
   | { readonly type: 'resetToCommit'; readonly commitHash: string };
 
@@ -51,6 +52,12 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'copyReferenceName':
       return isBoundedNonEmptyString(message.commitHash) && isBoundedNonEmptyString(message.refName)
         ? { type: 'copyReferenceName', commitHash: message.commitHash, refName: message.refName }
+        : undefined;
+    case 'cherryPickCommits':
+      return isBoundedStringArray(message.commitHashes)
+        && message.commitHashes.length > 0
+        && message.commitHashes.every((hash) => hash.trim().length > 0)
+        ? { type: 'cherryPickCommits', commitHashes: message.commitHashes }
         : undefined;
     case 'openFile':
     case 'compareWithWorktree':
