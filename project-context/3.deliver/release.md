@@ -33,6 +33,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-show-log-remote-commit-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-reset-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-compare-ui-boundary-hardening.md`
+- `project-context/2.build/features/0.0.39-shared-clipboard-writer-code-quality.md`
 
 Candidate direction:
 
@@ -59,6 +60,7 @@ Candidate direction:
 - Harden Show Log reset architecture by moving reset-to-commit workflow setup out of the editor panel provider.
 - Harden Show Log compare architecture by moving commit-compare UI adapter setup out of the editor panel provider.
 - Harden Show Log clipboard architecture by moving selected file/commit copy and clipboard access out of the editor panel provider.
+- Improve clipboard action coding quality by sharing the default VS Code clipboard writer instead of duplicating fallback adapters.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -189,6 +191,9 @@ Automated verification completed:
 - Focused Show Log clipboard, file action, state lookup, message handler, and webview tests passed with 18 tests after moving selected file/commit copy and clipboard access out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 385 tests after moving Show Log selected file/commit copy and clipboard access out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Show Log selected file/commit copy and clipboard access out of the provider and updating verification artifacts.
+- Focused Compare Results clipboard, Show Log clipboard, and message handler tests passed with 12 tests after consolidating the default VS Code clipboard writer. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 385 tests after consolidating the default VS Code clipboard writer. This includes `npm run build` through the test script.
+- `git diff --check` passed after consolidating the default VS Code clipboard writer and updating verification artifacts.
 
 Automated verification pending:
 
@@ -226,6 +231,7 @@ Post-release monitoring focus:
 - Reports of Show Log file actions, commit detail actions, or clipboard actions ignoring valid selected commits/files after state lookup extraction.
 - Reports of Show Log file diffs using the wrong parent ref, worktree ref, copied filename, or copied full path after file action helper extraction.
 - Reports of Show Log copy file name, copy full path, or copy commit hash actions writing stale or missing values after clipboard boundary extraction.
+- Reports of Compare Results or Show Log copy actions failing after shared clipboard writer cleanup.
 - Reports of graph, Compare Results, or Show Log webviews failing to render after local resource roots were denied.
 - Reports of revision graph layout cache not restoring across extension sessions or writing too often after cache persistence extraction.
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
@@ -251,6 +257,7 @@ Rollback:
 - If Show Log state lookup extraction causes file or commit action regressions, restore the previous provider-local lookup logic while preserving state lookup tests.
 - If Show Log file action extraction causes file diff or clipboard regressions, restore the previous provider-local file action logic while preserving file action tests.
 - If Show Log clipboard boundary extraction causes copy regressions, restore the previous provider-local clipboard writes while preserving clipboard action tests.
+- If shared clipboard writer cleanup causes copy regressions, restore the previous per-module default clipboard adapters while preserving clipboard action tests.
 - If local resource root hardening blocks a required shipped webview asset, explicitly grant the narrow asset root or temporarily restore the previous webview options while preserving helper tests.
 - If layout cache persistence extraction causes cache restore or save regressions, restore the previous activation-local persistence flow while preserving focused cache persistence tests.
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.

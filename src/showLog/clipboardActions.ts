@@ -1,3 +1,7 @@
+import {
+  getDefaultClipboardWriter,
+  type ClipboardWriter
+} from '../clipboard';
 import type { ShowLogState } from '../showLogShared';
 import {
   getShowLogChangeFileName,
@@ -8,9 +12,7 @@ import {
   isLoadedShowLogCommitHash
 } from './stateLookup';
 
-export interface ShowLogClipboardServices {
-  writeText(text: string): Promise<void>;
-}
+export type ShowLogClipboardServices = ClipboardWriter;
 
 export async function copyShowLogChangeFileName(
   state: ShowLogState,
@@ -23,7 +25,7 @@ export async function copyShowLogChangeFileName(
     return false;
   }
 
-  const clipboard = services ?? await getDefaultShowLogClipboardServices();
+  const clipboard = services ?? await getDefaultClipboardWriter();
   await clipboard.writeText(getShowLogChangeFileName(change));
   return true;
 }
@@ -39,7 +41,7 @@ export async function copyShowLogChangeFullPath(
     return false;
   }
 
-  const clipboard = services ?? await getDefaultShowLogClipboardServices();
+  const clipboard = services ?? await getDefaultClipboardWriter();
   await clipboard.writeText(getShowLogChangeFullPath(change));
   return true;
 }
@@ -53,16 +55,7 @@ export async function copyShowLogCommitHash(
     return false;
   }
 
-  const clipboard = services ?? await getDefaultShowLogClipboardServices();
+  const clipboard = services ?? await getDefaultClipboardWriter();
   await clipboard.writeText(commitHash);
   return true;
-}
-
-async function getDefaultShowLogClipboardServices(): Promise<ShowLogClipboardServices> {
-  const vscode = await import('vscode');
-  return {
-    async writeText(text) {
-      await vscode.env.clipboard.writeText(text);
-    }
-  };
 }
