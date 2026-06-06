@@ -256,14 +256,33 @@ export function renderShowLogWebviewHtml(): string {
     .commit-entry {
       position: relative;
     }
-    .commit-entry[data-selected="true"] {
+    .commit-entry[data-selected="true"] .commit-row {
       background: color-mix(in srgb, var(--show-log-row-active) 22%, transparent);
     }
-    .commit-entry[data-compare-base="true"] {
-      box-shadow: inset 3px 0 0 color-mix(in srgb, var(--vscode-list-focusOutline) 72%, var(--vscode-foreground));
-    }
+    .commit-entry[data-compare-base="true"],
     .commit-entry[data-compare-target="true"] {
-      box-shadow: inset 3px 0 0 var(--vscode-list-focusOutline);
+      --show-log-compare-role-color: var(--vscode-charts-blue, #3794ff);
+    }
+    .commit-entry[data-compare-base="true"] .commit-row,
+    .commit-entry[data-compare-target="true"] .commit-row {
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--show-log-compare-role-color) 86%, transparent) 0 3px,
+          transparent 3px 100%
+        ),
+        color-mix(in srgb, var(--show-log-compare-role-color) 13%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--show-log-compare-role-color) 34%, transparent);
+    }
+    .commit-entry[data-compare-base="true"] .commit-row:hover,
+    .commit-entry[data-compare-target="true"] .commit-row:hover {
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--show-log-compare-role-color) 92%, transparent) 0 3px,
+          transparent 3px 100%
+        ),
+        color-mix(in srgb, var(--show-log-compare-role-color) 18%, var(--show-log-row-hover));
     }
     .commit-row {
       position: relative;
@@ -387,6 +406,23 @@ export function renderShowLogWebviewHtml(): string {
       grid-area: subject;
       padding: 3px 12px 3px 0;
     }
+    .commit-entry[data-compare-base="true"] .subject-cell::after {
+      flex: 0 0 auto;
+      margin-left: 10px;
+      padding: 1px 7px 2px;
+      border: 1px solid color-mix(in srgb, var(--show-log-compare-role-color) 48%, transparent);
+      border-radius: 999px;
+      color: color-mix(in srgb, var(--show-log-compare-role-color) 76%, var(--vscode-foreground));
+      background: color-mix(in srgb, var(--show-log-compare-role-color) 16%, transparent);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .commit-entry[data-compare-base="true"] .subject-cell::after {
+      content: 'Base';
+    }
     .author-cell,
     .date-cell {
       padding: 3px 10px 3px 0;
@@ -409,6 +445,7 @@ export function renderShowLogWebviewHtml(): string {
     }
     .subject-stack {
       min-width: 0;
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       gap: 1px;
@@ -1560,15 +1597,13 @@ export function renderShowLogWebviewHtml(): string {
       const commitRow = target.closest('[data-commit-hash]');
       if (commitRow instanceof HTMLElement) {
         const commitHash = commitRow.getAttribute('data-commit-hash') || '';
-        if (event.ctrlKey) {
+        if (event.ctrlKey && event.button === 0) {
           selectCommit(commitHash, true);
           closeContextMenu();
           render();
           return;
         }
-        selectCommit(commitHash, false);
         closeContextMenu();
-        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash });
       }
     });
@@ -1642,9 +1677,7 @@ export function renderShowLogWebviewHtml(): string {
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-commit-hash]')) {
         event.preventDefault();
         const commitHash = target.getAttribute('data-commit-hash') || '';
-        selectCommit(commitHash, false);
         closeContextMenu();
-        render();
         vscode.postMessage({ type: 'toggleCommit', commitHash });
         return;
       }

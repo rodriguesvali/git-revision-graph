@@ -100,6 +100,14 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /data-compare-base="' \+ \(selectedCommitHashes\[0\] === commit\.hash \? 'true' : 'false'\)/);
   assert.match(html, /\.commit-entry\[data-compare-base="true"\]/);
   assert.match(html, /\.commit-entry\[data-compare-target="true"\]/);
+  assert.match(html, /--show-log-compare-role-color: var\(--vscode-charts-blue, #3794ff\);/);
+  assert.doesNotMatch(html, /--show-log-compare-role-color: var\(--vscode-charts-green, #89d185\);/);
+  assert.match(html, /\.commit-entry\[data-compare-base="true"\] \.commit-row,\s*\.commit-entry\[data-compare-target="true"\] \.commit-row/s);
+  assert.match(html, /\.commit-entry\[data-compare-base="true"\] \.subject-cell::after/);
+  assert.doesNotMatch(html, /\.commit-entry\[data-compare-target="true"\] \.subject-cell::after/);
+  assert.match(html, /content: 'Base';/);
+  assert.doesNotMatch(html, /content: 'Compare';/);
+  assert.match(html, /text-transform: uppercase;/);
   assert.match(html, /function persistUiState\(\)/);
   assert.match(html, /function normalizeSelectedCommitHashes\(value\)/);
   assert.match(html, /function syncSelectedCommitHashes\(commits\)/);
@@ -108,8 +116,10 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /selectedCommitHashes\.includes\(commitHash\)/);
   assert.match(html, /function getCompareSelectionForCommit\(commitHash\)/);
   assert.match(html, /vscode\.setState\(/);
-  assert.match(html, /if \(event\.ctrlKey\)/);
-  assert.match(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
+  assert.match(html, /if \(event\.ctrlKey && event\.button === 0\)/);
+  assert.match(html, /selectCommit\(commitHash, true\);\s*closeContextMenu\(\);\s*render\(\);\s*return;/s);
+  assert.match(html, /closeContextMenu\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
+  assert.doesNotMatch(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
   assert.match(html, /document\.addEventListener\('pointerdown'/);
   assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);
   assert.match(html, /function scheduleFilterUpdate\(value\)/);

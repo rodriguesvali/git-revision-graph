@@ -17,6 +17,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-show-merge-commits-view-option.md`
 - `project-context/2.build/features/1.0.0-remote-checkout-overwrite-confirmation.md`
 - `project-context/2.build/features/1.0.0-show-log-expanded-reference-gap-polish.md`
+- `project-context/2.build/features/1.0.0-show-log-comparison-selection-polish.md`
 
 Release direction:
 
@@ -32,6 +33,7 @@ Implemented polish:
 - The revision graph `View` menu now includes a default-off `Show Merge Commits` option that hides unreferenced merge commits by default while preserving ancestry through graph edges.
 - Remote checkout now requires a destructive confirmation before `Override branch if exists` resets an existing local branch.
 - Show Log expanded rows now extend the compact graph line through visible reference/stat metadata before the changed-file continuation starts.
+- Show Log comparison selections now use matching row emphasis plus a single `Base` badge instead of relying on the left-edge marker alone, and selection now requires `Ctrl` + left-click so plain clicks only expand commits.
 
 Automated verification completed:
 
@@ -55,6 +57,10 @@ Automated verification completed:
 - `npm run build` passed after the Show Log expanded-row graph polish.
 - `npm test` passed with 398 tests after the Show Log expanded-row graph polish. This includes `npm run build` through the test script.
 - `git diff --check` passed after the Show Log expanded-row graph polish.
+- Focused Show Log webview shell test passed after adding same-color full-row comparison selection emphasis, a single `Base` badge, and `Ctrl` + left-click-only comparison selection.
+- `npm run build` passed after the Show Log comparison selection gesture polish.
+- `npm test` passed with 398 tests after the Show Log comparison selection gesture polish. This includes `npm run build` through the test script.
+- `git diff --check` passed after the Show Log comparison selection gesture polish.
 
 Automated verification pending:
 
