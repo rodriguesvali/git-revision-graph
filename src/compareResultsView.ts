@@ -26,6 +26,7 @@ import {
   openChangeDiffWithWorktree,
   restoreWorktreeChangeFromRef
 } from './workbenchRefActionServices';
+import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 
@@ -246,10 +247,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       COMPARE_RESULTS_VIEW_ID,
       'Compare Results',
       vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true
-      }
+      createRetainedScriptWebviewPanelOptions()
     );
     panel.iconPath = {
       light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),

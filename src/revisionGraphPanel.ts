@@ -7,6 +7,7 @@ import { RevisionGraphController } from './revisionGraph/controller';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
 import { ShowLogPresenter } from './showLogView';
+import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private readonly controller: RevisionGraphController;
@@ -89,10 +90,7 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE,
       'Git Revision Graph',
       vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true
-      }
+      createRetainedScriptWebviewPanelOptions()
     );
     panel.iconPath = {
       light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),

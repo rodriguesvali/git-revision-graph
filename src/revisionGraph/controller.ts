@@ -61,6 +61,7 @@ import {
   RevisionGraphRepositoryEventKind,
   registerPendingFollowUpRefresh
 } from '../revisionGraphRefresh';
+import { createScriptOnlyWebviewOptions } from '../webviewOptions';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -285,9 +286,7 @@ export class RevisionGraphController implements vscode.Disposable {
         });
       })
     );
-    view.webview.options = {
-      enableScripts: true
-    };
+    view.webview.options = createScriptOnlyWebviewOptions();
     view.webview.html = renderRevisionGraphShellHtml();
 
     this.setCurrentRepository(reconcileCurrentRepository(this.git.repositories, this.currentRepository));

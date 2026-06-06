@@ -40,6 +40,7 @@ import {
   ShowLogState
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
+import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
 const SHOW_LOG_PAGE_SIZE = 50;
 
@@ -632,10 +633,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       SHOW_LOG_VIEW_ID,
       'Show Log',
       vscode.ViewColumn.One,
-      {
-        enableScripts: true,
-        retainContextWhenHidden: true
-      }
+      createRetainedScriptWebviewPanelOptions()
     );
     panel.iconPath = {
       light: vscode.Uri.joinPath(this.extensionUri, 'media', 'icon-source-light.svg'),
