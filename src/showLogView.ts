@@ -14,10 +14,13 @@ import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } f
 import { ShowLogExpansionRequests } from './showLog/expansionRequests';
 import {
   compareShowLogFileChangeWithWorktree,
-  getShowLogChangeFileName,
-  getShowLogChangeFullPath,
   openShowLogFileChange
 } from './showLog/fileActions';
+import {
+  copyShowLogChangeFileName,
+  copyShowLogChangeFullPath,
+  copyShowLogCommitHash
+} from './showLog/clipboardActions';
 import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
@@ -484,31 +487,15 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
-    const change = findShowLogChange(this.state, commitHash, changeId);
-    if (!change) {
-      return;
-    }
-
-    await vscode.env.clipboard.writeText(
-      getShowLogChangeFileName(change)
-    );
+    await copyShowLogChangeFileName(this.state, commitHash, changeId);
   }
 
   private async copyFullPath(commitHash: string, changeId: string): Promise<void> {
-    const change = findShowLogChange(this.state, commitHash, changeId);
-    if (!change) {
-      return;
-    }
-
-    await vscode.env.clipboard.writeText(getShowLogChangeFullPath(change));
+    await copyShowLogChangeFullPath(this.state, commitHash, changeId);
   }
 
   private async copyCommitHash(commitHash: string): Promise<void> {
-    if (!isLoadedShowLogCommitHash(this.state, commitHash)) {
-      return;
-    }
-
-    await vscode.env.clipboard.writeText(commitHash);
+    await copyShowLogCommitHash(this.state, commitHash);
   }
 
   private async openCommitOnGitHub(commitHash: string): Promise<void> {
