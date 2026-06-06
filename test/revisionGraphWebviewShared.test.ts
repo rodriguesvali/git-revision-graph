@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RevisionGraphNode, RevisionGraphScene } from '../src/revisionGraphData';
-import { buildNodeLayouts, createNonce, describeEdgePath, formatNodeSummary, NODE_HORIZONTAL_GAP, renderEdge } from '../src/revisionGraph/webview/shared';
+import { buildNodeLayouts, describeEdgePath, formatNodeSummary, NODE_HORIZONTAL_GAP, renderEdge } from '../src/revisionGraph/webview/shared';
 
 test('formats structural node summaries as compact short hashes', () => {
   const node: RevisionGraphNode = {
@@ -267,13 +267,4 @@ test('centers cards with different widths on the same lane coordinate', () => {
     (wide?.defaultLeft ?? 0) + (wide?.width ?? 0) / 2,
     (narrow?.defaultLeft ?? 0) + (narrow?.width ?? 0) / 2
   );
-});
-
-test('creates CSP nonces with cryptographic base64url-friendly values', () => {
-  const first = createNonce();
-  const second = createNonce();
-
-  assert.match(first, /^[A-Za-z0-9_-]{22}$/);
-  assert.match(second, /^[A-Za-z0-9_-]{22}$/);
-  assert.notEqual(first, second);
 });

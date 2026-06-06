@@ -1,4 +1,7 @@
-import { createNonce } from './revisionGraph/webview/shared';
+import {
+  createWebviewContentSecurityPolicy,
+  createWebviewNonce
+} from './webviewSecurity';
 
 export interface CompareResultsWebviewItem {
   readonly id: string;
@@ -24,13 +27,13 @@ export interface CompareResultsWebviewState {
 }
 
 export function renderCompareResultsWebviewHtml(): string {
-  const nonce = createNonce();
+  const nonce = createWebviewNonce();
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
+  <meta http-equiv="Content-Security-Policy" content="${createWebviewContentSecurityPolicy(nonce)}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compare Results</title>
   <style>

@@ -1,5 +1,3 @@
-import { randomBytes } from 'node:crypto';
-
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from '../../revisionGraphData';
 import {
   estimateRevisionGraphNodeHeight,
@@ -412,10 +410,6 @@ export function formatNodeTitle(node: RevisionGraphNode): string {
   const date = node.date || 'Unknown date';
   const subject = node.subject || 'Structural commit';
   return `${refBlock}${node.hash}\n${subject}\n${author} on ${date}`;
-}
-
-export function createNonce(): string {
-  return randomBytes(16).toString('base64url');
 }
 
 export function escapeHtml(value: string): string {
