@@ -1,6 +1,7 @@
 import { Branch, Repository, RefType } from '../git';
 import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
 import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
+import { formatShortCommitHash } from '../commitHash';
 import { createActionRefreshRequest } from '../revisionGraphRefresh';
 import { HeadSyncState, RefActionKind, RefActionServices } from './types';
 
@@ -56,7 +57,7 @@ export function getSuggestedLocalBranchName(refName: string): string {
 
 export function getSuggestedNewBranchName(refName: string, kind: RefActionKind): string {
   if (kind === 'commit') {
-    return `commit-${refName.slice(0, 8)}`;
+    return `commit-${formatShortCommitHash(refName)}`;
   }
 
   if (kind === 'head' || kind === 'branch') {

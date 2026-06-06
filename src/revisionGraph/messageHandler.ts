@@ -1,6 +1,7 @@
 import { Repository } from '../git';
 import { RefActionKind } from '../refActions';
 import { RevisionGraphMessage } from '../revisionGraphTypes';
+import { formatShortCommitHash } from '../commitHash';
 import { ShowLogPresenter } from '../showLogView';
 import {
   RevisionGraphRemoteTagWorkflow,
@@ -97,7 +98,7 @@ export class RevisionGraphMessageHandler {
         return;
       case 'copy-commit-hash':
         await this.host.writeClipboard(message.commitHash);
-        this.host.actionServices.ui.showInformationMessage(`Copied commit ${message.commitHash.slice(0, 8)}.`);
+        this.host.actionServices.ui.showInformationMessage(`Copied commit ${formatShortCommitHash(message.commitHash)}.`);
         return;
       case 'copy-ref-name':
         await this.host.writeClipboard(message.refName);

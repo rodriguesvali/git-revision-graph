@@ -1,4 +1,5 @@
 import type { Repository } from '../git';
+import { formatShortCommitHash } from '../commitHash';
 import {
   resetCurrentBranchToCommit,
   type RefActionServices
@@ -44,7 +45,7 @@ export async function resetShowLogCommit(
 }
 
 export function getShowLogResetCommitLabel(entry: RevisionLogEntry, commitHash: string): string {
-  return entry.shortHash || commitHash.slice(0, 8);
+  return entry.shortHash || formatShortCommitHash(commitHash);
 }
 
 async function getDefaultShowLogResetActionUi(): Promise<ShowLogResetActionUi> {

@@ -1,4 +1,5 @@
 import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from '../../revisionGraphData';
+import { formatShortCommitHash } from '../../commitHash';
 import {
   estimateRevisionGraphNodeHeight,
   estimateRevisionGraphNodeWidth
@@ -395,7 +396,7 @@ export function getNodeHeight(node: RevisionGraphNode): number {
 }
 
 export function formatNodeSummary(node: RevisionGraphNode): string {
-  return node.hash.slice(0, 8);
+  return formatShortCommitHash(node.hash);
 }
 
 export function shouldRenderNodeSummary(node: RevisionGraphNode): boolean {

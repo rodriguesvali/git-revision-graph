@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
+import { formatShortCommitHash } from '../../commitHash';
 import { Repository } from '../../git';
 import { RevisionGraphDocumentBackend } from '../backend';
 
@@ -14,7 +15,7 @@ export async function openUnifiedDiffDocument(
     const stdout = await backend.loadUnifiedDiff(repository, left, right);
 
     if (stdout.trim().length === 0) {
-      void vscode.window.showInformationMessage(`No unified diff found between ${left.slice(0, 8)} and ${right.slice(0, 8)}.`);
+      void vscode.window.showInformationMessage(`No unified diff found between ${formatShortCommitHash(left)} and ${formatShortCommitHash(right)}.`);
       return;
     }
 

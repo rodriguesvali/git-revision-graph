@@ -1,4 +1,5 @@
 import { Branch, Ref, RefType, Repository } from './git';
+import { formatShortCommitHash } from './commitHash';
 
 export function getReferenceHandle(ref: Ref): string {
   if (ref.type === RefType.RemoteHead && ref.remote && ref.name) {
@@ -33,7 +34,7 @@ export function getReferenceDescription(repository: Repository, ref: Ref): strin
     return ref.remote;
   }
 
-  return ref.commit ? ref.commit.slice(0, 8) : undefined;
+  return ref.commit ? formatShortCommitHash(ref.commit) : undefined;
 }
 
 export function getReferenceTooltip(repository: Repository, ref: Ref): string {

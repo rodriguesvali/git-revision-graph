@@ -1,3 +1,5 @@
+import { formatShortCommitHash } from '../../commitHash';
+
 export const NODE_MIN_WIDTH = 128;
 export const NODE_MAX_WIDTH = 360;
 export const NODE_CONTENT_CHAR_WIDTH = 7.4;
@@ -40,7 +42,7 @@ export function estimateRevisionGraphNodeHeight(node: RevisionGraphNodeSizingTar
 }
 
 function formatNodeSummaryForSizing(node: RevisionGraphNodeSizingTarget): string {
-  return node.hash.slice(0, 8);
+  return formatShortCommitHash(node.hash);
 }
 
 function clampNumber(value: number, min: number, max: number): number {
