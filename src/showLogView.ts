@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
 import type { Repository } from './git';
-import { openChangeDiffBetweenRefs, openChangeDiffWithWorktree } from './workbenchRefActionServices';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
 import {
@@ -15,6 +13,12 @@ import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
 import { ShowLogExpansionRequests } from './showLog/expansionRequests';
+import {
+  compareShowLogFileChangeWithWorktree,
+  getShowLogChangeFileName,
+  getShowLogChangeFullPath,
+  openShowLogFileChange
+} from './showLog/fileActions';
 import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
@@ -38,7 +42,6 @@ import {
 import { renderShowLogWebviewHtml } from './showLogWebview';
 
 const SHOW_LOG_PAGE_SIZE = 50;
-const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 export interface ShowLogPresenter {
   showSource(repository: Repository, source: RevisionLogSource): Promise<void>;
@@ -462,9 +465,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const entry = this.state.entries.find((item) => item.hash === commitHash);
-    const parentHash = entry?.parentHashes[0] ?? EMPTY_TREE_HASH;
-    await openChangeDiffBetweenRefs(repository, change, parentHash, commitHash);
+    await openShowLogFileChange(repository, this.state.entries, commitHash, change);
   }
 
   private async compareFileChangeWithWorktree(commitHash: string, changeId: string): Promise<void> {
@@ -478,7 +479,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    await openChangeDiffWithWorktree(repository, change, commitHash);
+    await compareShowLogFileChangeWithWorktree(repository, commitHash, change);
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
@@ -488,7 +489,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     await vscode.env.clipboard.writeText(
-      path.basename(change.renameUri?.fsPath ?? change.uri.fsPath)
+      getShowLogChangeFileName(change)
     );
   }
 
@@ -498,7 +499,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    await vscode.env.clipboard.writeText(change.renameUri?.fsPath ?? change.uri.fsPath);
+    await vscode.env.clipboard.writeText(getShowLogChangeFullPath(change));
   }
 
   private async copyCommitHash(commitHash: string): Promise<void> {
