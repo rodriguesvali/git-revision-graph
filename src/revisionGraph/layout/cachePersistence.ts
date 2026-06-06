@@ -1,0 +1,126 @@
+import type * as vscode from 'vscode';
+
+import {
+  restoreProjectedGraphLayoutCache,
+  serializeProjectedGraphLayoutCache,
+  type SerializedProjectedGraphLayoutCacheEntry
+} from './layeredLayout';
+
+export const PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY = 'gitRevisionGraph.projectedGraphLayoutCache.v1';
+export const PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS = 500;
+
+export interface ProjectedGraphLayoutCacheState {
+  get<T>(key: string, defaultValue: T): T;
+  update(key: string, value: SerializedProjectedGraphLayoutCacheEntry[] | undefined): Thenable<void>;
+}
+
+export interface ProjectedGraphLayoutCachePersistenceServices {
+  restoreCache(entries: readonly SerializedProjectedGraphLayoutCacheEntry[] | undefined): void;
+  serializeCache(): SerializedProjectedGraphLayoutCacheEntry[];
+  setTimeout(callback: () => void, delayMs: number): unknown;
+  clearTimeout(timer: unknown): void;
+  warn(message: string, error: unknown): void;
+}
+
+const defaultServices: ProjectedGraphLayoutCachePersistenceServices = {
+  restoreCache: restoreProjectedGraphLayoutCache,
+  serializeCache: serializeProjectedGraphLayoutCache,
+  setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearTimeout: (timer) => clearTimeout(timer as ReturnType<typeof setTimeout>),
+  warn: (message, error) => console.warn(message, error)
+};
+
+export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
+  private saveTimer: unknown;
+  private lastPersistedCacheJson: string | undefined;
+
+  constructor(
+    private readonly state: ProjectedGraphLayoutCacheState,
+    private readonly services: ProjectedGraphLayoutCachePersistenceServices = defaultServices,
+    private readonly saveDelayMs = PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS
+  ) {}
+
+  restore(): void {
+    try {
+      const persistedCache = this.state.get<SerializedProjectedGraphLayoutCacheEntry[]>(
+        PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+        []
+      );
+      this.services.restoreCache(persistedCache);
+      const restoredCache = this.services.serializeCache();
+      const persistedCacheJson = serializeCacheForComparison(persistedCache ?? []);
+      const restoredCacheJson = serializeCacheForComparison(restoredCache);
+      this.lastPersistedCacheJson = persistedCacheJson;
+      if (persistedCacheJson !== restoredCacheJson) {
+        void this.persist(true);
+      }
+    } catch (error) {
+      this.services.warn('Failed to restore the persisted revision graph layout cache.', error);
+      this.services.restoreCache(undefined);
+      this.lastPersistedCacheJson = undefined;
+      void this.state.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
+    }
+  }
+
+  schedulePersist(): void {
+    if (this.saveTimer) {
+      this.services.clearTimeout(this.saveTimer);
+    }
+
+    this.saveTimer = this.services.setTimeout(() => {
+      this.saveTimer = undefined;
+      void this.persist();
+    }, this.saveDelayMs);
+  }
+
+  async persist(force = false): Promise<void> {
+    let serializedCache: SerializedProjectedGraphLayoutCacheEntry[];
+    try {
+      serializedCache = this.services.serializeCache();
+    } catch (error) {
+      this.services.warn('Failed to serialize the revision graph layout cache.', error);
+      await this.clearPersistedCache();
+      return;
+    }
+
+    const serializedCacheJson = serializeCacheForComparison(serializedCache);
+    if (!force && serializedCacheJson === this.lastPersistedCacheJson) {
+      return;
+    }
+
+    try {
+      await this.state.update(
+        PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+        serializedCache.length > 0 ? serializedCache : undefined
+      );
+      this.lastPersistedCacheJson = serializedCacheJson;
+    } catch (error) {
+      this.services.warn('Failed to persist the revision graph layout cache.', error);
+      await this.clearPersistedCache();
+    }
+  }
+
+  dispose(): void {
+    if (this.saveTimer) {
+      this.services.clearTimeout(this.saveTimer);
+      this.saveTimer = undefined;
+    }
+
+    void this.persist();
+  }
+
+  private async clearPersistedCache(): Promise<void> {
+    try {
+      await this.state.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
+      this.lastPersistedCacheJson = serializeCacheForComparison([]);
+    } catch (error) {
+      this.services.warn('Failed to clear the persisted revision graph layout cache.', error);
+    }
+  }
+}
+
+function serializeCacheForComparison(
+  cache: readonly SerializedProjectedGraphLayoutCacheEntry[]
+): string {
+  return JSON.stringify(cache);
+}

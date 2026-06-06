@@ -23,6 +23,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-show-log-state-lookup-cohesion.md`
 - `project-context/2.build/features/0.0.39-show-log-file-action-cohesion.md`
 - `project-context/2.build/features/0.0.39-webview-local-resource-roots-hardening.md`
+- `project-context/2.build/features/0.0.39-layout-cache-persistence-hardening.md`
 
 Candidate direction:
 
@@ -39,6 +40,7 @@ Candidate direction:
 - Reduce Show Log action coupling by extracting state lookup and webview change ID parsing from panel actions when the slice can preserve existing behavior.
 - Reduce Show Log file action coupling by extracting file diff, parent-hash fallback, and path selection helpers from panel actions when the slice can preserve existing behavior.
 - Harden webview architecture by making local resource access explicit and denying local resource roots where the shipped webviews do not load local files.
+- Harden activation architecture by moving revision graph layout cache persistence, debounce, and workspace-state recovery out of the extension entrypoint.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -139,6 +141,9 @@ Automated verification completed:
 - Focused webview option and webview rendering tests passed with 28 tests after centralizing script-enabled webview options and denying local resource roots. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 347 tests after centralizing script-enabled webview options and denying local resource roots. This includes `npm run build` through the test script.
 - `git diff --check` passed after centralizing script-enabled webview options and updating verification artifacts.
+- Focused revision graph layout cache persistence and graph tests passed with 54 tests after moving layout cache persistence out of `extension.ts`. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 352 tests after moving layout cache persistence out of `extension.ts`. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving layout cache persistence out of `extension.ts` and updating verification artifacts.
 
 Automated verification pending:
 
@@ -176,6 +181,7 @@ Post-release monitoring focus:
 - Reports of Show Log file actions, commit detail actions, or clipboard actions ignoring valid selected commits/files after state lookup extraction.
 - Reports of Show Log file diffs using the wrong parent ref, worktree ref, copied filename, or copied full path after file action helper extraction.
 - Reports of graph, Compare Results, or Show Log webviews failing to render after local resource roots were denied.
+- Reports of revision graph layout cache not restoring across extension sessions or writing too often after cache persistence extraction.
 
 Rollback:
 
@@ -191,6 +197,7 @@ Rollback:
 - If Show Log state lookup extraction causes file or commit action regressions, restore the previous provider-local lookup logic while preserving state lookup tests.
 - If Show Log file action extraction causes file diff or clipboard regressions, restore the previous provider-local file action logic while preserving file action tests.
 - If local resource root hardening blocks a required shipped webview asset, explicitly grant the narrow asset root or temporarily restore the previous webview options while preserving helper tests.
+- If layout cache persistence extraction causes cache restore or save regressions, restore the previous activation-local persistence flow while preserving focused cache persistence tests.
 
 ## 0.0.38 Release Readiness
 

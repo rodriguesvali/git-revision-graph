@@ -9,22 +9,17 @@ import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } f
 import { RefNode } from './refNodes';
 import { createRevisionGraphBackend } from './revisionGraph/backend';
 import {
-  onProjectedGraphLayoutCacheDidChange,
-  restoreProjectedGraphLayoutCache,
-  serializeProjectedGraphLayoutCache
+  onProjectedGraphLayoutCacheDidChange
 } from './revisionGraph/layout/layeredLayout';
-import type { SerializedProjectedGraphLayoutCacheEntry } from './revisionGraph/layout/layeredLayout';
+import { ProjectedGraphLayoutCachePersistence } from './revisionGraph/layout/cachePersistence';
 import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
 import { initializeRevisionGraphVisibility } from './viewLayout';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
-const PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY = 'gitRevisionGraph.projectedGraphLayoutCache.v1';
-const PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS = 500;
 const GIT_EXTENSION_CONFIG_SECTION = 'git';
 const GIT_PATH_CONFIG_KEY = 'path';
-let lastPersistedProjectedGraphLayoutCacheJson: string | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   syncConfiguredGitExecutablePath();
@@ -38,18 +33,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  restorePersistedProjectedGraphLayoutCache(context);
-  let layoutCacheSaveTimer: ReturnType<typeof setTimeout> | undefined;
-  const saveProjectedGraphLayoutCache = () => {
-    if (layoutCacheSaveTimer) {
-      clearTimeout(layoutCacheSaveTimer);
-    }
-
-    layoutCacheSaveTimer = setTimeout(() => {
-      layoutCacheSaveTimer = undefined;
-      void persistProjectedGraphLayoutCache(context);
-    }, PROJECTED_GRAPH_LAYOUT_CACHE_SAVE_DELAY_MS);
-  };
+  const layoutCachePersistence = new ProjectedGraphLayoutCachePersistence(context.workspaceState);
+  layoutCachePersistence.restore();
 
   const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri);
   const backend = createRevisionGraphBackend();
@@ -75,17 +60,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     compareResultsProvider,
     showLogProvider,
     revisionGraphEditorPanel,
-    onProjectedGraphLayoutCacheDidChange(saveProjectedGraphLayoutCache),
-    {
-      dispose() {
-        if (layoutCacheSaveTimer) {
-          clearTimeout(layoutCacheSaveTimer);
-          layoutCacheSaveTimer = undefined;
-        }
-
-        void persistProjectedGraphLayoutCache(context);
-      }
-    },
+    layoutCachePersistence,
+    onProjectedGraphLayoutCacheDidChange(() => layoutCachePersistence.schedulePersist()),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration(`${GIT_EXTENSION_CONFIG_SECTION}.${GIT_PATH_CONFIG_KEY}`)) {
         syncConfiguredGitExecutablePath();
@@ -121,75 +97,6 @@ function syncConfiguredGitExecutablePath(): void {
     .getConfiguration(GIT_EXTENSION_CONFIG_SECTION)
     .get<unknown>(GIT_PATH_CONFIG_KEY);
   configureGitExecutablePath(gitPath);
-}
-
-function restorePersistedProjectedGraphLayoutCache(context: vscode.ExtensionContext): void {
-  try {
-    const persistedCache = context.workspaceState.get<SerializedProjectedGraphLayoutCacheEntry[]>(
-      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-      []
-    );
-    restoreProjectedGraphLayoutCache(
-      persistedCache
-    );
-    const restoredCache = serializeProjectedGraphLayoutCache();
-    const persistedCacheJson = serializeProjectedGraphLayoutCacheForComparison(persistedCache ?? []);
-    const restoredCacheJson = serializeProjectedGraphLayoutCacheForComparison(restoredCache);
-    lastPersistedProjectedGraphLayoutCacheJson = persistedCacheJson;
-    if (persistedCacheJson !== restoredCacheJson) {
-      void persistProjectedGraphLayoutCache(context, true);
-    }
-  } catch (error) {
-    console.warn('Failed to restore the persisted revision graph layout cache.', error);
-    restoreProjectedGraphLayoutCache(undefined);
-    lastPersistedProjectedGraphLayoutCacheJson = undefined;
-    void context.workspaceState.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
-  }
-}
-
-async function persistProjectedGraphLayoutCache(
-  context: vscode.ExtensionContext,
-  force = false
-): Promise<void> {
-  let serializedCache: SerializedProjectedGraphLayoutCacheEntry[];
-  try {
-    serializedCache = serializeProjectedGraphLayoutCache();
-  } catch (error) {
-    console.warn('Failed to serialize the revision graph layout cache.', error);
-    await clearPersistedProjectedGraphLayoutCache(context);
-    return;
-  }
-
-  const serializedCacheJson = serializeProjectedGraphLayoutCacheForComparison(serializedCache);
-  if (!force && serializedCacheJson === lastPersistedProjectedGraphLayoutCacheJson) {
-    return;
-  }
-
-  try {
-    await context.workspaceState.update(
-      PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-      serializedCache.length > 0 ? serializedCache : undefined
-    );
-    lastPersistedProjectedGraphLayoutCacheJson = serializedCacheJson;
-  } catch (error) {
-    console.warn('Failed to persist the revision graph layout cache.', error);
-    await clearPersistedProjectedGraphLayoutCache(context);
-  }
-}
-
-async function clearPersistedProjectedGraphLayoutCache(context: vscode.ExtensionContext): Promise<void> {
-  try {
-    await context.workspaceState.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
-    lastPersistedProjectedGraphLayoutCacheJson = serializeProjectedGraphLayoutCacheForComparison([]);
-  } catch (error) {
-    console.warn('Failed to clear the persisted revision graph layout cache.', error);
-  }
-}
-
-function serializeProjectedGraphLayoutCacheForComparison(
-  cache: readonly SerializedProjectedGraphLayoutCacheEntry[]
-): string {
-  return JSON.stringify(cache);
 }
 
 async function getGitApi(): Promise<API | undefined> {
