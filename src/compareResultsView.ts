@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import type { Change, Repository } from './git';
 import {
-  applyCompareResultsWorktreeRefresh,
   CompareResultItem,
   CompareResultsState
 } from './compareResultsShared';
@@ -25,6 +24,7 @@ import {
   createCompareResultsWebviewState,
   getCompareResultItems
 } from './compareResults/viewState';
+import { refreshCompareResultsWorktreeComparison } from './compareResults/worktreeRefresh';
 import type { RefSelection } from './refActions';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
@@ -183,8 +183,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {
-    const changes = await repository.diffWith(refName);
-    const outcome = applyCompareResultsWorktreeRefresh(this.state, repository, refName, changes);
+    const outcome = await refreshCompareResultsWorktreeComparison(this.state, repository, refName);
     if (!outcome) {
       return;
     }

@@ -27,6 +27,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-webview-security-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-item-action-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-restore-action-hardening.md`
+- `project-context/2.build/features/0.0.39-compare-results-worktree-refresh-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-remote-commit-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-reset-action-hardening.md`
 - `project-context/2.build/features/0.0.39-show-log-compare-ui-boundary-hardening.md`
@@ -50,6 +51,7 @@ Candidate direction:
 - Harden webview security boundaries by moving nonce and CSP construction out of revision graph renderer internals and into a shared host-facing helper.
 - Harden Compare Results panel architecture by moving item diff and clipboard action policy out of the editor panel provider.
 - Harden Compare Results restore architecture by moving destructive restore confirmation, execution, and error translation out of the editor panel provider.
+- Harden Compare Results post-restore architecture by moving worktree diff refresh loading out of the editor panel provider.
 - Harden Show Log remote commit architecture by moving GitHub URL opening and no-remote fallback behavior out of the editor panel provider.
 - Harden Show Log reset architecture by moving reset-to-commit workflow setup out of the editor panel provider.
 - Harden Show Log compare architecture by moving commit-compare UI adapter setup out of the editor panel provider.
@@ -174,6 +176,9 @@ Automated verification completed:
 - Focused Show Log commit compare, message handler, and webview tests passed with 11 tests after moving commit-compare UI adapter setup out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 375 tests after moving Show Log commit-compare UI adapter setup out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Show Log commit-compare UI adapter setup out of the provider and updating verification artifacts.
+- Focused Compare Results worktree refresh, shared-state, restore action, message handler, and webview tests passed with 18 tests after moving post-restore worktree diff refresh loading out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 378 tests after moving Compare Results post-restore worktree diff refresh loading out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Compare Results post-restore worktree diff refresh loading out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
@@ -215,6 +220,7 @@ Post-release monitoring focus:
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
 - Reports of Compare Results file actions using the wrong diff ref, copied filename, or copied full path after item action helper extraction.
 - Reports of Compare Results restore confirmation, restore execution, or post-restore refresh drifting after restore action helper extraction.
+- Reports of Compare Results post-restore refresh not closing when aligned or not retaining remaining worktree differences after worktree refresh extraction.
 - Reports of Show Log GitHub commit links not opening or no-GitHub-remote feedback drifting after remote commit action extraction.
 - Reports of Show Log reset-to-commit prompts, commit labels, or post-reset refresh behavior drifting after reset action extraction.
 - Reports of Show Log commit compare no-difference messages or compare-error feedback drifting after compare UI boundary extraction.
@@ -237,6 +243,7 @@ Rollback:
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.
 - If Compare Results item action extraction causes diff or clipboard regressions, restore the previous provider-local item action logic while preserving item action tests.
 - If Compare Results restore action extraction causes restore or refresh regressions, restore the previous provider-local restore logic while preserving restore action tests.
+- If Compare Results worktree refresh extraction causes post-restore refresh regressions, restore the previous provider-local diff refresh logic while preserving worktree refresh tests.
 - If Show Log remote commit action extraction causes GitHub link regressions, restore the previous provider-local external-open logic while preserving remote commit action tests.
 - If Show Log reset action extraction causes reset prompt or refresh regressions, restore the previous provider-local reset setup while preserving reset action tests.
 - If Show Log compare UI boundary extraction causes compare feedback regressions, restore the previous provider-local UI adapter setup while preserving compare helper tests.
