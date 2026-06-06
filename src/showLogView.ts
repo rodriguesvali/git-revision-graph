@@ -27,7 +27,7 @@ import {
   isAbortError,
   ShowLogLoadRequests
 } from './showLog/loadRequests';
-import { buildGitHubCommitUrl } from './showLog/remoteCommitUrl';
+import { openShowLogCommitOnGitHub } from './showLog/remoteCommitAction';
 import {
   findShowLogChange,
   getVisibleShowLogRepository,
@@ -517,13 +517,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    const url = buildGitHubCommitUrl(repository, commitHash);
-    if (!url) {
-      await vscode.window.showInformationMessage('No GitHub remote is configured for this repository.');
-      return;
-    }
-
-    await vscode.env.openExternal(vscode.Uri.parse(url));
+    await openShowLogCommitOnGitHub(repository, commitHash);
   }
 
   private async openCommitDetails(commitHash: string): Promise<void> {

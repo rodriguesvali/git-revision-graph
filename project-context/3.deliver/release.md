@@ -27,6 +27,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-webview-security-boundary-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-item-action-hardening.md`
 - `project-context/2.build/features/0.0.39-compare-results-restore-action-hardening.md`
+- `project-context/2.build/features/0.0.39-show-log-remote-commit-action-hardening.md`
 
 Candidate direction:
 
@@ -47,6 +48,7 @@ Candidate direction:
 - Harden webview security boundaries by moving nonce and CSP construction out of revision graph renderer internals and into a shared host-facing helper.
 - Harden Compare Results panel architecture by moving item diff and clipboard action policy out of the editor panel provider.
 - Harden Compare Results restore architecture by moving destructive restore confirmation, execution, and error translation out of the editor panel provider.
+- Harden Show Log remote commit architecture by moving GitHub URL opening and no-remote fallback behavior out of the editor panel provider.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -159,6 +161,9 @@ Automated verification completed:
 - Focused Compare Results restore action, item action, view-state, message handler, and webview tests passed with 21 tests after moving restore confirmation and execution policy out of the provider. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 366 tests after moving Compare Results restore confirmation and execution policy out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Compare Results restore action policy out of the provider and updating verification artifacts.
+- Focused Show Log remote commit action, remote URL, state lookup, message handler, and webview tests passed with 13 tests after moving GitHub external-open behavior out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 368 tests after moving Show Log GitHub external-open behavior out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Show Log remote commit action behavior out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
@@ -200,6 +205,7 @@ Post-release monitoring focus:
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
 - Reports of Compare Results file actions using the wrong diff ref, copied filename, or copied full path after item action helper extraction.
 - Reports of Compare Results restore confirmation, restore execution, or post-restore refresh drifting after restore action helper extraction.
+- Reports of Show Log GitHub commit links not opening or no-GitHub-remote feedback drifting after remote commit action extraction.
 
 Rollback:
 
@@ -219,6 +225,7 @@ Rollback:
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.
 - If Compare Results item action extraction causes diff or clipboard regressions, restore the previous provider-local item action logic while preserving item action tests.
 - If Compare Results restore action extraction causes restore or refresh regressions, restore the previous provider-local restore logic while preserving restore action tests.
+- If Show Log remote commit action extraction causes GitHub link regressions, restore the previous provider-local external-open logic while preserving remote commit action tests.
 
 ## 0.0.38 Release Readiness
 
