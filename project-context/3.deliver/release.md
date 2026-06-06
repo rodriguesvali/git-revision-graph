@@ -172,11 +172,12 @@ Automated verification completed:
 - `npm test` passed with 373 tests after moving Show Log reset-to-commit workflow setup out of the provider. This includes `npm run build` through the test script.
 - `git diff --check` passed after moving Show Log reset-to-commit workflow setup out of the provider and updating verification artifacts.
 - Focused Show Log commit compare, message handler, and webview tests passed with 11 tests after moving commit-compare UI adapter setup out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 375 tests after moving Show Log commit-compare UI adapter setup out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Show Log commit-compare UI adapter setup out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
-- `npm test` for the Show Log compare UI boundary extraction.
-- `git diff --check` after the Show Log compare UI boundary extraction and verification artifact updates.
+- None for the current implemented `0.0.39` slices. Re-run `npm run build`, `npm test`, and `git diff --check` before release preparation.
 
 Manual validation pending:
 
