@@ -428,8 +428,10 @@ test('gets remote names from Git API repository state before falling back to rem
   const repositoryWithRemotes = createRepository({
     root: '/workspace/repo',
     remotes: [
-      { name: 'upstream', isReadOnly: false },
+      { name: ' upstream ', isReadOnly: false },
+      { name: '', isReadOnly: false },
       { name: 'origin', isReadOnly: false },
+      { name: '  ', isReadOnly: false },
       { name: 'origin', isReadOnly: false }
     ],
     refs: [createRef({ type: RefType.RemoteHead, remote: 'fallback', name: 'fallback/main' })]
@@ -438,7 +440,11 @@ test('gets remote names from Git API repository state before falling back to rem
     root: '/workspace/repo',
     refs: [
       createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main' }),
-      createRef({ type: RefType.RemoteHead, remote: 'upstream', name: 'upstream/main' })
+      createRef({ type: RefType.RemoteHead, remote: ' upstream ', name: 'upstream/main' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature' }),
+      createRef({ type: RefType.RemoteHead, remote: '', name: 'blank/main' }),
+      createRef({ type: RefType.RemoteHead, name: 'missing/main' }),
+      createRef({ type: RefType.Head, remote: 'ignored', name: 'ignored' })
     ]
   });
 

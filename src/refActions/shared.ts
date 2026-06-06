@@ -27,18 +27,24 @@ export function buildRemoteTagDeleteRefspec(tagName: string): string {
 }
 
 export function getRepositoryRemoteNames(repository: Repository): readonly string[] {
-  const remoteNames = repository.state.remotes
-    .map((remote) => remote.name.trim())
-    .filter((remoteName) => remoteName.length > 0);
+  const remoteNames = getUniqueSortedNames(repository.state.remotes.map((remote) => remote.name));
   if (remoteNames.length > 0) {
-    return [...new Set(remoteNames)].sort();
+    return remoteNames;
   }
 
+  return getUniqueSortedNames(
+    repository.state.refs
+      .filter((ref) => ref.type === RefType.RemoteHead)
+      .map((ref) => ref.remote)
+  );
+}
+
+function getUniqueSortedNames(names: readonly (string | undefined)[]): string[] {
   return [
     ...new Set(
-      repository.state.refs
-        .filter((ref) => ref.type === RefType.RemoteHead && !!ref.remote)
-        .map((ref) => ref.remote as string)
+      names
+        .map((name) => name?.trim() ?? '')
+        .filter((name) => name.length > 0)
     )
   ].sort();
 }
