@@ -25,6 +25,7 @@ Planning and build references:
 - `project-context/2.build/features/0.0.39-webview-local-resource-roots-hardening.md`
 - `project-context/2.build/features/0.0.39-layout-cache-persistence-hardening.md`
 - `project-context/2.build/features/0.0.39-webview-security-boundary-hardening.md`
+- `project-context/2.build/features/0.0.39-compare-results-item-action-hardening.md`
 
 Candidate direction:
 
@@ -43,6 +44,7 @@ Candidate direction:
 - Harden webview architecture by making local resource access explicit and denying local resource roots where the shipped webviews do not load local files.
 - Harden activation architecture by moving revision graph layout cache persistence, debounce, and workspace-state recovery out of the extension entrypoint.
 - Harden webview security boundaries by moving nonce and CSP construction out of revision graph renderer internals and into a shared host-facing helper.
+- Harden Compare Results panel architecture by moving item diff and clipboard action policy out of the editor panel provider.
 - Preserve current product surface, command IDs, view types, menu contributions, multi-repository behavior, conflict guards, and load-only graph refresh behavior.
 
 Automated verification completed:
@@ -149,6 +151,9 @@ Automated verification completed:
 - Focused webview security and webview rendering tests passed with 35 tests after centralizing nonce and CSP construction outside revision graph renderer internals. This includes `npm run build` through the focused validation command.
 - `npm test` passed with 353 tests after centralizing nonce and CSP construction outside revision graph renderer internals. This includes `npm run build` through the test script.
 - `git diff --check` passed after centralizing nonce and CSP construction and updating verification artifacts.
+- Focused Compare Results item action, view-state, message handler, and webview tests passed with 15 tests after moving item diff and clipboard action policy out of the provider. This includes `npm run build` through the focused validation command.
+- `npm test` passed with 360 tests after moving Compare Results item diff and clipboard action policy out of the provider. This includes `npm run build` through the test script.
+- `git diff --check` passed after moving Compare Results item action policy out of the provider and updating verification artifacts.
 
 Automated verification pending:
 
@@ -188,6 +193,7 @@ Post-release monitoring focus:
 - Reports of graph, Compare Results, or Show Log webviews failing to render after local resource roots were denied.
 - Reports of revision graph layout cache not restoring across extension sessions or writing too often after cache persistence extraction.
 - Reports of graph, Compare Results, or Show Log webview scripts being blocked by CSP after nonce/CSP helper extraction.
+- Reports of Compare Results file actions using the wrong diff ref, copied filename, or copied full path after item action helper extraction.
 
 Rollback:
 
@@ -205,6 +211,7 @@ Rollback:
 - If local resource root hardening blocks a required shipped webview asset, explicitly grant the narrow asset root or temporarily restore the previous webview options while preserving helper tests.
 - If layout cache persistence extraction causes cache restore or save regressions, restore the previous activation-local persistence flow while preserving focused cache persistence tests.
 - If webview security helper extraction causes CSP regressions, restore the previous per-webview CSP literals while preserving nonce and CSP tests.
+- If Compare Results item action extraction causes diff or clipboard regressions, restore the previous provider-local item action logic while preserving item action tests.
 
 ## 0.0.38 Release Readiness
 

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'node:path';
 
 import { toOperationError } from './errorDetail';
 import type { Change, Repository } from './git';
@@ -17,13 +16,17 @@ import {
   type CompareResultsMessageHandlers
 } from './compareResults/messageHandler';
 import {
+  compareCompareResultItemWithWorktree,
+  getCompareResultItemFileNameList,
+  getCompareResultItemFullPathList,
+  openCompareResultItem
+} from './compareResults/itemActions';
+import {
   createCompareResultsWebviewState,
   getCompareResultItems
 } from './compareResults/viewState';
 import type { RefSelection } from './refActions';
 import {
-  openChangeDiffBetweenRefs,
-  openChangeDiffWithWorktree,
   restoreWorktreeChangeFromRef
 } from './workbenchRefActionServices';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
@@ -90,14 +93,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async openItem(item: CompareResultItem): Promise<void> {
-    if (item.leftRef && item.rightRef) {
-      await openChangeDiffBetweenRefs(item.repository, item.change, item.leftRef, item.rightRef);
-      return;
-    }
-
-    if (item.worktreeRef) {
-      await openChangeDiffWithWorktree(item.repository, item.change, item.worktreeRef);
-    }
+    await openCompareResultItem(item);
   }
 
   async compareWithBase(item: CompareResultItem): Promise<void> {
@@ -105,12 +101,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async compareWithWorktree(item: CompareResultItem): Promise<void> {
-    const ref = item.worktreeRef ?? item.rightRef ?? item.leftRef;
-    if (!ref) {
-      return;
-    }
-
-    await openChangeDiffWithWorktree(item.repository, item.change, ref);
+    await compareCompareResultItemWithWorktree(item);
   }
 
   async revertToItem(item: CompareResultItem): Promise<void> {
@@ -190,7 +181,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     }
 
     await vscode.env.clipboard.writeText(
-      items.map((item) => path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath)).join('\n')
+      getCompareResultItemFileNameList(items)
     );
   }
 
@@ -201,7 +192,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     }
 
     await vscode.env.clipboard.writeText(
-      items.map((item) => item.change.renameUri?.fsPath ?? item.change.uri.fsPath).join('\n')
+      getCompareResultItemFullPathList(items)
     );
   }
 
