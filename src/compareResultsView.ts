@@ -12,7 +12,10 @@ import {
   CompareResultsState
 } from './compareResultsShared';
 import { renderCompareResultsWebviewHtml, CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResultsWebview';
-import { validateCompareResultsWebviewMessage } from './compareResults/messageValidation';
+import {
+  dispatchCompareResultsWebviewMessage,
+  type CompareResultsMessageHandlers
+} from './compareResults/messageHandler';
 import type { RefSelection } from './refActions';
 import {
   openChangeDiffBetweenRefs,
@@ -26,6 +29,16 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
+  private readonly messageHandlers: CompareResultsMessageHandlers = {
+    ready: () => {
+      this.postState();
+    },
+    base: (itemId) => this.compareItemWithBase(itemId),
+    copyFileName: (itemIds) => this.copyFileNames(itemIds),
+    copyFullPath: (itemIds) => this.copyFullPaths(itemIds),
+    worktree: (itemId) => this.compareItemWithWorktree(itemId),
+    revert: (itemId) => this.revertItem(itemId)
+  };
 
   constructor(private readonly extensionUri: vscode.Uri) {}
 
@@ -199,60 +212,50 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
-    const message = validateCompareResultsWebviewMessage(rawMessage);
-    if (!message) {
+    await dispatchCompareResultsWebviewMessage(rawMessage, this.messageHandlers);
+  }
+
+  private async compareItemWithBase(itemId: string): Promise<void> {
+    const item = this.findItem(itemId);
+    if (item) {
+      await this.compareWithBase(item);
+    }
+  }
+
+  private async compareItemWithWorktree(itemId: string): Promise<void> {
+    const item = this.findItem(itemId);
+    if (item) {
+      await this.compareWithWorktree(item);
+    }
+  }
+
+  private async revertItem(itemId: string): Promise<void> {
+    const item = this.findItem(itemId);
+    if (item) {
+      await this.revertToItem(item);
+    }
+  }
+
+  private async copyFileNames(itemIds: readonly string[]): Promise<void> {
+    const items = this.findItems(itemIds);
+    if (items.length === 0) {
       return;
     }
 
-    switch (message.type) {
-      case 'ready':
-        this.postState();
-        return;
-      case 'base':
-        {
-          const item = this.findItem(message.itemId);
-          if (item) {
-            await this.compareWithBase(item);
-          }
-        }
-        return;
-      case 'copyFileName':
-        {
-          const items = this.findItems(message.itemIds);
-          if (items.length > 0) {
-            await vscode.env.clipboard.writeText(
-              items.map((item) => path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath)).join('\n')
-            );
-          }
-        }
-        return;
-      case 'copyFullPath':
-        {
-          const items = this.findItems(message.itemIds);
-          if (items.length > 0) {
-            await vscode.env.clipboard.writeText(
-              items.map((item) => item.change.renameUri?.fsPath ?? item.change.uri.fsPath).join('\n')
-            );
-          }
-        }
-        return;
-      case 'worktree':
-        {
-          const item = this.findItem(message.itemId);
-          if (item) {
-            await this.compareWithWorktree(item);
-          }
-        }
-        return;
-      case 'revert':
-        {
-          const item = this.findItem(message.itemId);
-          if (item) {
-            await this.revertToItem(item);
-          }
-        }
-        return;
+    await vscode.env.clipboard.writeText(
+      items.map((item) => path.basename(item.change.renameUri?.fsPath ?? item.change.uri.fsPath)).join('\n')
+    );
+  }
+
+  private async copyFullPaths(itemIds: readonly string[]): Promise<void> {
+    const items = this.findItems(itemIds);
+    if (items.length === 0) {
+      return;
     }
+
+    await vscode.env.clipboard.writeText(
+      items.map((item) => item.change.renameUri?.fsPath ?? item.change.uri.fsPath).join('\n')
+    );
   }
 
   private findItem(itemId: string): CompareResultItem | undefined {
