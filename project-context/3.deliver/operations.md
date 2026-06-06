@@ -6,14 +6,15 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-preparation focus for `0.0.37`:
+Current post-release monitoring focus for `1.0.0`:
 
-- Post-`0.0.36` stabilization of large graph loading with `d3-dag` layout and major-operations projection.
-- Worker-thread layout execution, cancellation, and fallback behavior on uncached graph layouts.
-- Webview graph virtualization while scrolling, zooming, searching, selecting, and using the minimap.
-- Stale render discard behavior after rapid repository events, refreshes, fetches, manual reloads, and scope changes.
+- Current-branch push mode selection and canceled-push refresh behavior.
+- Default-off `Show Merge Commits` graph view option.
+- Remote checkout overwrite confirmation with `Override branch if exists`.
+- Show Log expanded-row graph spacing, comparison selection styling, copy-reference-name action, and multi-select cherry-pick flows.
+- Cherry-pick conflict/in-progress handling, including empty cherry-pick skip and guarded abort/open-Source-Control fallbacks.
 - Existing compare, Show Log, checkout, branch, sync, merge, delete, reset, and conflict-guard workflows.
-- VSIX contents for compiled worker files under `out/revisionGraph/layout/` if packaging is requested after maintainer approval.
+- Marketplace feedback for the published `1.0.0` package.
 
 ## Alerts
 No automated alerting is configured. Treat regressions in graph loading, repository switching, compare/diff, checkout, branch, merge, sync, delete, and log workflows as release-impacting.

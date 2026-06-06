@@ -6,7 +6,7 @@ Current package baseline: `0.0.39`.
 
 Target release: `1.0.0`.
 
-Status: Delivery phase opened for `1.0.0` as a small polish release after the published `0.0.39` hardening cycle. The package version has been bumped to `1.0.0` in `package.json` and `package-lock.json`. No VSIX packaging or Marketplace publication has been performed for `1.0.0`.
+Status: Release completed for `1.0.0` after maintainer approval. The `1.0.0` polish scope is complete, package metadata is bumped to `1.0.0` in `package.json` and `package-lock.json`, automated verification is current, VSIX packaging produced `git-revision-graph-1.0.0.vsix`, and Marketplace publication is complete.
 
 Planning and build references:
 
@@ -20,6 +20,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-show-log-comparison-selection-polish.md`
 - `project-context/2.build/features/1.0.0-show-log-copy-reference-name.md`
 - `project-context/2.build/features/1.0.0-show-log-multi-select-cherry-pick.md`
+- `project-context/2.build/features/1.0.0-release-readiness-closure.md`
 
 Release direction:
 
@@ -75,26 +76,32 @@ Automated verification completed:
 - `npm test` passed with 406 tests after adding the in-progress cherry-pick fallback. This includes `npm run build` through the test script.
 - Focused Show Log cherry-pick action tests passed with 10 tests after adding the empty cherry-pick skip fallback.
 - `npm test` passed with 410 tests after adding the empty cherry-pick skip fallback. This includes `npm run build` through the test script.
+- Package metadata confirmed at `1.0.0` while closing the release.
+- `git diff --check` passed after final release-artifact updates.
+- VSIX packaging completed after maintainer approval and produced `git-revision-graph-1.0.0.vsix`.
+- Marketplace publication for `1.0.0` completed after maintainer approval.
 
-Automated verification pending:
+Follow-up verification:
 
-- None for the opened `1.0.0` baseline. Re-run `npm run build`, `npm test`, and `git diff --check` after selected polish changes and before any `1.0.0` package candidate.
+- None for the published `1.0.0` release. Re-run `npm run build`, `npm test`, and `git diff --check` before any follow-up package.
 
-Manual validation pending:
+Manual validation completed:
 
-- Define the final polish checklist before packaging.
-- Run Extension Development Host smoke validation after polish changes are complete.
+- Maintainer completed final release validation before VSIX packaging and Marketplace publication.
+
+Manual validation focus used for release:
+
 - Confirm graph launch from Source Control, graph load, repository switching, refresh, fetch, scope changes, search, minimap, scroll, zoom, and `Center HEAD`.
 - Confirm compare, compare with worktree, unified diff, Show Log, checkout, branch creation, tag creation, sync, pull, push, merge, delete, reset, and conflict guards.
+- Confirm Show Log multi-select cherry-pick, empty cherry-pick skip, in-progress cherry-pick abort/open-Source-Control, and normal selection clearing behavior.
 - Confirm Compare Results and Show Log remain on-demand editor panels and close with the graph panel.
 - Repeat key checks in multi-repository and zero-repository workspaces.
 
-Release gates pending:
+Release gates completed:
 
-- Select and complete the small `1.0.0` polish adjustments.
-- Review README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents before upload.
-- Run `npm run package:vsix` only after maintainer approval.
-- Marketplace publication remains with the maintainer and should use `npm run publish:current` only after VSIX/manual smoke validation is acceptable.
+- Review of README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents completed by the maintainer.
+- VSIX packaging completed after maintainer approval.
+- Marketplace publication completed after maintainer approval.
 
 Post-release monitoring focus:
 
@@ -104,9 +111,8 @@ Post-release monitoring focus:
 
 Rollback:
 
-- If a polish change introduces workflow regressions, revert that narrow change and preserve the `1.0.0` version/package metadata only if the candidate has not shipped.
-- If generated package contents or Marketplace metadata are incorrect, correct the metadata and regenerate the VSIX before publication.
-- If publication occurs and a regression is found, prepare a narrow `1.0.1` patch or direct affected users to the previous `0.0.39` VSIX depending on severity.
+- If a published `1.0.0` regression is found, prepare a narrow `1.0.1` patch or direct affected users to the previous `0.0.39` VSIX depending on severity.
+- If Marketplace metadata is incorrect, correct the metadata and publish a follow-up package if required.
 
 ## 0.0.39 Release Readiness
 

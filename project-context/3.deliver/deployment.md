@@ -14,17 +14,18 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Publish with the appropriate `npm run publish:*` command only after approval.
 
 ## Latest Deployment
-- `0.0.36` release package exists locally as `git-revision-graph-0.0.36.vsix`.
-- Marketplace publication status should be confirmed by the maintainer before publishing a newer version.
+- Latest published release recorded in the release notes: `1.0.0`.
+- VSIX package generated for the release: `git-revision-graph-1.0.0.vsix`.
+- Marketplace publication for `1.0.0` is complete.
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
 
-## Current Release Preparation
-- Target release: `0.0.37`.
-- Current package baseline: `0.0.36`.
-- Package metadata has not been bumped for `0.0.37`.
-- Release definition is opened as a post-`0.0.36` stabilization and regression-control cycle.
-- VSIX packaging has not been run for `0.0.37`.
-- Marketplace publishing remains pending explicit maintainer approval.
+## Current Release State
+- Target release: `1.0.0`.
+- Current package baseline: `0.0.39`.
+- Package metadata has been bumped to `1.0.0`.
+- Release definition is closed as a small polish release after the published `0.0.39` hardening cycle.
+- VSIX packaging has been run for `1.0.0`.
+- Marketplace publishing is complete for `1.0.0`.
 
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.
