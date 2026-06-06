@@ -15,6 +15,8 @@ Planning and build references:
 - `project-context/2.build/features/1.0.0-push-choice-loading-polish.md`
 - `project-context/2.build/features/1.0.0-push-cancel-refresh-polish.md`
 - `project-context/2.build/features/1.0.0-show-merge-commits-view-option.md`
+- `project-context/2.build/features/1.0.0-remote-checkout-overwrite-confirmation.md`
+- `project-context/2.build/features/1.0.0-show-log-expanded-reference-gap-polish.md`
 
 Release direction:
 
@@ -29,6 +31,7 @@ Implemented polish:
 - A canceled current-branch push no longer shows success feedback or schedules a graph reload when the VS Code Git API returns without a remote update.
 - The revision graph `View` menu now includes a default-off `Show Merge Commits` option that hides unreferenced merge commits by default while preserving ancestry through graph edges.
 - Remote checkout now requires a destructive confirmation before `Override branch if exists` resets an existing local branch.
+- Show Log expanded rows now extend the compact graph line through visible reference/stat metadata before the changed-file continuation starts.
 
 Automated verification completed:
 
@@ -48,6 +51,10 @@ Automated verification completed:
 - Focused ref action tests passed with 93 tests after adding destructive confirmation before remote checkout overwrites an existing local branch. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 398 tests after the remote checkout overwrite confirmation. This includes `npm run build` through the test script.
 - `git diff --check` passed after the remote checkout overwrite confirmation.
+- Focused Show Log webview shell test passed after extending expanded commit graph lines through visible reference/stat metadata.
+- `npm run build` passed after the Show Log expanded-row graph polish.
+- `npm test` passed with 398 tests after the Show Log expanded-row graph polish. This includes `npm run build` through the test script.
+- `git diff --check` passed after the Show Log expanded-row graph polish.
 
 Automated verification pending:
 

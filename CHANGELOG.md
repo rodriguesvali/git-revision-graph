@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Prevented a canceled current-branch push from showing success feedback or reloading the graph when no remote update occurred.
 - Added a default-off `Show Merge Commits` view option so the graph can hide unreferenced merge commits for a cleaner default presentation.
 - Added a destructive confirmation before remote checkout can overwrite an existing local branch via `Override branch if exists`.
+- Extended the Show Log compact graph line for expanded commits with references or stats so changed-file rows do not leave a visual gap.
 
 ## 0.0.39
 

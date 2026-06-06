@@ -322,7 +322,7 @@ export function renderShowLogWebviewHtml(): string {
     }
     .graph-main {
       display: flex;
-      min-height: 30px;
+      min-height: var(--show-log-main-graph-height, 30px);
       overflow: hidden;
     }
     .commit-row:not([data-expanded="true"]) .graph-main {
@@ -822,6 +822,8 @@ export function renderShowLogWebviewHtml(): string {
     const GRAPH_LANE_SPACING = 10;
     const GRAPH_LEFT_INSET = 8;
     const GRAPH_RIGHT_PADDING = 6;
+    const GRAPH_MAIN_HEIGHT = 34;
+    const GRAPH_MAIN_META_HEIGHT = 42;
     const persistedUiState = vscode.getState() || {};
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
     let resizeState = null;
@@ -929,11 +931,15 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function renderCommit(commit, index) {
+      const mainGraphHeight = getMainGraphHeight(commit);
+      const mainGraphHeightStyle = mainGraphHeight === GRAPH_MAIN_HEIGHT
+        ? ''
+        : ' style="--show-log-main-graph-height: ' + mainGraphHeight + 'px;"';
       return ''
         + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '">'
         + '  <div class="graph-cell">'
         + '    <div class="graph-stack">'
-        + '      <div class="graph-main">' + renderTopology(commit.topology, commit.isMerge, index === 0) + '</div>'
+        + '      <div class="graph-main"' + mainGraphHeightStyle + '>' + renderTopology(commit.topology, commit.isMerge, index === 0, mainGraphHeight) + '</div>'
         + (commit.expanded
           ? '      <div class="graph-continuation">' + renderContinuationRows(commit) + '</div>'
           : '')
@@ -969,13 +975,12 @@ export function renderShowLogWebviewHtml(): string {
       return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.label) + '</span>';
     }
 
-    function renderTopology(topology, isMerge, isFirstVisible) {
+    function renderTopology(topology, isMerge, isFirstVisible, height) {
       const laneSpacing = GRAPH_LANE_SPACING;
       const width = getGraphContentWidth(topology.laneCount, laneSpacing);
-      const height = 34;
       const centerY = 15;
       const topY = -2;
-      const bottomY = 32;
+      const bottomY = height - 2;
       const lineParts = [];
 
       for (const lane of topology.continuingLanes) {
@@ -1012,6 +1017,14 @@ export function renderShowLogWebviewHtml(): string {
       }
 
       return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
+    }
+
+    function getMainGraphHeight(commit) {
+      return commit.expanded && hasCommitMeta(commit) ? GRAPH_MAIN_META_HEIGHT : GRAPH_MAIN_HEIGHT;
+    }
+
+    function hasCommitMeta(commit) {
+      return (commit.refs && commit.refs.length > 0) || !!commit.stats;
     }
 
     function renderContinuationTopology(topology) {
