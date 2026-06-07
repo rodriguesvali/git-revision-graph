@@ -6,7 +6,7 @@ Current package baseline: `1.0.0`.
 
 Target release: `1.0.1`.
 
-Status: Hotfix implementation and automated verification are complete. Package metadata is bumped to `1.0.1` in `package.json` and `package-lock.json`. Extension Development Host smoke validation, VSIX packaging, and Marketplace publication are pending maintainer approval.
+Status: Release completed for `1.0.1` after maintainer approval. The `1.0.1` hotfix scope closed with exactly two fixes, package metadata is bumped to `1.0.1` in `package.json` and `package-lock.json`, automated verification is complete, VSIX packaging produced `git-revision-graph-1.0.1.vsix`, and Marketplace publication is complete.
 
 Planning and build references:
 
@@ -18,7 +18,7 @@ Planning and build references:
 Release direction:
 
 - Keep the shipped `1.0.0` Source Control/editor graph product surface stable.
-- Limit scope to the current-branch force-push authentication hotfix unless the maintainer explicitly approves another `1.0.1` item.
+- Limit scope to the two approved hotfixes: current-branch force-push Git API routing and current-branch pull error loading cleanup.
 - Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and native VS Code Git workflow alignment.
 - Do not package or publish without explicit maintainer approval.
 
@@ -48,12 +48,11 @@ Manual validation focus:
 - Trigger a current-branch pull failure and confirm `Pulling current branch...` clears while the error message remains visible.
 - Confirm graph refresh and success/error feedback remain coherent after push.
 
-Release gates pending:
+Release gates completed:
 
-- Complete maintainer Extension Development Host smoke validation.
-- Review README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents.
-- Run VSIX packaging only after maintainer approval.
-- Publish to Marketplace only after maintainer approval.
+- Maintainer Extension Development Host smoke validation completed before publication.
+- Maintainer VSIX packaging and generated package review completed.
+- Maintainer Marketplace publication completed for `1.0.1`.
 
 Post-release monitoring focus:
 
