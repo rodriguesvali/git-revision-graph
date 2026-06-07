@@ -1,5 +1,67 @@
 # Release Readiness
 
+## 1.0.1 Release Readiness
+
+Current package baseline: `1.0.0`.
+
+Target release: `1.0.1`.
+
+Status: Opened as a narrow hotfix cycle. Package metadata is bumped to `1.0.1` in `package.json` and `package-lock.json`. Implementation, automated verification, VSIX packaging, and Marketplace publication are pending.
+
+Planning and build references:
+
+- `project-context/docs/release-1.0.1-prioritization.md`
+- `project-context/2.build/features/1.0.1-hotfix-opening.md`
+- `project-context/2.build/features/1.0.1-force-push-vscode-api-hotfix.md`
+
+Release direction:
+
+- Keep the shipped `1.0.0` Source Control/editor graph product surface stable.
+- Limit scope to the current-branch force-push authentication hotfix unless the maintainer explicitly approves another `1.0.1` item.
+- Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and native VS Code Git workflow alignment.
+- Do not package or publish without explicit maintainer approval.
+
+Planned fixes:
+
+- First launch item: fix current-branch force push and force-with-lease push so they use the built-in VS Code Git API force parameter instead of direct non-interactive Git CLI execution. The reported failure is `fatal: could not read Username for 'https://github.com': terminal prompts disabled`; investigation confirmed the local `src/git.ts` API contract omits the official `ForcePushMode` and fourth `Repository.push` parameter available in the VS Code `1.90.0` baseline.
+
+Automated verification completed:
+
+- Package metadata confirmed at `1.0.1` in `package.json`, root `package-lock.json`, and root `package-lock.json` package metadata after opening the cycle.
+- `git diff --check` passed after opening the `1.0.1` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
+- `npm run build` passed after opening the `1.0.1` cycle.
+
+Automated verification pending:
+
+- `npm run build` after the hotfix implementation.
+- `npm test` after the hotfix implementation.
+
+Manual validation focus:
+
+- Open a Git workspace and launch `View Git Revision Graph` from Source Control.
+- Run current-branch normal push, force-with-lease push, and force push against a safe test remote.
+- Confirm force modes use VS Code Git authentication/Source Control behavior rather than failing with non-interactive terminal prompt errors.
+- Confirm graph refresh and success/error feedback remain coherent after push.
+
+Release gates pending:
+
+- Implement the hotfix.
+- Complete automated verification.
+- Complete maintainer Extension Development Host smoke validation.
+- Review README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents.
+- Run VSIX packaging only after maintainer approval.
+- Publish to Marketplace only after maintainer approval.
+
+Post-release monitoring focus:
+
+- Reports that current-branch force push or force-with-lease still bypasses VS Code Git authentication.
+- Reports of changed behavior in normal push, pull, sync, branch publish, tag push, or remote delete workflows.
+- Reports of accidental or unclear force-push flows.
+
+Rollback:
+
+- If the `1.0.1` hotfix regresses Git workflows, prepare a narrower follow-up patch or direct affected users to the previous `1.0.0` VSIX depending on severity.
+
 ## 1.0.0 Release Readiness
 
 Current package baseline: `0.0.39`.
