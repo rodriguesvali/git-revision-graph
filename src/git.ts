@@ -6,6 +6,12 @@ export enum RefType {
   Tag
 }
 
+export enum ForcePushMode {
+  Force,
+  ForceWithLease,
+  ForceWithLeaseIfIncludes
+}
+
 export enum Status {
   INDEX_MODIFIED,
   INDEX_ADDED,
@@ -105,7 +111,7 @@ export interface Repository {
   merge(ref: string): Promise<void>;
   fetch(options?: FetchOptions): Promise<void>;
   pull(unshallow?: boolean): Promise<void>;
-  push(remoteName?: string, branchName?: string, setUpstream?: boolean): Promise<void>;
+  push(remoteName?: string, branchName?: string, setUpstream?: boolean, force?: ForcePushMode): Promise<void>;
 }
 
 export interface API {

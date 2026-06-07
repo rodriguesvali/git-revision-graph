@@ -6,7 +6,7 @@ Current package baseline: `1.0.0`.
 
 Target release: `1.0.1`.
 
-Status: Opened as a narrow hotfix cycle. Package metadata is bumped to `1.0.1` in `package.json` and `package-lock.json`. Implementation, automated verification, VSIX packaging, and Marketplace publication are pending.
+Status: Hotfix implementation and automated verification are complete. Package metadata is bumped to `1.0.1` in `package.json` and `package-lock.json`. Extension Development Host smoke validation, VSIX packaging, and Marketplace publication are pending maintainer approval.
 
 Planning and build references:
 
@@ -21,7 +21,7 @@ Release direction:
 - Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and native VS Code Git workflow alignment.
 - Do not package or publish without explicit maintainer approval.
 
-Planned fixes:
+Implemented fixes:
 
 - First launch item: fix current-branch force push and force-with-lease push so they use the built-in VS Code Git API force parameter instead of direct non-interactive Git CLI execution. The reported failure is `fatal: could not read Username for 'https://github.com': terminal prompts disabled`; investigation confirmed the local `src/git.ts` API contract omits the official `ForcePushMode` and fourth `Repository.push` parameter available in the VS Code `1.90.0` baseline.
 
@@ -30,11 +30,10 @@ Automated verification completed:
 - Package metadata confirmed at `1.0.1` in `package.json`, root `package-lock.json`, and root `package-lock.json` package metadata after opening the cycle.
 - `git diff --check` passed after opening the `1.0.1` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
 - `npm run build` passed after opening the `1.0.1` cycle.
-
-Automated verification pending:
-
-- `npm run build` after the hotfix implementation.
-- `npm test` after the hotfix implementation.
+- `npm run build` passed after the force-push Git API hotfix implementation.
+- Focused ref action validation passed with 90 tests after the force-push Git API hotfix implementation. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 414 tests after the force-push Git API hotfix implementation. This includes `npm run build` through the test script.
+- `git diff --check` passed after implementation and release-artifact updates.
 
 Manual validation focus:
 
@@ -45,8 +44,6 @@ Manual validation focus:
 
 Release gates pending:
 
-- Implement the hotfix.
-- Complete automated verification.
 - Complete maintainer Extension Development Host smoke validation.
 - Review README, CHANGELOG, Marketplace-facing copy, package metadata, and generated VSIX contents.
 - Run VSIX packaging only after maintainer approval.

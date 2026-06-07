@@ -1,4 +1,4 @@
-import { API, Branch, Change, FetchOptions, Ref, RefQuery, RefType, Remote, Repository, RepositoryState, Status } from '../src/git';
+import { API, Branch, Change, FetchOptions, ForcePushMode, Ref, RefQuery, RefType, Remote, Repository, RepositoryState, Status } from '../src/git';
 import type { CompareResultItem } from '../src/compareResultsShared';
 import type { RevisionLogEntry } from '../src/revisionGraphTypes';
 
@@ -123,7 +123,7 @@ export function createRepository(options: {
     readonly merge: string[];
     readonly fetch: Array<FetchOptions | undefined>;
     readonly pull: boolean[];
-    readonly push: Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>;
+    readonly push: Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean; readonly force?: ForcePushMode }>;
   };
 } {
   const stateChanges = createEventEmitter<void>();
@@ -145,7 +145,7 @@ export function createRepository(options: {
     merge: [] as string[],
     fetch: [] as Array<FetchOptions | undefined>,
     pull: [] as boolean[],
-    push: [] as Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean }>
+    push: [] as Array<{ readonly remoteName?: string; readonly branchName?: string; readonly setUpstream?: boolean; readonly force?: ForcePushMode }>
   };
 
   return {
@@ -209,8 +209,18 @@ export function createRepository(options: {
     async pull(): Promise<void> {
       calls.pull.push(true);
     },
-    async push(remoteName?: string, branchName?: string, setUpstream?: boolean): Promise<void> {
-      calls.push.push({ remoteName, branchName, setUpstream });
+    async push(
+      remoteName?: string,
+      branchName?: string,
+      setUpstream?: boolean,
+      force?: ForcePushMode
+    ): Promise<void> {
+      calls.push.push({
+        remoteName,
+        branchName,
+        setUpstream,
+        ...(force !== undefined ? { force } : {})
+      });
     },
     calls
   };

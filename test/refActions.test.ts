@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { RefType, Status } from '../src/git';
+import { ForcePushMode, RefType, Status } from '../src/git';
 import {
   normalizeRefreshRequest,
   RevisionGraphRefreshIntent,
@@ -32,6 +32,7 @@ import {
   getRepositoryRemoteNames,
   isMissingUpstreamConfigurationError
 } from '../src/refActions/shared';
+import { getForcePushMode, pushCurrentBranchWithMode } from '../src/refActions/currentBranchPushAdapter';
 import { createChange, createGitError, createHead, createRef, createRepository } from './fakes';
 
 function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
@@ -2032,6 +2033,76 @@ test('pushCurrentBranchToUpstream can force push with lease', async () => {
     }
   ]);
   assert.equal(harness.infoMessages[0], 'main was force pushed to origin/main.');
+});
+
+test('pushCurrentBranchToUpstream can force push without lease', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 1, { remote: 'origin', name: 'origin/main' })
+  });
+  const harness = createServices({
+    async pickCurrentBranchPushMode() {
+      return 'force';
+    }
+  });
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, true);
+  assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'force' }]);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Force push main to origin/main?\n\nThis rewrites the remote branch without checking whether someone else updated it. Use this only when you intentionally moved the local branch history.',
+      confirmLabel: 'Force Push'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'main was force pushed to origin/main.');
+});
+
+test('getForcePushMode maps both force options to VS Code Git API force modes', () => {
+  assert.equal(getForcePushMode('normal'), undefined);
+  assert.equal(getForcePushMode('force-with-lease'), ForcePushMode.ForceWithLease);
+  assert.equal(getForcePushMode('force'), ForcePushMode.Force);
+});
+
+test('pushCurrentBranchWithMode passes force-with-lease through the VS Code Git API force parameter', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 1, { remote: 'origin', name: 'origin/main' })
+  });
+
+  const didPush = await pushCurrentBranchWithMode(
+    repository,
+    'origin',
+    'main',
+    'force-with-lease',
+    async () => undefined
+  );
+
+  assert.equal(didPush, true);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: 'origin', branchName: 'main', setUpstream: false, force: ForcePushMode.ForceWithLease }
+  ]);
+});
+
+test('pushCurrentBranchWithMode passes force through the VS Code Git API force parameter', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 1, { remote: 'origin', name: 'origin/main' })
+  });
+
+  const didPush = await pushCurrentBranchWithMode(
+    repository,
+    'origin',
+    'main',
+    'force',
+    async () => undefined
+  );
+
+  assert.equal(didPush, true);
+  assert.deepEqual(repository.calls.push, [
+    { remoteName: 'origin', branchName: 'main', setUpstream: false, force: ForcePushMode.Force }
+  ]);
 });
 
 test('pushCurrentBranchToUpstream handles upstream names that include the remote prefix', async () => {

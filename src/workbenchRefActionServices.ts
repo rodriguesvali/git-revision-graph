@@ -7,6 +7,7 @@ import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { CurrentBranchPushMode, PreparedRefreshHandle, RefActionServices, RemoteCheckoutInput } from './refActions';
+import { pushCurrentBranchWithMode } from './refActions/currentBranchPushAdapter';
 import {
   buildRemoteBranchDeleteRefspec,
   buildRemoteTagDeleteRefspec,
@@ -199,24 +200,7 @@ export function createWorkbenchRefActionServices(
         return getRepositoryRemoteNames(repository);
       },
       async pushCurrentBranch(repository, remoteName, branchName, mode) {
-        if (mode === 'normal') {
-          const beforeAhead = await getCurrentBranchAhead(repository);
-          await repository.push(remoteName, branchName, false);
-          const afterAhead = await getCurrentBranchAhead(repository);
-          if (beforeAhead === undefined || afterAhead === undefined) {
-            return true;
-          }
-
-          return afterAhead < beforeAhead;
-        }
-
-        await execGitWithResult(repository.rootUri.fsPath, [
-          'push',
-          mode === 'force-with-lease' ? '--force-with-lease' : '--force',
-          remoteName,
-          `HEAD:refs/heads/${branchName}`
-        ]);
-        return true;
+        return pushCurrentBranchWithMode(repository, remoteName, branchName, mode, getCurrentBranchAhead);
       },
       async pushTag(repository, remoteName, tagName) {
         await repository.push(remoteName, buildTagPushRefspec(tagName), false);
