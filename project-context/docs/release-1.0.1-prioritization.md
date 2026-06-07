@@ -21,6 +21,10 @@ Primary hotfix item:
 
 - Fix current-branch force push and force-with-lease push to use the built-in VS Code Git API force parameter instead of the direct non-interactive Git CLI path.
 
+Additional hotfix item:
+
+- Fix current-branch pull failure handling so `Pulling current branch...` loading feedback clears when the pull action returns, without waiting for the user to close the error message.
+
 Supporting work:
 
 - Update the local `src/git.ts` API contract to include `ForcePushMode` and the fourth `Repository.push` parameter.

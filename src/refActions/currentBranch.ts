@@ -186,9 +186,13 @@ export async function pullCurrentBranchFromUpstream(
     services.refreshController.refresh(preparedRefresh.request);
     return true;
   } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not pull the current branch.', error));
+    const errorMessage = services.ui.showErrorMessage(toOperationError('Could not pull the current branch.', error));
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
-      await services.ui.showSourceControl();
+      void errorMessage
+        .then(() => services.ui.showSourceControl())
+        .catch(() => undefined);
+    } else {
+      void errorMessage.catch(() => undefined);
     }
     return false;
   }

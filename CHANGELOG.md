@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Fixes
 
 - Fix current-branch force push and force-with-lease push so they use the built-in VS Code Git API force parameter instead of a direct non-interactive Git CLI push that can fail with credential prompts disabled.
+- Fixed current-branch pull failures so the revision graph clears `Pulling current branch...` loading feedback as soon as the pull action returns, without waiting for the user to close the error message.
 
 ## 1.0.0
 

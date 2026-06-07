@@ -2165,6 +2165,38 @@ test('pullCurrentBranchFromUpstream requires a clean workspace', async () => {
   assert.equal(harness.warningMessages[0], 'The workspace must be clean before pulling origin/main into main. Review, stash, or commit the current changes first.');
 });
 
+test('pullCurrentBranchFromUpstream does not wait for the error message to close after pull fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+  let errorMessageShown: string | undefined;
+  let closeErrorMessage: (() => void) | undefined;
+  repository.pull = async () => {
+    throw createGitError({ stderr: 'remote rejected pull' });
+  };
+  harness.services.ui.showErrorMessage = async (message) => {
+    errorMessageShown = message;
+    await new Promise<void>((resolve) => {
+      closeErrorMessage = resolve;
+    });
+  };
+
+  const didPullPromise = pullCurrentBranchFromUpstream(repository, harness.services);
+  const didPull = await Promise.race([
+    didPullPromise,
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+
+  assert.equal(didPull, false);
+  assert.equal(errorMessageShown, 'Could not pull the current branch. remote rejected pull');
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+
+  closeErrorMessage?.();
+  assert.equal(await didPullPromise, false);
+});
+
 test('deleteResolvedReference deletes remote branches through the shared reference manager', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const harness = createServices();

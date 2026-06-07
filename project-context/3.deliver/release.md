@@ -13,6 +13,7 @@ Planning and build references:
 - `project-context/docs/release-1.0.1-prioritization.md`
 - `project-context/2.build/features/1.0.1-hotfix-opening.md`
 - `project-context/2.build/features/1.0.1-force-push-vscode-api-hotfix.md`
+- `project-context/2.build/features/1.0.1-pull-error-loading-clear-hotfix.md`
 
 Release direction:
 
@@ -24,6 +25,7 @@ Release direction:
 Implemented fixes:
 
 - First launch item: fix current-branch force push and force-with-lease push so they use the built-in VS Code Git API force parameter instead of direct non-interactive Git CLI execution. The reported failure is `fatal: could not read Username for 'https://github.com': terminal prompts disabled`; investigation confirmed the local `src/git.ts` API contract omits the official `ForcePushMode` and fourth `Repository.push` parameter available in the VS Code `1.90.0` baseline.
+- Fixed current-branch pull failure handling so the graph clears `Pulling current branch...` loading feedback as soon as the pull action returns, without waiting for the user to close the VS Code error message.
 
 Automated verification completed:
 
@@ -33,6 +35,9 @@ Automated verification completed:
 - `npm run build` passed after the force-push Git API hotfix implementation.
 - Focused ref action validation passed with 90 tests after the force-push Git API hotfix implementation. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 414 tests after the force-push Git API hotfix implementation. This includes `npm run build` through the test script.
+- `npm run build` passed after the pull error loading-clear hotfix implementation.
+- Focused ref action validation passed with 91 tests after the pull error loading-clear hotfix implementation. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 415 tests after the pull error loading-clear hotfix implementation. This includes `npm run build` through the test script.
 - `git diff --check` passed after implementation and release-artifact updates.
 
 Manual validation focus:
@@ -40,6 +45,7 @@ Manual validation focus:
 - Open a Git workspace and launch `View Git Revision Graph` from Source Control.
 - Run current-branch normal push, force-with-lease push, and force push against a safe test remote.
 - Confirm force modes use VS Code Git authentication/Source Control behavior rather than failing with non-interactive terminal prompt errors.
+- Trigger a current-branch pull failure and confirm `Pulling current branch...` clears while the error message remains visible.
 - Confirm graph refresh and success/error feedback remain coherent after push.
 
 Release gates pending:
@@ -52,6 +58,7 @@ Release gates pending:
 Post-release monitoring focus:
 
 - Reports that current-branch force push or force-with-lease still bypasses VS Code Git authentication.
+- Reports that current-branch pull failures leave graph loading feedback visible until the error message is closed.
 - Reports of changed behavior in normal push, pull, sync, branch publish, tag push, or remote delete workflows.
 - Reports of accidental or unclear force-push flows.
 
