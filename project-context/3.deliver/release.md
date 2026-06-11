@@ -18,6 +18,7 @@ Planning and build references:
 - `project-context/2.build/features/1.1.0-graph-drag-release-hardening.md`
 - `project-context/2.build/features/1.1.0-reload-with-empty-cache.md`
 - `project-context/2.build/features/1.1.0-release-promotion.md`
+- `project-context/2.build/features/1.1.0-dirty-worktree-refresh-loop.md`
 
 Release direction:
 
@@ -32,6 +33,7 @@ Planned scope:
 - Allow `Create New Branch` to create and check out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 - Allow checkout and current-branch pull with ordinary workspace changes, while still blocking unresolved conflicts.
 - Harden revision graph drag cleanup so pan mode does not remain active after missed mouse release or focus-loss edge cases.
+- Stop ordinary workspace changes from repeatedly triggering full revision graph reloads.
 - Add a long-press `Reload Revision Graph` option that clears the persisted layout cache before a full rebuild.
 
 Automated verification:
@@ -57,6 +59,9 @@ Automated verification:
 - Package metadata and active release artifacts were promoted from `1.0.2` to `1.1.0` after the scope grew to include small functional improvements.
 - `npm run build` passed after promoting package metadata and active release artifacts to `1.1.0`.
 - `git diff --check` passed after the `1.1.0` promotion updates.
+- Focused repository state-change, revision graph state, and refresh tests passed after stopping dirty-worktree state events from triggering graph reloads. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 425 tests after stopping dirty-worktree state events from triggering graph reloads. This includes `npm run build` through the test script.
+- `git diff --check` passed after dirty-worktree refresh loop implementation and artifact updates.
 
 Manual validation focus:
 
@@ -71,6 +76,7 @@ Manual validation focus:
 - Repeat checkout and pull with unresolved conflicts and confirm the extension opens Source Control and blocks the operation.
 - Drag the revision graph viewport, release the left mouse button inside and outside the graph/webview area, and confirm pan mode clears.
 - Start a graph drag, switch focus away from VS Code, return, and confirm pan mode is not stuck.
+- Modify a file while the graph is open and confirm the graph does not repeatedly show `Loading Revision Graph...`.
 - Hold `Reload Revision Graph` for 500 ms, choose `With Empty Cache`, and confirm the graph reloads without also triggering a normal reload on release.
 
 Release gates:
@@ -86,6 +92,7 @@ Post-release monitoring focus:
 - Reports that Show Log two-commit selections still omit `Compare` or route to the wrong Compare Results pair.
 - Reports that branch creation, checkout, or pull still block ordinary dirty worktrees or allow operation during unresolved conflicts.
 - Reports that graph pan mode stays active after releasing the left mouse button or changing focus.
+- Reports that ordinary workspace changes still trigger repeated graph reloads or stale dirty/conflict action state.
 - Reports that long-press reload does not show `With Empty Cache`, fails to clear stale layout, or accidentally double-reloads.
 
 Rollback:

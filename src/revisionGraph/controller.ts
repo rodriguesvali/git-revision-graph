@@ -17,6 +17,10 @@ import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
 import {
+  applyRepositoryStatusToRevisionGraphViewState,
+  buildRevisionGraphRepositoryStateSignature
+} from './repository/stateChange';
+import {
   buildEmptyRevisionGraphViewState,
   buildReadyRevisionGraphViewStateBundle
 } from './panel/state';
@@ -118,6 +122,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private currentErrorMessage: string | undefined;
   private readonly pendingFollowUpRefreshes = new Map<string, PendingRevisionGraphFollowUpRefresh[]>();
   private readonly repoSubscriptions = new Map<string, vscode.Disposable>();
+  private readonly repositoryStateSignatures = new Map<string, string>();
   private readonly disposables: vscode.Disposable[] = [];
   private readonly actionServices: RefActionServices;
   private readonly messageDispatcher = new RevisionGraphMessageDispatcher();
@@ -398,6 +403,11 @@ export class RevisionGraphController implements vscode.Disposable {
       return undefined;
     }
 
+    this.repositoryStateSignatures.set(
+      this.currentRepository.rootUri.toString(),
+      buildRevisionGraphRepositoryStateSignature(this.currentRepository)
+    );
+
     return bundle.state;
   }
 
@@ -473,6 +483,7 @@ export class RevisionGraphController implements vscode.Disposable {
     const key = repository.rootUri.toString();
     this.repoSubscriptions.get(key)?.dispose();
     this.repoSubscriptions.delete(key);
+    this.repositoryStateSignatures.delete(key);
   }
 
   private handleRepositorySetChanged(): void {
@@ -507,8 +518,44 @@ export class RevisionGraphController implements vscode.Disposable {
         return;
       }
 
+      if (eventKind === 'state' && this.tryPostRepositoryStatusUpdate(repository)) {
+        return;
+      }
+
       await this.refresh(this.createCurrentRepositoryRefreshRequest(intent));
     }
+  }
+
+  private tryPostRepositoryStatusUpdate(repository: Repository): boolean {
+    const repositoryKey = repository.rootUri.toString();
+    const nextSignature = buildRevisionGraphRepositoryStateSignature(repository);
+    const previousSignature = this.repositoryStateSignatures.get(repositoryKey);
+
+    if (previousSignature === undefined) {
+      this.repositoryStateSignatures.set(repositoryKey, nextSignature);
+      return false;
+    }
+
+    if (previousSignature !== nextSignature || this.currentState.viewMode !== 'ready') {
+      return false;
+    }
+
+    this.repositoryStateSignatures.set(repositoryKey, nextSignature);
+    if (this.currentState.loading) {
+      return true;
+    }
+
+    const nextState = applyRepositoryStatusToRevisionGraphViewState(this.currentState, repository);
+    if (nextState === this.currentState) {
+      return true;
+    }
+
+    this.currentLoadingLabel = undefined;
+    this.currentLoadingMode = undefined;
+    this.currentErrorMessage = undefined;
+    this.currentState = nextState;
+    this.postHostMessage(createRevisionGraphUpdateStateMessage(this.currentState));
+    return true;
   }
 
   private setCurrentRepository(repository: Repository | undefined): void {

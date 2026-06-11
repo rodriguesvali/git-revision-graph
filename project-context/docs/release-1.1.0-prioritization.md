@@ -11,7 +11,7 @@ The release should stay narrow and preserve the shipped `1.0.1` product surface 
 - Current package baseline: `1.0.1`.
 - Target release: `1.1.0`.
 - `1.0.1` is treated as the latest completed release in the local release-readiness artifact.
-- Initial `1.1.0` implementation scope covers focused Show Log compare restoration, dirty-worktree branch/checkout/pull alignment with VS Code Source Control, graph drag release hardening, and a long-press reload option for clearing the revision graph layout cache.
+- Initial `1.1.0` implementation scope covers focused Show Log compare restoration, dirty-worktree branch/checkout/pull alignment with VS Code Source Control, dirty-worktree graph refresh-loop prevention, graph drag release hardening, and a long-press reload option for clearing the revision graph layout cache.
 
 ## Release Direction
 
@@ -57,6 +57,7 @@ Manual Extension Development Host smoke test:
 
 - Open a Git workspace and launch `View Git Revision Graph` from Source Control.
 - Confirm graph load, repository switching, scope/filter toggles, refresh, and affected `1.1.0` workflows after launch items are selected.
+- Modify a file while the graph is open and confirm ordinary workspace changes do not repeatedly trigger `Loading Revision Graph...`.
 - Confirm Compare Results and Show Log behavior if selected work touches review surfaces.
 - Hold the graph Reload button for 500 ms, choose `With Empty Cache`, and confirm the graph performs a clean layout-cache rebuild.
 

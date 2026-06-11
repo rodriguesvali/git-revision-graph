@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import { Branch, Repository, UpstreamRef } from './git';
+import { Branch, RefType, Repository, UpstreamRef } from './git';
 
 export function formatUpstreamLabel(remoteName: string, refName: string): string {
   return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
@@ -16,6 +16,24 @@ export function isBranchTrackingMatchingUpstream(
 
 export function isPublishedLocalBranch(branch: Branch): boolean {
   return !!branch.name && !!branch.upstream && isBranchTrackingMatchingUpstream(branch.name, branch.upstream);
+}
+
+export function getPublishedLocalBranchNames(repository: Repository): readonly string[] {
+  const branchesByName = new Map<string, Branch>();
+  for (const ref of repository.state.refs) {
+    if (ref.type === RefType.Head && ref.name) {
+      branchesByName.set(ref.name, ref as Branch);
+    }
+  }
+
+  if (repository.state.HEAD?.name) {
+    branchesByName.set(repository.state.HEAD.name, repository.state.HEAD);
+  }
+
+  return [...branchesByName.values()]
+    .filter(isPublishedLocalBranch)
+    .map((branch) => branch.name as string)
+    .sort();
 }
 
 export function hasMergeConflicts(repository: Repository): boolean {

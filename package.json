@@ -120,6 +120,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "codex": "^0.2.3",
     "d3-dag": "^1.2.1"
   }
 }

@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 - Restored the Show Log `Compare` context action when exactly two commits are selected, while keeping larger multi-selections focused on `Cherry Pick`.
 - Hardened revision graph dragging so pan mode clears when mouse release is missed or the webview loses focus.
+- Stopped ordinary workspace changes from repeatedly triggering full revision graph reloads while the graph panel is open.
 
 ### Improvements
 

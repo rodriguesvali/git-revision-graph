@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { isAbortError, throwIfAborted } from '../../errors';
-import { Branch, Ref, RefType, Repository } from '../../git';
+import { Ref, RefType, Repository } from '../../git';
 import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../backend';
 import {
   buildPrimaryAncestorNextByHash,
@@ -26,7 +26,7 @@ import {
   NODE_PADDING_X,
   RevisionGraphNodeLayout
 } from '../webview/shared';
-import { formatUpstreamLabel, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges, isPublishedLocalBranch } from '../../gitState';
+import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
@@ -385,24 +385,6 @@ export function buildRevisionGraphSceneLayoutKey(
 function compareRevisionGraphEdges(left: RevisionGraphEdge, right: RevisionGraphEdge): number {
   return left.from.localeCompare(right.from) ||
     left.to.localeCompare(right.to);
-}
-
-function getPublishedLocalBranchNames(repository: Repository): readonly string[] {
-  const branchesByName = new Map<string, Branch>();
-  for (const ref of repository.state.refs) {
-    if (ref.type === RefType.Head && ref.name) {
-      branchesByName.set(ref.name, ref as Branch);
-    }
-  }
-
-  if (repository.state.HEAD?.name) {
-    branchesByName.set(repository.state.HEAD.name, repository.state.HEAD);
-  }
-
-  return [...branchesByName.values()]
-    .filter(isPublishedLocalBranch)
-    .map((branch) => branch.name as string)
-    .sort();
 }
 
 function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewReference[] {
