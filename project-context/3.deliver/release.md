@@ -6,7 +6,7 @@ Current package baseline: `1.0.1`.
 
 Target release: `1.0.2`.
 
-Status: Release cycle open for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, two focused patch items are implemented and verified, and VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release cycle open for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, focused patch items are implemented and verified, and VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
@@ -15,6 +15,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.2-show-log-double-selection-compare.md`
 - `project-context/2.build/features/1.0.2-dirty-worktree-branch-creation.md`
 - `project-context/2.build/features/1.0.2-dirty-worktree-checkout-pull.md`
+- `project-context/2.build/features/1.0.2-graph-drag-release-hardening.md`
 
 Release direction:
 
@@ -28,6 +29,7 @@ Planned scope:
 - Restore the Show Log `Compare` context action when exactly two commits are selected, while preserving `Cherry Pick`-only behavior for larger multi-selections.
 - Allow `Create New Branch` to create and check out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 - Allow checkout and current-branch pull with ordinary workspace changes, while still blocking unresolved conflicts.
+- Harden revision graph drag cleanup so pan mode does not remain active after missed mouse release or focus-loss edge cases.
 
 Automated verification:
 
@@ -43,6 +45,9 @@ Automated verification:
 - Focused ref action tests passed after allowing dirty-worktree checkout and pull. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 419 tests after allowing dirty-worktree checkout and pull. This includes `npm run build` through the test script.
 - `git diff --check` passed after allowing dirty-worktree checkout and pull and artifact updates.
+- Focused revision graph webview shell tests passed after graph drag release hardening. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 420 tests after graph drag release hardening. This includes `npm run build` through the test script.
+- `git diff --check` passed after graph drag release hardening and artifact updates.
 
 Manual validation focus:
 
@@ -55,6 +60,8 @@ Manual validation focus:
 - Modify a file without committing, run checkout from the revision graph, and confirm the extension attempts the checkout.
 - Modify a file without committing, run current-branch pull, and confirm the extension attempts the pull.
 - Repeat checkout and pull with unresolved conflicts and confirm the extension opens Source Control and blocks the operation.
+- Drag the revision graph viewport, release the left mouse button inside and outside the graph/webview area, and confirm pan mode clears.
+- Start a graph drag, switch focus away from VS Code, return, and confirm pan mode is not stuck.
 
 Release gates:
 
@@ -68,6 +75,7 @@ Post-release monitoring focus:
 
 - Reports that Show Log two-commit selections still omit `Compare` or route to the wrong Compare Results pair.
 - Reports that branch creation, checkout, or pull still block ordinary dirty worktrees or allow operation during unresolved conflicts.
+- Reports that graph pan mode stays active after releasing the left mouse button or changing focus.
 
 Rollback:
 

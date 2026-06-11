@@ -440,6 +440,18 @@ test('uses a default cursor on the empty graph viewport', () => {
   assert.match(html, /\.node-grip \{[\s\S]*?cursor: grab;/);
 });
 
+test('clears graph drag state when mouse release is missed', () => {
+  const html = renderRevisionGraphShellHtml();
+
+  assert.match(html, /function endPointerDrivenInteractions\(\) \{\s*endMinimapDrag\(\);\s*endNodeDrag\(true\);\s*endViewportDrag\(\);\s*\}/s);
+  assert.match(html, /window\.addEventListener\('mouseup', \(\) => \{\s*endPointerDrivenInteractions\(\);\s*\}\);/s);
+  assert.match(html, /window\.addEventListener\('blur', endPointerDrivenInteractions\);/);
+  assert.match(html, /window\.addEventListener\('dragstart', endPointerDrivenInteractions\);/);
+  assert.match(html, /if \(typeof document\.addEventListener === 'function'\) \{\s*document\.addEventListener\('mouseleave', endPointerDrivenInteractions\);\s*\}/s);
+  assert.match(html, /if \(event\.buttons !== undefined && \(event\.buttons & 1\) === 0\) \{\s*endViewportDrag\(\);\s*return;\s*\}/s);
+  assert.match(html, /function endViewportDrag\(\) \{[\s\S]*?viewport\.classList\.remove\('dragging'\);[\s\S]*?dragState = null;[\s\S]*?return true;\s*\}/s);
+});
+
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
   const html = renderRevisionGraphShellHtml();
 

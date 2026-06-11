@@ -305,10 +305,18 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     });
     window.addEventListener('mousemove', (event) => {
       if (minimapDragState) {
+        if (event.buttons !== undefined && (event.buttons & 1) === 0) {
+          endMinimapDrag();
+          return;
+        }
         centerViewportFromMinimapEvent(event);
         return;
       }
       if (nodeDragState) {
+        if (event.buttons !== undefined && (event.buttons & 1) === 0) {
+          endNodeDrag(true);
+          return;
+        }
         const defaultLeft = getDefaultNodeLeft(nodeDragState.hash);
         const rawOffset = nodeDragState.startOffset + (event.clientX - nodeDragState.startX) / currentZoom;
         nodeOffsets[nodeDragState.hash] = clampNodeOffset(nodeDragState.hash, defaultLeft, rawOffset);
@@ -316,6 +324,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return;
       }
       if (!dragState) {
+        return;
+      }
+      if (event.buttons !== undefined && (event.buttons & 1) === 0) {
+        endViewportDrag();
         return;
       }
       const dx = event.clientX - dragState.startX;
@@ -329,28 +341,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncMinimap('viewport');
     });
     window.addEventListener('mouseup', () => {
-      if (minimapDragState) {
-        minimapDragState = null;
-      }
-      if (nodeDragState) {
-        document.body.classList.remove('node-dragging');
-        nodeDragState.element.classList.remove('dragging');
-        persistNodeLayout();
-        nodeDragState = null;
-      }
-      if (!dragState) {
-        return;
-      }
-      viewport.classList.remove('dragging');
-      if (!dragState.moved) {
-        suppressNodeClick = false;
-      } else {
-        setTimeout(() => {
-          suppressNodeClick = false;
-        }, 0);
-      }
-      dragState = null;
+      endPointerDrivenInteractions();
     });
+    window.addEventListener('blur', endPointerDrivenInteractions);
+    window.addEventListener('dragstart', endPointerDrivenInteractions);
+    if (typeof document.addEventListener === 'function') {
+      document.addEventListener('mouseleave', endPointerDrivenInteractions);
+    }
     window.addEventListener('click', (event) => {
       if (!contextMenu.contains(event.target)) {
         closeContextMenu();
@@ -411,12 +408,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (event.key === 'Escape') {
         closeContextMenu();
         closeViewOptionsMenu();
-        if (nodeDragState) {
-          document.body.classList.remove('node-dragging');
-          nodeDragState.element.classList.remove('dragging');
-          nodeDragState = null;
+        if (endNodeDrag(false)) {
           applyNodeLayout(false);
         }
+        endViewportDrag();
+        endMinimapDrag();
       }
     });
 
@@ -426,6 +422,52 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     syncCanvasSize();
     updateScenePlacement();
     syncToolbarActions();
+
+    function endPointerDrivenInteractions() {
+      endMinimapDrag();
+      endNodeDrag(true);
+      endViewportDrag();
+    }
+
+    function endMinimapDrag() {
+      if (!minimapDragState) {
+        return false;
+      }
+
+      minimapDragState = null;
+      return true;
+    }
+
+    function endNodeDrag(shouldPersist) {
+      if (!nodeDragState) {
+        return false;
+      }
+
+      document.body.classList.remove('node-dragging');
+      nodeDragState.element.classList.remove('dragging');
+      if (shouldPersist) {
+        persistNodeLayout();
+      }
+      nodeDragState = null;
+      return true;
+    }
+
+    function endViewportDrag() {
+      if (!dragState) {
+        return false;
+      }
+
+      viewport.classList.remove('dragging');
+      if (!dragState.moved) {
+        suppressNodeClick = false;
+      } else {
+        setTimeout(() => {
+          suppressNodeClick = false;
+        }, 0);
+      }
+      dragState = null;
+      return true;
+    }
 
     function handleHostMessage(message) {
       if (!message || typeof message.type !== 'string') {

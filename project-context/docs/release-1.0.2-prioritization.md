@@ -11,7 +11,7 @@ The release should stay narrow and preserve the shipped `1.0.1` product surface 
 - Current package baseline: `1.0.1`.
 - Target release: `1.0.2`.
 - `1.0.1` is treated as the latest completed release in the local release-readiness artifact.
-- Initial `1.0.2` implementation scope covers focused Show Log compare restoration and dirty-worktree branch, checkout, and pull alignment with VS Code Source Control.
+- Initial `1.0.2` implementation scope covers focused Show Log compare restoration, dirty-worktree branch/checkout/pull alignment with VS Code Source Control, and graph drag release hardening.
 
 ## Release Direction
 
