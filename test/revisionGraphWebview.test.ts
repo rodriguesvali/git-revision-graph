@@ -50,8 +50,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /workspace-led/);
   assert.doesNotMatch(html, /id="workspaceLed"/);
   assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"/);
-  assert.match(html, /id="abortMergeButton"/);
-  assert.match(html, /Abort Merge/);
+  assert.doesNotMatch(html, /id="abortMergeButton"/);
   assert.match(html, /id="zoomOutButton"/);
   assert.match(html, /id="zoomResetButton"/);
   assert.match(html, /id="zoomInButton"/);
@@ -585,16 +584,14 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
 });
 
-test('renders merge abort controls only for conflicted merge state', () => {
+test('renders merge abort as a HEAD context menu action only for conflicted merge state', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /const abortMergeButton = document\.getElementById\('abortMergeButton'\);/);
-  assert.match(html, /postMessageWithLoading\(createRevisionGraphAbortMergeMessage\(\), 'Aborting merge\.\.\.', abortMergeButton\);/);
-  assert.match(html, /abortMergeButton\.hidden = !state\.hasConflictedMerge;/);
-  assert.match(html, /abortMergeButton\.disabled = toolbarBusy \|\| !currentState\?\.hasConflictedMerge;/);
-  assert.match(html, /\.view-controls \.toolbar-button\[hidden\]\s*\{\s*display: none;/);
-  assert.match(html, /--merge-conflict-border: color-mix\(in srgb, var\(--workspace-dirty\) 72%, var\(--border\)\);/);
-  assert.match(html, /\.view-controls \.toolbar-button\.destructive:not\(\[hidden\]\)\s*\{[^}]*border-color: var\(--merge-conflict-border\);/s);
+  assert.doesNotMatch(html, /abortMergeButton/);
+  assert.match(html, /const canAbortConflictedMerge =\s*target\.kind === 'head' &&\s*hasConflictedMerge;/s);
+  assert.match(html, /if \(canAbortConflictedMerge\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Abort Merge', \(\) => postAbortMerge\(\), \{ destructive: true \}\);/s);
+  assert.match(html, /function postAbortMerge\(\) \{\s*postMessageWithLoading\(createRevisionGraphAbortMergeMessage\(\), 'Aborting merge\.\.\.'\);/s);
+  assert.doesNotMatch(html, /\.view-controls \.toolbar-button\.destructive/);
   assert.doesNotMatch(html, /open-source-control/);
 });
 
@@ -705,7 +702,6 @@ function createWebviewRuntime() {
     'pullButton',
     'pushButton',
     'syncButton',
-    'abortMergeButton',
     'scopeSelect',
     'viewOptions',
     'viewOptionsButton',

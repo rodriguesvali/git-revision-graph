@@ -234,17 +234,6 @@ export function renderRevisionGraphShellHtml(): string {
           aria-label="Reload revision graph"
         >${renderToolbarIcon('refresh')}</button>
       </div>
-      <button
-        id="abortMergeButton"
-        class="toolbar-button destructive"
-        type="button"
-        title="Abort the current merge"
-        aria-label="Abort the current merge"
-        hidden
-      >
-        <span class="button-icon">!</span>
-        <span>Abort Merge</span>
-      </button>
       <div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">
         <button
           id="zoomOutButton"

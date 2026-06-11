@@ -36,7 +36,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const pullButton = document.getElementById('pullButton');
     const pushButton = document.getElementById('pushButton');
     const syncButton = document.getElementById('syncButton');
-    const abortMergeButton = document.getElementById('abortMergeButton');
     const scopeSelect = document.getElementById('scopeSelect');
     const viewOptionsButton = document.getElementById('viewOptionsButton');
     const viewOptionsMenu = document.getElementById('viewOptionsMenu');
@@ -160,11 +159,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (syncButton) {
       syncButton.addEventListener('click', () => {
         postMessageWithLoading(createRevisionGraphSyncCurrentHeadMessage(), 'Synchronizing current branch...', syncButton);
-      });
-    }
-    if (abortMergeButton) {
-      abortMergeButton.addEventListener('click', () => {
-        postMessageWithLoading(createRevisionGraphAbortMergeMessage(), 'Aborting merge...', abortMergeButton);
       });
     }
     if (scopeSelect) {
@@ -954,9 +948,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (showMergeCommitsToggle) {
         showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
-      }
-      if (abortMergeButton) {
-        abortMergeButton.hidden = !state.hasConflictedMerge;
       }
       syncViewOptionsButton();
     }

@@ -30,7 +30,6 @@ export function renderRevisionGraphStyles(): string {
       --node-mixed: color-mix(in srgb, var(--panel) 98%, white 2%);
       --node-text-dark: #181818;
       --workspace-dirty: #ff3b30;
-      --merge-conflict-border: color-mix(in srgb, var(--workspace-dirty) 72%, var(--border));
       --toolbar-top-offset: 0px;
       --toolbar-safe-height: 56px;
       --graph-top-offset: calc(var(--toolbar-safe-height) + 1px);
@@ -648,11 +647,6 @@ export function renderRevisionGraphStyles(): string {
     }
     .view-controls .zoom-action-slot {
       flex: 0 0 auto;
-    }
-    .view-controls .toolbar-button.destructive:not([hidden]) {
-      border-color: var(--merge-conflict-border);
-      color: var(--workspace-dirty);
-      background: color-mix(in srgb, var(--workspace-dirty) 14%, var(--panel));
     }
     .view-controls .toolbar-button .button-icon {
       display: inline-flex;

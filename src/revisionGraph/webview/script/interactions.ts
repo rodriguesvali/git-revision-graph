@@ -304,6 +304,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         target.kind === 'head' &&
         isWorkspaceDirty &&
         !hasConflictedMerge;
+      const canAbortConflictedMerge =
+        target.kind === 'head' &&
+        hasConflictedMerge;
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -325,6 +328,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
         if (target.kind !== 'commit') {
           appendMenuItem('Copy ref name to clipboard', () => postCopyRefName(target));
+        }
+        if (canAbortConflictedMerge) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
         }
         appendMenuSection('Selection');
         appendMenuItem('Clear Selection', () => {
@@ -348,6 +355,10 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuSection('Destructive');
           appendMenuItem('Reset Workspace to HEAD', () => postResetCurrentWorkspace(false), { destructive: true });
           appendMenuItem('Reset Workspace and Remove Untracked Files', () => postResetCurrentWorkspace(true), { destructive: true });
+        }
+        if (canAbortConflictedMerge) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
         }
         if (canPublishBranch) {
           appendMenuSection('Create And Publish');
@@ -642,6 +653,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage(createRevisionGraphMergeMessage(target));
     }
 
+    function postAbortMerge() {
+      postMessageWithLoading(createRevisionGraphAbortMergeMessage(), 'Aborting merge...');
+    }
+
     function syncToolbarActions() {
       const canZoomIn = zoomLevels.some((value) => value > currentZoom);
       const canZoomOut = zoomLevels.some((value) => value < currentZoom);
@@ -677,9 +692,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         syncButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
         syncButton.title = 'Sync with ' + remoteActionState.upstreamLabel;
         syncButton.setAttribute('aria-label', syncButton.title);
-      }
-      if (abortMergeButton) {
-        abortMergeButton.disabled = toolbarBusy || !currentState?.hasConflictedMerge;
       }
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;
@@ -728,7 +740,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         showRemoteBranchesToggle,
         showStashesToggle,
         showMergeCommitsToggle,
-        abortMergeButton,
         searchInput,
         searchPrevButton,
         searchNextButton,
