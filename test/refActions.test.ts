@@ -474,6 +474,26 @@ test('checkoutResolvedReference blocks workspace-changing operations while confl
   assert.equal(harness.sourceControlOpens, 1);
 });
 
+test('checkoutResolvedReference allows checkout with workspace changes', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'release/2026' })],
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })]
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.warningMessages, []);
+  assert.deepEqual(repository.calls.checkout, ['release/2026']);
+  assert.equal(harness.infoMessages[0], 'Checkout completed for release/2026.');
+});
+
 test('checkoutResolvedReference relies on repository listeners instead of issuing an explicit graph refresh', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -2197,7 +2217,7 @@ test('pullCurrentBranchFromUpstream pulls the current branch from its upstream',
   assert.equal(harness.infoMessages[0], 'main was pulled from origin/main.');
 });
 
-test('pullCurrentBranchFromUpstream requires a clean workspace', async () => {
+test('pullCurrentBranchFromUpstream allows pull with workspace changes', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('main', 0, 1, { remote: 'origin', name: 'main' }),
@@ -2207,9 +2227,26 @@ test('pullCurrentBranchFromUpstream requires a clean workspace', async () => {
 
   const didPull = await pullCurrentBranchFromUpstream(repository, harness.services);
 
+  assert.equal(didPull, true);
+  assert.deepEqual(harness.warningMessages, []);
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.equal(harness.infoMessages[0], 'main was pulled from origin/main.');
+});
+
+test('pullCurrentBranchFromUpstream still blocks pull while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' }),
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  const didPull = await pullCurrentBranchFromUpstream(repository, harness.services);
+
   assert.equal(didPull, false);
   assert.deepEqual(repository.calls.pull, []);
-  assert.equal(harness.warningMessages[0], 'The workspace must be clean before pulling origin/main into main. Review, stash, or commit the current changes first.');
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before pulling origin/main into main.');
+  assert.equal(harness.sourceControlOpens, 1);
 });
 
 test('pullCurrentBranchFromUpstream does not wait for the error message to close after pull fails', async () => {

@@ -171,7 +171,7 @@ export async function pullCurrentBranchFromUpstream(
     }
 
     const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
-    if (!await ensureWorkspaceReadyForMutation(repository, `pulling ${upstreamLabel} into ${currentBranch}`, services)) {
+    if (!await ensureWorkspaceReadyForMutation(repository, `pulling ${upstreamLabel} into ${currentBranch}`, services, { allowWorkspaceChanges: true })) {
       return false;
     }
 

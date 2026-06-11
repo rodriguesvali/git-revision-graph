@@ -14,6 +14,7 @@ Planning and build references:
 - `project-context/2.build/features/1.0.2-release-opening.md`
 - `project-context/2.build/features/1.0.2-show-log-double-selection-compare.md`
 - `project-context/2.build/features/1.0.2-dirty-worktree-branch-creation.md`
+- `project-context/2.build/features/1.0.2-dirty-worktree-checkout-pull.md`
 
 Release direction:
 
@@ -26,6 +27,7 @@ Planned scope:
 
 - Restore the Show Log `Compare` context action when exactly two commits are selected, while preserving `Cherry Pick`-only behavior for larger multi-selections.
 - Allow `Create New Branch` to create and check out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
+- Allow checkout and current-branch pull with ordinary workspace changes, while still blocking unresolved conflicts.
 
 Automated verification:
 
@@ -38,6 +40,9 @@ Automated verification:
 - Focused ref action tests passed after allowing dirty-worktree branch creation. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 417 tests after allowing dirty-worktree branch creation. This includes `npm run build` through the test script.
 - `git diff --check` passed after allowing dirty-worktree branch creation and artifact updates.
+- Focused ref action tests passed after allowing dirty-worktree checkout and pull. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 419 tests after allowing dirty-worktree checkout and pull. This includes `npm run build` through the test script.
+- `git diff --check` passed after allowing dirty-worktree checkout and pull and artifact updates.
 
 Manual validation focus:
 
@@ -47,6 +52,9 @@ Manual validation focus:
 - Confirm the two-commit `Compare` action populates Compare Results as before.
 - Modify a file without committing, create a new branch from the revision graph, and confirm the branch is created and checked out while changes remain present.
 - Repeat branch creation with unresolved conflicts and confirm the extension opens Source Control and blocks the operation.
+- Modify a file without committing, run checkout from the revision graph, and confirm the extension attempts the checkout.
+- Modify a file without committing, run current-branch pull, and confirm the extension attempts the pull.
+- Repeat checkout and pull with unresolved conflicts and confirm the extension opens Source Control and blocks the operation.
 
 Release gates:
 
@@ -59,7 +67,7 @@ Release gates:
 Post-release monitoring focus:
 
 - Reports that Show Log two-commit selections still omit `Compare` or route to the wrong Compare Results pair.
-- Reports that `Create New Branch` still blocks ordinary dirty worktrees or allows branch creation during unresolved conflicts.
+- Reports that branch creation, checkout, or pull still block ordinary dirty worktrees or allow operation during unresolved conflicts.
 
 Rollback:
 

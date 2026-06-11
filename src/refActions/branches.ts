@@ -19,7 +19,7 @@ export async function checkoutResolvedReference(
       return;
     }
 
-    if (!await ensureWorkspaceReadyForMutation(repository, 'checking out another reference', services)) {
+    if (!await ensureWorkspaceReadyForMutation(repository, 'checking out another reference', services, { allowWorkspaceChanges: true })) {
       return;
     }
 
