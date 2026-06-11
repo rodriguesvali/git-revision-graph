@@ -1,27 +1,28 @@
 # Release Readiness
 
-## 1.0.2 Release Readiness
+## 1.1.0 Release Readiness
 
 Current package baseline: `1.0.1`.
 
-Target release: `1.0.2`.
+Target release: `1.1.0`.
 
-Status: Release cycle open for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, focused patch items are implemented and verified, and VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release cycle open for `1.1.0`. Package metadata is bumped to `1.1.0` in `package.json` and `package-lock.json`, focused fixes and small functional improvements are implemented and verified, and VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
-- `project-context/docs/release-1.0.2-prioritization.md`
-- `project-context/2.build/features/1.0.2-release-opening.md`
-- `project-context/2.build/features/1.0.2-show-log-double-selection-compare.md`
-- `project-context/2.build/features/1.0.2-dirty-worktree-branch-creation.md`
-- `project-context/2.build/features/1.0.2-dirty-worktree-checkout-pull.md`
-- `project-context/2.build/features/1.0.2-graph-drag-release-hardening.md`
-- `project-context/2.build/features/1.0.2-reload-with-empty-cache.md`
+- `project-context/docs/release-1.1.0-prioritization.md`
+- `project-context/2.build/features/1.1.0-release-opening.md`
+- `project-context/2.build/features/1.1.0-show-log-double-selection-compare.md`
+- `project-context/2.build/features/1.1.0-dirty-worktree-branch-creation.md`
+- `project-context/2.build/features/1.1.0-dirty-worktree-checkout-pull.md`
+- `project-context/2.build/features/1.1.0-graph-drag-release-hardening.md`
+- `project-context/2.build/features/1.1.0-reload-with-empty-cache.md`
+- `project-context/2.build/features/1.1.0-release-promotion.md`
 
 Release direction:
 
 - Keep the shipped `1.0.1` Source Control/editor graph product surface stable.
-- Limit scope to focused patch items selected by the maintainer.
+- Limit scope to focused fixes and small functional improvements selected by the maintainer.
 - Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and native VS Code Git workflow alignment.
 - Do not package or publish without explicit maintainer approval.
 
@@ -35,9 +36,9 @@ Planned scope:
 
 Automated verification:
 
-- Package metadata confirmed at `1.0.2` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
-- `git diff --check` passed after opening the `1.0.2` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
-- `npm run build` passed after opening the `1.0.2` cycle.
+- Package metadata confirmed at `1.1.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
+- `git diff --check` passed after opening the `1.1.0` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
+- `npm run build` passed after opening the `1.1.0` cycle.
 - Focused Show Log webview shell test passed after restoring double-selection compare. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 415 tests after restoring double-selection compare. This includes `npm run build` through the test script.
 - `git diff --check` passed after restoring double-selection compare and artifact updates.
@@ -53,6 +54,9 @@ Automated verification:
 - Focused revision graph webview, message handler, dispatcher, message validation, and layout cache persistence tests passed after adding the long-press reload with empty cache option. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 422 tests after adding the long-press reload with empty cache option. This includes `npm run build` through the test script.
 - `git diff --check` passed after reload with empty cache implementation and artifact updates.
+- Package metadata and active release artifacts were promoted from `1.0.2` to `1.1.0` after the scope grew to include small functional improvements.
+- `npm run build` passed after promoting package metadata and active release artifacts to `1.1.0`.
+- `git diff --check` passed after the `1.1.0` promotion updates.
 
 Manual validation focus:
 
@@ -72,7 +76,7 @@ Manual validation focus:
 Release gates:
 
 - Pending maintainer confirmation that no additional launch items are required.
-- Automated verification completed for the current `1.0.2` implementation scope.
+- Automated verification completed for the current `1.1.0` implementation scope.
 - Pending maintainer Extension Development Host smoke validation before publication.
 - Pending maintainer VSIX packaging and generated package review.
 - Pending maintainer Marketplace publication approval.
@@ -86,7 +90,7 @@ Post-release monitoring focus:
 
 Rollback:
 
-- If a published `1.0.2` regression is found, prepare a narrower follow-up patch or direct affected users to the previous `1.0.1` VSIX depending on severity.
+- If a published `1.1.0` regression is found, prepare a narrower follow-up patch or direct affected users to the previous `1.0.1` VSIX depending on severity.
 
 ## 1.0.1 Release Readiness
 

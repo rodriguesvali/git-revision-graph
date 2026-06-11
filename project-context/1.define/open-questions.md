@@ -1,10 +1,10 @@
 # Open Questions
 
-## 1.0.2
+## 1.1.0
 
-- Which focused patch items should define the `1.0.2` release scope?
-- Should `1.0.2` remain stabilization-only, or include one small Marketplace-safe polish item?
-- Which manual Extension Development Host smoke paths are mandatory once `1.0.2` launch items are selected?
+- Decided on 2026-06-11: promote the active cycle from `1.0.2` to `1.1.0` because the scope now includes small compatible functional improvements in addition to fixes.
+- Which final focused fixes and small functional improvements should define the closed `1.1.0` release scope?
+- Which manual Extension Development Host smoke paths are mandatory once `1.1.0` launch items are selected?
 
 ## 0.0.37
 

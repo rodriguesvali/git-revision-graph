@@ -2,19 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.2
+## 1.1.0
 
 ### Release Preparation
 
-- Opened the `1.0.2` cycle as the next patch release after the completed `1.0.1` release.
-- Version bump to `1.0.2` has been applied in `package.json` and `package-lock.json`; launch items, VSIX packaging, and Marketplace publication remain pending maintainer approval.
+- Opened the `1.1.0` cycle as the next minor release after the completed `1.0.1` release.
+- Version bump to `1.1.0` has been applied in `package.json` and `package-lock.json`; launch items, VSIX packaging, and Marketplace publication remain pending maintainer approval.
 
 ### Fixes
 
 - Restored the Show Log `Compare` context action when exactly two commits are selected, while keeping larger multi-selections focused on `Cherry Pick`.
+- Hardened revision graph dragging so pan mode clears when mouse release is missed or the webview loses focus.
+
+### Improvements
+
 - Allowed `Create New Branch` to match VS Code Source Control by creating and checking out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 - Allowed checkout and current-branch pull to match VS Code Source Control by running with ordinary workspace changes, while still blocking unresolved conflicts.
-- Hardened revision graph dragging so pan mode clears when mouse release is missed or the webview loses focus.
 - Added a long-press `Reload Revision Graph` option to reload with an empty layout cache.
 
 ## 1.0.1
