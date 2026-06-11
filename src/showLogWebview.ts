@@ -1391,16 +1391,16 @@ export function renderShowLogWebviewHtml(): string {
       if (!contextMenu) {
         return;
       }
-      if (isMultiSelectedContext(commitHash)) {
-        contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>';
-        showContextMenuAt(clientX, clientY);
-        return;
-      }
       if (compareSelection) {
         contextMenu.innerHTML = ''
           + '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
           + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
           + copyReferenceNameMenu;
+        showContextMenuAt(clientX, clientY);
+        return;
+      }
+      if (isMultiSelectedContext(commitHash)) {
+        contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>';
         showContextMenuAt(clientX, clientY);
         return;
       }

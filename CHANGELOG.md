@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - Opened the `1.0.2` cycle as the next patch release after the completed `1.0.1` release.
 - Version bump to `1.0.2` has been applied in `package.json` and `package-lock.json`; launch items, VSIX packaging, and Marketplace publication remain pending maintainer approval.
 
+### Fixes
+
+- Restored the Show Log `Compare` context action when exactly two commits are selected, while keeping larger multi-selections focused on `Cherry Pick`.
+
 ## 1.0.1
 
 ### Release Preparation

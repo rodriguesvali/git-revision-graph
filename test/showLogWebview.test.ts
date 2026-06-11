@@ -160,7 +160,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*copyReferenceNameMenu/s);
   assert.match(html, /data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*'<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this<\/button>'\s*\+\s*copyReferenceNameMenu/s);
   assert.match(html, /function isMultiSelectedContext\(commitHash\)/);
-  assert.match(html, /if \(isMultiSelectedContext\(commitHash\)\) \{\s*contextMenu\.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>';\s*showContextMenuAt\(clientX, clientY\);\s*return;\s*\}/s);
+  assert.match(html, /if \(compareSelection\) \{\s*contextMenu\.innerHTML = ''\s*\+\s*'<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'/s);
+  assert.match(html, /if \(compareSelection\) \{[\s\S]*?return;\s*\}\s*if \(isMultiSelectedContext\(commitHash\)\) \{\s*contextMenu\.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>';/s);
   assert.doesNotMatch(html, /canCompareWithWorktree/);
   assert.doesNotMatch(html, /function isSingleSelectedCommit\(commitHash\)/);
   assert.match(html, /data-menu-action="openFile">Compare<\/button>/);

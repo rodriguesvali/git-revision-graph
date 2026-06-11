@@ -12,6 +12,7 @@ Planning and build references:
 
 - `project-context/docs/release-1.0.2-prioritization.md`
 - `project-context/2.build/features/1.0.2-release-opening.md`
+- `project-context/2.build/features/1.0.2-show-log-double-selection-compare.md`
 
 Release direction:
 
@@ -22,19 +23,23 @@ Release direction:
 
 Planned scope:
 
-- Pending maintainer selection.
+- Restore the Show Log `Compare` context action when exactly two commits are selected, while preserving `Cherry Pick`-only behavior for larger multi-selections.
 
 Automated verification:
 
 - Package metadata confirmed at `1.0.2` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
 - `git diff --check` passed after opening the `1.0.2` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
 - `npm run build` passed after opening the `1.0.2` cycle.
-- Pending for behavior changes: `npm test` after selected `1.0.2` implementation work.
+- Focused Show Log webview shell test passed after restoring double-selection compare. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 415 tests after restoring double-selection compare. This includes `npm run build` through the test script.
+- `git diff --check` passed after restoring double-selection compare and artifact updates.
 
 Manual validation focus:
 
-- Confirm graph launch from Source Control, graph load, repository switching, scope/filter toggles, refresh, and affected `1.0.2` workflows once launch items are selected.
-- Confirm Compare Results and Show Log behavior if selected work touches review surfaces.
+- Confirm graph launch from Source Control and Show Log opening from a revision graph commit or range.
+- Ctrl-click two Show Log commits, open the context menu on either selected commit, and confirm both `Compare` and `Cherry Pick` are present.
+- Select three Show Log commits, open the context menu on a selected commit, and confirm only `Cherry Pick` is present.
+- Confirm the two-commit `Compare` action populates Compare Results as before.
 
 Release gates:
 
