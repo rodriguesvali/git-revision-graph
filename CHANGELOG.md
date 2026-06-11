@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.2
+
+### Release Preparation
+
+- Opened the `1.0.2` cycle as the next patch release after the completed `1.0.1` release.
+- Version bump to `1.0.2` has been applied in `package.json` and `package-lock.json`; launch items, VSIX packaging, and Marketplace publication remain pending maintainer approval.
+
 ## 1.0.1
 
 ### Release Preparation

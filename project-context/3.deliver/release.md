@@ -1,5 +1,57 @@
 # Release Readiness
 
+## 1.0.2 Release Readiness
+
+Current package baseline: `1.0.1`.
+
+Target release: `1.0.2`.
+
+Status: Release cycle opened for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, planning artifacts are created, and implementation scope remains pending maintainer selection. VSIX packaging and Marketplace publication are not approved or complete.
+
+Planning and build references:
+
+- `project-context/docs/release-1.0.2-prioritization.md`
+- `project-context/2.build/features/1.0.2-release-opening.md`
+
+Release direction:
+
+- Keep the shipped `1.0.1` Source Control/editor graph product surface stable.
+- Limit scope to focused patch items selected by the maintainer.
+- Preserve command IDs, contribution points, view types, multi-repository behavior, conflict guards, webview security boundaries, and native VS Code Git workflow alignment.
+- Do not package or publish without explicit maintainer approval.
+
+Planned scope:
+
+- Pending maintainer selection.
+
+Automated verification:
+
+- Package metadata confirmed at `1.0.2` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
+- `git diff --check` passed after opening the `1.0.2` package metadata, changelog, prioritization, feature, and release-readiness artifacts.
+- `npm run build` passed after opening the `1.0.2` cycle.
+- Pending for behavior changes: `npm test` after selected `1.0.2` implementation work.
+
+Manual validation focus:
+
+- Confirm graph launch from Source Control, graph load, repository switching, scope/filter toggles, refresh, and affected `1.0.2` workflows once launch items are selected.
+- Confirm Compare Results and Show Log behavior if selected work touches review surfaces.
+
+Release gates:
+
+- Pending maintainer launch-item selection.
+- Pending automated verification.
+- Pending maintainer Extension Development Host smoke validation before publication.
+- Pending maintainer VSIX packaging and generated package review.
+- Pending maintainer Marketplace publication approval.
+
+Post-release monitoring focus:
+
+- Pending implemented `1.0.2` scope.
+
+Rollback:
+
+- If a published `1.0.2` regression is found, prepare a narrower follow-up patch or direct affected users to the previous `1.0.1` VSIX depending on severity.
+
 ## 1.0.1 Release Readiness
 
 Current package baseline: `1.0.0`.

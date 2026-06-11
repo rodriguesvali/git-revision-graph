@@ -1,5 +1,11 @@
 # Open Questions
 
+## 1.0.2
+
+- Which focused patch items should define the `1.0.2` release scope?
+- Should `1.0.2` remain stabilization-only, or include one small Marketplace-safe polish item?
+- Which manual Extension Development Host smoke paths are mandatory once `1.0.2` launch items are selected?
+
 ## 0.0.37
 
 - Decided on 2026-06-04: `0.0.37` will not be stabilization-only. The cycle may include small visual and functional product improvements selected one by one from maintainer review, with each item scoped individually.
