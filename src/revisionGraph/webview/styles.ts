@@ -593,14 +593,13 @@ export function renderRevisionGraphStyles(): string {
       white-space: nowrap;
     }
     .view-controls .toolbar-actions {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 6px;
-      margin-left: auto;
       flex: 0 0 auto;
       max-width: 100%;
       flex-wrap: wrap;
-      justify-content: flex-end;
+      justify-content: flex-start;
     }
     .view-controls .toolbar-action-slot {
       display: inline-flex;

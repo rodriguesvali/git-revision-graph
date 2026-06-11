@@ -97,6 +97,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /--toolbar-safe-height: 56px/);
   assert.match(html, /--graph-top-offset: calc\(var\(--toolbar-safe-height\) \+ 1px\)/);
   assert.match(html, /\.view-controls \{\s*position: fixed;\s*top: var\(--toolbar-top-offset\);\s*left: 0;\s*right: 0;[\s\S]*?border-radius: 0;[\s\S]*?box-shadow: none;/);
+  assert.match(html, /\.view-controls \.toolbar-actions \{\s*display: flex;[\s\S]*?justify-content: flex-start;/);
+  assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?margin-left: auto;[\s\S]*?\}/);
   assert.match(html, /\.view-controls \.toolbar-button \{[\s\S]*?border-radius: 0;/);
   assert.match(html, /top: var\(--graph-top-offset\);/);
   assert.match(html, /right: 0;/);
