@@ -24,6 +24,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
   switch (message.type) {
     case 'webview-ready':
     case 'refresh':
+    case 'refresh-with-empty-cache':
     case 'fetch-current-repository':
     case 'choose-repository':
     case 'abort-merge':
@@ -129,6 +130,7 @@ export function isRevisionGraphMessageAllowedForState(
     case 'webview-ready':
     case 'load-trace':
     case 'refresh':
+    case 'refresh-with-empty-cache':
     case 'fetch-current-repository':
     case 'choose-repository':
     case 'set-projection-options':
@@ -200,6 +202,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'webview-ready':
     case 'load-trace':
     case 'refresh':
+    case 'refresh-with-empty-cache':
     case 'choose-repository':
     case 'set-projection-options':
       return false;

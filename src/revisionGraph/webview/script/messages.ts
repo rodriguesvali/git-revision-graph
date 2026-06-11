@@ -19,6 +19,10 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'refresh' };
     }
 
+    function createRevisionGraphRefreshWithEmptyCacheMessage() {
+      return { type: 'refresh-with-empty-cache' };
+    }
+
     function createRevisionGraphFetchCurrentRepositoryMessage() {
       return { type: 'fetch-current-repository' };
     }

@@ -63,8 +63,22 @@ test('RevisionGraphMessageDispatcher still allows unscoped refresh messages whil
       }
     }
   );
+  await dispatcher.dispatch(
+    { type: 'refresh-with-empty-cache' },
+    {
+      currentState: {
+        ...createReadyRevisionGraphState(),
+        loading: true,
+        loadingLabel: 'Loading revision graph...'
+      },
+      currentRepositoryPath: '/workspace/other',
+      async handleMessage(message) {
+        dispatchedMessages.push(message);
+      }
+    }
+  );
 
-  assert.deepEqual(dispatchedMessages, [{ type: 'refresh' }]);
+  assert.deepEqual(dispatchedMessages, [{ type: 'refresh' }, { type: 'refresh-with-empty-cache' }]);
 });
 
 function createReadyRevisionGraphState(): RevisionGraphViewState {

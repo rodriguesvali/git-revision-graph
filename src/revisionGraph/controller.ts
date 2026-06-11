@@ -172,7 +172,8 @@ export class RevisionGraphController implements vscode.Disposable {
     compareResultsPresenter: CompareResultsPresenter,
     showLogPresenter: ShowLogPresenter,
     private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
-    private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY
+    private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY,
+    private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined
   ) {
     this.actionServices = createWorkbenchRefActionServices(
       (request) => {
@@ -213,6 +214,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       postCurrentState: () => {
         this.postCurrentState();
+      },
+      clearLayoutCache: () => {
+        return this.clearLayoutCache();
       },
       traceWebviewLoadEvent: (phase, durationMs, detail, requestId) => {
         this.traceWebviewLoadEvent(phase, durationMs, detail, requestId);

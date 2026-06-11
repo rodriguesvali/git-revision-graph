@@ -17,9 +17,10 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     compareResultsPresenter: CompareResultsPresenter,
     showLogPresenter: ShowLogPresenter,
     backend: RevisionGraphBackend = createRevisionGraphBackend(),
-    viewId: string = REVISION_GRAPH_VIEW_ID
+    viewId: string = REVISION_GRAPH_VIEW_ID,
+    clearLayoutCache: () => PromiseLike<void> | void = () => undefined
   ) {
-    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter, viewId);
+    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter, viewId, undefined, clearLayoutCache);
   }
 
   dispose(): void {
@@ -61,14 +62,17 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     compareResultsPresenter: CompareResultsPresenter,
     showLogPresenter: ShowLogPresenter,
     private readonly closeDependentViews: () => Promise<void> | void = () => undefined,
-    backend: RevisionGraphBackend = createRevisionGraphBackend()
+    backend: RevisionGraphBackend = createRevisionGraphBackend(),
+    clearLayoutCache: () => PromiseLike<void> | void = () => undefined
   ) {
     this.controller = new RevisionGraphController(
       git,
       backend,
       compareResultsPresenter,
       showLogPresenter,
-      REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE
+      REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE,
+      undefined,
+      clearLayoutCache
     );
   }
 

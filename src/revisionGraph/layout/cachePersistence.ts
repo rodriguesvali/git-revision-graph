@@ -1,6 +1,7 @@
 import type * as vscode from 'vscode';
 
 import {
+  clearProjectedGraphLayoutCache,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache,
   type SerializedProjectedGraphLayoutCacheEntry
@@ -15,6 +16,7 @@ export interface ProjectedGraphLayoutCacheState {
 }
 
 export interface ProjectedGraphLayoutCachePersistenceServices {
+  clearCache?: () => void;
   restoreCache(entries: readonly SerializedProjectedGraphLayoutCacheEntry[] | undefined): void;
   serializeCache(): SerializedProjectedGraphLayoutCacheEntry[];
   setTimeout(callback: () => void, delayMs: number): unknown;
@@ -23,6 +25,7 @@ export interface ProjectedGraphLayoutCachePersistenceServices {
 }
 
 const defaultServices: ProjectedGraphLayoutCachePersistenceServices = {
+  clearCache: clearProjectedGraphLayoutCache,
   restoreCache: restoreProjectedGraphLayoutCache,
   serializeCache: serializeProjectedGraphLayoutCache,
   setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
@@ -97,6 +100,28 @@ export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
     } catch (error) {
       this.services.warn('Failed to persist the revision graph layout cache.', error);
       await this.clearPersistedCache();
+    }
+  }
+
+  async clear(): Promise<void> {
+    if (this.saveTimer) {
+      this.services.clearTimeout(this.saveTimer);
+      this.saveTimer = undefined;
+    }
+
+    try {
+      if (this.services.clearCache) {
+        this.services.clearCache();
+      } else {
+        this.services.restoreCache(undefined);
+      }
+      if (this.saveTimer) {
+        this.services.clearTimeout(this.saveTimer);
+        this.saveTimer = undefined;
+      }
+      await this.clearPersistedCache();
+    } catch (error) {
+      this.services.warn('Failed to clear the revision graph layout cache.', error);
     }
   }
 

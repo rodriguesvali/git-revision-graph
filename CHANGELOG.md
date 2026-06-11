@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Allowed `Create New Branch` to match VS Code Source Control by creating and checking out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 - Allowed checkout and current-branch pull to match VS Code Source Control by running with ordinary workspace changes, while still blocking unresolved conflicts.
 - Hardened revision graph dragging so pan mode clears when mouse release is missed or the webview loses focus.
+- Added a long-press `Reload Revision Graph` option to reload with an empty layout cache.
 
 ## 1.0.1
 

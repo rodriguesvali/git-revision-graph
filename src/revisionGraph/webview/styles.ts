@@ -286,6 +286,36 @@ export function renderRevisionGraphStyles(): string {
       display: none;
     }
     .context-menu.open { display: block; }
+    .reload-cache-menu {
+      position: fixed;
+      z-index: 90;
+      min-width: 168px;
+      max-width: calc(100vw - 16px);
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+    .reload-cache-menu[hidden] {
+      display: none;
+    }
+    .reload-cache-menu-button {
+      width: 100%;
+      min-height: 28px;
+      padding: 5px 8px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+    .reload-cache-menu-button:hover,
+    .reload-cache-menu-button:focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
     .context-item {
       width: 100%;
       text-align: left;

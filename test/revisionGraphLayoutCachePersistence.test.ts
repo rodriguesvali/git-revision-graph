@@ -91,6 +91,42 @@ test('ProjectedGraphLayoutCachePersistence clears persisted cache when serializa
   assert.deepEqual(warnings, ['Failed to serialize the revision graph layout cache.']);
 });
 
+test('ProjectedGraphLayoutCachePersistence clears in-memory and persisted cache', async () => {
+  const state = createState([createCacheEntry('persisted')]);
+  const timers: Array<() => void> = [];
+  let clearedCacheCount = 0;
+  let clearedTimers = 0;
+  let persistence!: ProjectedGraphLayoutCachePersistence;
+
+  persistence = new ProjectedGraphLayoutCachePersistence(
+    state,
+    createServices({
+      clearCache() {
+        clearedCacheCount += 1;
+        persistence.schedulePersist();
+      },
+      setTimeout(callback) {
+        timers.push(callback);
+        return callback;
+      },
+      clearTimeout() {
+        clearedTimers += 1;
+      }
+    }),
+    10
+  );
+
+  persistence.schedulePersist();
+  await persistence.clear();
+
+  assert.equal(clearedCacheCount, 1);
+  assert.equal(timers.length, 2);
+  assert.equal(clearedTimers, 2);
+  assert.deepEqual(state.updates, [
+    { key: PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, value: undefined }
+  ]);
+});
+
 test('ProjectedGraphLayoutCachePersistence debounces scheduled writes and flushes on dispose', async () => {
   const persistedCache: SerializedProjectedGraphLayoutCacheEntry[] = [];
   const nextCache = [createCacheEntry('next')];

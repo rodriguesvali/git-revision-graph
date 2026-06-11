@@ -30,6 +30,7 @@ export type RevisionGraphMessage =
     readonly requestId?: number;
   }
   | { readonly type: 'refresh' }
+  | { readonly type: 'refresh-with-empty-cache' }
   | { readonly type: 'fetch-current-repository' }
   | { readonly type: 'choose-repository' }
   | { readonly type: 'abort-merge' }

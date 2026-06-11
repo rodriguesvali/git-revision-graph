@@ -94,6 +94,10 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'abort-merge' }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'refresh-with-empty-cache' }),
+    { type: 'refresh-with-empty-cache' }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'copy-ref-name', refName: 'main', refKind: 'head' }),
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
@@ -262,6 +266,14 @@ test('isRevisionGraphMessageAllowedForCurrentRepository rejects stale repository
   assert.equal(
     isRevisionGraphMessageAllowedForCurrentRepository(
       { type: 'refresh' },
+      { ...state, loading: true, loadingLabel: 'Loading revision graph...' },
+      '/workspace/other'
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'refresh-with-empty-cache' },
       { ...state, loading: true, loadingLabel: 'Loading revision graph...' },
       '/workspace/other'
     ),

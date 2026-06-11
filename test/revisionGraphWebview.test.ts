@@ -155,10 +155,25 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /const pullButton = document\.getElementById\('pullButton'\);/);
   assert.match(html, /const pushButton = document\.getElementById\('pushButton'\);/);
   assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
+  assert.match(html, /const RELOAD_LONG_PRESS_DELAY_MS = 500;/);
   assert.match(
     html,
-    /reloadButton\.addEventListener\('click', \(\) => \{\s*postMessageWithLoading\(createRevisionGraphRefreshMessage\(\), 'Reloading revision graph\.\.\.', reloadButton\);/s
+    /reloadButton\.addEventListener\('pointerdown', \(event\) => \{[\s\S]*?scheduleReloadLongPressMenu\(\);[\s\S]*?reloadButton\.addEventListener\('click', \(event\) => \{[\s\S]*?reloadRevisionGraph\(\);/s
   );
+  assert.match(
+    html,
+    /function reloadRevisionGraph\(\) \{\s*closeReloadCacheMenu\(\);\s*postMessageWithLoading\(createRevisionGraphRefreshMessage\(\), 'Reloading revision graph\.\.\.', reloadButton\);/s
+  );
+  assert.match(
+    html,
+    /function reloadRevisionGraphWithEmptyCache\(\) \{\s*closeReloadCacheMenu\(\);\s*postMessageWithLoading\(\s*createRevisionGraphRefreshWithEmptyCacheMessage\(\),\s*'Reloading revision graph with empty cache\.\.\.',\s*reloadButton\s*\);/s
+  );
+  assert.match(html, /createRevisionGraphRefreshWithEmptyCacheMessage\(\)/);
+  assert.match(html, /emptyCacheButton\.textContent = 'With Empty Cache';/);
+  assert.match(html, /reloadButton\.addEventListener\('pointerup', cancelReloadLongPressMenu\);/);
+  assert.match(html, /reloadButton\.addEventListener\('pointercancel', cancelReloadLongPressMenu\);/);
+  assert.match(html, /reloadButton\.addEventListener\('pointerleave', cancelReloadLongPressMenu\);/);
+  assert.match(html, /\.reload-cache-menu/);
   assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);

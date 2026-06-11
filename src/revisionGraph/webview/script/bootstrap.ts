@@ -113,6 +113,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
     let pendingVirtualSceneRenderFrame = 0;
     let lastVirtualSceneKey = '';
+    const RELOAD_LONG_PRESS_DELAY_MS = 500;
+    let reloadLongPressTimer = 0;
+    let suppressNextReloadClick = false;
+    let reloadCacheMenu = null;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -120,8 +124,22 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     vscode.postMessage(createRevisionGraphWebviewReadyMessage());
 
     if (reloadButton) {
-      reloadButton.addEventListener('click', () => {
-        postMessageWithLoading(createRevisionGraphRefreshMessage(), 'Reloading revision graph...', reloadButton);
+      reloadButton.addEventListener('pointerdown', (event) => {
+        if (reloadButton.disabled || (event.button !== undefined && event.button !== 0)) {
+          return;
+        }
+        scheduleReloadLongPressMenu();
+      });
+      reloadButton.addEventListener('pointerup', cancelReloadLongPressMenu);
+      reloadButton.addEventListener('pointercancel', cancelReloadLongPressMenu);
+      reloadButton.addEventListener('pointerleave', cancelReloadLongPressMenu);
+      reloadButton.addEventListener('click', (event) => {
+        if (suppressNextReloadClick) {
+          suppressNextReloadClick = false;
+          event.preventDefault();
+          return;
+        }
+        reloadRevisionGraph();
       });
     }
     if (fetchAllButton) {
@@ -360,7 +378,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       ) {
         closeViewOptionsMenu();
       }
+      if (
+        reloadCacheMenu &&
+        !reloadCacheMenu.hidden &&
+        !reloadCacheMenu.contains(event.target) &&
+        !(reloadButton && reloadButton.contains(event.target))
+      ) {
+        closeReloadCacheMenu();
+      }
     });
+    window.addEventListener('blur', closeReloadCacheMenu);
     window.addEventListener('keydown', (event) => {
       const isSearchInputFocused = document.activeElement === searchInput;
       if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
@@ -408,6 +435,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (event.key === 'Escape') {
         closeContextMenu();
         closeViewOptionsMenu();
+        closeReloadCacheMenu();
         if (endNodeDrag(false)) {
           applyNodeLayout(false);
         }
@@ -427,6 +455,80 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       endMinimapDrag();
       endNodeDrag(true);
       endViewportDrag();
+    }
+
+    function reloadRevisionGraph() {
+      closeReloadCacheMenu();
+      postMessageWithLoading(createRevisionGraphRefreshMessage(), 'Reloading revision graph...', reloadButton);
+    }
+
+    function reloadRevisionGraphWithEmptyCache() {
+      closeReloadCacheMenu();
+      postMessageWithLoading(
+        createRevisionGraphRefreshWithEmptyCacheMessage(),
+        'Reloading revision graph with empty cache...',
+        reloadButton
+      );
+    }
+
+    function scheduleReloadLongPressMenu() {
+      cancelReloadLongPressMenu();
+      reloadLongPressTimer = window.setTimeout(() => {
+        reloadLongPressTimer = 0;
+        suppressNextReloadClick = true;
+        showReloadCacheMenu();
+      }, RELOAD_LONG_PRESS_DELAY_MS);
+    }
+
+    function cancelReloadLongPressMenu() {
+      if (reloadLongPressTimer) {
+        window.clearTimeout(reloadLongPressTimer);
+        reloadLongPressTimer = 0;
+      }
+    }
+
+    function showReloadCacheMenu() {
+      if (!reloadButton) {
+        return;
+      }
+      if (!reloadCacheMenu) {
+        reloadCacheMenu = document.createElement('div');
+        reloadCacheMenu.className = 'reload-cache-menu';
+        reloadCacheMenu.hidden = true;
+        reloadCacheMenu.setAttribute('role', 'menu');
+        const emptyCacheButton = document.createElement('button');
+        emptyCacheButton.type = 'button';
+        emptyCacheButton.className = 'reload-cache-menu-button';
+        emptyCacheButton.textContent = 'With Empty Cache';
+        emptyCacheButton.setAttribute('role', 'menuitem');
+        emptyCacheButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          reloadRevisionGraphWithEmptyCache();
+        });
+        reloadCacheMenu.appendChild(emptyCacheButton);
+        document.body.appendChild(reloadCacheMenu);
+      }
+
+      reloadCacheMenu.hidden = false;
+      const buttonRect = reloadButton.getBoundingClientRect();
+      const menuRect = reloadCacheMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const leftLimit = Math.max(8, viewportWidth - menuRect.width - 8);
+      const left = Math.min(Math.max(8, buttonRect.left), leftLimit);
+      reloadCacheMenu.style.left = left + 'px';
+      reloadCacheMenu.style.top = Math.max(8, buttonRect.bottom + 6) + 'px';
+      const firstButton = reloadCacheMenu.querySelector('button');
+      if (firstButton) {
+        firstButton.focus();
+      }
+    }
+
+    function closeReloadCacheMenu() {
+      cancelReloadLongPressMenu();
+      if (reloadCacheMenu) {
+        reloadCacheMenu.hidden = true;
+      }
+      suppressNextReloadClick = false;
     }
 
     function endMinimapDrag() {

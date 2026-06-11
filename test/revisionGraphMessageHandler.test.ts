@@ -48,6 +48,22 @@ test('RevisionGraphMessageHandler applies projection options and schedules a ful
   assert.deepEqual(refreshes, ['full-rebuild']);
 });
 
+test('RevisionGraphMessageHandler clears layout cache before empty-cache refresh', async () => {
+  const calls: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async clearLayoutCache() {
+      calls.push('clear-layout-cache');
+    },
+    async refresh(request) {
+      calls.push(`refresh:${request}`);
+    }
+  }));
+
+  await handler.handleMessage({ type: 'refresh-with-empty-cache' });
+
+  assert.deepEqual(calls, ['clear-layout-cache', 'refresh:full-rebuild']);
+});
+
 test('RevisionGraphMessageHandler handles clipboard copy actions through the host boundary', async () => {
   const clipboardWrites: string[] = [];
   const informationMessages: string[] = [];
@@ -136,6 +152,7 @@ function createHost(
     },
     setProjectionOptions() {},
     async refresh() {},
+    async clearLayoutCache() {},
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},

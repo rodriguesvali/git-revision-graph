@@ -31,6 +31,7 @@ export interface RevisionGraphMessageHandlerHost
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
+  clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
     phase: string,
     durationMs: number,
@@ -61,6 +62,10 @@ export class RevisionGraphMessageHandler {
         this.host.traceWebviewLoadEvent(message.phase, message.durationMs, message.detail, message.requestId);
         return;
       case 'refresh':
+        await this.host.refresh('full-rebuild');
+        return;
+      case 'refresh-with-empty-cache':
+        await this.host.clearLayoutCache();
         await this.host.refresh('full-rebuild');
         return;
       case 'fetch-current-repository':

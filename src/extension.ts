@@ -51,7 +51,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         showLogProvider.hideWithRevisionGraph()
       ]);
     },
-    backend
+    backend,
+    () => layoutCachePersistence.clear()
   );
   const commandServices = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);
   services = commandServices;
