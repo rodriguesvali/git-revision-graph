@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Fixes
 
 - Restored the Show Log `Compare` context action when exactly two commits are selected, while keeping larger multi-selections focused on `Cherry Pick`.
+- Allowed `Create New Branch` to match VS Code Source Control by creating and checking out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 
 ## 1.0.1
 

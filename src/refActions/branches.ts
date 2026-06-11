@@ -49,7 +49,7 @@ export async function createBranchFromResolvedReference(
   services: RefActionServices
 ): Promise<void> {
   try {
-    if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services)) {
+    if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services, { allowWorkspaceChanges: true })) {
       return;
     }
 

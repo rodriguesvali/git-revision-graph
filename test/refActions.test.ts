@@ -546,6 +546,53 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
   assert.equal(harness.refreshCalls, 0);
 });
 
+test('createBranchFromResolvedReference allows creating and checking out a branch with workspace changes', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'main' })],
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })]
+  });
+  const harness = createServices({
+    async promptBranchName() {
+      return 'feature/wip';
+    }
+  });
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'main', label: 'main', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.warningMessages, []);
+  assert.deepEqual(repository.calls.createBranch, [
+    { name: 'feature/wip', checkout: true, ref: 'main' }
+  ]);
+  assert.deepEqual(harness.upstreamClears, ['feature/wip']);
+  assert.equal(harness.infoMessages[0], 'Branch feature/wip was created and checked out from main.');
+});
+
+test('createBranchFromResolvedReference still blocks branch creation while conflicts are unresolved', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    refs: [createRef({ type: RefType.Head, name: 'main' })],
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await createBranchFromResolvedReference(
+    repository,
+    { refName: 'main', label: 'main', kind: 'head' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before creating a new branch.');
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
 test('createBranchFromResolvedReference creates a new branch from an unreferenced commit hash', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

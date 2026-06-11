@@ -6,13 +6,14 @@ Current package baseline: `1.0.1`.
 
 Target release: `1.0.2`.
 
-Status: Release cycle opened for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, planning artifacts are created, and implementation scope remains pending maintainer selection. VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release cycle open for `1.0.2`. Package metadata is bumped to `1.0.2` in `package.json` and `package-lock.json`, two focused patch items are implemented and verified, and VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
 - `project-context/docs/release-1.0.2-prioritization.md`
 - `project-context/2.build/features/1.0.2-release-opening.md`
 - `project-context/2.build/features/1.0.2-show-log-double-selection-compare.md`
+- `project-context/2.build/features/1.0.2-dirty-worktree-branch-creation.md`
 
 Release direction:
 
@@ -24,6 +25,7 @@ Release direction:
 Planned scope:
 
 - Restore the Show Log `Compare` context action when exactly two commits are selected, while preserving `Cherry Pick`-only behavior for larger multi-selections.
+- Allow `Create New Branch` to create and check out a new branch with ordinary workspace changes, while still blocking unresolved conflicts.
 
 Automated verification:
 
@@ -33,6 +35,9 @@ Automated verification:
 - Focused Show Log webview shell test passed after restoring double-selection compare. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 415 tests after restoring double-selection compare. This includes `npm run build` through the test script.
 - `git diff --check` passed after restoring double-selection compare and artifact updates.
+- Focused ref action tests passed after allowing dirty-worktree branch creation. This includes `npm run build` and test compilation through the focused command.
+- `npm test` passed with 417 tests after allowing dirty-worktree branch creation. This includes `npm run build` through the test script.
+- `git diff --check` passed after allowing dirty-worktree branch creation and artifact updates.
 
 Manual validation focus:
 
@@ -40,18 +45,21 @@ Manual validation focus:
 - Ctrl-click two Show Log commits, open the context menu on either selected commit, and confirm both `Compare` and `Cherry Pick` are present.
 - Select three Show Log commits, open the context menu on a selected commit, and confirm only `Cherry Pick` is present.
 - Confirm the two-commit `Compare` action populates Compare Results as before.
+- Modify a file without committing, create a new branch from the revision graph, and confirm the branch is created and checked out while changes remain present.
+- Repeat branch creation with unresolved conflicts and confirm the extension opens Source Control and blocks the operation.
 
 Release gates:
 
-- Pending maintainer launch-item selection.
-- Pending automated verification.
+- Pending maintainer confirmation that no additional launch items are required.
+- Automated verification completed for the current `1.0.2` implementation scope.
 - Pending maintainer Extension Development Host smoke validation before publication.
 - Pending maintainer VSIX packaging and generated package review.
 - Pending maintainer Marketplace publication approval.
 
 Post-release monitoring focus:
 
-- Pending implemented `1.0.2` scope.
+- Reports that Show Log two-commit selections still omit `Compare` or route to the wrong Compare Results pair.
+- Reports that `Create New Branch` still blocks ordinary dirty worktrees or allows branch creation during unresolved conflicts.
 
 Rollback:
 

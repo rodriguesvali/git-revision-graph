@@ -96,7 +96,8 @@ export function buildSyncResultMessage(syncState: HeadSyncState): string {
 export async function ensureWorkspaceReadyForMutation(
   repository: Repository,
   operationDescription: string,
-  services: RefActionServices
+  services: RefActionServices,
+  options: { readonly allowWorkspaceChanges?: boolean } = {}
 ): Promise<boolean> {
   if (hasMergeConflicts(repository)) {
     services.ui.showWarningMessage(`Resolve the current conflicts in Source Control before ${operationDescription}.`);
@@ -104,7 +105,7 @@ export async function ensureWorkspaceReadyForMutation(
     return false;
   }
 
-  if (hasWorkspaceChanges(repository)) {
+  if (!options.allowWorkspaceChanges && hasWorkspaceChanges(repository)) {
     services.ui.showWarningMessage(`The workspace must be clean before ${operationDescription}. Review, stash, or commit the current changes first.`);
     return false;
   }
