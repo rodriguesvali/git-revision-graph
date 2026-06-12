@@ -355,6 +355,7 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
 test('validateShowLogWebviewMessage rejects malformed show log messages', () => {
   assert.equal(validateShowLogWebviewMessage({ type: 'toggleShowAllBranches', value: 'true' }), undefined);
   assert.equal(validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123' }), undefined);
+  assert.equal(validateShowLogWebviewMessage({ type: 'revertFileToCommit', commitHash: 'abc123' }), undefined);
   assert.equal(
     validateShowLogWebviewMessage({
       type: 'setFilterText',
@@ -465,6 +466,10 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }),
     { type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'revertFileToCommit', commitHash: 'abc123', changeId: 'abc123:1' }),
+    { type: 'revertFileToCommit', commitHash: 'abc123', changeId: 'abc123:1' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'compareCommits', baseCommitHash: 'abc123', compareCommitHash: 'def456' }),

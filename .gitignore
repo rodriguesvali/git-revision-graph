@@ -3,4 +3,5 @@ out/
 out-test/
 *.vsix
 .venv/
+.env
 graphify-out/

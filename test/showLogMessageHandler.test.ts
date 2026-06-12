@@ -42,6 +42,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
 
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123', changeId: 'abc123:0' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'compareWithWorktree', commitHash: 'abc123', changeId: 'abc123:1' }, handlers), true);
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'revertFileToCommit', commitHash: 'abc123', changeId: 'abc123:2' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyFileName', commitHash: 'abc123', changeId: 'abc123:2' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyFullPath', commitHash: 'abc123', changeId: 'abc123:3' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'copyCommitHash', commitHash: 'abc123' }, handlers), true);
@@ -56,6 +57,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
   assert.deepEqual(calls, [
     'openFile:abc123:abc123:0',
     'compareWithWorktree:abc123:abc123:1',
+    'revertFileToCommit:abc123:abc123:2',
     'copyFileName:abc123:abc123:2',
     'copyFullPath:abc123:abc123:3',
     'copyCommitHash:abc123',
@@ -91,6 +93,9 @@ function createHandlers(calls: string[]): ShowLogMessageHandlers {
     },
     compareWithWorktree(commitHash, changeId) {
       calls.push(`compareWithWorktree:${commitHash}:${changeId}`);
+    },
+    revertFileToCommit(commitHash, changeId) {
+      calls.push(`revertFileToCommit:${commitHash}:${changeId}`);
     },
     copyFileName(commitHash, changeId) {
       calls.push(`copyFileName:${commitHash}:${changeId}`);

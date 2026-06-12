@@ -10,6 +10,7 @@ export interface ShowLogMessageHandlers {
   readonly loadMore: () => MaybePromise<void>;
   readonly openFile: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly compareWithWorktree: (commitHash: string, changeId: string) => MaybePromise<void>;
+  readonly revertFileToCommit: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly copyFileName: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly copyFullPath: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly copyCommitHash: (commitHash: string) => MaybePromise<void>;
@@ -52,6 +53,9 @@ export async function dispatchShowLogWebviewMessage(
       return true;
     case 'compareWithWorktree':
       await handlers.compareWithWorktree(message.commitHash, message.changeId);
+      return true;
+    case 'revertFileToCommit':
+      await handlers.revertFileToCommit(message.commitHash, message.changeId);
       return true;
     case 'copyFileName':
       await handlers.copyFileName(message.commitHash, message.changeId);

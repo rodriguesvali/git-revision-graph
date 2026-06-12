@@ -1600,6 +1600,7 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + '<button class="context-menu-button" type="button" data-menu-action="openFile">Compare</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="compareWithWorktree">Compare with Worktree</button>'
+        + '<button class="context-menu-button" type="button" data-menu-action="revertFileToCommit">Revert to this</button>'
         + '<div class="context-menu-group">'
         + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy to Clipboard">'
         + '    <span>Copy to Clipboard</span>'
@@ -2092,7 +2093,7 @@ export function renderShowLogWebviewHtml(): string {
         return;
       }
 
-      if (action === 'openFile' || action === 'compareWithWorktree' || action === 'copyFileName' || action === 'copyFullPath') {
+      if (action === 'openFile' || action === 'compareWithWorktree' || action === 'revertFileToCommit' || action === 'copyFileName' || action === 'copyFullPath') {
         vscode.postMessage({
           type: action,
           commitHash: state.commitHash,

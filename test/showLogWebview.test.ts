@@ -186,6 +186,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.doesNotMatch(html, /function isSingleSelectedCommit\(commitHash\)/);
   assert.match(html, /data-menu-action="openFile">Compare<\/button>/);
   assert.match(html, /Compare with Worktree/);
+  assert.match(html, /data-menu-action="revertFileToCommit">Revert to this<\/button>/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /context-menu-group/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
@@ -199,6 +200,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /compareCommitHash: state\.compareCommitHash/);
   assert.match(html, /data-menu-action="openFile"/);
   assert.match(html, /data-menu-action="compareWithWorktree"/);
+  assert.match(html, /data-menu-action="revertFileToCommit"/);
   assert.match(html, /type: action,\s*commitHash: state\.commitHash,\s*changeId: state\.changeId/s);
   assert.match(html, /type: 'openCommitDetails', commitHash: state\.commitHash/);
   assert.doesNotMatch(html, /id="loadMoreButton"/);

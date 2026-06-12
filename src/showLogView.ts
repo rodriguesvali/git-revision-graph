@@ -17,6 +17,7 @@ import {
   compareShowLogFileChangeWithWorktree,
   openShowLogFileChange
 } from './showLog/fileActions';
+import { revertShowLogFileChangeToCommit } from './showLog/fileRestoreAction';
 import {
   copyShowLogChangeFileName,
   copyShowLogChangeFullPath,
@@ -70,6 +71,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     loadMore: () => this.loadMore(),
     openFile: (commitHash, changeId) => this.openFileChange(commitHash, changeId),
     compareWithWorktree: (commitHash, changeId) => this.compareFileChangeWithWorktree(commitHash, changeId),
+    revertFileToCommit: (commitHash, changeId) => this.revertFileToCommit(commitHash, changeId),
     copyFileName: (commitHash, changeId) => this.copyFileName(commitHash, changeId),
     copyFullPath: (commitHash, changeId) => this.copyFullPath(commitHash, changeId),
     copyCommitHash: (commitHash) => this.copyCommitHash(commitHash),
@@ -488,6 +490,20 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     await compareShowLogFileChangeWithWorktree(repository, commitHash, change);
+  }
+
+  private async revertFileToCommit(commitHash: string, changeId: string): Promise<void> {
+    const change = findShowLogChange(this.state, commitHash, changeId);
+    if (!change) {
+      return;
+    }
+
+    const repository = getVisibleShowLogRepository(this.state);
+    if (!repository) {
+      return;
+    }
+
+    await revertShowLogFileChangeToCommit(repository, commitHash, change);
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
