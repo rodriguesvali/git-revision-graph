@@ -98,6 +98,47 @@ test('reuses completed graph snapshot cache entries for cancelable refreshes', a
   );
 });
 
+test('clears completed graph snapshot cache entries on request', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({
+        root: repositoryPath,
+        head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+        refs: [
+          createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+        ]
+      });
+      const limitPolicy: RevisionGraphLimitPolicy = {
+        initialLimit: 50,
+        steppedLimits: [],
+        minVisibleNodes: 1,
+        graphCommandTimeoutMs: 60000
+      };
+
+      await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        limitPolicy
+      );
+      backend.clearGraphSnapshotCache();
+      await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        limitPolicy
+      );
+
+      const calls = await fs.readFile(callsPath, 'utf8');
+      assert.equal(calls.trim().split('\n').length, 2);
+    }
+  );
+});
+
 test('reuses graph snapshot cache entries when ref names change on the same commits', async () => {
   await withFakeGitScript(
     [

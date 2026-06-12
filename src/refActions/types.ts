@@ -2,7 +2,7 @@ import { ChangeQuickPickItem } from '../changePresentation';
 import { Repository } from '../git';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 
-export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'commit';
+export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash' | 'commit';
 export type CurrentBranchPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export interface RefSelection {
@@ -90,6 +90,10 @@ export interface ReferenceManager {
   deleteRemoteBranch(repository: Repository, remoteName: string, branchName: string): Promise<void>;
   unsetBranchUpstream(repository: Repository, branchName: string): Promise<void>;
   abortMerge(repository: Repository): Promise<void>;
+  stashSave(repository: Repository): Promise<void>;
+  stashApply(repository: Repository, stashRefName: string): Promise<void>;
+  stashPop(repository: Repository, stashRefName: string): Promise<void>;
+  stashDrop(repository: Repository, stashRefName: string): Promise<void>;
 }
 
 export interface AncestryInspector {

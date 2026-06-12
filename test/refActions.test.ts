@@ -16,7 +16,10 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   deleteRemoteTagResolvedReference,
+  applyStashResolvedReference,
+  dropStashResolvedReference,
   mergeResolvedReference,
+  popStashResolvedReference,
   pullCurrentBranchFromUpstream,
   publishLocalBranchResolvedReference,
   pushCurrentBranchToUpstream,
@@ -24,6 +27,7 @@ import {
   RefActionServices,
   resetCurrentBranchToCommit,
   resetCurrentBranchWorkspace,
+  saveCurrentWorkspaceToStash,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
 import {
@@ -59,6 +63,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
   readonly workspaceResets: Array<{ readonly includeUntracked: boolean }>;
   readonly abortedMerges: number;
+  readonly stashSaves: number;
+  readonly stashApplies: string[];
+  readonly stashPops: string[];
+  readonly stashDrops: string[];
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
   readonly canceledPrepareRequests: readonly RevisionGraphRefreshRequest[];
@@ -86,6 +94,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
   const workspaceResets: Array<{ readonly includeUntracked: boolean }> = [];
+  let stashSaves = 0;
+  const stashApplies: string[] = [];
+  const stashPops: string[] = [];
+  const stashDrops: string[] = [];
   const upstreamClears: string[] = [];
   let abortedMerges = 0;
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
@@ -209,6 +221,18 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       },
       async abortMerge() {
         abortedMerges += 1;
+      },
+      async stashSave() {
+        stashSaves += 1;
+      },
+      async stashApply(_repository, stashRefName) {
+        stashApplies.push(stashRefName);
+      },
+      async stashPop(_repository, stashRefName) {
+        stashPops.push(stashRefName);
+      },
+      async stashDrop(_repository, stashRefName) {
+        stashDrops.push(stashRefName);
       }
     },
     ancestryInspector: {
@@ -244,6 +268,12 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     get abortedMerges() {
       return abortedMerges;
     },
+    get stashSaves() {
+      return stashSaves;
+    },
+    stashApplies,
+    stashPops,
+    stashDrops,
     upstreamClears,
     prepareRequests,
     canceledPrepareRequests,
@@ -1661,7 +1691,8 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 
@@ -1689,7 +1720,8 @@ test('syncCurrentHeadWithUpstream uses a full rebuild after push-only sync', asy
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 
@@ -1710,7 +1742,8 @@ test('syncCurrentHeadWithUpstream uses a full rebuild after pull-only sync', asy
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 
@@ -1873,7 +1906,8 @@ test('mergeResolvedReference updates graph state without opening Source Control 
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
   assert.equal(harness.sourceControlOpens, 0);
 });
@@ -1898,7 +1932,8 @@ test('abortCurrentMerge aborts conflicted merges after confirmation', async () =
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 
@@ -1931,6 +1966,179 @@ test('abortCurrentMerge keeps conflicts visible when abort fails', async () => {
   assert.equal(harness.sourceControlOpens, 1);
 });
 
+test('saveCurrentWorkspaceToStash saves dirty workspace changes and refreshes the graph', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  });
+  const harness = createServices();
+
+  await saveCurrentWorkspaceToStash(repository, harness.services);
+
+  assert.equal(harness.stashSaves, 1);
+  assert.equal(harness.infoMessages[0], 'Workspace changes were saved to stash.');
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
+  });
+});
+
+test('saveCurrentWorkspaceToStash does nothing when the workspace is clean', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createServices();
+
+  await saveCurrentWorkspaceToStash(repository, harness.services);
+
+  assert.equal(harness.stashSaves, 0);
+  assert.equal(harness.infoMessages[0], 'There are no workspace changes to stash.');
+  assert.equal(harness.refreshCalls, 0);
+});
+
+test('saveCurrentWorkspaceToStash opens Source Control when conflicts are present', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
+  });
+  const harness = createServices();
+
+  await saveCurrentWorkspaceToStash(repository, harness.services);
+
+  assert.equal(harness.stashSaves, 0);
+  assert.equal(
+    harness.warningMessages[0],
+    'Resolve the current conflicts in Source Control before saving workspace changes to a stash.'
+  );
+  assert.equal(harness.sourceControlOpens, 1);
+});
+
+test('applyStashResolvedReference applies a stash after confirmation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createServices();
+
+  await applyStashResolvedReference(
+    repository,
+    { refName: 'stash', label: 'stash', kind: 'stash' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.stashApplies, ['stash']);
+  assert.deepEqual(harness.confirmRequests, [
+    { message: 'Apply stash to the workspace?', confirmLabel: 'Stash Apply' }
+  ]);
+  assert.equal(harness.infoMessages[0], 'stash was applied to the workspace.');
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
+  });
+});
+
+test('applyStashResolvedReference requires a clean workspace', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  });
+  const harness = createServices();
+
+  await applyStashResolvedReference(
+    repository,
+    { refName: 'stash', label: 'stash', kind: 'stash' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.stashApplies, []);
+  assert.equal(
+    harness.warningMessages[0],
+    'The workspace must be clean before applying a stash. Review, stash, or commit the current changes first.'
+  );
+});
+
+test('applyStashResolvedReference refreshes and opens Source Control when conflicts are left behind', async () => {
+  const mergeChanges = [] as ReturnType<typeof createChange>[];
+  const repository = createRepository({
+    root: '/workspace/repo',
+    mergeChanges
+  });
+  const harness = createServices();
+  harness.services.referenceManager.stashApply = async () => {
+    mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
+    throw createGitError({
+      gitErrorCode: 'Conflict',
+      stderr: 'CONFLICT (content): Merge conflict in src/conflict.ts'
+    });
+  };
+
+  await applyStashResolvedReference(
+    repository,
+    { refName: 'stash', label: 'stash', kind: 'stash' },
+    harness.services
+  );
+
+  assert.equal(
+    harness.errorMessages[0],
+    'Could not apply the stash. CONFLICT (content): Merge conflict in src/conflict.ts [Conflict]'
+  );
+  assert.equal(harness.sourceControlOpens, 1);
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
+  });
+});
+
+test('popStashResolvedReference pops a stash after confirmation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createServices();
+
+  await popStashResolvedReference(
+    repository,
+    { refName: 'stash', label: 'stash', kind: 'stash' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.stashPops, ['stash']);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Pop stash into the workspace?\n\nThe stash entry is removed if it applies cleanly.',
+      confirmLabel: 'Stash Pop'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'stash was popped into the workspace.');
+});
+
+test('dropStashResolvedReference removes a stash even when the workspace is dirty', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  });
+  const harness = createServices();
+
+  await dropStashResolvedReference(
+    repository,
+    { refName: 'stash', label: 'stash', kind: 'stash' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.stashDrops, ['stash']);
+  assert.deepEqual(harness.confirmRequests, [
+    {
+      message: 'Remove stash?\n\nThis deletes the stash entry from the repository.',
+      confirmLabel: 'Remove Stash'
+    }
+  ]);
+  assert.equal(harness.infoMessages[0], 'stash was removed.');
+  assert.deepEqual(harness.refreshRequests[0], {
+    intent: 'full-rebuild',
+    repositoryPath: '/workspace/repo',
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
+  });
+});
+
 test('resetCurrentBranchWorkspace resets tracked workspace changes and keeps untracked files', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -1952,7 +2160,8 @@ test('resetCurrentBranchWorkspace resets tracked workspace changes and keeps unt
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
   assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were kept.');
 });
@@ -2013,7 +2222,8 @@ test('resetCurrentBranchToCommit resets a clean current branch and refreshes the
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
   assert.equal(harness.infoMessages[0], 'main was reset to abc123.');
 });
@@ -2049,7 +2259,8 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
   assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
 });
@@ -2212,7 +2423,8 @@ test('pullCurrentBranchFromUpstream pulls the current branch from its upstream',
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
   assert.equal(harness.infoMessages[0], 'main was pulled from origin/main.');
 });
@@ -2338,7 +2550,8 @@ test('deleteResolvedReference explains that deleting a tracked local branch leav
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 
@@ -2380,7 +2593,8 @@ test('deleteResolvedReference offers force delete when a tracked branch is not f
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout']
+    followUpEvents: ['state', 'checkout'],
+    clearSnapshotCache: true
   });
 });
 

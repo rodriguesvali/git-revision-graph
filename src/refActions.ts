@@ -45,3 +45,9 @@ export {
   deleteRemoteTagResolvedReference,
   pushTagResolvedReference
 } from './refActions/tags';
+export {
+  applyStashResolvedReference,
+  dropStashResolvedReference,
+  popStashResolvedReference,
+  saveCurrentWorkspaceToStash
+} from './refActions/stash';

@@ -11,7 +11,11 @@ import {
   publishLocalBranchResolvedReference,
   RefActionKind,
   RefActionServices,
-  resetCurrentBranchWorkspace
+  resetCurrentBranchWorkspace,
+  saveCurrentWorkspaceToStash,
+  applyStashResolvedReference,
+  popStashResolvedReference,
+  dropStashResolvedReference
 } from '../refActions';
 
 export interface RevisionGraphRefActionWorkflowHost {
@@ -63,6 +67,25 @@ export interface RevisionGraphRefActionWorkflowDependencies {
     includeUntracked: boolean,
     services: RefActionServices
   ): Promise<unknown>;
+  saveCurrentWorkspaceToStash?(
+    repository: Repository,
+    services: RefActionServices
+  ): Promise<boolean>;
+  applyStashResolvedReference?(
+    repository: Repository,
+    target: RefActionTarget,
+    services: RefActionServices
+  ): Promise<boolean>;
+  popStashResolvedReference?(
+    repository: Repository,
+    target: RefActionTarget,
+    services: RefActionServices
+  ): Promise<boolean>;
+  dropStashResolvedReference?(
+    repository: Repository,
+    target: RefActionTarget,
+    services: RefActionServices
+  ): Promise<boolean>;
   deleteResolvedReference?(
     repository: Repository,
     target: RefActionTarget,
@@ -100,6 +123,18 @@ export class RevisionGraphRefActionWorkflow {
   private readonly resetCurrentBranchWorkspace: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['resetCurrentBranchWorkspace']
   >;
+  private readonly saveCurrentWorkspaceToStash: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['saveCurrentWorkspaceToStash']
+  >;
+  private readonly applyStashResolvedReference: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['applyStashResolvedReference']
+  >;
+  private readonly popStashResolvedReference: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['popStashResolvedReference']
+  >;
+  private readonly dropStashResolvedReference: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['dropStashResolvedReference']
+  >;
   private readonly deleteResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['deleteResolvedReference']
   >;
@@ -124,6 +159,14 @@ export class RevisionGraphRefActionWorkflow {
       dependencies.publishLocalBranchResolvedReference ?? publishLocalBranchResolvedReference;
     this.resetCurrentBranchWorkspace =
       dependencies.resetCurrentBranchWorkspace ?? resetCurrentBranchWorkspace;
+    this.saveCurrentWorkspaceToStash =
+      dependencies.saveCurrentWorkspaceToStash ?? saveCurrentWorkspaceToStash;
+    this.applyStashResolvedReference =
+      dependencies.applyStashResolvedReference ?? applyStashResolvedReference;
+    this.popStashResolvedReference =
+      dependencies.popStashResolvedReference ?? popStashResolvedReference;
+    this.dropStashResolvedReference =
+      dependencies.dropStashResolvedReference ?? dropStashResolvedReference;
     this.deleteResolvedReference = dependencies.deleteResolvedReference ?? deleteResolvedReference;
     this.mergeResolvedReference = dependencies.mergeResolvedReference ?? mergeResolvedReference;
   }
@@ -204,6 +247,46 @@ export class RevisionGraphRefActionWorkflow {
     await this.runWithCurrentRepository((repository) =>
       this.resetCurrentBranchWorkspace(repository, includeUntracked, this.host.actionServices)
     );
+  }
+
+  async stashSave(): Promise<boolean> {
+    const repository = this.host.getCurrentRepository();
+    return repository
+      ? this.saveCurrentWorkspaceToStash(repository, this.host.actionServices)
+      : false;
+  }
+
+  async stashApply(refName: string): Promise<boolean> {
+    const repository = this.host.getCurrentRepository();
+    return repository
+      ? this.applyStashResolvedReference(
+        repository,
+        { refName, label: refName, kind: 'stash' },
+        this.host.actionServices
+      )
+      : false;
+  }
+
+  async stashPop(refName: string): Promise<boolean> {
+    const repository = this.host.getCurrentRepository();
+    return repository
+      ? this.popStashResolvedReference(
+        repository,
+        { refName, label: refName, kind: 'stash' },
+        this.host.actionServices
+      )
+      : false;
+  }
+
+  async stashDrop(refName: string): Promise<boolean> {
+    const repository = this.host.getCurrentRepository();
+    return repository
+      ? this.dropStashResolvedReference(
+        repository,
+        { refName, label: refName, kind: 'stash' },
+        this.host.actionServices
+      )
+      : false;
   }
 
   async deleteReference(refName: string, refKind: RefActionKind): Promise<void> {

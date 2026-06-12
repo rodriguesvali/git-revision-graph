@@ -357,7 +357,11 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
         async deleteRemoteTag() {},
         async deleteRemoteBranch() {},
         async unsetBranchUpstream() {},
-        async abortMerge() {}
+        async abortMerge() {},
+        async stashSave() {},
+        async stashApply() {},
+        async stashPop() {},
+        async stashDrop() {}
       },
       ancestryInspector: {
         async isRefAncestorOfHead() {

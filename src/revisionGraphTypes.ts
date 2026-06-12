@@ -68,6 +68,10 @@ export type RevisionGraphMessage =
   | { readonly type: 'pull-current-head' }
   | { readonly type: 'push-current-head' }
   | { readonly type: 'reset-current-workspace'; readonly includeUntracked: boolean }
+  | { readonly type: 'stash-save' }
+  | { readonly type: 'stash-apply'; readonly refName: string }
+  | { readonly type: 'stash-pop'; readonly refName: string }
+  | { readonly type: 'stash-drop'; readonly refName: string }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'merge'; readonly refName: string };
 

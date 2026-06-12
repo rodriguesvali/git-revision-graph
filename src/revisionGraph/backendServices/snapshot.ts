@@ -26,6 +26,7 @@ export interface RevisionGraphSnapshotBackend {
     signal?: AbortSignal,
     trace?: RevisionGraphLoadTraceSink
   ): Promise<RevisionGraphSnapshot>;
+  clearGraphSnapshotCache?(): void;
 }
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
@@ -39,6 +40,10 @@ interface SnapshotCacheEntry {
 
 export class DefaultRevisionGraphSnapshotBackend implements RevisionGraphSnapshotBackend {
   private readonly snapshotCache = new Map<string, SnapshotCacheEntry>();
+
+  clearGraphSnapshotCache(): void {
+    this.snapshotCache.clear();
+  }
 
   async loadGraphSnapshot(
     repository: Repository,

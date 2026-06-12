@@ -48,20 +48,23 @@ test('RevisionGraphMessageHandler applies projection options and schedules a ful
   assert.deepEqual(refreshes, ['full-rebuild']);
 });
 
-test('RevisionGraphMessageHandler clears layout cache before empty-cache refresh', async () => {
-  const calls: string[] = [];
+test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {
+  const calls: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
     async clearLayoutCache() {
       calls.push('clear-layout-cache');
     },
     async refresh(request) {
-      calls.push(`refresh:${request}`);
+      calls.push(request);
     }
   }));
 
   await handler.handleMessage({ type: 'refresh-with-empty-cache' });
 
-  assert.deepEqual(calls, ['clear-layout-cache', 'refresh:full-rebuild']);
+  assert.deepEqual(calls, [
+    'clear-layout-cache',
+    { intent: 'full-rebuild', clearSnapshotCache: true }
+  ]);
 });
 
 test('RevisionGraphMessageHandler handles clipboard copy actions through the host boundary', async () => {
@@ -123,6 +126,32 @@ test('RevisionGraphMessageHandler skips repository-scoped host actions without a
   });
 
   assert.equal(openedDiffCount, 0);
+});
+
+test('RevisionGraphMessageHandler posts current state when stash removal is canceled', async () => {
+  const repository = createRepository('/workspace/repo');
+  let currentStatePosts = 0;
+  let stashDrops = 0;
+  const handler = new RevisionGraphMessageHandler(createHost({
+    getCurrentRepository: () => repository,
+    actionServices: {
+      ...createActionServices([]),
+      referenceManager: {
+        ...createActionServices([]).referenceManager,
+        async stashDrop() {
+          stashDrops += 1;
+        }
+      }
+    },
+    postCurrentState() {
+      currentStatePosts += 1;
+    }
+  }));
+
+  await handler.handleMessage({ type: 'stash-drop', refName: 'stash' });
+
+  assert.equal(stashDrops, 0);
+  assert.equal(currentStatePosts, 1);
 });
 
 function createHost(
@@ -232,7 +261,11 @@ function createActionServices(informationMessages: string[]): RefActionServices 
       async deleteRemoteTag() {},
       async deleteRemoteBranch() {},
       async unsetBranchUpstream() {},
-      async abortMerge() {}
+      async abortMerge() {},
+      async stashSave() {},
+      async stashApply() {},
+      async stashPop() {},
+      async stashDrop() {}
     },
     ancestryInspector: {
       async isRefAncestorOfHead() {
@@ -287,7 +320,16 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
 function createRepository(repositoryPath: string): Repository {
   return {
     rootUri: {
-      fsPath: repositoryPath
+      fsPath: repositoryPath,
+      toString() {
+        return repositoryPath;
+      }
+    },
+    state: {
+      mergeChanges: [],
+      indexChanges: [],
+      workingTreeChanges: [],
+      untrackedChanges: []
     }
-  } as Repository;
+  } as unknown as Repository;
 }

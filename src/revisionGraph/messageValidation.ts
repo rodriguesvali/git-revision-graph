@@ -31,6 +31,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'sync-current-head':
     case 'pull-current-head':
     case 'push-current-head':
+    case 'stash-save':
       return { type: message.type };
     case 'load-trace':
       return isBoundedNonEmptyString(message.phase, 120)
@@ -113,6 +114,12 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'delete', refName: message.refName, refKind: message.refKind }
         : undefined;
+    case 'stash-apply':
+    case 'stash-pop':
+    case 'stash-drop':
+      return isBoundedNonEmptyString(message.refName)
+        ? { type: message.type, refName: message.refName }
+        : undefined;
     case 'merge':
       return isBoundedNonEmptyString(message.refName)
         ? { type: 'merge', refName: message.refName }
@@ -147,6 +154,15 @@ export function isRevisionGraphMessageAllowedForState(
       return state.viewMode === 'ready'
         && !!state.currentHeadName
         && state.references.some((ref) => ref.kind === 'head' && ref.name === state.currentHeadName);
+    case 'stash-save':
+      return state.viewMode === 'ready'
+        && state.isWorkspaceDirty
+        && !state.hasMergeConflicts
+        && state.references.some((ref) => ref.kind === 'head');
+    case 'stash-apply':
+    case 'stash-pop':
+    case 'stash-drop':
+      return hasKnownReference(state, message.refName, 'stash');
     case 'abort-merge':
       return state.viewMode === 'ready' && state.hasConflictedMerge;
     case 'compare-selected':
@@ -212,6 +228,10 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'pull-current-head':
     case 'push-current-head':
     case 'reset-current-workspace':
+    case 'stash-save':
+    case 'stash-apply':
+    case 'stash-pop':
+    case 'stash-drop':
     case 'compare-selected':
     case 'show-log':
     case 'open-unified-diff':

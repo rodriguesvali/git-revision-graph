@@ -47,6 +47,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Pull, push, and sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph, including confirmed force-push modes when intentionally rewriting remote history
 - Merge a selected reference into the current branch
 - Abort a conflicted merge from the `HEAD` reference context menu after confirmation
+- Save workspace changes to a stash from the `HEAD` reference context menu and apply, pop, or remove the visible stash reference
 - Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches

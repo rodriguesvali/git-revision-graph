@@ -106,6 +106,22 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'reset-current-workspace', includeUntracked: true }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'stash-save' }),
+    { type: 'stash-save' }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'stash-apply', refName: 'stash' }),
+    { type: 'stash-apply', refName: 'stash' }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'stash-pop', refName: 'stash' }),
+    { type: 'stash-pop', refName: 'stash' }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'stash-drop', refName: 'stash' }),
+    { type: 'stash-drop', refName: 'stash' }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'pull-current-head' }),
     { type: 'pull-current-head' }
   );
@@ -210,6 +226,37 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { type: 'reset-current-workspace', includeUntracked: false },
       { ...state, currentHeadName: 'missing' }
     ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-save' }, state),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-save' }, { ...state, isWorkspaceDirty: true }),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'stash-save' },
+      { ...state, isWorkspaceDirty: true, hasMergeConflicts: true }
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-apply', refName: 'stash' }, state),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-pop', refName: 'stash' }, state),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-drop', refName: 'stash' }, state),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({ type: 'stash-apply', refName: 'missing' }, state),
     false
   );
   assert.equal(
@@ -502,8 +549,18 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
           subject: 'Tag'
         },
         {
-          hash: 'structural1',
+          hash: 'stash1',
           row: 2,
+          lane: 0,
+          x: 0,
+          refs: [{ name: 'stash', kind: 'stash' }],
+          author: 'Ada',
+          date: '2026-04-28',
+          subject: 'Stash'
+        },
+        {
+          hash: 'structural1',
+          row: 3,
           lane: 0,
           x: 0,
           refs: [],
@@ -514,14 +571,15 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       ],
       edges: [],
       laneCount: 1,
-      rowCount: 3
+      rowCount: 4
     },
     nodeLayouts: [],
     references: [
       { id: 'head1::head::main', hash: 'head1', name: 'main', kind: 'head', title: 'main' },
-      { id: 'tag1::tag::v1.0.0', hash: 'tag1', name: 'v1.0.0', kind: 'tag', title: 'v1.0.0' }
+      { id: 'tag1::tag::v1.0.0', hash: 'tag1', name: 'v1.0.0', kind: 'tag', title: 'v1.0.0' },
+      { id: 'stash1::stash::stash', hash: 'stash1', name: 'stash', kind: 'stash', title: 'stash' }
     ],
-    sceneLayoutKey: 'head1:0:0|tag1:0:0|structural1:0:0',
+    sceneLayoutKey: 'head1:0:0|tag1:0:0|stash1:0:0|structural1:0:0',
     baseCanvasWidth: 320,
     baseCanvasHeight: 480,
     emptyMessage: undefined,

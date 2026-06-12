@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
 import { assertCompareResultRestorePlanInsideRepository, buildCompareResultRestorePlan } from './compareResultRestore';
+import { hasGitExitCode } from './errorDetail';
 import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
@@ -222,6 +223,24 @@ export function createWorkbenchRefActionServices(
       },
       async abortMerge(repository) {
         await execGitWithResult(repository.rootUri.fsPath, ['merge', '--abort']);
+      },
+      async stashSave(repository) {
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'push', '--include-untracked', '-m', 'stash']);
+      },
+      async stashApply(repository, stashRefName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'apply', normalizeStashRefName(stashRefName)]);
+      },
+      async stashPop(repository, stashRefName) {
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'pop', normalizeStashRefName(stashRefName)]);
+      },
+      async stashDrop(repository, stashRefName) {
+        const normalizedStashRefName = normalizeStashRefName(stashRefName);
+        const droppedHash = await resolveGitCommit(repository.rootUri.fsPath, normalizedStashRefName);
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'drop', normalizedStashRefName]);
+        const currentHash = await resolveGitCommit(repository.rootUri.fsPath, normalizedStashRefName);
+        if (droppedHash && currentHash === droppedHash) {
+          throw new Error(`Git reported that ${normalizedStashRefName} was dropped, but the stash reference still points to the same commit.`);
+        }
       }
     },
     ancestryInspector: {
@@ -233,6 +252,24 @@ export function createWorkbenchRefActionServices(
       return vscode.workspace.asRelativePath(vscode.Uri.file(fsPath), false);
     }
   };
+}
+
+function normalizeStashRefName(stashRefName: string): string {
+  return stashRefName === 'stash' ? 'stash@{0}' : stashRefName;
+}
+
+async function resolveGitCommit(repositoryPath: string, refName: string): Promise<string | undefined> {
+  try {
+    const { stdout } = await execGitWithResult(repositoryPath, ['rev-parse', '--verify', '--quiet', `${refName}^{commit}`]);
+    const hash = stdout.trim();
+    return hash.length > 0 ? hash : undefined;
+  } catch (error) {
+    if (hasGitExitCode(error, 1)) {
+      return undefined;
+    }
+
+    throw error;
+  }
 }
 
 async function getCurrentBranchAhead(repository: Repository): Promise<number | undefined> {

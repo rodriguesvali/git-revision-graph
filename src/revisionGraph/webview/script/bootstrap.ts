@@ -59,6 +59,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let currentHeadUpstreamName = null;
     let publishedLocalBranchNames = new Set();
     let isWorkspaceDirty = false;
+    let hasMergeConflicts = false;
     let hasConflictedMerge = false;
     let currentProjectionOptions = {
       refScope: 'all',
@@ -683,6 +684,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
         publishedLocalBranchNames = new Set(nextState.publishedLocalBranchNames || []);
         isWorkspaceDirty = !!nextState.isWorkspaceDirty;
+        hasMergeConflicts = !!nextState.hasMergeConflicts;
         hasConflictedMerge = !!nextState.hasConflictedMerge;
         currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
         mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);

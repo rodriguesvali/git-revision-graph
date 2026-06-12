@@ -66,7 +66,7 @@ export class RevisionGraphMessageHandler {
         return;
       case 'refresh-with-empty-cache':
         await this.host.clearLayoutCache();
-        await this.host.refresh('full-rebuild');
+        await this.host.refresh({ intent: 'full-rebuild', clearSnapshotCache: true });
         return;
       case 'fetch-current-repository':
         await this.host.runFetchCurrentRepository();
@@ -153,6 +153,26 @@ export class RevisionGraphMessageHandler {
         return;
       case 'reset-current-workspace':
         await this.refActionWorkflow.resetCurrentWorkspace(message.includeUntracked);
+        return;
+      case 'stash-save':
+        if (!await this.refActionWorkflow.stashSave()) {
+          this.host.postCurrentState();
+        }
+        return;
+      case 'stash-apply':
+        if (!await this.refActionWorkflow.stashApply(message.refName)) {
+          this.host.postCurrentState();
+        }
+        return;
+      case 'stash-pop':
+        if (!await this.refActionWorkflow.stashPop(message.refName)) {
+          this.host.postCurrentState();
+        }
+        return;
+      case 'stash-drop':
+        if (!await this.refActionWorkflow.stashDrop(message.refName)) {
+          this.host.postCurrentState();
+        }
         return;
       case 'delete':
         await this.refActionWorkflow.deleteReference(message.refName, message.refKind as RefActionKind);

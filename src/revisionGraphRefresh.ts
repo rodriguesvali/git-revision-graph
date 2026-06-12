@@ -6,6 +6,7 @@ export interface RevisionGraphRefreshRequest {
   readonly intent: RevisionGraphRefreshIntent;
   readonly repositoryPath?: string;
   readonly followUpEvents?: readonly RevisionGraphRepositoryEventKind[];
+  readonly clearSnapshotCache?: boolean;
 }
 
 export type RevisionGraphRefreshRequestLike =
@@ -56,7 +57,8 @@ export function createActionRefreshRequest(
   return {
     intent,
     repositoryPath,
-    followUpEvents: getDefaultFollowUpEventsForIntent(intent)
+    followUpEvents: getDefaultFollowUpEventsForIntent(intent),
+    clearSnapshotCache: true
   };
 }
 
@@ -68,7 +70,11 @@ export function createRepositoryRefreshRequest(
     return { intent };
   }
 
-  return createActionRefreshRequest(intent, repositoryPath);
+  return {
+    intent,
+    repositoryPath,
+    followUpEvents: getDefaultFollowUpEventsForIntent(intent)
+  };
 }
 
 export function getDefaultFollowUpEventsForIntent(

@@ -46,6 +46,10 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     return this.snapshotBackend.loadGraphSnapshot(repository, options, limitPolicy, signal, trace);
   }
 
+  clearGraphSnapshotCache(): void {
+    this.snapshotBackend.clearGraphSnapshotCache?.();
+  }
+
   async loadRevisionLog(
     repository: Repository,
     source: RevisionLogSource,

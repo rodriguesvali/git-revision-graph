@@ -344,6 +344,9 @@ export class RevisionGraphController implements vscode.Disposable {
     this.latestRefreshIntent = request.intent;
     const preparedRefresh = this.prepareRefresh(request);
     const renderIntent = request.intent;
+    if (request.clearSnapshotCache) {
+      this.backend.clearGraphSnapshotCache?.();
+    }
 
     const outcome = await this.renderCoordinator.schedule(
       getRefreshLoadingLabel(renderIntent),

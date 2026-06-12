@@ -21,7 +21,8 @@ test('createActionRefreshRequest attaches the default follow-up repository event
     {
       intent: 'full-rebuild',
       repositoryPath: '/workspace/repo',
-      followUpEvents: ['state', 'checkout']
+      followUpEvents: ['state', 'checkout'],
+      clearSnapshotCache: true
     }
   );
   assert.deepEqual(getDefaultFollowUpEventsForIntent('full-rebuild'), ['state', 'checkout']);

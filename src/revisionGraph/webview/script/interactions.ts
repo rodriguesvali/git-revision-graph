@@ -307,6 +307,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canAbortConflictedMerge =
         target.kind === 'head' &&
         hasConflictedMerge;
+      const canStashCurrentWorkspace =
+        target.kind === 'head' &&
+        isWorkspaceDirty &&
+        !hasMergeConflicts;
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -332,6 +336,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
+        }
+        if (canStashCurrentWorkspace) {
+          appendMenuSection('Stash');
+          appendMenuItem('Stash Save', () => postStashSave());
         }
         appendMenuSection('Selection');
         appendMenuItem('Clear Selection', () => {
@@ -359,6 +367,17 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
+        }
+        if (canStashCurrentWorkspace) {
+          appendMenuSection('Stash');
+          appendMenuItem('Stash Save', () => postStashSave());
+        }
+        if (target.kind === 'stash') {
+          appendMenuSection('Stash');
+          appendMenuItem('Stash Apply', () => postStashApply(target));
+          appendMenuItem('Stash Pop', () => postStashPop(target));
+          appendMenuSection('Destructive');
+          appendMenuItem('Remove Stash', () => postStashDrop(target), { destructive: true });
         }
         if (canPublishBranch) {
           appendMenuSection('Create And Publish');
@@ -600,6 +619,22 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function postResetCurrentWorkspace(includeUntracked) {
       vscode.postMessage(createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked));
+    }
+
+    function postStashSave() {
+      postMessageWithLoading(createRevisionGraphStashSaveMessage(), 'Saving workspace changes to stash...');
+    }
+
+    function postStashApply(target) {
+      vscode.postMessage(createRevisionGraphStashApplyMessage(target));
+    }
+
+    function postStashPop(target) {
+      vscode.postMessage(createRevisionGraphStashPopMessage(target));
+    }
+
+    function postStashDrop(target) {
+      vscode.postMessage(createRevisionGraphStashDropMessage(target));
     }
 
     function postPublishBranch(target) {

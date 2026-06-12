@@ -113,6 +113,22 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'reset-current-workspace', includeUntracked: !!includeUntracked };
     }
 
+    function createRevisionGraphStashSaveMessage() {
+      return { type: 'stash-save' };
+    }
+
+    function createRevisionGraphStashApplyMessage(target) {
+      return { type: 'stash-apply', refName: target.name };
+    }
+
+    function createRevisionGraphStashPopMessage(target) {
+      return { type: 'stash-pop', refName: target.name };
+    }
+
+    function createRevisionGraphStashDropMessage(target) {
+      return { type: 'stash-drop', refName: target.name };
+    }
+
     function createRevisionGraphPublishBranchMessage(target) {
       return {
         type: 'publish-branch',
