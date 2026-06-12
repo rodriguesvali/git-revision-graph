@@ -356,6 +356,9 @@ export function renderShowLogWebviewHtml(): string {
     .graph-continuation-row.status {
       min-height: 34px;
     }
+    .graph-continuation-row.search {
+      min-height: 36px;
+    }
     .graph-svg {
       flex: none;
       width: auto;
@@ -559,12 +562,67 @@ export function renderShowLogWebviewHtml(): string {
     .graph-continuation-row.status .commit-files-graph .graph-svg {
       min-height: 34px;
     }
+    .graph-continuation-row.search .commit-files-graph .graph-svg {
+      min-height: 36px;
+    }
     .commit-files-list {
       display: flex;
       flex-direction: column;
       gap: 0;
       padding: 0 0 5px 12px;
       border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
+    }
+    .commit-file-search-row {
+      display: flex;
+      justify-content: flex-end;
+      padding: 4px 8px 6px 0;
+    }
+    .commit-file-search-control {
+      position: relative;
+      flex: 0 1 320px;
+      min-width: 180px;
+      max-width: 320px;
+    }
+    .commit-file-search-input {
+      width: 100%;
+      height: 26px;
+      padding: 3px 28px 3px 8px;
+      border: 1px solid var(--vscode-input-border, transparent);
+      border-radius: 4px;
+      color: var(--vscode-input-foreground);
+      background: var(--vscode-input-background);
+      outline: none;
+      font: inherit;
+      font-size: 11px;
+    }
+    .commit-file-search-input:focus {
+      border-color: var(--vscode-focusBorder);
+    }
+    .commit-file-search-input::placeholder {
+      color: var(--vscode-input-placeholderForeground);
+    }
+    .commit-file-search-clear {
+      position: absolute;
+      top: 50%;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 3px;
+      color: var(--vscode-descriptionForeground);
+      background: transparent;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+    .commit-file-search-clear:hover,
+    .commit-file-search-clear:focus-visible {
+      outline: none;
+      color: var(--vscode-foreground);
+      background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+    }
+    .commit-file-search-clear:disabled {
+      visibility: hidden;
     }
     .commit-files-list .status-card {
       margin: 0;
@@ -835,6 +893,7 @@ export function renderShowLogWebviewHtml(): string {
   <div class="commit-tooltip" id="commitTooltip" role="tooltip" hidden></div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    const COMMIT_FILE_FILTERS_KEY = 'showLogCommitFileFilters';
     let currentState = null;
     let contextMenuState = null;
     const summary = document.getElementById('summary');
@@ -857,6 +916,8 @@ export function renderShowLogWebviewHtml(): string {
     const GRAPH_MAIN_META_HEIGHT = 42;
     const persistedUiState = vscode.getState() || {};
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
+    let commitFileFilters = normalizeCommitFileFilters(persistedUiState[COMMIT_FILE_FILTERS_KEY]);
+    let pendingCommitFileFilterFocus = null;
     let resizeState = null;
     let selectedCommitHashes = normalizeSelectedCommitHashes(
       persistedUiState.selectedCommitHashes || persistedUiState.selectedCommitHash
@@ -935,6 +996,7 @@ export function renderShowLogWebviewHtml(): string {
       hideCommitTooltip();
       content.innerHTML = sections.join('');
       syncLoadMoreObserver();
+      restorePendingCommitFileFilterFocus();
     }
 
     function renderTableHeader() {
@@ -1081,7 +1143,14 @@ export function renderShowLogWebviewHtml(): string {
         return '<div class="graph-continuation-row status"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>';
       }
 
-      return commit.changes.map(() =>
+      const searchContinuation = '<div class="graph-continuation-row search"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>';
+      const visibleChanges = getVisibleCommitFileChanges(commit);
+      if (visibleChanges.length === 0) {
+        return searchContinuation
+          + '<div class="graph-continuation-row status"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>';
+      }
+
+      return searchContinuation + visibleChanges.map(() =>
         '<div class="graph-continuation-row"><div class="commit-files-graph">' + renderContinuationTopology(commit.topology) + '</div></div>'
       ).join('');
     }
@@ -1116,6 +1185,7 @@ export function renderShowLogWebviewHtml(): string {
       vscode.setState({
         ...existingState,
         [GRAPH_WIDTH_KEY]: graphWidth,
+        [COMMIT_FILE_FILTERS_KEY]: commitFileFilters,
         selectedCommitHashes
       });
     }
@@ -1125,6 +1195,7 @@ export function renderShowLogWebviewHtml(): string {
       vscode.setState({
         ...existingState,
         [GRAPH_WIDTH_KEY]: graphWidth,
+        [COMMIT_FILE_FILTERS_KEY]: commitFileFilters,
         selectedCommitHashes
       });
     }
@@ -1166,17 +1237,102 @@ export function renderShowLogWebviewHtml(): string {
         return ''
           + '<div class="commit-files"><div class="commit-files-list"><div class="status-card">No changed files found for this commit.</div></div></div>';
       }
+      const filterText = getCommitFileFilter(commit.hash);
+      const visibleChanges = getVisibleCommitFileChanges(commit);
       return ''
         + '<div class="commit-files">'
         + '  <div class="commit-files-list">'
-        + commit.changes.map((change) => ''
+        + renderCommitFileSearch(commit.hash, filterText)
+        + (visibleChanges.length > 0
+          ? visibleChanges.map((change) => ''
           + '    <div class="file-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-change-id="' + escapeHtml(change.id) + '" aria-haspopup="menu" aria-label="' + escapeHtml(change.path + '. ' + change.status + '. Double-click to compare. Press Shift+F10 or Enter for actions.') + '">'
           + '      <span class="file-path">' + escapeHtml(change.path) + '</span>'
           + '      <span class="file-status">' + escapeHtml(change.status) + '</span>'
           + '    </div>'
-        ).join('')
+          ).join('')
+          : '    <div class="status-card">No files match the active filter.</div>')
         + '  </div>'
         + '</div>';
+    }
+
+    function renderCommitFileSearch(commitHash, filterText) {
+      return ''
+        + '    <div class="commit-file-search-row">'
+        + '      <div class="commit-file-search-control">'
+        + '        <input class="commit-file-search-input" type="text" value="' + escapeHtml(filterText) + '" placeholder="Filter files..." aria-label="Filter changed files" autocomplete="off" autocapitalize="off" spellcheck="false" data-commit-file-filter="' + escapeHtml(commitHash) + '" />'
+        + '        <button class="commit-file-search-clear" type="button" title="Clear filter" aria-label="Clear filter" data-commit-file-filter-clear="' + escapeHtml(commitHash) + '"' + (filterText ? '' : ' disabled') + '>×</button>'
+        + '      </div>'
+        + '    </div>';
+    }
+
+    function getVisibleCommitFileChanges(commit) {
+      const filterText = normalizeCommitFileFilterText(getCommitFileFilter(commit.hash));
+      if (!filterText) {
+        return commit.changes;
+      }
+
+      return commit.changes.filter((change) => (
+        String(change.path || '').toLowerCase().includes(filterText)
+        || String(change.status || '').toLowerCase().includes(filterText)
+      ));
+    }
+
+    function getCommitFileFilter(commitHash) {
+      return commitFileFilters[commitHash] || '';
+    }
+
+    function setCommitFileFilter(commitHash, value) {
+      const normalizedValue = String(value || '');
+      if (normalizedValue.trim()) {
+        commitFileFilters = {
+          ...commitFileFilters,
+          [commitHash]: normalizedValue
+        };
+      } else {
+        const nextFilters = { ...commitFileFilters };
+        delete nextFilters[commitHash];
+        commitFileFilters = nextFilters;
+      }
+      persistUiState();
+    }
+
+    function normalizeCommitFileFilters(value) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {};
+      }
+
+      const entries = Object.entries(value)
+        .filter(([commitHash, filterText]) => (
+          typeof commitHash === 'string'
+          && commitHash.length > 0
+          && typeof filterText === 'string'
+          && filterText.trim().length > 0
+        ))
+        .slice(-100);
+      return Object.fromEntries(entries);
+    }
+
+    function normalizeCommitFileFilterText(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function restorePendingCommitFileFilterFocus() {
+      if (!pendingCommitFileFilterFocus) {
+        return;
+      }
+
+      const focusRequest = pendingCommitFileFilterFocus;
+      pendingCommitFileFilterFocus = null;
+      const input = Array.from(content.querySelectorAll('[data-commit-file-filter]'))
+        .find((candidate) => candidate.getAttribute('data-commit-file-filter') === focusRequest.commitHash);
+      if (!(input instanceof HTMLInputElement)) {
+        return;
+      }
+
+      input.focus();
+      const selectionStart = Math.min(focusRequest.selectionStart, input.value.length);
+      const selectionEnd = Math.min(focusRequest.selectionEnd, input.value.length);
+      input.setSelectionRange(selectionStart, selectionEnd);
     }
 
     function escapeHtml(value) {
@@ -1642,6 +1798,9 @@ export function renderShowLogWebviewHtml(): string {
       if (target.closest('#graphResizer')) {
         return;
       }
+      if (target.closest('.commit-file-search-control')) {
+        return;
+      }
       const fileRow = target.closest('[data-change-id]');
       if (fileRow instanceof HTMLElement) {
         closeContextMenu();
@@ -1669,6 +1828,9 @@ export function renderShowLogWebviewHtml(): string {
       hideCommitTooltip();
       const target = event.target;
       if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      if (target.closest('.commit-file-search-control')) {
         return;
       }
 
@@ -1779,6 +1941,9 @@ export function renderShowLogWebviewHtml(): string {
         event.preventDefault();
         return;
       }
+      if (target.closest('.commit-file-search-control')) {
+        return;
+      }
       const fileRow = target.closest('[data-change-id]');
       if (fileRow instanceof HTMLElement) {
         event.preventDefault();
@@ -1804,6 +1969,10 @@ export function renderShowLogWebviewHtml(): string {
         scheduleHideCommitTooltip();
         return;
       }
+      if (target.closest('.commit-file-search-control')) {
+        scheduleHideCommitTooltip();
+        return;
+      }
       const row = target.closest('.commit-row[data-commit-hash]');
       if (!(row instanceof HTMLElement) || target.closest('[data-change-id]')) {
         scheduleHideCommitTooltip();
@@ -1819,6 +1988,46 @@ export function renderShowLogWebviewHtml(): string {
 
     content.addEventListener('mouseleave', () => {
       scheduleHideCommitTooltip();
+    });
+
+    content.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || !target.matches('[data-commit-file-filter]')) {
+        return;
+      }
+
+      const commitHash = target.getAttribute('data-commit-file-filter') || '';
+      if (!commitHash) {
+        return;
+      }
+
+      pendingCommitFileFilterFocus = {
+        commitHash,
+        selectionStart: target.selectionStart ?? target.value.length,
+        selectionEnd: target.selectionEnd ?? target.value.length
+      };
+      setCommitFileFilter(commitHash, target.value);
+      render();
+    });
+
+    content.addEventListener('click', (event) => {
+      const target = event.target?.closest?.('[data-commit-file-filter-clear]');
+      if (!(target instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const commitHash = target.getAttribute('data-commit-file-filter-clear') || '';
+      if (!commitHash) {
+        return;
+      }
+
+      pendingCommitFileFilterFocus = {
+        commitHash,
+        selectionStart: 0,
+        selectionEnd: 0
+      };
+      setCommitFileFilter(commitHash, '');
+      render();
     });
 
     commitTooltip?.addEventListener('mouseenter', () => {
