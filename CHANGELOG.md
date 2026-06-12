@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Opened the `1.1.0` cycle as the next minor release after the completed `1.0.1` release.
 - Version bump to `1.1.0` has been applied in `package.json` and `package-lock.json`; launch items, VSIX packaging, and Marketplace publication remain pending maintainer approval.
+- Removed an unused runtime dependency and pinned VS Code API types to the `1.90.0` engine baseline for release hygiene.
 
 ### Fixes
 

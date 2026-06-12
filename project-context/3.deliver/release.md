@@ -62,6 +62,14 @@ Automated verification:
 - Focused repository state-change, revision graph state, and refresh tests passed after stopping dirty-worktree state events from triggering graph reloads. This includes `npm run build` and test compilation through the focused command.
 - `npm test` passed with 425 tests after stopping dirty-worktree state events from triggering graph reloads. This includes `npm run build` through the test script.
 - `git diff --check` passed after dirty-worktree refresh loop implementation and artifact updates.
+- `npm audit --omit=dev` reported runtime vulnerabilities through the unused `codex` dependency before dependency cleanup.
+- Removed unused runtime dependency `codex` from `package.json` and `package-lock.json`.
+- Pinned `@types/vscode` to `1.90.0` to match the declared `engines.vscode` baseline.
+- Added package manifest regression coverage for the expected runtime dependency set and VS Code API type baseline.
+- `npm audit --omit=dev` passed with 0 runtime vulnerabilities after dependency cleanup.
+- `npm run build` passed after removing `codex` and pinning `@types/vscode`.
+- `npm test` passed with 447 tests after dependency cleanup and manifest regression coverage. This includes `npm run build` through the test script.
+- `git diff --check` passed after dependency cleanup, manifest regression coverage, and release artifact updates.
 
 Manual validation focus:
 
@@ -83,6 +91,7 @@ Release gates:
 
 - Pending maintainer confirmation that no additional launch items are required.
 - Automated verification completed for the current `1.1.0` implementation scope.
+- Runtime dependency audit completed with 0 vulnerabilities after removing unused `codex`.
 - Pending maintainer Extension Development Host smoke validation before publication.
 - Pending maintainer VSIX packaging and generated package review.
 - Pending maintainer Marketplace publication approval.

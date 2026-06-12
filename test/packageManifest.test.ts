@@ -32,6 +32,11 @@ type ViewContributions = Record<string, ViewContribution[] | undefined>;
 
 type PackageManifest = {
   readonly icon: string;
+  readonly dependencies?: Record<string, string>;
+  readonly devDependencies?: Record<string, string>;
+  readonly engines?: {
+    readonly vscode?: string;
+  };
   readonly activationEvents?: string[];
   readonly contributes: {
     readonly commands: Array<{
@@ -217,4 +222,19 @@ test('package manifest contributes graph git command timeout configuration', () 
   assert.equal(timeout?.default, 60000);
   assert.equal(timeout?.minimum, 5000);
   assert.equal(timeout?.maximum, 300000);
+});
+
+test('package manifest keeps runtime dependencies limited to shipped code dependencies', () => {
+  const manifest = loadPackageManifest();
+
+  assert.deepEqual(manifest.dependencies, {
+    'd3-dag': '^1.2.1'
+  });
+});
+
+test('package manifest pins VS Code API types to the engine baseline', () => {
+  const manifest = loadPackageManifest();
+
+  assert.equal(manifest.engines?.vscode, '^1.90.0');
+  assert.equal(manifest.devDependencies?.['@types/vscode'], '1.90.0');
 });
