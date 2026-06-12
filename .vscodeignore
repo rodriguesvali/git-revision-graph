@@ -17,3 +17,6 @@ tsconfig.test.json
 *.map
 package-lock.json
 PUBLISHING.md
+.venv/**
+graphify-out/**
+

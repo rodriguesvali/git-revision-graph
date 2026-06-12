@@ -2,3 +2,5 @@ node_modules/
 out/
 out-test/
 *.vsix
+.venv/
+graphify-out/
