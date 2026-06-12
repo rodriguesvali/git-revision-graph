@@ -2,7 +2,11 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
-import { assertCompareResultRestorePlanInsideRepository, buildCompareResultRestorePlan } from './compareResultRestore';
+import {
+  assertCompareResultRestorePlanInsideRepository,
+  buildCompareResultRestorePlan,
+  type CompareResultRestoreSourceSide
+} from './compareResultRestore';
 import { hasGitExitCode } from './errorDetail';
 import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
 import { Change, Repository } from './git';
@@ -343,9 +347,10 @@ export async function openChangeDiffWithWorktree(
 export async function restoreWorktreeChangeFromRef(
   repository: Repository,
   change: Change,
-  ref: string
+  ref: string,
+  sourceSide?: CompareResultRestoreSourceSide
 ): Promise<void> {
-  const plan = buildCompareResultRestorePlan(change);
+  const plan = buildCompareResultRestorePlan(change, sourceSide);
   assertCompareResultRestorePlanInsideRepository(repository.rootUri.fsPath, plan);
 
   for (const action of plan) {
@@ -371,6 +376,29 @@ export async function restoreWorktreeChangeFromRef(
       }
     }
   }
+}
+
+export async function hasWorktreeChangeForCompareResultRestore(
+  repository: Repository,
+  change: Change,
+  sourceSide?: CompareResultRestoreSourceSide
+): Promise<boolean> {
+  const plan = buildCompareResultRestorePlan(change, sourceSide);
+  assertCompareResultRestorePlanInsideRepository(repository.rootUri.fsPath, plan);
+  const paths = [...new Set(plan.map((action) => action.targetPath))]
+    .map((targetPath) => path.relative(repository.rootUri.fsPath, targetPath).split(path.sep).join('/'));
+  if (paths.length === 0) {
+    return false;
+  }
+
+  const { stdout } = await execGitWithResult(repository.rootUri.fsPath, [
+    'status',
+    '--porcelain',
+    '--untracked-files=all',
+    '--',
+    ...paths
+  ]);
+  return stdout.trim().length > 0;
 }
 
 async function deleteFileIfPresent(uri: vscode.Uri): Promise<void> {

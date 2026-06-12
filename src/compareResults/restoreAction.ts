@@ -1,8 +1,9 @@
 import { toOperationError } from '../errorDetail';
 import type { Change, Repository } from '../git';
 import type { CompareResultItem } from '../compareResultsShared';
+import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
 
-const RESTORE_FILE_CONFIRMATION_ACTION = 'Restore File';
+const RESTORE_FILE_CONFIRMATION_ACTION = 'Revert File';
 
 export interface CompareResultsRestoreServices {
   showWarningMessage(
@@ -11,10 +12,16 @@ export interface CompareResultsRestoreServices {
     action: typeof RESTORE_FILE_CONFIRMATION_ACTION
   ): Promise<string | undefined>;
   showErrorMessage(message: string): Promise<void>;
+  hasWorktreeChangeForCompareResultRestore(
+    repository: Repository,
+    change: Change,
+    sourceSide: CompareResultRestoreSourceSide
+  ): Promise<boolean>;
   restoreWorktreeChangeFromRef(
     repository: Repository,
     change: Change,
-    ref: string
+    ref: string,
+    sourceSide: CompareResultRestoreSourceSide
   ): Promise<void>;
 }
 
@@ -22,22 +29,36 @@ export async function restoreCompareResultItemToWorktree(
   item: CompareResultItem,
   services?: CompareResultsRestoreServices
 ): Promise<boolean> {
-  if (!item.worktreeRef) {
+  const restoreSource = getCompareResultRestoreSource(item);
+  if (!restoreSource) {
     return false;
   }
 
   const restoreServices = services ?? await getDefaultCompareResultsRestoreServices();
-  const confirmation = await restoreServices.showWarningMessage(
-    buildCompareResultRestoreConfirmationMessage(item),
-    { modal: true },
-    RESTORE_FILE_CONFIRMATION_ACTION
-  );
-  if (confirmation !== RESTORE_FILE_CONFIRMATION_ACTION) {
-    return false;
+  if (
+    await restoreServices.hasWorktreeChangeForCompareResultRestore(
+      item.repository,
+      item.change,
+      restoreSource.sourceSide
+    )
+  ) {
+    const confirmation = await restoreServices.showWarningMessage(
+      buildCompareResultRestoreConfirmationMessage(item),
+      { modal: true },
+      RESTORE_FILE_CONFIRMATION_ACTION
+    );
+    if (confirmation !== RESTORE_FILE_CONFIRMATION_ACTION) {
+      return false;
+    }
   }
 
   try {
-    await restoreServices.restoreWorktreeChangeFromRef(item.repository, item.change, item.worktreeRef);
+    await restoreServices.restoreWorktreeChangeFromRef(
+      item.repository,
+      item.change,
+      restoreSource.ref,
+      restoreSource.sourceSide
+    );
     return true;
   } catch (error) {
     await restoreServices.showErrorMessage(
@@ -48,8 +69,38 @@ export async function restoreCompareResultItemToWorktree(
 }
 
 export function buildCompareResultRestoreConfirmationMessage(item: CompareResultItem): string {
-  const restoreSource = item.worktreeLabel ?? item.worktreeRef;
-  return `Restore ${item.label} in the worktree from ${restoreSource}?`;
+  const restoreSource = getCompareResultRestoreSource(item);
+  return `Revert ${item.label} in the worktree to ${restoreSource?.label ?? 'the selected revision'}?`;
+}
+
+function getCompareResultRestoreSource(
+  item: CompareResultItem
+): { readonly ref: string; readonly label: string; readonly sourceSide: CompareResultRestoreSourceSide } | undefined {
+  if (item.worktreeRef) {
+    return {
+      ref: item.worktreeRef,
+      label: item.worktreeLabel ?? item.worktreeRef,
+      sourceSide: 'left'
+    };
+  }
+
+  if (item.rightRef) {
+    return {
+      ref: item.rightRef,
+      label: item.rightRef,
+      sourceSide: 'right'
+    };
+  }
+
+  if (item.leftRef) {
+    return {
+      ref: item.leftRef,
+      label: item.leftRef,
+      sourceSide: 'left'
+    };
+  }
+
+  return undefined;
 }
 
 async function getDefaultCompareResultsRestoreServices(): Promise<CompareResultsRestoreServices> {
@@ -64,6 +115,7 @@ async function getDefaultCompareResultsRestoreServices(): Promise<CompareResults
     async showErrorMessage(message) {
       await vscode.window.showErrorMessage(message);
     },
+    hasWorktreeChangeForCompareResultRestore: services.hasWorktreeChangeForCompareResultRestore,
     restoreWorktreeChangeFromRef: services.restoreWorktreeChangeFromRef
   };
 }

@@ -883,9 +883,10 @@ export function renderCompareResultsWebviewHtml(): string {
         { action: 'base', label: 'Open Diff' }
       ];
 
-      if (item.worktreeRef) {
-        actions.push({ action: 'revert', label: 'Restore from ' + (item.worktreeLabel || item.worktreeRef) });
-      } else if (item.leftRef || item.rightRef) {
+      if (item.worktreeRef || item.rightRef || item.leftRef) {
+        actions.push({ action: 'revert', label: 'Revert to this' });
+      }
+      if (!item.worktreeRef && (item.leftRef || item.rightRef)) {
         actions.push({ action: 'worktree', label: 'Compare with Worktree' });
       }
 

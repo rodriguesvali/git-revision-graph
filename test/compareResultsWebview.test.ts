@@ -71,8 +71,9 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /File Name/);
   assert.match(html, /Full Path/);
-  assert.match(html, /else if \(item\.leftRef \|\| item\.rightRef\) \{\s*actions\.push\(\{ action: 'worktree', label: 'Compare with Worktree' \}\);/s);
-  assert.match(html, /Restore from /);
+  assert.match(html, /if \(item\.worktreeRef \|\| item\.rightRef \|\| item\.leftRef\) \{\s*actions\.push\(\{ action: 'revert', label: 'Revert to this' \}\);/s);
+  assert.match(html, /if \(!item\.worktreeRef && \(item\.leftRef \|\| item\.rightRef\)\) \{\s*actions\.push\(\{ action: 'worktree', label: 'Compare with Worktree' \}\);/s);
+  assert.match(html, /Revert to this/);
   assert.match(html, /context-menu-group/);
   assert.match(html, /context-submenu/);
   assert.match(html, /function openContextMenu\(items, x, y\)/);

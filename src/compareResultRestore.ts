@@ -1,5 +1,5 @@
 import type { Change } from './git';
-import { isAddition, getLeftUri, getRightUri } from './changePresentation';
+import { isAddition, isDeletion, getLeftUri, getRightUri } from './changePresentation';
 import * as path from 'node:path';
 
 export type CompareResultRestoreAction =
@@ -13,9 +13,29 @@ export type CompareResultRestoreAction =
     readonly targetPath: string;
   };
 
-export function buildCompareResultRestorePlan(change: Change): CompareResultRestoreAction[] {
+export type CompareResultRestoreSourceSide = 'left' | 'right';
+
+export function buildCompareResultRestorePlan(
+  change: Change,
+  sourceSide: CompareResultRestoreSourceSide = 'left'
+): CompareResultRestoreAction[] {
   const originalPath = getLeftUri(change).fsPath;
   const targetPath = getRightUri(change).fsPath;
+
+  if (sourceSide === 'right') {
+    if (isDeletion(change.status)) {
+      return [{ kind: 'delete', targetPath: originalPath }];
+    }
+
+    if (change.renameUri && originalPath !== targetPath) {
+      return [
+        { kind: 'delete', targetPath: originalPath },
+        { kind: 'write-ref', refPath: targetPath, targetPath }
+      ];
+    }
+
+    return [{ kind: 'write-ref', refPath: targetPath, targetPath }];
+  }
 
   if (isAddition(change.status)) {
     return [{ kind: 'delete', targetPath }];

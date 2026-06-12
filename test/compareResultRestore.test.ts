@@ -22,6 +22,35 @@ test('buildCompareResultRestorePlan deletes added worktree files', () => {
   ]);
 });
 
+test('buildCompareResultRestorePlan restores added files from the right ref', () => {
+  const plan = buildCompareResultRestorePlan(
+    createChange({ uriPath: '/workspace/repo/src/new.ts', status: Status.UNTRACKED }),
+    'right'
+  );
+
+  assert.deepEqual(plan, [
+    {
+      kind: 'write-ref',
+      refPath: '/workspace/repo/src/new.ts',
+      targetPath: '/workspace/repo/src/new.ts'
+    }
+  ]);
+});
+
+test('buildCompareResultRestorePlan deletes files removed by the right ref', () => {
+  const plan = buildCompareResultRestorePlan(
+    createChange({ uriPath: '/workspace/repo/src/deleted.ts', status: Status.DELETED }),
+    'right'
+  );
+
+  assert.deepEqual(plan, [
+    {
+      kind: 'delete',
+      targetPath: '/workspace/repo/src/deleted.ts'
+    }
+  ]);
+});
+
 test('buildCompareResultRestorePlan restores modified files from the compared ref', () => {
   const plan = buildCompareResultRestorePlan(
     createChange({ uriPath: '/workspace/repo/src/file.ts', status: Status.MODIFIED })
@@ -55,6 +84,30 @@ test('buildCompareResultRestorePlan restores renames back to the ref path', () =
       kind: 'write-ref',
       refPath: '/workspace/repo/src/old-name.ts',
       targetPath: '/workspace/repo/src/old-name.ts'
+    }
+  ]);
+});
+
+test('buildCompareResultRestorePlan restores renames to the right ref path', () => {
+  const plan = buildCompareResultRestorePlan(
+    createChange({
+      uriPath: '/workspace/repo/src/new-name.ts',
+      originalPath: '/workspace/repo/src/old-name.ts',
+      renamePath: '/workspace/repo/src/new-name.ts',
+      status: Status.INDEX_RENAMED
+    }),
+    'right'
+  );
+
+  assert.deepEqual(plan, [
+    {
+      kind: 'delete',
+      targetPath: '/workspace/repo/src/old-name.ts'
+    },
+    {
+      kind: 'write-ref',
+      refPath: '/workspace/repo/src/new-name.ts',
+      targetPath: '/workspace/repo/src/new-name.ts'
     }
   ]);
 });
