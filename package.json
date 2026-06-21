@@ -100,6 +100,8 @@
     }
   },
   "scripts": {
+    "clean:out": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
+    "prebuild": "npm run clean:out",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "clean:test": "node -e \"require('fs').rmSync('out-test', { recursive: true, force: true })\"",

@@ -14,6 +14,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-release-opening.md`
 - `project-context/2.build/features/1.2.0-on-demand-command-activation.md`
 - `project-context/2.build/features/1.2.0-legacy-visibility-context-removal.md`
+- `project-context/2.build/features/1.2.0-deterministic-out-cleanup.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -64,6 +65,13 @@ Implemented performance slices:
 - `npm test` passed with 446 tests after the cleanup; one obsolete helper-only test was removed.
 - `git diff --check` passed after implementation and artifact updates.
 - Editor graph smoke validation remains pending.
+- Added `clean:out` and an npm `prebuild` lifecycle so every production build removes stale compiled output before TypeScript runs.
+- Clean-build measurement reduced `out/` from 256 to 234 files and from approximately 1.8 MB to 1.6 MB.
+- Compiled JavaScript files without matching current TypeScript sources decreased from 11 to zero.
+- The compiled d3-dag layout worker remained present after cleanup.
+- `npm run build` passed after deterministic output cleanup.
+- `npm test` passed with 446 tests and exercised the clean-build lifecycle.
+- `git diff --check` passed after implementation and artifact updates.
 
 Release gates:
 

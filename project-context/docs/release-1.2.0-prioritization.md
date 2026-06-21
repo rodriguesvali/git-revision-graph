@@ -20,7 +20,7 @@ The release should reduce extension activation, package, graph-loading, and webv
 
 - Remove `onStartupFinished` and rely on implicit activation from the five contributed commands. Implemented with automated manifest coverage; fresh-profile Extension Development Host validation remains pending.
 - Remove the obsolete `gitRefs.revisionGraphVisible` activation-time context reset for the removed side-bar graph surface. Implemented; editor graph smoke validation remains pending.
-- Add deterministic `out/` cleanup before build/package operations.
+- Add deterministic `out/` cleanup before production builds. Implemented through the npm `prebuild` lifecycle; package-specific source-map and orphan enforcement remain pending.
 - Exclude source maps and stale build output from the VSIX.
 - Add regression checks for package metadata and orphaned compiled output.
 - Evaluate bundling only after explicit maintainer approval for the required build dependency and worker-entry strategy.

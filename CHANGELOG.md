@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 - Removed unconditional `onStartupFinished` activation so the extension remains dormant until one of its contributed commands is invoked.
 - Removed the obsolete side-bar graph visibility context reset from activation.
+- Made production builds deterministic by clearing `out/` before TypeScript compilation.
 
 ## 1.1.0
 
