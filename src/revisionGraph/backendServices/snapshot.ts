@@ -1,6 +1,6 @@
 import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
-import { Repository } from '../../git';
+import { Ref, Repository } from '../../git';
 import { CommitGraph, RevisionGraphProjectionOptions } from '../model/commitGraphTypes';
 import { projectMajorOperationsGraph } from '../projection/graphProjection';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';
@@ -24,9 +24,14 @@ export interface RevisionGraphSnapshotBackend {
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
     signal?: AbortSignal,
-    trace?: RevisionGraphLoadTraceSink
+    trace?: RevisionGraphLoadTraceSink,
+    context?: RevisionGraphSnapshotLoadContext
   ): Promise<RevisionGraphSnapshot>;
   clearGraphSnapshotCache?(): void;
+}
+
+export interface RevisionGraphSnapshotLoadContext {
+  readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
 }
 
 const SNAPSHOT_CACHE_TTL_MS = 500;
@@ -50,7 +55,8 @@ export class DefaultRevisionGraphSnapshotBackend implements RevisionGraphSnapsho
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
     signal?: AbortSignal,
-    trace?: RevisionGraphLoadTraceSink
+    trace?: RevisionGraphLoadTraceSink,
+    context?: RevisionGraphSnapshotLoadContext
   ): Promise<RevisionGraphSnapshot> {
     const cacheStartedAt = nowMs();
     const prunedEntries = pruneExpiredSnapshotCacheEntries(this.snapshotCache, Date.now());
@@ -74,7 +80,7 @@ export class DefaultRevisionGraphSnapshotBackend implements RevisionGraphSnapsho
     }
 
     if (signal) {
-      const snapshot = await loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace);
+      const snapshot = await loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace, context);
       this.snapshotCache.set(cacheKey, {
         createdAt: Date.now(),
         snapshot,
@@ -85,7 +91,7 @@ export class DefaultRevisionGraphSnapshotBackend implements RevisionGraphSnapsho
 
     const cacheEntry: SnapshotCacheEntry = {
       createdAt: now,
-      snapshotPromise: loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace)
+      snapshotPromise: loadGraphSnapshotInternal(repository, options, limitPolicy, signal, trace, context)
     };
     cacheEntry.snapshotPromise = cacheEntry.snapshotPromise
       .then((snapshot) => {
@@ -109,7 +115,8 @@ async function loadGraphSnapshotInternal(
   options: RevisionGraphProjectionOptions,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: RevisionGraphSnapshotLoadContext
 ): Promise<RevisionGraphSnapshot> {
   const limits = [
     limitPolicy.initialLimit,
@@ -125,7 +132,8 @@ async function loadGraphSnapshotInternal(
       options,
       limitPolicy.graphCommandTimeoutMs,
       signal,
-      trace
+      trace,
+      context
     );
     selectedSnapshot = snapshot;
 
@@ -145,7 +153,8 @@ async function loadGraphSnapshotInternal(
       options,
       limitPolicy.graphCommandTimeoutMs,
       signal,
-      trace
+      trace,
+      context
     );
   }
 
@@ -197,13 +206,19 @@ async function loadSnapshot(
   options: RevisionGraphProjectionOptions,
   graphCommandTimeoutMs: number,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: RevisionGraphSnapshotLoadContext
 ): Promise<RevisionGraphSnapshot> {
   throwIfAborted(signal, 'The revision graph load was aborted.');
   const snapshotStartedAt = nowMs();
   const refsStartedAt = nowMs();
-  const refsPromise = repository.getRefs()
-    .finally(() => traceDuration(trace, 'snapshot.getRefs', refsStartedAt));
+  const refsPromise = resolveSnapshotRepositoryRefs(repository, context)
+    .finally(() => traceDuration(
+      trace,
+      'snapshot.getRefs',
+      refsStartedAt,
+      context?.repositoryRefs ? 'source=request-context' : 'source=repository'
+    ));
   const gitLogStartedAt = nowMs();
   const stdoutPromise = execGit(
     repository.rootUri.fsPath,
@@ -228,6 +243,17 @@ async function loadSnapshot(
     loadedAt: Date.now(),
     requestedLimit: limit
   };
+}
+
+function resolveSnapshotRepositoryRefs(
+  repository: Repository,
+  context: RevisionGraphSnapshotLoadContext | undefined
+): Promise<readonly Ref[]> {
+  if (context?.repositoryRefs) {
+    return Promise.resolve(context.repositoryRefs);
+  }
+
+  return repository.getRefs();
 }
 
 function pruneExpiredSnapshotCacheEntries<T extends { readonly createdAt: number }>(

@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Excluded source maps recursively from the packaged VSIX while keeping them available in local builds.
 - Added regression coverage that rejects compiled JavaScript without a matching TypeScript source.
 - Added projection-only revision graph refreshes that reuse the last applied snapshot for compatible projection option changes and fall back to full rebuilds when Git history inputs change.
+- Reused repository refs within a single revision graph load so snapshot decoration parsing and repository overlay construction no longer issue duplicate ref reads.
 
 ## 1.1.0
 

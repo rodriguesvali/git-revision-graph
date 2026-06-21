@@ -201,6 +201,54 @@ test('reuses graph snapshot cache entries when ref names change on the same comm
   );
 });
 
+test('graph snapshot loading uses request-scoped refs when provided', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037origin/main\\036'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({
+        root: repositoryPath,
+        head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+        refs: [
+          createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+        ]
+      });
+      repository.getRefs = async () => {
+        throw new Error('repository.getRefs should not be called when request-scoped refs are provided.');
+      };
+      const limitPolicy: RevisionGraphLimitPolicy = {
+        initialLimit: 50,
+        steppedLimits: [],
+        minVisibleNodes: 1,
+        graphCommandTimeoutMs: 60000
+      };
+
+      const snapshot = await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        limitPolicy,
+        undefined,
+        undefined,
+        {
+          repositoryRefs: [
+            createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' })
+          ]
+        }
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(calls.trim().split('\n').length, 1);
+      assert.deepEqual(snapshot.graph.orderedCommits[0]?.refs, [
+        { name: 'origin/main', kind: 'remote' }
+      ]);
+    }
+  );
+});
+
 test('uses the graph limit policy timeout for snapshot git log commands', async () => {
   await withFakeGitScript(
     [

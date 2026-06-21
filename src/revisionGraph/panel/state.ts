@@ -14,6 +14,7 @@ import {
 } from '../../revisionGraphData';
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
+import { RevisionGraphSnapshotLoadContext } from '../backendServices/snapshot';
 import {
   RevisionGraphViewReference,
   RevisionGraphViewState
@@ -42,6 +43,10 @@ export interface RevisionGraphRepositoryOverlay {
   readonly currentHeadCommit: string | undefined;
 }
 
+interface RevisionGraphViewStateBuildContext {
+  readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
+}
+
 export async function buildReadyRevisionGraphViewStateBundle(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
@@ -51,14 +56,17 @@ export async function buildReadyRevisionGraphViewStateBundle(
   trace?: RevisionGraphLoadTraceSink
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal, 'The revision graph load was aborted.');
-  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace);
+  const repositoryRefs = loadRepositoryRefsStrict(repository, signal);
+  const context: RevisionGraphSnapshotLoadContext = { repositoryRefs };
+  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace, context);
   return buildReadyRevisionGraphViewStateBundleFromSnapshot(
     repository,
     projectionOptions,
     backend,
     snapshot,
     signal,
-    trace
+    trace,
+    context
   );
 }
 
@@ -88,14 +96,16 @@ export async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: RevisionGraphViewStateBuildContext
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   const overlayedSnapshot = await buildGraphSnapshotWithRepositoryOverlay(
     repository,
     snapshot,
     projectionOptions,
     signal,
-    trace
+    trace,
+    context
   );
   const state = await buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     repository,
@@ -149,17 +159,18 @@ async function buildGraphSnapshotWithRepositoryOverlay(
   snapshot: RevisionGraphSnapshot,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
   signal: AbortSignal | undefined,
-  trace: RevisionGraphLoadTraceSink | undefined
+  trace: RevisionGraphLoadTraceSink | undefined,
+  context: RevisionGraphViewStateBuildContext | undefined
 ): Promise<RevisionGraphSnapshot> {
   const overlayStartedAt = nowMs();
-  const repositoryRefs = await loadRepositoryRefs(repository, signal);
+  const repositoryRefs = await loadRepositoryRefs(repository, signal, context);
   const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
   const overlayedGraph = applyRevisionGraphRepositoryOverlay(snapshot.graph, overlay, projectionOptions);
   traceDuration(
     trace,
     'state.repositoryOverlay',
     overlayStartedAt,
-    `refs=${repositoryRefs.length}; changed=${overlayedGraph !== snapshot.graph}`
+    `refs=${repositoryRefs.length}; changed=${overlayedGraph !== snapshot.graph}; source=${context?.repositoryRefs ? 'request-context' : 'repository'}`
   );
 
   return overlayedGraph === snapshot.graph
@@ -237,19 +248,30 @@ function applyRevisionGraphRepositoryOverlay(
 
 async function loadRepositoryRefs(
   repository: Repository,
-  signal: AbortSignal | undefined
+  signal: AbortSignal | undefined,
+  context?: RevisionGraphViewStateBuildContext
 ): Promise<readonly Ref[]> {
-  throwIfAborted(signal, 'The revision graph load was aborted.');
   try {
-    const refs = await repository.getRefs();
-    throwIfAborted(signal, 'The revision graph load was aborted.');
-    return refs;
+    return await loadRepositoryRefsStrict(repository, signal, context);
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
     }
     return repository.state.refs;
   }
+}
+
+async function loadRepositoryRefsStrict(
+  repository: Repository,
+  signal: AbortSignal | undefined,
+  context?: RevisionGraphViewStateBuildContext
+): Promise<readonly Ref[]> {
+  throwIfAborted(signal, 'The revision graph load was aborted.');
+  const refs = context?.repositoryRefs
+    ? await Promise.resolve(context.repositoryRefs)
+    : await repository.getRefs();
+  throwIfAborted(signal, 'The revision graph load was aborted.');
+  return refs;
 }
 
 export function buildEmptyRevisionGraphViewState(

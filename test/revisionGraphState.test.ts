@@ -196,6 +196,64 @@ test('repository overlays prefer getRefs for current head commit when repository
   assert.deepEqual(state.primaryAncestorNextByHash, { 'new-head': 'old-head' });
 });
 
+test('reuses repository refs across snapshot loading and overlay in one ready-state request', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main', commit: 'head1' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main', commit: 'head1' })
+    ]
+  });
+  const originalGetRefs = repository.getRefs.bind(repository);
+  let getRefsCalls = 0;
+  repository.getRefs = async (...args) => {
+    getRefsCalls += 1;
+    return originalGetRefs(...args);
+  };
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-05-12',
+      subject: 'Bootstrap',
+      refs: [{ name: 'main', kind: 'head' }]
+    }
+  ]);
+  let backendRepositoryRefCount = 0;
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot(_repository, _options, _limitPolicy, _signal, _trace, context) {
+      backendRepositoryRefCount = (await Promise.resolve(context?.repositoryRefs ?? [])).length;
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY
+  );
+
+  assert.equal(getRefsCalls, 1);
+  assert.equal(backendRepositoryRefCount, 2);
+  assert.deepEqual(
+    state.scene.nodes[0]?.refs,
+    [
+      { name: 'main', kind: 'head' },
+      { name: 'origin/main', kind: 'remote' }
+    ]
+  );
+});
+
 test('builds projection-only ready state from a reusable snapshot without loading Git history', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

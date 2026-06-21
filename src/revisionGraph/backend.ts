@@ -9,7 +9,7 @@ import { DefaultRevisionGraphSnapshotBackend } from './backendServices/snapshot'
 import { DefaultRevisionLogBackend } from './backendServices/revisionLog';
 import type { RevisionGraphDocumentBackend } from './backendServices/document';
 import type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
-import type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend } from './backendServices/snapshot';
+import type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend, RevisionGraphSnapshotLoadContext } from './backendServices/snapshot';
 import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
 
 export type { RevisionGraphDocumentBackend } from './backendServices/document';
@@ -41,9 +41,10 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     options: RevisionGraphProjectionOptions,
     limitPolicy: RevisionGraphLimitPolicy,
     signal?: AbortSignal,
-    trace?: RevisionGraphLoadTraceSink
+    trace?: RevisionGraphLoadTraceSink,
+    context?: RevisionGraphSnapshotLoadContext
   ): Promise<RevisionGraphSnapshot> {
-    return this.snapshotBackend.loadGraphSnapshot(repository, options, limitPolicy, signal, trace);
+    return this.snapshotBackend.loadGraphSnapshot(repository, options, limitPolicy, signal, trace, context);
   }
 
   clearGraphSnapshotCache(): void {

@@ -19,6 +19,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-orphaned-output-regression.md`
 - `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`
 - `project-context/2.build/features/1.2.0-projection-only-refresh.md`
+- `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -107,11 +108,19 @@ Implemented performance slices:
 - `npm run build` passed after projection-only refresh implementation.
 - `npm test` passed with 451 tests after projection-only refresh implementation.
 - `git diff --check` passed after projection-only refresh implementation and artifact updates.
+- Added request-scoped repository ref reuse so one graph-load request shares refs between snapshot decoration parsing and repository overlay construction.
+- Snapshot loading still runs ref loading and `git log` concurrently, while overlay reuse avoids the second `repository.getRefs()` call during the same ready-state request.
+- Projection-only refreshes from older snapshots still perform a new overlay ref read, preserving freshness without introducing a long-lived ref cache.
+- Focused request-scoped ref reuse validation passed across backend snapshot loading and ready-state construction.
+- `npm run build` passed after request-scoped ref reuse implementation.
+- `npm test` passed with 453 tests after request-scoped ref reuse implementation.
+- `git diff --check` passed after request-scoped ref reuse implementation and artifact updates.
 
 Release gates:
 
 - Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is implemented.
-- Request-scoped ref reuse is the next implementation slice.
+- Request-scoped ref reuse is implemented.
+- Git ancestry fallback consolidation is the next implementation slice.
 - Pending focused implementation artifacts for each runtime performance slice as work begins.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.
