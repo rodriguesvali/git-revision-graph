@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - Version metadata is bumped to `1.2.0` in `package.json` and `package-lock.json`; implementation, VSIX packaging, and Marketplace publication remain pending explicit maintainer approval.
 - Established initial performance priorities around activation cost, VSIX composition, graph refresh/loading work, viewport rendering, Git process fan-out, and Show Log updates.
 
+### Performance
+
+- Removed unconditional `onStartupFinished` activation so the extension remains dormant until one of its contributed commands is invoked.
+
 ## 1.1.0
 
 ### Release Preparation

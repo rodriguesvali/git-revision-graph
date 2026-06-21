@@ -35,9 +35,6 @@
     "SCM Providers"
   ],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
   "extensionDependencies": [
     "vscode.git"
   ],

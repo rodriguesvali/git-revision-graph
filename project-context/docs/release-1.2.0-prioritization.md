@@ -18,7 +18,7 @@ The release should reduce extension activation, package, graph-loading, and webv
 
 ### Priority 0: activation and package hygiene
 
-- Remove `onStartupFinished` if fresh-profile and command activation validation proves the legacy context initialization is unnecessary.
+- Remove `onStartupFinished` and rely on implicit activation from the five contributed commands. Implemented with automated manifest coverage; fresh-profile Extension Development Host validation remains pending.
 - Add deterministic `out/` cleanup before build/package operations.
 - Exclude source maps and stale build output from the VSIX.
 - Add regression checks for package metadata and orphaned compiled output.

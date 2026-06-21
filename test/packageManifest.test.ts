@@ -169,10 +169,21 @@ test('package manifest routes Source Control graph access to the editor panel', 
   );
 });
 
-test('package manifest activates on startup so graph visibility context is initialized', () => {
+test('package manifest relies on contributed commands for implicit activation', () => {
   const manifest = loadPackageManifest();
 
-  assert.ok(manifest.activationEvents?.includes('onStartupFinished'));
+  assert.deepEqual(manifest.activationEvents ?? [], []);
+  assert.equal(manifest.engines?.vscode, '^1.90.0');
+  assert.deepEqual(
+    manifest.contributes.commands.map((command) => command.command).sort(),
+    [
+      'gitRefs.checkout',
+      'gitRefs.compareRefs',
+      'gitRefs.compareWithWorktree',
+      'gitRefs.merge',
+      'gitRefs.openRevisionGraphEditor'
+    ]
+  );
 });
 
 test('package manifest does not contribute show log as an Activity Bar webview', () => {

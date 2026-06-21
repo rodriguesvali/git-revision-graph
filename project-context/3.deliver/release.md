@@ -12,6 +12,7 @@ Planning and build references:
 
 - `project-context/docs/release-1.2.0-prioritization.md`
 - `project-context/2.build/features/1.2.0-release-opening.md`
+- `project-context/2.build/features/1.2.0-on-demand-command-activation.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -47,6 +48,14 @@ Opening verification:
 - `git diff --check` passed after the opening changes.
 - `npm run build` passed.
 - `npm test` passed with 447 tests.
+
+Implemented performance slices:
+
+- Removed `onStartupFinished` from the manifest so VS Code activates the extension through its five contributed commands. Automated manifest coverage locks the command set and the `^1.90.0` engine baseline; fresh-profile Extension Development Host activation validation remains pending.
+- Focused package manifest validation passed for implicit command activation.
+- `npm run build` passed after the activation change.
+- `npm test` passed with 447 tests after the activation change.
+- `git diff --check` passed after implementation and artifact updates.
 
 Release gates:
 
