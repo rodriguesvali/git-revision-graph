@@ -24,6 +24,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-indexed-graph-virtualization.md`
 - `project-context/2.build/features/1.2.0-nonblocking-current-branch-sync-error.md`
 - `project-context/2.build/features/1.2.0-incremental-show-log-updates.md`
+- `project-context/2.build/features/1.2.0-copy-hash-menu-polish.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -144,6 +145,11 @@ Implemented performance slices:
 - `npm run build` passed after incremental Show Log append updates.
 - `npm test` passed with 455 tests after incremental Show Log append updates.
 - `git diff --check` passed after incremental Show Log append updates and artifact updates.
+- Added `Copy Hash` to the Show Log single-commit context menu and shortened graph/Show Log copy labels such as `Copy Hash` and `Copy Ref Name`.
+- Focused Show Log and revision graph webview shell validation passed for copy-hash menu polish.
+- `npm run build` passed after copy-hash menu polish.
+- `npm test` passed with 455 tests after copy-hash menu polish.
+- `git diff --check` passed after copy-hash menu polish and artifact updates.
 
 Release gates:
 

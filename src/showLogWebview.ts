@@ -1637,6 +1637,7 @@ export function renderShowLogWebviewHtml(): string {
         + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
         + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>'
+        + '<button class="context-menu-button" type="button" data-menu-action="copyCommitHash">Copy Hash</button>'
         + copyReferenceNameMenu;
       showContextMenuAt(clientX, clientY);
     }
@@ -1647,16 +1648,16 @@ export function renderShowLogWebviewHtml(): string {
         return '';
       }
       if (refs.length === 1) {
-        return '<button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(refs[0].name) + '">Copy Reference Name</button>';
+        return '<button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(refs[0].name) + '">Copy Ref Name</button>';
       }
 
       return ''
         + '<div class="context-menu-group">'
-        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy Reference Name">'
-        + '    <span>Copy Reference Name</span>'
+        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy Ref Name">'
+        + '    <span>Copy Ref Name</span>'
         + '    <span class="context-menu-chevron">›</span>'
         + '  </div>'
-        + '  <div class="context-submenu" role="menu" aria-label="Copy Reference Name">'
+        + '  <div class="context-submenu" role="menu" aria-label="Copy Ref Name">'
         + refs.map((ref) =>
           '    <button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.name) + '</button>'
         ).join('')
@@ -2156,6 +2157,9 @@ export function renderShowLogWebviewHtml(): string {
         }
         if (action === 'resetToCommit') {
           vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
+        }
+        if (action === 'copyCommitHash') {
+          vscode.postMessage({ type: 'copyCommitHash', commitHash: state.commitHash });
         }
         if (action === 'copyReferenceName') {
           if (refName) {

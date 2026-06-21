@@ -25,6 +25,10 @@ All notable changes to this project will be documented in this file.
 - Let failed current-branch sync actions clear their loading state without waiting for the user to close the Git error notification.
 - Added incremental Show Log append updates so repeated `loadMore` paging sends and inserts only the newly loaded commits.
 
+### Polish
+
+- Added `Copy Hash` to the Show Log single-commit context menu and shortened graph/Show Log copy labels such as `Copy Hash` and `Copy Ref Name`.
+
 ## 1.1.0
 
 ### Release Preparation

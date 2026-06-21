@@ -339,8 +339,11 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /compare\.hash === target\.hash/);
   assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCompareWithWorktreeMessage\(target\)\);/s);
   assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(createRevisionGraphCopyCommitHashMessage\(commitHash\)\);/s);
+  assert.match(html, /appendMenuItem\('Copy Hash', \(\) => postCopyCommitHash\(target\.hash\)\);/);
+  assert.doesNotMatch(html, /Copy Commit Hash/);
   assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCopyRefNameMessage\(target\)\);/s);
-  assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy ref name to clipboard', \(\) => postCopyRefName\(target\)\);/s);
+  assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy Ref Name', \(\) => postCopyRefName\(target\)\);/s);
+  assert.doesNotMatch(html, /Copy ref name to clipboard/);
   assert.match(html, /function createRevisionGraphCreateBranchMessage\(target\)/);
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCreateTagMessage\(target\)\);/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);

@@ -329,9 +329,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Show Log', () => postShowLogRange(base, compare));
         appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
         appendMenuSection('Inspect');
-        appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
         if (target.kind !== 'commit') {
-          appendMenuItem('Copy ref name to clipboard', () => postCopyRefName(target));
+          appendMenuItem('Copy Ref Name', () => postCopyRefName(target));
         }
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
@@ -349,9 +349,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       } else {
         appendMenuSection('Inspect');
         appendMenuItem('Show Log', () => postShowLogTarget(target));
-        appendMenuItem('Copy Commit Hash', () => postCopyCommitHash(target.hash));
+        appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
         if (target.kind !== 'commit') {
-          appendMenuItem('Copy ref name to clipboard', () => postCopyRefName(target));
+          appendMenuItem('Copy Ref Name', () => postCopyRefName(target));
         }
         appendMenuSection('Compare');
         appendMenuItem('Compare With Worktree', () => postCompareWithWorktree(target));
