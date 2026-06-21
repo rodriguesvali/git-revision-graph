@@ -15,7 +15,6 @@ import { ProjectedGraphLayoutCachePersistence } from './revisionGraph/layout/cac
 import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
-import { initializeRevisionGraphVisibility } from './viewLayout';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
 
 const GIT_EXTENSION_CONFIG_SECTION = 'git';
@@ -23,7 +22,6 @@ const GIT_PATH_CONFIG_KEY = 'path';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   syncConfiguredGitExecutablePath();
-  await initializeRevisionGraphVisibility(vscode.commands);
 
   const git = await getGitApi();
   if (!git) {

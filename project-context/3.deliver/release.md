@@ -13,6 +13,7 @@ Planning and build references:
 - `project-context/docs/release-1.2.0-prioritization.md`
 - `project-context/2.build/features/1.2.0-release-opening.md`
 - `project-context/2.build/features/1.2.0-on-demand-command-activation.md`
+- `project-context/2.build/features/1.2.0-legacy-visibility-context-removal.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -56,6 +57,13 @@ Implemented performance slices:
 - `npm run build` passed after the activation change.
 - `npm test` passed with 447 tests after the activation change.
 - `git diff --check` passed after implementation and artifact updates.
+- Removed the unused `gitRefs.revisionGraphVisible` context reset, its activation helper, constant, and isolated legacy test.
+- Source search confirmed zero remaining production or test references to the removed visibility context and helper.
+- Focused manifest coverage passed for the absence of duplicate side-bar graph views and Source Control routing to the editor panel.
+- `npm run build` passed after the legacy visibility cleanup.
+- `npm test` passed with 446 tests after the cleanup; one obsolete helper-only test was removed.
+- `git diff --check` passed after implementation and artifact updates.
+- Editor graph smoke validation remains pending.
 
 Release gates:
 

@@ -51,9 +51,9 @@ Phase 3 uses a single graph placement architecture:
   - Register `gitRefs.openRevisionGraphEditor` and keep `gitRefs.openRevisionGraph` as a compatibility alias to the editor panel.
   - Do not register graph `WebviewViewProvider` instances for removed side-bar graph placements.
   - Wire graph-panel disposal to dispose Compare Results and Show Log without reopening the graph.
-- `src/viewLayout.ts`
-  - Keep the removed side-bar graph hidden.
-  - Preserve the legacy visibility context reset without owning secondary review focus.
+- Legacy side-bar visibility state
+  - Do not contribute the removed side-bar graph.
+  - Do not retain activation-time context state for removed graph surfaces.
 
 The architectural intent is to keep one graph workspace while preserving existing review workflows. Git data loading and action execution remain shared extension capabilities.
 
@@ -106,6 +106,7 @@ With the editor graph panel:
 - Ref-loading reuse should be scoped to one coherent graph-load request; it must not introduce cross-request stale repository metadata.
 - Viewport optimization should retain the complete in-memory graph model for minimap, navigation, selection, and layout while indexing visible candidates so scroll frames do not repeatedly scan and rebuild unrelated full-graph structures.
 - Bundling is a candidate packaging optimization, not an approved dependency change. It requires explicit maintainer approval and must preserve the layout worker as a separately loadable runtime entrypoint.
+- The obsolete `gitRefs.revisionGraphVisible` context and `viewLayout.ts` activation helper are removed in `1.2.0`; the manifest already guarantees the removed side-bar graph stays absent.
 - The `0.0.32` Define draft should start as a post-Source-Control stabilization and graph-parity groundwork release. The release should protect the `0.0.31` Source Control/editor graph product surface before taking on one bounded graph foundation slice.
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 - Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
