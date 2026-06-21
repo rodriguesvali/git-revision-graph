@@ -39,6 +39,29 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
+## 1.2.0 Release Define
+- Current package baseline before opening on 2026-06-21: `1.1.0`.
+- Target release: `1.2.0`.
+- Product goal: improve perceived and measured performance without changing the established Source Control/editor graph product surface or weakening Git workflow correctness.
+- Primary users: users opening VS Code workspaces where the extension should stay dormant until needed, and users browsing branch-heavy or large repositories where graph refresh, scrolling, and Show Log interaction can become expensive.
+- Recommended scope:
+  - remove unnecessary startup activation after validating that contributed commands provide sufficient implicit activation;
+  - make build/package output deterministic, exclude stale compiled artifacts and source maps, and evaluate bundling behind a separate dependency-change approval;
+  - separate projection-only refresh work from Git snapshot reloads where snapshot correctness can be proven;
+  - reuse repository refs within one graph load and reduce per-reference Git process fan-out;
+  - reduce full-graph work in virtualized viewport frames;
+  - evaluate incremental or virtualized Show Log updates.
+- Baseline evidence from the opening analysis:
+  - the packaged VSIX contained 718 files and was approximately 1.3 MB;
+  - `out/` contained 10 compiled JavaScript files without matching current TypeScript sources;
+  - the VSIX contained 132 source-map files;
+  - full graph state construction can request repository refs in both snapshot loading and overlay construction;
+  - virtualized graph scroll frames still scan all graph nodes and edges and rebuild topology-derived maps;
+  - Show Log state changes resend and rebuild the complete loaded commit list.
+- Non-goals: changing command IDs, adding new product surfaces, replacing `vscode.git`, rendering unbounded full history, weakening cancellation or conflict guards, publishing, or adding a bundler dependency without separate maintainer approval.
+- Success condition: selected slices demonstrate lower activation, package, graph-load, or render cost through deterministic measurements while preserving all existing automated tests and required Extension Development Host workflows.
+- Planning reference: `project-context/docs/release-1.2.0-prioritization.md`.
+
 ## 0.0.37 Release Define
 - Current package baseline on 2026-06-04: `0.0.36`.
 - Target release: `0.0.37`.

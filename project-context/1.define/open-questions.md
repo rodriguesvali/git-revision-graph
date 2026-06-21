@@ -1,5 +1,14 @@
 # Open Questions
 
+## 1.2.0
+
+- Which branch-heavy or synthetic repository will be the repeatable performance benchmark for graph loading, scrolling, minimap navigation, and Show Log pagination?
+- Should the first implementation slice remove startup activation and stale package artifacts before deeper runtime optimization?
+- Is adding a bundler such as esbuild approved after a no-dependency package-cleanup slice establishes the baseline?
+- Which projection options can safely reuse the same immutable Git snapshot, and which options must change the `git log` query?
+- Should merge-blocked target analysis use one aggregated Git query, bounded concurrency, or graph-only answers when references fall outside the loaded window?
+- What regression budget is acceptable for webview payload size, graph-load duration, and scroll-frame work before a `1.2.0` release candidate is rejected?
+
 ## 1.1.0
 
 - Decided on 2026-06-11: promote the active cycle from `1.0.2` to `1.1.0` because the scope now includes small compatible functional improvements in addition to fixes.

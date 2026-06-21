@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.0
+
+### Release Preparation
+
+- Opened the `1.2.0` cycle as a performance-focused minor release after the `1.1.0` implementation baseline.
+- Version metadata is bumped to `1.2.0` in `package.json` and `package-lock.json`; implementation, VSIX packaging, and Marketplace publication remain pending explicit maintainer approval.
+- Established initial performance priorities around activation cost, VSIX composition, graph refresh/loading work, viewport rendering, Git process fan-out, and Show Log updates.
+
 ## 1.1.0
 
 ### Release Preparation

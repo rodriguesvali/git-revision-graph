@@ -1,5 +1,65 @@
 # Release Readiness
 
+## 1.2.0 Release Readiness
+
+Current package baseline before opening: `1.1.0`.
+
+Target release: `1.2.0`.
+
+Status: Release cycle open for `1.2.0`. Package metadata is bumped to `1.2.0`; performance implementation, manual validation, VSIX packaging, package review, and Marketplace publication are not complete or approved.
+
+Planning and build references:
+
+- `project-context/docs/release-1.2.0-prioritization.md`
+- `project-context/2.build/features/1.2.0-release-opening.md`
+- `project-context/1.define/prd.md`
+- `project-context/1.define/sad.md`
+- `project-context/1.define/open-questions.md`
+
+Release direction:
+
+- Improve activation and package efficiency.
+- Reduce repeated Git/ref/snapshot work during graph refreshes.
+- Reduce full-scene work in virtual viewport frames.
+- Improve Show Log update efficiency where measurement justifies the change.
+- Preserve the Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, webview security, and native VS Code Git workflows.
+
+Opening baseline:
+
+- VSIX measurement: approximately 1.3 MB compressed and 718 files.
+- Package contents included 132 source maps and 10 compiled JavaScript files without matching current TypeScript sources.
+- Full graph construction can read repository refs in both snapshot and overlay stages.
+- Virtual graph viewport frames still inspect complete node and edge collections and rebuild topology-derived maps.
+- Merge-blocked fallback analysis can spawn one Git ancestry process per unresolved visible reference.
+- Show Log state changes rebuild and resend the complete loaded commit list.
+
+Planned sequencing:
+
+1. Activation and deterministic package-output hygiene.
+2. Projection-only refresh and request-scoped ref reuse.
+3. Git ancestry fallback consolidation.
+4. Indexed virtual viewport candidate selection.
+5. Incremental or virtualized Show Log updates.
+
+Opening verification:
+
+- Package metadata confirmed at `1.2.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata.
+- `git diff --check` passed after the opening changes.
+- `npm run build` passed.
+- `npm test` passed with 447 tests.
+
+Release gates:
+
+- Pending focused feature artifacts and maintainer selection of implementation slices.
+- Bundling or any new build dependency requires separate maintainer approval.
+- Pending repeatable benchmark repository or synthetic fixture selection.
+- Pending automated and manual verification for implemented slices.
+- Pending explicit approval for VSIX packaging and Marketplace publication.
+
+Rollback:
+
+- Performance slices must be independently reversible. If a slice regresses correctness or workbench behavior, revert that slice while preserving the rest of the `1.2.0` cycle.
+
 ## 1.1.0 Release Readiness
 
 Current package baseline: `1.0.1`.

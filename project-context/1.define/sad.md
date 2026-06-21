@@ -100,6 +100,12 @@ With the editor graph panel:
 - Feature work should be scoped by release impact and tracked in `project-context/2.build/features/`.
 - Release deployment remains human-approved.
 - Built-in `vscode.git` remains preferred for repository state and mutations; Git CLI remains acceptable for graph/history data not exposed by the API.
+- The `1.2.0` cycle is performance-focused and must preserve the current Source Control-launched singleton editor graph architecture.
+- `1.2.0` optimization work should begin with observable boundaries: extension activation, package composition, Git snapshot/ref loading, projection/layout construction, host-to-webview payloads, virtual viewport frames, and Show Log rendering.
+- Projection-only reuse is acceptable only when the cached snapshot is a valid superset for the requested options and mutable refs/HEAD are reapplied before state delivery.
+- Ref-loading reuse should be scoped to one coherent graph-load request; it must not introduce cross-request stale repository metadata.
+- Viewport optimization should retain the complete in-memory graph model for minimap, navigation, selection, and layout while indexing visible candidates so scroll frames do not repeatedly scan and rebuild unrelated full-graph structures.
+- Bundling is a candidate packaging optimization, not an approved dependency change. It requires explicit maintainer approval and must preserve the layout worker as a separately loadable runtime entrypoint.
 - The `0.0.32` Define draft should start as a post-Source-Control stabilization and graph-parity groundwork release. The release should protect the `0.0.31` Source Control/editor graph product surface before taking on one bounded graph foundation slice.
 - The `0.0.27` Define draft should prioritize stabilization: Git CLI argument safety, bounded Git command execution, compare restore path guards, webview message budgets, and dependency audit posture.
 - Cache optimization for `0.0.27` should start with observability and bounded low-risk changes. Reusing completed snapshots for cancelable refreshes is acceptable only if cancellation does not terminate shared Git work needed by another consumer.
@@ -127,6 +133,10 @@ With the editor graph panel:
 - Manifest and command registrations can drift without explicit checks.
 - Webview state bugs can be hard to catch through automated tests alone.
 - Release packaging can ship stale README or contribution metadata if Deliver checks are skipped.
+- Removing startup activation without preserving required compatibility initialization could leave legacy context state stale; validate command activation and fresh-profile behavior.
+- Reusing snapshots or refs across the wrong invalidation boundary could display stale topology, refs, or `HEAD`.
+- Spatial indexing and incremental DOM updates can improve frame cost while introducing offscreen selection, minimap, focus, or accessibility regressions.
+- Bundling can break worker path resolution or omit runtime dependencies if package validation is not explicit.
 - Cache changes can introduce stale graph, ref, diff, or log data if invalidation does not respect repository state changes, worktree-sensitive operations, and cancellation boundaries.
 - Optimistic reference patches can compromise visual integrity after deletion by leaving stale scene geometry, empty cards, or preserved viewport/selection context that no longer matches repository truth.
 - Pull-based sync metadata patches can preserve stale layout context when newly pulled commits change topology, even when a fallback exists for unresolved `HEAD` cases.
