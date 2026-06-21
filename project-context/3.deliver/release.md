@@ -6,7 +6,7 @@ Current package baseline before opening: `1.1.0`.
 
 Target release: `1.2.0`.
 
-Status: Release cycle open for `1.2.0`. Package metadata is bumped to `1.2.0`; performance implementation, manual validation, VSIX packaging, package review, and Marketplace publication are not complete or approved.
+Status: Release completed for `1.2.0`. Package metadata is bumped to `1.2.0`; performance implementation, automated verification, manual validation, VSIX publication, and Marketplace publication are complete.
 
 Planning and build references:
 
@@ -72,7 +72,7 @@ Opening verification:
 
 Implemented performance slices:
 
-- Removed `onStartupFinished` from the manifest so VS Code activates the extension through its five contributed commands. Automated manifest coverage locks the command set and the `^1.90.0` engine baseline; fresh-profile Extension Development Host activation validation remains pending.
+- Removed `onStartupFinished` from the manifest so VS Code activates the extension through its five contributed commands. Automated manifest coverage locks the command set and the `^1.90.0` engine baseline; fresh-profile Extension Development Host activation validation is complete.
 - Focused package manifest validation passed for implicit command activation.
 - `npm run build` passed after the activation change.
 - `npm test` passed with 447 tests after the activation change.
@@ -83,7 +83,7 @@ Implemented performance slices:
 - `npm run build` passed after the legacy visibility cleanup.
 - `npm test` passed with 446 tests after the cleanup; one obsolete helper-only test was removed.
 - `git diff --check` passed after implementation and artifact updates.
-- Editor graph smoke validation remains pending.
+- Editor graph smoke validation is complete.
 - Added `clean:out` and an npm `prebuild` lifecycle so every production build removes stale compiled output before TypeScript runs.
 - Clean-build measurement reduced `out/` from 256 to 234 files and from approximately 1.8 MB to 1.6 MB.
 - Compiled JavaScript files without matching current TypeScript sources decreased from 11 to zero.
@@ -98,7 +98,7 @@ Implemented performance slices:
 - `npm run build` passed after source-map exclusion.
 - `npm test` passed with 446 tests.
 - `git diff --check` passed after implementation and artifact updates.
-- Generated VSIX review remains pending explicit maintainer approval.
+- Generated VSIX review and publication are complete.
 - Added automated package-output coverage that locks the clean-build lifecycle and rejects JavaScript files without matching TypeScript sources.
 - Focused package-output validation passed with two tests.
 - The full suite increased from 446 to 448 tests.
@@ -156,13 +156,30 @@ Release gates:
 - Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is implemented.
 - Request-scoped ref reuse is implemented.
 - Git ancestry fallback consolidation is implemented.
-- Indexed virtual viewport candidate selection is implemented; manual graph smoke remains pending.
-- Incremental Show Log append updates are implemented; manual Show Log paging smoke remains pending.
+- Indexed virtual viewport candidate selection is implemented; manual graph smoke is complete.
+- Incremental Show Log append updates are implemented; manual Show Log paging smoke is complete.
 - Runtime performance implementation slices are complete for the approved `1.2.0` backlog.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.
-- Pending automated and manual verification for implemented slices.
-- Pending explicit approval for VSIX packaging and Marketplace publication.
+- Automated and manual verification for implemented slices is complete.
+- VSIX publication is complete.
+- Marketplace publication is complete.
+
+Manual validation completed:
+
+- Maintainer Extension Development Host validation completed for the `1.2.0` release candidate.
+- Fresh-profile command activation, Source Control graph launch, editor graph smoke, repository switching, refresh, projection option changes, virtual graph scrolling/zooming, search, minimap, and `Center HEAD` were covered.
+- Show Log opening and `loadMore` paging were covered, including the incremental append path and copy-hash/copy-ref-name context menu polish.
+- Compare, compare with worktree, unified diff, checkout, branch creation, sync, merge, delete, and conflict-guard workflows were covered at smoke level.
+
+VSIX publication completed:
+
+- Maintainer confirmed the `1.2.0` VSIX was published after automated and manual validation.
+
+Marketplace publication completed:
+
+- Maintainer confirmed the `1.2.0` Marketplace publication is complete.
+- Post-publication monitoring should watch for activation, graph refresh, virtual scrolling, Show Log paging, and Git workflow regressions.
 
 Rollback:
 
