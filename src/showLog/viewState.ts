@@ -48,6 +48,16 @@ export interface ShowLogWebviewState {
   readonly hasMore: boolean;
 }
 
+export interface ShowLogWebviewAppendPatch {
+  readonly sourceToken: string;
+  readonly previousCommitCount: number;
+  readonly summaryCount: string;
+  readonly loadingMore: boolean;
+  readonly errorMessage: string | undefined;
+  readonly commits: readonly ShowLogWebviewCommitItem[];
+  readonly hasMore: boolean;
+}
+
 export function getShowLogSourceLabel(source: RevisionLogSource | undefined): string {
   if (!source) {
     return '';
@@ -156,6 +166,27 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       };
     }),
     hasMore: state.hasMore
+  };
+}
+
+export function buildShowLogWebviewAppendPatch(
+  state: ShowLogState,
+  previousCommitCount: number
+): ShowLogWebviewAppendPatch | undefined {
+  if (state.kind !== 'visible') {
+    return undefined;
+  }
+
+  const safePreviousCommitCount = Math.max(0, Math.min(previousCommitCount, state.entries.length));
+  const webviewState = buildShowLogWebviewState(state);
+  return {
+    sourceToken: webviewState.sourceToken,
+    previousCommitCount: safePreviousCommitCount,
+    summaryCount: webviewState.summaryCount,
+    loadingMore: webviewState.loadingMore,
+    errorMessage: webviewState.errorMessage,
+    commits: webviewState.commits.slice(safePreviousCommitCount),
+    hasMore: webviewState.hasMore
   };
 }
 

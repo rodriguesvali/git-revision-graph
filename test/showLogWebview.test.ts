@@ -168,6 +168,15 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /id="loadMoreSentinel"/);
   assert.match(html, /IntersectionObserver/);
   assert.match(html, /type: 'loadMore'/);
+  assert.match(html, /function applyAppendPatch\(patch\)/);
+  assert.match(html, /patch\.sourceToken !== currentState\.sourceToken/);
+  assert.match(html, /currentCommits\.length !== patch\.previousCommitCount/);
+  assert.match(html, /commits: currentCommits\.concat\(patch\.commits \|\| \[\]\)/);
+  assert.match(html, /commitList\.insertAdjacentHTML\('beforeend', appendedMarkup\);/);
+  assert.match(html, /function syncLoadMoreBlock\(state\)/);
+  assert.match(html, /function renderCommitEntry\(commit, index\)/);
+  assert.match(html, /event\.data && event\.data\.type === 'append'/);
+  assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /Open Commit Details/);
   assert.match(html, /Reset to this/);
   assert.match(html, /data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>/);

@@ -39,7 +39,10 @@ import {
   getVisibleShowLogRepository,
   isLoadedShowLogCommitHash
 } from './showLog/stateLookup';
-import { buildShowLogWebviewState } from './showLog/viewState';
+import {
+  buildShowLogWebviewAppendPatch,
+  buildShowLogWebviewState
+} from './showLog/viewState';
 import {
   addShowLogCachedChanges,
   createHiddenShowLogState,
@@ -444,7 +447,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         entries: [...this.state.entries, ...result.entries],
         hasMore: result.hasMore
       };
-      this.postState();
+      this.postAppendCommits(skip);
     } catch (error) {
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
@@ -606,6 +609,23 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     void this.panel.webview.postMessage({
       type: 'state',
       state: buildShowLogWebviewState(this.state)
+    });
+  }
+
+  private postAppendCommits(previousCommitCount: number): void {
+    if (!this.panel) {
+      return;
+    }
+
+    const patch = buildShowLogWebviewAppendPatch(this.state, previousCommitCount);
+    if (!patch) {
+      this.postState();
+      return;
+    }
+
+    void this.panel.webview.postMessage({
+      type: 'append',
+      patch
     });
   }
 

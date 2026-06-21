@@ -23,6 +23,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`
 - `project-context/2.build/features/1.2.0-indexed-graph-virtualization.md`
 - `project-context/2.build/features/1.2.0-nonblocking-current-branch-sync-error.md`
+- `project-context/2.build/features/1.2.0-incremental-show-log-updates.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -136,6 +137,13 @@ Implemented performance slices:
 - `npm run build` passed after nonblocking current-branch sync error handling.
 - `npm test` passed with 454 tests after nonblocking current-branch sync error handling.
 - `git diff --check` passed after nonblocking current-branch sync error handling and artifact updates.
+- Added incremental Show Log append updates for successful `loadMore` paging.
+- Show Log still uses full-state messages for initial render, source/filter/scope changes, retained-panel recovery, commit expansion, and stale-patch fallback.
+- The Show Log webview now applies aligned append patches by inserting new commit rows and updating the summary/load-more block without rebuilding the full content body.
+- Focused Show Log shared-state and webview shell validation passed for incremental append updates.
+- `npm run build` passed after incremental Show Log append updates.
+- `npm test` passed with 455 tests after incremental Show Log append updates.
+- `git diff --check` passed after incremental Show Log append updates and artifact updates.
 
 Release gates:
 
@@ -143,8 +151,8 @@ Release gates:
 - Request-scoped ref reuse is implemented.
 - Git ancestry fallback consolidation is implemented.
 - Indexed virtual viewport candidate selection is implemented; manual graph smoke remains pending.
-- Incremental Show Log updates are the next implementation slice.
-- Pending focused implementation artifacts for each runtime performance slice as work begins.
+- Incremental Show Log append updates are implemented; manual Show Log paging smoke remains pending.
+- Runtime performance implementation slices are complete for the approved `1.2.0` backlog.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.
 - Pending automated and manual verification for implemented slices.

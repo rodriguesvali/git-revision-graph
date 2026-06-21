@@ -7,6 +7,7 @@ import {
   createHiddenShowLogState
 } from '../src/showLogShared';
 import {
+  buildShowLogWebviewAppendPatch,
   buildShowLogCommitLabel,
   getShowLogSourceLabel,
   buildShowLogWebviewState
@@ -161,6 +162,63 @@ test('updates the summary count when more commits are appended', () => {
   assert.equal(initial.summary, 'Base: origin/jch -> Compare: origin/seen');
   assert.equal(initial.summaryCount, '1+ commits');
   assert.equal(afterLoadMore.summaryCount, '2+ commits');
+});
+
+test('builds incremental show log append patches from appended commits', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const state = {
+    kind: 'visible' as const,
+    sourceToken: 'test-source-append',
+    repository,
+    source: { kind: 'target' as const, revision: 'main', label: 'main' },
+    showAllBranches: false,
+    filterText: '',
+    entries: [
+      {
+        hash: 'a'.repeat(40),
+        shortHash: 'aaaaaaa',
+        author: 'Ada',
+        date: '2026-04-18',
+        subject: 'Commit A',
+        message: 'Commit A',
+        parentHashes: ['b'.repeat(40)],
+        references: [],
+        shortStat: undefined
+      },
+      {
+        hash: 'b'.repeat(40),
+        shortHash: 'bbbbbbb',
+        author: 'Linus',
+        date: '2026-04-17',
+        subject: 'Commit B',
+        message: 'Commit B',
+        parentHashes: [],
+        references: [{ name: 'v1.0.0', kind: 'tag' as const }],
+        shortStat: { files: 2, insertions: 5, deletions: 1 }
+      }
+    ],
+    hasMore: false,
+    loading: false,
+    loadingMore: false,
+    errorMessage: undefined,
+    expandedCommitHash: undefined,
+    loadingCommitHash: undefined,
+    expandedCommitError: undefined,
+    cachedChanges: {}
+  };
+
+  const patch = buildShowLogWebviewAppendPatch(state, 1);
+
+  assert.equal(patch?.sourceToken, 'test-source-append');
+  assert.equal(patch?.previousCommitCount, 1);
+  assert.equal(patch?.summaryCount, '2 commits');
+  assert.equal(patch?.loadingMore, false);
+  assert.equal(patch?.hasMore, false);
+  assert.equal(patch?.commits.length, 1);
+  assert.equal(patch?.commits[0]?.hash, 'b'.repeat(40));
+  assert.equal(patch?.commits[0]?.refs[0]?.label, 'tag:v1.0.0');
+  assert.equal(patch?.commits[0]?.stats, '2 files • +5 • -1');
+  assert.deepEqual(patch?.commits[0]?.topology.continuingLanes, [0]);
 });
 
 test('builds a filtered empty message for show log searches with no matches', () => {

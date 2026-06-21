@@ -36,10 +36,10 @@ The release should reduce extension activation, package, graph-loading, and webv
 
 - Index graph layouts by row or spatial range so viewport updates inspect nearby candidates rather than the full scene. Implemented as the fourth runtime performance slice.
 - Recompute full topology maps only when graph topology changes.
-- Evaluate incremental or virtualized Show Log rendering and append-only load-more messages. Approved after backend graph-loading and webview viewport indexing slices.
+- Evaluate incremental or virtualized Show Log rendering and append-only load-more messages. Implemented for successful `loadMore` append updates.
 - Preserve minimap, search, selection, keyboard behavior, persisted offsets, and retained panel state.
 
-The approved runtime performance backlog is recorded in `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`. The projection-only refresh implementation is recorded in `project-context/2.build/features/1.2.0-projection-only-refresh.md`; request-scoped ref reuse is recorded in `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`; merge ancestry fan-out reduction is recorded in `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`; indexed graph virtualization is recorded in `project-context/2.build/features/1.2.0-indexed-graph-virtualization.md`.
+The approved runtime performance backlog is recorded in `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`. The projection-only refresh implementation is recorded in `project-context/2.build/features/1.2.0-projection-only-refresh.md`; request-scoped ref reuse is recorded in `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`; merge ancestry fan-out reduction is recorded in `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`; indexed graph virtualization is recorded in `project-context/2.build/features/1.2.0-indexed-graph-virtualization.md`; incremental Show Log append updates are recorded in `project-context/2.build/features/1.2.0-incremental-show-log-updates.md`.
 
 ## Sequencing
 
@@ -47,7 +47,7 @@ The approved runtime performance backlog is recorded in `project-context/2.build
 2. Graph refresh intent and ref-loading reuse.
 3. Git ancestry fan-out reduction.
 4. Graph viewport indexing. Complete.
-5. Show Log incremental rendering.
+5. Show Log incremental rendering. Complete for append-only load-more updates.
 
 Each item should receive a focused feature artifact before implementation. Later items may be deferred if measurement shows that earlier slices deliver sufficient improvement for a safe minor release.
 

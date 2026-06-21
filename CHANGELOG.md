@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - Reduced Git process fan-out for merge-blocked analysis by replacing per-ref unresolved ancestry checks with batched merged-ref discovery.
 - Indexed virtual graph rendering by scene ranges so scroll and zoom frames inspect nearby node and edge candidates instead of scanning the full scene.
 - Let failed current-branch sync actions clear their loading state without waiting for the user to close the Git error notification.
+- Added incremental Show Log append updates so repeated `loadMore` paging sends and inserts only the newly loaded commits.
 
 ## 1.1.0
 

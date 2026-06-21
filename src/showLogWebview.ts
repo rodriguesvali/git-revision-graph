@@ -985,18 +985,58 @@ export function renderShowLogWebviewHtml(): string {
         sections.push(renderTableHeader());
         sections.push(renderCommitList(state.commits));
       }
-      if (state.hasMore) {
-        sections.push(
-          '<div class="load-more" aria-live="polite">'
-          + (state.loadingMore ? 'Loading more commits...' : '')
-          + '<div class="load-more-sentinel" id="loadMoreSentinel" aria-hidden="true"></div>'
-          + '</div>'
-        );
-      }
+      sections.push(renderLoadMore(state));
       hideCommitTooltip();
       content.innerHTML = sections.join('');
       syncLoadMoreObserver();
       restorePendingCommitFileFilterFocus();
+    }
+
+    function applyAppendPatch(patch) {
+      if (!patch || !currentState || currentState.kind !== 'visible') {
+        return false;
+      }
+
+      if (patch.sourceToken !== currentState.sourceToken) {
+        return false;
+      }
+
+      const currentCommits = currentState.commits || [];
+      if (currentCommits.length !== patch.previousCommitCount) {
+        return false;
+      }
+
+      currentState = {
+        ...currentState,
+        summaryCount: patch.summaryCount || currentState.summaryCount,
+        loadingMore: !!patch.loadingMore,
+        errorMessage: patch.errorMessage,
+        commits: currentCommits.concat(patch.commits || []),
+        hasMore: !!patch.hasMore
+      };
+      if (!content || !summaryCount || !loadingChip || currentState.errorMessage) {
+        render();
+        return true;
+      }
+
+      summaryCount.textContent = currentState.summaryCount || '';
+      loadingChip.dataset.visible = currentState.loading ? 'true' : 'false';
+      const commitList = content.querySelector('.commit-list');
+      if (!commitList) {
+        render();
+        return true;
+      }
+
+      const appendedMarkup = (patch.commits || [])
+        .map((commit, index) => renderCommitEntry(commit, patch.previousCommitCount + index))
+        .join('');
+      if (appendedMarkup) {
+        commitList.insertAdjacentHTML('beforeend', appendedMarkup);
+      }
+      syncLoadMoreBlock(currentState);
+      syncLoadMoreObserver();
+      restorePendingCommitFileFilterFocus();
+      return true;
     }
 
     function renderTableHeader() {
@@ -1013,15 +1053,47 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function renderCommitList(commits) {
-      const canCompareSelection = selectedCommitHashes.length === 2;
       return ''
         + '<div class="commit-list">'
-        + commits.map((commit, index) => ''
-          + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (canCompareSelection && selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (canCompareSelection && selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '" data-merge="' + (commit.isMerge ? 'true' : 'false') + '">'
-          + renderCommit(commit, index)
-          + '</div>'
-        ).join('')
+        + commits.map((commit, index) => renderCommitEntry(commit, index)).join('')
         + '</div>';
+    }
+
+    function renderCommitEntry(commit, index) {
+      const canCompareSelection = selectedCommitHashes.length === 2;
+      return ''
+        + '<div class="commit-entry" data-selected="' + (selectedCommitHashes.includes(commit.hash) ? 'true' : 'false') + '" data-compare-base="' + (canCompareSelection && selectedCommitHashes[0] === commit.hash ? 'true' : 'false') + '" data-compare-target="' + (canCompareSelection && selectedCommitHashes[1] === commit.hash ? 'true' : 'false') + '" data-merge="' + (commit.isMerge ? 'true' : 'false') + '">'
+        + renderCommit(commit, index)
+        + '</div>';
+    }
+
+    function renderLoadMore(state) {
+      if (!state.hasMore) {
+        return '';
+      }
+
+      return ''
+        + '<div class="load-more" aria-live="polite">'
+        + (state.loadingMore ? 'Loading more commits...' : '')
+        + '<div class="load-more-sentinel" id="loadMoreSentinel" aria-hidden="true"></div>'
+        + '</div>';
+    }
+
+    function syncLoadMoreBlock(state) {
+      const loadMore = content.querySelector('.load-more');
+      const nextMarkup = renderLoadMore(state);
+      if (loadMore) {
+        if (nextMarkup) {
+          loadMore.outerHTML = nextMarkup;
+        } else {
+          loadMore.remove();
+        }
+        return;
+      }
+
+      if (nextMarkup) {
+        content.insertAdjacentHTML('beforeend', nextMarkup);
+      }
     }
 
     function renderCommit(commit, index) {
@@ -2171,6 +2243,13 @@ export function renderShowLogWebviewHtml(): string {
           clearPendingFilterUpdate();
         }
         render();
+        return;
+      }
+
+      if (event.data && event.data.type === 'append') {
+        if (!applyAppendPatch(event.data.patch)) {
+          vscode.postMessage({ type: 'ready' });
+        }
       }
     });
 
