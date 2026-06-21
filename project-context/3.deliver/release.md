@@ -17,6 +17,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-deterministic-out-cleanup.md`
 - `project-context/2.build/features/1.2.0-vsix-source-map-exclusion.md`
 - `project-context/2.build/features/1.2.0-orphaned-output-regression.md`
+- `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -28,6 +29,14 @@ Release direction:
 - Reduce full-scene work in virtual viewport frames.
 - Improve Show Log update efficiency where measurement justifies the change.
 - Preserve the Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, webview security, and native VS Code Git workflows.
+
+Approved runtime performance backlog:
+
+1. Projection-only refresh with snapshot reuse.
+2. Request-scoped ref reuse during a graph-load request.
+3. Reduced Git ancestry process fan-out for merge-blocked target analysis.
+4. Indexed virtual viewport candidate selection so scroll frames avoid full-scene scans.
+5. Incremental Show Log updates for append, expansion, loading, and cache-hit paths where measurement justifies protocol complexity.
 
 Opening baseline:
 
@@ -41,10 +50,11 @@ Opening baseline:
 Planned sequencing:
 
 1. Activation and deterministic package-output hygiene.
-2. Projection-only refresh and request-scoped ref reuse.
-3. Git ancestry fallback consolidation.
-4. Indexed virtual viewport candidate selection.
-5. Incremental or virtualized Show Log updates.
+2. Projection-only refresh with snapshot reuse.
+3. Request-scoped ref reuse during a graph-load request.
+4. Git ancestry fallback consolidation.
+5. Indexed virtual viewport candidate selection.
+6. Incremental or virtualized Show Log updates.
 
 Opening verification:
 
@@ -92,7 +102,8 @@ Implemented performance slices:
 
 Release gates:
 
-- Pending focused feature artifacts and maintainer selection of implementation slices.
+- Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is the next implementation slice.
+- Pending focused implementation artifacts for each runtime performance slice as work begins.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.
 - Pending automated and manual verification for implemented slices.

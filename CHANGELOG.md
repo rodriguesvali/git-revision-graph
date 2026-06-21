@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Opened the `1.2.0` cycle as a performance-focused minor release after the `1.1.0` implementation baseline.
 - Version metadata is bumped to `1.2.0` in `package.json` and `package-lock.json`; implementation, VSIX packaging, and Marketplace publication remain pending explicit maintainer approval.
 - Established initial performance priorities around activation cost, VSIX composition, graph refresh/loading work, viewport rendering, Git process fan-out, and Show Log updates.
+- Approved the next runtime performance backlog: projection-only refresh with snapshot reuse, request-scoped ref reuse, reduced Git ancestry process fan-out, indexed graph virtualization, and incremental Show Log updates.
 
 ### Performance
 

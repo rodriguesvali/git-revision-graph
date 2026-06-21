@@ -27,17 +27,19 @@ The release should reduce extension activation, package, graph-loading, and webv
 
 ### Priority 1: graph loading and refresh reuse
 
-- Define a projection-only refresh path for options that do not require a new Git history query.
-- Avoid duplicate repository ref reads inside one graph-load request.
-- Reduce or aggregate merge-blocked ancestry fallback Git processes.
+- Define a projection-only refresh path for options that do not require a new Git history query. Approved as the first runtime performance slice.
+- Avoid duplicate repository ref reads inside one graph-load request. Approved as the second runtime performance slice.
+- Reduce or aggregate merge-blocked ancestry fallback Git processes. Approved as the third runtime performance slice.
 - Extend existing load tracing with counts for Git processes, ref reads, snapshot reuse, and host payload size where practical.
 
 ### Priority 2: webview frame and review-surface efficiency
 
-- Index graph layouts by row or spatial range so viewport updates inspect nearby candidates rather than the full scene.
+- Index graph layouts by row or spatial range so viewport updates inspect nearby candidates rather than the full scene. Approved after backend graph-loading slices.
 - Recompute full topology maps only when graph topology changes.
-- Evaluate incremental or virtualized Show Log rendering and append-only load-more messages.
+- Evaluate incremental or virtualized Show Log rendering and append-only load-more messages. Approved after backend graph-loading and webview viewport indexing slices.
 - Preserve minimap, search, selection, keyboard behavior, persisted offsets, and retained panel state.
+
+The approved runtime performance backlog is recorded in `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`.
 
 ## Sequencing
 
