@@ -16,6 +16,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-legacy-visibility-context-removal.md`
 - `project-context/2.build/features/1.2.0-deterministic-out-cleanup.md`
 - `project-context/2.build/features/1.2.0-vsix-source-map-exclusion.md`
+- `project-context/2.build/features/1.2.0-orphaned-output-regression.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -81,6 +82,13 @@ Implemented performance slices:
 - `npm test` passed with 446 tests.
 - `git diff --check` passed after implementation and artifact updates.
 - Generated VSIX review remains pending explicit maintainer approval.
+- Added automated package-output coverage that locks the clean-build lifecycle and rejects JavaScript files without matching TypeScript sources.
+- Focused package-output validation passed with two tests.
+- The full suite increased from 446 to 448 tests.
+- `npm run build` passed after adding output regression coverage.
+- `npm test` passed with 448 tests.
+- `git diff --check` passed after implementation and artifact updates.
+- Current clean output contains zero orphaned JavaScript files.
 
 Release gates:
 

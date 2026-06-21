@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Removed the obsolete side-bar graph visibility context reset from activation.
 - Made production builds deterministic by clearing `out/` before TypeScript compilation.
 - Excluded source maps recursively from the packaged VSIX while keeping them available in local builds.
+- Added regression coverage that rejects compiled JavaScript without a matching TypeScript source.
 
 ## 1.1.0
 
