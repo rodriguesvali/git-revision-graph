@@ -14,10 +14,9 @@ test/**
 tsconfig.json
 tsconfig.test.json
 *.ts
-*.map
+**/*.map
 package-lock.json
 PUBLISHING.md
 .venv/**
 .env
 graphify-out/**
-

@@ -15,6 +15,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-on-demand-command-activation.md`
 - `project-context/2.build/features/1.2.0-legacy-visibility-context-removal.md`
 - `project-context/2.build/features/1.2.0-deterministic-out-cleanup.md`
+- `project-context/2.build/features/1.2.0-vsix-source-map-exclusion.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -72,6 +73,14 @@ Implemented performance slices:
 - `npm run build` passed after deterministic output cleanup.
 - `npm test` passed with 446 tests and exercised the clean-build lifecycle.
 - `git diff --check` passed after implementation and artifact updates.
+- Updated `.vscodeignore` to exclude source maps recursively from package contents while preserving local TypeScript source maps.
+- `vsce ls` decreased from 694 to 573 package entries and from 121 source-map entries to zero.
+- Local builds retained 117 source maps totaling 327,540 uncompressed bytes.
+- The extension entrypoint and compiled d3-dag layout worker remained listed for packaging.
+- `npm run build` passed after source-map exclusion.
+- `npm test` passed with 446 tests.
+- `git diff --check` passed after implementation and artifact updates.
+- Generated VSIX review remains pending explicit maintainer approval.
 
 Release gates:
 
