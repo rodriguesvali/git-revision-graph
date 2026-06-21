@@ -226,7 +226,7 @@ Base image:
 
 - `mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm`
 
-This setup is intended to provide a consistent development environment with Node.js and npm available out of the box.
+This setup is intended to provide a consistent development environment with Node.js, npm, Python, and the `graphify` CLI available out of the box. The project-specific Graphify registration is intentionally manual; run `graphify install` after opening the rebuilt container when needed.
 
 To use it:
 

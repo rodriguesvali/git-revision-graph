@@ -2,7 +2,12 @@
   "name": "git-refs-explorer",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": true,
+      "toolsToInstall": "graphifyy==0.8.44"
+    }
   },
   "remoteUser": "root",
   "postCreateCommand": "if [ -f package.json ]; then npm install; fi",
