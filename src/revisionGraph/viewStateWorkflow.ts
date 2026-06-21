@@ -39,6 +39,6 @@ export class RevisionGraphViewStateWorkflow {
       ...options
     });
     this.host.setProjectionOptions(nextProjectionOptions);
-    await this.host.refresh('full-rebuild');
+    await this.host.refresh('projection-only');
   }
 }

@@ -1,4 +1,6 @@
-export type RevisionGraphRefreshIntent = 'full-rebuild';
+import type { RevisionGraphProjectionOptions } from './revisionGraphData';
+
+export type RevisionGraphRefreshIntent = 'full-rebuild' | 'projection-only';
 
 export type RevisionGraphRepositoryEventKind = 'state' | 'checkout';
 
@@ -28,12 +30,14 @@ export interface PreparedPendingRevisionGraphRefresh {
 const FOLLOW_UP_SUPPRESSION_WINDOW_MS = 5000;
 let nextPendingFollowUpRefreshId = 0;
 
-export function getRefreshLoadingLabel(_intent: RevisionGraphRefreshIntent): string {
-  return 'Loading revision graph...';
+export function getRefreshLoadingLabel(intent: RevisionGraphRefreshIntent): string {
+  return intent === 'projection-only'
+    ? 'Updating revision graph...'
+    : 'Loading revision graph...';
 }
 
-export function getRefreshLoadingMode(_intent: RevisionGraphRefreshIntent): 'blocking' {
-  return 'blocking';
+export function getRefreshLoadingMode(intent: RevisionGraphRefreshIntent): 'blocking' | 'subtle' {
+  return intent === 'projection-only' ? 'subtle' : 'blocking';
 }
 
 export function normalizeRefreshRequest(
@@ -78,9 +82,23 @@ export function createRepositoryRefreshRequest(
 }
 
 export function getDefaultFollowUpEventsForIntent(
-  _intent: RevisionGraphRefreshIntent
+  intent: RevisionGraphRefreshIntent
 ): readonly RevisionGraphRepositoryEventKind[] {
+  if (intent === 'projection-only') {
+    return [];
+  }
+
   return ['state', 'checkout'];
+}
+
+export function canReuseSnapshotForProjectionOptions(
+  snapshotOptions: RevisionGraphProjectionOptions,
+  targetOptions: RevisionGraphProjectionOptions
+): boolean {
+  return snapshotOptions.refScope === targetOptions.refScope &&
+    snapshotOptions.showTags === targetOptions.showTags &&
+    snapshotOptions.showRemoteBranches === targetOptions.showRemoteBranches &&
+    snapshotOptions.showStashes === targetOptions.showStashes;
 }
 
 export function registerPendingFollowUpRefresh(

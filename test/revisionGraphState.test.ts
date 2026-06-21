@@ -7,7 +7,8 @@ import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import {
   buildEmptyRevisionGraphViewState,
   buildRevisionGraphSceneLayoutKey,
-  buildReadyRevisionGraphViewState
+  buildReadyRevisionGraphViewState,
+  buildReadyRevisionGraphViewStateBundleFromSnapshot
 } from '../src/revisionGraph/panel/state';
 import { buildNodeLayouts } from '../src/revisionGraph/webview/shared';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
@@ -193,6 +194,85 @@ test('repository overlays prefer getRefs for current head commit when repository
     false
   );
   assert.deepEqual(state.primaryAncestorNextByHash, { 'new-head': 'old-head' });
+});
+
+test('builds projection-only ready state from a reusable snapshot without loading Git history', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createBranch({ type: RefType.Head, name: 'main', commit: 'tip' }),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main', commit: 'tip' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'tip',
+      parents: ['merge'],
+      author: 'Ada',
+      date: '2026-05-11',
+      subject: 'Tip',
+      refs: [{ name: 'main', kind: 'head' }]
+    },
+    {
+      hash: 'merge',
+      parents: ['left', 'right'],
+      author: 'Ada',
+      date: '2026-05-10',
+      subject: 'Merge topic',
+      refs: []
+    },
+    {
+      hash: 'left',
+      parents: [],
+      author: 'Ada',
+      date: '2026-05-09',
+      subject: 'Left root',
+      refs: []
+    },
+    {
+      hash: 'right',
+      parents: [],
+      author: 'Ada',
+      date: '2026-05-09',
+      subject: 'Right root',
+      refs: []
+    }
+  ]);
+  let loadGraphSnapshotCalls = 0;
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot() {
+      loadGraphSnapshotCalls += 1;
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const bundle = await buildReadyRevisionGraphViewStateBundleFromSnapshot(
+    repository,
+    {
+      ...createDefaultRevisionGraphProjectionOptions(),
+      showMergeCommits: true
+    },
+    backend,
+    {
+      graph,
+      loadedAt: Date.now(),
+      requestedLimit: 6000
+    }
+  );
+
+  assert.equal(loadGraphSnapshotCalls, 0);
+  assert.equal(bundle.snapshot.graph.orderedCommits.length, graph.orderedCommits.length);
+  assert.equal(
+    bundle.state.scene.nodes.some((node) => node.hash === 'merge'),
+    true
+  );
 });
 
 test('scene layout keys include edge topology to avoid stale node offsets', () => {

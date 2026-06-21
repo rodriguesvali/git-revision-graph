@@ -22,8 +22,11 @@ import {
 } from './repository/stateChange';
 import {
   buildEmptyRevisionGraphViewState,
-  buildReadyRevisionGraphViewStateBundle
+  buildReadyRevisionGraphViewStateBundle,
+  buildReadyRevisionGraphViewStateBundleFromSnapshot
 } from './panel/state';
+import type { RevisionGraphProjectionOptions } from './model/commitGraphTypes';
+import type { RevisionGraphSnapshot } from './source/graphSnapshot';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
 import {
   createDefaultRevisionGraphProjectionOptions,
@@ -57,6 +60,7 @@ import {
   createRepositoryRefreshRequest,
   getRefreshLoadingLabel,
   getRefreshLoadingMode,
+  canReuseSnapshotForProjectionOptions,
   normalizeRefreshRequest,
   PendingRevisionGraphFollowUpRefresh,
   RevisionGraphRefreshRequest,
@@ -79,6 +83,19 @@ interface RevisionGraphWebviewSurface {
 interface RevisionGraphRenderRequestContext {
   readonly requestId: number;
   readonly intent: RevisionGraphRefreshIntent;
+}
+
+interface RevisionGraphRenderResult {
+  readonly state: RevisionGraphViewState;
+  readonly repositoryPath?: string;
+  readonly snapshot?: RevisionGraphSnapshot;
+  readonly snapshotOptions?: RevisionGraphProjectionOptions;
+}
+
+interface ReusableRevisionGraphSnapshot {
+  readonly repositoryPath: string;
+  readonly snapshot: RevisionGraphSnapshot;
+  readonly snapshotOptions: RevisionGraphProjectionOptions;
 }
 
 function createWebviewViewSurface(view: vscode.WebviewView): RevisionGraphWebviewSurface {
@@ -127,7 +144,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly actionServices: RefActionServices;
   private readonly messageDispatcher = new RevisionGraphMessageDispatcher();
   private readonly messageHandler: RevisionGraphMessageHandler;
-  private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphViewState>(
+  private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphRenderResult>(
     (label) => {
       const nextLoadingMode = getRefreshLoadingMode(this.latestRefreshIntent);
       const shouldPostLoading =
@@ -147,12 +164,19 @@ export class RevisionGraphController implements vscode.Disposable {
         this.postHostMessage(createRevisionGraphLoadingMessage(label, this.currentLoadingMode));
       }
     },
-    (state) => {
+    (result) => {
       this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
-      this.currentState = state;
-      this.postHostMessage(createRevisionGraphUpdateStateMessage(state));
+      this.currentState = result.state;
+      this.reusableGraphSnapshot = result.snapshot && result.repositoryPath && result.snapshotOptions
+        ? {
+            repositoryPath: result.repositoryPath,
+            snapshot: result.snapshot,
+            snapshotOptions: result.snapshotOptions
+          }
+        : undefined;
+      this.postHostMessage(createRevisionGraphUpdateStateMessage(result.state));
     },
     (error) => {
       this.currentLoadingLabel = undefined;
@@ -170,6 +194,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly loadTrace = new RevisionGraphLoadTraceService(() => this.renderCoordinator.getCurrentRequestId());
   private currentState: RevisionGraphViewState;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
+  private reusableGraphSnapshot: ReusableRevisionGraphSnapshot | undefined;
 
   constructor(
     private readonly git: API,
@@ -341,12 +366,13 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     const request = this.resolveRefreshRequest(requestLike);
-    this.latestRefreshIntent = request.intent;
     const preparedRefresh = this.prepareRefresh(request);
-    const renderIntent = request.intent;
     if (request.clearSnapshotCache) {
       this.backend.clearGraphSnapshotCache?.();
+      this.reusableGraphSnapshot = undefined;
     }
+    const renderIntent = this.resolveEffectiveRefreshIntent(request.intent);
+    this.latestRefreshIntent = renderIntent;
 
     const outcome = await this.renderCoordinator.schedule(
       getRefreshLoadingLabel(renderIntent),
@@ -382,25 +408,42 @@ export class RevisionGraphController implements vscode.Disposable {
   private async buildNextState(
     renderRequest: RevisionGraphRenderRequestContext,
     signal: AbortSignal
-  ): Promise<RevisionGraphViewState | undefined> {
+  ): Promise<RevisionGraphRenderResult | undefined> {
     if (!this.view) {
       return undefined;
     }
 
     if (!this.currentRepository) {
-      return buildEmptyRevisionGraphViewState(this.git.repositories.length > 0, this.projectionOptions);
+      return {
+        state: buildEmptyRevisionGraphViewState(this.git.repositories.length > 0, this.projectionOptions)
+      };
     }
 
     const repositoryPath = this.currentRepository.rootUri.fsPath;
     const trace = this.loadTrace.createSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
-    const bundle = await buildReadyRevisionGraphViewStateBundle(
-      this.currentRepository,
-      this.projectionOptions,
-      this.backend,
-      this.resolveLimitPolicy(),
-      signal,
-      trace
-    );
+    const reusableSnapshot = this.resolveReusableGraphSnapshot(repositoryPath, renderRequest.intent);
+    trace?.({
+      phase: 'state.snapshotReuse',
+      durationMs: 0,
+      detail: reusableSnapshot ? 'result=hit' : `result=miss; intent=${renderRequest.intent}`
+    });
+    const bundle = reusableSnapshot
+      ? await buildReadyRevisionGraphViewStateBundleFromSnapshot(
+          this.currentRepository,
+          this.projectionOptions,
+          this.backend,
+          reusableSnapshot,
+          signal,
+          trace
+        )
+      : await buildReadyRevisionGraphViewStateBundle(
+          this.currentRepository,
+          this.projectionOptions,
+          this.backend,
+          this.resolveLimitPolicy(),
+          signal,
+          trace
+        );
 
     if (!this.isRenderRequestCurrent(renderRequest)) {
       return undefined;
@@ -411,7 +454,40 @@ export class RevisionGraphController implements vscode.Disposable {
       buildRevisionGraphRepositoryStateSignature(this.currentRepository)
     );
 
-    return bundle.state;
+    return {
+      state: bundle.state,
+      repositoryPath,
+      snapshot: bundle.snapshot,
+      snapshotOptions: this.projectionOptions
+    };
+  }
+
+  private resolveReusableGraphSnapshot(
+    repositoryPath: string,
+    intent: RevisionGraphRefreshIntent
+  ): RevisionGraphSnapshot | undefined {
+    if (intent !== 'projection-only') {
+      return undefined;
+    }
+
+    const reusableSnapshot = this.reusableGraphSnapshot;
+    if (!reusableSnapshot || reusableSnapshot.repositoryPath !== repositoryPath) {
+      return undefined;
+    }
+
+    return canReuseSnapshotForProjectionOptions(reusableSnapshot.snapshotOptions, this.projectionOptions)
+      ? reusableSnapshot.snapshot
+      : undefined;
+  }
+
+  private resolveEffectiveRefreshIntent(intent: RevisionGraphRefreshIntent): RevisionGraphRefreshIntent {
+    if (intent !== 'projection-only' || !this.currentRepository) {
+      return intent;
+    }
+
+    return this.resolveReusableGraphSnapshot(this.currentRepository.rootUri.fsPath, intent)
+      ? 'projection-only'
+      : 'full-rebuild';
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {
@@ -564,6 +640,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
+      this.reusableGraphSnapshot = undefined;
     }
 
     this.currentRepository = repository;

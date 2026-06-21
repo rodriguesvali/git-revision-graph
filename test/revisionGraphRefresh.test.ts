@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 
 import {
   cancelPendingFollowUpRefresh,
+  canReuseSnapshotForProjectionOptions,
   consumePendingFollowUpRefresh,
   createActionRefreshRequest,
   createRepositoryRefreshRequest,
   getDefaultFollowUpEventsForIntent,
+  getRefreshLoadingLabel,
+  getRefreshLoadingMode,
   normalizeRefreshRequest,
   registerPendingFollowUpRefresh
 } from '../src/revisionGraphRefresh';
@@ -26,6 +29,7 @@ test('createActionRefreshRequest attaches the default follow-up repository event
     }
   );
   assert.deepEqual(getDefaultFollowUpEventsForIntent('full-rebuild'), ['state', 'checkout']);
+  assert.deepEqual(getDefaultFollowUpEventsForIntent('projection-only'), []);
 });
 
 test('createRepositoryRefreshRequest attaches follow-up suppression only when a repository path is available', () => {
@@ -107,6 +111,61 @@ test('normalizeRefreshRequest preserves object requests and defaults missing req
   assert.deepEqual(normalizeRefreshRequest(undefined), { intent: 'full-rebuild' });
   assert.deepEqual(normalizeRefreshRequest('full-rebuild'), { intent: 'full-rebuild' });
   assert.equal(normalizeRefreshRequest(request), request);
+});
+
+test('projection-only refresh uses lightweight loading feedback', () => {
+  assert.equal(getRefreshLoadingLabel('projection-only'), 'Updating revision graph...');
+  assert.equal(getRefreshLoadingMode('projection-only'), 'subtle');
+  assert.equal(getRefreshLoadingLabel('full-rebuild'), 'Loading revision graph...');
+  assert.equal(getRefreshLoadingMode('full-rebuild'), 'blocking');
+});
+
+test('snapshot reuse is limited to options that do not affect Git history loading', () => {
+  const options = createDefaultRevisionGraphProjectionOptions();
+
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      showMergeCommits: true
+    }),
+    true
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      showCurrentBranchDescendants: true
+    }),
+    true
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      refScope: 'current',
+      showCurrentBranchDescendants: true
+    }),
+    false
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      showTags: false
+    }),
+    false
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      showRemoteBranches: false
+    }),
+    false
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
+      showStashes: false
+    }),
+    false
+  );
 });
 
 test('projection options keep descendants as core current branch behavior', () => {

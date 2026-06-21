@@ -23,7 +23,7 @@ test('RevisionGraphMessageHandler rehydrates the webview for ready messages', as
   assert.equal(rehydrated, true);
 });
 
-test('RevisionGraphMessageHandler applies projection options and schedules a full refresh', async () => {
+test('RevisionGraphMessageHandler applies projection options and schedules a projection-only refresh', async () => {
   const refreshes: unknown[] = [];
   let projectionOptions = createReadyRevisionGraphState().projectionOptions;
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -45,7 +45,7 @@ test('RevisionGraphMessageHandler applies projection options and schedules a ful
 
   assert.equal(projectionOptions.refScope, 'current');
   assert.equal(projectionOptions.showCurrentBranchDescendants, true);
-  assert.deepEqual(refreshes, ['full-rebuild']);
+  assert.deepEqual(refreshes, ['projection-only']);
 });
 
 test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {

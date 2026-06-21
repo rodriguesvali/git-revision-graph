@@ -18,6 +18,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-vsix-source-map-exclusion.md`
 - `project-context/2.build/features/1.2.0-orphaned-output-regression.md`
 - `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`
+- `project-context/2.build/features/1.2.0-projection-only-refresh.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -99,10 +100,18 @@ Implemented performance slices:
 - `npm test` passed with 448 tests.
 - `git diff --check` passed after implementation and artifact updates.
 - Current clean output contains zero orphaned JavaScript files.
+- Added a projection-only refresh intent so compatible projection option changes can reuse the last applied graph snapshot instead of reloading Git history.
+- Projection-only reuse is limited to snapshots whose `refScope`, tag, remote-branch, and stash visibility inputs still match the target projection; incompatible changes fall back to full rebuild.
+- Projection option changes now request projection-only refreshes, while explicit refresh, repository events, fetches, checkouts, merges, branch/tag/delete operations, and empty-cache reloads retain full-rebuild behavior.
+- Focused projection-only refresh validation passed across refresh helpers, ready-state from-snapshot construction, message handling, and view-state workflow tests.
+- `npm run build` passed after projection-only refresh implementation.
+- `npm test` passed with 451 tests after projection-only refresh implementation.
+- `git diff --check` passed after projection-only refresh implementation and artifact updates.
 
 Release gates:
 
-- Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is the next implementation slice.
+- Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is implemented.
+- Request-scoped ref reuse is the next implementation slice.
 - Pending focused implementation artifacts for each runtime performance slice as work begins.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.

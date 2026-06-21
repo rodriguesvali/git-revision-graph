@@ -82,7 +82,7 @@ export async function buildReadyRevisionGraphViewState(
   ).state;
 }
 
-async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
+export async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
   repository: Repository,
   projectionOptions: RevisionGraphViewState['projectionOptions'],
   backend: RevisionGraphStateBackend,

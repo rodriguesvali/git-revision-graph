@@ -53,7 +53,7 @@ test('RevisionGraphViewStateWorkflow reposts current state when repository picki
   assert.deepEqual(refreshes, []);
 });
 
-test('RevisionGraphViewStateWorkflow normalizes projection options and schedules a full rebuild', async () => {
+test('RevisionGraphViewStateWorkflow normalizes projection options and schedules a projection-only refresh', async () => {
   let projectionOptions = createReadyRevisionGraphState().projectionOptions;
   const refreshes: unknown[] = [];
   const workflow = new RevisionGraphViewStateWorkflow(createHost({
@@ -70,7 +70,7 @@ test('RevisionGraphViewStateWorkflow normalizes projection options and schedules
 
   assert.equal(projectionOptions.refScope, 'current');
   assert.equal(projectionOptions.showCurrentBranchDescendants, true);
-  assert.deepEqual(refreshes, ['full-rebuild']);
+  assert.deepEqual(refreshes, ['projection-only']);
 });
 
 function createHost(
