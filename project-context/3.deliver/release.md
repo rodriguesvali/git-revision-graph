@@ -21,6 +21,8 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-projection-only-refresh.md`
 - `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`
 - `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`
+- `project-context/2.build/features/1.2.0-indexed-graph-virtualization.md`
+- `project-context/2.build/features/1.2.0-nonblocking-current-branch-sync-error.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -123,13 +125,25 @@ Implemented performance slices:
 - `npm run build` passed after merge ancestry fan-out reduction.
 - `npm test` passed with 453 tests after merge ancestry fan-out reduction and removal of the per-ref fallback test.
 - `git diff --check` passed after merge ancestry fan-out reduction and artifact updates.
+- Added webview-side vertical bucket indexes for virtual graph node and edge candidate selection.
+- Scroll and zoom frames now collect nearby viewport candidates before applying the existing precise visibility checks instead of filtering the complete graph node and edge lists each frame.
+- Focused webview shell validation passed and locks the indexed virtual render path.
+- `npm run build` passed after indexed graph virtualization.
+- `npm test` passed with 453 tests after indexed graph virtualization.
+- `git diff --check` passed after indexed graph virtualization and artifact updates.
+- Updated current-branch sync error handling so failed sync attempts clear the graph loading state without waiting for the user to close the Git error notification.
+- Focused ref action validation passed for the nonblocking current-branch sync error path.
+- `npm run build` passed after nonblocking current-branch sync error handling.
+- `npm test` passed with 454 tests after nonblocking current-branch sync error handling.
+- `git diff --check` passed after nonblocking current-branch sync error handling and artifact updates.
 
 Release gates:
 
 - Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is implemented.
 - Request-scoped ref reuse is implemented.
 - Git ancestry fallback consolidation is implemented.
-- Indexed virtual viewport candidate selection is the next implementation slice.
+- Indexed virtual viewport candidate selection is implemented; manual graph smoke remains pending.
+- Incremental Show Log updates are the next implementation slice.
 - Pending focused implementation artifacts for each runtime performance slice as work begins.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.

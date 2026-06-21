@@ -111,8 +111,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
+    const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;
     let pendingVirtualSceneRenderFrame = 0;
     let lastVirtualSceneKey = '';
+    let virtualNodeIndex = new Map();
+    let virtualEdgeIndex = new Map();
     const RELOAD_LONG_PRESS_DELAY_MS = 500;
     let reloadLongPressTimer = 0;
     let suppressNextReloadClick = false;
@@ -968,6 +971,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           edgeLayer.innerHTML = '';
           nodeLayer.innerHTML = '';
           sceneNodeByHash = new Map();
+          resetVirtualSceneIndexes();
         });
         traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
         traceWebviewPhase('webview.render-scene.canvas-layout', () => {
@@ -980,7 +984,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const sceneNodes = (state.scene && state.scene.nodes) || [];
       traceWebviewPhase('webview.render-scene.indexes', () => {
         sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-      });
+        rebuildVirtualSceneIndexes();
+      }, 'nodes=' + graphNodes.length + '; edges=' + graphEdges.length);
       if (options.precenterViewport) {
         traceWebviewPhase('webview.render-scene.viewport-precenter', () => {
           syncCanvasSize();
@@ -1026,11 +1031,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const viewportBounds = getVirtualViewportBounds();
-      const visibleLayouts = graphNodes.filter((layout) =>
+      const visibleLayouts = collectVirtualNodeCandidates(viewportBounds).filter((layout) =>
         sceneNodeByHash.has(layout.hash) && isLayoutVisible(layout, viewportBounds)
       );
       const visibleHashes = new Set(visibleLayouts.map((layout) => layout.hash));
-      const visibleEdges = graphEdges.filter((edge) => isEdgeVisible(edge, viewportBounds, visibleHashes));
+      const visibleEdges = collectVirtualEdgeCandidates(viewportBounds).filter((edge) =>
+        isEdgeVisible(edge, viewportBounds, visibleHashes)
+      );
       const nextVirtualSceneKey = buildVirtualSceneKey(visibleHashes, visibleEdges);
 
       if (!options.force && nextVirtualSceneKey === lastVirtualSceneKey) {
@@ -1096,10 +1103,113 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         Math.min(fromY, toY) <= bounds.bottom;
     }
 
+    function rebuildVirtualSceneIndexes() {
+      virtualNodeIndex = buildVirtualNodeIndex(graphNodes);
+      virtualEdgeIndex = buildVirtualEdgeIndex(graphEdges);
+    }
+
+    function resetVirtualSceneIndexes() {
+      virtualNodeIndex = new Map();
+      virtualEdgeIndex = new Map();
+    }
+
+    function buildVirtualNodeIndex(layouts) {
+      const index = new Map();
+      for (const layout of layouts) {
+        addVirtualIndexEntry(index, layout.defaultTop, layout.defaultTop + layout.height, layout);
+      }
+      return index;
+    }
+
+    function buildVirtualEdgeIndex(edges) {
+      const index = new Map();
+      for (const edge of edges) {
+        const bounds = getEdgeVerticalBounds(edge);
+        if (!bounds) {
+          continue;
+        }
+        addVirtualIndexEntry(index, bounds.top, bounds.bottom, edge);
+      }
+      return index;
+    }
+
+    function getEdgeVerticalBounds(edge) {
+      const fromLayout = graphNodeByHash.get(edge.from);
+      const toLayout = graphNodeByHash.get(edge.to);
+      if (!fromLayout || !toLayout) {
+        return null;
+      }
+
+      return {
+        top: Math.min(fromLayout.defaultTop, toLayout.defaultTop),
+        bottom: Math.max(fromLayout.defaultTop + fromLayout.height, toLayout.defaultTop + toLayout.height)
+      };
+    }
+
+    function addVirtualIndexEntry(index, top, bottom, value) {
+      const bucketRange = getVirtualBucketRange(top, bottom);
+      if (!bucketRange) {
+        return;
+      }
+
+      for (let bucket = bucketRange.first; bucket <= bucketRange.last; bucket += 1) {
+        const entries = index.get(bucket);
+        if (entries) {
+          entries.push(value);
+        } else {
+          index.set(bucket, [value]);
+        }
+      }
+    }
+
+    function getVirtualBucketRange(top, bottom) {
+      if (!Number.isFinite(top) || !Number.isFinite(bottom)) {
+        return null;
+      }
+
+      const first = Math.floor(Math.max(0, Math.min(top, bottom)) / VIRTUAL_RENDER_BUCKET_SIZE_PX);
+      const last = Math.floor(Math.max(0, Math.max(top, bottom)) / VIRTUAL_RENDER_BUCKET_SIZE_PX);
+      return { first, last };
+    }
+
+    function collectVirtualNodeCandidates(bounds) {
+      return collectVirtualIndexCandidates(virtualNodeIndex, bounds, (layout) => layout.hash);
+    }
+
+    function collectVirtualEdgeCandidates(bounds) {
+      return collectVirtualIndexCandidates(virtualEdgeIndex, bounds, getVirtualEdgeKey);
+    }
+
+    function collectVirtualIndexCandidates(index, bounds, getKey) {
+      const bucketRange = getVirtualBucketRange(bounds.top, bounds.bottom);
+      if (!bucketRange) {
+        return [];
+      }
+
+      const candidates = [];
+      const seen = new Set();
+      for (let bucket = bucketRange.first; bucket <= bucketRange.last; bucket += 1) {
+        const entries = index.get(bucket) || [];
+        for (const entry of entries) {
+          const key = getKey(entry);
+          if (!key || seen.has(key)) {
+            continue;
+          }
+          seen.add(key);
+          candidates.push(entry);
+        }
+      }
+      return candidates;
+    }
+
+    function getVirtualEdgeKey(edge) {
+      return edge.from + '->' + edge.to;
+    }
+
     function buildVirtualSceneKey(visibleHashes, visibleEdges) {
       return [
         [...visibleHashes].sort().join(','),
-        visibleEdges.map((edge) => edge.from + '->' + edge.to).sort().join(',')
+        visibleEdges.map(getVirtualEdgeKey).sort().join(',')
       ].join('|');
     }
 

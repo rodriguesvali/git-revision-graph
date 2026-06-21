@@ -566,7 +566,12 @@ test('omits incremental revision graph patch handlers', () => {
   assert.doesNotMatch(html, /function applyWorkspaceStatePatch\(patch\)/);
   assert.doesNotMatch(html, /renderVirtualScene\(\{ force: true, reason: 'metadata-patch' \}\);/);
   assert.match(html, /function renderVirtualScene\(options = \{\}\)/);
-  assert.match(html, /visibleLayouts = graphNodes\.filter/);
+  assert.match(html, /function rebuildVirtualSceneIndexes\(\)/);
+  assert.match(html, /const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;/);
+  assert.match(html, /visibleLayouts = collectVirtualNodeCandidates\(viewportBounds\)\.filter/);
+  assert.match(html, /visibleEdges = collectVirtualEdgeCandidates\(viewportBounds\)\.filter/);
+  assert.doesNotMatch(html, /visibleLayouts = graphNodes\.filter/);
+  assert.doesNotMatch(html, /visibleEdges = graphEdges\.filter/);
   assert.match(html, /data-node-render-key="/);
   assert.match(html, /nodeLayer\.addEventListener\('click',/);
   assert.match(html, /nodeLayer\.addEventListener\('contextmenu',/);

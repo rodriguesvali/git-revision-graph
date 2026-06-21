@@ -1842,6 +1842,44 @@ test('syncCurrentHeadWithUpstream opens Source Control when pull leaves conflict
   assert.equal(harness.sourceControlOpens, 1);
 });
 
+test('syncCurrentHeadWithUpstream does not wait for the error message to close after sync fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+  let errorMessageShown: string | undefined;
+  let closeErrorMessage: (() => void) | undefined;
+  repository.push = async () => {
+    throw createGitError({
+      stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+      exitCode: 128
+    });
+  };
+  harness.services.ui.showErrorMessage = async (message) => {
+    errorMessageShown = message;
+    await new Promise<void>((resolve) => {
+      closeErrorMessage = resolve;
+    });
+  };
+
+  const didSyncPromise = syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await Promise.race([
+    didSyncPromise,
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+
+  assert.equal(didSync, false);
+  assert.equal(
+    errorMessageShown,
+    "Could not synchronize the current branch. fatal: could not read Username for 'https://github.com': terminal prompts disabled (exit code: 128)"
+  );
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+
+  closeErrorMessage?.();
+  assert.equal(await didSyncPromise, false);
+});
+
 test('mergeResolvedReference preserves the self-merge guard', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

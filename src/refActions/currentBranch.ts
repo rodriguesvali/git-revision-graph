@@ -145,9 +145,13 @@ export async function syncCurrentHeadWithUpstream(
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
     return true;
   } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
+    const errorMessage = services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
-      await services.ui.showSourceControl();
+      void errorMessage
+        .then(() => services.ui.showSourceControl())
+        .catch(() => undefined);
+    } else {
+      void errorMessage.catch(() => undefined);
     }
     return false;
   }

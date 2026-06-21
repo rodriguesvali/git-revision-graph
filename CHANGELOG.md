@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
 - Added projection-only revision graph refreshes that reuse the last applied snapshot for compatible projection option changes and fall back to full rebuilds when Git history inputs change.
 - Reused repository refs within a single revision graph load so snapshot decoration parsing and repository overlay construction no longer issue duplicate ref reads.
 - Reduced Git process fan-out for merge-blocked analysis by replacing per-ref unresolved ancestry checks with batched merged-ref discovery.
+- Indexed virtual graph rendering by scene ranges so scroll and zoom frames inspect nearby node and edge candidates instead of scanning the full scene.
+- Let failed current-branch sync actions clear their loading state without waiting for the user to close the Git error notification.
 
 ## 1.1.0
 
