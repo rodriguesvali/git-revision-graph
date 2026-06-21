@@ -390,16 +390,16 @@ test('loads commit details through the document backend with bounded git args', 
   );
 });
 
-test('loads merge-blocked targets through graph analysis and merge-base fallback', async () => {
+test('loads merge-blocked targets through graph analysis and batched merged-ref fallback', async () => {
   await withFakeGitScript(
     [
       '#!/bin/sh',
       'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      'case "$*" in',
-      "  'merge-base --is-ancestor --end-of-options release/1.x main') exit 0 ;;",
-      "  'merge-base --is-ancestor --end-of-options topic/demo main') exit 1 ;;",
-      '  *) exit 2 ;;',
-      'esac'
+      'if [ "$1" = "for-each-ref" ]; then',
+      "  printf 'refs/heads/release/1.x\\nrefs/remotes/origin/release/1.x\\nrefs/tags/v1.0.0\\n'",
+      '  exit 0',
+      'fi',
+      'exit 2'
     ].join('\n'),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphMergeAnalysisBackend();
@@ -425,17 +425,22 @@ test('loads merge-blocked targets through graph analysis and merge-base fallback
         'main',
         [
           { kind: 'branch', name: 'release/1.x', id: 'branch:release/1.x', hash: 'missing-release', title: 'release/1.x' },
+          { kind: 'remote', name: 'origin/release/1.x', id: 'remote:origin/release/1.x', hash: 'missing-remote', title: 'origin/release/1.x' },
+          { kind: 'tag', name: 'v1.0.0', id: 'tag:v1.0.0', hash: 'missing-tag', title: 'v1.0.0' },
           { kind: 'branch', name: 'topic/demo', id: 'branch:topic/demo', hash: 'missing-topic', title: 'topic/demo' }
         ]
       );
       const calls = await fs.readFile(callsPath, 'utf8');
 
-      assert.deepEqual(blocked, ['branch::release/1.x']);
+      assert.deepEqual(blocked, [
+        'branch::release/1.x',
+        'remote::origin/release/1.x',
+        'tag::v1.0.0'
+      ]);
       assert.deepEqual(
         calls.trim().split('\n').sort(),
         [
-          'merge-base --is-ancestor --end-of-options release/1.x main',
-          'merge-base --is-ancestor --end-of-options topic/demo main'
+          'for-each-ref --merged=refs/heads/main --format=%(refname) refs/heads refs/remotes refs/tags refs/stash'
         ]
       );
     }

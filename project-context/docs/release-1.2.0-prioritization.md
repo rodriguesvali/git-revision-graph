@@ -29,7 +29,7 @@ The release should reduce extension activation, package, graph-loading, and webv
 
 - Define a projection-only refresh path for options that do not require a new Git history query. Implemented as the first runtime performance slice.
 - Avoid duplicate repository ref reads inside one graph-load request. Implemented as the second runtime performance slice.
-- Reduce or aggregate merge-blocked ancestry fallback Git processes. Approved as the third runtime performance slice.
+- Reduce or aggregate merge-blocked ancestry fallback Git processes. Implemented as the third runtime performance slice.
 - Extend existing load tracing with counts for Git processes, ref reads, snapshot reuse, and host payload size where practical.
 
 ### Priority 2: webview frame and review-surface efficiency
@@ -39,7 +39,7 @@ The release should reduce extension activation, package, graph-loading, and webv
 - Evaluate incremental or virtualized Show Log rendering and append-only load-more messages. Approved after backend graph-loading and webview viewport indexing slices.
 - Preserve minimap, search, selection, keyboard behavior, persisted offsets, and retained panel state.
 
-The approved runtime performance backlog is recorded in `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`. The projection-only refresh implementation is recorded in `project-context/2.build/features/1.2.0-projection-only-refresh.md`; request-scoped ref reuse is recorded in `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`.
+The approved runtime performance backlog is recorded in `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`. The projection-only refresh implementation is recorded in `project-context/2.build/features/1.2.0-projection-only-refresh.md`; request-scoped ref reuse is recorded in `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`; merge ancestry fan-out reduction is recorded in `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`.
 
 ## Sequencing
 

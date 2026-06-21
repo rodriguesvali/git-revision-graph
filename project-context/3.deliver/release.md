@@ -20,6 +20,7 @@ Planning and build references:
 - `project-context/2.build/features/1.2.0-runtime-performance-backlog.md`
 - `project-context/2.build/features/1.2.0-projection-only-refresh.md`
 - `project-context/2.build/features/1.2.0-request-scoped-ref-reuse.md`
+- `project-context/2.build/features/1.2.0-merge-ancestry-fanout-reduction.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -115,12 +116,20 @@ Implemented performance slices:
 - `npm run build` passed after request-scoped ref reuse implementation.
 - `npm test` passed with 453 tests after request-scoped ref reuse implementation.
 - `git diff --check` passed after request-scoped ref reuse implementation and artifact updates.
+- Reduced merge-blocked ancestry fallback fan-out by replacing per-ref `merge-base --is-ancestor` checks with one batched `git for-each-ref --merged=<HEAD>` query for unresolved off-snapshot refs.
+- The batched ancestry fallback covers local branches, remote branches, tags, and stash refs through full-ref-name normalization.
+- The previous per-ref merge-base fallback was intentionally removed so the graph has one merge-blocked Git analysis implementation.
+- Focused merge ancestry fan-out validation passed for the batched path.
+- `npm run build` passed after merge ancestry fan-out reduction.
+- `npm test` passed with 453 tests after merge ancestry fan-out reduction and removal of the per-ref fallback test.
+- `git diff --check` passed after merge ancestry fan-out reduction and artifact updates.
 
 Release gates:
 
 - Runtime performance backlog approved for `1.2.0`; projection-only refresh with snapshot reuse is implemented.
 - Request-scoped ref reuse is implemented.
-- Git ancestry fallback consolidation is the next implementation slice.
+- Git ancestry fallback consolidation is implemented.
+- Indexed virtual viewport candidate selection is the next implementation slice.
 - Pending focused implementation artifacts for each runtime performance slice as work begins.
 - Bundling or any new build dependency requires separate maintainer approval.
 - Pending repeatable benchmark repository or synthetic fixture selection.
