@@ -78,6 +78,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let sceneNodeByHash = new Map();
     let edgeElements = [];
     let graphNodeByHash = new Map();
+    let graphEdgeByKey = new Map();
     let parentMap = new Map();
     let childMap = new Map();
     let headDistanceByHash = new Map();
@@ -1219,6 +1220,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       );
       edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
       headNodeHash = getCurrentHeadNodeHash();
+      graphEdgeByKey = new Map(graphEdges.map((edge) => [getVirtualEdgeKey(edge), edge]));
       parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
       childMap = buildDirectionalMap(graphEdges, 'to', 'from');
       headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
@@ -1378,11 +1380,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return '';
       }
 
-      const anchors = getEdgeAnchorPoints(parentNode, childNode);
-      const path = describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
+      const path = describeEdgePathForLayouts(edge, parentNode, childNode);
 
 	      return '<path class="graph-edge" data-edge-from="' + edge.from + '" data-edge-to="' + edge.to + '" d="' + path + '" fill="none" stroke="var(--edge)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>';
 	    }
+
+    function describeEdgePathForLayouts(edge, sourceNode, targetNode) {
+      const anchors = getEdgeAnchorPoints(sourceNode, targetNode);
+      const routedPath = describeRoutedEdgePath(edge, sourceNode, targetNode);
+      return routedPath || describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
+    }
 
     function getEdgeAnchorPoints(sourceNode, targetNode) {
       const sourceCenterY = sourceNode.defaultTop + sourceNode.height / 2;
@@ -1399,6 +1406,77 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           ? targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
           : targetNode.defaultTop + targetNode.height - ${EDGE_VERTICAL_INSET}
       };
+    }
+
+    function describeRoutedEdgePath(edge, sourceNode, targetNode) {
+      const route = getRenderableEdgeRoute(edge);
+      if (!route) {
+        return null;
+      }
+
+      const anchors = getEdgeAnchorPoints(sourceNode, targetNode);
+      const rawSource = route[0];
+      const rawTarget = route[route.length - 1];
+      const sourceCenter = {
+        x: sourceNode.defaultLeft + sourceNode.width / 2,
+        y: sourceNode.defaultTop + sourceNode.height / 2
+      };
+      const targetCenter = {
+        x: targetNode.defaultLeft + targetNode.width / 2,
+        y: targetNode.defaultTop + targetNode.height / 2
+      };
+      const sourceDelta = {
+        x: sourceCenter.x - rawSource.x,
+        y: sourceCenter.y - rawSource.y
+      };
+      const targetDelta = {
+        x: targetCenter.x - rawTarget.x,
+        y: targetCenter.y - rawTarget.y
+      };
+      const rawDeltaY = rawTarget.y - rawSource.y;
+      const fallbackSpan = Math.max(route.length - 1, 1);
+      const pathPoints = [
+        { x: anchors.sourceX, y: anchors.sourceY },
+        ...route.slice(1, -1).map((point, index) => {
+          const t = Number.isFinite(rawDeltaY) && Math.abs(rawDeltaY) > 0.001
+            ? clamp((point.y - rawSource.y) / rawDeltaY, 0, 1)
+            : (index + 1) / fallbackSpan;
+          return {
+            x: point.x + sourceDelta.x + (targetDelta.x - sourceDelta.x) * t,
+            y: point.y + sourceDelta.y + (targetDelta.y - sourceDelta.y) * t
+          };
+        }),
+        { x: anchors.targetX, y: anchors.targetY }
+      ];
+
+      return describePolylinePath(pathPoints);
+    }
+
+    function getRenderableEdgeRoute(edge) {
+      const route = edge && edge.route;
+      if (!Array.isArray(route) || route.length <= 2 || !route.every(isFiniteRoutePoint)) {
+        return null;
+      }
+
+      return [...route].reverse();
+    }
+
+    function isFiniteRoutePoint(point) {
+      return !!point &&
+        typeof point.x === 'number' &&
+        Number.isFinite(point.x) &&
+        typeof point.y === 'number' &&
+        Number.isFinite(point.y);
+    }
+
+    function describePolylinePath(points) {
+      return points
+        .map((point, index) => (index === 0 ? 'M' : 'L') + ' ' + formatPathNumber(point.x) + ' ' + formatPathNumber(point.y))
+        .join(' ');
+    }
+
+    function formatPathNumber(value) {
+      return String(Number(value.toFixed(3)));
     }
 
     function getNodeClass(node) {

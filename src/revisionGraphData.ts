@@ -17,8 +17,12 @@ import {
 import {
   getProjectedGraphLayoutCacheStats,
   getProjectedGraphLayoutProfile,
-  layoutProjectedGraph
+  layoutProjectedGraphWithRoutes
 } from './revisionGraph/layout/layeredLayout';
+import {
+  D3DagSugiyamaEdgeRoute,
+  getD3DagEdgeRouteKey
+} from './revisionGraph/layout/d3DagSugiyamaLayout';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './revisionGraph/loadTrace';
 
 export type {
@@ -45,6 +49,12 @@ export interface RevisionGraphNode {
 export interface RevisionGraphEdge {
   readonly from: string;
   readonly to: string;
+  readonly route?: readonly RevisionGraphEdgeRoutePoint[];
+}
+
+export interface RevisionGraphEdgeRoutePoint {
+  readonly x: number;
+  readonly y: number;
 }
 
 export interface RevisionGraphScene {
@@ -61,6 +71,11 @@ interface CommitLaneLayout {
   readonly x: number;
 }
 
+interface CommitLaneLayoutResult {
+  readonly nodes: readonly CommitLaneLayout[];
+  readonly edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>;
+}
+
 export async function buildRevisionGraphScene(
   source: CommitGraph | readonly ParsedRevisionGraphCommit[],
   projection?: ProjectedGraph,
@@ -71,7 +86,7 @@ export async function buildRevisionGraphScene(
   const graph = toCommitGraph(source);
   const activeProjection = projection ?? projectMajorOperationsGraph(graph);
   const commitLayout = await layoutCommitLanes(activeProjection, trace, signal);
-  const layoutByHash = new Map(commitLayout.map((layout) => [layout.hash, layout] as const));
+  const layoutByHash = new Map(commitLayout.nodes.map((layout) => [layout.hash, layout] as const));
 
   const rawNodes = activeProjection.nodes.map<RevisionGraphNode>((node) => {
     const layout = layoutByHash.get(node.hash);
@@ -101,9 +116,11 @@ export async function buildRevisionGraphScene(
         return undefined;
       }
 
+      const route = commitLayout.edgeRoutes.get(getD3DagEdgeRouteKey(edge.from, edge.to));
       return {
         from: edge.from,
-        to: edge.to
+        to: edge.to,
+        ...(route ? { route: route.points } : {})
       };
     })
     .filter((edge): edge is RevisionGraphEdge => edge !== undefined);
@@ -198,11 +215,12 @@ async function layoutCommitLanes(
   projection: ProjectedGraph,
   trace?: RevisionGraphLoadTraceSink,
   signal?: AbortSignal
-): Promise<CommitLaneLayout[]> {
+): Promise<CommitLaneLayoutResult> {
   const startedAt = nowMs();
   const cacheStatsBefore = getProjectedGraphLayoutCacheStats();
   const layoutProfile = getProjectedGraphLayoutProfile(projection);
-  const positionByHash = await layoutProjectedGraph(projection, signal);
+  const layoutResult = await layoutProjectedGraphWithRoutes(projection, signal);
+  const positionByHash = layoutResult.positions;
   const cacheStatsAfter = getProjectedGraphLayoutCacheStats();
   const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
   traceDuration(
@@ -229,7 +247,7 @@ async function layoutCommitLanes(
   const laneByRoundedX = new Map(uniqueXs.map((x, index) => [x, index] as const));
   const rowByRoundedY = new Map(uniqueYs.map((y, index) => [y, index] as const));
 
-  return projection.nodes.map((node) => {
+  const nodes = projection.nodes.map((node) => {
     const position = positionByHash.get(node.hash);
     const x = position?.x ?? fallbackXByHash.get(node.hash) ?? 0;
     const y = position?.y ?? (fallbackRowByHash.get(node.hash) ?? 0) * 100;
@@ -243,6 +261,11 @@ async function layoutCommitLanes(
       x
     };
   });
+
+  return {
+    nodes,
+    edgeRoutes: layoutResult.edgeRoutes
+  };
 }
 
 function compactNodeLanes(nodes: readonly RevisionGraphNode[]): RevisionGraphNode[] {

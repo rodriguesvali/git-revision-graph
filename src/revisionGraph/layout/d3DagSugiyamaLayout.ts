@@ -25,12 +25,24 @@ export interface D3DagSugiyamaLayoutPosition {
   readonly y: number;
 }
 
+export interface D3DagSugiyamaLayoutPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface D3DagSugiyamaEdgeRoute {
+  readonly from: string;
+  readonly to: string;
+  readonly points: readonly D3DagSugiyamaLayoutPoint[];
+}
+
 export type D3DagSugiyamaLayoutInput = Pick<ProjectedGraph, 'nodes' | 'edges'>;
 
 export type D3DagSugiyamaLayoutProfile = 'balanced' | 'fast-two-layer' | 'dfs-wide';
 
 export interface D3DagSugiyamaLayoutResult {
   readonly positions: Map<string, D3DagSugiyamaLayoutPosition>;
+  readonly edgeRoutes: Map<string, D3DagSugiyamaEdgeRoute>;
   readonly profile: D3DagSugiyamaLayoutProfile;
 }
 
@@ -42,6 +54,7 @@ export function calculateD3DagSugiyamaLayout(
   if (projection.nodes.length === 0) {
     return {
       positions: new Map(),
+      edgeRoutes: new Map(),
       profile
     };
   }
@@ -81,10 +94,35 @@ export function calculateD3DagSugiyamaLayout(
     });
   }
 
+  const edgeRoutes = new Map<string, D3DagSugiyamaEdgeRoute>();
+  for (const link of graph.links()) {
+    const from = link.source.data;
+    const to = link.target.data;
+    if (!nodeByHash.has(from) || !nodeByHash.has(to)) {
+      continue;
+    }
+
+    const points = normalizeD3DagLayoutPoints((link as { points?: unknown }).points);
+    if (points.length < 2) {
+      continue;
+    }
+
+    edgeRoutes.set(getD3DagEdgeRouteKey(from, to), {
+      from,
+      to,
+      points
+    });
+  }
+
   return {
     positions,
+    edgeRoutes,
     profile
   };
+}
+
+export function getD3DagEdgeRouteKey(from: string, to: string): string {
+  return `${from}->${to}`;
 }
 
 export function selectD3DagSugiyamaLayoutProfile(
@@ -187,4 +225,26 @@ function getMaxLayerNodeCount(
   }
 
   return maxLayerNodeCount;
+}
+
+function normalizeD3DagLayoutPoints(points: unknown): D3DagSugiyamaLayoutPoint[] {
+  if (!Array.isArray(points)) {
+    return [];
+  }
+
+  const normalized: D3DagSugiyamaLayoutPoint[] = [];
+  for (const point of points) {
+    if (!Array.isArray(point) || point.length < 2) {
+      continue;
+    }
+
+    const [x, y] = point;
+    if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) {
+      continue;
+    }
+
+    normalized.push({ x, y });
+  }
+
+  return normalized;
 }

@@ -55,6 +55,22 @@ export function renderRevisionGraphScriptLayout(): string {
 	    function buildEdgePath(fromHash, toHash) {
 	      const sourceHash = toHash;
 	      const targetHash = fromHash;
+        const edge = graphEdgeByKey.get(fromHash + '->' + toHash);
+        const sourceNode = graphNodeByHash.get(sourceHash);
+        const targetNode = graphNodeByHash.get(targetHash);
+        if (
+          edge &&
+          sourceNode &&
+          targetNode &&
+          !hasNodeHorizontalOffset(sourceHash) &&
+          !hasNodeHorizontalOffset(targetHash)
+        ) {
+          const routedPath = describeRoutedEdgePath(edge, sourceNode, targetNode);
+          if (routedPath) {
+            return routedPath;
+          }
+        }
+
 	      const sourceX = getNodeCenterX(sourceHash);
 	      const targetX = getNodeCenterX(targetHash);
 	      const sourceTop = getNodeTop(sourceHash);
@@ -70,6 +86,10 @@ export function renderRevisionGraphScriptLayout(): string {
 	        : targetTop + targetHeight - ${EDGE_VERTICAL_INSET};
 	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
+
+    function hasNodeHorizontalOffset(hash) {
+      return Math.abs(Number(nodeOffsets[hash] || 0)) > 0.5;
+    }
 
     function readViewportLayoutSize() {
       const width = viewport ? viewport.clientWidth : 0;

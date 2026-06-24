@@ -13,6 +13,7 @@ Planning and build references:
 - `project-context/docs/release-1.3.0-prioritization.md`
 - `project-context/docs/d3-dag-performance-ux-opportunities.md`
 - `project-context/2.build/features/1.3.0-adaptive-sugiyama-layout-plan.md`
+- `project-context/2.build/features/1.3.0-d3-dag-edge-routes.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -22,6 +23,7 @@ Release direction:
 - Improve revision graph layout responsiveness for large and wide projected graphs.
 - Preserve the existing Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
 - Treat adaptive Sugiyama layout as the first `1.3.0` release slice.
+- Treat d3-dag edge route preservation as the second `1.3.0` graph readability slice.
 
 Implemented slices:
 
@@ -29,22 +31,31 @@ Implemented slices:
 - Kept normal graphs on the balanced layout profile.
 - Selected `fast-two-layer` for projected graphs with `nodes >= 800` or `edges >= 1000`.
 - Selected `dfs-wide` when estimated layer width exceeds `300` nodes and preserved the realized wide-layer DFS guard.
-- Moved layout cache identity to `d3-dag-sugiyama-v3`, including selected profile in the cache hash.
+- Moved layout cache identity to `d3-dag-sugiyama-v4`, including selected profile and route-preserving result shape in the cache hash.
 - Added selected layout profile metadata to layout worker results.
 - Added `profile=...` to the existing `scene.layout.d3DagSugiyama` trace detail.
 - Added regression coverage for profile selection, cache identity, worker metadata, trace detail, and graph row direction.
+- Preserved d3-dag Sugiyama `link.points` as bounded edge route metadata through layout, worker messages, cache, scene payloads, and webview rendering.
+- Render route-aware graph edge paths when valid route points are available.
+- Keep endpoint fallback for missing, invalid, stale, or drag-adjusted route data.
+- Keep minimap edges straight in this slice.
+- Added regression coverage for route extraction, worker route serialization, scene route payloads, route-aware rendering, cache restoration, and shell runtime helpers.
 
 Automated verification:
 
 - `npm run build` passed after adaptive layout implementation.
 - `npm test` passed with 457 tests after adaptive layout implementation.
-- `git diff --check` passed after implementation and artifact updates.
+- `npm run build` passed after d3-dag edge route implementation.
+- `npm test` passed with 459 tests after d3-dag edge route implementation.
+- `git diff --check` passed after edge route implementation and artifact updates.
 
 Manual validation focus:
 
 - Enable `gitRevisionGraph.traceLoading`.
 - Confirm a small repository reports `profile=balanced`.
 - Confirm a large or branch-heavy repository or synthetic equivalent reports the expected adaptive profile.
+- Inspect merge-heavy and fan-out graph edges before and after reload; routed edges should remain anchored to card boundaries.
+- Drag connected nodes horizontally and confirm affected edges fall back to attached endpoint paths.
 - Verify graph loading, repository switching, scope/filter toggles, refresh, empty-cache reload, search, minimap, zoom, Center HEAD, and selection path highlighting.
 - Smoke compare, Show Log, checkout, branch creation, sync, merge, delete, reset, and conflict guards.
 
@@ -59,6 +70,7 @@ Release gates:
 Rollback:
 
 - Revert the adaptive layout slice if large real repositories show unacceptable crossing/readability regressions or worker/profile metadata introduces runtime issues.
+- Revert the route-aware edge slice if real merge-heavy repositories show confusing edge geometry or drag fallback issues.
 - The layout cache namespace bump intentionally invalidates old persisted positions; reverting should restore the previous strategy namespace only if old cache compatibility matters for the chosen rollback.
 
 ## 1.2.0 Release Readiness

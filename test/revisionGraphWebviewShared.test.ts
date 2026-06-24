@@ -27,8 +27,8 @@ test('renders single-bend edge paths for a more readable graph look', () => {
 });
 
 test('renders graph edges from parent toward descendant rows', () => {
-  const upper = { row: 0, defaultLeft: 0, defaultTop: 0, width: 100, height: 40 };
-  const lower = { row: 1, defaultLeft: 100, defaultTop: 100, width: 100, height: 40 };
+  const upper = { x: 50, row: 0, defaultLeft: 0, defaultTop: 0, width: 100, height: 40 };
+  const lower = { x: 150, row: 1, defaultLeft: 100, defaultTop: 100, width: 100, height: 40 };
 
   assert.match(
     renderEdge({ from: 'upper', to: 'lower' }, new Map([
@@ -43,6 +43,27 @@ test('renders graph edges from parent toward descendant rows', () => {
       ['lower', lower]
     ])),
     /d="M 50 34 L 150 70 L 150 106"/
+  );
+});
+
+test('renders d3-dag routed edge points when available', () => {
+  const upper = { x: 50, row: 0, defaultLeft: 0, defaultTop: 0, width: 100, height: 40 };
+  const lower = { x: 150, row: 1, defaultLeft: 100, defaultTop: 100, width: 100, height: 40 };
+
+  assert.match(
+    renderEdge({
+      from: 'upper',
+      to: 'lower',
+      route: [
+        { x: 50, y: 20 },
+        { x: 120, y: 70 },
+        { x: 150, y: 120 }
+      ]
+    }, new Map([
+      ['upper', upper],
+      ['lower', lower]
+    ])),
+    /d="M 150 106 L 120 70 L 50 34"/
   );
 });
 

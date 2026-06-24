@@ -29,6 +29,7 @@ import {
   getProjectedGraphLayoutProfile,
   getProjectedGraphLayoutCacheStats,
   layoutProjectedGraph,
+  layoutProjectedGraphWithRoutes,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
@@ -446,7 +447,7 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
   }
   assert.equal(scene.nodes.length, 4);
   assert.equal(scene.edges.length, 4);
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v3:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v4:/);
 });
 
 test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
@@ -465,6 +466,8 @@ test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
   assert.equal(result.positions.size, projection.nodes.length);
   assert.ok(result.positions.has('head1'));
   assert.ok(result.positions.has('base1'));
+  assert.equal(result.edgeRoutes.size, projection.edges.length);
+  assert.ok(result.edgeRoutes.has('head1->base1'));
 });
 
 test('selects adaptive d3-dag Sugiyama layout profiles by projected graph shape', () => {
@@ -483,11 +486,40 @@ test('includes adaptive d3-dag layout profile in cache identity', () => {
 
   assert.equal(getProjectedGraphLayoutProfile(balancedProjection), 'balanced');
   assert.equal(getProjectedGraphLayoutProfile(fastProjection), 'fast-two-layer');
-  assert.match(buildProjectedGraphLayoutCacheKey(balancedProjection), /^d3-dag-sugiyama-v3:/);
-  assert.match(buildProjectedGraphLayoutCacheKey(fastProjection), /^d3-dag-sugiyama-v3:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(balancedProjection), /^d3-dag-sugiyama-v4:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(fastProjection), /^d3-dag-sugiyama-v4:/);
   assert.notEqual(
     buildProjectedGraphLayoutCacheKey(balancedProjection),
     buildProjectedGraphLayoutCacheKey(fastProjection)
+  );
+});
+
+test('preserves d3-dag edge route points for edges spanning multiple layers', async () => {
+  const projection: ProjectedGraph = {
+    sourceGraph: buildCommitGraph([]),
+    nodes: [
+      { hash: 'head', author: 'Ada', date: '2026-06-24', subject: 'Head', refs: [{ name: 'main', kind: 'head' }], isBoundary: false },
+      { hash: 'mid', author: 'Ada', date: '2026-06-23', subject: 'Middle', refs: [], isBoundary: false },
+      { hash: 'base', author: 'Ada', date: '2026-06-22', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }], isBoundary: false }
+    ],
+    edges: [
+      { from: 'head', to: 'mid', through: [] },
+      { from: 'mid', to: 'base', through: [] },
+      { from: 'head', to: 'base', through: [] }
+    ],
+    visibleHashes: new Set(['head', 'mid', 'base'])
+  };
+
+  clearProjectedGraphLayoutCache();
+  const layout = await layoutProjectedGraphWithRoutes(projection);
+  const route = layout.edgeRoutes.get('head->base');
+  const scene = await buildRevisionGraphScene(projection.sourceGraph, projection);
+
+  assert.ok(route);
+  assert.ok((route?.points.length ?? 0) > 2);
+  assert.deepEqual(
+    scene.edges.find((edge) => edge.from === 'head' && edge.to === 'base')?.route,
+    route?.points
   );
 });
 
@@ -607,7 +639,7 @@ test('uses the d3-dag layout cache namespace', () => {
 
   const projection = projectMajorOperationsGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v3:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v4:/);
 });
 
 test('layout cache key includes ref metadata used by d3-dag placement', async () => {
@@ -807,6 +839,8 @@ test('restores serialized d3-dag layout cache entries across extension sessions'
   const afterRestoredLayout = getProjectedGraphLayoutCacheStats();
 
   assert.equal(serializedCache.length, 1);
+  assert.ok(serializedCache[0].edgeRoutes);
+  assert.ok((serializedCache[0].edgeRoutes?.length ?? 0) > 0);
   assert.equal(restoredStats.entries, 1);
   assert.equal(restoredStats.hits, 0);
   assert.equal(restoredStats.misses, 0);
@@ -814,6 +848,7 @@ test('restores serialized d3-dag layout cache entries across extension sessions'
     restoredScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x })),
     firstScene.nodes.map((node) => ({ hash: node.hash, row: node.row, lane: node.lane, x: node.x }))
   );
+  assert.deepEqual(restoredScene.edges, firstScene.edges);
   assert.equal(afterRestoredLayout.hits, 1);
   assert.equal(afterRestoredLayout.misses, 0);
 });
@@ -827,7 +862,7 @@ test('ignores oversized serialized layout cache entries', () => {
 
   restoreProjectedGraphLayoutCache([
     {
-      key: 'd3-dag-sugiyama-v3:oversized',
+      key: 'd3-dag-sugiyama-v4:oversized',
       positions: oversizedPositions
     }
   ]);

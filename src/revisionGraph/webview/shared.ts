@@ -46,6 +46,7 @@ export type RevisionGraphNodeLayout = {
 };
 
 type EdgeLayoutNode = {
+  readonly x: number;
   readonly row: number;
   readonly defaultLeft: number;
   readonly defaultTop: number;
@@ -342,7 +343,8 @@ export function renderEdge(
     return '';
   }
   const anchors = getEdgeAnchorPoints(parentNode, childNode);
-  const path = describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
+  const path = describeRoutedEdgePath(edge, parentNode, childNode) ??
+    describeEdgePath(anchors.sourceX, anchors.sourceY, anchors.targetX, anchors.targetY);
   return `<path class="graph-edge" data-edge-from="${edge.from}" data-edge-to="${edge.to}" d="${path}" fill="none" stroke="var(--edge)" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" ${marker}></path>`;
 }
 
@@ -361,6 +363,54 @@ function getEdgeAnchorPoints(sourceNode: EdgeLayoutNode, targetNode: EdgeLayoutN
       ? targetNode.defaultTop + EDGE_VERTICAL_INSET
       : targetNode.defaultTop + targetNode.height - EDGE_VERTICAL_INSET
   };
+}
+
+export function describeRoutedEdgePath(
+  edge: RevisionGraphEdge,
+  sourceNode: EdgeLayoutNode,
+  targetNode: EdgeLayoutNode
+): string | undefined {
+  const route = getRenderableEdgeRoute(edge);
+  if (!route) {
+    return undefined;
+  }
+
+  const anchors = getEdgeAnchorPoints(sourceNode, targetNode);
+  const rawSource = route[0];
+  const rawTarget = route[route.length - 1];
+  const sourceCenter = {
+    x: sourceNode.defaultLeft + sourceNode.width / 2,
+    y: sourceNode.defaultTop + sourceNode.height / 2
+  };
+  const targetCenter = {
+    x: targetNode.defaultLeft + targetNode.width / 2,
+    y: targetNode.defaultTop + targetNode.height / 2
+  };
+  const sourceDelta = {
+    x: sourceCenter.x - rawSource.x,
+    y: sourceCenter.y - rawSource.y
+  };
+  const targetDelta = {
+    x: targetCenter.x - rawTarget.x,
+    y: targetCenter.y - rawTarget.y
+  };
+  const rawDeltaY = rawTarget.y - rawSource.y;
+  const fallbackSpan = Math.max(route.length - 1, 1);
+  const pathPoints = [
+    { x: anchors.sourceX, y: anchors.sourceY },
+    ...route.slice(1, -1).map((point, index) => {
+      const t = Number.isFinite(rawDeltaY) && Math.abs(rawDeltaY) > 0.001
+        ? clampNumber((point.y - rawSource.y) / rawDeltaY, 0, 1)
+        : (index + 1) / fallbackSpan;
+      return {
+        x: point.x + sourceDelta.x + (targetDelta.x - sourceDelta.x) * t,
+        y: point.y + sourceDelta.y + (targetDelta.y - sourceDelta.y) * t
+      };
+    }),
+    { x: anchors.targetX, y: anchors.targetY }
+  ];
+
+  return describePolylinePath(pathPoints);
 }
 
 export function getNodeClass(node: RevisionGraphNode): string {
@@ -435,4 +485,40 @@ export function describeEdgePath(sourceX: number, sourceY: number, targetX: numb
   );
   const bendY = targetY - direction * approachLength;
   return `M ${sourceX} ${sourceY} L ${targetX} ${bendY} L ${targetX} ${targetY}`;
+}
+
+function getRenderableEdgeRoute(edge: RevisionGraphEdge): readonly { readonly x: number; readonly y: number }[] | undefined {
+  const route = edge.route;
+  if (!Array.isArray(route) || route.length <= 2 || !route.every(isFiniteRoutePoint)) {
+    return undefined;
+  }
+
+  return [...route].reverse();
+}
+
+function isFiniteRoutePoint(point: unknown): point is { readonly x: number; readonly y: number } {
+  return (
+    typeof point === 'object' &&
+    point !== null &&
+    typeof (point as { x?: unknown }).x === 'number' &&
+    Number.isFinite((point as { x: number }).x) &&
+    typeof (point as { y?: unknown }).y === 'number' &&
+    Number.isFinite((point as { y: number }).y)
+  );
+}
+
+function describePolylinePath(points: readonly { readonly x: number; readonly y: number }[]): string {
+  return points
+    .map((point, index) =>
+      `${index === 0 ? 'M' : 'L'} ${formatPathNumber(point.x)} ${formatPathNumber(point.y)}`
+    )
+    .join(' ');
+}
+
+function formatPathNumber(value: number): string {
+  return String(Number(value.toFixed(3)));
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

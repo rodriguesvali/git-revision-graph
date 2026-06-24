@@ -4,6 +4,7 @@ import { isAbortError, throwIfAborted } from '../../errors';
 import { ProjectedGraph } from '../model/commitGraphTypes';
 import {
   calculateD3DagSugiyamaLayout,
+  D3DagSugiyamaEdgeRoute,
   D3DagSugiyamaLayoutInput,
   D3DagSugiyamaLayoutProfile,
   selectD3DagSugiyamaLayoutProfile
@@ -16,19 +17,23 @@ import {
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v3';
+export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTES = 5000;
+const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTE_POINTS = 32;
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v4';
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
 
 interface ProjectedGraphLayoutCacheEntry {
-  promise: Promise<Map<string, ProjectedGraphLayoutPosition>>;
+  promise: Promise<ProjectedGraphLayoutResult>;
   positions?: Map<string, ProjectedGraphLayoutPosition>;
+  edgeRoutes?: Map<string, D3DagSugiyamaEdgeRoute>;
 }
 
 export interface SerializedProjectedGraphLayoutCacheEntry {
   readonly key: string;
   readonly positions: readonly [string, ProjectedGraphLayoutPosition][];
+  readonly edgeRoutes?: readonly [string, D3DagSugiyamaEdgeRoute][];
 }
 
 export interface ProjectedGraphLayoutCacheStats {
@@ -45,12 +50,27 @@ export interface ProjectedGraphLayoutPosition {
   readonly y: number;
 }
 
+export interface ProjectedGraphLayoutResult {
+  readonly positions: Map<string, ProjectedGraphLayoutPosition>;
+  readonly edgeRoutes: Map<string, D3DagSugiyamaEdgeRoute>;
+}
+
 export async function layoutProjectedGraph(
   projection: ProjectedGraph,
   signal?: AbortSignal
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+  return (await layoutProjectedGraphWithRoutes(projection, signal)).positions;
+}
+
+export async function layoutProjectedGraphWithRoutes(
+  projection: ProjectedGraph,
+  signal?: AbortSignal
+): Promise<ProjectedGraphLayoutResult> {
   if (projection.nodes.length === 0) {
-    return new Map();
+    return {
+      positions: new Map(),
+      edgeRoutes: new Map()
+    };
   }
 
   throwIfAborted(signal, 'The d3-dag layout was aborted.');
@@ -61,7 +81,7 @@ export async function layoutProjectedGraph(
     projectedGraphLayoutCache.set(cacheKey, cachedLayoutEntry);
     projectedGraphLayoutCacheHits += 1;
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
-    return cloneLayoutPositions(await cachedLayoutEntry.promise);
+    return cloneLayoutResult(await cachedLayoutEntry.promise);
   }
 
   projectedGraphLayoutCacheMisses += 1;
@@ -69,10 +89,11 @@ export async function layoutProjectedGraph(
     promise: calculateProjectedGraphLayout(projection, signal)
   };
   cacheEntry.promise = cacheEntry.promise
-    .then((positions) => {
-      cacheEntry.positions = cloneLayoutPositions(positions);
+    .then((result) => {
+      cacheEntry.positions = cloneLayoutPositions(result.positions);
+      cacheEntry.edgeRoutes = cloneLayoutEdgeRoutes(result.edgeRoutes);
       notifyProjectedGraphLayoutCacheChanged();
-      return positions;
+      return result;
     })
     .catch((error) => {
       projectedGraphLayoutCache.delete(cacheKey);
@@ -81,7 +102,7 @@ export async function layoutProjectedGraph(
   projectedGraphLayoutCache.set(cacheKey, cacheEntry);
   pruneProjectedGraphLayoutCache();
 
-  return cloneLayoutPositions(await cacheEntry.promise);
+  return cloneLayoutResult(await cacheEntry.promise);
 }
 
 export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
@@ -141,7 +162,10 @@ export function serializeProjectedGraphLayoutCache(): SerializedProjectedGraphLa
     .flatMap(([key, entry]) => entry.positions && entry.positions.size <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS
       ? [{
           key,
-          positions: [...entry.positions.entries()]
+          positions: [...entry.positions.entries()],
+          edgeRoutes: shouldPersistLayoutEdgeRoutes(entry.edgeRoutes)
+            ? [...entry.edgeRoutes.entries()]
+            : undefined
         }]
       : []
     );
@@ -160,9 +184,14 @@ export function restoreProjectedGraphLayoutCache(
     }
 
     const positions = new Map(entry.positions);
+    const edgeRoutes = new Map(entry.edgeRoutes ?? []);
     projectedGraphLayoutCache.set(entry.key, {
       positions,
-      promise: Promise.resolve(cloneLayoutPositions(positions))
+      edgeRoutes,
+      promise: Promise.resolve({
+        positions: cloneLayoutPositions(positions),
+        edgeRoutes: cloneLayoutEdgeRoutes(edgeRoutes)
+      })
     });
     pruneProjectedGraphLayoutCache();
   }
@@ -180,17 +209,17 @@ export function onProjectedGraphLayoutCacheDidChange(listener: () => void): { di
 async function calculateProjectedGraphLayout(
   projection: ProjectedGraph,
   signal: AbortSignal | undefined
-): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+): Promise<ProjectedGraphLayoutResult> {
   const layoutInput = createD3DagSugiyamaLayoutInput(projection);
   try {
-    return (await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal)).positions;
+    return toProjectedGraphLayoutResult(await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal));
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
     }
 
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
-    return calculateD3DagSugiyamaLayout(layoutInput).positions;
+    return toProjectedGraphLayoutResult(calculateD3DagSugiyamaLayout(layoutInput));
   }
 }
 
@@ -213,6 +242,48 @@ function cloneLayoutPositions(
   positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>
 ): Map<string, ProjectedGraphLayoutPosition> {
   return new Map(positions);
+}
+
+function cloneLayoutEdgeRoutes(
+  edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>
+): Map<string, D3DagSugiyamaEdgeRoute> {
+  return new Map(
+    [...edgeRoutes.entries()].map(([key, route]) => [
+      key,
+      {
+        from: route.from,
+        to: route.to,
+        points: route.points.map((point) => ({ x: point.x, y: point.y }))
+      }
+    ])
+  );
+}
+
+function cloneLayoutResult(result: ProjectedGraphLayoutResult): ProjectedGraphLayoutResult {
+  return {
+    positions: cloneLayoutPositions(result.positions),
+    edgeRoutes: cloneLayoutEdgeRoutes(result.edgeRoutes)
+  };
+}
+
+function toProjectedGraphLayoutResult(result: {
+  readonly positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>;
+  readonly edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>;
+}): ProjectedGraphLayoutResult {
+  return {
+    positions: cloneLayoutPositions(result.positions),
+    edgeRoutes: cloneLayoutEdgeRoutes(result.edgeRoutes)
+  };
+}
+
+function shouldPersistLayoutEdgeRoutes(
+  edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute> | undefined
+): edgeRoutes is ReadonlyMap<string, D3DagSugiyamaEdgeRoute> {
+  return !!edgeRoutes &&
+    edgeRoutes.size <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTES &&
+    [...edgeRoutes.values()].every((route) =>
+      route.points.length <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTE_POINTS
+    );
 }
 
 function pruneProjectedGraphLayoutCache(): void {
@@ -242,7 +313,8 @@ function isSerializedProjectedGraphLayoutCacheEntry(
     typeof (entry as { key?: unknown }).key === 'string' &&
     Array.isArray(positions) &&
     positions.length <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS &&
-    positions.every(isSerializedPositionEntry)
+    positions.every(isSerializedPositionEntry) &&
+    isSerializedEdgeRouteEntries((entry as { edgeRoutes?: unknown }).edgeRoutes)
   );
 }
 
@@ -255,5 +327,50 @@ function isSerializedPositionEntry(entry: unknown): entry is [string, ProjectedG
     entry[1] !== null &&
     typeof (entry[1] as { x?: unknown }).x === 'number' &&
     typeof (entry[1] as { y?: unknown }).y === 'number'
+  );
+}
+
+function isSerializedEdgeRouteEntries(
+  entries: unknown
+): entries is [string, D3DagSugiyamaEdgeRoute][] | undefined {
+  return entries === undefined ||
+    (
+      Array.isArray(entries) &&
+      entries.length <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTES &&
+      entries.every(isSerializedEdgeRouteEntry)
+    );
+}
+
+function isSerializedEdgeRouteEntry(entry: unknown): entry is [string, D3DagSugiyamaEdgeRoute] {
+  return (
+    Array.isArray(entry) &&
+    entry.length === 2 &&
+    typeof entry[0] === 'string' &&
+    isSerializedEdgeRoute(entry[1])
+  );
+}
+
+function isSerializedEdgeRoute(route: unknown): route is D3DagSugiyamaEdgeRoute {
+  const points = (route as { points?: unknown } | undefined)?.points;
+  return (
+    typeof route === 'object' &&
+    route !== null &&
+    typeof (route as { from?: unknown }).from === 'string' &&
+    typeof (route as { to?: unknown }).to === 'string' &&
+    Array.isArray(points) &&
+    points.length >= 2 &&
+    points.length <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTE_POINTS &&
+    points.every(isSerializedLayoutPoint)
+  );
+}
+
+function isSerializedLayoutPoint(point: unknown): point is ProjectedGraphLayoutPosition {
+  return (
+    typeof point === 'object' &&
+    point !== null &&
+    typeof (point as { x?: unknown }).x === 'number' &&
+    Number.isFinite((point as { x: number }).x) &&
+    typeof (point as { y?: unknown }).y === 'number' &&
+    Number.isFinite((point as { y: number }).y)
   );
 }

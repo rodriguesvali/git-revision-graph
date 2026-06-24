@@ -10,6 +10,7 @@ try {
   parentPort?.postMessage({
     type: 'result',
     positions: [...result.positions.entries()],
+    edgeRoutes: [...result.edgeRoutes.entries()],
     profile: result.profile
   });
 } catch (error) {

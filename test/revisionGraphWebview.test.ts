@@ -505,8 +505,9 @@ test('renders single-bend edges and compact structural node styling in the shell
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /stroke-width="1\.8"/);
+  assert.match(html, /function describeRoutedEdgePath\(edge, sourceNode, targetNode\)/);
   assert.match(html, /const bendY = targetY - direction \* approachLength;/);
-  assert.match(html, /return describeEdgePath\(sourceX, sourceY, targetX, targetY\);/);
+  assert.match(html, /return routedPath;/);
   assert.match(html, /min-width: 78px;/);
 });
 

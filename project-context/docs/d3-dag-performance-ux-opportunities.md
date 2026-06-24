@@ -63,6 +63,8 @@ Implementation notes:
 
 The d3-dag layout computes link points, but the project currently returns only node positions and then builds simplified edge paths in the webview.
 
+Release status: planned as the next `1.3.0` graph readability slice in `project-context/2.build/features/1.3.0-d3-dag-edge-routes.md`.
+
 Opportunity:
 
 - Extend the layout result to optionally include default edge route points.
@@ -161,9 +163,20 @@ Implemented on 2026-06-24 as the first contained "adaptive d3-dag layout profile
 2. Kept current behavior as the default profile.
 3. Switched to `fast-two-layer` when `nodes >= 800` or `edges >= 1000`.
 4. Kept `dfs-wide` for estimated layers wider than `300` nodes, plus the realized wide-layer guard.
-5. Included profile identity in the layout cache namespace by moving to `d3-dag-sugiyama-v3`.
+5. Included profile identity in the layout cache namespace, initially moving to `d3-dag-sugiyama-v3`; the follow-up route-preservation slice superseded this with `d3-dag-sugiyama-v4`.
 6. Added regression tests for profile selection, cache identity, worker metadata, trace detail, and row direction.
 7. Validated with `npm run build` and `npm test`.
+
+Implemented on 2026-06-24 as the second contained "d3-dag edge routes" slice:
+
+1. Preserved d3-dag Sugiyama `link.points` as edge route metadata.
+2. Carried route data through worker messages, layout cache, scene edges, and webview rendering.
+3. Bumped the layout cache namespace to `d3-dag-sugiyama-v4`.
+4. Persisted bounded route data with validation.
+5. Rendered routed edge polylines for valid default layouts while keeping endpoint fallback for missing, invalid, stale, or drag-adjusted routes.
+6. Kept minimap edges straight for this slice.
+7. Added regression tests for route extraction, worker route serialization, scene route payloads, route-aware rendering, cache restoration, and shell runtime helpers.
+8. Validated with `npm run build` and `npm test`.
 
 Manual Extension Development Host loading with `gitRevisionGraph.traceLoading` remains recommended before release.
 

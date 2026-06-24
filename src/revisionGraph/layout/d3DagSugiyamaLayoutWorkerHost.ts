@@ -3,6 +3,7 @@ import { Worker } from 'node:worker_threads';
 
 import { createAbortError, throwIfAborted } from '../../errors';
 import {
+  D3DagSugiyamaEdgeRoute,
   D3DagSugiyamaLayoutInput,
   D3DagSugiyamaLayoutPosition,
   D3DagSugiyamaLayoutProfile,
@@ -12,6 +13,7 @@ import {
 interface D3DagSugiyamaLayoutWorkerSuccessMessage {
   readonly type: 'result';
   readonly positions: readonly [string, D3DagSugiyamaLayoutPosition][];
+  readonly edgeRoutes?: readonly [string, D3DagSugiyamaEdgeRoute][];
   readonly profile: D3DagSugiyamaLayoutProfile;
 }
 
@@ -60,6 +62,7 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
         if (message.type === 'result') {
           resolve({
             positions: new Map(message.positions),
+            edgeRoutes: new Map(message.edgeRoutes ?? []),
             profile: message.profile
           });
           return;
