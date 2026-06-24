@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.3.0
+
+### Release Preparation
+
+- Opened the `1.3.0` cycle as a graph layout performance and readability release after the `1.2.0` implementation baseline.
+- Version metadata is bumped to `1.3.0` in `package.json` and `package-lock.json`; VSIX packaging and Marketplace publication remain pending explicit maintainer approval.
+
+### Performance & Readability
+
+- Added adaptive d3-dag Sugiyama layout profiles so normal graphs keep the balanced layout while large or very wide projected graphs use faster decross strategies.
+- Preserved d3-dag Sugiyama edge route points through layout, worker, cache, scene, and webview rendering paths so merge-heavy and fan-out graph edges can render with clearer routed geometry.
+- Kept endpoint-based edge fallback for missing, invalid, stale, or manually drag-adjusted route data.
+- Bumped the layout cache namespace to `d3-dag-sugiyama-v4` for the new adaptive and route-preserving layout result shape.
+
 ## 1.2.0
 
 ### Release Preparation

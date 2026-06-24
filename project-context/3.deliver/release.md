@@ -2,11 +2,11 @@
 
 ## 1.3.0 Release Readiness
 
-Current package baseline: `1.2.0`.
+Current package baseline before opening: `1.2.0`.
 
 Target release: `1.3.0`.
 
-Status: Release cycle opened in planning for `1.3.0`. Package metadata has not been bumped; VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release cycle opened for `1.3.0`. Package metadata is bumped to `1.3.0` in `package.json` and `package-lock.json`; VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
@@ -40,6 +40,8 @@ Implemented slices:
 - Keep endpoint fallback for missing, invalid, stale, or drag-adjusted route data.
 - Keep minimap edges straight in this slice.
 - Added regression coverage for route extraction, worker route serialization, scene route payloads, route-aware rendering, cache restoration, and shell runtime helpers.
+- Package metadata confirmed at `1.3.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
+- Added the public `1.3.0` changelog section for release preparation, adaptive layout profiles, and d3-dag routed edge rendering.
 
 Automated verification:
 
@@ -48,6 +50,7 @@ Automated verification:
 - `npm run build` passed after d3-dag edge route implementation.
 - `npm test` passed with 459 tests after d3-dag edge route implementation.
 - `git diff --check` passed after edge route implementation and artifact updates.
+- `npm run build`, `npm test`, and `git diff --check` passed after opening `1.3.0`.
 
 Manual validation focus:
 
@@ -61,7 +64,6 @@ Manual validation focus:
 
 Release gates:
 
-- Package metadata bump to `1.3.0` remains pending explicit approval.
 - Manual Extension Development Host validation remains pending.
 - VSIX packaging remains pending explicit approval.
 - Marketplace publication remains pending explicit approval.

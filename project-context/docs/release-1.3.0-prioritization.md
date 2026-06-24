@@ -10,6 +10,7 @@ The first release slice is adaptive d3-dag Sugiyama layout profile selection. Th
 
 - Current package baseline before opening: `1.2.0`.
 - Target release: `1.3.0`.
+- Package metadata is now opened at `1.3.0` in `package.json` and `package-lock.json`.
 - `1.2.0` shipped activation/package efficiency, graph refresh reuse, merge ancestry fan-out reduction, indexed graph virtualization, nonblocking current-branch sync error handling, and incremental Show Log append updates.
 - The graph layout already uses `d3-dag` Sugiyama, cache misses run in a Node worker, and the webview renders only the visible graph window.
 - Documentation analysis in `project-context/docs/d3-dag-performance-ux-opportunities.md` identified adaptive Sugiyama quality and d3-dag `link.points` preservation as safe near-term graph performance/readability improvements.
@@ -62,7 +63,7 @@ Implementation reference:
 
 ## Acceptance Criteria
 
-- Package metadata remains unchanged until explicit release-opening approval.
+- Package metadata is bumped to `1.3.0` after release-opening approval.
 - Normal graphs continue using balanced layout behavior.
 - Large projected graphs select `fast-two-layer`.
 - Wide projected graph shapes select `dfs-wide`.
@@ -94,7 +95,7 @@ Manual Extension Development Host smoke:
 - No visible layout-mode UI in this release slice.
 - No switch to `grid()` or `zherebko()`.
 - No dependency additions.
-- No package version bump, VSIX packaging, or Marketplace publication without explicit maintainer approval.
+- No VSIX packaging or Marketplace publication without explicit maintainer approval.
 
 ## Risks
 
