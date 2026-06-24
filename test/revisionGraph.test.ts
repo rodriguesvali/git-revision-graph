@@ -26,6 +26,7 @@ import {
 import {
   buildProjectedGraphLayoutCacheKey,
   clearProjectedGraphLayoutCache,
+  getProjectedGraphLayoutProfile,
   getProjectedGraphLayoutCacheStats,
   layoutProjectedGraph,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
@@ -33,6 +34,7 @@ import {
   serializeProjectedGraphLayoutCache
 } from '../src/revisionGraph/layout/layeredLayout';
 import { calculateD3DagSugiyamaLayoutInWorker } from '../src/revisionGraph/layout/d3DagSugiyamaLayoutWorkerHost';
+import { selectD3DagSugiyamaLayoutProfile } from '../src/revisionGraph/layout/d3DagSugiyamaLayout';
 import { ProjectedGraph } from '../src/revisionGraph/model/commitGraphTypes';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 
@@ -444,7 +446,7 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
   }
   assert.equal(scene.nodes.length, 4);
   assert.equal(scene.edges.length, 4);
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v2:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v3:/);
 });
 
 test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
@@ -454,14 +456,39 @@ test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
   ]);
   const projection = projectMajorOperationsGraph(graph);
 
-  const positions = await calculateD3DagSugiyamaLayoutInWorker({
+  const result = await calculateD3DagSugiyamaLayoutInWorker({
     nodes: projection.nodes,
     edges: projection.edges
   });
 
-  assert.equal(positions.size, projection.nodes.length);
-  assert.ok(positions.has('head1'));
-  assert.ok(positions.has('base1'));
+  assert.equal(result.profile, 'balanced');
+  assert.equal(result.positions.size, projection.nodes.length);
+  assert.ok(result.positions.has('head1'));
+  assert.ok(result.positions.has('base1'));
+});
+
+test('selects adaptive d3-dag Sugiyama layout profiles by projected graph shape', () => {
+  const smallProjection = createLinearProjectedGraph(12);
+  const largeProjection = createLinearProjectedGraph(800);
+  const wideProjection = createWideProjectedGraph(301);
+
+  assert.equal(selectD3DagSugiyamaLayoutProfile(smallProjection), 'balanced');
+  assert.equal(selectD3DagSugiyamaLayoutProfile(largeProjection), 'fast-two-layer');
+  assert.equal(selectD3DagSugiyamaLayoutProfile(wideProjection), 'dfs-wide');
+});
+
+test('includes adaptive d3-dag layout profile in cache identity', () => {
+  const balancedProjection = createLinearProjectedGraph(12);
+  const fastProjection = createLinearProjectedGraph(800);
+
+  assert.equal(getProjectedGraphLayoutProfile(balancedProjection), 'balanced');
+  assert.equal(getProjectedGraphLayoutProfile(fastProjection), 'fast-two-layer');
+  assert.match(buildProjectedGraphLayoutCacheKey(balancedProjection), /^d3-dag-sugiyama-v3:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(fastProjection), /^d3-dag-sugiyama-v3:/);
+  assert.notEqual(
+    buildProjectedGraphLayoutCacheKey(balancedProjection),
+    buildProjectedGraphLayoutCacheKey(fastProjection)
+  );
 });
 
 test('builds a scene from the refs-only projected graph while preserving merge edges', async () => {
@@ -495,7 +522,7 @@ test('builds a scene from the refs-only projected graph while preserving merge e
 });
 
 test('emits revision graph scene load trace phases when tracing is enabled', async () => {
-  const events: Array<{ readonly phase: string }> = [];
+  const events: Array<{ readonly phase: string; readonly detail?: string }> = [];
   const scene = await buildRevisionGraphScene(
     buildCommitGraph([
       {
@@ -512,7 +539,10 @@ test('emits revision graph scene load trace phases when tracing is enabled', asy
   );
 
   assert.equal(scene.nodes.length, 1);
-  assert.ok(events.some((event) => event.phase === 'scene.layout.d3DagSugiyama'));
+  assert.ok(events.some((event) =>
+    event.phase === 'scene.layout.d3DagSugiyama' &&
+    event.detail?.includes('profile=balanced')
+  ));
   assert.ok(events.some((event) => event.phase === 'scene.total'));
 });
 
@@ -577,7 +607,7 @@ test('uses the d3-dag layout cache namespace', () => {
 
   const projection = projectMajorOperationsGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v2:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v3:/);
 });
 
 test('layout cache key includes ref metadata used by d3-dag placement', async () => {
@@ -797,7 +827,7 @@ test('ignores oversized serialized layout cache entries', () => {
 
   restoreProjectedGraphLayoutCache([
     {
-      key: 'd3-dag-sugiyama-v2:oversized',
+      key: 'd3-dag-sugiyama-v3:oversized',
       positions: oversizedPositions
     }
   ]);
@@ -1241,3 +1271,56 @@ test('builds compact primary ancestor next pointers for the visible scene', asyn
     s1: 'b1'
   });
 });
+
+function createLinearProjectedGraph(nodeCount: number): ProjectedGraph {
+  const nodes = Array.from({ length: nodeCount }, (_, index) => ({
+    hash: `linear-${index}`,
+    author: 'Ada',
+    date: '2026-06-24',
+    subject: `Linear ${index}`,
+    refs: index === nodeCount - 1 ? [{ name: 'main', kind: 'head' as const }] : [],
+    isBoundary: false
+  }));
+
+  return {
+    sourceGraph: buildCommitGraph([]),
+    nodes,
+    edges: nodes.slice(1).map((node, index) => ({
+      from: node.hash,
+      to: nodes[index].hash,
+      through: []
+    })),
+    visibleHashes: new Set(nodes.map((node) => node.hash))
+  };
+}
+
+function createWideProjectedGraph(width: number): ProjectedGraph {
+  const root = {
+    hash: 'wide-root',
+    author: 'Ada',
+    date: '2026-06-24',
+    subject: 'Wide root',
+    refs: [{ name: 'v1.0.0', kind: 'tag' as const }],
+    isBoundary: false
+  };
+  const tips = Array.from({ length: width }, (_, index) => ({
+    hash: `wide-tip-${index}`,
+    author: 'Ada',
+    date: '2026-06-24',
+    subject: `Wide tip ${index}`,
+    refs: [{ name: `origin/wide-${index}`, kind: 'remote' as const }],
+    isBoundary: false
+  }));
+  const nodes = [...tips, root];
+
+  return {
+    sourceGraph: buildCommitGraph([]),
+    nodes,
+    edges: tips.map((tip) => ({
+      from: tip.hash,
+      to: root.hash,
+      through: []
+    })),
+    visibleHashes: new Set(nodes.map((node) => node.hash))
+  };
+}

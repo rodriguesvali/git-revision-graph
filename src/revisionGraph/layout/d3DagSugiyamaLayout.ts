@@ -15,6 +15,9 @@ import { estimateRevisionGraphNodeHeight, estimateRevisionGraphNodeWidth } from 
 const DEFAULT_LAYER_GAP = 56;
 const DEFAULT_NODE_GAP = 44;
 const DEFAULT_DECROSS_PASSES = 4;
+const FAST_DECROSS_PASSES = 1;
+const FAST_LAYOUT_NODE_THRESHOLD = 800;
+const FAST_LAYOUT_EDGE_THRESHOLD = 1000;
 const WIDE_LAYER_DECROSS_NODE_THRESHOLD = 300;
 
 export interface D3DagSugiyamaLayoutPosition {
@@ -24,11 +27,23 @@ export interface D3DagSugiyamaLayoutPosition {
 
 export type D3DagSugiyamaLayoutInput = Pick<ProjectedGraph, 'nodes' | 'edges'>;
 
+export type D3DagSugiyamaLayoutProfile = 'balanced' | 'fast-two-layer' | 'dfs-wide';
+
+export interface D3DagSugiyamaLayoutResult {
+  readonly positions: Map<string, D3DagSugiyamaLayoutPosition>;
+  readonly profile: D3DagSugiyamaLayoutProfile;
+}
+
 export function calculateD3DagSugiyamaLayout(
   projection: D3DagSugiyamaLayoutInput
-): Map<string, D3DagSugiyamaLayoutPosition> {
+): D3DagSugiyamaLayoutResult {
+  const profile = selectD3DagSugiyamaLayoutProfile(projection);
+
   if (projection.nodes.length === 0) {
-    return new Map();
+    return {
+      positions: new Map(),
+      profile
+    };
   }
 
   const nodeByHash = new Map(projection.nodes.map((node) => [node.hash, node] as const));
@@ -42,7 +57,7 @@ export function calculateD3DagSugiyamaLayout(
 
   const layout = sugiyama()
     .layering(layeringLongestPath())
-    .decross(createRevisionGraphDecross())
+    .decross(createRevisionGraphDecross(profile))
     .coord(coordGreedy())
     .nodeSize((node: GraphNode<string, readonly [string, string]>) => {
       const projectedNode = nodeByHash.get(node.data);
@@ -66,14 +81,40 @@ export function calculateD3DagSugiyamaLayout(
     });
   }
 
-  return positions;
+  return {
+    positions,
+    profile
+  };
 }
 
-function createRevisionGraphDecross(): Decross<string, readonly [string, string]> {
+export function selectD3DagSugiyamaLayoutProfile(
+  projection: D3DagSugiyamaLayoutInput
+): D3DagSugiyamaLayoutProfile {
+  if (estimateMaxLayerNodeCount(projection) > WIDE_LAYER_DECROSS_NODE_THRESHOLD) {
+    return 'dfs-wide';
+  }
+
+  if (
+    projection.nodes.length >= FAST_LAYOUT_NODE_THRESHOLD ||
+    projection.edges.length >= FAST_LAYOUT_EDGE_THRESHOLD
+  ) {
+    return 'fast-two-layer';
+  }
+
+  return 'balanced';
+}
+
+function createRevisionGraphDecross(
+  profile: D3DagSugiyamaLayoutProfile
+): Decross<string, readonly [string, string]> {
+  const wideLayerDecross = decrossDfs();
+  if (profile === 'dfs-wide') {
+    return wideLayerDecross;
+  }
+
   const twoLayerDecross = decrossTwoLayer()
     .order(twolayerAgg())
-    .passes(DEFAULT_DECROSS_PASSES);
-  const wideLayerDecross = decrossDfs();
+    .passes(profile === 'fast-two-layer' ? FAST_DECROSS_PASSES : DEFAULT_DECROSS_PASSES);
 
   return (layers: SugiNode<string, readonly [string, string]>[][]): void => {
     if (getMaxLayerNodeCount(layers) > WIDE_LAYER_DECROSS_NODE_THRESHOLD) {
@@ -83,6 +124,58 @@ function createRevisionGraphDecross(): Decross<string, readonly [string, string]
 
     twoLayerDecross(layers);
   };
+}
+
+function estimateMaxLayerNodeCount(projection: D3DagSugiyamaLayoutInput): number {
+  if (projection.nodes.length === 0) {
+    return 0;
+  }
+
+  const nodeHashes = new Set(projection.nodes.map((node) => node.hash));
+  const indegreeByHash = new Map<string, number>(
+    projection.nodes.map((node) => [node.hash, 0])
+  );
+  const childrenByHash = new Map<string, string[]>(
+    projection.nodes.map((node) => [node.hash, []])
+  );
+
+  for (const edge of projection.edges) {
+    if (!nodeHashes.has(edge.from) || !nodeHashes.has(edge.to)) {
+      continue;
+    }
+
+    indegreeByHash.set(edge.to, (indegreeByHash.get(edge.to) ?? 0) + 1);
+    childrenByHash.get(edge.from)?.push(edge.to);
+  }
+
+  const queue = projection.nodes
+    .filter((node) => (indegreeByHash.get(node.hash) ?? 0) === 0)
+    .map((node) => node.hash);
+  const layerByHash = new Map<string, number>(queue.map((hash) => [hash, 0]));
+  let queueIndex = 0;
+
+  while (queueIndex < queue.length) {
+    const hash = queue[queueIndex];
+    queueIndex += 1;
+
+    const nextLayer = (layerByHash.get(hash) ?? 0) + 1;
+    for (const childHash of childrenByHash.get(hash) ?? []) {
+      layerByHash.set(childHash, Math.max(layerByHash.get(childHash) ?? 0, nextLayer));
+      const nextIndegree = (indegreeByHash.get(childHash) ?? 0) - 1;
+      indegreeByHash.set(childHash, nextIndegree);
+      if (nextIndegree === 0) {
+        queue.push(childHash);
+      }
+    }
+  }
+
+  const layerCounts = new Map<number, number>();
+  for (const node of projection.nodes) {
+    const layer = layerByHash.get(node.hash) ?? 0;
+    layerCounts.set(layer, (layerCounts.get(layer) ?? 0) + 1);
+  }
+
+  return Math.max(...layerCounts.values());
 }
 
 function getMaxLayerNodeCount(

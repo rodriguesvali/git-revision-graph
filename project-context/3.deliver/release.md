@@ -1,5 +1,66 @@
 # Release Readiness
 
+## 1.3.0 Release Readiness
+
+Current package baseline: `1.2.0`.
+
+Target release: `1.3.0`.
+
+Status: Release cycle opened in planning for `1.3.0`. Package metadata has not been bumped; VSIX packaging and Marketplace publication are not approved or complete.
+
+Planning and build references:
+
+- `project-context/docs/release-1.3.0-prioritization.md`
+- `project-context/docs/d3-dag-performance-ux-opportunities.md`
+- `project-context/2.build/features/1.3.0-adaptive-sugiyama-layout-plan.md`
+- `project-context/1.define/prd.md`
+- `project-context/1.define/sad.md`
+- `project-context/1.define/open-questions.md`
+
+Release direction:
+
+- Improve revision graph layout responsiveness for large and wide projected graphs.
+- Preserve the existing Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
+- Treat adaptive Sugiyama layout as the first `1.3.0` release slice.
+
+Implemented slices:
+
+- Added adaptive d3-dag Sugiyama layout profile selection with `balanced`, `fast-two-layer`, and `dfs-wide` profiles.
+- Kept normal graphs on the balanced layout profile.
+- Selected `fast-two-layer` for projected graphs with `nodes >= 800` or `edges >= 1000`.
+- Selected `dfs-wide` when estimated layer width exceeds `300` nodes and preserved the realized wide-layer DFS guard.
+- Moved layout cache identity to `d3-dag-sugiyama-v3`, including selected profile in the cache hash.
+- Added selected layout profile metadata to layout worker results.
+- Added `profile=...` to the existing `scene.layout.d3DagSugiyama` trace detail.
+- Added regression coverage for profile selection, cache identity, worker metadata, trace detail, and graph row direction.
+
+Automated verification:
+
+- `npm run build` passed after adaptive layout implementation.
+- `npm test` passed with 457 tests after adaptive layout implementation.
+- `git diff --check` passed after implementation and artifact updates.
+
+Manual validation focus:
+
+- Enable `gitRevisionGraph.traceLoading`.
+- Confirm a small repository reports `profile=balanced`.
+- Confirm a large or branch-heavy repository or synthetic equivalent reports the expected adaptive profile.
+- Verify graph loading, repository switching, scope/filter toggles, refresh, empty-cache reload, search, minimap, zoom, Center HEAD, and selection path highlighting.
+- Smoke compare, Show Log, checkout, branch creation, sync, merge, delete, reset, and conflict guards.
+
+Release gates:
+
+- Package metadata bump to `1.3.0` remains pending explicit approval.
+- Manual Extension Development Host validation remains pending.
+- VSIX packaging remains pending explicit approval.
+- Marketplace publication remains pending explicit approval.
+- Any additional `1.3.0` scope should receive a focused feature artifact before implementation.
+
+Rollback:
+
+- Revert the adaptive layout slice if large real repositories show unacceptable crossing/readability regressions or worker/profile metadata introduces runtime issues.
+- The layout cache namespace bump intentionally invalidates old persisted positions; reverting should restore the previous strategy namespace only if old cache compatibility matters for the chosen rollback.
+
 ## 1.2.0 Release Readiness
 
 Current package baseline before opening: `1.1.0`.

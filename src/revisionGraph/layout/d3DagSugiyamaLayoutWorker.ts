@@ -6,10 +6,11 @@ import {
 } from './d3DagSugiyamaLayout';
 
 try {
-  const positions = calculateD3DagSugiyamaLayout(workerData as D3DagSugiyamaLayoutInput);
+  const result = calculateD3DagSugiyamaLayout(workerData as D3DagSugiyamaLayoutInput);
   parentPort?.postMessage({
     type: 'result',
-    positions: [...positions.entries()]
+    positions: [...result.positions.entries()],
+    profile: result.profile
   });
 } catch (error) {
   parentPort?.postMessage({

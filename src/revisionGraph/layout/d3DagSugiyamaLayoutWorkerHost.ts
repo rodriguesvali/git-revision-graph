@@ -4,12 +4,15 @@ import { Worker } from 'node:worker_threads';
 import { createAbortError, throwIfAborted } from '../../errors';
 import {
   D3DagSugiyamaLayoutInput,
-  D3DagSugiyamaLayoutPosition
+  D3DagSugiyamaLayoutPosition,
+  D3DagSugiyamaLayoutProfile,
+  D3DagSugiyamaLayoutResult
 } from './d3DagSugiyamaLayout';
 
 interface D3DagSugiyamaLayoutWorkerSuccessMessage {
   readonly type: 'result';
   readonly positions: readonly [string, D3DagSugiyamaLayoutPosition][];
+  readonly profile: D3DagSugiyamaLayoutProfile;
 }
 
 interface D3DagSugiyamaLayoutWorkerErrorMessage {
@@ -25,7 +28,7 @@ type D3DagSugiyamaLayoutWorkerMessage =
 export async function calculateD3DagSugiyamaLayoutInWorker(
   projection: D3DagSugiyamaLayoutInput,
   signal?: AbortSignal
-): Promise<Map<string, D3DagSugiyamaLayoutPosition>> {
+): Promise<D3DagSugiyamaLayoutResult> {
   throwIfAborted(signal, 'The d3-dag layout worker was aborted.');
 
   return new Promise((resolve, reject) => {
@@ -55,7 +58,10 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
     worker.once('message', (message: D3DagSugiyamaLayoutWorkerMessage) => {
       settle(() => {
         if (message.type === 'result') {
-          resolve(new Map(message.positions));
+          resolve({
+            positions: new Map(message.positions),
+            profile: message.profile
+          });
           return;
         }
 

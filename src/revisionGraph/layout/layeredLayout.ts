@@ -4,7 +4,9 @@ import { isAbortError, throwIfAborted } from '../../errors';
 import { ProjectedGraph } from '../model/commitGraphTypes';
 import {
   calculateD3DagSugiyamaLayout,
-  D3DagSugiyamaLayoutInput
+  D3DagSugiyamaLayoutInput,
+  D3DagSugiyamaLayoutProfile,
+  selectD3DagSugiyamaLayoutProfile
 } from './d3DagSugiyamaLayout';
 import { calculateD3DagSugiyamaLayoutInWorker } from './d3DagSugiyamaLayoutWorkerHost';
 import {
@@ -14,7 +16,7 @@ import {
 
 const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v2';
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v3';
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -85,6 +87,8 @@ export async function layoutProjectedGraph(
 export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
   const hash = createHash('sha256');
   hash.update(PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY);
+  hash.update('\0profile\0');
+  hash.update(getProjectedGraphLayoutProfile(projection));
 
   for (const node of projection.nodes) {
     hash.update('\0node\0');
@@ -111,6 +115,10 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
   }
 
   return `${PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY}:${hash.digest('base64url')}`;
+}
+
+export function getProjectedGraphLayoutProfile(projection: ProjectedGraph): D3DagSugiyamaLayoutProfile {
+  return selectD3DagSugiyamaLayoutProfile(createD3DagSugiyamaLayoutInput(projection));
 }
 
 export function getProjectedGraphLayoutCacheStats(): ProjectedGraphLayoutCacheStats {
@@ -175,14 +183,14 @@ async function calculateProjectedGraphLayout(
 ): Promise<Map<string, ProjectedGraphLayoutPosition>> {
   const layoutInput = createD3DagSugiyamaLayoutInput(projection);
   try {
-    return await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal);
+    return (await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal)).positions;
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
     }
 
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
-    return calculateD3DagSugiyamaLayout(layoutInput);
+    return calculateD3DagSugiyamaLayout(layoutInput).positions;
   }
 }
 

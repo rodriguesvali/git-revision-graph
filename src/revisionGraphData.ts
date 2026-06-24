@@ -16,6 +16,7 @@ import {
 } from './revisionGraph/source/graphGit';
 import {
   getProjectedGraphLayoutCacheStats,
+  getProjectedGraphLayoutProfile,
   layoutProjectedGraph
 } from './revisionGraph/layout/layeredLayout';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from './revisionGraph/loadTrace';
@@ -200,6 +201,7 @@ async function layoutCommitLanes(
 ): Promise<CommitLaneLayout[]> {
   const startedAt = nowMs();
   const cacheStatsBefore = getProjectedGraphLayoutCacheStats();
+  const layoutProfile = getProjectedGraphLayoutProfile(projection);
   const positionByHash = await layoutProjectedGraph(projection, signal);
   const cacheStatsAfter = getProjectedGraphLayoutCacheStats();
   const cacheResult = cacheStatsAfter.hits > cacheStatsBefore.hits ? 'hit' : 'miss';
@@ -207,7 +209,7 @@ async function layoutCommitLanes(
     trace,
     'scene.layout.d3DagSugiyama',
     startedAt,
-    `nodes=${projection.nodes.length}; edges=${projection.edges.length}; cache=${cacheResult}; entries=${cacheStatsAfter.entries}`
+    `nodes=${projection.nodes.length}; edges=${projection.edges.length}; profile=${layoutProfile}; cache=${cacheResult}; entries=${cacheStatsAfter.entries}`
   );
   const orderedHashes = projection.nodes.map((node) => node.hash);
   const fallbackXByHash = new Map(
