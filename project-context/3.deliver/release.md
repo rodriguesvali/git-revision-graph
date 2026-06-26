@@ -1,5 +1,57 @@
 # Release Readiness
 
+## 1.4.0 Release Readiness
+
+Current package baseline before opening: `1.3.0`.
+
+Target release: `1.4.0`.
+
+Status: Release cycle opened for `1.4.0`. Package metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; implementation scope, VSIX packaging, and Marketplace publication are not approved or complete.
+
+Planning and build references:
+
+- `project-context/docs/release-1.4.0-prioritization.md`
+- `project-context/2.build/features/1.4.0-release-opening.md`
+- `project-context/1.define/prd.md`
+- `project-context/1.define/sad.md`
+- `project-context/1.define/open-questions.md`
+
+Release direction:
+
+- Preserve the existing Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
+- Select focused `1.4.0` launch items before implementation, with each item recorded under `project-context/2.build/features/`.
+- Keep VSIX packaging and Marketplace publication as explicit Deliver actions after implementation and validation.
+
+Opening baseline:
+
+- `1.3.0` is recorded as completed by maintainer confirmation.
+- `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware graph edge rendering.
+- `1.4.0` has no selected implementation scope yet.
+
+Automated verification:
+
+- Package metadata confirmed at `1.4.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
+- `git diff --check` passed after opening the `1.4.0` cycle.
+- `npm run build` passed after opening the `1.4.0` cycle.
+- `npm test` passed with 459 tests after opening the `1.4.0` cycle.
+
+Manual validation focus:
+
+- Define after `1.4.0` launch items are selected.
+- At minimum, keep graph loading, repository switching, scope/filter toggles, refresh, empty-cache reload, search, minimap, zoom, Center HEAD, selection path highlighting, Compare Results, Show Log, checkout, branch creation, sync, merge, delete, reset, and conflict guards in the release-candidate smoke matrix when touched.
+
+Release gates:
+
+- Implementation scope remains pending maintainer selection.
+- Manual Extension Development Host validation remains pending.
+- VSIX packaging remains pending explicit approval.
+- Marketplace publication remains pending explicit approval.
+
+Rollback:
+
+- Revert selected `1.4.0` implementation slices individually if they introduce regressions.
+- If only the opening metadata needs rollback, restore package metadata to `1.3.0` and remove the `1.4.0` release artifacts.
+
 ## 1.3.0 Release Readiness
 
 Current package baseline before opening: `1.2.0`.

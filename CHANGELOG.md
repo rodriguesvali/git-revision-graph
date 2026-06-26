@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0
+
+### Release Preparation
+
+- Opened the `1.4.0` cycle as the next minor release after the published `1.3.0` release.
+- Version metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; implementation scope, VSIX packaging, and Marketplace publication remain pending maintainer selection and approval.
+
 ## 1.3.0
 
 ### Release Preparation
