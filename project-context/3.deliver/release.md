@@ -6,7 +6,7 @@ Current package baseline before opening: `1.2.0`.
 
 Target release: `1.3.0`.
 
-Status: Release cycle opened for `1.3.0`. Package metadata is bumped to `1.3.0` in `package.json` and `package-lock.json`; VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release completed for `1.3.0`. Package metadata is bumped to `1.3.0` in `package.json` and `package-lock.json`; maintainer confirmation records VSIX publication and Marketplace publication as complete.
 
 Planning and build references:
 
@@ -64,10 +64,24 @@ Manual validation focus:
 
 Release gates:
 
-- Manual Extension Development Host validation remains pending.
-- VSIX packaging remains pending explicit approval.
-- Marketplace publication remains pending explicit approval.
+- Manual Extension Development Host validation is complete by maintainer confirmation.
+- VSIX publication is complete by maintainer confirmation.
+- Marketplace publication is complete by maintainer confirmation.
 - Any additional `1.3.0` scope should receive a focused feature artifact before implementation.
+
+Manual validation completed:
+
+- Maintainer confirmed the `1.3.0` release candidate was validated after automated verification.
+- Smoke coverage should be treated as including graph loading, repository switching, scope/filter toggles, refresh, empty-cache reload, search, minimap, zoom, Center HEAD, selection path highlighting, and core Git workflows unless a later regression report narrows the validated scope.
+
+VSIX publication completed:
+
+- Maintainer confirmed the `1.3.0` VSIX was published.
+
+Marketplace publication completed:
+
+- Maintainer confirmed the `1.3.0` Marketplace publication is complete.
+- Post-publication monitoring should watch for adaptive layout profile selection, route-aware edge rendering, graph refresh, virtual scrolling, and Git workflow regressions.
 
 Rollback:
 
