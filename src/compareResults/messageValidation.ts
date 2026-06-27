@@ -5,6 +5,7 @@ export type CompareResultsWebviewMessage =
   | { readonly type: 'base'; readonly itemId: string }
   | { readonly type: 'copyFileName'; readonly itemIds: readonly string[] }
   | { readonly type: 'copyFullPath'; readonly itemIds: readonly string[] }
+  | { readonly type: 'unifiedDiff' }
   | { readonly type: 'worktree'; readonly itemId: string }
   | { readonly type: 'revert'; readonly itemId: string };
 
@@ -16,6 +17,8 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
   switch (message.type) {
     case 'ready':
       return { type: 'ready' };
+    case 'unifiedDiff':
+      return { type: 'unifiedDiff' };
     case 'base':
     case 'worktree':
     case 'revert':

@@ -34,8 +34,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const layoutCachePersistence = new ProjectedGraphLayoutCachePersistence(context.workspaceState);
   layoutCachePersistence.restore();
 
-  const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri);
   const backend = createRevisionGraphBackend();
+  const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri, backend);
   let services: RefCommandServices | undefined;
   const showLogProvider = new ShowLogViewProvider(context.extensionUri, backend, compareResultsProvider, () => services);
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(

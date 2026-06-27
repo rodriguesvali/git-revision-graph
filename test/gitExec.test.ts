@@ -127,6 +127,20 @@ test('execGitWithResult preserves stderr and exit code for failing git commands'
   }
 });
 
+test('execGitWithResult accepts explicitly allowed non-zero exit codes', async () => {
+  await withFakeGitScript(
+    '#!/bin/sh\nprintf "diff output\\n"\nexit 1\n',
+    async (repositoryPath) => {
+      const result = await execGitWithResult(repositoryPath, ['diff', '--no-index'], {
+        allowedExitCodes: [1]
+      });
+
+      assert.equal(result.stdout, 'diff output\n');
+      assert.equal(result.stderr, '');
+    }
+  );
+});
+
 test('execGit aborts an in-flight git process when the signal is cancelled', async () => {
   await withFakeGitScript(
     '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',

@@ -2,6 +2,8 @@
 
 ## 1.4.0
 
+- Decided on 2026-06-26: the first `1.4.0` feature slice is a `Unified Diff` action in the `Compare Results` editor panel for ref-to-ref comparisons.
+- Decided on 2026-06-26: extend the action to ref-to-worktree Compare Results and include untracked files alongside staged and unstaged changes.
 - Which focused launch items should define the `1.4.0` minor release?
 - Should `1.4.0` prioritize graph usability/readability, review-surface efficiency, Git workflow parity, release hygiene, or a different maintainer-selected theme?
 - Which manual Extension Development Host smoke paths are mandatory once `1.4.0` launch items are selected?

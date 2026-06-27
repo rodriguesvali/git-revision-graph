@@ -83,6 +83,14 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     return this.documentBackend.loadUnifiedDiff(repository, left, right);
   }
 
+  async loadUnifiedDiffWithWorktree(
+    repository: Repository,
+    ref: string,
+    untrackedPaths: readonly string[]
+  ): Promise<string> {
+    return this.documentBackend.loadUnifiedDiffWithWorktree(repository, ref, untrackedPaths);
+  }
+
   async loadCommitDetails(repository: Repository, commitHash: string): Promise<string> {
     return this.documentBackend.loadCommitDetails(repository, commitHash);
   }

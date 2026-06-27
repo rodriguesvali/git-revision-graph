@@ -13,6 +13,7 @@ test('createCompareResultsWebviewState builds an empty compare results state', (
     kind: 'empty',
     summary: '',
     emptyMessage: 'Run a compare from the revision graph or Command Palette to keep the changed files here.',
+    canOpenUnifiedDiff: false,
     items: []
   });
 });
@@ -34,6 +35,7 @@ test('createCompareResultsWebviewState builds between-ref labels and items', () 
   assert.equal(state.summary, 'main <-> release/2026 • 2 files changed');
   assert.equal(state.sourceLabel, 'main');
   assert.equal(state.targetLabel, 'release/2026');
+  assert.equal(state.canOpenUnifiedDiff, true);
   assert.deepEqual(
     state.items.map((item) => item.path),
     ['src/a.ts', 'src/b.ts']
@@ -63,6 +65,7 @@ test('createCompareResultsWebviewState builds worktree item display paths', () =
   assert.equal(state.summary, 'feature <-> worktree • 1 file changed');
   assert.equal(state.sourceLabel, 'feature');
   assert.equal(state.targetLabel, 'Worktree');
+  assert.equal(state.canOpenUnifiedDiff, true);
   assert.equal(state.items[0].path, 'src/new-name.ts');
   assert.equal(state.items[0].originalPath, 'src/old-name.ts');
   assert.equal(state.items[0].name, 'new-name.ts');

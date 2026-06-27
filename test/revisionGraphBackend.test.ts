@@ -367,6 +367,83 @@ test('loads unified diffs through the document backend with bounded git args', a
   );
 });
 
+test('loads worktree unified diffs with sorted unique untracked file patches', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
+      'if [ "$3" = "--no-index" ]; then',
+      "  printf 'diff --git a/%s b/%s\\n' \"$6\" \"$6\"",
+      '  exit 1',
+      'fi',
+      "printf 'diff --git a/tracked.txt b/tracked.txt\\n'"
+    ].join('\n'),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const diff = await backend.loadUnifiedDiffWithWorktree(
+        repository,
+        '--option-like-ref',
+        ['src/z file.ts', 'src/a.ts', 'src/a.ts']
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(
+        diff,
+        [
+          'diff --git a/tracked.txt b/tracked.txt',
+          '',
+          'diff --git a/src/a.ts b/src/a.ts',
+          '',
+          'diff --git a/src/z file.ts b/src/z file.ts',
+          ''
+        ].join('\n')
+      );
+      assert.equal(
+        calls,
+        [
+          'diff --no-color --end-of-options --option-like-ref',
+          'diff --no-color --no-index -- /dev/null src/a.ts',
+          'diff --no-color --no-index -- /dev/null src/z file.ts',
+          ''
+        ].join('\n')
+      );
+    }
+  );
+});
+
+test('rejects worktree unified diff paths outside the repository before running git', async () => {
+  const backend = new DefaultRevisionGraphDocumentBackend();
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await assert.rejects(
+    backend.loadUnifiedDiffWithWorktree(repository, 'main', ['../outside.txt']),
+    /outside the repository/
+  );
+});
+
+test('rejects worktree unified diff errors reported for stale untracked files', async () => {
+  await withFakeGitScript(
+    [
+      '#!/bin/sh',
+      'if [ "$3" = "--no-index" ]; then',
+      "  printf \"error: Could not access '%s'\\n\" \"$6\" >&2",
+      '  exit 1',
+      'fi'
+    ].join('\n'),
+    async (repositoryPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      await assert.rejects(
+        backend.loadUnifiedDiffWithWorktree(repository, 'main', ['stale.txt']),
+        /Could not access 'stale\.txt'/
+      );
+    }
+  );
+});
+
 test('loads commit details through the document backend with bounded git args', async () => {
   await withFakeGitScript(
     [

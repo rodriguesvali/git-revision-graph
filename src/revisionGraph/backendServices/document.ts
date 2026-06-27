@@ -1,8 +1,15 @@
-import { execGit } from '../../gitExec';
+import * as path from 'node:path';
+
+import { execGit, execGitWithResult } from '../../gitExec';
 import { Repository } from '../../git';
 
 export interface RevisionGraphDocumentBackend {
   loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string>;
+  loadUnifiedDiffWithWorktree(
+    repository: Repository,
+    ref: string,
+    untrackedPaths: readonly string[]
+  ): Promise<string>;
   loadCommitDetails(repository: Repository, commitHash: string): Promise<string>;
 }
 
@@ -22,6 +29,56 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
     );
   }
 
+  async loadUnifiedDiffWithWorktree(
+    repository: Repository,
+    ref: string,
+    untrackedPaths: readonly string[]
+  ): Promise<string> {
+    const normalizedUntrackedPaths = [...new Set(
+      untrackedPaths.map((untrackedPath) => normalizeRepositoryRelativePath(untrackedPath))
+    )].sort();
+    const sections = [await execGit(
+      repository.rootUri.fsPath,
+      ['diff', '--no-color', '--end-of-options', ref],
+      {
+        maxOutputBytes: UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
+      }
+    )];
+
+    let capturedBytes = Buffer.byteLength(sections[0], 'utf8');
+    let hasContent = sections[0].length > 0;
+    for (const untrackedPath of normalizedUntrackedPaths) {
+      const separatorBytes = hasContent ? 1 : 0;
+      const remainingBytes = UNIFIED_DIFF_MAX_OUTPUT_BYTES - capturedBytes - separatorBytes;
+      if (remainingBytes <= 0) {
+        throw new Error('The unified diff exceeded the maximum captured output.');
+      }
+
+      const result = await execGitWithResult(
+        repository.rootUri.fsPath,
+        ['diff', '--no-color', '--no-index', '--', '/dev/null', untrackedPath],
+        {
+          allowedExitCodes: [1],
+          maxOutputBytes: remainingBytes,
+          timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
+        }
+      );
+      if (result.stderr.trim().length > 0) {
+        throw new Error(result.stderr.trim());
+      }
+
+      const section = result.stdout;
+      if (section.length > 0) {
+        capturedBytes += separatorBytes + Buffer.byteLength(section, 'utf8');
+        hasContent = true;
+      }
+      sections.push(section);
+    }
+
+    return sections.filter((section) => section.length > 0).join('\n');
+  }
+
   async loadCommitDetails(repository: Repository, commitHash: string): Promise<string> {
     return execGit(
       repository.rootUri.fsPath,
@@ -32,4 +89,19 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
       }
     );
   }
+}
+
+function normalizeRepositoryRelativePath(value: string): string {
+  const normalized = path.normalize(value);
+  if (
+    normalized.length === 0
+    || normalized === '.'
+    || normalized === '..'
+    || normalized.startsWith(`..${path.sep}`)
+    || path.isAbsolute(normalized)
+  ) {
+    throw new Error(`Cannot include an untracked path outside the repository: ${value}`);
+  }
+
+  return normalized.split(path.sep).join('/');
 }

@@ -4,7 +4,7 @@
 
 Open `1.4.0` as the next minor release after the completed `1.3.0` graph layout performance and readability release.
 
-The initial release objective is intentionally unselected. The maintainer should choose focused launch items before implementation begins, with each item recorded in a feature artifact under `project-context/2.build/features/`.
+The first selected slice adds a `Unified Diff` action to the Compare Results editor panel for ref-to-ref and ref-to-worktree comparisons. Additional launch items remain pending maintainer selection and should be recorded in focused feature artifacts before implementation begins.
 
 ## Context
 
@@ -13,6 +13,7 @@ The initial release objective is intentionally unselected. The maintainer should
 - Package metadata is now opened at `1.4.0` in `package.json` and `package-lock.json`.
 - `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware edge rendering.
 - The active product surface remains the Source Control-launched singleton revision graph editor, plus on-demand Compare Results and Show Log editor panels.
+- The Compare Results panel already supports file-level diff review, filtering, copy actions, compare-with-worktree, and restore workflows.
 
 ## Release Direction
 
@@ -20,6 +21,19 @@ The initial release objective is intentionally unselected. The maintainer should
 - Select `1.4.0` launch items as small, independently verifiable slices.
 - Prefer items with clear user value, bounded regression risk, and deterministic verification.
 - Keep packaging and Marketplace publication as explicit Deliver actions after implementation and validation.
+
+## Selected Scope
+
+### Priority 0: Compare Results unified diff
+
+- Add a `Unified Diff` button to ref-to-ref Compare Results sessions.
+- Reuse the existing unified diff document flow and revision graph document backend.
+- Extend the action to ref-to-worktree sessions, including staged, unstaged, and untracked changes.
+- Preserve existing Compare Results file-level actions, filtering, selection, context menus, and restore behavior.
+
+Implementation reference:
+
+- `project-context/2.build/features/1.4.0-compare-results-unified-diff.md`
 
 ## Candidate Areas
 
@@ -33,6 +47,7 @@ The initial release objective is intentionally unselected. The maintainer should
 - Package metadata reports `1.4.0`.
 - The release readiness artifact records the cycle as open and not packaged or published.
 - Selected implementation items have focused feature artifacts before coding.
+- Ref-to-ref and ref-to-worktree Compare Results sessions can open a unified diff from the review panel.
 - `npm run build`, `npm test`, and `git diff --check` pass for release-candidate work.
 - Manual Extension Development Host validation covers any changed command, graph, review, or Git workflow behavior.
 - VSIX packaging and Marketplace publication are not run without explicit maintainer approval.
@@ -76,4 +91,3 @@ Release candidate:
 
 - Describe only selected and implemented `1.4.0` improvements.
 - Avoid broad performance or workflow claims unless release validation records a reproducible workload.
-

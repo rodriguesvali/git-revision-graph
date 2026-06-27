@@ -32,6 +32,34 @@ export async function openUnifiedDiffDocument(
   }
 }
 
+export async function openUnifiedDiffWithWorktreeDocument(
+  repository: Repository,
+  ref: string,
+  label: string,
+  untrackedPaths: readonly string[],
+  backend: RevisionGraphDocumentBackend
+): Promise<void> {
+  try {
+    const stdout = await backend.loadUnifiedDiffWithWorktree(repository, ref, untrackedPaths);
+
+    if (stdout.trim().length === 0) {
+      void vscode.window.showInformationMessage(`No unified diff found between ${label} and the worktree.`);
+      return;
+    }
+
+    const document = await vscode.workspace.openTextDocument({
+      content: stdout,
+      language: 'diff'
+    });
+
+    await vscode.window.showTextDocument(document, {
+      preview: true
+    });
+  } catch (error) {
+    await vscode.window.showErrorMessage(toOperationError('Could not open the unified diff.', error));
+  }
+}
+
 export async function openCommitDetails(
   repository: Repository,
   commitHash: string,

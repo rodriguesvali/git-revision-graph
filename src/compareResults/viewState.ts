@@ -20,6 +20,7 @@ export function createCompareResultsWebviewState(
       kind: 'empty',
       summary: '',
       emptyMessage: buildCompareResultsMessage(state),
+      canOpenUnifiedDiff: false,
       items: []
     };
   }
@@ -29,6 +30,7 @@ export function createCompareResultsWebviewState(
     summary: buildCompareResultsMessage(state),
     sourceLabel: state.kind === 'between' ? state.left.label : state.target.label,
     targetLabel: state.kind === 'between' ? state.right.label : 'Worktree',
+    canOpenUnifiedDiff: true,
     items: getCompareResultItems(state).map((item) => toCompareResultsWebviewItem(item))
   };
 }

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
-import type { Change, Repository } from './git';
+import { Status, type Change, type Repository } from './git';
+import { getRepositoryRelativeChangePath } from './changePresentation';
 import {
   CompareResultItem,
   CompareResultsState
@@ -27,6 +28,11 @@ import {
   getCompareResultItems
 } from './compareResults/viewState';
 import { refreshCompareResultsWorktreeComparison } from './compareResults/worktreeRefresh';
+import type { RevisionGraphDocumentBackend } from './revisionGraph/backend';
+import {
+  openUnifiedDiffDocument,
+  openUnifiedDiffWithWorktreeDocument
+} from './revisionGraph/repository/log';
 import type { RefSelection } from './refActions';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 
@@ -43,11 +49,15 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     base: (itemId) => this.compareItemWithBase(itemId),
     copyFileName: (itemIds) => this.copyFileNames(itemIds),
     copyFullPath: (itemIds) => this.copyFullPaths(itemIds),
+    unifiedDiff: () => this.openUnifiedDiff(),
     worktree: (itemId) => this.compareItemWithWorktree(itemId),
     revert: (itemId) => this.revertItem(itemId)
   };
 
-  constructor(private readonly extensionUri: vscode.Uri) {}
+  constructor(
+    private readonly extensionUri: vscode.Uri,
+    private readonly backend: RevisionGraphDocumentBackend
+  ) {}
 
   dispose(): void {
     this.disposePanel();
@@ -159,6 +169,29 @@ export class CompareResultsViewProvider implements vscode.Disposable {
 
   private async copyFullPaths(itemIds: readonly string[]): Promise<void> {
     await copyCompareResultFullPaths(this.state, itemIds);
+  }
+
+  private async openUnifiedDiff(): Promise<void> {
+    if (this.state.kind === 'between') {
+      await openUnifiedDiffDocument(
+        this.state.repository,
+        this.state.left.refName,
+        this.state.right.refName,
+        this.backend
+      );
+    } else if (this.state.kind === 'worktree') {
+      const state = this.state;
+      const untrackedPaths = state.changes
+        .filter((change) => change.status === Status.UNTRACKED)
+        .map((change) => getRepositoryRelativeChangePath(state.repository.rootUri.fsPath, change));
+      await openUnifiedDiffWithWorktreeDocument(
+        state.repository,
+        state.target.refName,
+        state.target.label,
+        untrackedPaths,
+        this.backend
+      );
+    }
   }
 
   private findItem(itemId: string): CompareResultItem | undefined {

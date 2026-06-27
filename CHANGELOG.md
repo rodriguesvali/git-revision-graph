@@ -7,7 +7,11 @@ All notable changes to this project will be documented in this file.
 ### Release Preparation
 
 - Opened the `1.4.0` cycle as the next minor release after the published `1.3.0` release.
-- Version metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; implementation scope, VSIX packaging, and Marketplace publication remain pending maintainer selection and approval.
+- Version metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; additional implementation scope, VSIX packaging, and Marketplace publication remain pending maintainer selection and approval.
+
+### Improvements
+
+- Added a `Unified Diff` button to the `Compare Results` editor panel for ref-to-ref and ref-to-worktree comparisons, including staged, unstaged, and untracked worktree changes.
 
 ## 1.3.0
 

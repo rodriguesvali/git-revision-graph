@@ -6,12 +6,13 @@ Current package baseline before opening: `1.3.0`.
 
 Target release: `1.4.0`.
 
-Status: Release cycle opened for `1.4.0`. Package metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; implementation scope, VSIX packaging, and Marketplace publication are not approved or complete.
+Status: Release cycle opened for `1.4.0`. Package metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; the first Compare Results unified diff slice is implemented, while additional implementation scope, VSIX packaging, and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
 - `project-context/docs/release-1.4.0-prioritization.md`
 - `project-context/2.build/features/1.4.0-release-opening.md`
+- `project-context/2.build/features/1.4.0-compare-results-unified-diff.md`
 - `project-context/1.define/prd.md`
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
@@ -19,14 +20,23 @@ Planning and build references:
 Release direction:
 
 - Preserve the existing Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
-- Select focused `1.4.0` launch items before implementation, with each item recorded under `project-context/2.build/features/`.
+- Treat Compare Results unified diff as the first selected `1.4.0` feature slice.
+- Select any additional focused `1.4.0` launch items before implementation, with each item recorded under `project-context/2.build/features/`.
 - Keep VSIX packaging and Marketplace publication as explicit Deliver actions after implementation and validation.
 
 Opening baseline:
 
 - `1.3.0` is recorded as completed by maintainer confirmation.
 - `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware graph edge rendering.
-- `1.4.0` has no selected implementation scope yet.
+- `1.4.0` starts with Compare Results unified diff as the first selected implementation scope.
+
+Implemented slices:
+
+- Added a `Unified Diff` button to ref-to-ref and ref-to-worktree Compare Results sessions.
+- Routed the button through validated Compare Results webview messaging.
+- Reused the existing unified diff editor flow and revision graph document backend.
+- Added a bounded worktree unified diff backend flow covering staged, unstaged, and untracked changes.
+- Kept the action hidden for empty Compare Results state.
 
 Automated verification:
 
@@ -34,6 +44,9 @@ Automated verification:
 - `git diff --check` passed after opening the `1.4.0` cycle.
 - `npm run build` passed after opening the `1.4.0` cycle.
 - `npm test` passed with 459 tests after opening the `1.4.0` cycle.
+- `npm run build` passed after Compare Results unified diff implementation.
+- Focused Compare Results unified diff validation passed with 38 tests across message dispatch, view state, webview shell, Git execution, document backend, and webview message validation.
+- `npm test` passed with 463 tests after ref-to-ref and ref-to-worktree Compare Results unified diff implementation.
 
 Manual validation focus:
 
@@ -42,7 +55,7 @@ Manual validation focus:
 
 Release gates:
 
-- Implementation scope remains pending maintainer selection.
+- The first Compare Results unified diff slice is implemented; any additional implementation scope remains pending maintainer selection.
 - Manual Extension Development Host validation remains pending.
 - VSIX packaging remains pending explicit approval.
 - Marketplace publication remains pending explicit approval.

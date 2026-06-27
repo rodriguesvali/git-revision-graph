@@ -350,6 +350,10 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
     validateCompareResultsWebviewMessage({ type: 'copyFullPath', itemIds: ['file:0'] }),
     { type: 'copyFullPath', itemIds: ['file:0'] }
   );
+  assert.deepEqual(
+    validateCompareResultsWebviewMessage({ type: 'unifiedDiff' }),
+    { type: 'unifiedDiff' }
+  );
 });
 
 test('validateShowLogWebviewMessage rejects malformed show log messages', () => {

@@ -9,6 +9,7 @@ export interface GitExecOptions {
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
   readonly timeoutMs?: number;
+  readonly allowedExitCodes?: readonly number[];
 }
 
 export interface GitExecResult {
@@ -246,7 +247,7 @@ function execGitCapturedWithResult(
       }
 
       const resolvedStdout = currentStdout();
-      if (code === 0) {
+      if (code === 0 || (code !== null && options.allowedExitCodes?.includes(code))) {
         resolveOnce({ stdout: resolvedStdout as string & Buffer, stderr });
         return;
       }

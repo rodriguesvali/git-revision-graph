@@ -7,6 +7,7 @@ export interface CompareResultsMessageHandlers {
   readonly base: (itemId: string) => MaybePromise<void>;
   readonly copyFileName: (itemIds: readonly string[]) => MaybePromise<void>;
   readonly copyFullPath: (itemIds: readonly string[]) => MaybePromise<void>;
+  readonly unifiedDiff: () => MaybePromise<void>;
   readonly worktree: (itemId: string) => MaybePromise<void>;
   readonly revert: (itemId: string) => MaybePromise<void>;
 }
@@ -32,6 +33,9 @@ export async function dispatchCompareResultsWebviewMessage(
       return true;
     case 'copyFullPath':
       await handlers.copyFullPath(message.itemIds);
+      return true;
+    case 'unifiedDiff':
+      await handlers.unifiedDiff();
       return true;
     case 'worktree':
       await handlers.worktree(message.itemId);
