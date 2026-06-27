@@ -49,6 +49,7 @@ Implementation reference:
 - The only user-visible `1.4.0` implementation scope is Compare Results unified diff.
 - Ref-to-ref and ref-to-worktree Compare Results sessions can open a unified diff from the review panel.
 - Worktree output covers tracked staged and unstaged changes plus active untracked files.
+- Ref-to-worktree generation refreshes Compare Results immediately before opening the diff and ignores stale refresh responses.
 - Empty state does not expose the action.
 - Existing Compare Results file-level workflows remain intact.
 - `npm run build`, `npm test`, and `git diff --check` pass on the release-candidate commit.
@@ -68,7 +69,7 @@ Run on the exact release-candidate commit:
 Current candidate evidence on 2026-06-27:
 
 - `npm run build` passed.
-- `npm test` passed with 463 tests.
+- `npm test` passed with 466 tests.
 - `git diff --check` passed.
 
 ### Mandatory Extension Development Host smoke gate
@@ -79,7 +80,7 @@ Use a fresh Extension Development Host with the built-in `vscode.git` extension 
 2. Run a non-empty ref-to-ref comparison, open `Unified Diff`, and verify orientation, labels, patch contents, and native diff-language rendering.
 3. Run a ref-to-worktree comparison containing staged, unstaged, and untracked files, including a nested path and a path containing spaces; verify every active change appears in the unified output.
 4. Confirm empty Compare Results state hides `Unified Diff` and existing file open, filter, selection, copy, compare-with-worktree, context-menu, and restore actions still work.
-5. Change or delete an untracked file after opening Compare Results and confirm the action reports an error without crashing or mutating the repository.
+5. Add and remove untracked files after opening Compare Results; confirm the panel refreshes and the unified output reflects the current comparison without using stale paths.
 6. Switch the active comparison between repositories and confirm the unified diff always runs against the repository shown by Compare Results.
 7. Resize the editor panel to a narrow width and confirm the toolbar remains usable.
 8. Smoke graph reload, Compare Results, and Show Log opening to detect integration regressions around the shared backend instance.

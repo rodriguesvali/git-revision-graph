@@ -39,6 +39,7 @@ The frozen `1.4.0` scope preserves the existing Compare Results architecture:
 - Reuse the shared revision graph document backend created during extension activation.
 - Use the existing native diff-language editor presentation.
 - Keep targeted Git CLI execution inside the document backend for ref-to-ref and ref-to-worktree textual patches.
+- Refresh ref-to-worktree Compare Results through the public `vscode.git` repository API before invoking the textual patch backend, and discard refresh responses when the panel has moved to another state.
 - Add no command, menu, view, setting, dependency, or persistent panel.
 - Defer broader provider decomposition, operation-wide cancellation, and worktree snapshot redesign beyond the frozen `1.4.0` release scope.
 

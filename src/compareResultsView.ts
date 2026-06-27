@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { Status, type Change, type Repository } from './git';
-import { getRepositoryRelativeChangePath } from './changePresentation';
+import type { Change, Repository } from './git';
+import { toOperationError } from './errorDetail';
 import {
   CompareResultItem,
   CompareResultsState
@@ -27,7 +27,10 @@ import {
   createCompareResultsWebviewState,
   getCompareResultItems
 } from './compareResults/viewState';
-import { refreshCompareResultsWorktreeComparison } from './compareResults/worktreeRefresh';
+import {
+  prepareCompareResultsWorktreeUnifiedDiff,
+  refreshCompareResultsWorktreeComparison
+} from './compareResults/worktreeRefresh';
 import type { RevisionGraphDocumentBackend } from './revisionGraph/backend';
 import {
   openUnifiedDiffDocument,
@@ -181,14 +184,39 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       );
     } else if (this.state.kind === 'worktree') {
       const state = this.state;
-      const untrackedPaths = state.changes
-        .filter((change) => change.status === Status.UNTRACKED)
-        .map((change) => getRepositoryRelativeChangePath(state.repository.rootUri.fsPath, change));
+      let preparation;
+      try {
+        preparation = await prepareCompareResultsWorktreeUnifiedDiff(
+          state,
+          () => this.state
+        );
+      } catch (error) {
+        await vscode.window.showErrorMessage(toOperationError(
+          'Could not refresh Compare Results before opening the unified diff.',
+          error
+        ));
+        return;
+      }
+      if (!preparation) {
+        return;
+      }
+
+      this.state = preparation.nextState;
+      if (!preparation.request) {
+        this.refresh();
+        this.disposePanel();
+        if (preparation.infoMessage) {
+          void vscode.window.showInformationMessage(preparation.infoMessage);
+        }
+        return;
+      }
+
+      this.refresh();
       await openUnifiedDiffWithWorktreeDocument(
-        state.repository,
-        state.target.refName,
-        state.target.label,
-        untrackedPaths,
+        preparation.request.repository,
+        preparation.request.refName,
+        preparation.request.label,
+        preparation.request.untrackedPaths,
         this.backend
       );
     }
@@ -199,7 +227,13 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async refreshWorktreeComparison(repository: Repository, refName: string): Promise<void> {
-    const outcome = await refreshCompareResultsWorktreeComparison(this.state, repository, refName);
+    const state = this.state;
+    const outcome = await refreshCompareResultsWorktreeComparison(
+      state,
+      repository,
+      refName,
+      () => this.state
+    );
     if (!outcome) {
       return;
     }

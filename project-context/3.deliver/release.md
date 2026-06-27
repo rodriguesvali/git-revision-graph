@@ -30,14 +30,16 @@ Implemented slice:
 - Routed the button through validated Compare Results webview messaging.
 - Reused the existing unified diff editor flow and revision graph document backend.
 - Added a bounded worktree unified diff backend flow covering staged, unstaged, and untracked changes.
+- Refreshes the active ref-to-worktree comparison before generation and discards refresh responses when the panel has moved to another state.
 - Kept the action hidden for empty Compare Results state.
 
 Automated verification:
 
 - Package metadata confirmed at `1.4.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata.
-- Focused Compare Results unified diff validation passed with 38 tests across message dispatch, view state, webview shell, Git execution, document backend, and webview message validation.
+- Focused Compare Results unified diff validation passed with 44 tests across message dispatch, view state, worktree refresh, webview shell, Git execution, document backend, and webview message validation.
 - `npm run build` passed on the frozen release-candidate scope on 2026-06-27.
-- `npm test` passed with 463 tests on the frozen release-candidate scope on 2026-06-27.
+- Focused worktree refresh validation covers refreshed untracked paths, aligned worktrees, and stale in-flight response rejection.
+- `npm test` passed with 466 tests on the frozen release-candidate scope on 2026-06-27.
 - `git diff --check` passed on the frozen release-candidate scope on 2026-06-27.
 
 Mandatory manual validation matrix:
@@ -57,7 +59,7 @@ Smoke checklist:
 - [ ] Run a ref-to-worktree comparison containing staged, unstaged, and untracked changes, including a nested path and a path containing spaces; verify all active changes appear.
 - [ ] Confirm empty Compare Results state hides `Unified Diff`.
 - [ ] Verify existing file open, filters, selection, copy, compare-with-worktree, context-menu, and restore actions remain functional.
-- [ ] Change or delete an untracked file after opening Compare Results; confirm an actionable error appears without a crash or repository mutation.
+- [ ] Add and remove untracked files after opening Compare Results; confirm the panel refreshes and the unified output reflects the current comparison without using stale paths.
 - [ ] Switch comparisons between repositories; confirm each unified diff runs against the repository displayed by Compare Results.
 - [ ] Resize the editor panel to a narrow width and confirm the toolbar remains usable.
 - [ ] Smoke graph reload, Compare Results, and Show Log opening around the shared backend integration.

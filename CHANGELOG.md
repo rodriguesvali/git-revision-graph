@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Improvements
 
 - Added a `Unified Diff` button to the `Compare Results` editor panel for ref-to-ref and ref-to-worktree comparisons, including staged, unstaged, and untracked worktree changes.
+- Refresh the active ref-to-worktree comparison before generating its unified diff so newly added or removed untracked files do not use stale panel state.
 
 ## 1.3.0
 
