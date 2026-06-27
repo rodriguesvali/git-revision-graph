@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 
 import { API, Repository } from '../git';
-import { toErrorDetail } from '../errorDetail';
+import { toErrorDetail, toOperationError } from '../errorDetail';
+import { handleWebviewMessageSafely } from '../webviewMessageBoundary';
 import {
   isSameRepositoryPath,
   reconcileCurrentRepository,
@@ -43,7 +44,10 @@ import {
   RemoteTagPublicationRequestContext,
   isRemoteTagPublicationStateResponseCurrent
 } from './remoteTagState';
-import { runRevisionGraphFetchWorkflow } from './fetchWorkflow';
+import {
+  RevisionGraphFetchWorkflowHost,
+  runRevisionGraphFetchWorkflow
+} from './fetchWorkflow';
 import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
@@ -70,6 +74,11 @@ import {
   registerPendingFollowUpRefresh
 } from '../revisionGraphRefresh';
 import { createScriptOnlyWebviewOptions } from '../webviewOptions';
+import {
+  createMutationGuardedRepository,
+  RepositoryMutationCoordinator,
+  runGuardedRepositoryMutation
+} from '../repositoryMutationCoordinator';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -195,6 +204,8 @@ export class RevisionGraphController implements vscode.Disposable {
   private currentState: RevisionGraphViewState;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   private reusableGraphSnapshot: ReusableRevisionGraphSnapshot | undefined;
+  private readonly mutationCoordinator: RepositoryMutationCoordinator;
+  private readonly ownsMutationCoordinator: boolean;
 
   constructor(
     private readonly git: API,
@@ -203,8 +214,11 @@ export class RevisionGraphController implements vscode.Disposable {
     showLogPresenter: ShowLogPresenter,
     private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY,
-    private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined
+    private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
+    mutationCoordinator?: RepositoryMutationCoordinator
   ) {
+    this.mutationCoordinator = mutationCoordinator ?? new RepositoryMutationCoordinator();
+    this.ownsMutationCoordinator = !mutationCoordinator;
     this.actionServices = createWorkbenchRefActionServices(
       (request) => {
         void this.refresh(request);
@@ -255,6 +269,22 @@ export class RevisionGraphController implements vscode.Disposable {
         this.createRemoteTagPublicationRequestContext(repository),
       postRemoteTagStateIfCurrent: (requestContext, tagName, state) => {
         this.postRemoteTagStateIfCurrent(requestContext, tagName, state);
+      },
+      runRepositoryMutation: async (repository, action) => {
+        const outcome = await runGuardedRepositoryMutation(
+          this.mutationCoordinator,
+          repository,
+          this.actionServices,
+          action
+        );
+        if (outcome.status === 'rejected') {
+          void vscode.window.showWarningMessage(
+            'Another Git operation is already running for this repository.'
+          );
+          return undefined;
+        }
+
+        return outcome.value;
       }
     });
     this.currentRepository = reconcileCurrentRepository(git.repositories, undefined);
@@ -270,6 +300,7 @@ export class RevisionGraphController implements vscode.Disposable {
         this.handleRepositorySetChanged();
       }),
       git.onDidCloseRepository((repository) => {
+        this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
         this.detachRepository(repository);
         this.handleRepositorySetChanged();
       })
@@ -277,6 +308,12 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   dispose(): void {
+    if (this.currentRepository) {
+      this.mutationCoordinator.invalidate(this.currentRepository.rootUri.fsPath);
+    }
+    if (this.ownsMutationCoordinator) {
+      this.mutationCoordinator.dispose();
+    }
     this.renderCoordinator.cancel();
     this.disposeViewDisposables();
     this.loadTrace.dispose();
@@ -310,14 +347,36 @@ export class RevisionGraphController implements vscode.Disposable {
         }
         this.disposeViewDisposables();
       }),
-      view.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.messageDispatcher.dispatch(message, {
-          currentState: this.currentState,
-          currentRepositoryPath: this.currentRepository?.rootUri.fsPath,
-          handleMessage: async (validatedMessage) => {
-            await this.messageHandler.handleMessage(validatedMessage);
+      view.webview.onDidReceiveMessage((message: unknown) => {
+        void handleWebviewMessageSafely(
+          () => this.messageDispatcher.dispatch(message, {
+            currentState: this.currentState,
+            currentRepositoryPath: this.currentRepository?.rootUri.fsPath,
+            handleMessage: async (validatedMessage) => {
+              await this.messageHandler.handleMessage(validatedMessage);
+            }
+          }),
+          {
+            onUnexpectedError: async (error) => {
+              const detail = toOperationError('Could not handle the revision graph action.', error);
+              console.error(detail);
+              this.currentLoadingLabel = undefined;
+              this.currentLoadingMode = undefined;
+              this.currentErrorMessage = detail;
+              this.currentState = {
+                ...this.currentState,
+                loading: false,
+                loadingLabel: undefined,
+                errorMessage: detail
+              };
+              this.postHostMessage(createRevisionGraphErrorMessage(detail));
+              await vscode.window.showErrorMessage(detail);
+            },
+            reportBoundaryFailure: (error) => {
+              console.error('Revision graph error reporting failed.', error);
+            }
           }
-        });
+        );
       })
     );
     view.webview.options = createScriptOnlyWebviewOptions();
@@ -509,7 +568,29 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private async runFetchCurrentRepository(): Promise<void> {
-    await runRevisionGraphFetchWorkflow(this.currentRepository, {
+    const repository = this.currentRepository;
+    if (!repository) {
+      await runRevisionGraphFetchWorkflow(undefined, this.createFetchWorkflowHost());
+      return;
+    }
+
+    const outcome = await this.mutationCoordinator.run(repository.rootUri.fsPath, (lease) =>
+      runRevisionGraphFetchWorkflow(
+        createMutationGuardedRepository(repository, lease),
+        this.createFetchWorkflowHost(() => lease.assertCurrent())
+      )
+    );
+    if (outcome.status === 'rejected') {
+      void vscode.window.showWarningMessage(
+        'Another Git operation is already running for this repository.'
+      );
+    }
+  }
+
+  private createFetchWorkflowHost(
+    assertMutationCurrent?: () => void
+  ): RevisionGraphFetchWorkflowHost {
+    return {
       ui: this.actionServices.ui,
       postActionLoading: (label, mode) => {
         this.postActionLoading(label, mode);
@@ -521,8 +602,9 @@ export class RevisionGraphController implements vscode.Disposable {
         await this.refresh(request);
       },
       createCurrentRepositoryRefreshRequest: () => this.createCurrentRepositoryRefreshRequest('full-rebuild'),
-      getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel()
-    });
+      getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel(),
+      assertMutationCurrent
+    };
   }
 
   private getCurrentRepositoryLabel(): string {
@@ -639,6 +721,9 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private setCurrentRepository(repository: Repository | undefined): void {
     if (!isSameRepositoryPath(this.currentRepository, repository)) {
+      if (this.currentRepository) {
+        this.mutationCoordinator.invalidate(this.currentRepository.rootUri.fsPath);
+      }
       this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
       this.reusableGraphSnapshot = undefined;
     }

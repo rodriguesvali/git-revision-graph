@@ -6,7 +6,7 @@ Published package baseline: `1.4.0`.
 
 Target release: `1.5.0`.
 
-Status: Release cycle open by maintainer approval on 2026-06-27. Package metadata is `1.5.0`; implementation scope remains proposed and is not frozen or approved. No robustness implementation, dependency change, `1.5.0` packaging, or `1.5.0` publication has been performed.
+Status: Scope frozen and Build authorized by the maintainer on 2026-06-27. Package metadata is `1.5.0`; the frozen robustness slices are implemented and verified locally. Cross-platform CI observation and manual Extension Development Host validation remain pending. No `1.5.0` packaging or publication has been authorized or performed.
 
 Opening verification:
 
@@ -15,7 +15,20 @@ Opening verification:
 - `npm run build` passed through the `npm test` lifecycle.
 - `npm test` passed with 466 tests.
 
-Proposed release direction:
+Current Build verification:
+
+- Clean `npm ci` passed after development-only dependency remediation.
+- `npm run build` passed.
+- `npm test` passed with 493 tests.
+- `npm run test:platform` passed with 29 focused tests on Linux.
+- `git diff --check` passed.
+- Production and full development audits both report zero vulnerabilities.
+- Deterministic CI and RC benchmark manifests and local measurements are recorded in `project-context/2.build/features/1.5.0-robustness-hardening.md`.
+- Graphify incremental review completed with 1,010 nodes, 2,566 edges, and 51 communities.
+- Read-only `vsce ls` package-content inspection completed with 578 listed entries; no VSIX was created.
+- GitHub Actions matrix observation, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication remain incomplete.
+
+Implemented release direction:
 
 - harden asynchronous webview message boundaries and prevent overlapping or stale repository mutations;
 - make restore behavior symlink-safe and preserve tracked-file semantics;
@@ -38,11 +51,19 @@ Entry gates:
 
 - Maintainer confirmation of all `1.4.0` Deliver gates: complete on 2026-06-27.
 - `1.5.0` version metadata and cycle opening: complete on 2026-06-27.
-- Review and approve the proposed `1.5.0` scope.
-- Resolve restore strategy, mutation coordination, Git execution profiles, layout fallback threshold, CI, and dependency-change questions.
+- Per-repository mutation coordination with rejection of overlapping mutations: approved on 2026-06-27.
+- Hybrid restore using targeted `git restore`, constrained direct removal, and symlink-aware ancestor validation: approved on 2026-06-27.
+- Bounded `gitExec` profiles for metadata reads, local mutations, remote-capable CLI operations, and fallback execution: approved on 2026-06-27.
+- Synchronous d3-dag fallback limit of 200 nodes and 300 edges, with deterministic `O(V+E)` fallback above either threshold: approved on 2026-06-27.
+- Cross-platform synthetic Git, filesystem, parser, and process fixture matrix: approved on 2026-06-27.
+- Verification-only GitHub Actions matrix for Ubuntu, Windows, and macOS on Node.js 20, with no packaging or publication authority: approved on 2026-06-27.
+- Development-only dependency and lockfile audit remediation without `--force`, runtime dependency changes, or unapproved majors: approved on 2026-06-27.
+- Deterministic generated CI and release-candidate graph benchmarks with fixed seed, manifest, and approved sizes: approved on 2026-06-27.
+- Scope freeze and Build authorization: complete on 2026-06-27.
+- All technical Define questions required for Build are resolved.
 - Opening comparison baseline recorded as `0fd5263e5fdbcaaeb9d305abf981f7e01e895936`; record a new implementation baseline if approved Build work starts from a later commit.
 
-Release gates remain distinct: scope approval, implementation, automated verification, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication require explicit progression.
+Release gates remain distinct: scope approval is complete; implementation, automated verification, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication require explicit progression. Build authorization does not authorize packaging or publication.
 
 ## 1.4.0 Release Readiness
 

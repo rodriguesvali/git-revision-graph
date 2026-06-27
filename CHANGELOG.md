@@ -7,7 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Release Preparation
 
 - Opened the `1.5.0` cycle as a reliability and safety release after maintainer confirmation that `1.4.0` was published to the Marketplace.
-- Version metadata is `1.5.0` in `package.json` and `package-lock.json`; implementation scope remains proposed and is not yet frozen or approved.
+- Version metadata is `1.5.0` in `package.json` and `package-lock.json`; the robustness scope is frozen and implemented locally, while manual validation, packaging, and publication remain pending.
+
+### Reliability & Safety
+
+- Added per-repository mutation coordination with stale-operation invalidation and post-prompt Git revalidation across graph, command, Compare Results, and Show Log mutations.
+- Contained asynchronous webview handler failures and invalidated repository-dependent Compare Results and Show Log panels when repositories close.
+- Reworked file restore around targeted `git restore`, constrained direct removal, and symlink-ancestor validation so tracked type and executable metadata are preserved.
+- Added bounded Git execution profiles, process-tree termination, NUL-safe history parsing, bounded layout-worker recovery, and explicit ref-content failures.
+- Added deterministic Git fixtures and graph benchmarks plus a read-only Node.js 20 verification matrix for Ubuntu, Windows, and macOS.
 
 ## 1.4.0
 

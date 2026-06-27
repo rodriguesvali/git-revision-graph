@@ -30,7 +30,9 @@ import {
   getProjectedGraphLayoutCacheStats,
   layoutProjectedGraph,
   layoutProjectedGraphWithRoutes,
+  calculateLinearProjectedGraphFallback,
   PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS,
+  shouldUseSynchronousD3DagFallback,
   restoreProjectedGraphLayoutCache,
   serializeProjectedGraphLayoutCache
 } from '../src/revisionGraph/layout/layeredLayout';
@@ -57,6 +59,18 @@ test('parses git log output into revision graph commits', () => {
   assert.deepEqual(commits[1].refs, [{ name: 'origin/feature/demo', kind: 'remote' }]);
 });
 
+test('NUL-framed graph log preserves record and field separator characters in subjects', () => {
+  const subject = 'Keep \u001e record and \u001f field markers';
+  const commits = parseRevisionGraphLog(
+    `\x00aaa111\x00bbb222\x00Ada\x002026-06-27\x00${subject}\x00HEAD -> main`
+    + '\x00bbb222\x00\x00Linus\x002026-06-26\x00Base\x00'
+  );
+
+  assert.equal(commits.length, 2);
+  assert.equal(commits[0].subject, subject);
+  assert.equal(commits[1].hash, 'bbb222');
+});
+
 test('parses decoration labels by type', () => {
   assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, release'), [
     { name: 'main', kind: 'head' },
@@ -78,7 +92,7 @@ test('builds default git log args for all refs', () => {
       '--decorate=short',
       '--date=short',
       '--max-count=6000',
-      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
   );
 });
@@ -104,7 +118,7 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       '--decorate-refs-exclude=refs/stash',
       '--date=short',
       '--max-count=12000',
-      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
   );
 });
@@ -127,7 +141,7 @@ test('builds show log git args for a target revision', () => {
       '--date=short',
       '--max-count=51',
       '--skip=100',
-      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
       '--first-parent',
       '--end-of-options',
@@ -155,7 +169,7 @@ test('builds show log git args for a target revision with all branches enabled',
       '--date=short',
       '--max-count=51',
       '--skip=0',
-      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
       '--all'
     ]
@@ -181,7 +195,7 @@ test('builds show log git args for a revision range', () => {
       '--date=short',
       '--max-count=51',
       '--skip=0',
-      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
       '--end-of-options',
       'main..feature/demo'
@@ -206,7 +220,7 @@ test('builds show log git args with an option terminator before option-like revi
       '--date=short',
       '--max-count=51',
       '--skip=0',
-      '--pretty=format:%x1e%H\u001f%P\u001f%an\u001f%ad\u001f%D\u001f%s\u001f%b',
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
       '--first-parent',
       '--end-of-options',
@@ -238,6 +252,20 @@ test('parses show log entries with refs and short stats', () => {
     deletions: 2
   });
   assert.equal(entries[1].shortStat, undefined);
+});
+
+test('NUL-framed show log preserves record and field separator characters in commit text', () => {
+  const subject = 'Subject \u001e and \u001f';
+  const body = 'Body \u001f remains intact\nSecond \u001e line';
+  const entries = parseRevisionLogEntries(
+    `\x00aaa111\x00\x00Ada\x002026-06-27\x00HEAD -> main\x00${subject}\x00${body}`
+    + '\n 1 file changed, 1 insertion(+)'
+  );
+
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].subject, subject);
+  assert.equal(entries[0].message, `${subject}\n\n${body}`);
+  assert.deepEqual(entries[0].shortStat, { files: 1, insertions: 1, deletions: 0 });
 });
 
 test('matches show log filter text across message author hashes and references', () => {
@@ -447,7 +475,7 @@ test('uses the d3-dag Sugiyama layout for the major-operations projection', asyn
   }
   assert.equal(scene.nodes.length, 4);
   assert.equal(scene.edges.length, 4);
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v4:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v5-bounded-fallback:/);
 });
 
 test('calculates d3-dag Sugiyama layout in a worker thread', async () => {
@@ -480,14 +508,28 @@ test('selects adaptive d3-dag Sugiyama layout profiles by projected graph shape'
   assert.equal(selectD3DagSugiyamaLayoutProfile(wideProjection), 'dfs-wide');
 });
 
+test('bounds synchronous d3-dag failure fallback and provides deterministic linear layout', () => {
+  const smallProjection = createLinearProjectedGraph(200);
+  const largeProjection = createLinearProjectedGraph(201);
+
+  assert.equal(shouldUseSynchronousD3DagFallback(smallProjection), true);
+  assert.equal(shouldUseSynchronousD3DagFallback(largeProjection), false);
+
+  const first = calculateLinearProjectedGraphFallback(largeProjection);
+  const second = calculateLinearProjectedGraphFallback(largeProjection);
+  assert.deepEqual([...first.positions], [...second.positions]);
+  assert.equal(first.positions.size, largeProjection.nodes.length);
+  assert.equal(first.edgeRoutes.size, 0);
+});
+
 test('includes adaptive d3-dag layout profile in cache identity', () => {
   const balancedProjection = createLinearProjectedGraph(12);
   const fastProjection = createLinearProjectedGraph(800);
 
   assert.equal(getProjectedGraphLayoutProfile(balancedProjection), 'balanced');
   assert.equal(getProjectedGraphLayoutProfile(fastProjection), 'fast-two-layer');
-  assert.match(buildProjectedGraphLayoutCacheKey(balancedProjection), /^d3-dag-sugiyama-v4:/);
-  assert.match(buildProjectedGraphLayoutCacheKey(fastProjection), /^d3-dag-sugiyama-v4:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(balancedProjection), /^d3-dag-sugiyama-v5-bounded-fallback:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(fastProjection), /^d3-dag-sugiyama-v5-bounded-fallback:/);
   assert.notEqual(
     buildProjectedGraphLayoutCacheKey(balancedProjection),
     buildProjectedGraphLayoutCacheKey(fastProjection)
@@ -639,7 +681,7 @@ test('uses the d3-dag layout cache namespace', () => {
 
   const projection = projectMajorOperationsGraph(graph);
 
-  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v4:/);
+  assert.match(buildProjectedGraphLayoutCacheKey(projection), /^d3-dag-sugiyama-v5-bounded-fallback:/);
 });
 
 test('layout cache key includes ref metadata used by d3-dag placement', async () => {
@@ -1055,7 +1097,7 @@ test('builds current branch git log args from all refs by default so descendants
       '--decorate=short',
       '--date=short',
       '--max-count=6000',
-      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
   );
 });
@@ -1075,7 +1117,7 @@ test('builds current branch git log args from all refs for legacy descendant opt
       '--decorate=short',
       '--date=short',
       '--max-count=6000',
-      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
   );
 });
@@ -1094,7 +1136,7 @@ test('builds origin head git log args from all refs so descendants can be projec
       '--decorate=short',
       '--date=short',
       '--max-count=6000',
-      '--pretty=format:%H\u001f%P\u001f%an\u001f%ad\u001f%s\u001f%D\u001e'
+      '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
   );
 });

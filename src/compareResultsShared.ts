@@ -20,6 +20,14 @@ export type CompareResultsState =
     readonly changes: readonly Change[];
   };
 
+export function isCompareResultsStateForRepository(
+  state: CompareResultsState,
+  repository: Repository
+): boolean {
+  return state.kind !== 'empty'
+    && state.repository.rootUri.fsPath === repository.rootUri.fsPath;
+}
+
 export interface CompareResultItem {
   readonly id: string;
   readonly repository: Repository;

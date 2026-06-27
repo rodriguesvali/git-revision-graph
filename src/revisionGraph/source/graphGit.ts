@@ -9,11 +9,23 @@ import { RevisionLogEntry, RevisionLogSource } from '../../revisionGraphTypes';
 
 const FIELD_SEPARATOR = '\u001f';
 const RECORD_SEPARATOR = '\u001e';
+const NUL_FIELD_SEPARATOR = '\0';
 
 export function parseRevisionGraphLog(
   output: string,
   refKindsByName?: ReadonlyMap<string, RevisionGraphRef['kind']>
 ): ParsedRevisionGraphCommit[] {
+  if (output.includes(NUL_FIELD_SEPARATOR)) {
+    return splitFixedNulFields(output, 6).map(([hash, parents, author, date, subject, decorations]) => ({
+      hash,
+      parents: parents ? parents.split(' ').filter(Boolean) : [],
+      author,
+      date,
+      subject,
+      refs: parseDecorationRefs(decorations ?? '', refKindsByName)
+    }));
+  }
+
   return output
     .split(RECORD_SEPARATOR)
     .map((record) => record.trim())
@@ -78,7 +90,7 @@ export function parseDecorationRefs(
 }
 
 export function getRevisionGraphGitFormat(): string {
-  return `%H${FIELD_SEPARATOR}%P${FIELD_SEPARATOR}%an${FIELD_SEPARATOR}%ad${FIELD_SEPARATOR}%s${FIELD_SEPARATOR}%D${RECORD_SEPARATOR}`;
+  return '%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D';
 }
 
 export function buildRevisionGraphGitLogArgs(
@@ -202,27 +214,37 @@ function formatRevisionLogReferenceForSearch(name: string, kind: RevisionGraphRe
 }
 
 export function getRevisionLogFormat(): string {
-  return `%x1e%H${FIELD_SEPARATOR}%P${FIELD_SEPARATOR}%an${FIELD_SEPARATOR}%ad${FIELD_SEPARATOR}%D${FIELD_SEPARATOR}%s${FIELD_SEPARATOR}%b`;
+  return '%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b';
 }
 
 export function parseRevisionLogEntries(
   output: string,
   refKindsByName?: ReadonlyMap<string, RevisionGraphRef['kind']>
 ): RevisionLogEntry[] {
+  if (output.includes(NUL_FIELD_SEPARATOR)) {
+    return splitFixedNulFields(output, 7)
+      .map((fields) => parseRevisionLogRecord(
+        fields.join(NUL_FIELD_SEPARATOR),
+        refKindsByName,
+        NUL_FIELD_SEPARATOR
+      ));
+  }
+
   return output
     .split(RECORD_SEPARATOR)
     .map((record) => record.trim())
     .filter((record) => record.length > 0)
-    .map((record) => parseRevisionLogRecord(record, refKindsByName));
+    .map((record) => parseRevisionLogRecord(record, refKindsByName, FIELD_SEPARATOR));
 }
 
 function parseRevisionLogRecord(
   record: string,
-  refKindsByName?: ReadonlyMap<string, RevisionGraphRef['kind']>
+  refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']> | undefined,
+  fieldSeparator: string
 ): RevisionLogEntry {
-  const fields = record.split(FIELD_SEPARATOR);
+  const fields = record.split(fieldSeparator);
   const [hash = '', parents = '', author = '', date = '', decorations = '', subject = '', ...bodyParts] = fields;
-  const remainder = bodyParts.join(FIELD_SEPARATOR);
+  const remainder = bodyParts.join(fieldSeparator);
   const normalizedRemainder = remainder.replace(/^\n+/, '');
   const lines = normalizedRemainder.split('\n');
   const statsLine = findRevisionShortStatLine(lines);
@@ -240,6 +262,21 @@ function parseRevisionLogRecord(
     references: parseDecorationRefs(decorations, refKindsByName),
     shortStat: statsLine ? parseRevisionShortStat(statsLine) : undefined
   };
+}
+
+function splitFixedNulFields(output: string, fieldCount: number): string[][] {
+  const tokens = output.split(NUL_FIELD_SEPARATOR);
+  const offset = tokens[0]?.trim().length === 0 ? 1 : 0;
+  const records: string[][] = [];
+  for (let index = offset; index + fieldCount <= tokens.length; index += fieldCount) {
+    const fields = tokens.slice(index, index + fieldCount);
+    fields[0] = fields[0].replace(/^(?:\r?\n)+/, '');
+    fields[fieldCount - 1] = fields[fieldCount - 1].replace(/(?:\r?\n)+$/, '');
+    if (fields[0].length > 0) {
+      records.push(fields);
+    }
+  }
+  return records;
 }
 
 function findRevisionShortStatLine(lines: readonly string[]): string | undefined {

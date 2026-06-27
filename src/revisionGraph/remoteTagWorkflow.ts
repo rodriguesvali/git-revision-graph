@@ -11,8 +11,9 @@ import {
   RemoteTagPublicationRequestContext,
   resolveRemoteTagPublicationState
 } from './remoteTagState';
+import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
 
-export interface RevisionGraphRemoteTagWorkflowHost {
+export interface RevisionGraphRemoteTagWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
   createRemoteTagPublicationRequestContext(repository: Repository): RemoteTagPublicationRequestContext;
@@ -90,11 +91,18 @@ export class RevisionGraphRemoteTagWorkflow {
     }
 
     const requestContext = this.host.createRemoteTagPublicationRequestContext(repository);
-    const pushed = await this.pushTagResolvedReference(
-      repository,
-      { refName, label, kind: refKind },
-      this.host.actionServices
-    );
+    const pushed = this.host.runRepositoryMutation
+      ? await this.host.runRepositoryMutation(repository, (guardedRepository, services) =>
+        this.pushTagResolvedReference(
+          guardedRepository,
+          { refName, label, kind: refKind },
+          services
+        ))
+      : await this.pushTagResolvedReference(
+        repository,
+        { refName, label, kind: refKind },
+        this.host.actionServices
+      );
     if (pushed) {
       this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'published');
     }
@@ -111,11 +119,18 @@ export class RevisionGraphRemoteTagWorkflow {
     }
 
     const requestContext = this.host.createRemoteTagPublicationRequestContext(repository);
-    const deleted = await this.deleteRemoteTagResolvedReference(
-      repository,
-      { refName, label, kind: refKind },
-      this.host.actionServices
-    );
+    const deleted = this.host.runRepositoryMutation
+      ? await this.host.runRepositoryMutation(repository, (guardedRepository, services) =>
+        this.deleteRemoteTagResolvedReference(
+          guardedRepository,
+          { refName, label, kind: refKind },
+          services
+        ))
+      : await this.deleteRemoteTagResolvedReference(
+        repository,
+        { refName, label, kind: refKind },
+        this.host.actionServices
+      );
     if (deleted) {
       this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'unpublished');
     }

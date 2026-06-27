@@ -8,7 +8,12 @@ import {
   type CompareResultRestoreSourceSide
 } from './compareResultRestore';
 import { hasGitExitCode } from './errorDetail';
-import { execGitBinaryWithResult, execGitWithResult } from './gitExec';
+import {
+  execGitWithResult,
+  GIT_EXEC_LOCAL_MUTATION_PROFILE,
+  GIT_EXEC_METADATA_PROFILE
+} from './gitExec';
+import { executeCompareResultRestorePlan } from './compareResultRestoreExecutor';
 import { Change, Repository } from './git';
 import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
 import { CurrentBranchPushMode, PreparedRefreshHandle, RefActionServices, RemoteCheckoutInput } from './refActions';
@@ -24,9 +29,6 @@ import { buildTagPushRefspec } from './refActions/tagRefspec';
 import { validateGitTagName } from './refActions/tagValidation';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { isRefAncestorOfHead } from './revisionGraphRepository';
-
-const RESTORE_REF_CONTENT_MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
-const RESTORE_REF_CONTENT_TIMEOUT_MS = 15000;
 
 export function createWorkbenchRefActionServices(
   refresh?: (request?: RevisionGraphRefreshRequestLike) => void,
@@ -187,18 +189,18 @@ export function createWorkbenchRefActionServices(
     },
     referenceManager: {
       async createTag(repository, tagName, refName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['tag', tagName, refName]);
+        await execGitWithResult(repository.rootUri.fsPath, ['tag', tagName, refName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async resetBranch(repository, branchName, refName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName]);
+        await execGitWithResult(repository.rootUri.fsPath, ['branch', '--force', branchName, refName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async resetCurrentBranch(repository, refName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', refName]);
+        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', refName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async resetWorkspace(repository, includeUntracked) {
-        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD']);
+        await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
         if (includeUntracked) {
-          await execGitWithResult(repository.rootUri.fsPath, ['clean', '-fd']);
+          await execGitWithResult(repository.rootUri.fsPath, ['clean', '-fd'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
         }
       },
       async getRemoteNames(repository) {
@@ -218,7 +220,7 @@ export function createWorkbenchRefActionServices(
       },
       async unsetBranchUpstream(repository, branchName) {
         try {
-          await execGitWithResult(repository.rootUri.fsPath, ['branch', '--unset-upstream', branchName]);
+          await execGitWithResult(repository.rootUri.fsPath, ['branch', '--unset-upstream', branchName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
         } catch (error) {
           if (!isMissingUpstreamConfigurationError(error)) {
             throw error;
@@ -226,21 +228,21 @@ export function createWorkbenchRefActionServices(
         }
       },
       async abortMerge(repository) {
-        await execGitWithResult(repository.rootUri.fsPath, ['merge', '--abort']);
+        await execGitWithResult(repository.rootUri.fsPath, ['merge', '--abort'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async stashSave(repository) {
-        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'push', '--include-untracked', '-m', 'stash']);
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'push', '--include-untracked', '-m', 'stash'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async stashApply(repository, stashRefName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'apply', normalizeStashRefName(stashRefName)]);
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'apply', normalizeStashRefName(stashRefName)], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async stashPop(repository, stashRefName) {
-        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'pop', normalizeStashRefName(stashRefName)]);
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'pop', normalizeStashRefName(stashRefName)], GIT_EXEC_LOCAL_MUTATION_PROFILE);
       },
       async stashDrop(repository, stashRefName) {
         const normalizedStashRefName = normalizeStashRefName(stashRefName);
         const droppedHash = await resolveGitCommit(repository.rootUri.fsPath, normalizedStashRefName);
-        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'drop', normalizedStashRefName]);
+        await execGitWithResult(repository.rootUri.fsPath, ['stash', 'drop', normalizedStashRefName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
         const currentHash = await resolveGitCommit(repository.rootUri.fsPath, normalizedStashRefName);
         if (droppedHash && currentHash === droppedHash) {
           throw new Error(`Git reported that ${normalizedStashRefName} was dropped, but the stash reference still points to the same commit.`);
@@ -264,7 +266,11 @@ function normalizeStashRefName(stashRefName: string): string {
 
 async function resolveGitCommit(repositoryPath: string, refName: string): Promise<string | undefined> {
   try {
-    const { stdout } = await execGitWithResult(repositoryPath, ['rev-parse', '--verify', '--quiet', `${refName}^{commit}`]);
+    const { stdout } = await execGitWithResult(
+      repositoryPath,
+      ['rev-parse', '--verify', '--quiet', `${refName}^{commit}`],
+      GIT_EXEC_METADATA_PROFILE
+    );
     const hash = stdout.trim();
     return hash.length > 0 ? hash : undefined;
   } catch (error) {
@@ -283,7 +289,7 @@ async function getCurrentBranchAhead(repository: Repository): Promise<number | u
       '--left-right',
       '--count',
       'HEAD...@{upstream}'
-    ]);
+    ], GIT_EXEC_METADATA_PROFILE);
     const [ahead] = stdout.trim().split(/\s+/);
     const parsedAhead = Number(ahead);
     return Number.isFinite(parsedAhead) ? parsedAhead : undefined;
@@ -351,31 +357,7 @@ export async function restoreWorktreeChangeFromRef(
   sourceSide?: CompareResultRestoreSourceSide
 ): Promise<void> {
   const plan = buildCompareResultRestorePlan(change, sourceSide);
-  assertCompareResultRestorePlanInsideRepository(repository.rootUri.fsPath, plan);
-
-  for (const action of plan) {
-    switch (action.kind) {
-      case 'delete':
-        await deleteFileIfPresent(vscode.Uri.file(action.targetPath));
-        break;
-      case 'write-ref': {
-        const relativePath = path.relative(repository.rootUri.fsPath, action.refPath);
-        const gitPath = relativePath.split(path.sep).join('/');
-        const { stdout } = await execGitBinaryWithResult(
-          repository.rootUri.fsPath,
-          ['show', '--end-of-options', `${ref}:${gitPath}`],
-          {
-            maxOutputBytes: RESTORE_REF_CONTENT_MAX_OUTPUT_BYTES,
-            timeoutMs: RESTORE_REF_CONTENT_TIMEOUT_MS
-          }
-        );
-        const targetUri = vscode.Uri.file(action.targetPath);
-        await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.dirname(action.targetPath)));
-        await vscode.workspace.fs.writeFile(targetUri, stdout);
-        break;
-      }
-    }
-  }
+  await executeCompareResultRestorePlan(repository.rootUri.fsPath, ref, plan);
 }
 
 export async function hasWorktreeChangeForCompareResultRestore(
@@ -397,17 +379,6 @@ export async function hasWorktreeChangeForCompareResultRestore(
     '--untracked-files=all',
     '--',
     ...paths
-  ]);
+  ], GIT_EXEC_METADATA_PROFILE);
   return stdout.trim().length > 0;
-}
-
-async function deleteFileIfPresent(uri: vscode.Uri): Promise<void> {
-  try {
-    await vscode.workspace.fs.delete(uri, { recursive: false, useTrash: false });
-  } catch (error) {
-    const fileError = error as { readonly code?: string };
-    if (fileError.code !== 'FileNotFound') {
-      throw error;
-    }
-  }
 }

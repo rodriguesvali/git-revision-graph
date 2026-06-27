@@ -5,8 +5,9 @@ import {
   RefActionServices,
   syncCurrentHeadWithUpstream
 } from '../refActions';
+import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
 
-export interface RevisionGraphCurrentHeadWorkflowHost {
+export interface RevisionGraphCurrentHeadWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
   postCurrentState(): void;
@@ -42,28 +43,32 @@ export class RevisionGraphCurrentHeadWorkflow {
   }
 
   async syncCurrentHead(): Promise<void> {
-    await this.runCurrentHeadAction((repository) =>
-      this.syncCurrentHeadWithUpstream(repository, this.host.actionServices)
+    await this.runCurrentHeadAction((repository, services) =>
+      this.syncCurrentHeadWithUpstream(repository, services)
     );
   }
 
   async pullCurrentHead(): Promise<void> {
-    await this.runCurrentHeadAction((repository) =>
-      this.pullCurrentBranchFromUpstream(repository, this.host.actionServices)
+    await this.runCurrentHeadAction((repository, services) =>
+      this.pullCurrentBranchFromUpstream(repository, services)
     );
   }
 
   async pushCurrentHead(): Promise<void> {
-    await this.runCurrentHeadAction((repository) =>
-      this.pushCurrentBranchToUpstream(repository, this.host.actionServices)
+    await this.runCurrentHeadAction((repository, services) =>
+      this.pushCurrentBranchToUpstream(repository, services)
     );
   }
 
-  private async runCurrentHeadAction(action: (repository: Repository) => Promise<boolean>): Promise<void> {
+  private async runCurrentHeadAction(
+    action: (repository: Repository, services: RefActionServices) => Promise<boolean>
+  ): Promise<void> {
     const repository = this.host.getCurrentRepository();
-    const didScheduleRefresh = repository
-      ? await action(repository)
-      : false;
+    const didScheduleRefresh = repository && this.host.runRepositoryMutation
+      ? await this.host.runRepositoryMutation(repository, action)
+      : repository
+        ? await action(repository, this.host.actionServices)
+        : false;
     if (!didScheduleRefresh) {
       this.host.postCurrentState();
     }

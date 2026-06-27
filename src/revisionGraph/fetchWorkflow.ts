@@ -5,6 +5,7 @@ import { execGitWithResult } from '../gitExec';
 import { Repository } from '../git';
 import { RefActionUi } from '../refActions';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
+import { isAbortError } from '../errors';
 import {
   buildRevisionGraphFetchArgs,
   buildRevisionGraphFetchOptions,
@@ -24,6 +25,7 @@ export interface RevisionGraphFetchWorkflowHost {
   refresh(request?: RevisionGraphRefreshRequestLike): Promise<void>;
   createCurrentRepositoryRefreshRequest(): RevisionGraphRefreshRequestLike;
   getCurrentRepositoryLabel(): string;
+  assertMutationCurrent?(): void;
 }
 
 export async function runRevisionGraphFetchWorkflow(
@@ -41,6 +43,8 @@ export async function runRevisionGraphFetchWorkflow(
     host.postCurrentState();
     return;
   }
+
+  host.assertMutationCurrent?.();
 
   host.postActionLoading('Fetching remotes...');
 
@@ -62,6 +66,9 @@ export async function runRevisionGraphFetchWorkflow(
     );
     await host.refresh(host.createCurrentRepositoryRefreshRequest());
   } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     await host.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
     host.postCurrentState();
   }

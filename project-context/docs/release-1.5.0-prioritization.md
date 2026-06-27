@@ -2,19 +2,48 @@
 
 ## Release Status
 
-Status: Release cycle open. The implementation scope is proposed and is not yet frozen or approved.
+Status: Scope frozen and Build authorized by the maintainer on 2026-06-27.
 
 - Published package baseline: `1.4.0`.
 - Target release: `1.5.0`.
 - Package metadata is `1.5.0` in `package.json` and `package-lock.json` after the approved release opening.
 - The maintainer confirmed all `1.4.0` Deliver gates complete on 2026-06-27, including Marketplace publication.
-- Do not implement proposed slices, package a new VSIX, update dependencies, or publish until their respective gates are approved.
+- Build is authorized for the frozen slices below. VSIX packaging and Marketplace publication remain separate Deliver gates and are not authorized.
 
 ## Objective
 
 Deliver `1.5.0` as a reliability and safety release that hardens privileged Git actions, repository lifecycle handling, filesystem restore behavior, bounded process execution, graph layout failure recovery, and Git history parsing.
 
 The release should preserve the current Source Control-launched singleton graph, Compare Results and Show Log editor panels, command IDs, native VS Code ergonomics, multi-repository behavior, and existing Git workflow semantics. It should not add a new product surface.
+
+## Approved Decisions
+
+- Approved on 2026-06-27: coordinate workspace-changing actions per repository and reject overlapping mutations rather than queueing them.
+- The coordinator must release its lease on success, cancellation, validation rejection, failure, repository close, and controller disposal.
+- Read-only compare, log, clipboard, and projection operations remain outside the mutation lease.
+- Approved on 2026-06-27: use targeted `git restore` for tracked restore content so Git preserves file type and executable metadata.
+- Direct filesystem removal is permitted only when the selected source revision has no corresponding path, after repository containment and symlink-ancestor validation.
+- Revalidate repository identity and the source revision immediately before either restore path executes.
+- Approved on 2026-06-27: use explicit `gitExec` profiles of 15 seconds/1 MiB for short metadata reads, 60 seconds/4 MiB for local mutations, and 120 seconds/4 MiB for remote-capable CLI operations.
+- Preserve reviewed specialized limits for graph history, revision logs, unified diffs, commit details, ref content, and binary restore content.
+- Apply a mandatory 60 second/4 MiB fallback profile so omitted caller options cannot create unbounded Git execution.
+- Operations routed through the built-in `vscode.git` API remain governed by that API and are not redirected to `gitExec` for this policy.
+- Approved on 2026-06-27: synchronous d3-dag fallback is allowed only for projections with at most 200 nodes and at most 300 edges.
+- Above either threshold, never repeat d3-dag in the extension host; use a deterministic `O(V+E)` fallback that keeps the graph functional with simplified layout.
+- Approved on 2026-06-27: use a generated shared Git fixture with spaces, Unicode, option-like names, nested paths, renames, binary files, empty files, executable files, and commit text containing `U+001E` and `U+001F`.
+- Linux and macOS coverage must include file and directory symlinks outside the repository, broken symlinks, and executable-bit preservation.
+- Windows coverage must include an external junction, symlink behavior when supported, drive-letter and separator normalization, long paths, and paths containing spaces and Unicode.
+- A shared Node helper must exercise process trees, timeout, cancellation, and bounded stdout/stderr flooding.
+- Approved on 2026-06-27: add a verification-only GitHub Actions matrix for Ubuntu, Windows, and macOS using Node.js 20.
+- Each CI job must run `npm ci`, `npm run build`, `npm test`, `git diff --check`, `npm audit --omit=dev`, and its applicable platform fixtures.
+- CI receives read-only repository permissions and must not build a release VSIX, change versions, create tags/releases, upload to Marketplace, or use publication credentials.
+- Approved on 2026-06-27: update development dependencies and `package-lock.json` as needed to remediate audit findings without changing runtime dependencies.
+- Do not use `npm audit fix --force`; any major dependency upgrade requires separate approval and compatibility review.
+- After dependency updates, require clean install, build, full tests, production and development audits, and inspection of packaged contents before release closure.
+- Approved on 2026-06-27: use a deterministic generated graph benchmark with a fixed seed, versioned generator, and verifiable manifest instead of an external repository dependency.
+- The CI tier contains 1,200 commits, 120 branches/refs, 40 merges, and 30 tags.
+- The release-candidate tier contains 12,000 commits, 600 branches/refs, 200 merges, and 200 tags.
+- Record Git load, projection, worker, fallback, host payload, and webview rendering measurements against the same generated manifest.
 
 ## Evidence and Direction
 
@@ -31,7 +60,7 @@ The Graphify review of `src/` reported 964 nodes and 2,958 relationships. Its pr
 
 The `1.4.0` automated baseline is strong: `npm test` passes with 466 tests, `npm audit --omit=dev` reports zero production vulnerabilities, and the full development dependency audit currently reports 11 transitive findings, including 5 high-severity findings.
 
-## Proposed Scope
+## Frozen Scope
 
 ### Priority 0: mutation integrity and asynchronous containment
 
@@ -60,8 +89,8 @@ The `1.4.0` automated baseline is strong: `npm test` passes with 466 tests, `npm
 ### Priority 3: release engineering
 
 1. Add focused fault-injection and concurrency regression coverage for every slice.
-2. Establish an automated CI matrix for supported Node/VS Code build assumptions and at least Linux and Windows path/process behavior, subject to maintainer approval.
-3. Update vulnerable development dependencies only after explicit dependency-change approval; require zero high-severity production findings and no unexplained high-severity development findings for the release candidate.
+2. Establish the approved Ubuntu, Windows, and macOS GitHub Actions verification matrix on Node.js 20.
+3. Apply the approved development-only dependency remediation policy; require zero high-severity production findings and no unexplained high-severity development findings for the release candidate.
 4. Re-run Graphify after implementation and review whether new coordinators or adapters became excessive cross-community bridges.
 
 ## Sequencing and Gates
@@ -71,9 +100,10 @@ The `1.4.0` automated baseline is strong: `npm test` passes with 466 tests, `npm
 - All `1.4.0` Deliver gates confirmed complete by the maintainer. Complete.
 - Record the `1.5.0` opening comparison baseline. Complete: `0fd5263e5fdbcaaeb9d305abf981f7e01e895936`.
 - Capture baseline test count, audit output, graph load trace, and representative graph size.
-- Obtain maintainer approval for the `1.5.0` scope before implementation.
+- Generate and record the approved CI and release-candidate benchmark manifests.
+- Maintainer approval for the `1.5.0` scope and Build authorization. Complete on 2026-06-27.
 
-### Wave 1: host action safety
+### Wave 1: host action safety — implemented locally
 
 1. Webview rejection containment.
 2. Per-repository mutation coordinator.
@@ -82,7 +112,7 @@ The `1.4.0` automated baseline is strong: `npm test` passes with 466 tests, `npm
 
 Wave 1 is the critical path because later restore, Git execution, and panel changes must use the same operation context and error boundary.
 
-### Wave 2: data and process safety
+### Wave 2: data and process safety — implemented locally
 
 1. Git execution policy and process-settlement hardening.
 2. Symlink-safe restore implementation using the approved restore strategy.
@@ -91,13 +121,13 @@ Wave 1 is the critical path because later restore, Git execution, and panel chan
 
 Implement the Git execution policy before a Git-native restore strategy if that strategy is approved.
 
-### Wave 3: layout resilience
+### Wave 3: layout resilience — implemented locally
 
 1. Worker timeout and exit-without-result handling.
 2. Size-aware fallback policy that protects the extension host.
 3. Failure diagnostics and retry UX using the existing graph surface.
 
-### Wave 4: release closure
+### Wave 4: release closure — in progress
 
 1. Full automated verification and audit review.
 2. Cross-platform and Extension Development Host manual matrix.
@@ -130,6 +160,7 @@ Implement the Git execution policy before a Git-native restore strategy if that 
 - Git process fixtures for timeout, output flood, cancellation, non-zero exit, child-process settlement, and allowed exit codes.
 - Parser fixtures containing record separators, field separators, multiline bodies, unusual author text, and decorated refs.
 - Worker fixtures for result, error, non-zero exit, zero exit without result, timeout, and abort.
+- Cross-platform fixture generation must fail explicitly when a mandatory platform capability is unavailable; it must not silently skip a release-critical case.
 - Provider tests that distinguish valid empty blob content from a failed `git show`.
 - Full regression suite after every wave.
 
@@ -149,7 +180,7 @@ Implement the Git execution policy before a Git-native restore strategy if that 
 - No new command, menu, view, persistent panel, setting, or product surface.
 - No full-history graph loading or graph architecture replacement.
 - No replacement of the built-in `vscode.git` API for operations it already handles well.
-- No dependency additions or upgrades without explicit maintainer approval.
+- No runtime dependency addition or change without explicit maintainer approval; development-only audit remediation follows the approved policy, with separate approval still required for majors.
 - No opportunistic graph UX, parity, or feature work unrelated to the identified reliability risks.
 - No further version change, packaging, or publication during unapproved Build work.
 

@@ -4,7 +4,8 @@ import type { Change, Repository } from './git';
 import { toOperationError } from './errorDetail';
 import {
   CompareResultItem,
-  CompareResultsState
+  CompareResultsState,
+  isCompareResultsStateForRepository
 } from './compareResultsShared';
 import {
   renderCompareResultsWebviewHtml,
@@ -38,6 +39,11 @@ import {
 } from './revisionGraph/repository/log';
 import type { RefSelection } from './refActions';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
+import { handleWebviewMessageSafely } from './webviewMessageBoundary';
+import {
+  createMutationGuardedRepository,
+  RepositoryMutationCoordinator
+} from './repositoryMutationCoordinator';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 
@@ -59,10 +65,20 @@ export class CompareResultsViewProvider implements vscode.Disposable {
 
   constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly backend: RevisionGraphDocumentBackend
+    private readonly backend: RevisionGraphDocumentBackend,
+    private readonly mutationCoordinator?: RepositoryMutationCoordinator
   ) {}
 
   dispose(): void {
+    this.disposePanel();
+  }
+
+  handleRepositoryClosed(repository: Repository): void {
+    if (!isCompareResultsStateForRepository(this.state, repository)) {
+      return;
+    }
+
+    this.state = { kind: 'empty' };
     this.disposePanel();
   }
 
@@ -117,9 +133,33 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async revertToItem(item: CompareResultItem): Promise<void> {
-    if (await restoreCompareResultItemToWorktree(item) && item.worktreeRef) {
+    const restored = this.mutationCoordinator
+      ? await this.runRestoreMutation(item)
+      : await restoreCompareResultItemToWorktree(item);
+    if (restored && item.worktreeRef) {
       await this.refreshWorktreeComparison(item.repository, item.worktreeRef);
     }
+  }
+
+  private async runRestoreMutation(item: CompareResultItem): Promise<boolean> {
+    const outcome = await this.mutationCoordinator!.run(
+      item.repository.rootUri.fsPath,
+      (lease) => restoreCompareResultItemToWorktree(
+        {
+          ...item,
+          repository: createMutationGuardedRepository(item.repository, lease)
+        },
+        undefined,
+        () => lease.assertCurrent()
+      )
+    );
+    if (outcome.status === 'rejected') {
+      void vscode.window.showWarningMessage(
+        'Another Git operation is already running for this repository.'
+      );
+      return false;
+    }
+    return outcome.value;
   }
 
   private refresh(): void {
@@ -280,8 +320,20 @@ export class CompareResultsViewProvider implements vscode.Disposable {
         }
         this.disposePanelDisposables();
       }),
-      panel.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.handleMessage(message);
+      panel.webview.onDidReceiveMessage((message: unknown) => {
+        void handleWebviewMessageSafely(
+          () => this.handleMessage(message),
+          {
+            onUnexpectedError: async (error) => {
+              const detail = toOperationError('Could not handle the Compare Results action.', error);
+              console.error(detail);
+              await vscode.window.showErrorMessage(detail);
+            },
+            reportBoundaryFailure: (error) => {
+              console.error('Compare Results error reporting failed.', error);
+            }
+          }
+        );
       })
     );
   }

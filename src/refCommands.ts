@@ -13,6 +13,7 @@ import {
   getReferenceHandle,
   getReferenceShortLabel
 } from './refPresentation';
+import type { RepositoryMutationRunner } from './repositoryMutationCoordinator';
 
 export interface RefQuickPickItem {
   readonly label: string;
@@ -34,7 +35,7 @@ export interface RepositoryPickItem {
   readonly repository: Repository;
 }
 
-export interface RefCommandServices extends RefActionServices {
+export interface RefCommandServices extends RefActionServices, Partial<RepositoryMutationRunner> {
   readonly ui: RefActionServices['ui'] & RefCommandUi;
 }
 
@@ -114,15 +115,18 @@ export async function checkoutReference(
     return;
   }
 
-  await checkoutResolvedReference(
-    repository,
-    {
-      refName: selected.refName,
-      label: selected.label,
-      kind: toActionKind(selected.ref)
-    },
-    services
-  );
+  const target = {
+    refName: selected.refName,
+    label: selected.label,
+    kind: toActionKind(selected.ref)
+  };
+  if (services.runRepositoryMutation) {
+    await services.runRepositoryMutation(repository, (guardedRepository, guardedServices) =>
+      checkoutResolvedReference(guardedRepository, target, guardedServices)
+    );
+  } else {
+    await checkoutResolvedReference(repository, target, services);
+  }
 }
 
 export async function mergeReference(
@@ -142,11 +146,14 @@ export async function mergeReference(
     return;
   }
 
-  await mergeResolvedReference(
-    repository,
-    { refName: selected.refName, label: selected.label },
-    services
-  );
+  const target = { refName: selected.refName, label: selected.label };
+  if (services.runRepositoryMutation) {
+    await services.runRepositoryMutation(repository, (guardedRepository, guardedServices) =>
+      mergeResolvedReference(guardedRepository, target, guardedServices)
+    );
+  } else {
+    await mergeResolvedReference(repository, target, services);
+  }
 }
 
 export function buildRepositoryPickItems(

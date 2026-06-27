@@ -46,10 +46,17 @@ import {
 import {
   addShowLogCachedChanges,
   createHiddenShowLogState,
+  isShowLogStateForRepository,
   ShowLogState
 } from './showLogShared';
 import { renderShowLogWebviewHtml } from './showLogWebview';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
+import { handleWebviewMessageSafely } from './webviewMessageBoundary';
+import {
+  createMutationGuardedRefActionServices,
+  createMutationGuardedRepository,
+  RepositoryMutationCoordinator
+} from './repositoryMutationCoordinator';
 
 const SHOW_LOG_PAGE_SIZE = 50;
 
@@ -91,11 +98,23 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     private readonly extensionUri: vscode.Uri,
     private readonly backend: RevisionGraphLogBackend & RevisionGraphDocumentBackend & ShowLogBackend,
     private readonly compareResultsPresenter: CompareResultsPresenter,
-    private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined
+    private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined,
+    private readonly mutationCoordinator?: RepositoryMutationCoordinator
   ) {}
 
   dispose(): void {
     this.logLoadRequests.cancelActive();
+    this.disposePanel();
+  }
+
+  handleRepositoryClosed(repository: Repository): void {
+    if (!isShowLogStateForRepository(this.state, repository)) {
+      return;
+    }
+
+    this.logLoadRequests.invalidateAndCancel();
+    this.expansionRequests.invalidate();
+    this.state = createHiddenShowLogState();
     this.disposePanel();
   }
 
@@ -506,7 +525,21 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    await revertShowLogFileChangeToCommit(repository, commitHash, change);
+    if (!this.mutationCoordinator) {
+      await revertShowLogFileChangeToCommit(repository, commitHash, change);
+      return;
+    }
+
+    const outcome = await this.mutationCoordinator.run(repository.rootUri.fsPath, (lease) =>
+      revertShowLogFileChangeToCommit(
+        createMutationGuardedRepository(repository, lease),
+        commitHash,
+        change,
+        undefined,
+        () => lease.assertCurrent()
+      )
+    );
+    this.reportRejectedMutation(outcome.status);
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
@@ -581,11 +614,23 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
     const loadedCommitHashes = new Set(this.state.entries.map((entry) => entry.hash));
     const selectedLoadedHashes = commitHashes.filter((hash) => loadedCommitHashes.has(hash));
-    await cherryPickShowLogCommits(
-      this.state.repository,
-      selectedLoadedHashes,
-      this.getRefActionServices()
+    const repository = this.state.repository;
+    const services = this.getRefActionServices();
+    if (!this.mutationCoordinator || !services) {
+      await cherryPickShowLogCommits(repository, selectedLoadedHashes, services);
+      return;
+    }
+
+    const outcome = await this.mutationCoordinator.run(repository.rootUri.fsPath, (lease) =>
+      cherryPickShowLogCommits(
+        createMutationGuardedRepository(repository, lease),
+        selectedLoadedHashes,
+        createMutationGuardedRefActionServices(services, lease),
+        undefined,
+        () => lease.assertCurrent()
+      )
     );
+    this.reportRejectedMutation(outcome.status);
   }
 
   private async resetToCommit(commitHash: string): Promise<void> {
@@ -593,12 +638,30 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       return;
     }
 
-    await resetShowLogCommit(
-      this.state.repository,
-      this.state.entries,
-      commitHash,
-      this.getRefActionServices()
+    const repository = this.state.repository;
+    const services = this.getRefActionServices();
+    if (!this.mutationCoordinator || !services) {
+      await resetShowLogCommit(repository, this.state.entries, commitHash, services);
+      return;
+    }
+
+    const outcome = await this.mutationCoordinator.run(repository.rootUri.fsPath, (lease) =>
+      resetShowLogCommit(
+        createMutationGuardedRepository(repository, lease),
+        this.state.entries,
+        commitHash,
+        createMutationGuardedRefActionServices(services, lease)
+      )
     );
+    this.reportRejectedMutation(outcome.status);
+  }
+
+  private reportRejectedMutation(status: 'completed' | 'rejected'): void {
+    if (status === 'rejected') {
+      void vscode.window.showWarningMessage(
+        'Another Git operation is already running for this repository.'
+      );
+    }
   }
 
   private postState(): void {
@@ -662,8 +725,29 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         }
         this.disposePanelDisposables();
       }),
-      panel.webview.onDidReceiveMessage(async (message: unknown) => {
-        await this.handleMessage(message);
+      panel.webview.onDidReceiveMessage((message: unknown) => {
+        void handleWebviewMessageSafely(
+          () => this.handleMessage(message),
+          {
+            onUnexpectedError: async (error) => {
+              const detail = toOperationError('Could not handle the Show Log action.', error);
+              console.error(detail);
+              if (this.state.kind === 'visible') {
+                this.state = {
+                  ...this.state,
+                  loading: false,
+                  loadingMore: false,
+                  errorMessage: detail
+                };
+                this.postState();
+              }
+              await vscode.window.showErrorMessage(detail);
+            },
+            reportBoundaryFailure: (error) => {
+              console.error('Show Log error reporting failed.', error);
+            }
+          }
+        );
       })
     );
   }

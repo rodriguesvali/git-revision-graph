@@ -19,7 +19,9 @@ const PROJECTED_GRAPH_LAYOUT_CACHE_MAX_ENTRIES = 12;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS = 2500;
 export const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTES = 5000;
 const PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_ROUTE_POINTS = 32;
-const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v4';
+const PROJECTED_GRAPH_LAYOUT_STRATEGY_KEY = 'd3-dag-sugiyama-v5-bounded-fallback';
+export const SYNCHRONOUS_D3_DAG_FALLBACK_MAX_NODES = 200;
+export const SYNCHRONOUS_D3_DAG_FALLBACK_MAX_EDGES = 300;
 
 const projectedGraphLayoutCache = new Map<string, ProjectedGraphLayoutCacheEntry>();
 const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
@@ -219,8 +221,64 @@ async function calculateProjectedGraphLayout(
     }
 
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
-    return toProjectedGraphLayoutResult(calculateD3DagSugiyamaLayout(layoutInput));
+    return shouldUseSynchronousD3DagFallback(projection)
+      ? toProjectedGraphLayoutResult(calculateD3DagSugiyamaLayout(layoutInput))
+      : calculateLinearProjectedGraphFallback(projection);
   }
+}
+
+export function shouldUseSynchronousD3DagFallback(projection: ProjectedGraph): boolean {
+  return projection.nodes.length <= SYNCHRONOUS_D3_DAG_FALLBACK_MAX_NODES
+    && projection.edges.length <= SYNCHRONOUS_D3_DAG_FALLBACK_MAX_EDGES;
+}
+
+export function calculateLinearProjectedGraphFallback(
+  projection: ProjectedGraph
+): ProjectedGraphLayoutResult {
+  const nodeIndexes = new Map(projection.nodes.map((node, index) => [node.hash, index] as const));
+  const incomingCounts = new Array<number>(projection.nodes.length).fill(0);
+  const outgoing = Array.from({ length: projection.nodes.length }, () => [] as number[]);
+  for (const edge of projection.edges) {
+    const fromIndex = nodeIndexes.get(edge.from);
+    const toIndex = nodeIndexes.get(edge.to);
+    if (fromIndex === undefined || toIndex === undefined) {
+      continue;
+    }
+    outgoing[fromIndex].push(toIndex);
+    incomingCounts[toIndex] += 1;
+  }
+
+  const layers = new Array<number>(projection.nodes.length).fill(0);
+  const queue: number[] = [];
+  for (let index = 0; index < incomingCounts.length; index += 1) {
+    if (incomingCounts[index] === 0) {
+      queue.push(index);
+    }
+  }
+  for (let cursor = 0; cursor < queue.length; cursor += 1) {
+    const fromIndex = queue[cursor];
+    for (const toIndex of outgoing[fromIndex]) {
+      layers[toIndex] = Math.max(layers[toIndex], layers[fromIndex] + 1);
+      incomingCounts[toIndex] -= 1;
+      if (incomingCounts[toIndex] === 0) {
+        queue.push(toIndex);
+      }
+    }
+  }
+
+  const laneCounts = new Map<number, number>();
+  const positions = new Map<string, ProjectedGraphLayoutPosition>();
+  for (let index = 0; index < projection.nodes.length; index += 1) {
+    const layer = layers[index];
+    const lane = laneCounts.get(layer) ?? 0;
+    laneCounts.set(layer, lane + 1);
+    positions.set(projection.nodes[index].hash, {
+      x: lane * 220,
+      y: layer * 100
+    });
+  }
+
+  return { positions, edgeRoutes: new Map() };
 }
 
 function createD3DagSugiyamaLayoutInput(projection: ProjectedGraph): D3DagSugiyamaLayoutInput {

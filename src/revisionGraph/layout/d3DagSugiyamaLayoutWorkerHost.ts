@@ -27,17 +27,32 @@ type D3DagSugiyamaLayoutWorkerMessage =
   | D3DagSugiyamaLayoutWorkerSuccessMessage
   | D3DagSugiyamaLayoutWorkerErrorMessage;
 
+const DEFAULT_LAYOUT_WORKER_TIMEOUT_MS = 30_000;
+
+export interface D3DagSugiyamaLayoutWorkerLike {
+  once(event: 'message', listener: (message: D3DagSugiyamaLayoutWorkerMessage) => void): this;
+  once(event: 'error', listener: (error: Error) => void): this;
+  once(event: 'exit', listener: (code: number) => void): this;
+  removeAllListeners(): this;
+  terminate(): Promise<number>;
+}
+
+export type D3DagSugiyamaLayoutWorkerFactory = (
+  projection: D3DagSugiyamaLayoutInput
+) => D3DagSugiyamaLayoutWorkerLike;
+
 export async function calculateD3DagSugiyamaLayoutInWorker(
   projection: D3DagSugiyamaLayoutInput,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  timeoutMs = DEFAULT_LAYOUT_WORKER_TIMEOUT_MS,
+  createWorker: D3DagSugiyamaLayoutWorkerFactory = createDefaultWorker
 ): Promise<D3DagSugiyamaLayoutResult> {
   throwIfAborted(signal, 'The d3-dag layout worker was aborted.');
 
   return new Promise((resolve, reject) => {
     let settled = false;
-    const worker = new Worker(join(__dirname, 'd3DagSugiyamaLayoutWorker.js'), {
-      workerData: projection
-    });
+    const worker = createWorker(projection);
+    let timeout: NodeJS.Timeout | undefined;
 
     const settle = (callback: () => void): void => {
       if (settled) {
@@ -46,6 +61,10 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
 
       settled = true;
       signal?.removeEventListener('abort', abort);
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = undefined;
+      }
       worker.removeAllListeners();
       callback();
     };
@@ -56,6 +75,12 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
     }
 
     signal?.addEventListener('abort', abort, { once: true });
+    timeout = setTimeout(() => {
+      void worker.terminate();
+      const error = new Error(`The d3-dag layout worker exceeded the timeout of ${timeoutMs} ms.`);
+      error.name = 'TimeoutError';
+      settle(() => reject(error));
+    }, timeoutMs);
 
     worker.once('message', (message: D3DagSugiyamaLayoutWorkerMessage) => {
       settle(() => {
@@ -75,10 +100,18 @@ export async function calculateD3DagSugiyamaLayoutInWorker(
       settle(() => reject(error));
     });
     worker.once('exit', (code) => {
-      if (code !== 0) {
-        settle(() => reject(new Error(`d3-dag layout worker exited with code ${code}.`)));
-      }
+      settle(() => reject(new Error(
+        code === 0
+          ? 'd3-dag layout worker exited without returning a result.'
+          : `d3-dag layout worker exited with code ${code}.`
+      )));
     });
+  });
+}
+
+function createDefaultWorker(projection: D3DagSugiyamaLayoutInput): D3DagSugiyamaLayoutWorkerLike {
+  return new Worker(join(__dirname, 'd3DagSugiyamaLayoutWorker.js'), {
+    workerData: projection
   });
 }
 

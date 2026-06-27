@@ -1,6 +1,10 @@
 import { Repository } from '../../git';
 import { hasGitExitCode } from '../../errorDetail';
-import { execGit, execGitWithResult } from '../../gitExec';
+import {
+  execGit,
+  execGitWithResult,
+  GIT_EXEC_METADATA_PROFILE
+} from '../../gitExec';
 import { RevisionGraphProjectionOptions } from '../../revisionGraphData';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { buildCommitGraphFromGitLog, buildRevisionGraphGitLogArgs } from '../source/graphGit';
@@ -14,7 +18,11 @@ export async function loadRevisionGraphSnapshot(
   const refKindsByName = buildRevisionGraphRefKinds(await repository.getRefs());
   const stdout = await execGit(
     repository.rootUri.fsPath,
-    buildRevisionGraphGitLogArgs(limit, options)
+    buildRevisionGraphGitLogArgs(limit, options),
+    {
+      timeoutMs: 60_000,
+      maxOutputBytes: 32 * 1024 * 1024
+    }
   );
 
   return {
@@ -34,7 +42,7 @@ export async function isRefAncestorOfHead(
     await execGitWithResult(
       repository.rootUri.fsPath,
       ['merge-base', '--is-ancestor', '--end-of-options', refName, headRefName],
-      { signal }
+      { ...GIT_EXEC_METADATA_PROFILE, signal }
     );
     return true;
   } catch (error) {

@@ -4,10 +4,27 @@ import assert from 'node:assert/strict';
 import {
   applyCompareResultsWorktreeRefresh,
   buildCompareResultItems,
-  buildCompareResultsMessage
+  buildCompareResultsMessage,
+  isCompareResultsStateForRepository
 } from '../src/compareResultsShared';
 import { createChange, createRepository } from './fakes';
 import { Status } from '../src/git';
+
+test('matches Compare Results state only to its owning repository', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const otherRepository = createRepository({ root: '/workspace/other' });
+  const state = {
+    kind: 'between' as const,
+    repository,
+    left: { refName: 'main', label: 'main' },
+    right: { refName: 'feature', label: 'feature' },
+    changes: []
+  };
+
+  assert.equal(isCompareResultsStateForRepository(state, repository), true);
+  assert.equal(isCompareResultsStateForRepository(state, otherRepository), false);
+  assert.equal(isCompareResultsStateForRepository({ kind: 'empty' }, repository), false);
+});
 
 test('buildCompareResultItems marks ref-to-ref entries with the between context value', () => {
   const repository = createRepository({ root: '/workspace/repo' });

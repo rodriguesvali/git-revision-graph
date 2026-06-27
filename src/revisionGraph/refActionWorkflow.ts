@@ -17,8 +17,9 @@ import {
   popStashResolvedReference,
   dropStashResolvedReference
 } from '../refActions';
+import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
 
-export interface RevisionGraphRefActionWorkflowHost {
+export interface RevisionGraphRefActionWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
 }
@@ -172,8 +173,8 @@ export class RevisionGraphRefActionWorkflow {
   }
 
   async abortMerge(): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
-      this.abortCurrentMerge(repository, this.host.actionServices)
+    await this.runMutationWithCurrentRepository((repository, services) =>
+      this.abortCurrentMerge(repository, services)
     );
   }
 
@@ -204,107 +205,103 @@ export class RevisionGraphRefActionWorkflow {
   }
 
   async checkout(refName: string, refKind: RefActionKind): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.checkoutResolvedReference(
         repository,
         { refName, label: refName, kind: refKind },
-        this.host.actionServices
+        services
       )
     );
   }
 
   async createBranch(revision: string, label: string, refKind: RefActionKind): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.createBranchFromResolvedReference(
         repository,
         { refName: revision, label, kind: refKind },
-        this.host.actionServices
+        services
       )
     );
   }
 
   async createTag(revision: string, label: string, refKind: RefActionKind): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.createTagFromResolvedReference(
         repository,
         { refName: revision, label, kind: refKind },
-        this.host.actionServices
+        services
       )
     );
   }
 
   async publishBranch(refName: string, label: string, refKind: RefActionKind): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.publishLocalBranchResolvedReference(
         repository,
         { refName, label, kind: refKind },
-        this.host.actionServices
+        services
       )
     );
   }
 
   async resetCurrentWorkspace(includeUntracked: boolean): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
-      this.resetCurrentBranchWorkspace(repository, includeUntracked, this.host.actionServices)
+    await this.runMutationWithCurrentRepository((repository, services) =>
+      this.resetCurrentBranchWorkspace(repository, includeUntracked, services)
     );
   }
 
   async stashSave(): Promise<boolean> {
-    const repository = this.host.getCurrentRepository();
-    return repository
-      ? this.saveCurrentWorkspaceToStash(repository, this.host.actionServices)
-      : false;
+    return (await this.runMutationWithCurrentRepository((repository, services) =>
+      this.saveCurrentWorkspaceToStash(repository, services)
+    )) ?? false;
   }
 
   async stashApply(refName: string): Promise<boolean> {
-    const repository = this.host.getCurrentRepository();
-    return repository
-      ? this.applyStashResolvedReference(
+    return (await this.runMutationWithCurrentRepository((repository, services) =>
+      this.applyStashResolvedReference(
         repository,
         { refName, label: refName, kind: 'stash' },
-        this.host.actionServices
+        services
       )
-      : false;
+    )) ?? false;
   }
 
   async stashPop(refName: string): Promise<boolean> {
-    const repository = this.host.getCurrentRepository();
-    return repository
-      ? this.popStashResolvedReference(
+    return (await this.runMutationWithCurrentRepository((repository, services) =>
+      this.popStashResolvedReference(
         repository,
         { refName, label: refName, kind: 'stash' },
-        this.host.actionServices
+        services
       )
-      : false;
+    )) ?? false;
   }
 
   async stashDrop(refName: string): Promise<boolean> {
-    const repository = this.host.getCurrentRepository();
-    return repository
-      ? this.dropStashResolvedReference(
+    return (await this.runMutationWithCurrentRepository((repository, services) =>
+      this.dropStashResolvedReference(
         repository,
         { refName, label: refName, kind: 'stash' },
-        this.host.actionServices
+        services
       )
-      : false;
+    )) ?? false;
   }
 
   async deleteReference(refName: string, refKind: RefActionKind): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.deleteResolvedReference(
         repository,
         { refName, label: refName, kind: refKind },
-        this.host.actionServices
+        services
       )
     );
   }
 
   async merge(refName: string): Promise<void> {
-    await this.runWithCurrentRepository((repository) =>
+    await this.runMutationWithCurrentRepository((repository, services) =>
       this.mergeResolvedReference(
         repository,
         { refName, label: refName },
-        this.host.actionServices
+        services
       )
     );
   }
@@ -318,5 +315,20 @@ export class RevisionGraphRefActionWorkflow {
     }
 
     await action(repository);
+  }
+
+  private async runMutationWithCurrentRepository<T>(
+    action: (repository: Repository, services: RefActionServices) => Promise<T> | T
+  ): Promise<T | undefined> {
+    const repository = this.host.getCurrentRepository();
+    if (!repository) {
+      return undefined;
+    }
+
+    if (this.host.runRepositoryMutation) {
+      return this.host.runRepositoryMutation(repository, action);
+    }
+
+    return action(repository, this.host.actionServices);
   }
 }

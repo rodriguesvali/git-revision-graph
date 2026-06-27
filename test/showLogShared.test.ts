@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { createChange, createRepository } from './fakes';
 import {
   addShowLogCachedChanges,
-  createHiddenShowLogState
+  createHiddenShowLogState,
+  isShowLogStateForRepository
 } from '../src/showLogShared';
 import {
   buildShowLogWebviewAppendPatch,
@@ -12,6 +13,20 @@ import {
   getShowLogSourceLabel,
   buildShowLogWebviewState
 } from '../src/showLog/viewState';
+
+test('matches Show Log state only to its owning repository', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const otherRepository = createRepository({ root: '/workspace/other' });
+  const state = {
+    ...createHiddenShowLogState(),
+    kind: 'visible' as const,
+    repository
+  };
+
+  assert.equal(isShowLogStateForRepository(state, repository), true);
+  assert.equal(isShowLogStateForRepository(state, otherRepository), false);
+  assert.equal(isShowLogStateForRepository(createHiddenShowLogState(), repository), false);
+});
 
 test('builds show log summaries for target and range sources', () => {
   assert.equal(

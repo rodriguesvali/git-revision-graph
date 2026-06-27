@@ -3,14 +3,15 @@
 ## 1.5.0
 
 - Decided on 2026-06-27: all `1.4.0` Deliver gates are complete, including Extension Development Host smoke validation, VSIX packaging, clean-profile installation, and Marketplace publication; the `1.5.0` release cycle may open.
-- Approve a per-repository mutation coordinator that rejects overlapping mutations rather than queueing stale work?
-- Should tracked-file restore move to targeted `git restore`, or remain filesystem-based with symlink-component rejection and metadata preservation?
-- What timeout and output-cap profiles are acceptable for local mutation, history/read, and remote-capable Git operations?
-- What graph size threshold permits synchronous layout fallback without risking extension-host responsiveness?
-- Which Linux, Windows, and macOS fixtures will be used for symlink, process termination, executable-bit, and path behavior?
-- Is adding a GitHub Actions CI matrix approved for `1.5.0`?
-- Are development dependency upgrades approved to address the current transitive audit findings, provided runtime dependencies and extension behavior remain unchanged?
-- Which fixed branch-heavy repository becomes the repeatable graph load and worker-failure benchmark for the release candidate?
+- Decided on 2026-06-27: use a per-repository mutation coordinator that rejects overlapping mutations rather than queueing stale work.
+- Decided on 2026-06-27: use a hybrid restore strategy with targeted `git restore` for tracked content, direct removal only when the source revision has no path, and symlink-aware ancestor validation before every write or removal.
+- Decided on 2026-06-27: use `gitExec` profiles of 15 seconds/1 MiB for short metadata reads, 60 seconds/4 MiB for local mutations, and 120 seconds/4 MiB for remote-capable CLI operations; retain reviewed specialized history/document/binary limits and enforce a 60 second/4 MiB fallback so no call is unbounded.
+- Decided on 2026-06-27: permit synchronous d3-dag fallback only when the projection has at most 200 nodes and at most 300 edges; above either limit, use a deterministic `O(V+E)` fallback and never repeat d3-dag in the extension host.
+- Decided on 2026-06-27: use a shared synthetic Git fixture covering spaces, Unicode, option-like names, renames, binary and empty files, and `U+001E/U+001F` commit text; add Linux/macOS symlink and executable-bit cases, Windows junction/symlink and path cases, and a shared Node process-tree/output-flood helper.
+- Decided on 2026-06-27: add a verification-only GitHub Actions matrix for Ubuntu, Windows, and macOS on Node.js 20, running clean install, build, tests, diff validation, production audit, and platform fixtures without automatic packaging or publication.
+- Decided on 2026-06-27: approve development-only dependency and lockfile updates that remediate audit findings without runtime dependency changes; do not use `npm audit fix --force`, and require separate approval for any major upgrade.
+- Decided on 2026-06-27: use a deterministic generated benchmark with a fixed seed and manifest; CI uses 1,200 commits, 120 branches/refs, 40 merges, and 30 tags, while release-candidate validation uses 12,000 commits, 600 branches/refs, 200 merges, and 200 tags.
+- Decided on 2026-06-27: freeze the complete `1.5.0` robustness scope recorded in `project-context/docs/release-1.5.0-prioritization.md` and authorize Build. Packaging, clean-profile installation, and Marketplace publication remain separate Deliver approvals.
 
 ## 1.4.0
 

@@ -3,6 +3,19 @@ import { spawn } from 'node:child_process';
 import { createAbortError } from './errors';
 
 const DEFAULT_GIT_EXECUTABLE = 'git';
+export const GIT_EXEC_METADATA_PROFILE = Object.freeze({
+  timeoutMs: 15_000,
+  maxOutputBytes: 1024 * 1024
+});
+export const GIT_EXEC_LOCAL_MUTATION_PROFILE = Object.freeze({
+  timeoutMs: 60_000,
+  maxOutputBytes: 4 * 1024 * 1024
+});
+export const GIT_EXEC_REMOTE_PROFILE = Object.freeze({
+  timeoutMs: 120_000,
+  maxOutputBytes: 4 * 1024 * 1024
+});
+export const GIT_EXEC_FALLBACK_PROFILE = GIT_EXEC_LOCAL_MUTATION_PROFILE;
 let configuredGitExecutablePath: string | undefined;
 
 export interface GitExecOptions {
@@ -51,7 +64,7 @@ export async function execGitWithResult(
   args: readonly string[],
   options: GitExecOptions = {}
 ): Promise<GitExecResult> {
-  return execGitCapturedWithResult(repositoryPath, args, options, 'text');
+  return execGitCapturedWithResult(repositoryPath, args, resolveGitExecOptions(options), 'text');
 }
 
 export async function execGitBinaryWithResult(
@@ -59,7 +72,15 @@ export async function execGitBinaryWithResult(
   args: readonly string[],
   options: GitExecOptions = {}
 ): Promise<GitBinaryExecResult> {
-  return execGitCapturedWithResult(repositoryPath, args, options, 'binary');
+  return execGitCapturedWithResult(repositoryPath, args, resolveGitExecOptions(options), 'binary');
+}
+
+export function resolveGitExecOptions(options: GitExecOptions = {}): GitExecOptions {
+  return {
+    ...options,
+    timeoutMs: options.timeoutMs ?? GIT_EXEC_FALLBACK_PROFILE.timeoutMs,
+    maxOutputBytes: options.maxOutputBytes ?? GIT_EXEC_FALLBACK_PROFILE.maxOutputBytes
+  };
 }
 
 function createTimeoutError(timeoutMs: number): Error {
@@ -119,7 +140,9 @@ function execGitCapturedWithResult(
     const gitExecutablePath = getGitExecutablePath();
     const child = spawn(gitExecutablePath, [...args], {
       cwd: repositoryPath,
-      stdio: ['ignore', 'pipe', 'pipe']
+      detached: process.platform !== 'win32',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true
     });
 
     let stdout = '';
@@ -167,7 +190,7 @@ function execGitCapturedWithResult(
 
     const rejectForOutputLimit = () => {
       if (child.exitCode === null && !child.killed) {
-        child.kill();
+        terminateChildProcess(child.pid);
       }
 
       const error = new Error(
@@ -187,7 +210,7 @@ function execGitCapturedWithResult(
 
     const abortChildProcess = () => {
       if (child.exitCode === null && !child.killed) {
-        child.kill();
+        terminateChildProcess(child.pid);
       }
 
       rejectOnce(createAbortError('The git command was aborted.'));
@@ -195,7 +218,7 @@ function execGitCapturedWithResult(
 
     const timeoutChildProcess = () => {
       if (child.exitCode === null && !child.killed) {
-        child.kill();
+        terminateChildProcess(child.pid);
       }
 
       rejectOnce(createTimeoutError(options.timeoutMs ?? 0));
@@ -264,4 +287,29 @@ function execGitCapturedWithResult(
       rejectOnce(error);
     });
   });
+}
+
+function terminateChildProcess(pid: number | undefined): void {
+  if (!pid) {
+    return;
+  }
+
+  if (process.platform === 'win32') {
+    const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true
+    });
+    killer.unref();
+    return;
+  }
+
+  try {
+    process.kill(-pid, 'SIGTERM');
+  } catch {
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // The process already exited between the state check and termination.
+    }
+  }
 }

@@ -11,11 +11,28 @@ import {
   execGit,
   execGitBinaryWithResult,
   execGitWithResult,
-  getGitExecutablePath
+  getGitExecutablePath,
+  GIT_EXEC_FALLBACK_PROFILE,
+  GIT_EXEC_LOCAL_MUTATION_PROFILE,
+  GIT_EXEC_METADATA_PROFILE,
+  GIT_EXEC_REMOTE_PROFILE,
+  resolveGitExecOptions
 } from '../src/gitExec';
 import { isAbortError } from '../src/errors';
 
 const execFile = promisify(execFileCallback);
+
+test('git execution profiles expose the approved bounded policies', () => {
+  assert.deepEqual(GIT_EXEC_METADATA_PROFILE, { timeoutMs: 15_000, maxOutputBytes: 1024 * 1024 });
+  assert.deepEqual(GIT_EXEC_LOCAL_MUTATION_PROFILE, { timeoutMs: 60_000, maxOutputBytes: 4 * 1024 * 1024 });
+  assert.deepEqual(GIT_EXEC_REMOTE_PROFILE, { timeoutMs: 120_000, maxOutputBytes: 4 * 1024 * 1024 });
+  assert.deepEqual(GIT_EXEC_FALLBACK_PROFILE, GIT_EXEC_LOCAL_MUTATION_PROFILE);
+  assert.deepEqual(resolveGitExecOptions(), GIT_EXEC_FALLBACK_PROFILE);
+  assert.deepEqual(resolveGitExecOptions({ timeoutMs: 25 }), {
+    timeoutMs: 25,
+    maxOutputBytes: GIT_EXEC_FALLBACK_PROFILE.maxOutputBytes
+  });
+});
 
 async function createTemporaryRepository(): Promise<string> {
   const repositoryPath = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-'));
@@ -25,16 +42,40 @@ async function createTemporaryRepository(): Promise<string> {
   return repositoryPath;
 }
 
-async function withFakeGitScript<T>(script: string, run: (repositoryPath: string) => Promise<T>): Promise<T> {
+async function createNodeExecutable(
+  binDir: string,
+  name: string,
+  program: string
+): Promise<string> {
+  const sourcePath = path.join(binDir, `${name}.cjs`);
+  await fs.writeFile(sourcePath, program, 'utf8');
+  if (process.platform === 'win32') {
+    const commandPath = path.join(binDir, `${name}.cmd`);
+    await fs.writeFile(
+      commandPath,
+      `@echo off\r\n"${process.execPath}" "${sourcePath}" %*\r\n`,
+      'utf8'
+    );
+    return commandPath;
+  }
+
+  const commandPath = path.join(binDir, name);
+  await fs.writeFile(commandPath, `#!/usr/bin/env node\n${program}`, {
+    encoding: 'utf8',
+    mode: 0o755
+  });
+  return commandPath;
+}
+
+async function withFakeGitProgram<T>(program: string, run: (repositoryPath: string) => Promise<T>): Promise<T> {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-fake-git-'));
   const binDir = path.join(temporaryRoot, 'bin');
   const repositoryPath = path.join(temporaryRoot, 'repo');
-  const gitPath = path.join(binDir, 'git');
   const originalPath = process.env.PATH ?? '';
 
   await fs.mkdir(binDir, { recursive: true });
   await fs.mkdir(repositoryPath, { recursive: true });
-  await fs.writeFile(gitPath, script, { encoding: 'utf8', mode: 0o755 });
+  await createNodeExecutable(binDir, 'git', program);
   process.env.PATH = `${binDir}:${originalPath}`;
 
   try {
@@ -63,13 +104,13 @@ test('configureGitExecutablePath normalizes custom values and falls back to git 
 test('execGit uses the configured Git executable path', async () => {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-custom-git-'));
   const repositoryPath = path.join(temporaryRoot, 'repo');
-  const customGitPath = path.join(temporaryRoot, 'custom-git');
 
   await fs.mkdir(repositoryPath, { recursive: true });
-  await fs.writeFile(customGitPath, '#!/bin/sh\nprintf "configured-git\\n"\n', {
-    encoding: 'utf8',
-    mode: 0o755
-  });
+  const customGitPath = await createNodeExecutable(
+    temporaryRoot,
+    'custom-git',
+    'process.stdout.write("configured-git\\n");\n'
+  );
   configureGitExecutablePath(customGitPath);
 
   try {
@@ -96,7 +137,10 @@ test('execGit reads large git output without failing on a fixed maxBuffer', asyn
     await execFile('git', ['commit', '-m', 'Add large fixture'], { cwd: repositoryPath });
     await fs.writeFile(filePath, updatedContent, 'utf8');
 
-    const stdout = await execGit(repositoryPath, ['diff', '--no-color', 'HEAD']);
+    const stdout = await execGit(repositoryPath, ['diff', '--no-color', 'HEAD'], {
+      maxOutputBytes: 24 * 1024 * 1024,
+      timeoutMs: 60_000
+    });
 
     assert.ok(stdout.length > 8 * 1024 * 1024);
     assert.match(stdout, /^diff --git /);
@@ -128,8 +172,8 @@ test('execGitWithResult preserves stderr and exit code for failing git commands'
 });
 
 test('execGitWithResult accepts explicitly allowed non-zero exit codes', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\nprintf "diff output\\n"\nexit 1\n',
+  await withFakeGitProgram(
+    'process.stdout.write("diff output\\n");\nprocess.exitCode = 1;\n',
     async (repositoryPath) => {
       const result = await execGitWithResult(repositoryPath, ['diff', '--no-index'], {
         allowedExitCodes: [1]
@@ -142,8 +186,8 @@ test('execGitWithResult accepts explicitly allowed non-zero exit codes', async (
 });
 
 test('execGit aborts an in-flight git process when the signal is cancelled', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+  await withFakeGitProgram(
+    'setTimeout(() => undefined, 10_000);\n',
     async (repositoryPath) => {
       const abortController = new AbortController();
       const execution = execGit(repositoryPath, ['status'], { signal: abortController.signal });
@@ -158,8 +202,8 @@ test('execGit aborts an in-flight git process when the signal is cancelled', asy
 });
 
 test('execGit stops when the configured timeout expires', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+  await withFakeGitProgram(
+    'setTimeout(() => undefined, 10_000);\n',
     async (repositoryPath) => {
       await assert.rejects(
         execGit(repositoryPath, ['status'], { timeoutMs: 25 }),
@@ -175,8 +219,8 @@ test('execGit stops when the configured timeout expires', async () => {
 });
 
 test('execGit stops when the captured output exceeds the configured limit', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\nprintf "1234567890"\n',
+  await withFakeGitProgram(
+    'process.stdout.write("1234567890");\n',
     async (repositoryPath) => {
       await assert.rejects(
         execGit(repositoryPath, ['status'], { maxOutputBytes: 4 }),
@@ -196,8 +240,8 @@ test('execGit stops when the captured output exceeds the configured limit', asyn
 });
 
 test('execGitBinaryWithResult preserves arbitrary stdout bytes', async () => {
-  await withFakeGitScript(
-    "#!/bin/sh\nprintf '\\377\\000ABC'\n",
+  await withFakeGitProgram(
+    'process.stdout.write(Buffer.from([255, 0, 65, 66, 67]));\n',
     async (repositoryPath) => {
       const result = await execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin']);
 
@@ -208,8 +252,8 @@ test('execGitBinaryWithResult preserves arbitrary stdout bytes', async () => {
 });
 
 test('execGitBinaryWithResult preserves stderr and exit code for failing commands', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\nprintf "boom\\n" >&2\nexit 9\n',
+  await withFakeGitProgram(
+    'process.stderr.write("boom\\n");\nprocess.exitCode = 9;\n',
     async (repositoryPath) => {
       await assert.rejects(
         execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin']),
@@ -229,8 +273,8 @@ test('execGitBinaryWithResult preserves stderr and exit code for failing command
 });
 
 test('execGitBinaryWithResult aborts an in-flight git process when the signal is cancelled', async () => {
-  await withFakeGitScript(
-    '#!/bin/sh\ntrap "exit 130" TERM INT\nsleep 10\n',
+  await withFakeGitProgram(
+    'setTimeout(() => undefined, 10_000);\n',
     async (repositoryPath) => {
       const abortController = new AbortController();
       const execution = execGitBinaryWithResult(repositoryPath, ['show', 'HEAD:file.bin'], {
@@ -242,6 +286,35 @@ test('execGitBinaryWithResult aborts an in-flight git process when the signal is
       }, 25);
 
       await assert.rejects(execution, isAbortError);
+    }
+  );
+});
+
+test('execGit cancellation terminates the spawned process tree', async () => {
+  await withFakeGitProgram(
+    [
+      "const { spawn } = require('node:child_process');",
+      "spawn(process.execPath, ['-e', `setTimeout(() => require('node:fs').writeFileSync(process.env.GIT_EXEC_TREE_MARKER, 'alive'), 400)`], { stdio: 'ignore' });",
+      'setTimeout(() => undefined, 10_000);'
+    ].join('\n'),
+    async (repositoryPath) => {
+      const markerPath = path.join(repositoryPath, 'child-survived.txt');
+      const previousMarker = process.env.GIT_EXEC_TREE_MARKER;
+      process.env.GIT_EXEC_TREE_MARKER = markerPath;
+      try {
+        const abortController = new AbortController();
+        const execution = execGit(repositoryPath, ['status'], { signal: abortController.signal });
+        setTimeout(() => abortController.abort(), 50);
+        await assert.rejects(execution, isAbortError);
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        await assert.rejects(fs.stat(markerPath), { code: 'ENOENT' });
+      } finally {
+        if (previousMarker === undefined) {
+          delete process.env.GIT_EXEC_TREE_MARKER;
+        } else {
+          process.env.GIT_EXEC_TREE_MARKER = previousMarker;
+        }
+      }
     }
   );
 });

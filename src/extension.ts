@@ -16,6 +16,10 @@ import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { ShowLogViewProvider } from './showLogView';
 import { createWorkbenchRefActionServices } from './workbenchRefActionServices';
+import {
+  RepositoryMutationCoordinator,
+  runGuardedRepositoryMutation
+} from './repositoryMutationCoordinator';
 
 const GIT_EXTENSION_CONFIG_SECTION = 'git';
 const GIT_PATH_CONFIG_KEY = 'path';
@@ -35,9 +39,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   layoutCachePersistence.restore();
 
   const backend = createRevisionGraphBackend();
-  const compareResultsProvider = new CompareResultsViewProvider(context.extensionUri, backend);
+  const mutationCoordinator = new RepositoryMutationCoordinator();
+  const compareResultsProvider = new CompareResultsViewProvider(
+    context.extensionUri,
+    backend,
+    mutationCoordinator
+  );
   let services: RefCommandServices | undefined;
-  const showLogProvider = new ShowLogViewProvider(context.extensionUri, backend, compareResultsProvider, () => services);
+  const showLogProvider = new ShowLogViewProvider(
+    context.extensionUri,
+    backend,
+    compareResultsProvider,
+    () => services,
+    mutationCoordinator
+  );
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
     git,
@@ -50,9 +65,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       ]);
     },
     backend,
-    () => layoutCachePersistence.clear()
+    () => layoutCachePersistence.clear(),
+    mutationCoordinator
   );
-  const commandServices = createCommandServices(revisionGraphEditorPanel, compareResultsProvider);
+  const commandServices = createCommandServices(
+    revisionGraphEditorPanel,
+    compareResultsProvider,
+    mutationCoordinator
+  );
   services = commandServices;
 
   context.subscriptions.push(
@@ -60,7 +80,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     showLogProvider,
     revisionGraphEditorPanel,
     layoutCachePersistence,
+    { dispose: () => mutationCoordinator.dispose() },
     onProjectedGraphLayoutCacheDidChange(() => layoutCachePersistence.schedulePersist()),
+    git.onDidCloseRepository((repository) => {
+      mutationCoordinator.invalidate(repository.rootUri.fsPath);
+      compareResultsProvider.handleRepositoryClosed(repository);
+      showLogProvider.handleRepositoryClosed(repository);
+    }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration(`${GIT_EXTENSION_CONFIG_SECTION}.${GIT_PATH_CONFIG_KEY}`)) {
         syncConfiguredGitExecutablePath();
@@ -110,7 +136,8 @@ async function getGitApi(): Promise<API | undefined> {
 
 function createCommandServices(
   revisionGraphPanel: RevisionGraphEditorPanel,
-  compareResultsProvider: CompareResultsViewProvider
+  compareResultsProvider: CompareResultsViewProvider,
+  mutationCoordinator: RepositoryMutationCoordinator
 ): RefCommandServices {
   const baseServices = createWorkbenchRefActionServices(
     (request?: RevisionGraphRefreshRequestLike) => {
@@ -124,6 +151,21 @@ function createCommandServices(
 
   return {
     ...baseServices,
+    async runRepositoryMutation(repository, action) {
+      const outcome = await runGuardedRepositoryMutation(
+        mutationCoordinator,
+        repository,
+        baseServices,
+        action
+      );
+      if (outcome.status === 'rejected') {
+        void vscode.window.showWarningMessage(
+          'Another Git operation is already running for this repository.'
+        );
+        return undefined;
+      }
+      return outcome.value;
+    },
     ui: {
       ...baseServices.ui,
       async pickRepository(items, placeHolder) {

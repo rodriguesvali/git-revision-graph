@@ -2,6 +2,7 @@ import { getRepositoryRelativeChangePath } from '../changePresentation';
 import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
 import { toOperationError } from '../errorDetail';
 import type { Change, Repository } from '../git';
+import { isAbortError } from '../errors';
 
 const REVERT_FILE_CONFIRMATION_ACTION = 'Revert File';
 const SHOW_LOG_RESTORE_SOURCE_SIDE: CompareResultRestoreSourceSide = 'right';
@@ -30,7 +31,8 @@ export async function revertShowLogFileChangeToCommit(
   repository: Repository,
   commitHash: string,
   change: Change,
-  services?: ShowLogFileRestoreServices
+  services?: ShowLogFileRestoreServices,
+  assertMutationCurrent: () => void = () => undefined
 ): Promise<boolean> {
   const restoreServices = services ?? await getDefaultShowLogFileRestoreServices();
   if (
@@ -51,6 +53,7 @@ export async function revertShowLogFileChangeToCommit(
   }
 
   try {
+    assertMutationCurrent();
     await restoreServices.restoreWorktreeChangeFromRef(
       repository,
       change,
@@ -59,6 +62,9 @@ export async function revertShowLogFileChangeToCommit(
     );
     return true;
   } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     await restoreServices.showErrorMessage(
       toOperationError('Could not revert the file to the selected commit.', error)
     );

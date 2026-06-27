@@ -2,6 +2,7 @@ import { toOperationError } from '../errorDetail';
 import type { Change, Repository } from '../git';
 import type { CompareResultItem } from '../compareResultsShared';
 import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
+import { isAbortError } from '../errors';
 
 const RESTORE_FILE_CONFIRMATION_ACTION = 'Revert File';
 
@@ -27,7 +28,8 @@ export interface CompareResultsRestoreServices {
 
 export async function restoreCompareResultItemToWorktree(
   item: CompareResultItem,
-  services?: CompareResultsRestoreServices
+  services?: CompareResultsRestoreServices,
+  assertMutationCurrent: () => void = () => undefined
 ): Promise<boolean> {
   const restoreSource = getCompareResultRestoreSource(item);
   if (!restoreSource) {
@@ -53,6 +55,7 @@ export async function restoreCompareResultItemToWorktree(
   }
 
   try {
+    assertMutationCurrent();
     await restoreServices.restoreWorktreeChangeFromRef(
       item.repository,
       item.change,
@@ -61,6 +64,9 @@ export async function restoreCompareResultItemToWorktree(
     );
     return true;
   } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
     await restoreServices.showErrorMessage(
       toOperationError('Could not revert the file to the selected revision.', error)
     );

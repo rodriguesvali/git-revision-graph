@@ -8,6 +8,7 @@ import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
 import { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE, REVISION_GRAPH_VIEW_ID } from './revisionGraphTypes';
 import { ShowLogPresenter } from './showLogView';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
+import { RepositoryMutationCoordinator } from './repositoryMutationCoordinator';
 
 export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
   private readonly controller: RevisionGraphController;
@@ -18,9 +19,19 @@ export class RevisionGraphViewProvider implements vscode.WebviewViewProvider, vs
     showLogPresenter: ShowLogPresenter,
     backend: RevisionGraphBackend = createRevisionGraphBackend(),
     viewId: string = REVISION_GRAPH_VIEW_ID,
-    clearLayoutCache: () => PromiseLike<void> | void = () => undefined
+    clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
+    mutationCoordinator?: RepositoryMutationCoordinator
   ) {
-    this.controller = new RevisionGraphController(git, backend, compareResultsPresenter, showLogPresenter, viewId, undefined, clearLayoutCache);
+    this.controller = new RevisionGraphController(
+      git,
+      backend,
+      compareResultsPresenter,
+      showLogPresenter,
+      viewId,
+      undefined,
+      clearLayoutCache,
+      mutationCoordinator
+    );
   }
 
   dispose(): void {
@@ -63,7 +74,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     showLogPresenter: ShowLogPresenter,
     private readonly closeDependentViews: () => Promise<void> | void = () => undefined,
     backend: RevisionGraphBackend = createRevisionGraphBackend(),
-    clearLayoutCache: () => PromiseLike<void> | void = () => undefined
+    clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
+    mutationCoordinator?: RepositoryMutationCoordinator
   ) {
     this.controller = new RevisionGraphController(
       git,
@@ -72,7 +84,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       showLogPresenter,
       REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE,
       undefined,
-      clearLayoutCache
+      clearLayoutCache,
+      mutationCoordinator
     );
   }
 

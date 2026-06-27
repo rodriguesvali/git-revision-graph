@@ -41,6 +41,13 @@ export function createHiddenShowLogState(): ShowLogState {
   };
 }
 
+export function isShowLogStateForRepository(
+  state: ShowLogState,
+  repository: Repository
+): boolean {
+  return state.repository?.rootUri.fsPath === repository.rootUri.fsPath;
+}
+
 export function addShowLogCachedChanges(
   cache: Readonly<Record<string, readonly Change[]>>,
   commitHash: string,
