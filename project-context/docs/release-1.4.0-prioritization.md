@@ -1,5 +1,9 @@
 # Release 1.4.0 Prioritization
 
+## Release Outcome
+
+Status: released. The maintainer confirmed all Deliver gates complete on 2026-06-27, including Extension Development Host smoke validation, VSIX packaging, clean-profile installation, and Marketplace publication. Automated verification completed with 466 passing tests before publication.
+
 ## Objective
 
 Deliver `1.4.0` as a focused review-surface improvement release after the completed `1.3.0` graph layout release.
@@ -117,9 +121,9 @@ Only after explicit maintainer approval:
 - Focused implementation: complete.
 - Maintainer approval of the implemented `1.4.0` feature scope: complete on 2026-06-27.
 - Automated verification: complete on current candidate.
-- Manual Extension Development Host smoke: pending.
-- VSIX packaging and clean-profile installation: pending explicit approval.
-- Marketplace publication: pending explicit approval.
+- Manual Extension Development Host smoke: complete by maintainer confirmation on 2026-06-27.
+- VSIX packaging and clean-profile installation: complete by maintainer confirmation on 2026-06-27.
+- Marketplace publication: complete by maintainer confirmation on 2026-06-27.
 
 ## Rollback
 

@@ -1,12 +1,56 @@
 # Release Readiness
 
+## 1.5.0 Release Readiness
+
+Published package baseline: `1.4.0`.
+
+Target release: `1.5.0`.
+
+Status: Release cycle open by maintainer approval on 2026-06-27. Package metadata is `1.5.0`; implementation scope remains proposed and is not frozen or approved. No robustness implementation, dependency change, `1.5.0` packaging, or `1.5.0` publication has been performed.
+
+Opening verification:
+
+- Package metadata confirmed at `1.5.0` in `package.json` and root `package-lock.json` package metadata.
+- `git diff --check` passed.
+- `npm run build` passed through the `npm test` lifecycle.
+- `npm test` passed with 466 tests.
+
+Proposed release direction:
+
+- harden asynchronous webview message boundaries and prevent overlapping or stale repository mutations;
+- make restore behavior symlink-safe and preserve tracked-file semantics;
+- apply reviewed timeout, output, cancellation, and settlement policies to every targeted Git CLI call;
+- use collision-safe Git history framing;
+- invalidate repository-dependent review panels when repositories close;
+- make layout worker failure recovery bounded and extension-host safe;
+- surface ref content failures instead of displaying valid-looking empty documents;
+- add fault-injection, cross-platform, and manual Extension Development Host validation before release closure.
+
+Planning references:
+
+- `project-context/docs/release-1.5.0-prioritization.md`
+- `project-context/2.build/features/1.5.0-release-opening.md`
+- `project-context/2.build/features/1.5.0-robustness-hardening.md`
+- `project-context/1.define/open-questions.md`
+- `src/graphify-out/GRAPH_REPORT.md`
+
+Entry gates:
+
+- Maintainer confirmation of all `1.4.0` Deliver gates: complete on 2026-06-27.
+- `1.5.0` version metadata and cycle opening: complete on 2026-06-27.
+- Review and approve the proposed `1.5.0` scope.
+- Resolve restore strategy, mutation coordination, Git execution profiles, layout fallback threshold, CI, and dependency-change questions.
+- Opening comparison baseline recorded as `0fd5263e5fdbcaaeb9d305abf981f7e01e895936`; record a new implementation baseline if approved Build work starts from a later commit.
+
+Release gates remain distinct: scope approval, implementation, automated verification, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication require explicit progression.
+
 ## 1.4.0 Release Readiness
 
 Current package baseline before opening: `1.3.0`.
 
 Target release: `1.4.0`.
 
-Status: Release-candidate scope frozen. Package metadata is `1.4.0`; the implemented Compare Results unified diff capabilities are approved by the maintainer for `1.4.0`, and automated verification is complete on the current candidate. Manual Extension Development Host validation remains pending. VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release completed. The maintainer confirmed on 2026-06-27 that Extension Development Host smoke validation, VSIX packaging, clean-profile installation, and Marketplace publication were all completed for `1.4.0`.
 
 Planning and build references:
 
@@ -72,7 +116,7 @@ Smoke checklist:
 - [ ] Resize the editor panel to a narrow width and confirm the toolbar remains usable.
 - [ ] Smoke graph reload, Compare Results, and Show Log opening around the shared backend integration.
 
-Manual validation result: pending.
+Manual validation result: complete by maintainer confirmation on 2026-06-27. The detailed environment record was not supplied for this artifact.
 
 Release gates:
 
@@ -80,16 +124,15 @@ Release gates:
 - Maintainer approval of the implemented `1.4.0` feature scope: complete on 2026-06-27.
 - Focused implementation: complete.
 - Automated verification: complete on the current candidate.
-- Manual Extension Development Host validation: pending; blocks packaging approval.
-- VSIX packaging and clean-profile installation: pending explicit approval; blocks Marketplace publication.
-- Marketplace publication: pending explicit approval.
+- Manual Extension Development Host validation: complete by maintainer confirmation on 2026-06-27.
+- VSIX packaging and clean-profile installation: complete by maintainer confirmation on 2026-06-27.
+- Marketplace publication: complete by maintainer confirmation on 2026-06-27.
 
-Packaging readiness requirements:
+Completion record:
 
-- Run `npm run package:vsix` only after explicit maintainer approval.
-- Record VSIX filename, size, checksum, and package-entry count.
-- Install the generated VSIX in a clean profile and repeat the core ref-to-ref and ref-to-worktree smoke paths.
-- Confirm packaged changelog, README, entrypoint, worker output, icons, and runtime dependencies.
+- The maintainer confirmed the complete validation, packaging, installation, and publication sequence.
+- Exact VSIX filename, size, checksum, package-entry count, and manual environment details were not supplied for this artifact and are not inferred.
+- `1.5.0` must record those details directly before publication.
 
 Rollback:
 

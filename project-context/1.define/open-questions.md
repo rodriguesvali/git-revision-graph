@@ -1,5 +1,17 @@
 # Open Questions
 
+## 1.5.0
+
+- Decided on 2026-06-27: all `1.4.0` Deliver gates are complete, including Extension Development Host smoke validation, VSIX packaging, clean-profile installation, and Marketplace publication; the `1.5.0` release cycle may open.
+- Approve a per-repository mutation coordinator that rejects overlapping mutations rather than queueing stale work?
+- Should tracked-file restore move to targeted `git restore`, or remain filesystem-based with symlink-component rejection and metadata preservation?
+- What timeout and output-cap profiles are acceptable for local mutation, history/read, and remote-capable Git operations?
+- What graph size threshold permits synchronous layout fallback without risking extension-host responsiveness?
+- Which Linux, Windows, and macOS fixtures will be used for symlink, process termination, executable-bit, and path behavior?
+- Is adding a GitHub Actions CI matrix approved for `1.5.0`?
+- Are development dependency upgrades approved to address the current transitive audit findings, provided runtime dependencies and extension behavior remain unchanged?
+- Which fixed branch-heavy repository becomes the repeatable graph load and worker-failure benchmark for the release candidate?
+
 ## 1.4.0
 
 - Decided on 2026-06-26: the first `1.4.0` feature slice is a `Unified Diff` action in the `Compare Results` editor panel for ref-to-ref comparisons.

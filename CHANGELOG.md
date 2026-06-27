@@ -2,12 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.0
+
+### Release Preparation
+
+- Opened the `1.5.0` cycle as a reliability and safety release after maintainer confirmation that `1.4.0` was published to the Marketplace.
+- Version metadata is `1.5.0` in `package.json` and `package-lock.json`; implementation scope remains proposed and is not yet frozen or approved.
+
 ## 1.4.0
 
 ### Release Preparation
 
 - Opened the `1.4.0` cycle as the next minor release after the published `1.3.0` release.
-- Version metadata is `1.4.0` in `package.json` and `package-lock.json`; release scope is frozen to the implemented Compare Results unified diff improvement, while manual validation, VSIX packaging, and Marketplace publication remain pending.
+- Version metadata is `1.4.0` in the published release; release scope was frozen to the implemented Compare Results unified diff improvement.
+- Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication were confirmed complete by the maintainer on 2026-06-27.
 
 ### Improvements
 
