@@ -4,7 +4,7 @@
 
 Deliver `1.4.0` as a focused review-surface improvement release after the completed `1.3.0` graph layout release.
 
-The release scope is frozen to the implemented `Unified Diff` action in the Compare Results editor panel for ref-to-ref and ref-to-worktree comparisons. No additional feature, fix, dependency, contribution point, or product-surface change is included in `1.4.0` without reopening scope through explicit maintainer approval.
+The release scope is frozen to the implemented and maintainer-approved `Unified Diff` action in the Compare Results editor panel for ref-to-ref and ref-to-worktree comparisons. No additional feature, fix, dependency, contribution point, or product-surface change is included in `1.4.0` without reopening scope through explicit maintainer approval.
 
 ## Context
 
@@ -14,12 +14,27 @@ The release scope is frozen to the implemented `Unified Diff` action in the Comp
 - `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware edge rendering.
 - The active product surface remains the Source Control-launched singleton revision graph editor, plus on-demand Compare Results and Show Log editor panels.
 - Scope was frozen on 2026-06-27 after implementation and automated verification of the Compare Results unified diff slice.
+- Maintainer approval uses commit `78a80ab427894f2dab5e0636e929c5f9d56f5b08` as the comparison baseline and includes the implemented candidate through `876eecd3b0e986f9a4c843ac6b88d1009b9d83dc`.
 
 ## Release Direction
 
 - Preserve the existing extension architecture, command IDs, multi-repository behavior, conflict guards, cancellation paths, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
 - Ship one independently verifiable review-surface slice instead of expanding the minor release backlog.
 - Keep VSIX packaging and Marketplace publication as explicit Deliver actions after automated and manual validation.
+
+## Maintainer Approval Record
+
+Approved for `1.4.0` on 2026-06-27:
+
+- Compare Results unified diff for ref-to-ref comparison sessions.
+- Compare Results unified diff for ref-to-worktree comparison sessions, covering staged, unstaged, and active untracked changes.
+- Correctness hardening required by the worktree capability: refresh immediately before generation, reject stale in-flight responses, and close the panel without opening a diff when the refreshed worktree is aligned with the selected ref.
+
+Approval comparison baseline: `78a80ab427894f2dab5e0636e929c5f9d56f5b08`.
+
+Approved implementation candidate: `876eecd3b0e986f9a4c843ac6b88d1009b9d83dc`.
+
+This approval records feature inclusion only. Manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication remain separate Deliver gates owned by the maintainer.
 
 ## Frozen Scope
 
@@ -100,6 +115,7 @@ Only after explicit maintainer approval:
 
 - Scope freeze: complete.
 - Focused implementation: complete.
+- Maintainer approval of the implemented `1.4.0` feature scope: complete on 2026-06-27.
 - Automated verification: complete on current candidate.
 - Manual Extension Development Host smoke: pending.
 - VSIX packaging and clean-profile installation: pending explicit approval.

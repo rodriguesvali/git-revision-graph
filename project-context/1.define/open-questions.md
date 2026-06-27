@@ -7,6 +7,7 @@
 - Decided on 2026-06-27: freeze the `1.4.0` release scope to the implemented Compare Results unified diff slice; defer all other candidate areas to a later release.
 - Decided on 2026-06-27: treat `1.4.0` as a focused review-surface improvement release rather than broad graph, Git workflow, or release-hygiene expansion.
 - Decided on 2026-06-27: require the release-candidate Extension Development Host smoke matrix recorded in `project-context/3.deliver/release.md` before VSIX packaging approval.
+- Approved by the maintainer on 2026-06-27: the implemented Compare Results unified diff capabilities after baseline `78a80ab427894f2dab5e0636e929c5f9d56f5b08`, through candidate `876eecd3b0e986f9a4c843ac6b88d1009b9d83dc`, are approved for inclusion in `1.4.0`. This approval covers ref-to-ref and ref-to-worktree unified diff, staged/unstaged/untracked worktree output, and the pre-generation refresh and stale-response guards. Manual validation, VSIX packaging, and Marketplace publication remain separate maintainer actions.
 
 ## 1.2.0
 

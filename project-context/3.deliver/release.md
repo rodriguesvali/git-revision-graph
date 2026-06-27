@@ -6,7 +6,7 @@ Current package baseline before opening: `1.3.0`.
 
 Target release: `1.4.0`.
 
-Status: Release-candidate scope frozen. Package metadata is `1.4.0`; the Compare Results unified diff slice is implemented and automated verification is complete on the current candidate. Manual Extension Development Host validation remains pending. VSIX packaging and Marketplace publication are not approved or complete.
+Status: Release-candidate scope frozen. Package metadata is `1.4.0`; the implemented Compare Results unified diff capabilities are approved by the maintainer for `1.4.0`, and automated verification is complete on the current candidate. Manual Extension Development Host validation remains pending. VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
@@ -17,6 +17,14 @@ Planning and build references:
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
 
+Maintainer feature approval:
+
+- Approval date: 2026-06-27.
+- Comparison baseline: `78a80ab427894f2dab5e0636e929c5f9d56f5b08`.
+- Approved implementation candidate: `876eecd3b0e986f9a4c843ac6b88d1009b9d83dc`.
+- Approved capabilities: ref-to-ref Compare Results unified diff; ref-to-worktree Compare Results unified diff with staged, unstaged, and active untracked changes; and the required pre-generation refresh, aligned-state handling, and stale-response rejection.
+- Approval is limited to feature inclusion in `1.4.0`; it does not mark manual validation, VSIX packaging, clean-profile installation, or Marketplace publication complete.
+
 Frozen release scope:
 
 - Ship `1.4.0` as a focused review-surface release containing only the Compare Results unified diff slice.
@@ -24,7 +32,7 @@ Frozen release scope:
 - Preserve the Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
 - Keep VSIX packaging and Marketplace publication as explicit Deliver actions after validation.
 
-Implemented slice:
+Approved implemented slice:
 
 - Added a `Unified Diff` button to ref-to-ref and ref-to-worktree Compare Results sessions.
 - Routed the button through validated Compare Results webview messaging.
@@ -69,6 +77,7 @@ Manual validation result: pending.
 Release gates:
 
 - Scope freeze: complete on 2026-06-27.
+- Maintainer approval of the implemented `1.4.0` feature scope: complete on 2026-06-27.
 - Focused implementation: complete.
 - Automated verification: complete on the current candidate.
 - Manual Extension Development Host validation: pending; blocks packaging approval.
