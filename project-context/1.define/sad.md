@@ -30,6 +30,18 @@ After Source Control integration Phase 3, keep one graph product surface:
 - Tests: TypeScript build, Node test suite, focused unit/integration-style coverage.
 - AAMAD artifacts: Define, Build, Deliver, handoff, and feature-scoped notes.
 
+## 1.4.0 Architecture Decision
+
+The frozen `1.4.0` scope preserves the existing Compare Results architecture:
+
+- Keep Compare Results as the existing on-demand editor `WebviewPanel`.
+- Route the `unifiedDiff` action through the existing validated webview message dispatcher.
+- Reuse the shared revision graph document backend created during extension activation.
+- Use the existing native diff-language editor presentation.
+- Keep targeted Git CLI execution inside the document backend for ref-to-ref and ref-to-worktree textual patches.
+- Add no command, menu, view, setting, dependency, or persistent panel.
+- Defer broader provider decomposition, operation-wide cancellation, and worktree snapshot redesign beyond the frozen `1.4.0` release scope.
+
 ## Source Control Editor Panel Architecture
 Phase 3 uses a single graph placement architecture:
 

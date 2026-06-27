@@ -6,7 +6,7 @@ Current package baseline before opening: `1.3.0`.
 
 Target release: `1.4.0`.
 
-Status: Release cycle opened for `1.4.0`. Package metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; the first Compare Results unified diff slice is implemented, while additional implementation scope, VSIX packaging, and Marketplace publication are not approved or complete.
+Status: Release-candidate scope frozen. Package metadata is `1.4.0`; the Compare Results unified diff slice is implemented and automated verification is complete on the current candidate. Manual Extension Development Host validation remains pending. VSIX packaging and Marketplace publication are not approved or complete.
 
 Planning and build references:
 
@@ -17,20 +17,14 @@ Planning and build references:
 - `project-context/1.define/sad.md`
 - `project-context/1.define/open-questions.md`
 
-Release direction:
+Frozen release scope:
 
-- Preserve the existing Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
-- Treat Compare Results unified diff as the first selected `1.4.0` feature slice.
-- Select any additional focused `1.4.0` launch items before implementation, with each item recorded under `project-context/2.build/features/`.
-- Keep VSIX packaging and Marketplace publication as explicit Deliver actions after implementation and validation.
+- Ship `1.4.0` as a focused review-surface release containing only the Compare Results unified diff slice.
+- Defer all other graph, review-surface, Git workflow, packaging-hygiene, dependency, and contribution-point changes to a later release unless scope is explicitly reopened by the maintainer.
+- Preserve the Source Control-launched singleton editor graph, command IDs, multi-repository behavior, conflict guards, cancellation, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
+- Keep VSIX packaging and Marketplace publication as explicit Deliver actions after validation.
 
-Opening baseline:
-
-- `1.3.0` is recorded as completed by maintainer confirmation.
-- `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware graph edge rendering.
-- `1.4.0` starts with Compare Results unified diff as the first selected implementation scope.
-
-Implemented slices:
+Implemented slice:
 
 - Added a `Unified Diff` button to ref-to-ref and ref-to-worktree Compare Results sessions.
 - Routed the button through validated Compare Results webview messaging.
@@ -40,30 +34,56 @@ Implemented slices:
 
 Automated verification:
 
-- Package metadata confirmed at `1.4.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata after opening the cycle.
-- `git diff --check` passed after opening the `1.4.0` cycle.
-- `npm run build` passed after opening the `1.4.0` cycle.
-- `npm test` passed with 459 tests after opening the `1.4.0` cycle.
-- `npm run build` passed after Compare Results unified diff implementation.
+- Package metadata confirmed at `1.4.0` in `package.json`, root `package-lock.json`, and root package-lock package metadata.
 - Focused Compare Results unified diff validation passed with 38 tests across message dispatch, view state, webview shell, Git execution, document backend, and webview message validation.
-- `npm test` passed with 463 tests after ref-to-ref and ref-to-worktree Compare Results unified diff implementation.
+- `npm run build` passed on the frozen release-candidate scope on 2026-06-27.
+- `npm test` passed with 463 tests on the frozen release-candidate scope on 2026-06-27.
+- `git diff --check` passed on the frozen release-candidate scope on 2026-06-27.
 
-Manual validation focus:
+Mandatory manual validation matrix:
 
-- Define after `1.4.0` launch items are selected.
-- At minimum, keep graph loading, repository switching, scope/filter toggles, refresh, empty-cache reload, search, minimap, zoom, Center HEAD, selection path highlighting, Compare Results, Show Log, checkout, branch creation, sync, merge, delete, reset, and conflict guards in the release-candidate smoke matrix when touched.
+Environment record:
+
+- VS Code version: pending.
+- Operating system: pending.
+- Single-repository fixture: pending.
+- Multi-repository fixture: pending.
+- Tester and date: pending.
+
+Smoke checklist:
+
+- [ ] Open the graph from Source Control and verify repository selection in single- and multi-repository workspaces.
+- [ ] Run a non-empty ref-to-ref comparison; open `Unified Diff`; verify orientation, labels, patch contents, and diff-language rendering.
+- [ ] Run a ref-to-worktree comparison containing staged, unstaged, and untracked changes, including a nested path and a path containing spaces; verify all active changes appear.
+- [ ] Confirm empty Compare Results state hides `Unified Diff`.
+- [ ] Verify existing file open, filters, selection, copy, compare-with-worktree, context-menu, and restore actions remain functional.
+- [ ] Change or delete an untracked file after opening Compare Results; confirm an actionable error appears without a crash or repository mutation.
+- [ ] Switch comparisons between repositories; confirm each unified diff runs against the repository displayed by Compare Results.
+- [ ] Resize the editor panel to a narrow width and confirm the toolbar remains usable.
+- [ ] Smoke graph reload, Compare Results, and Show Log opening around the shared backend integration.
+
+Manual validation result: pending.
 
 Release gates:
 
-- The first Compare Results unified diff slice is implemented; any additional implementation scope remains pending maintainer selection.
-- Manual Extension Development Host validation remains pending.
-- VSIX packaging remains pending explicit approval.
-- Marketplace publication remains pending explicit approval.
+- Scope freeze: complete on 2026-06-27.
+- Focused implementation: complete.
+- Automated verification: complete on the current candidate.
+- Manual Extension Development Host validation: pending; blocks packaging approval.
+- VSIX packaging and clean-profile installation: pending explicit approval; blocks Marketplace publication.
+- Marketplace publication: pending explicit approval.
+
+Packaging readiness requirements:
+
+- Run `npm run package:vsix` only after explicit maintainer approval.
+- Record VSIX filename, size, checksum, and package-entry count.
+- Install the generated VSIX in a clean profile and repeat the core ref-to-ref and ref-to-worktree smoke paths.
+- Confirm packaged changelog, README, entrypoint, worker output, icons, and runtime dependencies.
 
 Rollback:
 
-- Revert selected `1.4.0` implementation slices individually if they introduce regressions.
-- If only the opening metadata needs rollback, restore package metadata to `1.3.0` and remove the `1.4.0` release artifacts.
+- Revert the Compare Results unified diff slice if validation finds incorrect patches, repository selection errors, unacceptable toolbar behavior, or regressions in existing Compare Results actions.
+- Restore package metadata to `1.3.0` and remove the `1.4.0` release artifacts if the candidate is abandoned rather than corrected.
 
 ## 1.3.0 Release Readiness
 

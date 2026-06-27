@@ -2,92 +2,114 @@
 
 ## Objective
 
-Open `1.4.0` as the next minor release after the completed `1.3.0` graph layout performance and readability release.
+Deliver `1.4.0` as a focused review-surface improvement release after the completed `1.3.0` graph layout release.
 
-The first selected slice adds a `Unified Diff` action to the Compare Results editor panel for ref-to-ref and ref-to-worktree comparisons. Additional launch items remain pending maintainer selection and should be recorded in focused feature artifacts before implementation begins.
+The release scope is frozen to the implemented `Unified Diff` action in the Compare Results editor panel for ref-to-ref and ref-to-worktree comparisons. No additional feature, fix, dependency, contribution point, or product-surface change is included in `1.4.0` without reopening scope through explicit maintainer approval.
 
 ## Context
 
 - Current package baseline before opening: `1.3.0`.
 - Target release: `1.4.0`.
-- Package metadata is now opened at `1.4.0` in `package.json` and `package-lock.json`.
+- Package metadata is `1.4.0` in `package.json` and `package-lock.json`.
 - `1.3.0` shipped adaptive d3-dag Sugiyama layout profile selection and route-aware edge rendering.
 - The active product surface remains the Source Control-launched singleton revision graph editor, plus on-demand Compare Results and Show Log editor panels.
-- The Compare Results panel already supports file-level diff review, filtering, copy actions, compare-with-worktree, and restore workflows.
+- Scope was frozen on 2026-06-27 after implementation and automated verification of the Compare Results unified diff slice.
 
 ## Release Direction
 
 - Preserve the existing extension architecture, command IDs, multi-repository behavior, conflict guards, cancellation paths, worker-thread layout execution, virtualized webview rendering, and native VS Code Git workflows.
-- Select `1.4.0` launch items as small, independently verifiable slices.
-- Prefer items with clear user value, bounded regression risk, and deterministic verification.
-- Keep packaging and Marketplace publication as explicit Deliver actions after implementation and validation.
+- Ship one independently verifiable review-surface slice instead of expanding the minor release backlog.
+- Keep VSIX packaging and Marketplace publication as explicit Deliver actions after automated and manual validation.
 
-## Selected Scope
+## Frozen Scope
 
-### Priority 0: Compare Results unified diff
+### Compare Results unified diff
 
 - Add a `Unified Diff` button to ref-to-ref Compare Results sessions.
 - Reuse the existing unified diff document flow and revision graph document backend.
 - Extend the action to ref-to-worktree sessions, including staged, unstaged, and untracked changes.
 - Preserve existing Compare Results file-level actions, filtering, selection, context menus, and restore behavior.
+- Keep the action hidden in empty Compare Results state.
 
 Implementation reference:
 
 - `project-context/2.build/features/1.4.0-compare-results-unified-diff.md`
 
-## Candidate Areas
+## Deferred Beyond 1.4.0
 
-- Revision graph usability, readability, and workflow polish.
-- Compare Results and Show Log review efficiency.
-- Git workflow parity with VS Code Source Control where the public Git API supports the behavior.
-- Release hygiene, package composition, diagnostics, and regression coverage.
+- Additional revision graph usability or readability changes.
+- Additional Compare Results or Show Log review features.
+- New Git workflow parity work.
+- Package, diagnostics, or dependency changes not required to deliver the frozen slice.
+- Any new command, menu, view, setting, dependency, or contribution point.
 
 ## Acceptance Criteria
 
 - Package metadata reports `1.4.0`.
-- The release readiness artifact records the cycle as open and not packaged or published.
-- Selected implementation items have focused feature artifacts before coding.
+- The only user-visible `1.4.0` implementation scope is Compare Results unified diff.
 - Ref-to-ref and ref-to-worktree Compare Results sessions can open a unified diff from the review panel.
-- `npm run build`, `npm test`, and `git diff --check` pass for release-candidate work.
-- Manual Extension Development Host validation covers any changed command, graph, review, or Git workflow behavior.
+- Worktree output covers tracked staged and unstaged changes plus active untracked files.
+- Empty state does not expose the action.
+- Existing Compare Results file-level workflows remain intact.
+- `npm run build`, `npm test`, and `git diff --check` pass on the release-candidate commit.
+- The mandatory Extension Development Host smoke matrix is completed and recorded in `project-context/3.deliver/release.md`.
 - VSIX packaging and Marketplace publication are not run without explicit maintainer approval.
 
 ## Verification Plan
 
-Opening:
+### Automated gate
 
-- Confirm version metadata in `package.json` and `package-lock.json`.
-- `git diff --check`
-- `npm run build`
-- `npm test`
-
-Feature slices:
-
-- Use focused tests for changed command behavior, graph state shaping, render coordination, webview shell output, or Git workflow boundaries.
-- Preserve zero-repository and multi-repository behavior.
-- Record manual smoke paths for changed user-facing workflows.
-
-Release candidate:
+Run on the exact release-candidate commit:
 
 - `npm run build`
 - `npm test`
 - `git diff --check`
-- `npm run package:vsix` only after explicit approval
-- Fresh-profile Extension Development Host smoke validation
 
-## Exclusions
+Current candidate evidence on 2026-06-27:
 
-- No dependency additions without separate maintainer approval.
-- No new product surface or contribution point unless selected as a focused `1.4.0` feature.
-- No VSIX packaging, version re-bump, or Marketplace publication without explicit maintainer approval.
+- `npm run build` passed.
+- `npm test` passed with 463 tests.
+- `git diff --check` passed.
 
-## Risks
+### Mandatory Extension Development Host smoke gate
 
-- A broad minor-release backlog can overfill the release. Keep slices small and defer lower-confidence work.
-- User-facing graph or Git workflow changes can regress multi-repository, conflict, or empty-state behavior without focused validation.
-- Changelog and Marketplace copy should describe only implemented, validated improvements.
+Use a fresh Extension Development Host with the built-in `vscode.git` extension active.
+
+1. Open the graph from Source Control and confirm repository selection still works in single- and multi-repository workspaces.
+2. Run a non-empty ref-to-ref comparison, open `Unified Diff`, and verify orientation, labels, patch contents, and native diff-language rendering.
+3. Run a ref-to-worktree comparison containing staged, unstaged, and untracked files, including a nested path and a path containing spaces; verify every active change appears in the unified output.
+4. Confirm empty Compare Results state hides `Unified Diff` and existing file open, filter, selection, copy, compare-with-worktree, context-menu, and restore actions still work.
+5. Change or delete an untracked file after opening Compare Results and confirm the action reports an error without crashing or mutating the repository.
+6. Switch the active comparison between repositories and confirm the unified diff always runs against the repository shown by Compare Results.
+7. Resize the editor panel to a narrow width and confirm the toolbar remains usable.
+8. Smoke graph reload, Compare Results, and Show Log opening to detect integration regressions around the shared backend instance.
+
+Record the tested VS Code version, operating system, repository fixtures, result of each step, and any accepted limitation in the release-readiness artifact.
+
+### Packaging gate
+
+Only after explicit maintainer approval:
+
+- Run `npm run package:vsix`.
+- Record VSIX filename, size, checksum, and package-entry count.
+- Install the generated VSIX in a clean profile and repeat the core ref-to-ref and ref-to-worktree smoke paths.
+- Inspect the packaged changelog, README, entrypoint, worker output, icons, and runtime dependencies.
+
+## Release Gate Checklist
+
+- Scope freeze: complete.
+- Focused implementation: complete.
+- Automated verification: complete on current candidate.
+- Manual Extension Development Host smoke: pending.
+- VSIX packaging and clean-profile installation: pending explicit approval.
+- Marketplace publication: pending explicit approval.
+
+## Rollback
+
+- Revert the Compare Results unified diff implementation if manual validation finds incorrect patches, repository selection errors, unacceptable toolbar behavior, or regressions in existing Compare Results actions.
+- Restore package metadata to `1.3.0` and remove the `1.4.0` release artifacts if the release candidate is abandoned rather than corrected.
 
 ## Marketplace Notes
 
-- Describe only selected and implemented `1.4.0` improvements.
-- Avoid broad performance or workflow claims unless release validation records a reproducible workload.
+- Describe `1.4.0` only as adding unified diff access from ref-to-ref and ref-to-worktree Compare Results.
+- Do not claim broader graph, performance, Git workflow, or packaging improvements.

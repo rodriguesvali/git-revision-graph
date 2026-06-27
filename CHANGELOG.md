@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Release Preparation
 
 - Opened the `1.4.0` cycle as the next minor release after the published `1.3.0` release.
-- Version metadata is bumped to `1.4.0` in `package.json` and `package-lock.json`; additional implementation scope, VSIX packaging, and Marketplace publication remain pending maintainer selection and approval.
+- Version metadata is `1.4.0` in `package.json` and `package-lock.json`; release scope is frozen to the implemented Compare Results unified diff improvement, while manual validation, VSIX packaging, and Marketplace publication remain pending.
 
 ### Improvements
 

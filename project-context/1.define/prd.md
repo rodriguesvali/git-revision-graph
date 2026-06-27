@@ -39,6 +39,16 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
+## 1.4.0 Release Define
+
+- Target release: `1.4.0`.
+- Scope freeze date: 2026-06-27.
+- Product goal: add direct unified diff access to the existing Compare Results review panel for ref-to-ref and ref-to-worktree sessions.
+- Frozen scope: the implemented Compare Results unified diff slice is the only user-visible `1.4.0` change.
+- Non-goals: additional graph, Show Log, Git workflow, contribution-point, dependency, packaging-hygiene, or product-surface work.
+- Success condition: automated gates pass, the mandatory Extension Development Host matrix in `project-context/3.deliver/release.md` is completed, and packaging remains blocked until explicit maintainer approval.
+- Deferred work requires a later release artifact or explicit scope-reopen decision.
+
 ## 1.2.0 Release Define
 - Current package baseline before opening on 2026-06-21: `1.1.0`.
 - Target release: `1.2.0`.
