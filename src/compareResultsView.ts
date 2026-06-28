@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import type { Change, Repository } from './git';
 import { toOperationError } from './errorDetail';
 import {
+  CompareResultsCompletedState,
   CompareResultItem,
   CompareResultsState,
   isCompareResultsStateForRepository
@@ -100,6 +101,14 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     this.refresh();
   }
 
+  async showLoadingBetweenRefs(
+    repository: Repository,
+    left: RefSelection,
+    right: RefSelection
+  ): Promise<void> {
+    this.showLoading(repository, left.label, right.label);
+  }
+
   async showWithWorktree(
     repository: Repository,
     target: RefSelection,
@@ -113,6 +122,25 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     };
     this.revealPanel();
     this.refresh();
+  }
+
+  async showLoadingWithWorktree(
+    repository: Repository,
+    target: RefSelection
+  ): Promise<void> {
+    this.showLoading(repository, target.label, 'Worktree');
+  }
+
+  async hideLoading(): Promise<void> {
+    if (this.state.kind !== 'loading') {
+      return;
+    }
+
+    this.state = this.state.previousState;
+    this.refresh();
+    if (this.state.kind === 'empty') {
+      this.disposePanel();
+    }
   }
 
   async hideWithRevisionGraph(): Promise<void> {
@@ -161,6 +189,20 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       return false;
     }
     return outcome.value;
+  }
+
+  private showLoading(repository: Repository, sourceLabel: string, targetLabel: string): void {
+    const previousState: CompareResultsCompletedState =
+      this.state.kind === 'loading' ? this.state.previousState : this.state;
+    this.state = {
+      kind: 'loading',
+      repository,
+      sourceLabel,
+      targetLabel,
+      previousState
+    };
+    this.revealPanel();
+    this.refresh();
   }
 
   private refresh(): void {

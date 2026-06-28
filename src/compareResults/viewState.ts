@@ -25,6 +25,17 @@ export function createCompareResultsWebviewState(
     };
   }
 
+  if (state.kind === 'loading') {
+    return {
+      kind: 'loading',
+      summary: buildCompareResultsMessage(state),
+      sourceLabel: state.sourceLabel,
+      targetLabel: state.targetLabel,
+      canOpenUnifiedDiff: false,
+      items: []
+    };
+  }
+
   return {
     kind: 'results',
     summary: buildCompareResultsMessage(state),
@@ -38,6 +49,7 @@ export function createCompareResultsWebviewState(
 export function getCompareResultItems(state: CompareResultsState): CompareResultItem[] {
   switch (state.kind) {
     case 'empty':
+    case 'loading':
       return [];
     case 'between':
       return buildCompareResultItems(

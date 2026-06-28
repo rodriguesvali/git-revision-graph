@@ -18,7 +18,7 @@ export interface CompareResultsWebviewItem {
 }
 
 export interface CompareResultsWebviewState {
-  readonly kind: 'empty' | 'results';
+  readonly kind: 'empty' | 'loading' | 'results';
   readonly summary: string;
   readonly sourceLabel?: string | undefined;
   readonly targetLabel?: string | undefined;
@@ -350,6 +350,25 @@ export function renderCompareResultsWebviewHtml(): string {
       padding: 22px 16px 18px;
       color: var(--vscode-descriptionForeground);
       line-height: 1.45;
+    }
+    .loading-state {
+      display: grid;
+      min-height: calc(100vh - 96px);
+      place-items: center;
+      padding: 24px 16px;
+    }
+    .loading-dialog {
+      min-width: min(320px, 100%);
+      max-width: 420px;
+      padding: 18px 20px;
+      border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent));
+      border-radius: 6px;
+      color: var(--vscode-editorWidget-foreground, var(--vscode-foreground));
+      background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--vscode-widget-shadow, #000) 55%, transparent);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
     }
     @media (max-width: 760px) {
       .controls-row {
@@ -766,7 +785,23 @@ export function renderCompareResultsWebviewHtml(): string {
       selectionSummary.textContent = formatSelectionSummary(totalCount, filteredItems.length, selectedCount);
       statusFilters.innerHTML = renderStatusFilters(currentState.items);
       updateUnifiedDiffButton();
+      searchInput.disabled = currentState.kind === 'loading';
       clearSearchButton.disabled = filterQuery.length === 0;
+
+      if (currentState.kind === 'loading') {
+        resultCount.textContent = currentState.summary || 'Loading results...';
+        selectionSummary.textContent = '';
+        statusFilters.innerHTML = '';
+        clearSearchButton.disabled = true;
+        updateUnifiedDiffButton();
+        content.innerHTML = ''
+          + '<div class="loading-state">'
+          + '  <div class="loading-dialog" role="dialog" aria-modal="true" aria-live="polite">'
+          + '    Loading results...'
+          + '  </div>'
+          + '</div>';
+        return;
+      }
 
       if (currentState.kind === 'empty') {
         sourceLabel.textContent = 'Compare Results';

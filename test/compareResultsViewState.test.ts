@@ -18,6 +18,25 @@ test('createCompareResultsWebviewState builds an empty compare results state', (
   });
 });
 
+test('createCompareResultsWebviewState builds a loading compare results state', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  assert.deepEqual(createCompareResultsWebviewState({
+    kind: 'loading',
+    repository,
+    sourceLabel: 'main',
+    targetLabel: 'release/2026',
+    previousState: { kind: 'empty' }
+  }), {
+    kind: 'loading',
+    summary: 'Loading results...',
+    sourceLabel: 'main',
+    targetLabel: 'release/2026',
+    canOpenUnifiedDiff: false,
+    items: []
+  });
+});
+
 test('createCompareResultsWebviewState builds between-ref labels and items', () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const state = createCompareResultsWebviewState({

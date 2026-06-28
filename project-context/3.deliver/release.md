@@ -18,12 +18,16 @@ Implemented candidate scope:
 - Disable duplicate `Unified Diff` requests while generation is in flight.
 - Show unified diff failures that block command completion, including output limit errors,
   in a modal error dialog instead of a toaster.
+- Open Compare Results immediately with a centered `Loading results...` dialog while large
+  ref-to-ref or ref-to-worktree compare result lists are loading.
+- Restore the previous Compare Results state, or close the panel when there was no previous
+  state, when compare loading ends with no differences or a blocking error.
 - Preserve existing ref-to-ref and ref-to-worktree unified diff generation behavior.
 
 Verification:
 
 - `npm run build` passed.
-- `npm test` passed with 498 tests.
+- `npm test` passed with 501 tests.
 - `git diff --check` passed.
 
 Release gates:
@@ -35,7 +39,7 @@ Release gates:
 
 Planning reference:
 
-- `project-context/2.build/features/1.5.3-compare-results-unified-diff-loading.md`
+- `project-context/2.build/features/1.5.3-compare-results-loading-feedback.md`
 
 ## 1.5.2 Release Readiness
 

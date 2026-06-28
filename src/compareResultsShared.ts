@@ -7,6 +7,13 @@ export type CompareResultsState =
     readonly kind: 'empty';
   }
   | {
+    readonly kind: 'loading';
+    readonly repository: Repository;
+    readonly sourceLabel: string;
+    readonly targetLabel: string;
+    readonly previousState: CompareResultsCompletedState;
+  }
+  | {
     readonly kind: 'between';
     readonly repository: Repository;
     readonly left: RefSelection;
@@ -19,6 +26,8 @@ export type CompareResultsState =
     readonly target: RefSelection;
     readonly changes: readonly Change[];
   };
+
+export type CompareResultsCompletedState = Exclude<CompareResultsState, { readonly kind: 'loading' }>;
 
 export function isCompareResultsStateForRepository(
   state: CompareResultsState,
@@ -78,6 +87,8 @@ export function buildCompareResultsMessage(state: CompareResultsState): string {
   switch (state.kind) {
     case 'empty':
       return 'Run a compare from the revision graph or Command Palette to keep the changed files here.';
+    case 'loading':
+      return 'Loading results...';
     case 'between':
       return `${state.left.label} <-> ${state.right.label} • ${formatFileCount(state.changes.length)}`;
     case 'worktree':

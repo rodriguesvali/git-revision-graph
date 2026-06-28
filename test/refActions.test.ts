@@ -58,6 +58,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     readonly upstreamRefName: string | undefined;
   }>;
   readonly diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }>;
+  readonly compareResultsLoadingCalls: Array<{ readonly kind: 'between' | 'worktree' | 'hide'; readonly refA?: string; readonly refB?: string }>;
   readonly compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }>;
   readonly createdTags: Array<{ readonly tagName: string; readonly refName: string }>;
   readonly resetBranches: Array<{ readonly branchName: string; readonly refName: string }>;
@@ -94,6 +95,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     readonly upstreamRefName: string | undefined;
   }> = [];
   const diffCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string }> = [];
+  const compareResultsLoadingCalls: Array<{ readonly kind: 'between' | 'worktree' | 'hide'; readonly refA?: string; readonly refB?: string }> = [];
   const compareResultsCalls: Array<{ readonly kind: 'between' | 'worktree'; readonly refA: string; readonly refB?: string; readonly changeCount: number }> = [];
   const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
   const resetBranches: Array<{ readonly branchName: string; readonly refName: string }> = [];
@@ -167,6 +169,13 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       }
     },
     compareResultsPresenter: {
+      async showLoadingBetweenRefs(_repository, left, right) {
+        compareResultsLoadingCalls.push({
+          kind: 'between',
+          refA: left.refName,
+          refB: right.refName
+        });
+      },
       async showBetweenRefs(_repository, left, right, changes) {
         compareResultsCalls.push({
           kind: 'between',
@@ -175,12 +184,21 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
           changeCount: changes.length
         });
       },
+      async showLoadingWithWorktree(_repository, target) {
+        compareResultsLoadingCalls.push({
+          kind: 'worktree',
+          refA: target.refName
+        });
+      },
       async showWithWorktree(_repository, target, changes) {
         compareResultsCalls.push({
           kind: 'worktree',
           refA: target.refName,
           changeCount: changes.length
         });
+      },
+      async hideLoading() {
+        compareResultsLoadingCalls.push({ kind: 'hide' });
       }
     },
     refreshController: {
@@ -267,6 +285,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     confirmRequests,
     remoteCheckoutInputRequests,
     diffCalls,
+    compareResultsLoadingCalls,
     compareResultsCalls,
     createdTags,
     resetBranches,
@@ -313,6 +332,9 @@ test('compareResolvedRefs uses the shared compare workflow and labels', async ()
   );
 
   assert.deepEqual(harness.diffCalls, []);
+  assert.deepEqual(harness.compareResultsLoadingCalls, [
+    { kind: 'between', refA: 'main', refB: 'release/2026' }
+  ]);
   assert.deepEqual(harness.compareResultsCalls, [
     { kind: 'between', refA: 'main', refB: 'release/2026', changeCount: 1 }
   ]);
@@ -332,9 +354,61 @@ test('compareResolvedRefWithWorktree uses the persistent compare results view', 
   );
 
   assert.deepEqual(harness.diffCalls, []);
+  assert.deepEqual(harness.compareResultsLoadingCalls, [
+    { kind: 'worktree', refA: 'main' }
+  ]);
   assert.deepEqual(harness.compareResultsCalls, [
     { kind: 'worktree', refA: 'main', changeCount: 1 }
   ]);
+});
+
+test('compareResolvedRefs hides loading when no differences are found', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    diffBetween: []
+  });
+  const harness = createServices();
+
+  await compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.compareResultsLoadingCalls, [
+    { kind: 'between', refA: 'main', refB: 'release/2026' },
+    { kind: 'hide' }
+  ]);
+  assert.deepEqual(harness.compareResultsCalls, []);
+  assert.deepEqual(harness.infoMessages, [
+    'No differences found between main and release/2026.'
+  ]);
+});
+
+test('compareResolvedRefs hides loading and reports blocking diff errors as modal', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo'
+  });
+  repository.diffBetween = async () => {
+    throw new Error('The compare output exceeded the maximum captured output.');
+  };
+  const harness = createServices();
+
+  await compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.compareResultsLoadingCalls, [
+    { kind: 'between', refA: 'main', refB: 'release/2026' },
+    { kind: 'hide' }
+  ]);
+  assert.equal(harness.errorMessageRequests.length, 1);
+  assert.match(harness.errorMessageRequests[0].message, /Could not compare references\./);
+  assert.deepEqual(harness.errorMessageRequests[0].options, { modal: true });
 });
 
 test('checkoutResolvedReference keeps current branch behavior consistent across entrypoints', async () => {

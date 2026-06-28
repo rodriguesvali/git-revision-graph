@@ -59,11 +59,22 @@ export interface DiffPresenter {
 }
 
 export interface CompareResultsPresenter {
+  showLoadingBetweenRefs?(
+    repository: Repository,
+    left: RefSelection,
+    right: RefSelection,
+    options?: CompareResultsRevealOptions
+  ): Promise<void>;
   showBetweenRefs(
     repository: Repository,
     left: RefSelection,
     right: RefSelection,
     changes: readonly ChangeQuickPickItem['change'][],
+    options?: CompareResultsRevealOptions
+  ): Promise<void>;
+  showLoadingWithWorktree?(
+    repository: Repository,
+    target: RefSelection,
     options?: CompareResultsRevealOptions
   ): Promise<void>;
   showWithWorktree(
@@ -72,6 +83,7 @@ export interface CompareResultsPresenter {
     changes: readonly ChangeQuickPickItem['change'][],
     options?: CompareResultsRevealOptions
   ): Promise<void>;
+  hideLoading?(): Promise<void>;
 }
 
 export interface PreparedRefreshHandle {

@@ -22,6 +22,10 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /canOpenUnifiedDiff: false/);
   assert.match(html, /let isOpeningUnifiedDiff = false/);
   assert.match(html, /currentState\.items\.length === 1 \? \[currentState\.items\[0\]\.id\] : \[\]/);
+  assert.match(html, /Loading results\.\.\./);
+  assert.match(html, /class="loading-dialog" role="dialog" aria-modal="true"/);
+  assert.match(html, /\.loading-state \{/);
+  assert.match(html, /\.loading-dialog \{/);
   assert.match(html, /function filterItems\(items, query, statusFilter\)/);
   assert.match(html, /function getVisibleItemIds\(\)/);
   assert.match(html, /function renderStatusFilters\(items\)/);
@@ -93,6 +97,8 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /context-submenu/);
   assert.match(html, /function openContextMenu\(items, x, y\)/);
   assert.match(html, /selectionSummary\.textContent = formatSelectionSummary/);
+  assert.match(html, /if \(currentState\.kind === 'loading'\)/);
+  assert.match(html, /resultCount\.textContent = currentState\.summary \|\| 'Loading results\.\.\.'/);
   assert.match(html, /function postSingleAction\(type, itemId\)/);
   assert.match(html, /postSingleAction\('base', itemId\)/);
   assert.match(html, /function resetDoubleClickTracking\(\)/);
