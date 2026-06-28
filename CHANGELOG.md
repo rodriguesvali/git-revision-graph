@@ -2,12 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.1
+
+### Release Preparation
+
+- Prepared a documentation-only patch so the Marketplace package includes the complete `1.5.0` reliability, safety, and merge-conflict release notes.
+- Runtime behavior is unchanged from `1.5.0`; package metadata is `1.5.1`, while packaging and publication remain pending explicit maintainer action.
+
 ## 1.5.0
 
 ### Release Preparation
 
 - Opened the `1.5.0` cycle as a reliability and safety release after maintainer confirmation that `1.4.0` was published to the Marketplace.
-- Version metadata is `1.5.0` in `package.json` and `package-lock.json`; the robustness scope is frozen and implemented locally, while manual validation, packaging, and publication remain pending.
+- Version metadata is `1.5.0` in `package.json` and `package-lock.json`; automated verification and the final Extension Development Host smoke test completed before publication.
+- Marketplace publication was confirmed by the maintainer on 2026-06-28.
 
 ### Reliability & Safety
 
@@ -16,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Reworked file restore around targeted `git restore`, constrained direct removal, and symlink-ancestor validation so tracked type and executable metadata are preserved.
 - Added bounded Git execution profiles, process-tree termination, NUL-safe history parsing, bounded layout-worker recovery, and explicit ref-content failures.
 - Added deterministic Git fixtures and graph benchmarks plus a read-only Node.js 20 verification matrix for Ubuntu, Windows, and macOS.
+- Replaced the easy-to-miss merge-conflict error notification with a native modal dialog, refreshed conflict state before waiting for dismissal, and kept the per-repository mutation guard active until the user acknowledges the conflict.
 
 ## 1.4.0
 

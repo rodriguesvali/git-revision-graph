@@ -1,12 +1,69 @@
 # Release Readiness
 
+## 1.5.1 Release Readiness
+
+Previous published package baseline: `1.5.0`.
+
+Target corrective release: `1.5.1`.
+
+Status: Delivery artifacts are prepared for a documentation-only corrective patch after
+the maintainer reported that `1.5.0` was published before its final release notes were
+updated. Runtime behavior is unchanged from `1.5.0`. Package metadata is `1.5.1` in
+`package.json` and `package-lock.json`; the authorized version bump is complete, while no
+packaging or follow-up publication has been performed by Codex.
+
+Corrective scope:
+
+- Add a `1.5.1` changelog entry explaining that the patch corrects Marketplace-facing
+  release metadata without runtime changes.
+- Finalize the `1.5.0` changelog with publication state and the modal merge-conflict dialog.
+- Align `release.md`, `deployment.md`, and `operations.md` with the published `1.5.0`
+  baseline and the pending corrective patch.
+
+Verification baseline:
+
+- The `1.5.1` candidate passed `npm run build` through the `npm test` lifecycle and all
+  495 tests passed after the version bump.
+- Final Extension Development Host smoke validation for the runtime was reported complete
+  by the maintainer on 2026-06-28.
+- `package.json`, top-level `package-lock.json`, and the root lockfile package entry all
+  report `1.5.1`.
+- `git diff --check` passed after the documentation correction and version bump.
+- Read-only `vsce ls --no-dependencies` inspection confirmed that `package.json`,
+  `README.md`, and the corrected `CHANGELOG.md` are included in the package contents.
+
+Release gates:
+
+- Corrected delivery artifacts: complete.
+- Package metadata bump from `1.5.0` to `1.5.1`: complete after maintainer approval on 2026-06-28.
+- Automated candidate verification after the version bump: complete.
+- VSIX packaging and content inspection for `1.5.1`: pending.
+- Marketplace publication of `1.5.1`: pending maintainer action.
+
+Marketplace constraint:
+
+- The already published `1.5.0` version number cannot be reused for another upload.
+- The corrective package must use a distinct version such as `1.5.1`; deleting a published
+  version does not make that version number reusable.
+
+Rollback:
+
+- If the corrective patch is abandoned, keep `1.5.0` as the published baseline and remove
+  only the unshipped `1.5.1` preparation notes.
+
 ## 1.5.0 Release Readiness
 
-Published package baseline: `1.4.0`.
+Previous published package baseline: `1.4.0`.
 
 Target release: `1.5.0`.
 
-Status: Scope frozen and Build authorized by the maintainer on 2026-06-27. Package metadata is `1.5.0`; the frozen robustness slices are implemented and verified locally. Cross-platform CI observation and manual Extension Development Host validation remain pending. No `1.5.0` packaging or publication has been authorized or performed.
+Published release: `1.5.0`.
+
+Status: Release completed by maintainer confirmation on 2026-06-28. Package metadata is
+`1.5.0`; automated verification passed, the final smoke test was reported complete, and
+Marketplace publication was reported complete. Exact Marketplace publication metadata,
+VSIX filename/checksum, clean-profile installation evidence, and cross-platform CI results
+were not supplied for this artifact and are not inferred.
 
 Opening verification:
 
@@ -19,14 +76,16 @@ Current Build verification:
 
 - Clean `npm ci` passed after development-only dependency remediation.
 - `npm run build` passed.
-- `npm test` passed with 493 tests.
+- `npm test` passed with 495 tests after the modal merge-conflict dialog slice.
 - `npm run test:platform` passed with 29 focused tests on Linux.
 - `git diff --check` passed.
 - Production and full development audits both report zero vulnerabilities.
 - Deterministic CI and RC benchmark manifests and local measurements are recorded in `project-context/2.build/features/1.5.0-robustness-hardening.md`.
 - Graphify incremental review completed with 1,010 nodes, 2,566 edges, and 51 communities.
-- Read-only `vsce ls` package-content inspection completed with 578 listed entries; no VSIX was created.
-- GitHub Actions matrix observation, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication remain incomplete.
+- Read-only `vsce ls` package-content inspection completed with 578 listed entries; no VSIX was created by Codex during that check.
+- Final Extension Development Host smoke validation was reported complete by the maintainer on 2026-06-28.
+- Marketplace publication of `1.5.0` was reported complete by the maintainer on 2026-06-28.
+- GitHub Actions matrix results, exact VSIX metadata, and clean-profile installation details remain unrecorded rather than inferred.
 
 Implemented release direction:
 
@@ -37,6 +96,7 @@ Implemented release direction:
 - invalidate repository-dependent review panels when repositories close;
 - make layout worker failure recovery bounded and extension-host safe;
 - surface ref content failures instead of displaying valid-looking empty documents;
+- report merge-conflict failures in a native modal dialog while preserving the per-repository mutation guard;
 - add fault-injection, cross-platform, and manual Extension Development Host validation before release closure.
 
 Planning references:
@@ -44,6 +104,7 @@ Planning references:
 - `project-context/docs/release-1.5.0-prioritization.md`
 - `project-context/2.build/features/1.5.0-release-opening.md`
 - `project-context/2.build/features/1.5.0-robustness-hardening.md`
+- `project-context/2.build/features/1.5.0-modal-merge-conflict-dialog.md`
 - `project-context/1.define/open-questions.md`
 - `src/graphify-out/GRAPH_REPORT.md`
 
@@ -60,10 +121,28 @@ Entry gates:
 - Development-only dependency and lockfile audit remediation without `--force`, runtime dependency changes, or unapproved majors: approved on 2026-06-27.
 - Deterministic generated CI and release-candidate graph benchmarks with fixed seed, manifest, and approved sizes: approved on 2026-06-27.
 - Scope freeze and Build authorization: complete on 2026-06-27.
+- Modal merge-conflict dialog implementation and automated verification: complete on 2026-06-28.
+- Final smoke validation: complete by maintainer confirmation on 2026-06-28.
+- Marketplace publication: complete by maintainer confirmation on 2026-06-28.
 - All technical Define questions required for Build are resolved.
 - Opening comparison baseline recorded as `0fd5263e5fdbcaaeb9d305abf981f7e01e895936`; record a new implementation baseline if approved Build work starts from a later commit.
 
-Release gates remain distinct: scope approval is complete; implementation, automated verification, manual Extension Development Host validation, VSIX packaging, clean-profile installation, and Marketplace publication require explicit progression. Build authorization does not authorize packaging or publication.
+Completion record:
+
+- The maintainer confirmed the final smoke test and Marketplace publication for `1.5.0`.
+- The maintainer later reported that publication occurred before the final delivery
+  artifacts were updated; corrected notes are prepared under the `1.5.1` section above.
+- Packaging necessarily occurred as part of the maintainer's external publication workflow,
+  but the exact VSIX artifact details were not supplied and are not recorded as verified here.
+- No publication command, version bump, or Marketplace mutation was executed by Codex in
+  this documentation update.
+
+Post-release rollback:
+
+- If the modal merge-conflict behavior regresses, prepare a patch release that reverts the
+  opt-in modal message options or corrects the merge conflict detection/refresh ordering.
+- For broader `1.5.0` regressions, publish a corrective patch or direct affected users to a
+  previously validated VSIX when one is available; do not overwrite published history.
 
 ## 1.4.0 Release Readiness
 
