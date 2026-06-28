@@ -6,19 +6,21 @@ Previous published package baseline: `1.5.0`.
 
 Target corrective release: `1.5.1`.
 
-Status: Delivery artifacts are prepared for a documentation-only corrective patch after
-the maintainer reported that `1.5.0` was published before its final release notes were
-updated. Runtime behavior is unchanged from `1.5.0`. Package metadata is `1.5.1` in
-`package.json` and `package-lock.json`; the authorized version bump is complete, while no
-packaging or follow-up publication has been performed by Codex.
+Published release: `1.5.1`.
+
+Status: Corrective release completed by maintainer confirmation on 2026-06-28 after
+`1.5.0` was published before its final release notes were updated. Runtime behavior is
+unchanged from `1.5.0`. Package metadata is `1.5.1` in `package.json` and
+`package-lock.json`; automated verification passed and Marketplace publication was
+reported complete. Codex did not execute packaging or publication commands.
 
 Corrective scope:
 
-- Add a `1.5.1` changelog entry explaining that the patch corrects Marketplace-facing
+- Added a `1.5.1` changelog entry explaining that the patch corrects Marketplace-facing
   release metadata without runtime changes.
-- Finalize the `1.5.0` changelog with publication state and the modal merge-conflict dialog.
-- Align `release.md`, `deployment.md`, and `operations.md` with the published `1.5.0`
-  baseline and the pending corrective patch.
+- Finalized the `1.5.0` changelog with publication state and the modal merge-conflict dialog.
+- Aligned `release.md`, `deployment.md`, and `operations.md` with the published `1.5.0`
+  baseline and the published corrective patch.
 
 Verification baseline:
 
@@ -37,8 +39,10 @@ Release gates:
 - Corrected delivery artifacts: complete.
 - Package metadata bump from `1.5.0` to `1.5.1`: complete after maintainer approval on 2026-06-28.
 - Automated candidate verification after the version bump: complete.
-- VSIX packaging and content inspection for `1.5.1`: pending.
-- Marketplace publication of `1.5.1`: pending maintainer action.
+- Read-only package-content inspection: complete.
+- Marketplace packaging and publication of `1.5.1`: complete by maintainer confirmation on 2026-06-28.
+- Exact standalone VSIX filename, checksum, size, and Marketplace publication metadata:
+  not supplied and not inferred.
 
 Marketplace constraint:
 
@@ -46,10 +50,10 @@ Marketplace constraint:
 - The corrective package must use a distinct version such as `1.5.1`; deleting a published
   version does not make that version number reusable.
 
-Rollback:
+Post-release rollback:
 
-- If the corrective patch is abandoned, keep `1.5.0` as the published baseline and remove
-  only the unshipped `1.5.1` preparation notes.
+- If the corrected package introduces an unexpected delivery regression, prepare a new
+  patch version; do not attempt to overwrite or reuse `1.5.1`.
 
 ## 1.5.0 Release Readiness
 

@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Release Preparation
 
 - Prepared a documentation-only patch so the Marketplace package includes the complete `1.5.0` reliability, safety, and merge-conflict release notes.
-- Runtime behavior is unchanged from `1.5.0`; package metadata is `1.5.1`, while packaging and publication remain pending explicit maintainer action.
+- Runtime behavior is unchanged from `1.5.0`; package metadata is `1.5.1` and Marketplace publication was confirmed by the maintainer on 2026-06-28.
 
 ## 1.5.0
 
