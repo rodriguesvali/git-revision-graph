@@ -20,6 +20,7 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /id="contextMenu"/);
   assert.match(html, /selectedItemIds = \[\]/);
   assert.match(html, /canOpenUnifiedDiff: false/);
+  assert.match(html, /let isOpeningUnifiedDiff = false/);
   assert.match(html, /currentState\.items\.length === 1 \? \[currentState\.items\[0\]\.id\] : \[\]/);
   assert.match(html, /function filterItems\(items, query, statusFilter\)/);
   assert.match(html, /function getVisibleItemIds\(\)/);
@@ -48,8 +49,16 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /\.actions-column \{\s*text-align: center;/);
   assert.match(html, /content\.addEventListener\('click'/);
   assert.match(html, /unifiedDiffButton\.addEventListener\('click'/);
+  assert.match(html, /message\.type === 'unifiedDiffProgress'/);
+  assert.match(html, /isOpeningUnifiedDiff = message\.isOpening === true/);
+  assert.match(html, /if \(!currentState\.canOpenUnifiedDiff \|\| isOpeningUnifiedDiff\)/);
+  assert.match(html, /isOpeningUnifiedDiff = true/);
+  assert.match(html, /updateUnifiedDiffButton\(\)/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'unifiedDiff' \}\)/);
-  assert.match(html, /unifiedDiffButton\.hidden = !currentState\.canOpenUnifiedDiff/);
+  assert.match(html, /function updateUnifiedDiffButton\(\)/);
+  assert.match(html, /unifiedDiffButton\.disabled = canOpen && isOpeningUnifiedDiff/);
+  assert.match(html, /Generating Diff\.\.\./);
+  assert.match(html, /aria-busy/);
   assert.match(html, /content\.addEventListener\('mousedown'/);
   assert.match(html, /content\.addEventListener\('auxclick'/);
   assert.match(html, /content\.addEventListener\('contextmenu'/);

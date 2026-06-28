@@ -129,6 +129,10 @@ export function renderCompareResultsWebviewHtml(): string {
       outline: none;
       background: var(--vscode-button-secondaryHoverBackground, var(--vscode-toolbar-hoverBackground));
     }
+    .toolbar-action:disabled {
+      opacity: 0.75;
+      cursor: wait;
+    }
     .toolbar-action[hidden] {
       display: none;
     }
@@ -515,6 +519,7 @@ export function renderCompareResultsWebviewHtml(): string {
     let contextMenuItemIds = [];
     let lastPrimaryClickItemId = undefined;
     let lastPrimaryClickAt = 0;
+    let isOpeningUnifiedDiff = false;
     const doubleClickThresholdMs = 500;
 
     window.addEventListener('message', (event) => {
@@ -528,6 +533,9 @@ export function renderCompareResultsWebviewHtml(): string {
         resetDoubleClickTracking();
         closeContextMenu();
         render();
+      } else if (message && message.type === 'unifiedDiffProgress') {
+        isOpeningUnifiedDiff = message.isOpening === true;
+        updateUnifiedDiffButton();
       }
     });
 
@@ -544,9 +552,11 @@ export function renderCompareResultsWebviewHtml(): string {
     });
 
     unifiedDiffButton.addEventListener('click', () => {
-      if (!currentState.canOpenUnifiedDiff) {
+      if (!currentState.canOpenUnifiedDiff || isOpeningUnifiedDiff) {
         return;
       }
+      isOpeningUnifiedDiff = true;
+      updateUnifiedDiffButton();
       closeContextMenu();
       resetDoubleClickTracking();
       vscode.postMessage({ type: 'unifiedDiff' });
@@ -755,7 +765,7 @@ export function renderCompareResultsWebviewHtml(): string {
       resultCount.title = currentState.summary || '';
       selectionSummary.textContent = formatSelectionSummary(totalCount, filteredItems.length, selectedCount);
       statusFilters.innerHTML = renderStatusFilters(currentState.items);
-      unifiedDiffButton.hidden = !currentState.canOpenUnifiedDiff;
+      updateUnifiedDiffButton();
       clearSearchButton.disabled = filterQuery.length === 0;
 
       if (currentState.kind === 'empty') {
@@ -764,7 +774,7 @@ export function renderCompareResultsWebviewHtml(): string {
         resultCount.textContent = '';
         selectionSummary.textContent = '';
         statusFilters.innerHTML = '';
-        unifiedDiffButton.hidden = true;
+        updateUnifiedDiffButton();
         content.innerHTML = '<div class="empty-state">' + escapeHtml(currentState.emptyMessage || '') + '</div>';
         return;
       }
@@ -812,6 +822,15 @@ export function renderCompareResultsWebviewHtml(): string {
           + '  </div>'
           + '</div>';
       }).join('') + '</div>';
+    }
+
+    function updateUnifiedDiffButton() {
+      const canOpen = currentState.kind !== 'empty' && currentState.canOpenUnifiedDiff;
+      unifiedDiffButton.hidden = !canOpen;
+      unifiedDiffButton.disabled = canOpen && isOpeningUnifiedDiff;
+      unifiedDiffButton.textContent = isOpeningUnifiedDiff ? 'Generating Diff...' : 'Unified Diff';
+      unifiedDiffButton.title = isOpeningUnifiedDiff ? 'Generating unified diff...' : 'Open unified diff';
+      unifiedDiffButton.setAttribute('aria-busy', isOpeningUnifiedDiff ? 'true' : 'false');
     }
 
     function getFilteredItems(query) {

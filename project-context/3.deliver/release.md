@@ -1,5 +1,42 @@
 # Release Readiness
 
+## 1.5.3 Release Readiness
+
+Published package baseline: `1.5.2`.
+
+Target patch: `1.5.3`.
+
+Status: Build in progress. The Compare Results `Unified Diff` loading-feedback fix is assigned
+to `1.5.3` because the maintainer confirmed on 2026-06-28 that `1.5.2` has already been
+published. Package metadata still reports `1.5.2`; no version bump, VSIX packaging, or
+Marketplace publication has been approved or executed for `1.5.3`.
+
+Implemented candidate scope:
+
+- Show immediate `Generating Diff...` feedback after the Compare Results `Unified Diff`
+  action is clicked.
+- Disable duplicate `Unified Diff` requests while generation is in flight.
+- Show unified diff failures that block command completion, including output limit errors,
+  in a modal error dialog instead of a toaster.
+- Preserve existing ref-to-ref and ref-to-worktree unified diff generation behavior.
+
+Verification:
+
+- `npm run build` passed.
+- `npm test` passed with 498 tests.
+- `git diff --check` passed.
+
+Release gates:
+
+- Implementation and automated verification: complete for the current candidate.
+- Package version bump to `1.5.3`: pending maintainer approval.
+- Manual Extension Development Host smoke validation: pending.
+- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+
+Planning reference:
+
+- `project-context/2.build/features/1.5.3-compare-results-unified-diff-loading.md`
+
 ## 1.5.2 Release Readiness
 
 Published package baseline: `1.5.1`.

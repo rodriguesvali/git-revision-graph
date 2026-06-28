@@ -50,6 +50,7 @@ export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
+  private openingUnifiedDiff = false;
   private readonly panelDisposables: vscode.Disposable[] = [];
   private readonly messageHandlers: CompareResultsMessageHandlers = {
     ready: () => {
@@ -166,6 +167,17 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     this.postState();
   }
 
+  private postUnifiedDiffProgress(isOpening: boolean): void {
+    if (!this.panel) {
+      return;
+    }
+
+    void this.panel.webview.postMessage({
+      type: 'unifiedDiffProgress',
+      isOpening
+    });
+  }
+
   private postState(): void {
     if (!this.panel) {
       return;
@@ -215,50 +227,68 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async openUnifiedDiff(): Promise<void> {
-    if (this.state.kind === 'between') {
-      await openUnifiedDiffDocument(
-        this.state.repository,
-        this.state.left.refName,
-        this.state.right.refName,
-        this.backend
-      );
-    } else if (this.state.kind === 'worktree') {
-      const state = this.state;
-      let preparation;
-      try {
-        preparation = await prepareCompareResultsWorktreeUnifiedDiff(
-          state,
-          () => this.state
+    if (this.openingUnifiedDiff) {
+      return;
+    }
+
+    if (this.state.kind !== 'between' && this.state.kind !== 'worktree') {
+      return;
+    }
+
+    this.openingUnifiedDiff = true;
+    this.postUnifiedDiffProgress(true);
+    try {
+      if (this.state.kind === 'between') {
+        await openUnifiedDiffDocument(
+          this.state.repository,
+          this.state.left.refName,
+          this.state.right.refName,
+          this.backend
         );
-      } catch (error) {
-        await vscode.window.showErrorMessage(toOperationError(
-          'Could not refresh Compare Results before opening the unified diff.',
-          error
-        ));
-        return;
-      }
-      if (!preparation) {
-        return;
-      }
-
-      this.state = preparation.nextState;
-      if (!preparation.request) {
-        this.refresh();
-        this.disposePanel();
-        if (preparation.infoMessage) {
-          void vscode.window.showInformationMessage(preparation.infoMessage);
+      } else {
+        const state = this.state;
+        let preparation;
+        try {
+          preparation = await prepareCompareResultsWorktreeUnifiedDiff(
+            state,
+            () => this.state
+          );
+        } catch (error) {
+          await vscode.window.showErrorMessage(
+            toOperationError(
+              'Could not refresh Compare Results before opening the unified diff.',
+              error
+            ),
+            { modal: true }
+          );
+          return;
         }
-        return;
-      }
+        if (!preparation) {
+          return;
+        }
 
-      this.refresh();
-      await openUnifiedDiffWithWorktreeDocument(
-        preparation.request.repository,
-        preparation.request.refName,
-        preparation.request.label,
-        preparation.request.untrackedPaths,
-        this.backend
-      );
+        this.state = preparation.nextState;
+        if (!preparation.request) {
+          this.refresh();
+          this.disposePanel();
+          if (preparation.infoMessage) {
+            void vscode.window.showInformationMessage(preparation.infoMessage);
+          }
+          return;
+        }
+
+        this.refresh();
+        await openUnifiedDiffWithWorktreeDocument(
+          preparation.request.repository,
+          preparation.request.refName,
+          preparation.request.label,
+          preparation.request.untrackedPaths,
+          this.backend
+        );
+      }
+    } finally {
+      this.openingUnifiedDiff = false;
+      this.postUnifiedDiffProgress(false);
     }
   }
 

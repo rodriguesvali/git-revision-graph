@@ -28,7 +28,10 @@ export async function openUnifiedDiffDocument(
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(toOperationError('Could not open the unified diff.', error));
+    await vscode.window.showErrorMessage(
+      toOperationError('Could not open the unified diff.', error),
+      { modal: true }
+    );
   }
 }
 
@@ -56,7 +59,10 @@ export async function openUnifiedDiffWithWorktreeDocument(
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(toOperationError('Could not open the unified diff.', error));
+    await vscode.window.showErrorMessage(
+      toOperationError('Could not open the unified diff.', error),
+      { modal: true }
+    );
   }
 }
 
