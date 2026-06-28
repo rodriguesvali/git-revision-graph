@@ -6,11 +6,15 @@ Published package baseline: `1.5.2`.
 
 Target patch: `1.5.3`.
 
-Status: Publication preparation candidate. The Compare Results loading-feedback UX fix is
-assigned to `1.5.3` because the maintainer confirmed on 2026-06-28 that `1.5.2` has already
-been published. Implementation and local automated verification are complete. Package
-metadata reports `1.5.3` after maintainer approval. No VSIX packaging or Marketplace
-publication has been approved or executed for `1.5.3`.
+Published release: `1.5.3`.
+
+Status: Release completed by maintainer confirmation on 2026-06-28. The Compare Results
+loading-feedback UX fix is assigned to `1.5.3` because the maintainer confirmed on
+2026-06-28 that `1.5.2` had already been published. Implementation and local automated
+verification are complete. Package metadata reports `1.5.3` after maintainer approval.
+Marketplace publication was confirmed by the maintainer on 2026-06-28. Codex did not
+execute packaging or publication commands. Exact standalone VSIX filename, checksum, size,
+and Marketplace publication metadata were not supplied and are not inferred.
 
 Implemented candidate scope:
 
@@ -41,8 +45,12 @@ Release gates:
 - Implementation and automated verification: complete for the current candidate.
 - Marketplace-facing release notes: complete for the current candidate.
 - Package version bump to `1.5.3`: complete after maintainer approval.
-- Manual Extension Development Host smoke validation: pending.
-- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+- Manual Extension Development Host smoke validation: not supplied for this artifact and not
+  inferred.
+- VSIX packaging and Marketplace publication: complete by maintainer confirmation on
+  2026-06-28.
+- Exact standalone VSIX filename, checksum, size, and Marketplace publication metadata: not
+  supplied and not inferred.
 
 Manual smoke checklist:
 
@@ -58,9 +66,9 @@ Manual smoke checklist:
 
 Packaging notes:
 
-- Package with `npm run package:vsix` only after explicit maintainer approval.
-- Publish with the approved `npm run publish:*` command only after explicit maintainer
-  approval.
+- `1.5.3` publication is recorded as complete by maintainer confirmation on 2026-06-28.
+- Codex did not run `npm run package:vsix` or any `npm run publish:*` command for this
+  release.
 
 Planning reference:
 
