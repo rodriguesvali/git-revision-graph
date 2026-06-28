@@ -6,16 +6,20 @@ Published package baseline: `1.5.1`.
 
 Target hotfix: `1.5.2`.
 
-Status: The Windows GitHub Actions test-runner hotfix is implemented and verified locally.
-Package metadata remains `1.5.1`; no version bump, packaging, or publication has been
-authorized or performed for `1.5.2`. The Node 20 `windows-latest` re-run remains the final
-platform gate.
+Status: The Windows GitHub Actions test-runner and test-portability hotfixes are implemented
+and verified locally. Package metadata remains `1.5.1`; no version bump, packaging, or
+publication has been authorized or performed for `1.5.2`. The Node 20 `windows-latest`
+re-run remains the final platform gate.
 
 Root cause:
 
 - `npm test` passed `out-test/test/*.test.js` directly to `node --test`.
 - POSIX shells expanded the glob, but Windows `cmd.exe` passed it literally.
 - Node 20 then failed because no file named `*.test.js` exists.
+- After the runner fix exposed all 496 tests on Windows, 31 tests failed because logical Git
+  paths retained `\\`, fake Git fixtures depended on POSIX shell or `.cmd` execution, forced
+  process termination raced fixture cleanup, and content-sensitive fixtures inherited global
+  `core.autocrlf` behavior.
 
 Implemented hotfix:
 
@@ -23,10 +27,14 @@ Implemented hotfix:
 - Updated `npm test` to pass explicit paths to `node --test` without shell glob expansion.
 - Added package-manifest regression coverage for the runner command and absence of the glob.
 - Preserved the existing explicit-path `test:platform` command.
+- Normalized repository-relative logical paths to Git-style `/` separators.
+- Replaced shell-based fake Git fixtures with shell-free Node fixture programs.
+- Awaited Windows process-tree termination before rejecting bounded Git executions.
+- Configured content-sensitive Git fixtures with repository-local `core.autocrlf=false`.
 
 Verification:
 
-- `npm test` passed with 496 tests through the new runner.
+- `npm test` passed with 496 tests through the new runner after portability hardening.
 - The compiled suite passed with Node `20.19.5`: 496 tests.
 - `npm run test:platform` passed with 29 tests.
 - The runner selected 67 `.test.js` entrypoints and excluded helper modules.
@@ -50,6 +58,9 @@ Rollback:
 - Restore the prior `npm test` command only if the cross-platform runner introduces a
   regression, then replace it with another shell-independent explicit-file strategy before
   re-enabling the Windows matrix.
+- Roll back the process-termination wait independently if Windows termination stalls; retain
+  the shell-free fixtures and logical path normalization because they address deterministic
+  cross-platform contracts.
 
 ## 1.5.1 Release Readiness
 

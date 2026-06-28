@@ -18,6 +18,7 @@ async function createRepository(): Promise<string> {
   await execFile('git', ['init'], { cwd: repositoryPath });
   await execFile('git', ['config', 'user.name', 'Test User'], { cwd: repositoryPath });
   await execFile('git', ['config', 'user.email', 'test@example.com'], { cwd: repositoryPath });
+  await execFile('git', ['config', 'core.autocrlf', 'false'], { cwd: repositoryPath });
   return repositoryPath;
 }
 

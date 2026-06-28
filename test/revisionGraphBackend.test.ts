@@ -11,7 +11,9 @@ import type { RevisionGraphLoadTraceEvent } from '../src/revisionGraph/loadTrace
 import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 import { RefType } from '../src/git';
+import { configureGitExecutablePath } from '../src/gitExec';
 import { createBranch, createRef, createRepository } from './fakes';
+import { createFakeGitExecutable } from './fakeGitExecutable';
 
 async function withFakeGitScript<T>(
   script: string,
@@ -20,21 +22,19 @@ async function withFakeGitScript<T>(
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-backend-'));
   const binDir = path.join(temporaryRoot, 'bin');
   const repositoryPath = path.join(temporaryRoot, 'repo');
-  const gitPath = path.join(binDir, 'git');
   const callsPath = path.join(temporaryRoot, 'git-calls.log');
-  const originalPath = process.env.PATH ?? '';
   const originalCallsPath = process.env.GIT_REVISION_GRAPH_FAKE_GIT_CALLS;
 
   await fs.mkdir(binDir, { recursive: true });
   await fs.mkdir(repositoryPath, { recursive: true });
-  await fs.writeFile(gitPath, script, { encoding: 'utf8', mode: 0o755 });
-  process.env.PATH = `${binDir}:${originalPath}`;
+  const fakeGit = await createFakeGitExecutable(binDir, 'git', script);
+  configureGitExecutablePath(fakeGit.executablePath, fakeGit.argumentPrefix);
   process.env.GIT_REVISION_GRAPH_FAKE_GIT_CALLS = callsPath;
 
   try {
     return await run(repositoryPath, callsPath);
   } finally {
-    process.env.PATH = originalPath;
+    configureGitExecutablePath(undefined);
     if (originalCallsPath === undefined) {
       delete process.env.GIT_REVISION_GRAPH_FAKE_GIT_CALLS;
     } else {
@@ -44,13 +44,29 @@ async function withFakeGitScript<T>(
   }
 }
 
+function createFakeGitProgram(
+  body: string,
+  recordedCall: 'args' | 'call' | 'none' = 'args'
+): string {
+  return [
+    "const fs = require('node:fs');",
+    'const args = process.argv.slice(2);',
+    'const callsPath = process.env.GIT_REVISION_GRAPH_FAKE_GIT_CALLS;',
+    recordedCall === 'args'
+      ? "fs.appendFileSync(callsPath, `${args.join(' ')}\\n`);"
+      : recordedCall === 'call'
+        ? "fs.appendFileSync(callsPath, 'call\\n');"
+        : '',
+    body
+  ].filter(Boolean).join('\n');
+}
+
 test('reuses completed graph snapshot cache entries for cancelable refreshes', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('head1\\x1f\\x1fAda\\x1f2026-05-01\\x1fBootstrap\\x1fHEAD -> main\\x1e');",
+      'call'
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const repository = createRepository({
@@ -100,11 +116,10 @@ test('reuses completed graph snapshot cache entries for cancelable refreshes', a
 
 test('clears completed graph snapshot cache entries on request', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('head1\\x1f\\x1fAda\\x1f2026-05-01\\x1fBootstrap\\x1fHEAD -> main\\x1e');",
+      'call'
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const repository = createRepository({
@@ -141,11 +156,10 @@ test('clears completed graph snapshot cache entries on request', async () => {
 
 test('reuses graph snapshot cache entries when ref names change on the same commits', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('head1\\x1f\\x1fAda\\x1f2026-05-01\\x1fBootstrap\\x1fHEAD -> main\\x1e');",
+      'call'
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const refs = [
@@ -203,11 +217,10 @@ test('reuses graph snapshot cache entries when ref names change on the same comm
 
 test('graph snapshot loading uses request-scoped refs when provided', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037origin/main\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('head1\\x1f\\x1fAda\\x1f2026-05-01\\x1fBootstrap\\x1forigin/main\\x1e');",
+      'call'
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const repository = createRepository({
@@ -251,12 +264,10 @@ test('graph snapshot loading uses request-scoped refs when provided', async () =
 
 test('uses the graph limit policy timeout for snapshot git log commands', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo call >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      'sleep 1',
-      "printf 'head1\\037\\037Ada\\0372026-05-01\\037Bootstrap\\037HEAD -> main\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "setTimeout(() => process.stdout.write('head1\\x1f\\x1fAda\\x1f2026-05-01\\x1fBootstrap\\x1fHEAD -> main\\x1e'), 1_000);",
+      'call'
+    ),
     async (repositoryPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const repository = createRepository({
@@ -289,13 +300,9 @@ test('uses the graph limit policy timeout for snapshot git log commands', async 
 
 test('loads filtered show log pages across message author hashes and refs', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf '\\036aaa111aaa111\\037\\037Ada\\0372026-05-03\\037origin/main\\037Fix parser\\037Match body\\036'",
-      "printf '\\036bbb222bbb222\\037\\037Linus\\0372026-05-02\\037tag: v1.0.0\\037Update docs\\037Release notes\\036'",
-      "printf '\\036ccc333ccc333\\037\\037Grace\\0372026-05-01\\037\\037Refactor cache\\037Second match\\036'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('\\x1eaaa111aaa111\\x1f\\x1fAda\\x1f2026-05-03\\x1forigin/main\\x1fFix parser\\x1fMatch body\\x1e\\x1ebbb222bbb222\\x1f\\x1fLinus\\x1f2026-05-02\\x1ftag: v1.0.0\\x1fUpdate docs\\x1fRelease notes\\x1e\\x1eccc333ccc333\\x1f\\x1fGrace\\x1f2026-05-01\\x1f\\x1fRefactor cache\\x1fSecond match\\x1e');"
+    ),
     async (repositoryPath) => {
       const backend = new DefaultRevisionGraphBackend();
       const repository = createRepository({ root: repositoryPath });
@@ -346,11 +353,9 @@ test('loads filtered show log pages across message author hashes and refs', asyn
 
 test('loads unified diffs through the document backend with bounded git args', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'diff --git a/file.txt b/file.txt\\n'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('diff --git a/file.txt b/file.txt\\n');"
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphDocumentBackend();
       const repository = createRepository({ root: repositoryPath });
@@ -369,15 +374,16 @@ test('loads unified diffs through the document backend with bounded git args', a
 
 test('loads worktree unified diffs with sorted unique untracked file patches', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      'if [ "$3" = "--no-index" ]; then',
-      "  printf 'diff --git a/%s b/%s\\n' \"$6\" \"$6\"",
-      '  exit 1',
-      'fi',
-      "printf 'diff --git a/tracked.txt b/tracked.txt\\n'"
-    ].join('\n'),
+    createFakeGitProgram(
+      [
+        "if (args[2] === '--no-index') {",
+        "  process.stdout.write(`diff --git a/${args[5]} b/${args[5]}\\n`);",
+        '  process.exitCode = 1;',
+        '} else {',
+        "  process.stdout.write('diff --git a/tracked.txt b/tracked.txt\\n');",
+        '}'
+      ].join('\n')
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphDocumentBackend();
       const repository = createRepository({ root: repositoryPath });
@@ -425,13 +431,15 @@ test('rejects worktree unified diff paths outside the repository before running 
 
 test('rejects worktree unified diff errors reported for stale untracked files', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'if [ "$3" = "--no-index" ]; then',
-      "  printf \"error: Could not access '%s'\\n\" \"$6\" >&2",
-      '  exit 1',
-      'fi'
-    ].join('\n'),
+    createFakeGitProgram(
+      [
+        "if (args[2] === '--no-index') {",
+        "  process.stderr.write(`error: Could not access '${args[5]}'\\n`);",
+        '  process.exitCode = 1;',
+        '}'
+      ].join('\n'),
+      'none'
+    ),
     async (repositoryPath) => {
       const backend = new DefaultRevisionGraphDocumentBackend();
       const repository = createRepository({ root: repositoryPath });
@@ -446,11 +454,9 @@ test('rejects worktree unified diff errors reported for stale untracked files', 
 
 test('loads commit details through the document backend with bounded git args', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      "printf 'commit --option-like-hash\\n'"
-    ].join('\n'),
+    createFakeGitProgram(
+      "process.stdout.write('commit --option-like-hash\\n');"
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphDocumentBackend();
       const repository = createRepository({ root: repositoryPath });
@@ -469,15 +475,15 @@ test('loads commit details through the document backend with bounded git args', 
 
 test('loads merge-blocked targets through graph analysis and batched merged-ref fallback', async () => {
   await withFakeGitScript(
-    [
-      '#!/bin/sh',
-      'echo "$*" >> "$GIT_REVISION_GRAPH_FAKE_GIT_CALLS"',
-      'if [ "$1" = "for-each-ref" ]; then',
-      "  printf 'refs/heads/release/1.x\\nrefs/remotes/origin/release/1.x\\nrefs/tags/v1.0.0\\n'",
-      '  exit 0',
-      'fi',
-      'exit 2'
-    ].join('\n'),
+    createFakeGitProgram(
+      [
+        "if (args[0] === 'for-each-ref') {",
+        "  process.stdout.write('refs/heads/release/1.x\\nrefs/remotes/origin/release/1.x\\nrefs/tags/v1.0.0\\n');",
+        '} else {',
+        '  process.exitCode = 2;',
+        '}'
+      ].join('\n')
+    ),
     async (repositoryPath, callsPath) => {
       const backend = new DefaultRevisionGraphMergeAnalysisBackend();
       const repository = createRepository({ root: repositoryPath });

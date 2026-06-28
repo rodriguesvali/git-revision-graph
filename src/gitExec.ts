@@ -17,6 +17,7 @@ export const GIT_EXEC_REMOTE_PROFILE = Object.freeze({
 });
 export const GIT_EXEC_FALLBACK_PROFILE = GIT_EXEC_LOCAL_MUTATION_PROFILE;
 let configuredGitExecutablePath: string | undefined;
+let configuredGitExecutableArgumentPrefix: readonly string[] = [];
 
 export interface GitExecOptions {
   readonly signal?: AbortSignal;
@@ -42,8 +43,14 @@ interface GitExecError extends Error {
   stderr?: string;
 }
 
-export function configureGitExecutablePath(value: unknown): void {
+export function configureGitExecutablePath(
+  value: unknown,
+  argumentPrefix: readonly string[] = []
+): void {
   configuredGitExecutablePath = normalizeGitExecutablePath(value);
+  configuredGitExecutableArgumentPrefix = configuredGitExecutablePath
+    ? [...argumentPrefix]
+    : [];
 }
 
 export function getGitExecutablePath(): string {
@@ -138,7 +145,7 @@ function execGitCapturedWithResult(
     }
 
     const gitExecutablePath = getGitExecutablePath();
-    const child = spawn(gitExecutablePath, [...args], {
+    const child = spawn(gitExecutablePath, [...configuredGitExecutableArgumentPrefix, ...args], {
       cwd: repositoryPath,
       detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -188,17 +195,26 @@ function execGitCapturedWithResult(
       reject(error);
     };
 
-    const rejectForOutputLimit = () => {
-      if (child.exitCode === null && !child.killed) {
-        terminateChildProcess(child.pid);
+    const terminateAndReject = (error: unknown) => {
+      if (settled) {
+        return;
       }
 
+      settled = true;
+      cleanup();
+      void terminateChildProcess(child.pid).then(
+        () => reject(error),
+        () => reject(error)
+      );
+    };
+
+    const rejectForOutputLimit = () => {
       const error = new Error(
         `${formatGitCommand(gitExecutablePath, args)} exceeded the maximum captured output of ${options.maxOutputBytes} bytes.`
       ) as GitExecError;
       error.stdout = currentStdout();
       error.stderr = stderr;
-      rejectOnce(error);
+      terminateAndReject(error);
     };
 
     const trackCapturedBytes = (byteLength: number) => {
@@ -209,19 +225,11 @@ function execGitCapturedWithResult(
     };
 
     const abortChildProcess = () => {
-      if (child.exitCode === null && !child.killed) {
-        terminateChildProcess(child.pid);
-      }
-
-      rejectOnce(createAbortError('The git command was aborted.'));
+      terminateAndReject(createAbortError('The git command was aborted.'));
     };
 
     const timeoutChildProcess = () => {
-      if (child.exitCode === null && !child.killed) {
-        terminateChildProcess(child.pid);
-      }
-
-      rejectOnce(createTimeoutError(options.timeoutMs ?? 0));
+      terminateAndReject(createTimeoutError(options.timeoutMs ?? 0));
     };
 
     options.signal?.addEventListener('abort', abortChildProcess, { once: true });
@@ -289,18 +297,20 @@ function execGitCapturedWithResult(
   });
 }
 
-function terminateChildProcess(pid: number | undefined): void {
+function terminateChildProcess(pid: number | undefined): Promise<void> {
   if (!pid) {
-    return;
+    return Promise.resolve();
   }
 
   if (process.platform === 'win32') {
-    const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
-      stdio: 'ignore',
-      windowsHide: true
+    return new Promise((resolve) => {
+      const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true
+      });
+      killer.once('error', () => resolve());
+      killer.once('close', () => resolve());
     });
-    killer.unref();
-    return;
   }
 
   try {
@@ -312,4 +322,6 @@ function terminateChildProcess(pid: number | undefined): void {
       // The process already exited between the state check and termination.
     }
   }
+
+  return Promise.resolve();
 }

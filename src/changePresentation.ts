@@ -40,7 +40,7 @@ export function getRepositoryRelativeUriPath(
     !relativePath.startsWith(`..${path.sep}`) &&
     !path.isAbsolute(relativePath)
   ) {
-    return relativePath;
+    return relativePath.split(path.sep).join('/');
   }
 
   return filePath;

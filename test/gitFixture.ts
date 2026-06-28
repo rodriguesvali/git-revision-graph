@@ -18,6 +18,7 @@ export async function createSharedGitFixture(): Promise<SharedGitFixture> {
   await execFile('git', ['init'], { cwd: repositoryPath });
   await execFile('git', ['config', 'user.name', 'Fixture User'], { cwd: repositoryPath });
   await execFile('git', ['config', 'user.email', 'fixture@example.com'], { cwd: repositoryPath });
+  await execFile('git', ['config', 'core.autocrlf', 'false'], { cwd: repositoryPath });
 
   await fs.mkdir(path.join(repositoryPath, 'nested'), { recursive: true });
   await Promise.all([

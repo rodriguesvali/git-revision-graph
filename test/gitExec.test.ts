@@ -19,6 +19,7 @@ import {
   resolveGitExecOptions
 } from '../src/gitExec';
 import { isAbortError } from '../src/errors';
+import { createFakeGitExecutable } from './fakeGitExecutable';
 
 const execFile = promisify(execFileCallback);
 
@@ -42,47 +43,20 @@ async function createTemporaryRepository(): Promise<string> {
   return repositoryPath;
 }
 
-async function createNodeExecutable(
-  binDir: string,
-  name: string,
-  program: string
-): Promise<string> {
-  const sourcePath = path.join(binDir, `${name}.cjs`);
-  await fs.writeFile(sourcePath, program, 'utf8');
-  if (process.platform === 'win32') {
-    const commandPath = path.join(binDir, `${name}.cmd`);
-    await fs.writeFile(
-      commandPath,
-      `@echo off\r\n"${process.execPath}" "${sourcePath}" %*\r\n`,
-      'utf8'
-    );
-    return commandPath;
-  }
-
-  const commandPath = path.join(binDir, name);
-  await fs.writeFile(commandPath, `#!/usr/bin/env node\n${program}`, {
-    encoding: 'utf8',
-    mode: 0o755
-  });
-  return commandPath;
-}
-
 async function withFakeGitProgram<T>(program: string, run: (repositoryPath: string) => Promise<T>): Promise<T> {
   const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'git-revision-graph-fake-git-'));
   const binDir = path.join(temporaryRoot, 'bin');
   const repositoryPath = path.join(temporaryRoot, 'repo');
-  const originalPath = process.env.PATH ?? '';
 
   await fs.mkdir(binDir, { recursive: true });
   await fs.mkdir(repositoryPath, { recursive: true });
-  await createNodeExecutable(binDir, 'git', program);
-  process.env.PATH = `${binDir}:${originalPath}`;
+  const fakeGit = await createFakeGitExecutable(binDir, 'git', program);
+  configureGitExecutablePath(fakeGit.executablePath, fakeGit.argumentPrefix);
 
   try {
     return await run(repositoryPath);
   } finally {
     configureGitExecutablePath(undefined);
-    process.env.PATH = originalPath;
     await fs.rm(temporaryRoot, { recursive: true, force: true });
   }
 }
@@ -106,12 +80,12 @@ test('execGit uses the configured Git executable path', async () => {
   const repositoryPath = path.join(temporaryRoot, 'repo');
 
   await fs.mkdir(repositoryPath, { recursive: true });
-  const customGitPath = await createNodeExecutable(
+  const customGit = await createFakeGitExecutable(
     temporaryRoot,
     'custom-git',
     'process.stdout.write("configured-git\\n");\n'
   );
-  configureGitExecutablePath(customGitPath);
+  configureGitExecutablePath(customGit.executablePath, customGit.argumentPrefix);
 
   try {
     const stdout = await execGit(repositoryPath, ['status']);
