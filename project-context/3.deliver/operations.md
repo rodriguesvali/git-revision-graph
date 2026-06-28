@@ -6,7 +6,7 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-monitoring focus for the `1.5.2` CI hotfix candidate:
+Current post-release monitoring focus for the published `1.5.2` CI hotfix:
 
 - The Node 20 verification matrix should remain green on `ubuntu-latest`, `windows-latest`,
   and `macos-latest` using the shell-independent compiled test runner.
@@ -23,8 +23,8 @@ Current release-monitoring focus for the `1.5.2` CI hotfix candidate:
   approved timeout, output, cancellation, and process-tree limits.
 - Compare Results and Show Log panels should invalidate when their owning repository closes.
 - Layout worker failures and ref-content failures should remain bounded and explicit.
-- Monitor Marketplace feedback for the published `1.5.1` package until `1.5.2` is packaged
-  and published by the maintainer.
+- Monitor Marketplace feedback for the published `1.5.2` package and prepare a follow-up
+  patch if a published regression is confirmed.
 
 ## Alerts
 No automated alerting is configured. Treat regressions in graph loading, repository switching, compare/diff, checkout, branch, merge, sync, delete, and log workflows as release-impacting.

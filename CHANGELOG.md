@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Closed a narrow CI hotfix after the published `1.5.1` package exposed a Windows-only test command failure.
 - Version metadata is `1.5.2` in `package.json` and `package-lock.json`; the Node 20 GitHub Actions matrix passed on Ubuntu, Windows, and macOS before closure.
-- VSIX packaging and Marketplace publication remain with the maintainer.
+- Marketplace publication was confirmed by the maintainer on 2026-06-28.
 
 ### CI Fixes
 

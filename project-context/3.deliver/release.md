@@ -6,11 +6,15 @@ Published package baseline: `1.5.1`.
 
 Target hotfix: `1.5.2`.
 
+Published release: `1.5.2`.
+
 Status: The Windows GitHub Actions test-runner and test-portability hotfixes are implemented
 and verified locally. The maintainer reported on 2026-06-28 that the Node 20 GitHub Actions
 matrix passed on Ubuntu, Windows, and macOS. Package metadata is bumped to `1.5.2` in
-`package.json` and `package-lock.json`. VSIX packaging and Marketplace publication have not
-been performed by Codex and remain with the maintainer.
+`package.json` and `package-lock.json`. Marketplace publication was confirmed by the maintainer
+on 2026-06-28. Codex did not execute packaging or publication commands. Exact standalone VSIX
+filename, checksum, size, and Marketplace publication metadata were not supplied and are not
+inferred.
 
 Root cause:
 
@@ -55,7 +59,10 @@ Release gates:
 - Node 20 local runner verification: complete.
 - Node 20 Actions verification on Ubuntu, Windows, and macOS: complete by maintainer report.
 - Package version bump to `1.5.2`: complete after maintainer approval on 2026-06-28.
-- VSIX packaging and Marketplace publication: remain with the maintainer.
+- Marketplace packaging and publication of `1.5.2`: complete by maintainer confirmation on
+  2026-06-28.
+- Exact standalone VSIX filename, checksum, size, and Marketplace publication metadata: not
+  supplied and not inferred.
 
 Rollback:
 

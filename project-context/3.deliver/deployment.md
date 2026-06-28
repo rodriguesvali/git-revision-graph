@@ -14,8 +14,8 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Publish with the appropriate `npm run publish:*` command only after approval.
 
 ## Latest Deployment
-- Latest published release recorded in the release notes: `1.5.1`.
-- Marketplace publication for `1.5.1` was confirmed by the maintainer on 2026-06-28.
+- Latest published release recorded in the release notes: `1.5.2`.
+- Marketplace publication for `1.5.2` was confirmed by the maintainer on 2026-06-28.
 - Exact VSIX filename, checksum, and Marketplace publication metadata were not supplied and
   are not inferred.
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
@@ -30,7 +30,8 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Dependency declarations, commands, views, and Marketplace surface are unchanged.
 - Post-bump local verification passed on 2026-06-28: `npm run build`, `npm test`,
   `npm run test:platform`, and `git diff --check`.
-- No `1.5.2` packaging or Marketplace publication has been performed.
+- Marketplace publication of `1.5.2` is complete by maintainer confirmation on 2026-06-28.
+- Codex did not execute packaging or publication commands.
 
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.
