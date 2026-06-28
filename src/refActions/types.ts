@@ -10,6 +10,11 @@ export interface RefSelection {
   readonly label: string;
 }
 
+export interface RefActionMessageOptions {
+  readonly modal?: boolean;
+  readonly detail?: string;
+}
+
 export interface CompareResultsRevealOptions {
   readonly source?: 'graph' | 'showLog';
 }
@@ -44,7 +49,7 @@ export interface RefActionUi {
   confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
   showInformationMessage(message: string): void;
   showWarningMessage(message: string): void;
-  showErrorMessage(message: string): Promise<void>;
+  showErrorMessage(message: string, options?: RefActionMessageOptions): Promise<void>;
   showSourceControl(): Promise<void>;
 }
 

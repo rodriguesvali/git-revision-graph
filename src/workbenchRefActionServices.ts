@@ -160,7 +160,12 @@ export function createWorkbenchRefActionServices(
       showWarningMessage(message) {
         void vscode.window.showWarningMessage(message);
       },
-      async showErrorMessage(message) {
+      async showErrorMessage(message, options) {
+        if (options) {
+          await vscode.window.showErrorMessage(message, options);
+          return;
+        }
+
         await vscode.window.showErrorMessage(message);
       },
       async showSourceControl() {

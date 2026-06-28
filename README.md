@@ -45,7 +45,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Push a local tag to a selected Git remote from the graph context menu when it is not already published
 - Delete a pushed tag from a selected Git remote while keeping the local tag unchanged
 - Pull, push, and sync the current tracked `HEAD` branch with its upstream remote branch from the Revision Graph, including confirmed force-push modes when intentionally rewriting remote history
-- Merge a selected reference into the current branch
+- Merge a selected reference into the current branch, with merge conflicts reported in a modal dialog before further repository operations continue
 - Abort a conflicted merge from the `HEAD` reference context menu after confirmation
 - Save workspace changes to a stash from the `HEAD` reference context menu and apply, pop, or remove the visible stash reference
 - Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files

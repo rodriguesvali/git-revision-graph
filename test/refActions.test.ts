@@ -24,6 +24,7 @@ import {
   publishLocalBranchResolvedReference,
   pushCurrentBranchToUpstream,
   pushTagResolvedReference,
+  RefActionMessageOptions,
   RefActionServices,
   resetCurrentBranchToCommit,
   resetCurrentBranchWorkspace,
@@ -44,6 +45,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly infoMessages: string[];
   readonly warningMessages: string[];
   readonly errorMessages: string[];
+  readonly errorMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }>;
   readonly sourceControlOpens: number;
   readonly confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly remoteCheckoutInputRequests: Array<{
@@ -77,6 +82,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
   const errorMessages: string[] = [];
+  const errorMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }> = [];
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const remoteCheckoutInputRequests: Array<{
     readonly prompt: string;
@@ -140,8 +149,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       showWarningMessage(message) {
         warningMessages.push(message);
       },
-      async showErrorMessage(message) {
+      async showErrorMessage(message, options) {
         errorMessages.push(message);
+        errorMessageRequests.push({ message, options });
       },
       async showSourceControl() {
         sourceControlOpens += 1;
@@ -250,6 +260,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     infoMessages,
     warningMessages,
     errorMessages,
+    errorMessageRequests,
     get sourceControlOpens() {
       return sourceControlOpens;
     },
@@ -1915,7 +1926,7 @@ test('mergeResolvedReference prevents merges that are already ancestors of HEAD'
   assert.equal(harness.infoMessages[0], 'release/2026 is already contained in main.');
 });
 
-test('mergeResolvedReference updates graph state without opening Source Control when the merge leaves conflicts to resolve', async () => {
+test('mergeResolvedReference shows a modal error and updates graph state when the merge leaves conflicts to resolve', async () => {
   const mergeChanges = [] as ReturnType<typeof createChange>[];
   const repository = createRepository({
     root: '/workspace/repo',
@@ -1941,6 +1952,10 @@ test('mergeResolvedReference updates graph state without opening Source Control 
     harness.errorMessages[0],
     'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience. Automatic merge failed; fix conflicts and then commit the result. [Conflict]'
   );
+  assert.deepEqual(harness.errorMessageRequests[0]?.options, {
+    modal: true,
+    detail: 'Resolve the conflicts in Source Control or abort the merge from the HEAD reference before continuing.'
+  });
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
@@ -1948,6 +1963,66 @@ test('mergeResolvedReference updates graph state without opening Source Control 
     clearSnapshotCache: true
   });
   assert.equal(harness.sourceControlOpens, 0);
+});
+
+test('mergeResolvedReference refreshes conflict state before waiting for the modal error to close', async () => {
+  const mergeChanges = [] as ReturnType<typeof createChange>[];
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main'),
+    mergeChanges
+  });
+  repository.merge = async () => {
+    mergeChanges.push(createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED }));
+    throw createGitError({ gitErrorCode: 'Conflict' });
+  };
+  let closeErrorMessage: (() => void) | undefined;
+  let errorOptions: RefActionMessageOptions | undefined;
+  const harness = createServices({
+    async showErrorMessage(_message, options) {
+      errorOptions = options;
+      await new Promise<void>((resolve) => {
+        closeErrorMessage = resolve;
+      });
+    }
+  });
+
+  const mergePromise = mergeResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+  const resultBeforeDismissal = await Promise.race([
+    mergePromise.then(() => 'completed' as const),
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+
+  assert.equal(resultBeforeDismissal, 'pending');
+  assert.equal(errorOptions?.modal, true);
+  assert.equal(harness.refreshCalls, 1);
+
+  closeErrorMessage?.();
+  await mergePromise;
+});
+
+test('mergeResolvedReference keeps non-conflict merge errors non-modal', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  repository.merge = async () => {
+    throw createGitError({ stderr: 'merge failed before changing the workspace' });
+  };
+  const harness = createServices();
+
+  await mergeResolvedReference(
+    repository,
+    { refName: 'release/2026', label: 'release/2026' },
+    harness.services
+  );
+
+  assert.equal(harness.errorMessageRequests[0]?.options, undefined);
+  assert.equal(harness.refreshCalls, 0);
 });
 
 test('abortCurrentMerge aborts conflicted merges after confirmation', async () => {

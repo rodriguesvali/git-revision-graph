@@ -8,6 +8,7 @@ export type {
   CompareResultsRevealOptions,
   CurrentBranchPushMode,
   RefActionKind,
+  RefActionMessageOptions,
   RefActionUi,
   RefActionServices,
   RefActionTarget,

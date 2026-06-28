@@ -50,13 +50,25 @@ export async function mergeResolvedReference(
     services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(`Merge from ${target.label} started in ${currentBranch}.`);
   } catch (error) {
-    await services.ui.showErrorMessage(
-      toOperationError('Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.', error)
+    const errorMessage = toOperationError(
+      'Merge did not complete. If there were conflicts, finish it in the VS Code Source Control experience.',
+      error
     );
-    if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
+    const hasWorkspaceConflict = shouldRevealSourceControlAfterWorkspaceConflict(error, repository);
+    if (hasWorkspaceConflict) {
       const preparedRefresh = prepareFullRebuildRefresh(repository, services);
       services.refreshController.refresh(preparedRefresh.request);
     }
+
+    await services.ui.showErrorMessage(
+      errorMessage,
+      hasWorkspaceConflict
+        ? {
+            modal: true,
+            detail: 'Resolve the conflicts in Source Control or abort the merge from the HEAD reference before continuing.'
+          }
+        : undefined
+    );
   }
 }
 
