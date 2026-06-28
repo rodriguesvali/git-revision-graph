@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.3
+
+### Release Preparation
+
+- Prepared a UX patch after the published `1.5.2` package.
+- Version metadata is `1.5.3` in `package.json` and `package-lock.json` after maintainer approval.
+- Local verification passed with `npm run build`, `npm test`, and `git diff --check`; VSIX packaging and Marketplace publication remain pending explicit maintainer approval.
+
+### UX Fixes
+
+- Open Compare Results immediately with a centered `Loading results...` dialog while large ref-to-ref or ref-to-worktree comparisons are still loading.
+- Restore the previous Compare Results state, or close the panel when there was no previous state, if compare loading ends with no differences or a blocking error.
+- Show `Generating Diff...` feedback and disable duplicate clicks while Compare Results `Unified Diff` generation is in flight.
+- Show blocking compare and unified diff failures, including output-limit errors, as modal dialogs instead of transient toasts.
+
 ## 1.5.2
 
 ### Release Preparation

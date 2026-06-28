@@ -21,17 +21,18 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
 
 ## Current Release State
-- Published package baseline: `1.5.1`.
-- Target hotfix: `1.5.2`.
-- The Windows test-runner and test-portability hotfixes are implemented and verified locally.
-- The maintainer reported on 2026-06-28 that the Node 20 GitHub Actions matrix passed on
-  Ubuntu, Windows, and macOS.
-- Package metadata reports `1.5.2` after explicit maintainer approval on 2026-06-28.
-- Dependency declarations, commands, views, and Marketplace surface are unchanged.
-- Post-bump local verification passed on 2026-06-28: `npm run build`, `npm test`,
-  `npm run test:platform`, and `git diff --check`.
-- Marketplace publication of `1.5.2` is complete by maintainer confirmation on 2026-06-28.
-- Codex did not execute packaging or publication commands.
+- Published package baseline: `1.5.2`.
+- Target patch: `1.5.3`.
+- The Compare Results loading-feedback UX patch is implemented and verified locally.
+- Package metadata reports `1.5.3` after explicit maintainer approval.
+- Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
+- Post-bump local verification passed: `npm run build`, `npm test` with 501 tests, and
+  `git diff --check`.
+- `CHANGELOG.md` includes the `1.5.3` candidate notes for Marketplace-facing release notes.
+- Manual Extension Development Host smoke validation, VSIX packaging, and Marketplace
+  publication remain pending explicit maintainer approval.
+- Codex executed the approved version bump. Codex did not execute packaging or publication
+  commands.
 
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.

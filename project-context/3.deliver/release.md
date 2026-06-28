@@ -6,10 +6,11 @@ Published package baseline: `1.5.2`.
 
 Target patch: `1.5.3`.
 
-Status: Build in progress. The Compare Results `Unified Diff` loading-feedback fix is assigned
-to `1.5.3` because the maintainer confirmed on 2026-06-28 that `1.5.2` has already been
-published. Package metadata still reports `1.5.2`; no version bump, VSIX packaging, or
-Marketplace publication has been approved or executed for `1.5.3`.
+Status: Publication preparation candidate. The Compare Results loading-feedback UX fix is
+assigned to `1.5.3` because the maintainer confirmed on 2026-06-28 that `1.5.2` has already
+been published. Implementation and local automated verification are complete. Package
+metadata reports `1.5.3` after maintainer approval. No VSIX packaging or Marketplace
+publication has been approved or executed for `1.5.3`.
 
 Implemented candidate scope:
 
@@ -29,13 +30,37 @@ Verification:
 - `npm run build` passed.
 - `npm test` passed with 501 tests.
 - `git diff --check` passed.
+- `CHANGELOG.md` contains the Marketplace-facing `1.5.3` candidate notes.
+- Package metadata reports `1.5.3` in `package.json`, root `package-lock.json`, and root
+  package-lock package metadata.
+- Post-bump verification passed: `npm run build`, `npm test` with 501 tests, and
+  `git diff --check`.
 
 Release gates:
 
 - Implementation and automated verification: complete for the current candidate.
-- Package version bump to `1.5.3`: pending maintainer approval.
+- Marketplace-facing release notes: complete for the current candidate.
+- Package version bump to `1.5.3`: complete after maintainer approval.
 - Manual Extension Development Host smoke validation: pending.
 - VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+
+Manual smoke checklist:
+
+- Run a large ref-to-ref comparison and confirm Compare Results opens immediately with
+  `Loading results...`, then replaces it with the result list.
+- Run a large ref-to-worktree comparison and confirm the same loading behavior.
+- Trigger or simulate a blocking compare failure and confirm the error appears as a modal
+  dialog.
+- Open `Unified Diff` from Compare Results for a large comparison and confirm
+  `Generating Diff...` appears immediately and duplicate clicks are ignored.
+- Trigger or simulate the unified diff output limit and confirm the error appears as a modal
+  dialog.
+
+Packaging notes:
+
+- Package with `npm run package:vsix` only after explicit maintainer approval.
+- Publish with the approved `npm run publish:*` command only after explicit maintainer
+  approval.
 
 Planning reference:
 
