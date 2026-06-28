@@ -23,17 +23,13 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 ## Current Release State
 - Published package baseline: `1.5.1`.
 - Target hotfix: `1.5.2`.
-- The Windows test-runner hotfix is implemented and locally verified, while package metadata
-  remains `1.5.1` pending explicit bump approval.
-- Node 20 `windows-latest` verification is pending the next GitHub Actions run.
-- Package metadata reports `1.5.1` after explicit maintainer approval on 2026-06-28.
-- Corrected changelog and delivery artifacts were included in the documentation-only patch.
-- The `1.5.1` candidate passed the build and all 495 tests after the version bump; read-only
-  `vsce` inspection confirmed that the corrected changelog is included.
-- Runtime smoke validation remains valid from the unchanged `1.5.0` implementation and was
-  reported complete by the maintainer.
-- Marketplace publication is complete by maintainer confirmation; Codex did not execute
-  packaging or publication commands.
+- The Windows test-runner and test-portability hotfixes are implemented and verified locally.
+- The maintainer reported on 2026-06-28 that the Node 20 GitHub Actions matrix passed on
+  Ubuntu, Windows, and macOS.
+- Package metadata reports `1.5.2` after explicit maintainer approval on 2026-06-28.
+- Dependency declarations, commands, views, and Marketplace surface are unchanged.
+- Post-bump local verification passed on 2026-06-28: `npm run build`, `npm test`,
+  `npm run test:platform`, and `git diff --check`.
 - No `1.5.2` packaging or Marketplace publication has been performed.
 
 ## Access

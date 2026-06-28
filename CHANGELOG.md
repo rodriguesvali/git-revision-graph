@@ -6,12 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Release Preparation
 
-- Opened a narrow CI hotfix after the published `1.5.1` package exposed a Windows-only test command failure; package version bump, packaging, and publication remain pending explicit maintainer approval.
+- Closed a narrow CI hotfix after the published `1.5.1` package exposed a Windows-only test command failure.
+- Version metadata is `1.5.2` in `package.json` and `package-lock.json`; the Node 20 GitHub Actions matrix passed on Ubuntu, Windows, and macOS before closure.
+- VSIX packaging and Marketplace publication remain with the maintainer.
 
 ### CI Fixes
 
 - Replaced the shell-expanded `out-test/test/*.test.js` argument with a dependency-free Node runner that enumerates compiled `.test.js` entrypoints consistently on Linux, Windows, and macOS.
 - Added manifest regression coverage that keeps the full test script on the cross-platform runner and rejects reintroduction of the shell glob.
+- Hardened Windows test portability by normalizing repository-relative Git paths, using shell-free Node fake Git fixtures, awaiting Windows process-tree termination, and disabling fixture-local `core.autocrlf` where content is asserted.
 
 ## 1.5.1
 

@@ -7,9 +7,10 @@ Published package baseline: `1.5.1`.
 Target hotfix: `1.5.2`.
 
 Status: The Windows GitHub Actions test-runner and test-portability hotfixes are implemented
-and verified locally. Package metadata remains `1.5.1`; no version bump, packaging, or
-publication has been authorized or performed for `1.5.2`. The Node 20 `windows-latest`
-re-run remains the final platform gate.
+and verified locally. The maintainer reported on 2026-06-28 that the Node 20 GitHub Actions
+matrix passed on Ubuntu, Windows, and macOS. Package metadata is bumped to `1.5.2` in
+`package.json` and `package-lock.json`. VSIX packaging and Marketplace publication have not
+been performed by Codex and remain with the maintainer.
 
 Root cause:
 
@@ -41,17 +42,20 @@ Verification:
 - `git diff --check` passed.
 - Read-only `vsce ls --no-dependencies` inspection includes `scripts/run-compiled-tests.mjs`
   and the `1.5.2` changelog entry.
-- Package metadata remains `1.5.1` and dependency declarations are unchanged.
-- `windows-latest` GitHub Actions verification: pending push and re-run.
+- Package metadata reports `1.5.2`; dependency declarations are unchanged.
+- Node 20 GitHub Actions matrix verification: passed on Ubuntu, Windows, and macOS by
+  maintainer report on 2026-06-28.
+- Post-bump local verification on 2026-06-28: `npm run build` passed; `npm test` passed
+  with 496 tests; `npm run test:platform` passed with 29 tests; `git diff --check` passed.
 - GitHub CLI inspection is unavailable in the current environment because `gh` is not installed.
 
 Release gates:
 
 - Implementation and local regression coverage: complete.
 - Node 20 local runner verification: complete.
-- Node 20 `windows-latest` Actions verification: pending.
-- Package version bump to `1.5.2`: pending explicit maintainer approval.
-- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+- Node 20 Actions verification on Ubuntu, Windows, and macOS: complete by maintainer report.
+- Package version bump to `1.5.2`: complete after maintainer approval on 2026-06-28.
+- VSIX packaging and Marketplace publication: remain with the maintainer.
 
 Rollback:
 

@@ -6,11 +6,13 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current post-release monitoring focus for the published documentation-only `1.5.1`
-corrective package and its unchanged `1.5.0` runtime:
+Current release-monitoring focus for the `1.5.2` CI hotfix candidate:
 
-- The Node 20 verification matrix should pass on `ubuntu-latest`, `windows-latest`, and
-  `macos-latest` using the shell-independent compiled test runner.
+- The Node 20 verification matrix should remain green on `ubuntu-latest`, `windows-latest`,
+  and `macos-latest` using the shell-independent compiled test runner.
+- Watch for regressions in repository-relative path presentation, Compare Results path IDs,
+  Show Log path state, fake Git fixtures, bounded Git process termination, and content-sensitive
+  restore fixtures after the Windows portability hardening.
 - Merge conflicts should use the native modal error dialog, refresh conflict state before
   dismissal, and allow `Abort Merge` after the dialog closes.
 - Repository mutations should reject overlapping work for the same repository without
@@ -21,8 +23,8 @@ corrective package and its unchanged `1.5.0` runtime:
   approved timeout, output, cancellation, and process-tree limits.
 - Compare Results and Show Log panels should invalidate when their owning repository closes.
 - Layout worker failures and ref-content failures should remain bounded and explicit.
-- Monitor Marketplace feedback for both the initially published `1.5.0` package and the
-  corrected release metadata in the published `1.5.1` package.
+- Monitor Marketplace feedback for the published `1.5.1` package until `1.5.2` is packaged
+  and published by the maintainer.
 
 ## Alerts
 No automated alerting is configured. Treat regressions in graph loading, repository switching, compare/diff, checkout, branch, merge, sync, delete, and log workflows as release-impacting.
