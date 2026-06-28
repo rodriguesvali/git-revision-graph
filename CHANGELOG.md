@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.2
+
+### Release Preparation
+
+- Opened a narrow CI hotfix after the published `1.5.1` package exposed a Windows-only test command failure; package version bump, packaging, and publication remain pending explicit maintainer approval.
+
+### CI Fixes
+
+- Replaced the shell-expanded `out-test/test/*.test.js` argument with a dependency-free Node runner that enumerates compiled `.test.js` entrypoints consistently on Linux, Windows, and macOS.
+- Added manifest regression coverage that keeps the full test script on the cross-platform runner and rejects reintroduction of the shell glob.
+
 ## 1.5.1
 
 ### Release Preparation

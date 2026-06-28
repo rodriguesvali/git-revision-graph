@@ -32,6 +32,7 @@ type ViewContributions = Record<string, ViewContribution[] | undefined>;
 
 type PackageManifest = {
   readonly icon: string;
+  readonly scripts?: Record<string, string>;
   readonly dependencies?: Record<string, string>;
   readonly devDependencies?: Record<string, string>;
   readonly engines?: {
@@ -248,4 +249,16 @@ test('package manifest pins VS Code API types to the engine baseline', () => {
 
   assert.equal(manifest.engines?.vscode, '^1.90.0');
   assert.equal(manifest.devDependencies?.['@types/vscode'], '1.90.0');
+});
+
+test('test script uses the cross-platform compiled test runner', () => {
+  const manifest = loadPackageManifest();
+  const testScript = manifest.scripts?.test;
+
+  assert.equal(
+    testScript,
+    'npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node scripts/run-compiled-tests.mjs'
+  );
+  assert.equal(testScript?.includes('*.test.js'), false);
+  assert.equal(existsSync(path.join(process.cwd(), 'scripts', 'run-compiled-tests.mjs')), true);
 });

@@ -9,6 +9,8 @@ Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 Current post-release monitoring focus for the published documentation-only `1.5.1`
 corrective package and its unchanged `1.5.0` runtime:
 
+- The Node 20 verification matrix should pass on `ubuntu-latest`, `windows-latest`, and
+  `macos-latest` using the shell-independent compiled test runner.
 - Merge conflicts should use the native modal error dialog, refresh conflict state before
   dismissal, and allow `Abort Merge` after the dialog closes.
 - Repository mutations should reject overlapping work for the same repository without
