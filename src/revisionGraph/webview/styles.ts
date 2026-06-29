@@ -595,18 +595,43 @@ export function renderRevisionGraphStyles(): string {
     .view-controls .range-filter {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 0;
       min-width: 0;
-      max-width: 260px;
+      max-width: min(320px, 100%);
       height: 34px;
-      padding: 2px 2px 2px 10px;
-      border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+      padding: 2px;
+      border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--border));
       border-radius: 0;
-      background: color-mix(in srgb, var(--panel) 92%, var(--accent) 8%);
+      background: color-mix(in srgb, var(--panel) 86%, var(--accent) 14%);
+      box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 88%, var(--text) 12%);
       color: var(--text);
     }
     .view-controls .range-filter[hidden] {
       display: none;
+    }
+    .view-controls .range-filter-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 30px;
+      width: 30px;
+      height: 24px;
+      color: color-mix(in srgb, var(--accent) 78%, var(--text) 22%);
+    }
+    .view-controls .range-filter-copy {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+      padding-right: 8px;
+    }
+    .view-controls .range-filter-caption {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     .view-controls .range-filter-label {
       min-width: 0;
@@ -614,6 +639,20 @@ export function renderRevisionGraphStyles(): string {
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 12px;
+      font-weight: 600;
+    }
+    .view-controls .range-filter .toolbar-button {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .view-controls .range-filter .toolbar-button:not(:disabled):hover {
+      border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      box-shadow: none;
     }
     .view-controls .toolbar-actions {
       display: flex;

@@ -34,8 +34,11 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchNextButton"[\s\S]*?data-icon="arrow-down"/);
   assert.match(html, /id="searchClearButton"[\s\S]*?data-icon="close"/);
   assert.match(html, /id="rangeFilter"/);
+  assert.match(html, /id="rangeFilter"[\s\S]*?role="group"[\s\S]*?aria-label="Focus Range active"/);
+  assert.match(html, /class="range-filter-icon"[\s\S]*?data-icon="focus-range"/);
+  assert.match(html, /class="range-filter-caption">Focus<\/span>/);
   assert.match(html, /id="rangeFilterLabel"/);
-  assert.match(html, /id="rangeFilterClearButton"[\s\S]*?data-icon="close"/);
+  assert.match(html, /id="rangeFilterClearButton"[\s\S]*?title="Exit Focus Range"[\s\S]*?aria-label="Exit Focus Range and show all revisions"[\s\S]*?data-icon="close"/);
   assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.match(html, /id="reloadButton"/);
@@ -606,6 +609,7 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /searchClearButton\.addEventListener\('click'/);
   assert.match(html, /rangeFilterClearButton\.addEventListener\('click'/);
   assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ revisionRange: null \}\)/);
+  assert.match(html, /'Exiting Focus Range\.\.\.'/);
   assert.match(html, /function setSearchQuery\(nextQuery\)/);
   assert.match(html, /function syncSearchResults\(options = \{\}\)/);
   assert.match(html, /function syncSearchHighlights\(\)/);
@@ -615,6 +619,34 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /event\.key\.toLowerCase\(\) === 'f'/);
   assert.match(html, /currentState\.scene\.nodes/);
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
+});
+
+test('presents the active Focus Range as a descriptive toolbar state', () => {
+  const runtime = createWebviewRuntime();
+  const rangeFilter = runtime.elements.get('rangeFilter');
+  const rangeFilterLabel = runtime.elements.get('rangeFilterLabel');
+  assert.ok(rangeFilter);
+  assert.ok(rangeFilterLabel);
+
+  runtime.context.syncRangeFilter({
+    baseLabel: 'main',
+    compareLabel: 'feature/focus-range'
+  });
+
+  assert.equal(rangeFilter.hidden, false);
+  assert.equal(rangeFilterLabel.textContent, 'main → feature/focus-range');
+  assert.equal(rangeFilterLabel.title, 'Focused range: main → feature/focus-range');
+  assert.equal(
+    rangeFilter.getAttribute('aria-label'),
+    'Focus Range active from main to feature/focus-range'
+  );
+
+  runtime.context.syncRangeFilter(null);
+
+  assert.equal(rangeFilter.hidden, true);
+  assert.equal(rangeFilterLabel.textContent, '');
+  assert.equal(rangeFilterLabel.title, '');
+  assert.equal(rangeFilter.getAttribute('aria-label'), 'Focus Range inactive');
 });
 
 test('renders merge abort as a HEAD context menu action only for conflicted merge state', () => {

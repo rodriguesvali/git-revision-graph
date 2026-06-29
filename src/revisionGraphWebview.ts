@@ -10,6 +10,7 @@ type ToolbarIconName =
   | 'arrow-up'
   | 'cloud-download'
   | 'close'
+  | 'focus-range'
   | 'minus'
   | 'plus'
   | 'refresh'
@@ -35,6 +36,12 @@ function renderToolbarIcon(iconName: ToolbarIconName): string {
       return `<svg class="toolbar-icon" data-icon="close" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <path d="M4.4 4.4 11.6 11.6"></path>
           <path d="M11.6 4.4 4.4 11.6"></path>
+        </svg>`;
+    case 'focus-range':
+      return `<svg class="toolbar-icon" data-icon="focus-range" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="3.5" cy="8" r="1.5"></circle>
+          <path d="M5.5 8h5"></path>
+          <circle cx="12.5" cy="8" r="1.5"></circle>
         </svg>`;
     case 'minus':
       return `<svg class="toolbar-icon" data-icon="minus" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -189,14 +196,24 @@ export function renderRevisionGraphShellHtml(): string {
         aria-label="Clear Search"
       >${renderToolbarIcon('close')}</button>
     </div>
-    <div class="range-filter" id="rangeFilter" hidden>
-      <span class="range-filter-label" id="rangeFilterLabel"></span>
+    <div
+      class="range-filter"
+      id="rangeFilter"
+      role="group"
+      aria-label="Focus Range active"
+      hidden
+    >
+      <span class="range-filter-icon" aria-hidden="true">${renderToolbarIcon('focus-range')}</span>
+      <span class="range-filter-copy">
+        <span class="range-filter-caption">Focus</span>
+        <span class="range-filter-label" id="rangeFilterLabel"></span>
+      </span>
       <button
         id="rangeFilterClearButton"
         class="toolbar-button icon-only"
         type="button"
-        title="Clear Range Filter"
-        aria-label="Clear Range Filter"
+        title="Exit Focus Range"
+        aria-label="Exit Focus Range and show all revisions"
       >${renderToolbarIcon('close')}</button>
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">

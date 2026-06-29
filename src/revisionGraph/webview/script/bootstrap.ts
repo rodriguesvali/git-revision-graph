@@ -232,7 +232,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       rangeFilterClearButton.addEventListener('click', () => {
         postMessageWithLoading(
           createRevisionGraphProjectionOptionsMessage({ revisionRange: null }),
-          'Clearing range filter...',
+          'Exiting Focus Range...',
           rangeFilterClearButton,
           'subtle'
         );
@@ -981,11 +981,19 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (!revisionRange) {
         rangeFilter.hidden = true;
         rangeFilterLabel.textContent = '';
+        rangeFilterLabel.title = '';
+        rangeFilter.setAttribute('aria-label', 'Focus Range inactive');
         return;
       }
 
+      const rangeLabel = revisionRange.baseLabel + ' → ' + revisionRange.compareLabel;
       rangeFilter.hidden = false;
-      rangeFilterLabel.textContent = 'Range: ' + revisionRange.baseLabel + ' -> ' + revisionRange.compareLabel;
+      rangeFilterLabel.textContent = rangeLabel;
+      rangeFilterLabel.title = 'Focused range: ' + rangeLabel;
+      rangeFilter.setAttribute(
+        'aria-label',
+        'Focus Range active from ' + revisionRange.baseLabel + ' to ' + revisionRange.compareLabel
+      );
     }
 
     function renderScene(state, options = {}) {
