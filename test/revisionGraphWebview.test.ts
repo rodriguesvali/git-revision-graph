@@ -39,6 +39,10 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /class="range-filter-caption">Focus<\/span>/);
   assert.match(html, /id="rangeFilterLabel"/);
   assert.match(html, /id="rangeFilterClearButton"[\s\S]*?title="Exit Focus Range"[\s\S]*?aria-label="Exit Focus Range and show all revisions"[\s\S]*?data-icon="close"/);
+  assert.ok(
+    html.indexOf('id="rangeFilter"') > html.indexOf('class="toolbar-actions"'),
+    'expected the Focus Range indicator after the graph actions at the end of the toolbar'
+  );
   assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.match(html, /id="reloadButton"/);

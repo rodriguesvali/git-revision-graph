@@ -196,26 +196,6 @@ export function renderRevisionGraphShellHtml(): string {
         aria-label="Clear Search"
       >${renderToolbarIcon('close')}</button>
     </div>
-    <div
-      class="range-filter"
-      id="rangeFilter"
-      role="group"
-      aria-label="Focus Range active"
-      hidden
-    >
-      <span class="range-filter-icon" aria-hidden="true">${renderToolbarIcon('focus-range')}</span>
-      <span class="range-filter-copy">
-        <span class="range-filter-caption">Focus</span>
-        <span class="range-filter-label" id="rangeFilterLabel"></span>
-      </span>
-      <button
-        id="rangeFilterClearButton"
-        class="toolbar-button icon-only"
-        type="button"
-        title="Exit Focus Range"
-        aria-label="Exit Focus Range and show all revisions"
-      >${renderToolbarIcon('close')}</button>
-    </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <div class="toolbar-action-slot" aria-label="Repository actions">
         <button
@@ -284,6 +264,26 @@ export function renderRevisionGraphShellHtml(): string {
           aria-label="Zoom In"
         >${renderToolbarIcon('plus')}</button>
       </div>
+    </div>
+    <div
+      class="range-filter"
+      id="rangeFilter"
+      role="group"
+      aria-label="Focus Range active"
+      hidden
+    >
+      <span class="range-filter-icon" aria-hidden="true">${renderToolbarIcon('focus-range')}</span>
+      <span class="range-filter-copy">
+        <span class="range-filter-caption">Focus</span>
+        <span class="range-filter-label" id="rangeFilterLabel"></span>
+      </span>
+      <button
+        id="rangeFilterClearButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Exit Focus Range"
+        aria-label="Exit Focus Range and show all revisions"
+      >${renderToolbarIcon('close')}</button>
     </div>
   </div>
   <div
