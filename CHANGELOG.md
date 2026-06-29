@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.4
+
+### Release Preparation
+
+- Opened `1.5.4` as a narrow UX safety patch after the published `1.5.3` package.
+- Version metadata is `1.5.4` in `package.json` and `package-lock.json` after maintainer
+  approval; packaging and Marketplace publication remain pending explicit maintainer approval.
+- Local verification passed with `npm run build`, `npm test`, and `git diff --check`.
+
+### UX Fixes
+
+- Show remote permission and protected-branch failures as modal errors instead of transient
+  toasts when they block current-branch sync, current-branch push, branch publish, tag push,
+  remote tag delete, or remote branch delete.
+- Preserve nonblocking notification behavior for ordinary sync and pull failures so graph
+  action/loading state still clears quickly.
+
 ## 1.5.3
 
 ### Release Preparation

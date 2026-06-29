@@ -1381,6 +1381,29 @@ test('pushTagResolvedReference surfaces push failures', async () => {
   assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
 });
 
+test('pushTagResolvedReference shows remote permission failures as modal errors', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.pushTag = async () => {
+    throw createGitError({
+      stderr: 'remote: Write access to repository not granted.'
+    });
+  };
+
+  await pushTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.pushedTags, []);
+  assert.equal(harness.errorMessageRequests[0]?.options?.modal, true);
+  assert.equal(harness.errorMessages[0], 'Could not push the tag. remote: Write access to repository not granted.');
+});
+
 test('pushTagResolvedReference opens Source Control when Git authentication needs an interactive prompt', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -1565,6 +1588,29 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
 
   assert.deepEqual(harness.deletedRemoteTags, []);
   assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. remote ref does not exist');
+});
+
+test('deleteRemoteTagResolvedReference shows remote permission failures as modal errors', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+  harness.services.referenceManager.deleteRemoteTag = async () => {
+    throw createGitError({
+      stderr: 'ERROR: Permission to owner/project.git denied to user.'
+    });
+  };
+
+  await deleteRemoteTagResolvedReference(
+    repository,
+    { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.equal(harness.errorMessageRequests[0]?.options?.modal, true);
+  assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. ERROR: Permission to owner/project.git denied to user.');
 });
 
 test('publishLocalBranchResolvedReference publishes the current branch and sets upstream', async () => {
@@ -1754,6 +1800,28 @@ test('publishLocalBranchResolvedReference opens Source Control when Git authenti
     harness.errorMessages[0],
     /Git: Publish Branch/
   );
+});
+
+test('publishLocalBranchResolvedReference shows remote permission failures as modal errors', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo')
+  });
+  const harness = createServices();
+  repository.push = async () => {
+    throw createGitError({
+      stderr: 'remote: Write access to repository not granted.'
+    });
+  };
+
+  await publishLocalBranchResolvedReference(
+    repository,
+    { refName: 'feature/demo', label: 'feature/demo', kind: 'head' },
+    harness.services
+  );
+
+  assert.equal(harness.errorMessageRequests[0]?.options?.modal, true);
+  assert.equal(harness.errorMessages[0], 'Could not publish the branch. remote: Write access to repository not granted.');
 });
 
 test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is diverged from upstream', async () => {
@@ -1958,6 +2026,46 @@ test('syncCurrentHeadWithUpstream does not wait for the error message to close a
   assert.equal(
     errorMessageShown,
     "Could not synchronize the current branch. fatal: could not read Username for 'https://github.com': terminal prompts disabled (exit code: 128)"
+  );
+  assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
+
+  closeErrorMessage?.();
+  assert.equal(await didSyncPromise, false);
+});
+
+test('syncCurrentHeadWithUpstream waits for modal remote permission failures', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+  let errorMessageShown: string | undefined;
+  let errorMessageModal: boolean | undefined;
+  let closeErrorMessage: (() => void) | undefined;
+  repository.push = async () => {
+    throw createGitError({
+      stderr: 'remote: Write access to repository not granted.'
+    });
+  };
+  harness.services.ui.showErrorMessage = async (message, options) => {
+    errorMessageShown = message;
+    errorMessageModal = options?.modal;
+    await new Promise<void>((resolve) => {
+      closeErrorMessage = resolve;
+    });
+  };
+
+  const didSyncPromise = syncCurrentHeadWithUpstream(repository, harness.services);
+  const didSync = await Promise.race([
+    didSyncPromise,
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+
+  assert.equal(didSync, 'pending');
+  assert.equal(errorMessageModal, true);
+  assert.equal(
+    errorMessageShown,
+    'Could not synchronize the current branch. remote: Write access to repository not granted.'
   );
   assert.deepEqual(harness.canceledPrepareRequests, harness.prepareRequests);
 
@@ -2596,6 +2704,28 @@ test('pushCurrentBranchToUpstream requires upstream tracking', async () => {
   assert.equal(harness.infoMessages[0], 'main has no upstream branch configured for push.');
 });
 
+test('pushCurrentBranchToUpstream shows remote permission failures as modal errors', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
+  });
+  const harness = createServices();
+  harness.services.referenceManager.pushCurrentBranch = async () => {
+    throw createGitError({
+      stderr: 'fatal: unable to access https://example.test/project.git: The requested URL returned error: 403'
+    });
+  };
+
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+
+  assert.equal(didPush, false);
+  assert.equal(harness.errorMessageRequests[0]?.options?.modal, true);
+  assert.equal(
+    harness.errorMessages[0],
+    'Could not push the current branch. fatal: unable to access https://example.test/project.git: The requested URL returned error: 403'
+  );
+});
+
 test('pullCurrentBranchFromUpstream pulls the current branch from its upstream', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -2696,6 +2826,29 @@ test('deleteResolvedReference deletes remote branches through the shared referen
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
+});
+
+test('deleteResolvedReference shows remote branch permission failures as modal errors', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createServices();
+  harness.services.referenceManager.deleteRemoteBranch = async () => {
+    throw createGitError({
+      stderr: 'remote: error: GH006: Protected branch update failed for refs/heads/feature/demo.'
+    });
+  };
+
+  await deleteResolvedReference(
+    repository,
+    { refName: 'origin/feature/demo', label: 'origin/feature/demo', kind: 'remote' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.deletedRemoteBranches, []);
+  assert.equal(harness.errorMessageRequests[0]?.options?.modal, true);
+  assert.equal(
+    harness.errorMessages[0],
+    'Could not delete the reference. remote: error: GH006: Protected branch update failed for refs/heads/feature/demo.'
+  );
 });
 
 test('deleteResolvedReference refuses to delete remote HEAD aliases', async () => {

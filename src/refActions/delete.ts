@@ -1,5 +1,6 @@
 import {
   hasGitErrorCode as matchesGitErrorCode,
+  isRemotePermissionDeniedError,
   toOperationError
 } from '../errorDetail';
 import { Repository } from '../git';
@@ -31,7 +32,10 @@ export async function deleteResolvedReference(
 
     await deleteBranchReference(repository, target, services);
   } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not delete the reference.', error));
+    await services.ui.showErrorMessage(
+      toOperationError('Could not delete the reference.', error),
+      target.kind === 'remote' && isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+    );
   }
 }
 

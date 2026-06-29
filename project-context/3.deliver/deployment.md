@@ -14,25 +14,24 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Publish with the appropriate `npm run publish:*` command only after approval.
 
 ## Latest Deployment
-- Latest published release recorded in the release notes: `1.5.2`.
-- Marketplace publication for `1.5.2` was confirmed by the maintainer on 2026-06-28.
+- Latest published release recorded in the release notes: `1.5.3`.
+- Marketplace publication for `1.5.3` was confirmed by the maintainer on 2026-06-28.
 - Exact VSIX filename, checksum, and Marketplace publication metadata were not supplied and
   are not inferred.
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
 
 ## Current Release State
-- Published package baseline: `1.5.2`.
-- Target patch: `1.5.3`.
-- The Compare Results loading-feedback UX patch is implemented and verified locally.
-- Package metadata reports `1.5.3` after explicit maintainer approval.
+- Published package baseline: `1.5.3`.
+- Target patch: `1.5.4`.
+- The remote permission modal-alert UX safety patch is implemented and verified locally.
+- Package metadata reports `1.5.4` after explicit maintainer approval.
 - Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
-- Post-bump local verification passed: `npm run build`, `npm test` with 501 tests, and
-  `git diff --check`.
-- `CHANGELOG.md` includes the `1.5.3` candidate notes for Marketplace-facing release notes.
+- Local verification passed: `npm run build`, `npm test` with 508 tests, and `git diff --check`.
+- `CHANGELOG.md` includes the `1.5.4` candidate notes for Marketplace-facing release notes.
 - Manual Extension Development Host smoke validation, VSIX packaging, and Marketplace
   publication remain pending explicit maintainer approval.
 - Codex executed the approved version bump. Codex did not execute packaging or publication
-  commands.
+  commands for `1.5.4`.
 
 ## Access
 Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.

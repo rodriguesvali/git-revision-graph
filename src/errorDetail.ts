@@ -50,6 +50,41 @@ export function isNonInteractiveGitAuthenticationError(error: unknown): boolean 
   );
 }
 
+export function isRemotePermissionDeniedError(error: unknown): boolean {
+  const gitError = asGitLikeError(error);
+  const text = [
+    normalizeErrorText(gitError?.stderr),
+    normalizeErrorText(gitError?.message),
+    normalizePrimitiveError(error)
+  ]
+    .filter((value): value is string => !!value)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    text.includes('permission to ') && text.includes(' denied')
+  ) || (
+    text.includes('write access to repository not granted')
+  ) || (
+    text.includes('the requested url returned error: 403')
+  ) || (
+    text.includes('request failed') && text.includes('403')
+  ) || (
+    text.includes('protected branch') && (
+      text.includes('hook declined')
+      || text.includes('update failed')
+    )
+  ) || (
+    text.includes('remote: error: gh006')
+  ) || (
+    text.includes('forbidden') && (
+      text.includes('remote')
+      || text.includes('repository')
+      || text.includes('server')
+    )
+  );
+}
+
 export function isMissingUpstreamConfigurationError(error: unknown): boolean {
   const gitError = asGitLikeError(error);
   const stderr = normalizeErrorText(gitError?.stderr);

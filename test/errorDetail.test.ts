@@ -5,6 +5,7 @@ import {
   hasGitExitCode,
   isMissingUpstreamConfigurationError,
   isNonInteractiveGitAuthenticationError,
+  isRemotePermissionDeniedError,
   toErrorDetail,
   toOperationError
 } from '../src/errorDetail';
@@ -44,6 +45,25 @@ test('isNonInteractiveGitAuthenticationError recognizes disabled credential prom
   );
   assert.equal(
     isNonInteractiveGitAuthenticationError({ stderr: 'fatal: authentication failed' }),
+    false
+  );
+});
+
+test('isRemotePermissionDeniedError recognizes remote authorization failures', () => {
+  assert.equal(
+    isRemotePermissionDeniedError({
+      stderr: 'remote: Write access to repository not granted.\nfatal: unable to access https://example.test/project.git: The requested URL returned error: 403'
+    }),
+    true
+  );
+  assert.equal(
+    isRemotePermissionDeniedError({
+      stderr: 'remote: error: GH006: Protected branch update failed for refs/heads/main.'
+    }),
+    true
+  );
+  assert.equal(
+    isRemotePermissionDeniedError({ stderr: 'remote rejected pull' }),
     false
   );
 });

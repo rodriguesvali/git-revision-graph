@@ -6,21 +6,30 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-candidate monitoring focus for the pending `1.5.3` UX patch:
+Current release-candidate monitoring focus for the pending `1.5.4` UX safety patch:
+
+- Current-branch sync failures caused by missing remote write privileges should use a modal
+  error instead of a transient toaster.
+- Current-branch push, branch publish, tag push, remote tag delete, and remote branch delete
+  should also use modal errors for permission/protected-branch failures.
+- Generic sync and pull failures should still clear the graph action/loading state without
+  waiting for the user to dismiss the notification.
+- Existing conflict handling and Source Control reveal behavior should remain unchanged.
+
+Ongoing post-release monitoring focus for the published `1.5.3` UX patch:
 
 - Large ref-to-ref and ref-to-worktree comparisons should open Compare Results immediately
   with a centered `Loading results...` dialog, then replace it with the result list.
 - Compare loading should restore the previous Compare Results state, or close the panel when
   there was no previous state, if the comparison has no differences or fails.
-- Blocking compare failures should use modal error dialogs instead of transient toasts.
+- Blocking compare and unified diff failures, including output-limit errors, should use modal
+  error dialogs instead of transient toasts.
 - Compare Results `Unified Diff` should show `Generating Diff...` immediately and ignore
   duplicate clicks while generation is in flight.
-- Blocking unified diff failures, including output-limit errors, should use modal error
-  dialogs instead of transient toasts.
 - Existing Compare Results filtering, selection, context actions, file diffs, worktree
   restore, and Unified Diff behavior should remain unchanged after results load.
 
-Ongoing post-release monitoring focus for the published `1.5.2` CI hotfix:
+Ongoing post-release monitoring focus for earlier reliability releases:
 
 - The Node 20 verification matrix should remain green on `ubuntu-latest`, `windows-latest`,
   and `macos-latest` using the shell-independent compiled test runner.

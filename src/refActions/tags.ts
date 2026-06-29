@@ -1,5 +1,6 @@
 import {
   isNonInteractiveGitAuthenticationError,
+  isRemotePermissionDeniedError,
   toErrorDetail,
   toOperationError
 } from '../errorDetail';
@@ -99,7 +100,10 @@ export async function pushTagResolvedReference(
       );
       await services.ui.showSourceControl();
     } else {
-      await services.ui.showErrorMessage(toOperationError('Could not push the tag.', error));
+      await services.ui.showErrorMessage(
+        toOperationError('Could not push the tag.', error),
+        isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+      );
     }
     return false;
   }
@@ -139,7 +143,10 @@ export async function deleteRemoteTagResolvedReference(
     services.ui.showInformationMessage(`Tag ${target.label} was deleted from ${remoteName}.`);
     return true;
   } catch (error) {
-    await services.ui.showErrorMessage(toOperationError('Could not delete the remote tag.', error));
+    await services.ui.showErrorMessage(
+      toOperationError('Could not delete the remote tag.', error),
+      isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+    );
     return false;
   }
 }

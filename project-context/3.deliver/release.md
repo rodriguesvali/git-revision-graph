@@ -1,5 +1,66 @@
 # Release Readiness
 
+## 1.5.4 Release Readiness
+
+Published package baseline: `1.5.3`.
+
+Target patch: `1.5.4`.
+
+Published release: not published.
+
+Status: Opened on 2026-06-29 as a narrow UX safety patch. The initial implementation is
+complete locally and included in scope. Package metadata now reports `1.5.4` after
+maintainer approval for the version bump. Codex did not execute packaging or publication
+commands.
+
+Implemented candidate scope:
+
+- Detect remote permission and protected-branch failures from Git error text and metadata.
+- Show server-side authorization failures as modal errors for current-branch sync,
+  current-branch push, branch publish, tag push, remote tag delete, and remote branch delete.
+- Preserve nonblocking notification behavior for ordinary sync and pull failures so the
+  revision graph action state still clears quickly.
+- Cover the reported current-branch sync failure where the remote server rejects the push
+  side because the user has no write privileges.
+
+Verification:
+
+- `npm run build` passed.
+- `npx tsc -p ./tsconfig.test.json` passed.
+- `node --test out-test/test/errorDetail.test.js out-test/test/refActions.test.js` passed.
+- `npm test` passed with 508 tests.
+- `git diff --check` passed.
+
+Release gates:
+
+- Scope opened: complete.
+- Implementation and automated verification: complete locally.
+- Marketplace-facing release notes: drafted in `CHANGELOG.md`.
+- Package version bump to `1.5.4`: complete after maintainer approval.
+- Manual Extension Development Host smoke validation: pending.
+- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+
+Manual smoke checklist:
+
+- Trigger `Sync with <upstream>` where the push side is rejected by the server for missing
+  privileges and confirm the error is modal.
+- Trigger a generic sync or pull failure and confirm graph loading/action state clears without
+  waiting for notification dismissal.
+- Verify current-branch push, branch publish, tag push, remote tag delete, and remote branch
+  delete still show modal errors for permission/protected-branch failures.
+
+Packaging notes:
+
+- Do not run `npm run package:vsix` or any `npm run publish:*` command without explicit
+  maintainer approval.
+- Exact VSIX filename, checksum, size, and Marketplace publication metadata do not exist yet
+  for this target and are not inferred.
+
+Planning reference:
+
+- `project-context/docs/release-1.5.4-prioritization.md`
+- `project-context/2.build/features/1.5.4-remote-permission-modal-alerts.md`
+
 ## 1.5.3 Release Readiness
 
 Published package baseline: `1.5.2`.

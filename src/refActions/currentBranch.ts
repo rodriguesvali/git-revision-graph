@@ -1,5 +1,6 @@
 import {
   isNonInteractiveGitAuthenticationError,
+  isRemotePermissionDeniedError,
   toErrorDetail,
   toOperationError
 } from '../errorDetail';
@@ -73,6 +74,11 @@ export async function publishLocalBranchResolvedReference(
         `Open Source Control and run "Git: Publish Branch", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
       );
       await services.ui.showSourceControl();
+    } else if (isRemotePermissionDeniedError(error)) {
+      await services.ui.showErrorMessage(
+        toOperationError('Could not publish the branch.', error),
+        { modal: true }
+      );
     } else {
       await services.ui.showErrorMessage(toOperationError('Could not publish the branch.', error));
     }
@@ -145,7 +151,13 @@ export async function syncCurrentHeadWithUpstream(
     services.ui.showInformationMessage(buildSyncResultMessage(syncState));
     return true;
   } catch (error) {
-    const errorMessage = services.ui.showErrorMessage(toOperationError('Could not synchronize the current branch.', error));
+    const message = toOperationError('Could not synchronize the current branch.', error);
+    if (isRemotePermissionDeniedError(error)) {
+      await services.ui.showErrorMessage(message, { modal: true });
+      return false;
+    }
+
+    const errorMessage = services.ui.showErrorMessage(message);
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
       void errorMessage
         .then(() => services.ui.showSourceControl())
@@ -190,7 +202,13 @@ export async function pullCurrentBranchFromUpstream(
     services.refreshController.refresh(preparedRefresh.request);
     return true;
   } catch (error) {
-    const errorMessage = services.ui.showErrorMessage(toOperationError('Could not pull the current branch.', error));
+    const message = toOperationError('Could not pull the current branch.', error);
+    if (isRemotePermissionDeniedError(error)) {
+      await services.ui.showErrorMessage(message, { modal: true });
+      return false;
+    }
+
+    const errorMessage = services.ui.showErrorMessage(message);
     if (shouldRevealSourceControlAfterWorkspaceConflict(error, repository)) {
       void errorMessage
         .then(() => services.ui.showSourceControl())
@@ -272,7 +290,10 @@ export async function pushCurrentBranchToUpstream(
       return false;
     }
 
-    await services.ui.showErrorMessage(toOperationError('Could not push the current branch.', error));
+    await services.ui.showErrorMessage(
+      toOperationError('Could not push the current branch.', error),
+      isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+    );
     return false;
   }
 }
