@@ -189,6 +189,16 @@ export function renderRevisionGraphShellHtml(): string {
         aria-label="Clear Search"
       >${renderToolbarIcon('close')}</button>
     </div>
+    <div class="range-filter" id="rangeFilter" hidden>
+      <span class="range-filter-label" id="rangeFilterLabel"></span>
+      <button
+        id="rangeFilterClearButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Clear Range Filter"
+        aria-label="Clear Range Filter"
+      >${renderToolbarIcon('close')}</button>
+    </div>
     <div class="toolbar-actions" aria-label="Graph actions">
       <div class="toolbar-action-slot" aria-label="Repository actions">
         <button

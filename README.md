@@ -33,6 +33,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
+- Focus the graph on a selected `base..compare` range from the two-reference context menu, with a removable range filter in the graph toolbar
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` editor panel that presents comparisons as a compact review queue with source/target context, status filters, rename paths, a `Unified Diff` action for ref-to-ref and ref-to-worktree comparisons, double-click file diff opening, and context actions for compare with worktree and worktree restore flows
 - On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
@@ -80,7 +81,7 @@ Included in the MVP:
 Not included yet:
 
 - Advanced merge conflict guidance
-- Rich search beyond the current loaded graph scope, plus more advanced ref and revision-range filtering
+- Rich search beyond the current loaded graph scope, plus more advanced saved ref and range filter combinations
 - Reference rename or general push workflows
 - Full-history graph rendering beyond the bounded recent-commit window
 
@@ -255,6 +256,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream
 - Copy a selected reference name to the clipboard
+- Focus the graph on a selected `base..compare` pair
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
@@ -278,7 +280,7 @@ Closing the editor graph panel also closes these secondary review panels.
 
 Potential improvements after the MVP:
 
-- Add revision-range filtering and saved graph filter combinations
+- Add saved graph filter combinations and richer range presets
 - Avoid full graph reloads for metadata-only local operations such as checkout and branch creation when the loaded commit window is unchanged
 - Preserve zoom, scroll, and selection context across lightweight refreshes
 - Add refresh profiling and caching for graph load, projection, and layout hot paths
@@ -306,7 +308,8 @@ Use both automated and manual checks when changing command behavior:
    - merge of a selected reference into the current branch
    - open `Git Revision Graph` from the `Git Revision Graph` title bar
    - Ctrl/Cmd-click two references and compare them
-   - Ctrl/Cmd-click two references and open `Show Log` and `Unified Diff`
+   - Ctrl/Cmd-click two references and open `Show Log`, `Unified Diff`, and `Focus Range`
+   - clear the active range filter from the graph toolbar
    - select one reference and compare it with the worktree
    - select one reference and create a branch from it
    - select one reference and create a local tag from it

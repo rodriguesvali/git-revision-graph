@@ -105,7 +105,8 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       showRemoteBranches: false,
       showStashes: false,
       showMergeCommits: false,
-      showCurrentBranchDescendants: false
+      showCurrentBranchDescendants: false,
+      revisionRange: undefined
     }),
     [
       'log',
@@ -1262,6 +1263,32 @@ test('can scope the projection to local branches', () => {
   });
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'feature1', 'base1']);
+});
+
+test('can focus the projection on a selected revision range', () => {
+  const graph = buildCommitGraph([
+    { hash: 'topic3', parents: ['topic2'], author: 'Ada', date: '2026-04-10', subject: 'Topic tip', refs: [{ name: 'feature/range', kind: 'branch' }] },
+    { hash: 'topic2', parents: ['topic1'], author: 'Ada', date: '2026-04-09', subject: 'Topic work 2', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Topic work 1', refs: [] },
+    { hash: 'sibling1', parents: ['base1'], author: 'Ada', date: '2026-04-08', subject: 'Sibling', refs: [{ name: 'feature/sibling', kind: 'branch' }] },
+    { hash: 'base1', parents: ['root1'], author: 'Ada', date: '2026-04-07', subject: 'Base', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Root', refs: [] }
+  ]);
+
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    revisionRange: {
+      baseRevision: 'base1',
+      baseLabel: 'v1.0.0',
+      compareRevision: 'feature/range',
+      compareLabel: 'feature/range'
+    }
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['topic3', 'base1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'topic3', to: 'base1', through: ['topic2', 'topic1'] }
+  ]);
 });
 
 test('can hide tag refs and tag-only commits from the projection', () => {

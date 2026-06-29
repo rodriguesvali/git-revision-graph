@@ -592,6 +592,29 @@ export function renderRevisionGraphStyles(): string {
       font-weight: 700;
       white-space: nowrap;
     }
+    .view-controls .range-filter {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 260px;
+      height: 34px;
+      padding: 2px 2px 2px 10px;
+      border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+      border-radius: 0;
+      background: color-mix(in srgb, var(--panel) 92%, var(--accent) 8%);
+      color: var(--text);
+    }
+    .view-controls .range-filter[hidden] {
+      display: none;
+    }
+    .view-controls .range-filter-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
     .view-controls .toolbar-actions {
       display: flex;
       align-items: center;

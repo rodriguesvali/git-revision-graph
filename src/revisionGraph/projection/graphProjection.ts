@@ -14,7 +14,8 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   showRemoteBranches: true,
   showStashes: true,
   showMergeCommits: false,
-  showCurrentBranchDescendants: false
+  showCurrentBranchDescendants: false,
+  revisionRange: undefined
 };
 const DEFAULT_REMOTE_HEAD_REF_NAMES = ['origin/HEAD', 'origin/main', 'origin/master'];
 
@@ -82,6 +83,13 @@ function getScopeHashes(
   graph: CommitGraph,
   options: RevisionGraphProjectionOptions
 ): Set<string> {
+  if (options.revisionRange) {
+    const rangeHashes = getRevisionRangeHashes(graph, options.revisionRange.baseRevision, options.revisionRange.compareRevision);
+    if (rangeHashes) {
+      return rangeHashes;
+    }
+  }
+
   switch (options.refScope) {
     case 'current': {
       const headHashes = graph.orderedCommits
@@ -118,6 +126,40 @@ function getScopeHashes(
     case 'all':
       return new Set(graph.orderedCommits.map((commit) => commit.hash));
   }
+}
+
+function getRevisionRangeHashes(
+  graph: CommitGraph,
+  baseRevision: string,
+  compareRevision: string
+): Set<string> | undefined {
+  const baseHash = resolveRevisionHash(graph, baseRevision);
+  const compareHash = resolveRevisionHash(graph, compareRevision);
+  if (!baseHash || !compareHash) {
+    return undefined;
+  }
+
+  const baseAncestors = collectAncestorHashes(graph, [baseHash]);
+  const compareAncestors = collectAncestorHashes(graph, [compareHash]);
+  const rangeHashes = new Set<string>();
+  for (const hash of compareAncestors) {
+    if (!baseAncestors.has(hash)) {
+      rangeHashes.add(hash);
+    }
+  }
+  rangeHashes.add(baseHash);
+  rangeHashes.add(compareHash);
+  return rangeHashes;
+}
+
+function resolveRevisionHash(graph: CommitGraph, revision: string): string | undefined {
+  if (graph.commitsByHash.has(revision)) {
+    return revision;
+  }
+
+  return graph.orderedCommits.find((commit) =>
+    commit.refs.some((ref) => ref.name === revision)
+  )?.hash;
 }
 
 function collectDescendantRefTipHashes(

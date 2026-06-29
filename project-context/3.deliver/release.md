@@ -8,8 +8,9 @@ Target patch: `1.5.4`.
 
 Published release: not published.
 
-Status: Opened on 2026-06-29 as a narrow UX safety patch. The initial implementation is
-complete locally and included in scope. Package metadata now reports `1.5.4` after
+Status: Opened on 2026-06-29 as a UX patch after the published `1.5.3` package. The initial
+blocking-alert implementation is complete locally, and the maintainer expanded the scope to
+include one user-visible graph navigation feature. Package metadata now reports `1.5.4` after
 maintainer approval for the version bump. Codex did not execute packaging or publication
 commands.
 
@@ -24,6 +25,8 @@ Implemented candidate scope:
   side because the user has no write privileges.
 - Close revision graph processing feedback before displaying blocking error dialogs from
   graph actions.
+- Add `Focus Range` to the two-revision graph context menu so users can narrow the visible
+  graph to a selected `base..compare` path and clear that range from the graph toolbar.
 
 Verification:
 
@@ -33,7 +36,9 @@ Verification:
 - `npm test` passed with 508 tests.
 - Post-wrapper verification on 2026-06-29: `npm run build` passed.
 - Post-wrapper verification on 2026-06-29: `npm test` passed with 511 tests.
-- `git diff --check` passed.
+- Post-feature verification on 2026-06-29: `npm run build` passed.
+- Post-feature verification on 2026-06-29: `npm test` passed with 512 tests.
+- Post-feature verification on 2026-06-29: `git diff --check` passed.
 
 Release gates:
 
@@ -52,6 +57,8 @@ Manual smoke checklist:
   waiting for notification dismissal.
 - Verify current-branch push, branch publish, tag push, remote tag delete, and remote branch
   delete still show modal errors for permission/protected-branch failures.
+- Ctrl/Cmd-click two visible revisions, choose `Focus Range`, confirm the graph narrows to the
+  selected path, then clear the range from the graph toolbar.
 
 Packaging notes:
 
@@ -64,6 +71,7 @@ Planning reference:
 
 - `project-context/docs/release-1.5.4-prioritization.md`
 - `project-context/2.build/features/1.5.4-remote-permission-modal-alerts.md`
+- `project-context/2.build/features/1.5.4-focus-selected-range.md`
 
 ## 1.5.3 Release Readiness
 

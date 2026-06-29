@@ -328,6 +328,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Compare', () => postCompareSelected(base, compare), { primary: true });
         appendMenuItem('Show Log', () => postShowLogRange(base, compare));
         appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
+        appendMenuItem('Focus Range', () => postFocusRange(base, compare));
         appendMenuSection('Inspect');
         appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
         if (target.kind !== 'commit') {
@@ -571,6 +572,15 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage(createRevisionGraphUnifiedDiffMessage(base, compare));
     }
 
+    function postFocusRange(base, compare) {
+      postMessageWithLoading(
+        createRevisionGraphFocusRangeMessage(base, compare),
+        'Focusing selected range...',
+        null,
+        'subtle'
+      );
+    }
+
     function postShowLogTarget(target) {
       vscode.postMessage(createRevisionGraphShowLogTargetMessage(target));
     }
@@ -743,6 +753,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showMinimapToggle) {
         showMinimapToggle.disabled = toolbarBusy;
       }
+      if (rangeFilterClearButton) {
+        rangeFilterClearButton.disabled = toolbarBusy;
+      }
       if (centerHeadButton) {
         centerHeadButton.disabled = toolbarBusy;
       }
@@ -779,6 +792,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchPrevButton,
         searchNextButton,
         searchClearButton,
+        rangeFilterClearButton,
         reloadButton,
         fetchAllButton,
         pullButton,

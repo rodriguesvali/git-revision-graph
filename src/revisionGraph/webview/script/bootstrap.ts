@@ -49,6 +49,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const searchPrevButton = document.getElementById('searchPrevButton');
     const searchNextButton = document.getElementById('searchNextButton');
     const searchClearButton = document.getElementById('searchClearButton');
+    const rangeFilter = document.getElementById('rangeFilter');
+    const rangeFilterLabel = document.getElementById('rangeFilterLabel');
+    const rangeFilterClearButton = document.getElementById('rangeFilterClearButton');
     const centerHeadButton = document.getElementById('centerHeadButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomResetButton = document.getElementById('zoomResetButton');
@@ -67,7 +70,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       showRemoteBranches: true,
       showStashes: true,
       showMergeCommits: false,
-      showCurrentBranchDescendants: false
+      showCurrentBranchDescendants: false,
+      revisionRange: undefined
     };
     let mergeBlockedTargets = new Set();
     let graphNodes = [];
@@ -169,7 +173,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (scopeSelect) {
       scopeSelect.addEventListener('change', () => {
         const nextRefScope = scopeSelect.value;
-        const options = { refScope: nextRefScope };
+        const options = { refScope: nextRefScope, revisionRange: null };
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage(options), 'Updating graph scope...', scopeSelect);
       });
     }
@@ -222,6 +226,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (searchClearButton) {
       searchClearButton.addEventListener('click', () => {
         clearSearchQuery(true);
+      });
+    }
+    if (rangeFilterClearButton) {
+      rangeFilterClearButton.addEventListener('click', () => {
+        postMessageWithLoading(
+          createRevisionGraphProjectionOptionsMessage({ revisionRange: null }),
+          'Clearing range filter...',
+          rangeFilterClearButton,
+          'subtle'
+        );
       });
     }
     if (centerHeadButton) {
@@ -955,7 +969,23 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (showMergeCommitsToggle) {
         showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
+      syncRangeFilter(state.projectionOptions.revisionRange);
       syncViewOptionsButton();
+    }
+
+    function syncRangeFilter(revisionRange) {
+      if (!rangeFilter || !rangeFilterLabel) {
+        return;
+      }
+
+      if (!revisionRange) {
+        rangeFilter.hidden = true;
+        rangeFilterLabel.textContent = '';
+        return;
+      }
+
+      rangeFilter.hidden = false;
+      rangeFilterLabel.textContent = 'Range: ' + revisionRange.baseLabel + ' -> ' + revisionRange.compareLabel;
     }
 
     function renderScene(state, options = {}) {

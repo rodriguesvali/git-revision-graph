@@ -98,7 +98,8 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showRemoteBranches: true,
       showStashes: true,
       showMergeCommits: false,
-      showCurrentBranchDescendants: true
+      showCurrentBranchDescendants: true,
+      revisionRange: undefined
     },
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},

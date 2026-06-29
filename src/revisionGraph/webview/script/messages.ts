@@ -70,6 +70,17 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       };
     }
 
+    function createRevisionGraphFocusRangeMessage(base, compare) {
+      return createRevisionGraphProjectionOptionsMessage({
+        revisionRange: {
+          baseRevision: base.revision,
+          baseLabel: base.label,
+          compareRevision: compare.revision,
+          compareLabel: compare.label
+        }
+      });
+    }
+
     function createRevisionGraphShowLogTargetMessage(target) {
       return {
         type: 'show-log',

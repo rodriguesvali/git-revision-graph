@@ -286,7 +286,37 @@ function validateProjectionOptions(value: unknown): Partial<RevisionGraphProject
     }
   }
 
+  if (value.revisionRange !== undefined) {
+    if (value.revisionRange === null) {
+      options.revisionRange = undefined;
+    } else {
+      const revisionRange = validateRevisionRange(value.revisionRange);
+      if (!revisionRange) {
+        return undefined;
+      }
+      options.revisionRange = revisionRange;
+    }
+  }
+
   return options;
+}
+
+function validateRevisionRange(value: unknown): RevisionGraphProjectionOptions['revisionRange'] {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return isBoundedNonEmptyString(value.baseRevision)
+    && isBoundedString(value.baseLabel)
+    && isBoundedNonEmptyString(value.compareRevision)
+    && isBoundedString(value.compareLabel)
+    ? {
+      baseRevision: value.baseRevision,
+      baseLabel: value.baseLabel,
+      compareRevision: value.compareRevision,
+      compareLabel: value.compareLabel
+    }
+    : undefined;
 }
 
 function validateRevisionLogSource(value: unknown): RevisionLogSource | undefined {

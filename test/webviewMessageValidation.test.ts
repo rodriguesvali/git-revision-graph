@@ -49,6 +49,34 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     }),
     undefined
   );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        revisionRange: {
+          baseRevision: '',
+          baseLabel: 'main',
+          compareRevision: 'feature/demo',
+          compareLabel: 'feature/demo'
+        }
+      }
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        revisionRange: {
+          baseRevision: 'main',
+          baseLabel: 'main',
+          compareRevision: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1),
+          compareLabel: 'feature/demo'
+        }
+      }
+    }),
+    undefined
+  );
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -82,6 +110,44 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       type: 'set-projection-options',
       options: {
         refScope: 'remoteHead'
+      }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        revisionRange: {
+          baseRevision: 'main',
+          baseLabel: 'main',
+          compareRevision: 'feature/demo',
+          compareLabel: 'feature/demo'
+        }
+      }
+    }),
+    {
+      type: 'set-projection-options',
+      options: {
+        revisionRange: {
+          baseRevision: 'main',
+          baseLabel: 'main',
+          compareRevision: 'feature/demo',
+          compareLabel: 'feature/demo'
+        }
+      }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        revisionRange: null
+      }
+    }),
+    {
+      type: 'set-projection-options',
+      options: {
+        revisionRange: undefined
       }
     }
   );
@@ -531,7 +597,8 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showRemoteBranches: true,
       showStashes: true,
       showMergeCommits: false,
-      showCurrentBranchDescendants: true
+      showCurrentBranchDescendants: true,
+      revisionRange: undefined
     },
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},

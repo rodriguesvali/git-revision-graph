@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
   approval; packaging and Marketplace publication remain pending explicit maintainer approval.
 - Local verification passed with `npm run build`, `npm test`, and `git diff --check`.
 
+### Added
+
+- Added `Focus Range` to the two-revision graph context menu so users can temporarily narrow
+  the graph to a selected `base..compare` path and clear the range from the graph toolbar.
+
 ### UX Fixes
 
 - Show remote permission and protected-branch failures as modal errors instead of transient

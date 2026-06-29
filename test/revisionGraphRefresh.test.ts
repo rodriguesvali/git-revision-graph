@@ -140,6 +140,36 @@ test('snapshot reuse is limited to options that do not affect Git history loadin
   assert.equal(
     canReuseSnapshotForProjectionOptions(options, {
       ...options,
+      revisionRange: {
+        baseRevision: 'main',
+        baseLabel: 'main',
+        compareRevision: 'feature/demo',
+        compareLabel: 'feature/demo'
+      }
+    }),
+    true
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(
+      {
+        ...options,
+        revisionRange: {
+          baseRevision: 'main',
+          baseLabel: 'main',
+          compareRevision: 'feature/demo',
+          compareLabel: 'feature/demo'
+        }
+      },
+      {
+        ...options,
+        revisionRange: undefined
+      }
+    ),
+    true
+  );
+  assert.equal(
+    canReuseSnapshotForProjectionOptions(options, {
+      ...options,
       refScope: 'current',
       showCurrentBranchDescendants: true
     }),

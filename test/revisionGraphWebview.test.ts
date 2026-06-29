@@ -33,6 +33,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="searchPrevButton"[\s\S]*?data-icon="arrow-up"/);
   assert.match(html, /id="searchNextButton"[\s\S]*?data-icon="arrow-down"/);
   assert.match(html, /id="searchClearButton"[\s\S]*?data-icon="close"/);
+  assert.match(html, /id="rangeFilter"/);
+  assert.match(html, /id="rangeFilterLabel"/);
+  assert.match(html, /id="rangeFilterClearButton"[\s\S]*?data-icon="close"/);
   assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.match(html, /id="reloadButton"/);
@@ -182,7 +185,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.doesNotMatch(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /searchClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
+  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
 });
@@ -245,7 +248,8 @@ test('center HEAD button does not crash when refs are grouped by families', asyn
         showRemoteBranches: true,
         showStashes: true,
         showMergeCommits: false,
-        showCurrentBranchDescendants: true
+        showCurrentBranchDescendants: true,
+        revisionRange: undefined
       },
       mergeBlockedTargets: [],
       primaryAncestorNextByHash: {},
@@ -412,6 +416,9 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function appendMenuSection\(label\)/);
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
+  assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
+  assert.match(html, /appendMenuItem\('Focus Range', \(\) => postFocusRange\(base, compare\)\);/);
+  assert.match(html, /function postFocusRange\(base, compare\)/);
   assert.match(html, /appendMenuSection\('Destructive'\);/);
   assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
   assert.match(html, /placeContextMenu\(clientX, clientY\);/);
@@ -597,6 +604,8 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /searchPrevButton\.addEventListener\('click'/);
   assert.match(html, /searchNextButton\.addEventListener\('click'/);
   assert.match(html, /searchClearButton\.addEventListener\('click'/);
+  assert.match(html, /rangeFilterClearButton\.addEventListener\('click'/);
+  assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ revisionRange: null \}\)/);
   assert.match(html, /function setSearchQuery\(nextQuery\)/);
   assert.match(html, /function syncSearchResults\(options = \{\}\)/);
   assert.match(html, /function syncSearchHighlights\(\)/);
@@ -740,6 +749,9 @@ function createWebviewRuntime() {
     'searchPrevButton',
     'searchNextButton',
     'searchClearButton',
+    'rangeFilter',
+    'rangeFilterLabel',
+    'rangeFilterClearButton',
     'centerHeadButton',
     'zoomOutButton',
     'zoomResetButton',

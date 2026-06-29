@@ -30,6 +30,14 @@ export interface RevisionGraphProjectionOptions {
   readonly showStashes: boolean;
   readonly showMergeCommits: boolean;
   readonly showCurrentBranchDescendants: boolean;
+  readonly revisionRange: RevisionGraphRevisionRange | undefined;
+}
+
+export interface RevisionGraphRevisionRange {
+  readonly baseRevision: string;
+  readonly baseLabel: string;
+  readonly compareRevision: string;
+  readonly compareLabel: string;
 }
 
 export interface ProjectedGraphNode {
