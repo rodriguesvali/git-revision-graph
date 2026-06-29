@@ -321,6 +321,9 @@ export function renderRevisionGraphScriptInteractions(): string {
           || base.hash === target.hash
           || compare.hash === target.hash
         );
+      const focusRangeActionLabel = hasComparisonSelection
+        ? getFocusRangeActionLabel(base, compare)
+        : null;
 
       contextMenu.innerHTML = '';
       if (hasComparisonSelection) {
@@ -328,7 +331,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         appendMenuItem('Compare', () => postCompareSelected(base, compare), { primary: true });
         appendMenuItem('Show Log', () => postShowLogRange(base, compare));
         appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
-        appendMenuItem('Focus Range', () => postFocusRange(base, compare));
+        if (focusRangeActionLabel) {
+          appendMenuItem(focusRangeActionLabel, () => postFocusRange(base, compare));
+        }
         appendMenuSection('Inspect');
         appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
         if (target.kind !== 'commit') {
@@ -572,10 +577,25 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage(createRevisionGraphUnifiedDiffMessage(base, compare));
     }
 
+    function getFocusRangeActionLabel(base, compare, activeRange = currentProjectionOptions.revisionRange) {
+      if (!activeRange) {
+        return 'Focus Range';
+      }
+      if (
+        activeRange.baseRevision === base.revision &&
+        activeRange.compareRevision === compare.revision
+      ) {
+        return null;
+      }
+      return 'Update Focus Range';
+    }
+
     function postFocusRange(base, compare) {
       postMessageWithLoading(
         createRevisionGraphFocusRangeMessage(base, compare),
-        'Focusing selected range...',
+        currentProjectionOptions.revisionRange
+          ? 'Updating Focus Range...'
+          : 'Focusing selected range...',
         null,
         'subtle'
       );

@@ -420,7 +420,9 @@ test('renders grouped graph context menus', () => {
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
-  assert.match(html, /appendMenuItem\('Focus Range', \(\) => postFocusRange\(base, compare\)\);/);
+  assert.match(html, /const focusRangeActionLabel = hasComparisonSelection[\s\S]*?getFocusRangeActionLabel\(base, compare\)/);
+  assert.match(html, /if \(focusRangeActionLabel\) \{\s*appendMenuItem\(focusRangeActionLabel, \(\) => postFocusRange\(base, compare\)\);\s*\}/);
+  assert.match(html, /function getFocusRangeActionLabel\(base, compare, activeRange = currentProjectionOptions\.revisionRange\)/);
   assert.match(html, /function postFocusRange\(base, compare\)/);
   assert.match(html, /appendMenuSection\('Destructive'\);/);
   assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
@@ -647,6 +649,35 @@ test('presents the active Focus Range as a descriptive toolbar state', () => {
   assert.equal(rangeFilterLabel.textContent, '');
   assert.equal(rangeFilterLabel.title, '');
   assert.equal(rangeFilter.getAttribute('aria-label'), 'Focus Range inactive');
+});
+
+test('adapts the Focus Range context action to the active interval', () => {
+  const runtime = createWebviewRuntime();
+  const base = { revision: 'main' };
+  const compare = { revision: 'feature/focus-range' };
+
+  assert.equal(runtime.context.getFocusRangeActionLabel(base, compare, undefined), 'Focus Range');
+  assert.equal(
+    runtime.context.getFocusRangeActionLabel(base, compare, {
+      baseRevision: 'release/1.5',
+      compareRevision: 'feature/other'
+    }),
+    'Update Focus Range'
+  );
+  assert.equal(
+    runtime.context.getFocusRangeActionLabel(base, compare, {
+      baseRevision: 'main',
+      compareRevision: 'feature/focus-range'
+    }),
+    null
+  );
+  assert.equal(
+    runtime.context.getFocusRangeActionLabel(base, compare, {
+      baseRevision: 'feature/focus-range',
+      compareRevision: 'main'
+    }),
+    'Update Focus Range'
+  );
 });
 
 test('renders merge abort as a HEAD context menu action only for conflicted merge state', () => {
