@@ -124,6 +124,7 @@ function createHost(options: {
     getCurrentRepository() {
       return options.repository;
     },
+    postCurrentState() {},
     createRemoteTagPublicationRequestContext(repository): RemoteTagPublicationRequestContext {
       return {
         repositoryPath: repository.rootUri.fsPath,

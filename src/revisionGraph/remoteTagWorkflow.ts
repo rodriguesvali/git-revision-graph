@@ -12,10 +12,12 @@ import {
   resolveRemoteTagPublicationState
 } from './remoteTagState';
 import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
+import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 
 export interface RevisionGraphRemoteTagWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
+  postCurrentState(): void;
   createRemoteTagPublicationRequestContext(repository: Repository): RemoteTagPublicationRequestContext;
   postRemoteTagStateIfCurrent(
     requestContext: RemoteTagPublicationRequestContext,
@@ -96,12 +98,12 @@ export class RevisionGraphRemoteTagWorkflow {
         this.pushTagResolvedReference(
           guardedRepository,
           { refName, label, kind: refKind },
-          services
+          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState())
         ))
       : await this.pushTagResolvedReference(
         repository,
         { refName, label, kind: refKind },
-        this.host.actionServices
+        withCurrentStateBeforeBlockingMessage(this.host.actionServices, () => this.host.postCurrentState())
       );
     if (pushed) {
       this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'published');
@@ -124,12 +126,12 @@ export class RevisionGraphRemoteTagWorkflow {
         this.deleteRemoteTagResolvedReference(
           guardedRepository,
           { refName, label, kind: refKind },
-          services
+          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState())
         ))
       : await this.deleteRemoteTagResolvedReference(
         repository,
         { refName, label, kind: refKind },
-        this.host.actionServices
+        withCurrentStateBeforeBlockingMessage(this.host.actionServices, () => this.host.postCurrentState())
       );
     if (deleted) {
       this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'unpublished');

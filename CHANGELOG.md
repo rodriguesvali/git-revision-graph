@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Show remote permission and protected-branch failures as modal errors instead of transient
   toasts when they block current-branch sync, current-branch push, branch publish, tag push,
   remote tag delete, or remote branch delete.
+- Close revision graph processing feedback before displaying those blocking error dialogs.
 - Preserve nonblocking notification behavior for ordinary sync and pull failures so graph
   action/loading state still clears quickly.
 

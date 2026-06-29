@@ -70,13 +70,135 @@ test('RevisionGraphRefActionWorkflow preserves reset workspace options', async (
   assert.deepEqual(includeUntrackedValues, [true, false]);
 });
 
+test('RevisionGraphRefActionWorkflow posts current state before awaiting a modal error', async () => {
+  const repository = createRepository('/repo');
+  const events: string[] = [];
+  let closeErrorMessage: (() => void) | undefined;
+  const workflow = new RevisionGraphRefActionWorkflow(
+    createHost({
+      repository,
+      actionServices: createActionServices({
+        async showErrorMessage(_message, options) {
+          events.push(options?.modal ? 'show-modal-error' : 'show-error');
+          await new Promise<void>((resolve) => {
+            closeErrorMessage = resolve;
+          });
+        }
+      }),
+      postCurrentState() {
+        events.push('post-current-state');
+      }
+    }),
+    {
+      async deleteResolvedReference(_repository, _target, services) {
+        await services.ui.showErrorMessage('Could not delete.', { modal: true });
+      }
+    }
+  );
+
+  const deletePromise = workflow.deleteReference('origin/protected', 'remote');
+  const resultBeforeDismissal = await Promise.race([
+    deletePromise.then(() => 'completed' as const),
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+
+  assert.equal(resultBeforeDismissal, 'pending');
+  assert.deepEqual(events, ['post-current-state', 'show-modal-error']);
+
+  closeErrorMessage?.();
+  await deletePromise;
+});
+
 function createHost(options: {
   readonly repository?: Repository;
+  readonly actionServices?: RefActionServices;
+  postCurrentState?(): void;
 } = {}): RevisionGraphRefActionWorkflowHost {
   return {
-    actionServices: {} as RefActionServices,
+    actionServices: options.actionServices ?? createActionServices(),
     getCurrentRepository() {
       return options.repository;
+    },
+    postCurrentState() {
+      options.postCurrentState?.();
+    }
+  };
+}
+
+function createActionServices(
+  uiOverrides: Partial<RefActionServices['ui']> = {}
+): RefActionServices {
+  return {
+    ui: {
+      async pickChange() {
+        return undefined;
+      },
+      async pickRemoteName() {
+        return undefined;
+      },
+      async promptBranchName() {
+        return undefined;
+      },
+      async promptTagName() {
+        return undefined;
+      },
+      async promptRemoteBranchCheckout() {
+        return undefined;
+      },
+      async pickCurrentBranchPushMode() {
+        return undefined;
+      },
+      async confirm() {
+        return false;
+      },
+      showInformationMessage() {},
+      showWarningMessage() {},
+      async showErrorMessage() {},
+      async showSourceControl() {},
+      ...uiOverrides
+    },
+    diffPresenter: {
+      async openBetweenRefs() {},
+      async openWithWorktree() {}
+    },
+    compareResultsPresenter: {
+      async showBetweenRefs() {},
+      async showWithWorktree() {}
+    },
+    refreshController: {
+      prepare() {
+        return undefined;
+      },
+      refresh() {}
+    },
+    referenceManager: {
+      async createTag() {},
+      async resetBranch() {},
+      async resetCurrentBranch() {},
+      async resetWorkspace() {},
+      async getRemoteNames() {
+        return [];
+      },
+      async pushCurrentBranch() {
+        return false;
+      },
+      async pushTag() {},
+      async deleteRemoteTag() {},
+      async deleteRemoteBranch() {},
+      async unsetBranchUpstream() {},
+      async abortMerge() {},
+      async stashSave() {},
+      async stashApply() {},
+      async stashPop() {},
+      async stashDrop() {}
+    },
+    ancestryInspector: {
+      async isRefAncestorOfHead() {
+        return false;
+      }
+    },
+    formatPath(fsPath) {
+      return fsPath;
     }
   };
 }

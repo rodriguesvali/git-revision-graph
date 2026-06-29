@@ -6,6 +6,7 @@ import {
   syncCurrentHeadWithUpstream
 } from '../refActions';
 import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
+import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 
 export interface RevisionGraphCurrentHeadWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
@@ -64,10 +65,18 @@ export class RevisionGraphCurrentHeadWorkflow {
     action: (repository: Repository, services: RefActionServices) => Promise<boolean>
   ): Promise<void> {
     const repository = this.host.getCurrentRepository();
+    const actionServices = withCurrentStateBeforeBlockingMessage(
+      this.host.actionServices,
+      () => this.host.postCurrentState()
+    );
     const didScheduleRefresh = repository && this.host.runRepositoryMutation
-      ? await this.host.runRepositoryMutation(repository, action)
+      ? await this.host.runRepositoryMutation(repository, (currentRepository, services) =>
+        action(
+          currentRepository,
+          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState())
+        ))
       : repository
-        ? await action(repository, this.host.actionServices)
+        ? await action(repository, actionServices)
         : false;
     if (!didScheduleRefresh) {
       this.host.postCurrentState();

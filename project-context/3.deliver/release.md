@@ -22,6 +22,8 @@ Implemented candidate scope:
   revision graph action state still clears quickly.
 - Cover the reported current-branch sync failure where the remote server rejects the push
   side because the user has no write privileges.
+- Close revision graph processing feedback before displaying blocking error dialogs from
+  graph actions.
 
 Verification:
 
@@ -29,6 +31,8 @@ Verification:
 - `npx tsc -p ./tsconfig.test.json` passed.
 - `node --test out-test/test/errorDetail.test.js out-test/test/refActions.test.js` passed.
 - `npm test` passed with 508 tests.
+- Post-wrapper verification on 2026-06-29: `npm run build` passed.
+- Post-wrapper verification on 2026-06-29: `npm test` passed with 511 tests.
 - `git diff --check` passed.
 
 Release gates:
@@ -43,7 +47,7 @@ Release gates:
 Manual smoke checklist:
 
 - Trigger `Sync with <upstream>` where the push side is rejected by the server for missing
-  privileges and confirm the error is modal.
+  privileges and confirm the processing indicator closes before the modal error appears.
 - Trigger a generic sync or pull failure and confirm graph loading/action state clears without
   waiting for notification dismissal.
 - Verify current-branch push, branch publish, tag push, remote tag delete, and remote branch

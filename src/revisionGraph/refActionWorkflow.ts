@@ -18,10 +18,12 @@ import {
   dropStashResolvedReference
 } from '../refActions';
 import type { RepositoryMutationRunner } from '../repositoryMutationCoordinator';
+import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 
 export interface RevisionGraphRefActionWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
+  postCurrentState(): void;
 }
 
 interface RefActionTarget {
@@ -326,9 +328,16 @@ export class RevisionGraphRefActionWorkflow {
     }
 
     if (this.host.runRepositoryMutation) {
-      return this.host.runRepositoryMutation(repository, action);
+      return this.host.runRepositoryMutation(repository, (currentRepository, services) =>
+        action(
+          currentRepository,
+          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState())
+        ));
     }
 
-    return action(repository, this.host.actionServices);
+    return action(
+      repository,
+      withCurrentStateBeforeBlockingMessage(this.host.actionServices, () => this.host.postCurrentState())
+    );
   }
 }
