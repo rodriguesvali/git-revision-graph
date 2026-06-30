@@ -80,4 +80,4 @@ Candidate slices:
 
 ## Historical Reference
 
-`project-context/docs/revision-graph-parity-plan.md` contains the older TortoiseGit parity analysis. Treat it as a source of ideas and constraints, not as active approved scope.
+`project-context/archive/analysis/revision-graph-parity-plan-history.md` contains the older TortoiseGit parity analysis. Treat it as a source of ideas and constraints, not as active approved scope.

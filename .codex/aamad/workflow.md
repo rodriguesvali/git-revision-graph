@@ -9,7 +9,7 @@ Use the process lightly for small fixes and fully for user-visible features, Git
 ## Define
 
 - Clarify the user goal, target workflow, constraints, scope, non-goals, acceptance criteria, and risks.
-- Produce or update `project-context/1.define/mrd.md`, `prd.md`, `sad.md`, and `open-questions.md` as needed.
+- Produce or update `project-context/1.define/prd.md`, `sad.md`, and `open-questions.md` as needed.
 - For a new feature, decide whether it is a patch-level improvement or a release-driving feature.
 - Do not move into broad implementation until the relevant Define artifacts are sufficient for the requested change.
 
