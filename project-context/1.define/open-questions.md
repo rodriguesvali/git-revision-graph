@@ -7,10 +7,10 @@
   snapshot, not from visual row position, timestamp, or a new Git history query.
 - Decided on 2026-06-30: keep `Focus Descendants` mutually exclusive with `Focus Range` in the
   first implementation and clear active focus when the main graph scope changes.
-- Open: should activation place the anchor near the bottom of the viewport or center it while
-  preserving enough context to make upward navigation obvious?
-- Open: should the active indicator use the literal `Descendants` caption or reuse the compact
-  `Focus` caption with the anchor label and an accessible full description?
+- Decided on 2026-06-30: activation should place the anchor closer to the bottom of the viewport
+  while preserving enough context to make upward descendant navigation obvious.
+- Decided on 2026-06-30: keep the active indicator using the current literal `Descendants`
+  caption with the anchor label and accessible full description.
 
 ## 2.0.0
 
