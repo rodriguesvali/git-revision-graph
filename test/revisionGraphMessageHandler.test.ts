@@ -296,7 +296,8 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showStashes: true,
       showMergeCommits: false,
       showCurrentBranchDescendants: false,
-      revisionRange: undefined
+      revisionRange: undefined,
+      descendantFocus: undefined
     },
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},

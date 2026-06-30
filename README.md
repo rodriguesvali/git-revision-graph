@@ -34,6 +34,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
 - Focus the graph on a selected `base..compare` range from the two-reference context menu, with a removable range filter in the graph toolbar
+- Focus the graph on one visible revision and all loaded descendants from its single-revision context menu, excluding older and unrelated history through Git ancestry rather than visual position
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` editor panel that presents comparisons as a compact review queue with source/target context, status filters, rename paths, a `Unified Diff` action for ref-to-ref and ref-to-worktree comparisons, double-click file diff opening, and context actions for compare with worktree and worktree restore flows
 - On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
@@ -257,6 +258,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Sync the current tracked `HEAD` branch with its upstream
 - Copy a selected reference name to the clipboard
 - Focus the graph on a selected `base..compare` pair
+- Focus the graph on one selected revision and all of its loaded descendants
 - Show a compact log for a selected target or a selected `base..compare` pair
 - Open the unified diff between two selected references
 
@@ -310,6 +312,8 @@ Use both automated and manual checks when changing command behavior:
    - Ctrl/Cmd-click two references and compare them
    - Ctrl/Cmd-click two references and open `Show Log`, `Unified Diff`, and `Focus Range`
    - clear the active range filter from the graph toolbar
+   - open `Focus Descendants` from one visible reference or unreferenced commit and clear its active toolbar indicator
+   - switch between `Focus Range` and `Focus Descendants`, then change graph scope and confirm active focus clears
    - select one reference and compare it with the worktree
    - select one reference and create a branch from it
    - select one reference and create a local tag from it

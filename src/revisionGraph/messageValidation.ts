@@ -298,6 +298,22 @@ function validateProjectionOptions(value: unknown): Partial<RevisionGraphProject
     }
   }
 
+  if (value.descendantFocus !== undefined) {
+    if (value.descendantFocus === null) {
+      options.descendantFocus = undefined;
+    } else {
+      const descendantFocus = validateDescendantFocus(value.descendantFocus);
+      if (!descendantFocus) {
+        return undefined;
+      }
+      options.descendantFocus = descendantFocus;
+    }
+  }
+
+  if (options.revisionRange && options.descendantFocus) {
+    return undefined;
+  }
+
   return options;
 }
 
@@ -315,6 +331,20 @@ function validateRevisionRange(value: unknown): RevisionGraphProjectionOptions['
       baseLabel: value.baseLabel,
       compareRevision: value.compareRevision,
       compareLabel: value.compareLabel
+    }
+    : undefined;
+}
+
+function validateDescendantFocus(value: unknown): RevisionGraphProjectionOptions['descendantFocus'] {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  return isBoundedNonEmptyString(value.anchorRevision)
+    && isBoundedString(value.anchorLabel)
+    ? {
+      anchorRevision: value.anchorRevision,
+      anchorLabel: value.anchorLabel
     }
     : undefined;
 }

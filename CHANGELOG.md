@@ -7,17 +7,20 @@ All notable changes to this project will be documented in this file.
 ### Release Preparation
 
 - Opened the `1.5.5` development cycle after maintainer confirmation that `1.5.4` was launched.
-- Version metadata is `1.5.5` in `package.json` and `package-lock.json`; implementation,
-  packaging, and Marketplace publication are not complete.
+- Version metadata is `1.5.5` in `package.json` and `package-lock.json`; manual validation,
+  scope closure, packaging, and Marketplace publication are not complete.
 - Opening verification passed with `npm run build`, 514 tests through `npm test`, and
   `git diff --check`.
+- Implementation verification passed with `npm run build` and 522 tests through `npm test`.
 
-### Planned
+### Added
 
-- Add `Focus Descendants` to let users select one visible revision and temporarily narrow the
+- Added `Focus Descendants` to let users select one visible revision and temporarily narrow the
   graph to that anchor and every loaded reference and structural path that descends from it.
-- Reuse the loaded graph snapshot, existing major-operations projection, layout pipeline, and
+- Reused the loaded graph snapshot, existing major-operations projection, layout pipeline, and
   virtualized webview while providing a removable active-focus indicator.
+- Kept Focus Descendants and Focus Range mutually exclusive, clear either focus on main scope
+  changes, and preserve the current valid scene when a requested descendant anchor is stale.
 
 ## 1.5.4
 

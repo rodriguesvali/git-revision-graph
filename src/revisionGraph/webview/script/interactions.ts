@@ -324,6 +324,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       const focusRangeActionLabel = hasComparisonSelection
         ? getFocusRangeActionLabel(base, compare)
         : null;
+      const focusDescendantsActionLabel = !hasComparisonSelection
+        ? getFocusDescendantsActionLabel(target)
+        : null;
 
       contextMenu.innerHTML = '';
       if (hasComparisonSelection) {
@@ -361,6 +364,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         }
         appendMenuSection('Compare');
         appendMenuItem('Compare With Worktree', () => postCompareWithWorktree(target));
+        if (focusDescendantsActionLabel) {
+          appendMenuSection('Navigate');
+          appendMenuItem(focusDescendantsActionLabel, () => postFocusDescendants(target));
+        }
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
@@ -601,6 +608,27 @@ export function renderRevisionGraphScriptInteractions(): string {
       );
     }
 
+    function getFocusDescendantsActionLabel(target, activeFocus = currentProjectionOptions.descendantFocus) {
+      if (!activeFocus) {
+        return 'Focus Descendants';
+      }
+      if (activeFocus.anchorRevision === target.hash) {
+        return null;
+      }
+      return 'Update Focus Descendants';
+    }
+
+    function postFocusDescendants(target) {
+      postMessageWithLoading(
+        createRevisionGraphFocusDescendantsMessage(target),
+        currentProjectionOptions.descendantFocus
+          ? 'Updating Focus Descendants...'
+          : 'Focusing descendants...',
+        null,
+        'subtle'
+      );
+    }
+
     function postShowLogTarget(target) {
       vscode.postMessage(createRevisionGraphShowLogTargetMessage(target));
     }
@@ -776,6 +804,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (rangeFilterClearButton) {
         rangeFilterClearButton.disabled = toolbarBusy;
       }
+      if (descendantFilterClearButton) {
+        descendantFilterClearButton.disabled = toolbarBusy;
+      }
       if (centerHeadButton) {
         centerHeadButton.disabled = toolbarBusy;
       }
@@ -813,6 +844,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         searchNextButton,
         searchClearButton,
         rangeFilterClearButton,
+        descendantFilterClearButton,
         reloadButton,
         fetchAllButton,
         pullButton,

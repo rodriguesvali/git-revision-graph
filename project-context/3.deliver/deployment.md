@@ -26,11 +26,10 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Target patch: `1.5.5`.
 - The `1.5.5` cycle is open with `Focus Descendants` as its initial approved scope.
 - Package metadata reports `1.5.5` after explicit maintainer approval.
-- Focus Descendants implementation, automated behavior verification, manual smoke validation,
-  scope closure, packaging, and publication are pending.
+- Focus Descendants implementation and automated behavior verification are complete locally.
+- Manual smoke validation, scope closure, packaging, and publication are pending.
 - Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
-- `CHANGELOG.md` contains opening notes only; final Marketplace-facing `1.5.5` feature copy and
-  README changes wait for implementation.
+- `README.md` and `CHANGELOG.md` describe the implemented `1.5.5` feature behavior.
 - Codex executed the approved `1.5.5` version bump. Codex has not executed packaging or
   publication commands for `1.5.5`.
 

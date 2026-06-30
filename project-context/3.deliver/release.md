@@ -10,11 +10,11 @@ Published release: not published.
 
 Status: Release cycle opened on 2026-06-30 after maintainer confirmation that `1.5.4` was
 launched. Package metadata reports `1.5.5`. `Focus Descendants` is approved as the initial
-development scope, but implementation, behavior verification, scope closure, packaging, and
-Marketplace publication have not started. Codex did not execute packaging or publication
-commands.
+development scope. Implementation and automated behavior verification are complete locally;
+manual validation, scope closure, packaging, and Marketplace publication remain pending. Codex
+did not execute packaging or publication commands.
 
-Approved candidate scope:
+Implemented candidate scope:
 
 - Add `Focus Descendants` to the single-revision graph context menu.
 - Resolve one visible revision as an anchor and keep the anchor plus all loaded descendants
@@ -33,13 +33,21 @@ Opening verification:
 - `npm test` passed with 514 tests on 2026-06-30.
 - `git diff --check` passed on 2026-06-30 after the opening documentation update.
 
+Implementation verification:
+
+- `npm run build` passed on 2026-06-30.
+- `npm test` passed with 522 tests on 2026-06-30.
+- Focused webview verification passed with 29 tests on 2026-06-30.
+- README and Marketplace-facing `CHANGELOG.md` copy describe the implemented behavior.
+- `git diff --check` passed on 2026-06-30 after release-documentation synchronization.
+
 Release gates:
 
 - Define and initial scope approval: complete.
 - Package version bump to `1.5.5`: complete after maintainer approval.
-- Feature implementation and automated behavior verification: pending.
+- Feature implementation and automated behavior verification: complete locally.
 - Extension Development Host validation: pending.
-- Final README and Marketplace-facing changelog copy: pending implementation.
+- Final README and Marketplace-facing changelog copy: complete for the current candidate.
 - Scope closure: pending maintainer review.
 - VSIX packaging and Marketplace publication: pending separate explicit approval.
 

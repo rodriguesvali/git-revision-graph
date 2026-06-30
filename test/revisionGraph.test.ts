@@ -106,7 +106,8 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       showStashes: false,
       showMergeCommits: false,
       showCurrentBranchDescendants: false,
-      revisionRange: undefined
+      revisionRange: undefined,
+      descendantFocus: undefined
     }),
     [
       'log',
@@ -1289,6 +1290,51 @@ test('can focus the projection on a selected revision range', () => {
   assert.deepEqual(projection.edges, [
     { from: 'topic3', to: 'base1', through: ['topic2', 'topic1'] }
   ]);
+});
+
+test('can focus the projection on all loaded descendants of one revision', () => {
+  const graph = buildCommitGraph([
+    { hash: 'main2', parents: ['main1'], author: 'Ada', date: '2026-04-12', subject: 'Main tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'feature2', parents: ['feature1'], author: 'Ada', date: '2026-04-11', subject: 'Feature tip', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'unrelated2', parents: ['unrelated1'], author: 'Ada', date: '2026-04-10', subject: 'Unrelated tip', refs: [{ name: 'release/legacy', kind: 'branch' }] },
+    { hash: 'main1', parents: ['anchor1'], author: 'Ada', date: '2026-04-09', subject: 'Main work', refs: [] },
+    { hash: 'feature1', parents: ['anchor1'], author: 'Ada', date: '2026-04-08', subject: 'Feature work', refs: [] },
+    { hash: 'unrelated1', parents: ['root1'], author: 'Ada', date: '2026-04-07', subject: 'Unrelated work', refs: [] },
+    { hash: 'anchor1', parents: ['root1'], author: 'Ada', date: '2026-04-06', subject: 'Anchor', refs: [{ name: 'v1.5.4', kind: 'tag' }] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-04-05', subject: 'Root', refs: [] }
+  ]);
+
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    descendantFocus: {
+      anchorRevision: 'v1.5.4',
+      anchorLabel: 'v1.5.4'
+    }
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['main2', 'feature2', 'anchor1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'main2', to: 'anchor1', through: ['main1'] },
+    { from: 'feature2', to: 'anchor1', through: ['feature1'] }
+  ]);
+});
+
+test('does not broaden descendant focus when its anchor cannot be resolved', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['root1'], author: 'Ada', date: '2026-04-07', subject: 'Head', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-04-06', subject: 'Root', refs: [] }
+  ]);
+
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    descendantFocus: {
+      anchorRevision: 'missing',
+      anchorLabel: 'missing'
+    }
+  });
+
+  assert.deepEqual(projection.nodes, []);
+  assert.deepEqual(projection.edges, []);
 });
 
 test('can hide tag refs and tag-only commits from the projection', () => {

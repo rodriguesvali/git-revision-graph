@@ -31,6 +31,7 @@ export interface RevisionGraphProjectionOptions {
   readonly showMergeCommits: boolean;
   readonly showCurrentBranchDescendants: boolean;
   readonly revisionRange: RevisionGraphRevisionRange | undefined;
+  readonly descendantFocus: RevisionGraphDescendantFocus | undefined;
 }
 
 export interface RevisionGraphRevisionRange {
@@ -38,6 +39,11 @@ export interface RevisionGraphRevisionRange {
   readonly baseLabel: string;
   readonly compareRevision: string;
   readonly compareLabel: string;
+}
+
+export interface RevisionGraphDescendantFocus {
+  readonly anchorRevision: string;
+  readonly anchorLabel: string;
 }
 
 export interface ProjectedGraphNode {

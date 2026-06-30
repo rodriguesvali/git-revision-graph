@@ -285,6 +285,26 @@ export function renderRevisionGraphShellHtml(): string {
         aria-label="Exit Focus Range and show all revisions"
       >${renderToolbarIcon('close')}</button>
     </div>
+    <div
+      class="range-filter"
+      id="descendantFilter"
+      role="group"
+      aria-label="Focus Descendants active"
+      hidden
+    >
+      <span class="range-filter-icon" aria-hidden="true">${renderToolbarIcon('focus-range')}</span>
+      <span class="range-filter-copy">
+        <span class="range-filter-caption">Descendants</span>
+        <span class="range-filter-label" id="descendantFilterLabel"></span>
+      </span>
+      <button
+        id="descendantFilterClearButton"
+        class="toolbar-button icon-only"
+        type="button"
+        title="Exit Focus Descendants"
+        aria-label="Exit Focus Descendants and show all revisions"
+      >${renderToolbarIcon('close')}</button>
+    </div>
   </div>
   <div
     class="graph-minimap"

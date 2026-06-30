@@ -15,7 +15,8 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   showStashes: true,
   showMergeCommits: false,
   showCurrentBranchDescendants: false,
-  revisionRange: undefined
+  revisionRange: undefined,
+  descendantFocus: undefined
 };
 const DEFAULT_REMOTE_HEAD_REF_NAMES = ['origin/HEAD', 'origin/main', 'origin/master'];
 
@@ -83,6 +84,15 @@ function getScopeHashes(
   graph: CommitGraph,
   options: RevisionGraphProjectionOptions
 ): Set<string> {
+  if (options.descendantFocus) {
+    const anchorHash = resolveRevisionHash(graph, options.descendantFocus.anchorRevision);
+    if (anchorHash) {
+      return collectDescendantHashes(graph, [anchorHash]);
+    }
+
+    return new Set<string>();
+  }
+
   if (options.revisionRange) {
     const rangeHashes = getRevisionRangeHashes(graph, options.revisionRange.baseRevision, options.revisionRange.compareRevision);
     if (rangeHashes) {

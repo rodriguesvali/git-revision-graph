@@ -34,11 +34,36 @@ export class RevisionGraphViewStateWorkflow {
   async setProjectionOptions(
     options: Partial<RevisionGraphViewState['projectionOptions']>
   ): Promise<void> {
+    const requestedDescendantFocus = options.descendantFocus;
+    if (
+      requestedDescendantFocus &&
+      !this.host.getCurrentState().scene.nodes.some((node) => node.hash === requestedDescendantFocus.anchorRevision)
+    ) {
+      this.host.postHostMessage(createRevisionGraphUpdateStateMessage(this.host.getCurrentState()));
+      return;
+    }
+
+    const currentProjectionOptions = this.host.getProjectionOptions();
+    const isScopeChange = options.refScope !== undefined && options.refScope !== currentProjectionOptions.refScope;
     const nextProjectionOptions = normalizeRevisionGraphProjectionOptionsForScope({
-      ...this.host.getProjectionOptions(),
-      ...options
+      ...currentProjectionOptions,
+      ...options,
+      ...(isScopeChange
+        ? { revisionRange: undefined, descendantFocus: undefined }
+        : hasOwnProjectionOption(options, 'revisionRange') && options.revisionRange
+          ? { descendantFocus: undefined }
+          : hasOwnProjectionOption(options, 'descendantFocus') && options.descendantFocus
+            ? { revisionRange: undefined }
+            : {})
     });
     this.host.setProjectionOptions(nextProjectionOptions);
     await this.host.refresh('projection-only');
   }
+}
+
+function hasOwnProjectionOption(
+  options: Partial<RevisionGraphViewState['projectionOptions']>,
+  key: keyof RevisionGraphViewState['projectionOptions']
+): boolean {
+  return Object.prototype.hasOwnProperty.call(options, key);
 }

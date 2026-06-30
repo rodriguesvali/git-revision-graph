@@ -73,6 +73,107 @@ test('RevisionGraphViewStateWorkflow normalizes projection options and schedules
   assert.deepEqual(refreshes, ['projection-only']);
 });
 
+test('RevisionGraphViewStateWorkflow keeps graph focus modes mutually exclusive', async () => {
+  let projectionOptions: RevisionGraphViewState['projectionOptions'] = {
+    ...createReadyRevisionGraphState().projectionOptions,
+    revisionRange: {
+      baseRevision: 'main',
+      baseLabel: 'main',
+      compareRevision: 'feature/demo',
+      compareLabel: 'feature/demo'
+    }
+  };
+  const workflow = new RevisionGraphViewStateWorkflow(createHost({
+    getProjectionOptions: () => projectionOptions,
+    setProjectionOptions(options) {
+      projectionOptions = options;
+    }
+  }));
+
+  await workflow.setProjectionOptions({
+    descendantFocus: {
+      anchorRevision: 'main-hash',
+      anchorLabel: 'main'
+    }
+  });
+
+  assert.equal(projectionOptions.revisionRange, undefined);
+  assert.deepEqual(projectionOptions.descendantFocus, {
+    anchorRevision: 'main-hash',
+    anchorLabel: 'main'
+  });
+
+  await workflow.setProjectionOptions({
+    revisionRange: {
+      baseRevision: 'main',
+      baseLabel: 'main',
+      compareRevision: 'feature/demo',
+      compareLabel: 'feature/demo'
+    }
+  });
+
+  assert.equal(projectionOptions.descendantFocus, undefined);
+  assert.deepEqual(projectionOptions.revisionRange, {
+    baseRevision: 'main',
+    baseLabel: 'main',
+    compareRevision: 'feature/demo',
+    compareLabel: 'feature/demo'
+  });
+});
+
+test('RevisionGraphViewStateWorkflow clears active focus when the main scope changes', async () => {
+  let projectionOptions: RevisionGraphViewState['projectionOptions'] = {
+    ...createReadyRevisionGraphState().projectionOptions,
+    descendantFocus: {
+      anchorRevision: 'main',
+      anchorLabel: 'main'
+    }
+  };
+  const workflow = new RevisionGraphViewStateWorkflow(createHost({
+    getProjectionOptions: () => projectionOptions,
+    setProjectionOptions(options) {
+      projectionOptions = options;
+    }
+  }));
+
+  await workflow.setProjectionOptions({ refScope: 'local' });
+
+  assert.equal(projectionOptions.refScope, 'local');
+  assert.equal(projectionOptions.descendantFocus, undefined);
+  assert.equal(projectionOptions.revisionRange, undefined);
+});
+
+test('RevisionGraphViewStateWorkflow preserves state for a stale descendant anchor', async () => {
+  const state = createReadyRevisionGraphState();
+  const messages: RevisionGraphViewHostMessage[] = [];
+  const refreshes: unknown[] = [];
+  let projectionOptions = state.projectionOptions;
+  const workflow = new RevisionGraphViewStateWorkflow(createHost({
+    getCurrentState: () => state,
+    getProjectionOptions: () => projectionOptions,
+    setProjectionOptions(options) {
+      projectionOptions = options;
+    },
+    postHostMessage(message) {
+      messages.push(message);
+    },
+    async refresh(request) {
+      refreshes.push(request);
+    }
+  }));
+
+  await workflow.setProjectionOptions({
+    descendantFocus: {
+      anchorRevision: 'missing',
+      anchorLabel: 'missing'
+    }
+  });
+
+  assert.equal(projectionOptions, state.projectionOptions);
+  assert.deepEqual(messages, [{ type: 'update-state', state }]);
+  assert.deepEqual(refreshes, []);
+});
+
 function createHost(
   overrides: Partial<RevisionGraphViewStateWorkflowHost> = {}
 ): RevisionGraphViewStateWorkflowHost {
@@ -117,12 +218,22 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showStashes: true,
       showMergeCommits: false,
       showCurrentBranchDescendants: false,
-      revisionRange: undefined
+      revisionRange: undefined,
+      descendantFocus: undefined
     },
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},
     scene: {
-      nodes: [],
+      nodes: [{
+        hash: 'main-hash',
+        refs: [{ name: 'main', kind: 'head' }],
+        author: 'Ada',
+        date: '2026-06-30',
+        subject: 'Main',
+        x: 0,
+        row: 0,
+        lane: 0
+      }],
       edges: [],
       laneCount: 1,
       rowCount: 1

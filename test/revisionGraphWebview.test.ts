@@ -39,6 +39,11 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /class="range-filter-caption">Focus<\/span>/);
   assert.match(html, /id="rangeFilterLabel"/);
   assert.match(html, /id="rangeFilterClearButton"[\s\S]*?title="Exit Focus Range"[\s\S]*?aria-label="Exit Focus Range and show all revisions"[\s\S]*?data-icon="close"/);
+  assert.match(html, /id="descendantFilter"/);
+  assert.match(html, /id="descendantFilter"[\s\S]*?role="group"[\s\S]*?aria-label="Focus Descendants active"/);
+  assert.match(html, /class="range-filter-caption">Descendants<\/span>/);
+  assert.match(html, /id="descendantFilterLabel"/);
+  assert.match(html, /id="descendantFilterClearButton"[\s\S]*?title="Exit Focus Descendants"[\s\S]*?aria-label="Exit Focus Descendants and show all revisions"[\s\S]*?data-icon="close"/);
   assert.ok(
     html.indexOf('id="rangeFilter"') > html.indexOf('class="toolbar-actions"'),
     'expected the Focus Range indicator after the graph actions at the end of the toolbar'
@@ -192,7 +197,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.doesNotMatch(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
+  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
 });
@@ -256,7 +261,8 @@ test('center HEAD button does not crash when refs are grouped by families', asyn
         showStashes: true,
         showMergeCommits: false,
         showCurrentBranchDescendants: true,
-        revisionRange: undefined
+        revisionRange: undefined,
+        descendantFocus: undefined
       },
       mergeBlockedTargets: [],
       primaryAncestorNextByHash: {},
@@ -424,10 +430,16 @@ test('renders grouped graph context menus', () => {
   assert.doesNotMatch(html, /context-section-label/);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
+  assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);
+  assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\) \{[\s\S]*?descendantFocus: null,[\s\S]*?revisionRange:/s);
+  assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\) \{[\s\S]*?revisionRange: null,[\s\S]*?descendantFocus:/s);
   assert.match(html, /const focusRangeActionLabel = hasComparisonSelection[\s\S]*?getFocusRangeActionLabel\(base, compare\)/);
   assert.match(html, /if \(focusRangeActionLabel\) \{\s*appendMenuItem\(focusRangeActionLabel, \(\) => postFocusRange\(base, compare\)\);\s*\}/);
   assert.match(html, /function getFocusRangeActionLabel\(base, compare, activeRange = currentProjectionOptions\.revisionRange\)/);
   assert.match(html, /function postFocusRange\(base, compare\)/);
+  assert.match(html, /function getFocusDescendantsActionLabel\(target, activeFocus = currentProjectionOptions\.descendantFocus\)/);
+  assert.match(html, /appendMenuItem\(focusDescendantsActionLabel, \(\) => postFocusDescendants\(target\)\);/);
+  assert.match(html, /function postFocusDescendants\(target\)/);
   assert.match(html, /appendMenuSection\('Destructive'\);/);
   assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
   assert.match(html, /placeContextMenu\(clientX, clientY\);/);
@@ -616,6 +628,10 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /rangeFilterClearButton\.addEventListener\('click'/);
   assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ revisionRange: null \}\)/);
   assert.match(html, /'Exiting Focus Range\.\.\.'/);
+  assert.match(html, /descendantFilterClearButton\.addEventListener\('click'/);
+  assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ descendantFocus: null \}\)/);
+  assert.match(html, /'Exiting Focus Descendants\.\.\.'/);
+  assert.match(html, /const options = \{ refScope: nextRefScope, revisionRange: null, descendantFocus: null \};/);
   assert.match(html, /function setSearchQuery\(nextQuery\)/);
   assert.match(html, /function syncSearchResults\(options = \{\}\)/);
   assert.match(html, /function syncSearchHighlights\(\)/);
@@ -682,6 +698,79 @@ test('adapts the Focus Range context action to the active interval', () => {
     }),
     'Update Focus Range'
   );
+});
+
+test('presents active Focus Descendants as a descriptive toolbar state', () => {
+  const runtime = createWebviewRuntime();
+  const descendantFilter = runtime.elements.get('descendantFilter');
+  const descendantFilterLabel = runtime.elements.get('descendantFilterLabel');
+  assert.ok(descendantFilter);
+  assert.ok(descendantFilterLabel);
+
+  runtime.context.syncDescendantFilter({
+    anchorLabel: 'feature/focus-descendants'
+  });
+
+  assert.equal(descendantFilter.hidden, false);
+  assert.equal(descendantFilterLabel.textContent, 'feature/focus-descendants');
+  assert.equal(
+    descendantFilterLabel.title,
+    'Focused descendants from: feature/focus-descendants'
+  );
+  assert.equal(
+    descendantFilter.getAttribute('aria-label'),
+    'Focus Descendants active from feature/focus-descendants'
+  );
+
+  runtime.context.syncDescendantFilter(null);
+
+  assert.equal(descendantFilter.hidden, true);
+  assert.equal(descendantFilterLabel.textContent, '');
+  assert.equal(descendantFilterLabel.title, '');
+  assert.equal(descendantFilter.getAttribute('aria-label'), 'Focus Descendants inactive');
+});
+
+test('adapts the Focus Descendants context action to the active anchor', () => {
+  const runtime = createWebviewRuntime();
+  const target = { revision: 'feature/focus-descendants', hash: 'focus1234' };
+
+  assert.equal(
+    runtime.context.getFocusDescendantsActionLabel(target, undefined),
+    'Focus Descendants'
+  );
+  assert.equal(
+    runtime.context.getFocusDescendantsActionLabel(target, {
+      anchorRevision: 'release/other'
+    }),
+    'Update Focus Descendants'
+  );
+  assert.equal(
+    runtime.context.getFocusDescendantsActionLabel(target, {
+      anchorRevision: 'focus1234'
+    }),
+    null
+  );
+});
+
+test('builds mutually exclusive range and descendant focus messages', () => {
+  const runtime = createWebviewRuntime();
+  const descendantMessage = runtime.context.createRevisionGraphFocusDescendantsMessage({
+    hash: 'focus1234',
+    revision: 'feature/focus-descendants',
+    label: 'feature/focus-descendants'
+  });
+  const rangeMessage = runtime.context.createRevisionGraphFocusRangeMessage(
+    { revision: 'main', label: 'main' },
+    { revision: 'feature/demo', label: 'feature/demo' }
+  );
+
+  assert.equal(descendantMessage.type, 'set-projection-options');
+  assert.equal(descendantMessage.options.revisionRange, null);
+  assert.equal(descendantMessage.options.descendantFocus.anchorRevision, 'focus1234');
+  assert.equal(descendantMessage.options.descendantFocus.anchorLabel, 'feature/focus-descendants');
+  assert.equal(rangeMessage.options.descendantFocus, null);
+  assert.equal(rangeMessage.options.revisionRange.baseRevision, 'main');
+  assert.equal(rangeMessage.options.revisionRange.compareRevision, 'feature/demo');
 });
 
 test('renders merge abort as a HEAD context menu action only for conflicted merge state', () => {
@@ -819,6 +908,9 @@ function createWebviewRuntime() {
     'rangeFilter',
     'rangeFilterLabel',
     'rangeFilterClearButton',
+    'descendantFilter',
+    'descendantFilterLabel',
+    'descendantFilterClearButton',
     'centerHeadButton',
     'zoomOutButton',
     'zoomResetButton',

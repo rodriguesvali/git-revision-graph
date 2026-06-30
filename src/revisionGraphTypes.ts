@@ -129,7 +129,8 @@ export function createDefaultRevisionGraphProjectionOptions(): RevisionGraphProj
     showStashes: true,
     showMergeCommits: false,
     showCurrentBranchDescendants: false,
-    revisionRange: undefined
+    revisionRange: undefined,
+    descendantFocus: undefined
   };
 }
 

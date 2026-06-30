@@ -77,6 +77,36 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     }),
     undefined
   );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        descendantFocus: {
+          anchorRevision: '',
+          anchorLabel: 'main'
+        }
+      }
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        revisionRange: {
+          baseRevision: 'main',
+          baseLabel: 'main',
+          compareRevision: 'feature/demo',
+          compareLabel: 'feature/demo'
+        },
+        descendantFocus: {
+          anchorRevision: 'main',
+          anchorLabel: 'main'
+        }
+      }
+    }),
+    undefined
+  );
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -96,6 +126,40 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
         refScope: 'local',
         showTags: false,
         showMergeCommits: true
+      }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        descendantFocus: {
+          anchorRevision: 'main',
+          anchorLabel: 'main'
+        }
+      }
+    }),
+    {
+      type: 'set-projection-options',
+      options: {
+        descendantFocus: {
+          anchorRevision: 'main',
+          anchorLabel: 'main'
+        }
+      }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: {
+        descendantFocus: null
+      }
+    }),
+    {
+      type: 'set-projection-options',
+      options: {
+        descendantFocus: undefined
       }
     }
   );
@@ -598,7 +662,8 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showStashes: true,
       showMergeCommits: false,
       showCurrentBranchDescendants: true,
-      revisionRange: undefined
+      revisionRange: undefined,
+      descendantFocus: undefined
     },
     mergeBlockedTargets: [],
     primaryAncestorNextByHash: {},

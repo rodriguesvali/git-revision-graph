@@ -72,11 +72,22 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
 
     function createRevisionGraphFocusRangeMessage(base, compare) {
       return createRevisionGraphProjectionOptionsMessage({
+        descendantFocus: null,
         revisionRange: {
           baseRevision: base.revision,
           baseLabel: base.label,
           compareRevision: compare.revision,
           compareLabel: compare.label
+        }
+      });
+    }
+
+    function createRevisionGraphFocusDescendantsMessage(target) {
+      return createRevisionGraphProjectionOptionsMessage({
+        revisionRange: null,
+        descendantFocus: {
+          anchorRevision: target.hash,
+          anchorLabel: target.label
         }
       });
     }

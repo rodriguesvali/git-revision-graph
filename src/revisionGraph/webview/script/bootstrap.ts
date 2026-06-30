@@ -52,6 +52,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const rangeFilter = document.getElementById('rangeFilter');
     const rangeFilterLabel = document.getElementById('rangeFilterLabel');
     const rangeFilterClearButton = document.getElementById('rangeFilterClearButton');
+    const descendantFilter = document.getElementById('descendantFilter');
+    const descendantFilterLabel = document.getElementById('descendantFilterLabel');
+    const descendantFilterClearButton = document.getElementById('descendantFilterClearButton');
     const centerHeadButton = document.getElementById('centerHeadButton');
     const zoomOutButton = document.getElementById('zoomOutButton');
     const zoomResetButton = document.getElementById('zoomResetButton');
@@ -71,7 +74,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       showStashes: true,
       showMergeCommits: false,
       showCurrentBranchDescendants: false,
-      revisionRange: undefined
+      revisionRange: undefined,
+      descendantFocus: undefined
     };
     let mergeBlockedTargets = new Set();
     let graphNodes = [];
@@ -173,7 +177,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (scopeSelect) {
       scopeSelect.addEventListener('change', () => {
         const nextRefScope = scopeSelect.value;
-        const options = { refScope: nextRefScope, revisionRange: null };
+        const options = { refScope: nextRefScope, revisionRange: null, descendantFocus: null };
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage(options), 'Updating graph scope...', scopeSelect);
       });
     }
@@ -234,6 +238,16 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           createRevisionGraphProjectionOptionsMessage({ revisionRange: null }),
           'Exiting Focus Range...',
           rangeFilterClearButton,
+          'subtle'
+        );
+      });
+    }
+    if (descendantFilterClearButton) {
+      descendantFilterClearButton.addEventListener('click', () => {
+        postMessageWithLoading(
+          createRevisionGraphProjectionOptionsMessage({ descendantFocus: null }),
+          'Exiting Focus Descendants...',
+          descendantFilterClearButton,
           'subtle'
         );
       });
@@ -970,6 +984,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
       syncRangeFilter(state.projectionOptions.revisionRange);
+      syncDescendantFilter(state.projectionOptions.descendantFocus);
       syncViewOptionsButton();
     }
 
@@ -993,6 +1008,28 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       rangeFilter.setAttribute(
         'aria-label',
         'Focus Range active from ' + revisionRange.baseLabel + ' to ' + revisionRange.compareLabel
+      );
+    }
+
+    function syncDescendantFilter(descendantFocus) {
+      if (!descendantFilter || !descendantFilterLabel) {
+        return;
+      }
+
+      if (!descendantFocus) {
+        descendantFilter.hidden = true;
+        descendantFilterLabel.textContent = '';
+        descendantFilterLabel.title = '';
+        descendantFilter.setAttribute('aria-label', 'Focus Descendants inactive');
+        return;
+      }
+
+      descendantFilter.hidden = false;
+      descendantFilterLabel.textContent = descendantFocus.anchorLabel;
+      descendantFilterLabel.title = 'Focused descendants from: ' + descendantFocus.anchorLabel;
+      descendantFilter.setAttribute(
+        'aria-label',
+        'Focus Descendants active from ' + descendantFocus.anchorLabel
       );
     }
 
