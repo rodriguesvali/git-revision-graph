@@ -6,7 +6,18 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-candidate monitoring focus for the closed `1.5.4` scope:
+Current development monitoring focus for the open `1.5.5` scope:
+
+- Focus Descendants must use Git ancestry from one visible anchor, not visual row or timestamp.
+- The anchor, descendant references, and structurally required paths must remain visible while
+  older and unrelated history is excluded.
+- Focus Descendants and Focus Range must remain mutually exclusive in the first implementation.
+- Clearing focus or changing the main graph scope must restore a correct ordinary projection.
+- Snapshot reuse must not hide fresh refs or cross repository boundaries.
+- Search, selection, context menus, minimap, zoom, persisted offsets, and virtualized rendering
+  must continue to work on the focused scene.
+
+Ongoing post-release monitoring focus for the published `1.5.4` scope:
 
 - Focus Range should keep the ordered base/compare endpoints visible in the toolbar, replace
   the active range when a different pair is selected, and clear when the main graph scope changes.

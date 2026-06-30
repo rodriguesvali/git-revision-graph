@@ -39,6 +39,31 @@ The extension is already published and feature-rich enough that new work can aff
 - Release work cannot proceed to publish or version bump without explicit human approval.
 - Cache optimization work is traceable through hit/miss or bypass logging and does not introduce stale graph, ref, diff, or show-log data.
 
+## 1.5.5 Release Define
+
+- Published baseline: `1.5.4`, confirmed by the maintainer while opening this cycle on
+  2026-06-30.
+- Target release: `1.5.5`.
+- Product goal: let users temporarily focus the revision graph on every loaded branch, tag,
+  remote, stash, and structural path that descends from one selected revision.
+- Initial approved scope: add `Focus Descendants` as a single-revision graph projection mode,
+  keep the anchor visible as the lower boundary, reuse the loaded snapshot, retain existing
+  major-operations path collapsing, expose a removable toolbar indicator, and restore the
+  ordinary projection when the focus is cleared or the main graph scope changes.
+- Graph semantics: descendants are determined from Git parent relationships in the loaded
+  commit DAG. The feature must not use row number, timestamp, or visual position to decide
+  what is "above" the anchor.
+- Interaction boundary: `Focus Descendants` and `Focus Range` are mutually exclusive in the
+  initial implementation; activating one replaces the other.
+- Non-goals: unbounded history loading, a new Git history query, a new product surface,
+  renderer or layout-engine replacement, new contribution points, settings, dependencies,
+  packaging, or Marketplace publication.
+- Success condition: users can focus from any visible revision, unrelated history disappears,
+  the anchor and all relevant descendant paths remain navigable, clearing restores the normal
+  graph, and deterministic plus manual graph verification passes.
+- Planning reference: `project-context/docs/release-1.5.5-prioritization.md`.
+- Build reference: `project-context/2.build/features/1.5.5-focus-descendants.md`.
+
 ## 1.4.0 Release Define
 
 - Target release: `1.4.0`.

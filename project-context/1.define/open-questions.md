@@ -1,5 +1,17 @@
 # Open Questions
 
+## 1.5.5
+
+- Decided on 2026-06-30: open `1.5.5` with `Focus Descendants` as the initial approved feature.
+- Decided on 2026-06-30: determine descendants from Git ancestry in the currently loaded
+  snapshot, not from visual row position, timestamp, or a new Git history query.
+- Decided on 2026-06-30: keep `Focus Descendants` mutually exclusive with `Focus Range` in the
+  first implementation and clear active focus when the main graph scope changes.
+- Open: should activation place the anchor near the bottom of the viewport or center it while
+  preserving enough context to make upward navigation obvious?
+- Open: should the active indicator use the literal `Descendants` caption or reuse the compact
+  `Focus` caption with the anchor label and an accessible full description?
+
 ## 2.0.0
 
 - Decided on 2026-06-29: defer graph-driven branching workflow profiles, with Git Flow as a

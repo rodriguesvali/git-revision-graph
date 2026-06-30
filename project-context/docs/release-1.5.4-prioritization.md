@@ -2,10 +2,10 @@
 
 ## Release Status
 
-Status: Scope closed on 2026-06-29. The release candidate contains the approved remote-error
-UX safety correction and Focus Range graph-navigation feature. Package metadata is `1.5.4`,
-final automated verification is current, and release artifacts are ready for
-maintainer-controlled VSIX packaging and Marketplace publication.
+Status: Published by maintainer confirmation on 2026-06-30. The release contains the approved
+remote-error UX safety correction and Focus Range graph-navigation feature. Package metadata is
+`1.5.4`; Codex did not execute packaging or publication commands, and exact VSIX/Marketplace
+metadata was not supplied.
 
 ## Objective
 
@@ -94,8 +94,9 @@ Implementation reference:
 - Package version bump to `1.5.4`: complete after maintainer approval.
 - Marketplace-facing changelog and README notes: complete.
 - Interactive Focus Range behavior review: completed by the maintainer during candidate review.
-- Remote permission/protected-branch Extension Development Host smoke validation: pending.
-- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+- Remote permission/protected-branch Extension Development Host smoke validation result: not
+  supplied and not inferred.
+- VSIX packaging and Marketplace publication: complete by maintainer confirmation on 2026-06-30.
 
 ## Rollback
 

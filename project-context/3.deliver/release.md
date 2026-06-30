@@ -1,19 +1,84 @@
 # Release Readiness
 
+## 1.5.5 Release Readiness
+
+Published package baseline: `1.5.4`.
+
+Target patch: `1.5.5`.
+
+Published release: not published.
+
+Status: Release cycle opened on 2026-06-30 after maintainer confirmation that `1.5.4` was
+launched. Package metadata reports `1.5.5`. `Focus Descendants` is approved as the initial
+development scope, but implementation, behavior verification, scope closure, packaging, and
+Marketplace publication have not started. Codex did not execute packaging or publication
+commands.
+
+Approved candidate scope:
+
+- Add `Focus Descendants` to the single-revision graph context menu.
+- Resolve one visible revision as an anchor and keep the anchor plus all loaded descendants
+  determined by Git ancestry.
+- Exclude older and unrelated history without filtering by visual row, date, or screen position.
+- Reuse the loaded snapshot and existing major-operations projection, collapsed paths, layout,
+  minimap, search, selection, and indexed webview virtualization.
+- Expose the active anchor through a removable, accessible toolbar indicator.
+- Clear descendant focus when the main graph scope changes.
+- Keep Focus Descendants and Focus Range mutually exclusive in the initial implementation.
+
+Opening verification:
+
+- Package and root lockfile metadata were updated to `1.5.5` after explicit maintainer approval.
+- `npm run build` passed on 2026-06-30.
+- `npm test` passed with 514 tests on 2026-06-30.
+- `git diff --check` passed on 2026-06-30 after the opening documentation update.
+
+Release gates:
+
+- Define and initial scope approval: complete.
+- Package version bump to `1.5.5`: complete after maintainer approval.
+- Feature implementation and automated behavior verification: pending.
+- Extension Development Host validation: pending.
+- Final README and Marketplace-facing changelog copy: pending implementation.
+- Scope closure: pending maintainer review.
+- VSIX packaging and Marketplace publication: pending separate explicit approval.
+
+Manual validation plan:
+
+- Focus from a recent fork point in a branch-heavy repository and confirm unrelated lines are
+  excluded while descendant references and the anchor remain visible.
+- Cover merge-heavy ancestry, visibility toggles, collapsed paths, search, selection, minimap,
+  zoom, context menus, and persisted node offsets.
+- Switch between Focus Range and Focus Descendants and confirm only one focus mode remains active.
+- Clear focus, change graph scope, switch repositories, and reopen the retained editor panel.
+- Confirm zero-repository and multi-repository states remain safe.
+
+Packaging notes:
+
+- Do not run `npm run package:vsix` or any `npm run publish:*` command without explicit
+  maintainer approval after implementation, verification, and scope closure.
+- No `1.5.5` VSIX filename, checksum, size, or Marketplace publication metadata exists yet.
+
+Planning reference:
+
+- `project-context/docs/release-1.5.5-prioritization.md`
+- `project-context/2.build/features/1.5.5-release-opening.md`
+- `project-context/2.build/features/1.5.5-focus-descendants.md`
+
 ## 1.5.4 Release Readiness
 
 Published package baseline: `1.5.3`.
 
 Target patch: `1.5.4`.
 
-Published release: not published.
+Published release: `1.5.4`.
 
-Status: Release-candidate scope closed on 2026-06-29 after maintainer review. The completed
-candidate contains the remote permission modal-alert UX correction and Focus Range graph
-navigation with its final accessibility, state-aware action, and toolbar-placement refinements.
-Package metadata reports `1.5.4`, final automated verification is current, and the artifacts are
-ready for maintainer-controlled VSIX packaging and Marketplace publication. Codex did not execute
-packaging or publication commands.
+Status: Release completed by maintainer confirmation on 2026-06-30 while opening `1.5.5`. The
+published candidate contains the remote permission modal-alert UX correction and Focus Range
+graph navigation with its final accessibility, state-aware action, and toolbar-placement
+refinements. Codex did not execute packaging or publication commands. Exact standalone VSIX
+filename, checksum, size, and Marketplace publication metadata were not supplied and are not
+inferred.
 
 Implemented candidate scope:
 
@@ -56,8 +121,9 @@ Release gates:
 - Package version bump to `1.5.4`: complete after maintainer approval.
 - Maintainer release-close approval: complete on 2026-06-29.
 - Interactive Focus Range behavior review: complete during candidate review.
-- Remote permission/protected-branch Extension Development Host smoke validation: pending.
-- VSIX packaging and Marketplace publication: pending explicit maintainer approval.
+- Remote permission/protected-branch Extension Development Host smoke validation result: not
+  supplied and not inferred.
+- VSIX packaging and Marketplace publication: complete by maintainer confirmation on 2026-06-30.
 
 Manual smoke checklist:
 
@@ -77,10 +143,10 @@ Manual smoke checklist:
 
 Packaging notes:
 
-- Release artifacts are prepared for publication handoff. Do not run `npm run package:vsix` or
-  any `npm run publish:*` command without explicit maintainer approval for those operations.
-- Exact VSIX filename, checksum, size, and Marketplace publication metadata do not exist yet
-  for this target and are not inferred.
+- `1.5.4` publication is recorded as complete by maintainer confirmation on 2026-06-30.
+- Codex did not run `npm run package:vsix` or any `npm run publish:*` command for this release.
+- Exact VSIX filename, checksum, size, and Marketplace publication metadata were not supplied
+  and are not inferred.
 
 Planning reference:
 

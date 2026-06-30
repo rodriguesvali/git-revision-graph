@@ -30,6 +30,34 @@ After Source Control integration Phase 3, keep one graph product surface:
 - Tests: TypeScript build, Node test suite, focused unit/integration-style coverage.
 - AAMAD artifacts: Define, Build, Deliver, handoff, and feature-scoped notes.
 
+## 1.5.5 Focus Descendants Architecture Decision
+
+The initial `1.5.5` feature stays inside the existing snapshot, projection, layout, controller,
+and webview boundaries:
+
+- Resolve the selected visible revision to one anchor hash in the loaded `CommitGraph`.
+- Traverse child relationships to collect the anchor and all descendants available in the
+  loaded snapshot; never infer descendants from visual rows or commit dates.
+- Pass that candidate set through the existing major-operations projection so intermediate
+  commits may remain collapsed into `through` edge paths while referenced tips, forks, roots,
+  and configured merge nodes remain structurally correct.
+- Represent descendant focus as a projection option and schedule a projection-only refresh
+  when the current snapshot remains compatible. Do not add a dedicated Git query or persistent
+  graph store for this feature.
+- Keep descendant focus mutually exclusive with `revisionRange` for the first slice. Applying
+  one focus mode clears the other, and changing the main graph scope clears the active focus.
+- Reuse the existing validated webview message boundary and active-focus toolbar area; add no
+  command, menu contribution, view, setting, runtime dependency, or secondary webview.
+- Preserve the complete focused scene for layout, minimap, search, selection, and navigation,
+  while the existing indexed virtualization continues to mount only the visible DOM window.
+- Treat the loaded-history boundary as explicit product behavior. A visible anchor is always in
+  the snapshot, but descendants outside that bounded snapshot are not fetched by this mode.
+
+The primary implementation surfaces are expected to be the graph model/projection option,
+projection traversal, snapshot-reuse compatibility, view-state workflow, message validation,
+webview context menu and focus indicator, and focused regression tests. Exact identifiers may
+be refined during Build without changing these semantic and architectural constraints.
+
 ## 1.4.0 Architecture Decision
 
 The frozen `1.4.0` scope preserves the existing Compare Results architecture:

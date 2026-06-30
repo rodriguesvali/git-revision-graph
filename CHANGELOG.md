@@ -2,15 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.5
+
+### Release Preparation
+
+- Opened the `1.5.5` development cycle after maintainer confirmation that `1.5.4` was launched.
+- Version metadata is `1.5.5` in `package.json` and `package-lock.json`; implementation,
+  packaging, and Marketplace publication are not complete.
+- Opening verification passed with `npm run build`, 514 tests through `npm test`, and
+  `git diff --check`.
+
+### Planned
+
+- Add `Focus Descendants` to let users select one visible revision and temporarily narrow the
+  graph to that anchor and every loaded reference and structural path that descends from it.
+- Reuse the loaded graph snapshot, existing major-operations projection, layout pipeline, and
+  virtualized webview while providing a removable active-focus indicator.
+
 ## 1.5.4
 
 ### Release Preparation
 
 - Closed the `1.5.4` scope after the published `1.5.3` package with one graph-navigation
   feature and one remote-error UX safety correction.
-- Version metadata is `1.5.4` in `package.json` and `package-lock.json` after maintainer
-  approval; the candidate is ready for maintainer-controlled packaging and Marketplace
-  publication.
+- Version metadata is `1.5.4` in `package.json` and `package-lock.json`; Marketplace publication
+  was confirmed by the maintainer on 2026-06-30 while opening `1.5.5`.
 - Final local verification passed with `npm run build`, 514 tests through `npm test`, and
   `git diff --check`.
 
