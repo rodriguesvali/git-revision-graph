@@ -1,15 +1,22 @@
-# Setup
+# Setup Notes
 
-## Scope
+Status: Active
+Last consolidated: 2026-06-30
 
-## Inputs
+## Requirements
 
-## Changes
+- Visual Studio Code
+- Node.js 20 compatible with the project scripts
+- npm
+- Git
 
-## Verification
+## Common Commands
 
-## Decisions
+- Install dependencies: `npm install`
+- Build: `npm run build`
+- Test: `npm test`
+- Package VSIX after approval: `npm run package:vsix`
 
-## Handoff Notes
+Do not publish, package, or bump versions without explicit maintainer approval.
 
-## Known Gaps
+Historical setup placeholder is archived in `project-context/archive/build/setup.md`.

@@ -1,51 +1,28 @@
-# Frontend
+# Frontend Build Guidance
+
+Status: Active
+Last consolidated: 2026-06-30
 
 ## Scope
-Revision graph webview, compare/log webview surfaces, browser-side graph interactions, theming, layout, filters, context menus, and user-visible copy.
 
-## Inputs
-Use `README.md`, `project-context/docs/revision-graph-parity-plan.md`, feature artifacts in `project-context/2.build/features/`, and existing webview code as sources.
+Revision graph webview, Compare Results and Show Log editor panels, browser-side interactions,
+theming, layout, minimap, search, focus modes, context menus, and user-facing copy.
 
-## Changes
-Record frontend changes here only when they affect shared webview behavior. Prefer feature-specific files under `project-context/2.build/features/` for individual feature notes.
+## Current Guidance
 
-- 2026-05-01 `0.0.27` stabilization: toolbar zoom now preserves the current graph viewport instead of recentering the graph, fixing a pre-existing issue when zooming while scrolled below the top.
-- 2026-05-02 `0.0.27` graph layout stabilization: scene layout identity now includes a fan-out balance version and edge topology so normal refresh/update paths discard stale node offsets and converge with full rebuild disposition.
-- 2026-05-02 `0.0.27` refs-only merge simplification: the default graph now hides unreferenced merge connector cards while preserving merged-branch lines from visible merge commits.
-- 2026-05-02 `0.0.28` default scope reversal: new revision graph sessions now start with `All Refs` again.
-- 2026-05-03 `0.0.29` current scope refinement: `Current Branch` now includes visible descendant refs by default, so the former `Show Current Branch Descendants` view option is no longer rendered.
-- 2026-05-02 `0.0.28` view simplification: removed the `Show Branchings & Merges` option from the `View` menu and from projection options so graph loading no longer switches into the sparse branch/merge topology path.
-- 2026-05-02 `0.0.28` merge recovery: the graph toolbar now exposes `Abort Merge` only while merge conflicts are present.
-- 2026-05-02 `0.0.28` graph navigation: the main graph zoom list now has 10 levels by adding five zoom-out levels below the previous `0.6` minimum.
-- 2026-05-16 `0.0.31` review polish: Compare Results file rows and Show Log changed-file rows support double-click diff opening.
-- 2026-05-16 `0.0.31` review polish: Compare Results file context menus use `Compare` as the primary action and show `Compare with Worktree` only when the result set is ref-to-ref.
-- 2026-05-16 `0.0.31` graph navigation: the `View` menu includes a persisted `Show Minimap` checkbox so users can hide or restore the minimap without resetting graph layout.
-- 2026-05-16 `0.0.31` product surface: the graph now renders in an editor panel launched from Source Control, while Compare Results and Show Logs remain as on-demand review views.
-- 2026-06-04 `0.0.37` product surface: Compare Results and Show Log now render as on-demand editor panels instead of left-side Activity Bar review views.
-- 2026-05-24 graph navigation: new webview sessions default the persisted `Show Minimap` option to off; users can still enable it from the `View` menu and keep that preference in webview state.
+- Keep the editor graph as the primary graph surface.
+- Preserve VS Code theme compatibility and native workbench ergonomics.
+- Preserve search, selection, minimap, zoom, persisted offsets, context menus, and virtualized
+  rendering when changing graph scenes.
+- Keep Focus Range and Focus Descendants mutually exclusive unless a scoped feature explicitly
+  changes that product rule.
+- Avoid adding persistent webviews or contribution surfaces without product approval.
 
 ## Verification
+
 - Run `npm run build`.
-- Run `npm test` for graph state, render coordination, controller, or behavior changes.
-- Manually verify affected graph interactions in an Extension Development Host when changing webview behavior.
+- Run `npm test` for graph state, message validation, render coordination, webview shell, or
+  interaction changes.
+- Manually validate affected graph and review-panel workflows in an Extension Development Host.
 
-Latest automated verification:
-
-- `npm run build` passed.
-- `npm test` passed with 273 tests during the `0.0.31` product surface implementation.
-
-## Decisions
-- Keep UI aligned with VS Code workbench conventions and theme variables.
-- Preserve existing webview surface rather than adding new persistent webviews unless explicitly scoped.
-
-## Handoff Notes
-Document changed files, user-facing behavior, known browser-side state risks, and manual validation performed.
-
-## Known Gaps
-Manual VS Code webview validation is still needed for many UI regressions.
-Manual validation is specifically pending for the TensorFlow fan-out area before and after fetch/update.
-Manual validation is specifically pending for a local branch after merging multiple branches into it in the refs-only graph.
-Manual validation is specifically pending for descendant references in the `Current Branch` scope.
-Manual validation is specifically pending for aborting a conflicted merge from the graph toolbar.
-Manual validation is specifically pending for the added main graph zoom-out levels in a large graph.
-Manual validation is specifically pending for the Source Control toolbar editor graph, secondary review view lifecycle, double-click diff routing, and persisted `Show Minimap` behavior in an Extension Development Host.
+Historical frontend notes are archived in `project-context/archive/build/frontend.md`.

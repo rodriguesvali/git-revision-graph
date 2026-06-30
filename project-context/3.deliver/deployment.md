@@ -1,42 +1,29 @@
 # Deployment
 
+Status: Active
+Last consolidated: 2026-06-30
+
 ## Environment
-Visual Studio Marketplace for the published VS Code extension.
 
-## Configuration
-No runtime secrets should be stored in the repository. Marketplace publishing requires external credentials or authenticated `vsce` access handled outside project artifacts.
+Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package.json`.
 
-## Steps
-- Confirm release scope and version target.
-- Run required verification.
-- Update release notes or README when user-visible behavior changes.
-- Package with `npm run package:vsix` only after approval.
-- Publish with the appropriate `npm run publish:*` command only after approval.
+## Rules
 
-## Latest Deployment
-- Latest published release recorded in the release notes: `1.5.5`.
-- Marketplace publication for `1.5.5` was confirmed by the maintainer on 2026-06-30.
-- Exact VSIX filename, checksum, and Marketplace publication metadata were not supplied and
-  are not inferred.
-- Post-release monitoring should follow `project-context/3.deliver/release.md`.
+- Do not store Marketplace credentials or tokens in the repository.
+- Do not run `npm run package:vsix` or any `npm run publish:*` command without explicit
+  maintainer approval.
+- Do not reuse an already published Marketplace version number.
 
-## Current Release State
-- Published package baseline: `1.5.4`.
-- Target patch: `1.5.5`.
-- The `1.5.5` release is published with `Focus Descendants` as its completed scope.
-- Package metadata reports `1.5.5` after explicit maintainer approval.
-- Focus Descendants implementation, automated behavior verification, and maintainer-confirmed
-  manual smoke validation are complete.
-- Scope closure, VSIX packaging, and Marketplace publication are complete by maintainer
-  confirmation on 2026-06-30.
-- Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
-- `README.md` and `CHANGELOG.md` describe the implemented `1.5.5` feature behavior.
-- Codex executed the approved `1.5.5` version bump. Codex did not execute packaging or
-  publication commands for `1.5.5`.
+## Deployment Steps
 
-## Access
-Publisher: `rodriguesvali` as declared in `package.json`. Confirm Marketplace access before publish work.
+1. Confirm release scope and package version.
+2. Run required automated verification.
+3. Complete the required Extension Development Host smoke matrix.
+4. Update README, CHANGELOG, and `project-context/3.deliver/release.md` when user-visible behavior
+   changes.
+5. Package VSIX only after approval.
+6. Publish only after approval.
+7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
+   install result when available.
 
-## Rollback
-Prefer a follow-up patch release and keep previous VSIX artifacts when preparing releases.
-Do not attempt to overwrite or reuse an existing Marketplace version number.
+Historical deployment notes are archived in `project-context/archive/deliver/deployment.md`.

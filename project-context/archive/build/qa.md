@@ -1,0 +1,116 @@
+# Quality Assurance
+
+## Scope
+Build checks, automated tests, focused regression planning, Extension Development Host smoke tests, and release readiness verification.
+
+## Inputs
+Use feature artifacts, acceptance criteria, changed files, known risks, and release target.
+
+## Test Plan
+- Always run `npm run build` after meaningful changes.
+- Run `npm test` for behavior, command, graph, controller, Git workflow, or user-visible changes.
+- For release candidates, manually validate affected workflows in an Extension Development Host.
+- Include negative/cancel paths for destructive or workspace-changing operations.
+
+## Results
+Record command output summaries, not full logs, when verification is performed.
+
+- 2026-05-01 `0.0.27` stabilization hardening:
+  - `npm run build` passed.
+  - `npm test` passed with 223 tests.
+  - `npm audit --omit=dev --json` passed with 0 production vulnerabilities.
+  - `npm audit --json` reported 2 moderate dev-tooling vulnerabilities through `@vscode/vsce -> @azure/msal-node -> uuid`.
+- 2026-05-01 `0.0.27` cache stabilization:
+  - `npm run build` passed.
+  - `npm test` passed with 225 tests.
+  - Added regression coverage for completed snapshot cache reuse in cancelable refreshes and bounded Show Log cached changes.
+- 2026-05-02 `0.0.27` graph layout stabilization:
+  - `npm run build` passed.
+  - `npm test` passed with 228 tests.
+  - Added regression coverage that scene layout keys include edge topology to avoid stale node offsets.
+- 2026-05-02 `0.0.27` refs-only merge simplification:
+  - `npm run build` passed.
+  - `npm test` passed with 231 tests.
+  - Added regression coverage for refs-only merge-parent line preservation, hidden merge connector removal, git-simplified sync merge hiding, and detailed-mode topology preservation.
+- 2026-05-02 `0.0.27` default graph scope:
+  - `npm run build` passed.
+  - `npm test` passed with 232 tests.
+  - Updated graph Git args coverage so the default projection loads `HEAD` for the current branch scope.
+  - Added regression coverage requiring a fresh graph snapshot when projection options change.
+- 2026-05-02 `0.0.28` graph cache architecture:
+  - `npm run build` passed.
+  - `npm test` passed with 234 tests.
+  - Added regression coverage for ready-state repository overlay application and same-commit ref rename snapshot cache reuse.
+- 2026-05-02 `0.0.28` default scope reversal:
+  - Restored the default revision graph scope to `All Refs`.
+  - Updated graph Git args coverage so the default projection loads `--all`.
+- 2026-05-02 `0.0.28` current scope descendant refs:
+  - `npm run build` passed.
+  - `npm test` passed with 235 tests.
+  - Updated coverage so current-scope graph loading uses `--all` by default and descendant refs are projected as core behavior.
+  - Added projection coverage for default current-branch ancestry and opt-in descendant branch refs from `HEAD` while excluding unrelated sibling branches.
+  - Added refresh invalidation coverage for the descendant toggle.
+  - Updated webview coverage so the former `Show Current Branch Descendants` option is absent from the `View` menu.
+- 2026-05-02 `0.0.28` branch/merge view option removal:
+  - Removed the `Show Branchings & Merges` webview control and projection option.
+  - Updated graph Git args expectations so graph loading no longer adds `--sparse` for the revision graph.
+  - `npm run build` passed.
+  - `npm test` passed with 235 tests.
+- 2026-05-02 `0.0.28` abort conflicted merge:
+  - Added a contextual `Abort Merge` toolbar action for conflicted merge state.
+  - Added coverage for confirmed abort, no-conflict no-op, abort failure recovery, webview message validation, and shell rendering.
+  - `npm run build` passed.
+  - `npm test` passed with 239 tests.
+- 2026-05-02 `0.0.28` graph zoom-out levels:
+  - Added five main graph zoom-out levels below the previous `0.6` minimum while preserving the existing zoom-in maximum.
+  - Added webview shell coverage for the 10-level main graph zoom list.
+  - `npm run build` passed.
+  - `npm test` passed with 239 tests.
+- 2026-05-16 `0.0.31` Source Control companion implementation:
+  - Added temporary Source Control companion graph coverage and manifest alignment checks.
+  - `npm run build` passed.
+  - `npm test` passed with 270 tests.
+- 2026-05-16 `0.0.31` Source Control editor panel:
+  - Added editor graph command, singleton panel behavior, and Source Control toolbar wiring coverage.
+  - `npm run build` passed.
+  - `npm test` passed with 270 tests.
+  - `git diff --check` passed.
+- 2026-05-16 `0.0.31` Source Control product surface:
+  - Removed duplicate graph side-bar contribution coverage and locked secondary review view labels.
+  - Added Compare Results/Show Log double-click coverage and minimap preference coverage.
+  - `npm run build` passed.
+  - `npm test` passed with 273 tests.
+  - `git diff --check` passed.
+- 2026-05-17 `0.0.31` release documentation review:
+  - Updated README, CHANGELOG, Define/Build/Deliver artifacts, deployment/operations notes, and release prioritization docs.
+  - `npm run build` passed.
+  - `npm test` passed with 273 tests.
+  - `git diff --check` passed.
+
+## Issues
+Record failures, skipped checks, and residual risks.
+
+- Manual Extension Development Host validation is still pending for graph loading, show log, unified diff, compare results, restore, and fetch-with-tags flows.
+- Manual graph viewport validation is still pending for zoom-in/zoom-out while scrolled below the top of a large graph.
+- Manual cache trace validation is still pending for repeated graph refreshes with `gitRevisionGraph.traceLoading` enabled.
+- Manual graph cache overlay validation is still pending for branch rename/create, checkout, fetch, and pull scenarios in a real repository.
+- Manual default-scope validation is still pending in an Extension Development Host.
+- Manual current-scope descendant-ref validation is still pending in an Extension Development Host.
+- Manual graph layout validation is still pending for the TensorFlow fan-out area before and after fetch/update.
+- Manual refs-only merge simplification validation is still pending after merging multiple branches into a local branch.
+- Manual validation is still pending that the `View` menu no longer exposes `Show Branchings & Merges` and that toggling remaining options does not blank the graph.
+- Manual validation is still pending for aborting a conflicted merge from the graph toolbar in an Extension Development Host.
+- Manual validation is still pending for the added main graph zoom-out levels in an Extension Development Host.
+- Manual validation is still pending for the `0.0.31` Source Control toolbar editor graph path, including repeated open/reveal, graph panel close/reopen, no-repository behavior, and multi-repository selection.
+- Manual validation is still pending that no primary graph Activity Bar view and no Source Control companion graph view appear in the final `0.0.31` surface.
+- Manual validation is still pending for Compare Results and Show Log lifecycle, double-click file diff routing, focus restoration, and persisted `Show Minimap` behavior.
+- Dev-tooling audit remediation was not attempted because dependency changes require explicit approval.
+
+## Verification
+Verification is complete only when required automated checks pass or known gaps are explicitly recorded.
+
+## Handoff Notes
+Include the feature artifact path, commands run, manual paths covered, and remaining risks.
+
+## Known Gaps
+Marketplace install and real-workspace Git behavior may require manual validation outside automated tests.

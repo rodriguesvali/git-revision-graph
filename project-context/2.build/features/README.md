@@ -1,24 +1,37 @@
 # Feature Build Artifacts
 
-Use this directory for feature-scoped AAMAD notes.
+Status: Active
+Last consolidated: 2026-06-30
 
-Name files with a version or feature slug, for example:
+Use this directory only for active or next-release feature work.
 
-- `x.y.z-tag-actions.md`
-- `x.y.z-graph-filtering.md`
-- `feature-full-history-windowing.md`
+Completed feature artifacts are archived in `project-context/archive/features/`. Do not treat an archived feature artifact as current scope unless it is explicitly reopened and copied or moved back here.
 
-Each feature artifact should include:
+## Current Active Features
 
+None. Open the next feature here only after the target scope is approved.
+
+## Required Shape
+
+Each active feature artifact should include:
+
+- Status
 - Goal
 - User workflow
 - Scope
 - Non-goals
 - Touched surfaces
 - Acceptance criteria
+- Risks
 - Test plan
 - Manual validation
 - Release-note impact
 - Handoff notes
 
-Keep these files concise. Link to broader docs such as `README.md` or `project-context/docs/revision-graph-parity-plan.md` instead of duplicating them.
+## Lifecycle
+
+- Draft the feature here when it is approved for active definition or build work.
+- Keep it concise and link to durable docs instead of duplicating them.
+- When the feature is complete, promote durable product or architecture decisions into `project-context/1.define/prd.md` or `project-context/1.define/sad.md`.
+- Move the completed artifact to `project-context/archive/features/`.
+- Update `project-context/3.deliver/release.md` when the feature is release-bound.
