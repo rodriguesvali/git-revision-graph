@@ -2,9 +2,10 @@
 
 ## Release Status
 
-Status: Opened for development on 2026-06-30. Package metadata reports `1.5.5` after explicit
-maintainer approval. `Focus Descendants` is implemented and automated verification is complete;
-manual validation, scope closure, packaging, and Marketplace publication are pending.
+Status: Release completed by maintainer confirmation on 2026-06-30. Package metadata reports
+`1.5.5` after explicit maintainer approval. `Focus Descendants` is implemented, automated
+verification is complete, and manual Extension Development Host validation, scope closure, VSIX
+packaging, and Marketplace publication were confirmed complete by the maintainer.
 
 ## Objective
 
@@ -59,10 +60,10 @@ Implementation reference:
 - Define and initial scope approval: complete.
 - Package version bump to `1.5.5`: complete after maintainer approval.
 - Feature implementation and automated verification: complete locally.
-- Manual Extension Development Host validation: pending.
+- Manual Extension Development Host validation: complete by maintainer confirmation on 2026-06-30.
 - README and Marketplace-facing changelog copy: complete for the current candidate.
-- Scope closure: pending maintainer review.
-- VSIX packaging and Marketplace publication: pending separate explicit approval.
+- Scope closure: complete by maintainer confirmation on 2026-06-30.
+- VSIX packaging and Marketplace publication: complete by maintainer confirmation on 2026-06-30.
 
 ## Opening Verification
 
@@ -76,6 +77,8 @@ Implementation reference:
 - `npm run build` passed on 2026-06-30.
 - `npm test` passed with 522 tests on 2026-06-30.
 - Focused webview verification passed with 29 tests on 2026-06-30.
+- Manual Extension Development Host validation was confirmed complete by the maintainer on
+  2026-06-30.
 - `git diff --check` passed on 2026-06-30 after release-documentation synchronization.
 
 ## Rollback

@@ -6,7 +6,7 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current development monitoring focus for the open `1.5.5` scope:
+Ongoing post-release monitoring focus for the published `1.5.5` scope:
 
 - Focus Descendants must use Git ancestry from one visible anchor, not visual row or timestamp.
 - The anchor, descendant references, and structurally required paths must remain visible while

@@ -14,9 +14,8 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 - Publish with the appropriate `npm run publish:*` command only after approval.
 
 ## Latest Deployment
-- Latest published release recorded in the release notes: `1.5.4`.
-- Marketplace publication for `1.5.4` was confirmed by the maintainer on 2026-06-30 while
-  opening the `1.5.5` cycle.
+- Latest published release recorded in the release notes: `1.5.5`.
+- Marketplace publication for `1.5.5` was confirmed by the maintainer on 2026-06-30.
 - Exact VSIX filename, checksum, and Marketplace publication metadata were not supplied and
   are not inferred.
 - Post-release monitoring should follow `project-context/3.deliver/release.md`.
@@ -24,13 +23,15 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 ## Current Release State
 - Published package baseline: `1.5.4`.
 - Target patch: `1.5.5`.
-- The `1.5.5` cycle is open with `Focus Descendants` as its initial approved scope.
+- The `1.5.5` release is published with `Focus Descendants` as its completed scope.
 - Package metadata reports `1.5.5` after explicit maintainer approval.
-- Focus Descendants implementation and automated behavior verification are complete locally.
-- Manual smoke validation, scope closure, packaging, and publication are pending.
+- Focus Descendants implementation, automated behavior verification, and maintainer-confirmed
+  manual smoke validation are complete.
+- Scope closure, VSIX packaging, and Marketplace publication are complete by maintainer
+  confirmation on 2026-06-30.
 - Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
 - `README.md` and `CHANGELOG.md` describe the implemented `1.5.5` feature behavior.
-- Codex executed the approved `1.5.5` version bump. Codex has not executed packaging or
+- Codex executed the approved `1.5.5` version bump. Codex did not execute packaging or
   publication commands for `1.5.5`.
 
 ## Access

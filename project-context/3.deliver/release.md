@@ -6,13 +6,15 @@ Published package baseline: `1.5.4`.
 
 Target patch: `1.5.5`.
 
-Published release: not published.
+Published release: `1.5.5`.
 
-Status: Release cycle opened on 2026-06-30 after maintainer confirmation that `1.5.4` was
-launched. Package metadata reports `1.5.5`. `Focus Descendants` is approved as the initial
-development scope. Implementation and automated behavior verification are complete locally;
-manual validation, scope closure, packaging, and Marketplace publication remain pending. Codex
-did not execute packaging or publication commands.
+Status: Release completed by maintainer confirmation on 2026-06-30. The cycle opened after
+maintainer confirmation that `1.5.4` was launched, and package metadata reports `1.5.5`.
+`Focus Descendants` is the completed scope. Implementation, automated behavior verification,
+manual Extension Development Host validation, scope closure, VSIX packaging, and Marketplace
+publication are complete. Codex did not execute packaging or publication commands. Exact
+standalone VSIX filename, checksum, size, and Marketplace publication metadata were not supplied
+and are not inferred.
 
 Implemented candidate scope:
 
@@ -41,17 +43,24 @@ Implementation verification:
 - README and Marketplace-facing `CHANGELOG.md` copy describe the implemented behavior.
 - `git diff --check` passed on 2026-06-30 after release-documentation synchronization.
 
+Manual validation:
+
+- Extension Development Host validation was confirmed complete by the maintainer on 2026-06-30.
+- The validation covered the `Focus Descendants` smoke paths listed below; exact VS Code version,
+  operating system, fixture repository names, and VSIX metadata were not supplied and are not
+  inferred.
+
 Release gates:
 
 - Define and initial scope approval: complete.
 - Package version bump to `1.5.5`: complete after maintainer approval.
 - Feature implementation and automated behavior verification: complete locally.
-- Extension Development Host validation: pending.
+- Extension Development Host validation: complete by maintainer confirmation on 2026-06-30.
 - Final README and Marketplace-facing changelog copy: complete for the current candidate.
-- Scope closure: pending maintainer review.
-- VSIX packaging and Marketplace publication: pending separate explicit approval.
+- Scope closure: complete by maintainer confirmation on 2026-06-30.
+- VSIX packaging and Marketplace publication: complete by maintainer confirmation on 2026-06-30.
 
-Manual validation plan:
+Manual validation coverage:
 
 - Focus from a recent fork point in a branch-heavy repository and confirm unrelated lines are
   excluded while descendant references and the anchor remain visible.
@@ -63,9 +72,10 @@ Manual validation plan:
 
 Packaging notes:
 
-- Do not run `npm run package:vsix` or any `npm run publish:*` command without explicit
-  maintainer approval after implementation, verification, and scope closure.
-- No `1.5.5` VSIX filename, checksum, size, or Marketplace publication metadata exists yet.
+- `1.5.5` publication is recorded as complete by maintainer confirmation on 2026-06-30.
+- Codex did not run `npm run package:vsix` or any `npm run publish:*` command for this release.
+- Exact VSIX filename, checksum, size, and Marketplace publication metadata were not supplied
+  and are not inferred.
 
 Planning reference:
 
