@@ -23,13 +23,16 @@ No runtime secrets should be stored in the repository. Marketplace publishing re
 ## Current Release State
 - Published package baseline: `1.5.3`.
 - Target patch: `1.5.4`.
-- The remote permission modal-alert UX safety patch is implemented and verified locally.
+- The `1.5.4` scope is closed with Focus Range and the remote permission modal-alert UX safety
+  correction implemented.
 - Package metadata reports `1.5.4` after explicit maintainer approval.
 - Dependency declarations, commands, views, and Marketplace contribution points are unchanged.
-- Local verification passed: `npm run build`, `npm test` with 508 tests, and `git diff --check`.
-- `CHANGELOG.md` includes the `1.5.4` candidate notes for Marketplace-facing release notes.
-- Manual Extension Development Host smoke validation, VSIX packaging, and Marketplace
-  publication remain pending explicit maintainer approval.
+- Final local verification passed on 2026-06-29: `npm run build`, `npm test` with 514 tests,
+  and `git diff --check`.
+- `CHANGELOG.md` and `README.md` include the Marketplace-facing `1.5.4` feature description.
+- Interactive Focus Range behavior was reviewed by the maintainer during candidate review.
+- Remote permission/protected-branch smoke validation remains the final manual behavior gate.
+- Release artifacts are ready; VSIX packaging and Marketplace publication have not been run.
 - Codex executed the approved version bump. Codex did not execute packaging or publication
   commands for `1.5.4`.
 

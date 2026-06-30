@@ -6,15 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Release Preparation
 
-- Opened `1.5.4` as a narrow UX safety patch after the published `1.5.3` package.
+- Closed the `1.5.4` scope after the published `1.5.3` package with one graph-navigation
+  feature and one remote-error UX safety correction.
 - Version metadata is `1.5.4` in `package.json` and `package-lock.json` after maintainer
-  approval; packaging and Marketplace publication remain pending explicit maintainer approval.
-- Local verification passed with `npm run build`, `npm test`, and `git diff --check`.
+  approval; the candidate is ready for maintainer-controlled packaging and Marketplace
+  publication.
+- Final local verification passed with `npm run build`, 514 tests through `npm test`, and
+  `git diff --check`.
 
 ### Added
 
 - Added `Focus Range` to the two-revision graph context menu so users can temporarily narrow
   the graph to a selected `base..compare` path and clear the range from the graph toolbar.
+- Added a state-aware Focus Range indicator and context action: active endpoints remain visible
+  at the end of the toolbar, a different pair reads `Update Focus Range`, and the redundant
+  action is omitted for the already-active pair.
 
 ### UX Fixes
 

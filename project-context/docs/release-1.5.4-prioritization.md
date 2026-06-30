@@ -2,15 +2,16 @@
 
 ## Release Status
 
-Status: Opened on 2026-06-29 as a narrow patch release. Implementation for the initial scope
-is complete locally. Package metadata is bumped to `1.5.4` after maintainer approval;
-packaging, VSIX generation, and Marketplace publication remain pending explicit maintainer
-approval.
+Status: Scope closed on 2026-06-29. The release candidate contains the approved remote-error
+UX safety correction and Focus Range graph-navigation feature. Package metadata is `1.5.4`,
+final automated verification is current, and release artifacts are ready for
+maintainer-controlled VSIX packaging and Marketplace publication.
 
 ## Objective
 
-Deliver `1.5.4` as a focused UX safety patch for remote Git authorization failures that block
-the requested operation and should not be dismissible as transient toaster notifications.
+Deliver `1.5.4` as a focused graph-navigation and UX safety patch: add a temporary selected-range
+focus mode and ensure remote Git authorization failures that block an operation use modal
+feedback rather than transient toaster notifications.
 
 ## Context
 
@@ -41,11 +42,27 @@ Implementation reference:
 
 - `project-context/2.build/features/1.5.4-remote-permission-modal-alerts.md`
 
+### Focus selected range
+
+- Add `Focus Range` to the two-revision context menu.
+- Reproject the loaded snapshot to the ordered `base..compare` path without opening another
+  product surface.
+- Show the active endpoints in a removable, accessible indicator at the end of the toolbar.
+- Use `Update Focus Range` for a different selected pair and omit the redundant action when the
+  selected ordered pair already matches the active range.
+- Clear the active range when the main graph scope changes.
+
+Implementation reference:
+
+- `project-context/2.build/features/1.5.4-focus-selected-range.md`
+
 ## Deferred Beyond 1.5.4
 
 - Broad Git error taxonomy redesign.
 - New commands, contribution points, settings, or dependencies.
 - Any release packaging or Marketplace publish step without explicit maintainer approval.
+- Graph-driven branching workflow profiles, including a possible Git Flow preset, are reserved
+  for the `2.0.0` product cycle.
 
 ## Acceptance Criteria
 
@@ -54,6 +71,10 @@ Implementation reference:
 - The reported current-branch sync case, where the server rejects the push side for missing
   privileges, waits for the modal error before the action promise resolves.
 - Generic Git sync/pull failures remain nonblocking.
+- Two selected revisions can activate or update Focus Range, while the active ordered pair does
+  not expose a redundant focus action.
+- The toolbar indicator exposes the complete active range accessibly, can clear the range, and
+  is cleared when the main graph scope changes.
 - Automated verification passes: `npm run build`, `npm test`, and `git diff --check`.
 - Manual Extension Development Host validation exercises at least the current-branch sync
   missing-server-privileges path before packaging approval.
@@ -63,16 +84,17 @@ Implementation reference:
 - `npm run build` passed.
 - `npx tsc -p ./tsconfig.test.json` passed.
 - `node --test out-test/test/errorDetail.test.js out-test/test/refActions.test.js` passed.
-- `npm test` passed with 508 tests.
+- Final `npm test` passed with 514 tests on 2026-06-29.
 - `git diff --check` passed.
 
 ## Release Gates
 
-- Scope opened: complete.
-- Initial implementation and automated verification: complete locally.
+- Scope opened and closed: complete.
+- Implementation and final automated verification: complete locally.
 - Package version bump to `1.5.4`: complete after maintainer approval.
-- Changelog candidate notes: drafted.
-- Manual Extension Development Host smoke validation: pending.
+- Marketplace-facing changelog and README notes: complete.
+- Interactive Focus Range behavior review: completed by the maintainer during candidate review.
+- Remote permission/protected-branch Extension Development Host smoke validation: pending.
 - VSIX packaging and Marketplace publication: pending explicit maintainer approval.
 
 ## Rollback

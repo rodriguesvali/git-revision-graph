@@ -6,8 +6,11 @@ The extension runs inside VS Code and depends on the built-in `vscode.git` exten
 ## Monitoring
 Monitor GitHub issues, Marketplace feedback, and user reports after releases.
 
-Current release-candidate monitoring focus for the pending `1.5.4` UX safety patch:
+Current release-candidate monitoring focus for the closed `1.5.4` scope:
 
+- Focus Range should keep the ordered base/compare endpoints visible in the toolbar, replace
+  the active range when a different pair is selected, and clear when the main graph scope changes.
+- The already-active ordered range should not expose a redundant `Focus Range` context action.
 - Current-branch sync failures caused by missing remote write privileges should use a modal
   error instead of a transient toaster.
 - Current-branch push, branch publish, tag push, remote tag delete, and remote branch delete

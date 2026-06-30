@@ -8,11 +8,12 @@ Target patch: `1.5.4`.
 
 Published release: not published.
 
-Status: Opened on 2026-06-29 as a UX patch after the published `1.5.3` package. The initial
-blocking-alert implementation is complete locally, and the maintainer expanded the scope to
-include one user-visible graph navigation feature. Package metadata now reports `1.5.4` after
-maintainer approval for the version bump. Codex did not execute packaging or publication
-commands.
+Status: Release-candidate scope closed on 2026-06-29 after maintainer review. The completed
+candidate contains the remote permission modal-alert UX correction and Focus Range graph
+navigation with its final accessibility, state-aware action, and toolbar-placement refinements.
+Package metadata reports `1.5.4`, final automated verification is current, and the artifacts are
+ready for maintainer-controlled VSIX packaging and Marketplace publication. Codex did not execute
+packaging or publication commands.
 
 Implemented candidate scope:
 
@@ -27,6 +28,10 @@ Implemented candidate scope:
   graph actions.
 - Add `Focus Range` to the two-revision graph context menu so users can narrow the visible
   graph to a selected `base..compare` path and clear that range from the graph toolbar.
+- Present the active range as an accessible indicator at the end of the toolbar, use
+  `Update Focus Range` for a different selected pair, and omit the redundant action for the
+  already-active ordered pair.
+- Clear Focus Range when the main graph scope changes.
 
 Verification:
 
@@ -39,14 +44,19 @@ Verification:
 - Post-feature verification on 2026-06-29: `npm run build` passed.
 - Post-feature verification on 2026-06-29: `npm test` passed with 512 tests.
 - Post-feature verification on 2026-06-29: `git diff --check` passed.
+- Final release-candidate verification on 2026-06-29: `npm run build` passed.
+- Final release-candidate verification on 2026-06-29: `npm test` passed with 514 tests.
+- Final release-artifact verification on 2026-06-29: `git diff --check` passed.
 
 Release gates:
 
-- Scope opened: complete.
-- Implementation and automated verification: complete locally.
-- Marketplace-facing release notes: drafted in `CHANGELOG.md`.
+- Scope opened and closed: complete.
+- Implementation and final automated verification: complete locally.
+- Marketplace-facing release notes and README feature copy: complete.
 - Package version bump to `1.5.4`: complete after maintainer approval.
-- Manual Extension Development Host smoke validation: pending.
+- Maintainer release-close approval: complete on 2026-06-29.
+- Interactive Focus Range behavior review: complete during candidate review.
+- Remote permission/protected-branch Extension Development Host smoke validation: pending.
 - VSIX packaging and Marketplace publication: pending explicit maintainer approval.
 
 Manual smoke checklist:
@@ -59,11 +69,16 @@ Manual smoke checklist:
   delete still show modal errors for permission/protected-branch failures.
 - Ctrl/Cmd-click two visible revisions, choose `Focus Range`, confirm the graph narrows to the
   selected path, then clear the range from the graph toolbar.
+- While Focus Range is active, confirm a different ordered pair reads `Update Focus Range` and
+  the already-active ordered pair exposes no redundant focus action.
+- Confirm the active range indicator is the final toolbar item and remains readable in light,
+  dark, narrow, and long-ref-name cases.
+- Change the main graph scope and confirm Focus Range clears.
 
 Packaging notes:
 
-- Do not run `npm run package:vsix` or any `npm run publish:*` command without explicit
-  maintainer approval.
+- Release artifacts are prepared for publication handoff. Do not run `npm run package:vsix` or
+  any `npm run publish:*` command without explicit maintainer approval for those operations.
 - Exact VSIX filename, checksum, size, and Marketplace publication metadata do not exist yet
   for this target and are not inferred.
 
@@ -72,6 +87,7 @@ Planning reference:
 - `project-context/docs/release-1.5.4-prioritization.md`
 - `project-context/2.build/features/1.5.4-remote-permission-modal-alerts.md`
 - `project-context/2.build/features/1.5.4-focus-selected-range.md`
+- `project-context/2.build/features/1.5.4-release-readiness-closure.md`
 
 ## 1.5.3 Release Readiness
 

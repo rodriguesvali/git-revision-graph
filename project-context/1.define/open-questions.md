@@ -1,5 +1,12 @@
 # Open Questions
 
+## 2.0.0
+
+- Decided on 2026-06-29: defer graph-driven branching workflow profiles, with Git Flow as a
+  possible preset rather than a mandatory external CLI dependency, to the `2.0.0` product cycle.
+- Open: should pull, push, sync, and fetch actions be removed from the graph to reduce overlap
+  with the built-in VS Code Source Control experience? No product change is approved yet.
+
 ## 1.5.0
 
 - Decided on 2026-06-27: all `1.4.0` Deliver gates are complete, including Extension Development Host smoke validation, VSIX packaging, clean-profile installation, and Marketplace publication; the `1.5.0` release cycle may open.
