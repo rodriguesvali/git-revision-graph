@@ -2,7 +2,10 @@ import {
   RevisionGraphMessage,
   RevisionLogSource
 } from '../revisionGraphTypes';
-import { RevisionGraphProjectionOptions, RevisionGraphRef } from '../revisionGraphData';
+import type {
+  RevisionGraphProjectionOptions,
+  RevisionGraphRef
+} from './model/commitGraphTypes';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
 export {
   isRevisionGraphMessageAllowedForCurrentRepository,

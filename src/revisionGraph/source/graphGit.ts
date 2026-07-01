@@ -1,11 +1,11 @@
 import { buildCommitGraphWithSimplification } from '../model/commitGraph';
-import {
+import type {
   CommitGraph,
   ParsedRevisionGraphCommit,
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from '../model/commitGraphTypes';
-import { RevisionLogEntry, RevisionLogSource } from '../../revisionGraphTypes';
+import type { RevisionLogEntry, RevisionLogSource } from '../revisionLogTypes';
 
 const FIELD_SEPARATOR = '\u001f';
 const RECORD_SEPARATOR = '\u001e';
@@ -68,15 +68,15 @@ export function parseDecorationRefs(
         return { name: label.slice('HEAD -> '.length), kind: 'head' };
       }
 
-	      if (label.startsWith('tag: ')) {
-	        return { name: label.slice('tag: '.length), kind: 'tag' };
-	      }
+      if (label.startsWith('tag: ')) {
+        return { name: label.slice('tag: '.length), kind: 'tag' };
+      }
 
-	      if (label === 'refs/stash' || label === 'stash') {
-	        return { name: 'stash', kind: 'stash' };
-	      }
+      if (label === 'refs/stash' || label === 'stash') {
+        return { name: 'stash', kind: 'stash' };
+      }
 
-	      const knownKind = refKindsByName?.get(label);
+      const knownKind = refKindsByName?.get(label);
       if (knownKind) {
         return { name: label, kind: knownKind };
       }

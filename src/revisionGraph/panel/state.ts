@@ -8,10 +8,13 @@ import {
   buildRevisionGraphScene,
   CommitGraph,
   projectMajorOperationsGraph,
-  RevisionGraphRef,
-  RevisionGraphEdge,
-  RevisionGraphScene
+  RevisionGraphRef
 } from '../../revisionGraphData';
+import type {
+  RevisionGraphEdge,
+  RevisionGraphNodeLayout,
+  RevisionGraphScene
+} from '../model/sceneTypes';
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { RevisionGraphSnapshotLoadContext } from '../backendServices/snapshot';
@@ -24,8 +27,7 @@ import {
   createReferenceId,
   GRAPH_PADDING_BOTTOM,
   GRAPH_PADDING_TOP,
-  NODE_PADDING_X,
-  RevisionGraphNodeLayout
+  NODE_PADDING_X
 } from '../webview/shared';
 import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';

@@ -1,4 +1,9 @@
-import { RevisionGraphEdge, RevisionGraphNode, RevisionGraphScene } from '../../revisionGraphData';
+import type {
+  RevisionGraphEdge,
+  RevisionGraphNode,
+  RevisionGraphNodeLayout,
+  RevisionGraphScene
+} from '../model/sceneTypes';
 import { formatShortCommitHash } from '../../commitHash';
 import {
   estimateRevisionGraphNodeHeight,
@@ -33,17 +38,6 @@ export const VIEWPORT_PADDING_TOP = 18;
 export const VIEWPORT_PADDING_RIGHT = 0;
 export const VIEWPORT_PADDING_BOTTOM = 18;
 export const VIEWPORT_PADDING_LEFT = 18;
-
-export type RevisionGraphNodeLayout = {
-  readonly hash: string;
-  readonly lane: number;
-  readonly row: number;
-  readonly x: number;
-  readonly width: number;
-  readonly height: number;
-  readonly defaultLeft: number;
-  readonly defaultTop: number;
-};
 
 type EdgeLayoutNode = {
   readonly x: number;

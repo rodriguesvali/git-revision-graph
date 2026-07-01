@@ -1,4 +1,4 @@
-import { RevisionGraphRef } from '../revisionGraphData';
+import type { RevisionGraphRef } from './model/commitGraphTypes';
 import {
   RevisionGraphMessage,
   RevisionGraphViewState,

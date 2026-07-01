@@ -5,7 +5,7 @@ import {
   execGitWithResult,
   GIT_EXEC_METADATA_PROFILE
 } from '../../gitExec';
-import { RevisionGraphProjectionOptions } from '../../revisionGraphData';
+import type { RevisionGraphProjectionOptions } from '../model/commitGraphTypes';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { buildCommitGraphFromGitLog, buildRevisionGraphGitLogArgs } from '../source/graphGit';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';

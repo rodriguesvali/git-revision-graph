@@ -67,6 +67,8 @@ Proposed scope:
   authorization rules.
 - Extract revision graph repository lifecycle and refresh coordination from
   `src/revisionGraph/controller.ts` without changing graph webview behavior.
+- Extract revision graph type boundaries to remove import cycles between Git graph parsing,
+  shared graph data, view-state contracts, and webview shared contracts.
 - Add a fixed Extension Development Host smoke matrix for future release candidates.
 
 Release constraints:
@@ -75,6 +77,7 @@ Release constraints:
 - Do not add commands, menus, views, activation events, settings, or runtime dependencies.
 - Preserve multi-repository behavior, empty-state handling, conflict guards, and native VS Code
   workbench ergonomics.
+- Preserve current revision graph behavior while changing only internal type/module ownership.
 - Do not run packaging or Marketplace publication commands without explicit maintainer approval.
 
 Planned verification:
@@ -97,6 +100,12 @@ Recorded verification:
   repository lifecycle extraction.
 - Final Extension Development Host smoke completed by maintainer confirmation on 2026-07-01 after
   repository lifecycle extraction.
+- Focused graph type-boundary, graph state, graph model, and webview shared tests passed on
+  2026-07-01.
+- `npm test` passed with 527 tests on 2026-07-01 after the type-boundary extraction.
+- `git diff --check` passed on 2026-07-01 after the type-boundary extraction.
+- Final Extension Development Host smoke completed by maintainer confirmation on 2026-07-01 after
+  the type-boundary extraction.
 
 ## Standard Release Verification
 

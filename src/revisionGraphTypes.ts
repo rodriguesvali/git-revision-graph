@@ -1,23 +1,18 @@
-import { RevisionGraphProjectionOptions, RevisionGraphRef, RevisionGraphScene } from './revisionGraphData';
-import { RevisionGraphNodeLayout } from './revisionGraph/webview/shared';
+import type {
+  RevisionGraphProjectionOptions,
+  RevisionGraphRef
+} from './revisionGraph/model/commitGraphTypes';
+import type {
+  RevisionGraphNodeLayout,
+  RevisionGraphScene
+} from './revisionGraph/model/sceneTypes';
+import type { RevisionLogSource } from './revisionGraph/revisionLogTypes';
+
+export type { RevisionLogEntry, RevisionLogSource } from './revisionGraph/revisionLogTypes';
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 export const REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE = 'gitRefs.revisionGraphEditorPanel';
 export const SHOW_LOG_VIEW_ID = 'gitRefs.showLogView';
-
-export type RevisionLogSource =
-  | {
-    readonly kind: 'target';
-    readonly revision: string;
-    readonly label: string;
-  }
-  | {
-    readonly kind: 'range';
-    readonly baseRevision: string;
-    readonly baseLabel: string;
-    readonly compareRevision: string;
-    readonly compareLabel: string;
-  };
 
 export type RevisionGraphMessage =
   | { readonly type: 'webview-ready' }
@@ -141,22 +136,4 @@ export function normalizeRevisionGraphProjectionOptionsForScope(
     ...options,
     showCurrentBranchDescendants: options.refScope === 'current'
   };
-}
-
-export interface RevisionLogEntry {
-  readonly hash: string;
-  readonly shortHash: string;
-  readonly author: string;
-  readonly date: string;
-  readonly subject: string;
-  readonly message: string;
-  readonly parentHashes: readonly string[];
-  readonly references: readonly RevisionGraphRef[];
-  readonly shortStat:
-    | {
-      readonly files: number;
-      readonly insertions: number;
-      readonly deletions: number;
-    }
-    | undefined;
 }
