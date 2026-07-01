@@ -1406,6 +1406,46 @@ test('can hide remote refs and stash refs from the projection', () => {
   );
 });
 
+test('preserves hidden path continuity across branch, merge, tag, remote, and stash refs', () => {
+  const graph = buildCommitGraph([
+    { hash: 'headTip', parents: ['merge1'], author: 'Ada', date: '2026-07-01', subject: 'Main tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'stashTip', parents: ['stashWork'], author: 'Ada', date: '2026-07-01', subject: 'Stashed work', refs: [{ name: 'stash', kind: 'stash' }] },
+    { hash: 'merge1', parents: ['mainMid', 'topicTip'], author: 'Ada', date: '2026-06-30', subject: 'Merge topic', refs: [] },
+    { hash: 'mainMid', parents: ['releaseTag'], author: 'Ada', date: '2026-06-29', subject: 'Mainline work', refs: [] },
+    { hash: 'topicTip', parents: ['topicMid'], author: 'Ada', date: '2026-06-28', subject: 'Topic tip', refs: [{ name: 'feature/demo', kind: 'branch' }] },
+    { hash: 'topicMid', parents: ['releaseTag'], author: 'Ada', date: '2026-06-27', subject: 'Topic work', refs: [] },
+    { hash: 'stashWork', parents: ['releaseTag'], author: 'Ada', date: '2026-06-26', subject: 'Hidden stash base', refs: [] },
+    { hash: 'remoteTip', parents: ['releaseTag'], author: 'Ada', date: '2026-06-25', subject: 'Remote tip', refs: [{ name: 'origin/release/1.5', kind: 'remote' }] },
+    { hash: 'releaseTag', parents: ['root1'], author: 'Ada', date: '2026-06-24', subject: 'Release tag', refs: [{ name: 'v1.5.5', kind: 'tag' }] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-06-23', subject: 'Root', refs: [] }
+  ]);
+
+  const projection = projectMajorOperationsGraph(graph);
+
+  assert.deepEqual(
+    projection.nodes.map((node) => ({ hash: node.hash, refs: node.refs.map((ref) => ref.kind) })),
+    [
+      { hash: 'headTip', refs: ['head'] },
+      { hash: 'stashTip', refs: ['stash'] },
+      { hash: 'topicTip', refs: ['branch'] },
+      { hash: 'remoteTip', refs: ['remote'] },
+      { hash: 'releaseTag', refs: ['tag'] },
+      { hash: 'root1', refs: [] }
+    ]
+  );
+  assert.deepEqual(
+    projection.edges.map((edge) => ({ from: edge.from, to: edge.to, through: edge.through })),
+    [
+      { from: 'headTip', to: 'releaseTag', through: ['merge1', 'mainMid'] },
+      { from: 'headTip', to: 'topicTip', through: ['merge1'] },
+      { from: 'stashTip', to: 'releaseTag', through: ['stashWork'] },
+      { from: 'topicTip', to: 'releaseTag', through: ['topicMid'] },
+      { from: 'remoteTip', to: 'releaseTag', through: [] },
+      { from: 'releaseTag', to: 'root1', through: [] }
+    ]
+  );
+});
+
 test('builds compact primary ancestor next pointers for the visible scene', async () => {
   const graph = buildCommitGraph([
     { hash: 'm1', parents: ['n1', 's1'], author: 'Ada', date: '2026-04-07', subject: 'Merge feature', refs: [{ name: 'main', kind: 'head' }] },

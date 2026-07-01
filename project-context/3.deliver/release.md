@@ -69,6 +69,8 @@ Proposed scope:
   `src/revisionGraph/controller.ts` without changing graph webview behavior.
 - Extract revision graph type boundaries to remove import cycles between Git graph parsing,
   shared graph data, view-state contracts, and webview shared contracts.
+- Add a graph fidelity regression fixture for branch, hidden merge, tag, remote, stash, and hidden
+  linear-path continuity without changing runtime behavior.
 - Add a fixed Extension Development Host smoke matrix for future release candidates.
 
 Release constraints:
@@ -106,6 +108,8 @@ Recorded verification:
 - `git diff --check` passed on 2026-07-01 after the type-boundary extraction.
 - Final Extension Development Host smoke completed by maintainer confirmation on 2026-07-01 after
   the type-boundary extraction.
+- `npm test` passed with 528 tests on 2026-07-01 after adding the graph fidelity regression
+  fixture.
 
 ## Standard Release Verification
 
