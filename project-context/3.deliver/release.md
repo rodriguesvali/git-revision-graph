@@ -55,6 +55,7 @@ Opened: 2026-07-01
 Focused build artifact:
 
 - `project-context/2.build/features/1.5.6-architecture-risk-reduction.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Proposed scope:
 
@@ -78,9 +79,16 @@ Planned verification:
 - `npm run build`
 - `npm test`
 - `git diff --check`
-- Manual Extension Development Host smoke against graph launch, repository switching, refresh,
-  Compare Results, Show Log, diff open, checkout/branch/merge guards, sync/fetch, and conflict
-  handoff.
+- Manual Extension Development Host smoke using
+  `project-context/3.deliver/extension-host-smoke-matrix.md`.
+
+Recorded verification:
+
+- `npm run build` passed on 2026-07-01.
+- Focused webview message validation/dispatcher tests passed on 2026-07-01.
+- `npm test` passed with 522 tests on 2026-07-01.
+- `git diff --check` passed on 2026-07-01.
+- Manual Extension Development Host smoke completed by maintainer confirmation on 2026-07-01.
 
 ## Standard Release Verification
 

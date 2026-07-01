@@ -7,6 +7,10 @@ import { HeadSyncState, RefActionKind, RefActionServices } from './types';
 
 export { isMissingUpstreamConfigurationError } from '../errorDetail';
 
+export type MutationReadinessServices = Pick<RefActionServices, 'ui'>;
+export type RefreshPreparationServices = Pick<RefActionServices, 'refreshController'>;
+export type RemotePickerServices = Pick<RefActionServices, 'ui' | 'referenceManager'>;
+
 export function parseRemoteReferenceTarget(refName: string): { remoteName: string; branchName: string } | undefined {
   const firstSlash = refName.indexOf('/');
   if (firstSlash <= 0 || firstSlash === refName.length - 1) {
@@ -96,7 +100,7 @@ export function buildSyncResultMessage(syncState: HeadSyncState): string {
 export async function ensureWorkspaceReadyForMutation(
   repository: Repository,
   operationDescription: string,
-  services: RefActionServices,
+  services: MutationReadinessServices,
   options: { readonly allowWorkspaceChanges?: boolean } = {}
 ): Promise<boolean> {
   if (hasMergeConflicts(repository)) {
@@ -123,7 +127,7 @@ export function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, 
 
 export function prepareFullRebuildRefresh(
   repository: Repository,
-  services: RefActionServices
+  services: RefreshPreparationServices
 ): {
   readonly request: ReturnType<typeof createActionRefreshRequest>;
   readonly cancel: () => void;
@@ -139,7 +143,7 @@ export function prepareFullRebuildRefresh(
 
 export async function pickRemote(
   repository: Repository,
-  services: RefActionServices,
+  services: RemotePickerServices,
   placeHolder: string
 ): Promise<string | undefined> {
   const remoteNames = await services.referenceManager.getRemoteNames(repository);
