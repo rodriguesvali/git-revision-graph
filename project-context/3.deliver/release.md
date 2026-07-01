@@ -1,13 +1,13 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-06-30
+Last consolidated: 2026-07-01
 
 ## Current State
 
-- Current package version: `1.5.5` in `package.json`.
+- Current package version: `1.5.6` in `package.json`.
 - Latest recorded published release: `1.5.5`.
-- Release cycle status: no new release cycle is open in active context.
+- Release cycle status: `1.5.6` is open for implementation.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Last Completed Release
@@ -46,6 +46,41 @@ Before implementation begins for the next release:
 - Update `project-context/1.define/prd.md` or `project-context/1.define/sad.md` only for durable product or architecture decisions.
 - Record release-specific risks, verification plan, manual smoke matrix, Marketplace impact, and rollback notes in this file.
 - Do not bump versions, package VSIX, or publish without explicit maintainer approval.
+
+## Planned Next Release: 1.5.6
+
+Status: Open
+Opened: 2026-07-01
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.6-architecture-risk-reduction.md`
+
+Proposed scope:
+
+- Split `src/workbenchRefActionServices.ts` into smaller native VS Code adapter modules while
+  preserving the existing factory and user-facing behavior.
+- Narrow touched ref action workflows so they depend on only the service capabilities they use.
+- Separate revision graph webview message payload validation from state/current-repository
+  authorization rules.
+- Add a fixed Extension Development Host smoke matrix for future release candidates.
+
+Release constraints:
+
+- Package baseline has been bumped to `1.5.6`; do not bump again without maintainer approval.
+- Do not add commands, menus, views, activation events, settings, or runtime dependencies.
+- Preserve multi-repository behavior, empty-state handling, conflict guards, and native VS Code
+  workbench ergonomics.
+- Do not run packaging or Marketplace publication commands without explicit maintainer approval.
+
+Planned verification:
+
+- `npm run build`
+- `npm test`
+- `git diff --check`
+- Manual Extension Development Host smoke against graph launch, repository switching, refresh,
+  Compare Results, Show Log, diff open, checkout/branch/merge guards, sync/fetch, and conflict
+  handoff.
 
 ## Standard Release Verification
 
