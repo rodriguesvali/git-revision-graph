@@ -5,7 +5,7 @@
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
 - **Feature status:** Approved product proposal with an execution-ready Phase 1 baseline
-- **Package baseline at review:** `package.json` version `1.5.5` on 2026-07-01
+- **Package baseline at review:** `package.json` version `1.5.6` on 2026-07-01
 - **Document version:** 3.0 - Implementation-grade FRD baseline
 - **Language:** English
 
@@ -31,6 +31,9 @@ The current extension already provides:
 - search, filters, minimap, refresh behavior, and multi-repository support;
 - native VS Code confirmations, diff editors, picks, notifications, and Source
   Control handoff.
+- repository lifecycle coordination, graph backend services, message
+  authorization, and graph model/type boundaries extracted in the `1.5.6`
+  architecture risk reduction work.
 
 The Flow Governance Layer must build on those foundations. It should help teams
 understand branch roles and detect flow issues, while keeping official
@@ -990,6 +993,25 @@ refs are classified, how flow metadata enters the graph view model, which
 webview messages are added, and which modules own policy, diagnostics,
 decorations, and actions.
 
+As of the `1.5.6` architecture baseline, Flow Governance implementation must
+respect these active boundaries:
+
+- repository selection, repository-set changes, state signatures, and refresh
+  request enrichment are coordinated through the revision graph repository
+  lifecycle layer;
+- graph loading, revision logs, document/diff loading, and merge analysis are
+  exposed through focused backend service contracts behind the revision graph
+  backend facade;
+- commit graph, projection, ref, scene, and webview view-state contracts are
+  separated into serializable model/type boundaries;
+- webview message payload parsing and state/current-repository authorization are
+  separate concerns;
+- workbench ref action services are split into UI, diff, reference mutation,
+  ancestry, refresh, and Compare Results adapter responsibilities.
+
+Flow Governance must attach to these boundaries as metadata and policy logic,
+not by re-centralizing them in the controller or webview runtime.
+
 Suggested directory:
 
 ```text
@@ -1037,6 +1059,8 @@ Git refs + commit graph
         |
 Flow branch classification
         |
+Flow metadata enrichment
+        |
 Transition policy and promotion checks
         |
 Diagnostics and decorations
@@ -1057,13 +1081,22 @@ The SAD must be updated before coding starts with the final module names and
 message contracts. The expected Phase 1 ownership boundary is:
 
 - extension host or shared revision graph model: configuration loading,
-  validation, normalization, branch classification, and diagnostic generation;
-- graph snapshot or view-model shaping layer: attaching flow metadata to refs
-  and preserving the existing commit graph without changing ancestry;
+  validation, normalization, branch classification, and diagnostic generation,
+  resolved per active repository;
+- repository lifecycle boundary: Flow Governance configuration and metadata must
+  follow repository switching, repository closure, and multi-root refresh
+  semantics without adding an independent repository coordinator;
+- graph snapshot, projection, or view-model shaping layer: attaching flow
+  metadata to refs and preserving the existing commit graph without changing
+  ancestry, compressed edge paths, ref identity, or layout ownership;
+- serializable model/view-state contracts: flow metadata delivered to the
+  webview must remain JSON-serializable and must not reintroduce import cycles
+  between Git parsing, graph model, view state, and webview shared code;
 - webview state: rendering badges, trunk highlight, filters, and hide/show
   controls from metadata supplied by the host;
 - webview messages: user intent only, such as toggling Flow View or changing
-  filters;
+  filters, with payload parsing and state/current-repository authorization kept
+  in the existing host-side message validation/authorization boundary;
 - no webview-side branch-name inference, policy evaluation, Git mutation, or
   provider authentication.
 
@@ -1252,8 +1285,12 @@ Phase 1 implementation traceability:
 | Flow configuration | `package.json` settings, `src/revisionGraph/flow/*`, focused feature artifact | Config validation tests and manifest review |
 | Branch classification | shared revision graph model or `src/revisionGraph/flow/*` | Unit tests for default patterns, custom patterns, `main` precedence, and `unknown` fallback |
 | Flow metadata delivery | graph state/view-model shaping and controller message flow | Tests that metadata is delivered without changing commit ancestry |
+| Repository lifecycle compatibility | existing revision graph repository lifecycle and controller integration points | Tests for repository switching, repository close/open, zero-repository state, and per-repository config independence |
+| Type-boundary compatibility | `src/revisionGraph/model/*`, serializable view-state contracts, and flow metadata types | Import-cycle regression and type-only boundary checks for graph source/model/view-state/webview shared code |
+| Message contract safety | existing revision graph message validation and authorization boundary | Tests for Flow View messages, malformed payloads, stale repository state, and disabled behavior |
 | Badges and trunk highlight | existing revision graph webview runtime and styles | Webview tests or focused shell/render checks |
 | Branch-kind filters | existing graph toolbar/filter state | Tests for filter state and no irreversible history hiding |
+| Graph fidelity preservation | projection fixtures covering branch, remote, tag, stash, hidden merge, and compressed paths | Tests proving flow metadata and hidden `sync/*` treatment do not alter ancestry, `through` paths, or visible anchors |
 | Multi-repository configuration | repository selection and controller state | Tests using separate repositories/config sources |
 | Disabled behavior | extension defaults and graph load path | Regression tests proving current graph behavior is unchanged |
 
@@ -1278,6 +1315,16 @@ Phase 1 verification gate:
   schema version, repository-file precedence, workspace fallback, user fallback,
   multi-repository independence, Phase 1 default-file generation, and inert
   future-field handling;
+- repository lifecycle tests cover Flow Governance state across repository
+  switching, repository open/close, zero-repository state, and refresh after the
+  active repository changes;
+- message validation/authorization tests cover any new Flow View messages,
+  malformed payloads, stale repository state, and disabled Flow Governance;
+- graph type-boundary checks prove Flow Governance does not reintroduce import
+  cycles between Git parsing, graph model, view state, and webview shared code;
+- graph fidelity fixtures prove badges, metadata, and hidden `sync/*` treatment
+  do not alter commit ancestry, visible branch/remote/tag/stash anchors, hidden
+  merge continuity, or compressed edge `through` paths;
 - focused webview tests or screenshots confirm badges, filters, trunk highlight,
   and hidden `sync/*` treatment do not overlap or obscure existing graph
   controls;
