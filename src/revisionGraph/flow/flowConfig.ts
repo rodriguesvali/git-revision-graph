@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import * as path from 'node:path';
+
 import {
   createDefaultFlowConfig,
   DEFAULT_FLOW_CONFIG,
@@ -23,6 +26,7 @@ const PHASE_1_CONFIG_KEYS = new Set([
   'highlightProductionTrunk',
   'showUnknownBranches'
 ]);
+export const DEFAULT_FLOW_CONFIG_PATH = '.git-revision-graph-flow.json';
 
 export function normalizeFlowConfig(
   rawConfig: unknown,
@@ -65,7 +69,10 @@ export function normalizeFlowConfig(
   return issues.length > 0 ? invalid(issues, config) : { ok: true, source, config, issues };
 }
 
-export function normalizeFlowSettings(settings: FlowGovernanceSettings | undefined): FlowConfigResolution {
+export function normalizeFlowSettings(
+  settings: FlowGovernanceSettings | undefined,
+  source: Exclude<FlowConfigSource, 'repository' | 'invalid' | 'disabled'> = 'user'
+): FlowConfigResolution {
   if (!settings) {
     return { ok: true, source: 'defaults', config: DEFAULT_FLOW_CONFIG, issues: [] };
   }
@@ -86,12 +93,32 @@ export function normalizeFlowSettings(settings: FlowGovernanceSettings | undefin
       settings.showUnknownBranches ?? DEFAULT_FLOW_CONFIG.showUnknownBranches
   });
 
-  return issues.length > 0 ? invalid(issues, config) : { ok: true, source: 'user', config, issues: [] };
+  return issues.length > 0 ? invalid(issues, config) : { ok: true, source, config, issues: [] };
 }
 
 export function createInertFlowConfig(rawConfig: FlowConfigV1): NormalizedFlowConfig {
   const normalized = normalizeFlowConfig(rawConfig);
   return normalized.config;
+}
+
+export async function resolveFlowConfigForRepository(
+  repositoryRootPath: string,
+  settings?: FlowGovernanceSettings
+): Promise<FlowConfigResolution> {
+  const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
+  const resolvedConfigPath = resolveRepositoryConfigPath(repositoryRootPath, configPath);
+  if (!resolvedConfigPath.ok) {
+    return invalid([resolvedConfigPath.issue]);
+  }
+
+  const rawConfig = await readRepositoryFlowConfig(resolvedConfigPath.path);
+  if (rawConfig.exists) {
+    return rawConfig.value === undefined
+      ? invalid(rawConfig.issues)
+      : normalizeFlowConfig(rawConfig.value, 'repository');
+  }
+
+  return normalizeFlowSettings(settings, settings ? 'workspace' : 'defaults');
 }
 
 function readOptionalBoolean(
@@ -179,4 +206,68 @@ function invalid(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function resolveRepositoryConfigPath(
+  repositoryRootPath: string,
+  configPath: string
+): { readonly ok: true; readonly path: string } | { readonly ok: false; readonly issue: FlowConfigValidationIssue } {
+  if (typeof configPath !== 'string' || configPath.trim().length === 0) {
+    return {
+      ok: false,
+      issue: { path: 'configPath', message: 'configPath must be a non-empty repository-relative path.' }
+    };
+  }
+
+  if (path.isAbsolute(configPath)) {
+    return {
+      ok: false,
+      issue: { path: 'configPath', message: 'configPath must be relative to the repository root.' }
+    };
+  }
+
+  const root = path.resolve(repositoryRootPath);
+  const resolved = path.resolve(root, configPath);
+  const relative = path.relative(root, resolved);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return {
+      ok: false,
+      issue: { path: 'configPath', message: 'configPath must stay inside the repository root.' }
+    };
+  }
+
+  return { ok: true, path: resolved };
+}
+
+async function readRepositoryFlowConfig(
+  configPath: string
+): Promise<
+  | { readonly exists: false; readonly value?: undefined; readonly issues: readonly [] }
+  | { readonly exists: true; readonly value: unknown; readonly issues: readonly [] }
+  | { readonly exists: true; readonly value?: undefined; readonly issues: readonly FlowConfigValidationIssue[] }
+> {
+  try {
+    return {
+      exists: true,
+      value: JSON.parse(await readFile(configPath, 'utf8')),
+      issues: []
+    };
+  } catch (error) {
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      return { exists: false, issues: [] };
+    }
+
+    return {
+      exists: true,
+      issues: [{ path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }]
+    };
+  }
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

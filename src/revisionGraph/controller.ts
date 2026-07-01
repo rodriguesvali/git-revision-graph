@@ -64,6 +64,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
+import type { FlowGovernanceSettings } from './flow';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -455,6 +456,7 @@ export class RevisionGraphController implements vscode.Disposable {
     const repositoryPath = this.currentRepository.rootUri.fsPath;
     const trace = this.loadTrace.createSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
     const reusableSnapshot = this.resolveReusableGraphSnapshot(repositoryPath, renderRequest.intent);
+    const flowGovernanceSettings = this.resolveFlowGovernanceSettings(this.currentRepository);
     trace?.({
       phase: 'state.snapshotReuse',
       durationMs: 0,
@@ -467,7 +469,8 @@ export class RevisionGraphController implements vscode.Disposable {
           this.backend,
           reusableSnapshot,
           signal,
-          trace
+          trace,
+          { flowGovernanceSettings }
         )
       : await buildReadyRevisionGraphViewStateBundle(
           this.currentRepository,
@@ -475,7 +478,8 @@ export class RevisionGraphController implements vscode.Disposable {
           this.backend,
           this.resolveLimitPolicy(),
           signal,
-          trace
+          trace,
+          { flowGovernanceSettings }
         );
 
     if (!this.isRenderRequestCurrent(renderRequest)) {
@@ -518,6 +522,17 @@ export class RevisionGraphController implements vscode.Disposable {
     return this.resolveReusableGraphSnapshot(this.currentRepository.rootUri.fsPath, intent)
       ? 'projection-only'
       : 'full-rebuild';
+  }
+
+  private resolveFlowGovernanceSettings(repository: Repository): FlowGovernanceSettings {
+    const config = vscode.workspace.getConfiguration('gitRevisionGraph.flowGovernance', repository.rootUri);
+    return {
+      enabled: config.get<boolean>('enabled'),
+      configPath: config.get<string>('configPath'),
+      hideSyncBranchesByDefault: config.get<boolean>('hideSyncBranchesByDefault'),
+      highlightProductionTrunk: config.get<boolean>('highlightProductionTrunk'),
+      showUnknownBranches: config.get<boolean>('showUnknownBranches')
+    };
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

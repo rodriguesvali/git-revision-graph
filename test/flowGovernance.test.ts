@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import {
   classifyFlowBranch,
@@ -7,7 +10,8 @@ import {
   createDefaultFlowConfigFile,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
-  normalizeFlowConfig
+  normalizeFlowConfig,
+  resolveFlowConfigForRepository
 } from '../src/revisionGraph/flow';
 
 test('Flow Governance normalizes Phase 1 defaults and ignores future fields inertly', () => {
@@ -114,4 +118,54 @@ test('Flow Governance default file contains only Phase 1 fields', () => {
     'schemaVersion',
     'showUnknownBranches'
   ]);
+});
+
+test('Flow Governance resolves repository file before fallback settings', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+  await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
+    schemaVersion: 1,
+    enabled: true,
+    mainBranches: ['production'],
+    hideSyncBranchesByDefault: false
+  }));
+
+  const result = await resolveFlowConfigForRepository(root, {
+    enabled: false,
+    hideSyncBranchesByDefault: true
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.source, 'repository');
+  assert.equal(result.config.enabled, true);
+  assert.deepEqual(result.config.mainBranches, ['production']);
+  assert.equal(result.config.hideSyncBranchesByDefault, false);
+});
+
+test('Flow Governance uses fallback settings when repository file is missing', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+
+  const result = await resolveFlowConfigForRepository(root, {
+    enabled: true,
+    configPath: '.missing-flow.json',
+    showUnknownBranches: false
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.source, 'workspace');
+  assert.equal(result.config.enabled, true);
+  assert.equal(result.config.showUnknownBranches, false);
+});
+
+test('Flow Governance rejects config paths outside the repository', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+
+  const result = await resolveFlowConfigForRepository(root, {
+    enabled: true,
+    configPath: '../outside.json'
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.source, 'invalid');
+  assert.equal(result.config.enabled, false);
+  assert.equal(result.issues[0]?.path, 'configPath');
 });

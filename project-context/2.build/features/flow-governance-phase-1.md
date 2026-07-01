@@ -1,6 +1,6 @@
 # Flow Governance Phase 1
 
-Status: In progress - foundation slice implemented
+Status: In progress - state wiring slice implemented
 Last updated: 2026-07-01
 Target baseline: `1.5.6`
 
@@ -13,6 +13,8 @@ Included:
 - Phase 1 Flow Governance types, defaults, config normalization, classification, diagnostics, decorations, and view-state helpers.
 - VS Code settings for bootstrap/fallback behavior.
 - Optional serializable `RevisionGraphViewState.flowGovernance` contract for later graph-state wiring.
+- Repository flow-file resolution with settings fallback and invalid-config diagnostics.
+- Runtime graph-state wiring that attaches Flow Governance metadata when enabled or invalid.
 - Deterministic tests for config, classification, inert future fields, unknown diagnostics, sync hiding, and serializable state.
 
 Excluded:
@@ -44,6 +46,8 @@ The first slice intentionally stays pure and host-side:
 - Generated Phase 1 config contains only Phase 1-supported fields.
 - Flow view-state helpers return JSON-serializable metadata.
 - The revision graph ready state remains unchanged until Flow Governance is explicitly wired.
+- Enabled fallback settings or valid repository flow files attach Flow Governance metadata to ready graph state.
+- Invalid repository flow files attach disabled Flow Governance diagnostics without breaking graph load.
 - `package.json` settings remain aligned with the FRD/SAD.
 
 ## Verification
@@ -57,12 +61,14 @@ Focused tests:
 - `test/flowGovernance.test.ts`
 - manifest test updates for contributed settings
 - `test/revisionGraphState.test.ts` confirms `flowGovernance` is absent by default
+- `test/revisionGraphState.test.ts` confirms enabled settings and invalid repository config attach metadata safely
 - `test/revisionGraphTypeBoundaries.test.ts` confirms the new type contract does not reintroduce import cycles
 
 Current results:
 
 - `npm run build` passed on 2026-07-01.
 - Focused Flow Governance, manifest, revision graph state, and type-boundary tests passed on 2026-07-01.
+- Repository flow-file precedence, settings fallback, path guard, and invalid-config state tests passed on 2026-07-01.
 
 ## Risks
 
@@ -71,4 +77,4 @@ Current results:
 
 ## Handoff Notes
 
-Next implementation slices should wire the pure flow state into ready graph view-state shaping, add message validation/authorization for Flow View toggles, and then add webview rendering controls.
+Next implementation slices should add message validation/authorization for Flow View toggles, then add webview rendering controls.

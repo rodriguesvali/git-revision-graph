@@ -31,6 +31,13 @@ import {
 } from '../webview/shared';
 import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
+import {
+  classifyFlowBranches,
+  createFlowGovernanceViewState,
+  FlowGovernanceSettings,
+  FlowGovernanceViewState,
+  resolveFlowConfigForRepository
+} from '../flow';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
 
@@ -45,8 +52,9 @@ export interface RevisionGraphRepositoryOverlay {
   readonly currentHeadCommit: string | undefined;
 }
 
-interface RevisionGraphViewStateBuildContext {
+export interface RevisionGraphViewStateBuildContext {
   readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
+  readonly flowGovernanceSettings?: FlowGovernanceSettings;
 }
 
 export async function buildReadyRevisionGraphViewStateBundle(
@@ -55,12 +63,16 @@ export async function buildReadyRevisionGraphViewStateBundle(
   backend: RevisionGraphStateBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: Omit<RevisionGraphViewStateBuildContext, 'repositoryRefs'>
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal, 'The revision graph load was aborted.');
   const repositoryRefs = loadRepositoryRefsStrict(repository, signal);
-  const context: RevisionGraphSnapshotLoadContext = { repositoryRefs };
-  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace, context);
+  const buildContext: RevisionGraphViewStateBuildContext & RevisionGraphSnapshotLoadContext = {
+    ...context,
+    repositoryRefs
+  };
+  const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace, buildContext);
   return buildReadyRevisionGraphViewStateBundleFromSnapshot(
     repository,
     projectionOptions,
@@ -68,7 +80,7 @@ export async function buildReadyRevisionGraphViewStateBundle(
     snapshot,
     signal,
     trace,
-    context
+    buildContext
   );
 }
 
@@ -78,7 +90,8 @@ export async function buildReadyRevisionGraphViewState(
   backend: RevisionGraphStateBackend,
   limitPolicy: RevisionGraphLimitPolicy,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: Omit<RevisionGraphViewStateBuildContext, 'repositoryRefs'>
 ): Promise<RevisionGraphViewState> {
   return (
     await buildReadyRevisionGraphViewStateBundle(
@@ -87,7 +100,8 @@ export async function buildReadyRevisionGraphViewState(
       backend,
       limitPolicy,
       signal,
-      trace
+      trace,
+      context
     )
   ).state;
 }
@@ -115,7 +129,8 @@ export async function buildReadyRevisionGraphViewStateBundleFromSnapshot(
     backend,
     overlayedSnapshot,
     signal,
-    trace
+    trace,
+    context
   );
 
   return {
@@ -130,7 +145,8 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: RevisionGraphViewStateBuildContext
 ): Promise<RevisionGraphViewState> {
   const projectionStartedAt = nowMs();
   const projection = projectMajorOperationsGraph(snapshot.graph, projectionOptions);
@@ -152,7 +168,8 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     scene,
     primaryAncestorNextByHash,
     signal,
-    trace
+    trace,
+    context
   );
 }
 
@@ -321,7 +338,8 @@ async function buildReadyRevisionGraphViewStateFromParts(
   scene: RevisionGraphScene,
   primaryAncestorNextByHash: NonNullable<RevisionGraphViewState['primaryAncestorNextByHash']>,
   signal?: AbortSignal,
-  trace?: RevisionGraphLoadTraceSink
+  trace?: RevisionGraphLoadTraceSink,
+  context?: RevisionGraphViewStateBuildContext
 ): Promise<RevisionGraphViewState> {
   throwIfAborted(signal, 'The revision graph load was aborted.');
   const partsStartedAt = nowMs();
@@ -364,6 +382,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     scene,
     nodeLayouts,
     references,
+    flowGovernance: await buildFlowGovernanceViewState(repository, references, context?.flowGovernanceSettings),
     sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, scene.edges),
     baseCanvasWidth,
     baseCanvasHeight,
@@ -374,6 +393,20 @@ async function buildReadyRevisionGraphViewStateFromParts(
   };
   traceDuration(trace, 'state.readyViewState', partsStartedAt, `nodes=${scene.nodes.length}; refs=${references.length}`);
   return state;
+}
+
+async function buildFlowGovernanceViewState(
+  repository: Repository,
+  references: readonly RevisionGraphViewReference[],
+  settings: FlowGovernanceSettings | undefined
+): Promise<FlowGovernanceViewState | undefined> {
+  const resolution = await resolveFlowConfigForRepository(repository.rootUri.fsPath, settings);
+  const branchRefs = references
+    .filter((ref) => ref.kind === 'head' || ref.kind === 'branch')
+    .map((ref) => ref.name);
+  const flowReferences = classifyFlowBranches([...new Set(branchRefs)], resolution.config);
+  const state = createFlowGovernanceViewState(resolution, flowReferences);
+  return state.enabled || state.configSource === 'invalid' ? state : undefined;
 }
 
 export function buildRevisionGraphSceneLayoutKey(

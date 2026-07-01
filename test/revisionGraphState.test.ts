@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import { RefType } from '../src/git';
 import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../src/revisionGraph/backend';
@@ -74,6 +77,138 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
+});
+
+test('attaches Flow Governance metadata from fallback settings without changing graph refs', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' }),
+      createRef({ type: RefType.Head, name: 'sync/release-from-main' }),
+      createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/feature/demo' }),
+      createRef({ type: RefType.Tag, name: 'v1.0.0' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'sync/release-from-main', kind: 'branch' },
+        { name: 'origin/feature/demo', kind: 'remote' },
+        { name: 'v1.0.0', kind: 'tag' }
+      ]
+    }
+  ]);
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY,
+    undefined,
+    undefined,
+    {
+      flowGovernanceSettings: {
+        enabled: true,
+        configPath: '.missing-flow.json'
+      }
+    }
+  );
+
+  assert.equal(state.flowGovernance?.enabled, true);
+  assert.equal(state.flowGovernance?.configSource, 'workspace');
+  assert.deepEqual(
+    state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind, ref.shouldHideByDefault]),
+    [
+      ['main', 'main', false],
+      ['sync/release-from-main', 'sync', true]
+    ]
+  );
+  assert.deepEqual(
+    state.references.map((ref) => [ref.name, ref.kind]),
+    [
+      ['main', 'head'],
+      ['sync/release-from-main', 'branch'],
+      ['origin/feature/demo', 'remote'],
+      ['v1.0.0', 'tag']
+    ]
+  );
+});
+
+test('attaches invalid Flow Governance diagnostics from repository config without breaking graph load', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-state-'));
+  await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
+    schemaVersion: 1,
+    enabled: true,
+    patterns: {
+      feature: '['
+    }
+  }));
+  const repository = createRepository({
+    root,
+    head: createHead('main', 0, 0),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [{ name: 'main', kind: 'head' }]
+    }
+  ]);
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY,
+    undefined,
+    undefined,
+    { flowGovernanceSettings: { enabled: false } }
+  );
+
+  assert.equal(state.viewMode, 'ready');
+  assert.equal(state.flowGovernance?.enabled, false);
+  assert.equal(state.flowGovernance?.configSource, 'invalid');
+  assert.deepEqual(
+    state.flowGovernance?.diagnostics.map((diagnostic) => diagnostic.code),
+    ['invalid-config']
+  );
 });
 
 test('applies repository overlay refs before projecting a ready graph state', async () => {
