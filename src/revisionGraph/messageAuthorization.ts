@@ -21,6 +21,8 @@ export function isRevisionGraphMessageAllowedForState(
     case 'set-projection-options':
     case 'sync-current-head':
       return true;
+    case 'set-flow-governance-options':
+      return state.viewMode === 'ready' && !!state.flowGovernance;
     case 'pull-current-head':
     case 'push-current-head':
       return state.viewMode === 'ready'
@@ -100,6 +102,8 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'choose-repository':
     case 'set-projection-options':
       return false;
+    case 'set-flow-governance-options':
+      return true;
     case 'fetch-current-repository':
     case 'abort-merge':
     case 'sync-current-head':

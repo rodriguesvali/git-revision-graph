@@ -48,6 +48,30 @@ test('RevisionGraphMessageHandler applies projection options and schedules a pro
   assert.deepEqual(refreshes, ['projection-only']);
 });
 
+test('RevisionGraphMessageHandler applies Flow Governance option updates through the host boundary', async () => {
+  const updates: unknown[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    updateFlowGovernanceOptions(options) {
+      updates.push(options);
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'set-flow-governance-options',
+    options: {
+      enabled: true,
+      hideSyncBranches: false,
+      visibleKinds: ['main', 'feature']
+    }
+  });
+
+  assert.deepEqual(updates, [{
+    enabled: true,
+    hideSyncBranches: false,
+    visibleKinds: ['main', 'feature']
+  }]);
+});
+
 test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {
   const calls: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -185,6 +209,7 @@ function createHost(
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},
+    updateFlowGovernanceOptions() {},
     traceWebviewLoadEvent() {},
     createRemoteTagPublicationRequestContext(): RemoteTagPublicationRequestContext {
       return {

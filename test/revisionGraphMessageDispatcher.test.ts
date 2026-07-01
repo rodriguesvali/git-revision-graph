@@ -81,6 +81,62 @@ test('RevisionGraphMessageDispatcher still allows unscoped refresh messages whil
   assert.deepEqual(dispatchedMessages, [{ type: 'refresh' }, { type: 'refresh-with-empty-cache' }]);
 });
 
+test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for current ready flow state', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const dispatchedMessages: RevisionGraphMessage[] = [];
+  const state = {
+    ...createReadyRevisionGraphState(),
+    flowGovernance: {
+      enabled: true,
+      configSource: 'workspace' as const,
+      diagnostics: [],
+      branchKinds: ['main', 'sync', 'unknown'] as const,
+      filters: {
+        visibleKinds: ['main', 'sync', 'unknown'] as const,
+        hideSyncBranches: true,
+        highlightProductionTrunk: true,
+        showUnknownBranches: true
+      },
+      references: []
+    }
+  };
+
+  await dispatcher.dispatch(
+    { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+    {
+      currentState: state,
+      currentRepositoryPath: '/workspace/repo',
+      async handleMessage(message) {
+        dispatchedMessages.push(message);
+      }
+    }
+  );
+  await dispatcher.dispatch(
+    { type: 'set-flow-governance-options', options: { hideSyncBranches: true } },
+    {
+      currentState: { ...state, flowGovernance: undefined },
+      currentRepositoryPath: '/workspace/repo',
+      async handleMessage(message) {
+        dispatchedMessages.push(message);
+      }
+    }
+  );
+  await dispatcher.dispatch(
+    { type: 'set-flow-governance-options', options: { hideSyncBranches: true } },
+    {
+      currentState: state,
+      currentRepositoryPath: '/workspace/other',
+      async handleMessage(message) {
+        dispatchedMessages.push(message);
+      }
+    }
+  );
+
+  assert.deepEqual(dispatchedMessages, [
+    { type: 'set-flow-governance-options', options: { hideSyncBranches: false } }
+  ]);
+});
+
 function createReadyRevisionGraphState(): RevisionGraphViewState {
   return {
     viewMode: 'ready',

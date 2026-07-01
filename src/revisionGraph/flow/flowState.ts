@@ -1,6 +1,7 @@
 import { FLOW_BRANCH_KINDS } from './flowDefaults';
 import {
   FlowBranchInfo,
+  FlowGovernanceOptionsUpdate,
   FlowGovernanceFilterState,
   FlowGovernanceViewState,
   FlowConfigResolution
@@ -30,5 +31,21 @@ export function createFlowGovernanceViewState(
     branchKinds: FLOW_BRANCH_KINDS,
     filters,
     references: enabled ? references : []
+  };
+}
+
+export function applyFlowGovernanceOptionsUpdate(
+  state: FlowGovernanceViewState,
+  update: FlowGovernanceOptionsUpdate
+): FlowGovernanceViewState {
+  return {
+    ...state,
+    enabled: update.enabled ?? state.enabled,
+    filters: {
+      visibleKinds: update.visibleKinds ?? state.filters.visibleKinds,
+      hideSyncBranches: update.hideSyncBranches ?? state.filters.hideSyncBranches,
+      highlightProductionTrunk: update.highlightProductionTrunk ?? state.filters.highlightProductionTrunk,
+      showUnknownBranches: update.showUnknownBranches ?? state.filters.showUnknownBranches
+    }
   };
 }

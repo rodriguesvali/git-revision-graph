@@ -1,6 +1,7 @@
 import { Repository } from '../git';
 import { RefActionKind } from '../refActions';
 import { RevisionGraphMessage } from '../revisionGraphTypes';
+import type { FlowGovernanceOptionsUpdate } from './flow';
 import { formatShortCommitHash } from '../commitHash';
 import { ShowLogPresenter } from '../showLogView';
 import {
@@ -31,6 +32,7 @@ export interface RevisionGraphMessageHandlerHost
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
+  updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
   clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
     phase: string,
@@ -79,6 +81,9 @@ export class RevisionGraphMessageHandler {
         return;
       case 'set-projection-options':
         await this.viewStateWorkflow.setProjectionOptions(message.options);
+        return;
+      case 'set-flow-governance-options':
+        this.host.updateFlowGovernanceOptions(message.options);
         return;
       case 'compare-selected':
         await this.refActionWorkflow.compareSelected(

@@ -37,6 +37,24 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'set-flow-governance-options', options: {} }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-flow-governance-options',
+      options: { visibleKinds: ['main', 'evil'] }
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'set-flow-governance-options',
+      options: { hideSyncBranches: 'yes' }
+    }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'load-trace', phase: 'webview.apply.update-state', durationMs: Infinity }),
     undefined
   );
@@ -261,6 +279,29 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
   );
   assert.deepEqual(
     validateRevisionGraphMessage({
+      type: 'set-flow-governance-options',
+      options: {
+        enabled: true,
+        visibleKinds: ['main', 'sync', 'sync'],
+        hideSyncBranches: false,
+        highlightProductionTrunk: false,
+        showUnknownBranches: true,
+        ignored: 'value'
+      }
+    }),
+    {
+      type: 'set-flow-governance-options',
+      options: {
+        enabled: true,
+        visibleKinds: ['main', 'sync'],
+        hideSyncBranches: false,
+        highlightProductionTrunk: false,
+        showUnknownBranches: true
+      }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
       type: 'load-trace',
       phase: 'webview.apply.update-state',
       durationMs: 4.6,
@@ -410,6 +451,35 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { ...state, publishedLocalBranchNames: [] }
     ),
     false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+      {
+        ...state,
+        flowGovernance: {
+          enabled: true,
+          configSource: 'workspace',
+          diagnostics: [],
+          branchKinds: ['main', 'sync', 'unknown'],
+          filters: {
+            visibleKinds: ['main', 'sync', 'unknown'],
+            hideSyncBranches: true,
+            highlightProductionTrunk: true,
+            showUnknownBranches: true
+          },
+          references: []
+        }
+      }
+    ),
+    true
   );
 });
 

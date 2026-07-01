@@ -1,6 +1,6 @@
 # Flow Governance Phase 1
 
-Status: In progress - state wiring slice implemented
+Status: In progress - message contract slice implemented
 Last updated: 2026-07-01
 Target baseline: `1.5.6`
 
@@ -15,6 +15,7 @@ Included:
 - Optional serializable `RevisionGraphViewState.flowGovernance` contract for later graph-state wiring.
 - Repository flow-file resolution with settings fallback and invalid-config diagnostics.
 - Runtime graph-state wiring that attaches Flow Governance metadata when enabled or invalid.
+- Host-side Flow View message validation, current-repository authorization, and in-memory state updates.
 - Deterministic tests for config, classification, inert future fields, unknown diagnostics, sync hiding, and serializable state.
 
 Excluded:
@@ -48,6 +49,9 @@ The first slice intentionally stays pure and host-side:
 - The revision graph ready state remains unchanged until Flow Governance is explicitly wired.
 - Enabled fallback settings or valid repository flow files attach Flow Governance metadata to ready graph state.
 - Invalid repository flow files attach disabled Flow Governance diagnostics without breaking graph load.
+- `set-flow-governance-options` accepts only known Flow Governance options and branch kinds.
+- Flow Governance option updates require a ready current-repository graph state with Flow Governance metadata.
+- Flow Governance option updates do not trigger Git operations or graph rebuilds.
 - `package.json` settings remain aligned with the FRD/SAD.
 
 ## Verification
@@ -62,6 +66,9 @@ Focused tests:
 - manifest test updates for contributed settings
 - `test/revisionGraphState.test.ts` confirms `flowGovernance` is absent by default
 - `test/revisionGraphState.test.ts` confirms enabled settings and invalid repository config attach metadata safely
+- `test/webviewMessageValidation.test.ts` covers Flow View message payload validation and state authorization
+- `test/revisionGraphMessageDispatcher.test.ts` covers stale-repository rejection
+- `test/revisionGraphMessageHandler.test.ts` covers host-boundary update routing
 - `test/revisionGraphTypeBoundaries.test.ts` confirms the new type contract does not reintroduce import cycles
 
 Current results:
@@ -69,6 +76,7 @@ Current results:
 - `npm run build` passed on 2026-07-01.
 - Focused Flow Governance, manifest, revision graph state, and type-boundary tests passed on 2026-07-01.
 - Repository flow-file precedence, settings fallback, path guard, and invalid-config state tests passed on 2026-07-01.
+- Focused Flow Governance message validation, dispatcher, handler, and type-boundary tests passed on 2026-07-01.
 
 ## Risks
 
@@ -77,4 +85,4 @@ Current results:
 
 ## Handoff Notes
 
-Next implementation slices should add message validation/authorization for Flow View toggles, then add webview rendering controls.
+Next implementation slice should add webview rendering controls for Flow View and branch-kind filters.

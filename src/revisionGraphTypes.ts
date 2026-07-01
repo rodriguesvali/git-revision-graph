@@ -7,7 +7,7 @@ import type {
   RevisionGraphScene
 } from './revisionGraph/model/sceneTypes';
 import type { RevisionLogSource } from './revisionGraph/revisionLogTypes';
-import type { FlowGovernanceViewState } from './revisionGraph/flow/flowTypes';
+import type { FlowGovernanceOptionsUpdate, FlowGovernanceViewState } from './revisionGraph/flow/flowTypes';
 
 export type { RevisionLogEntry, RevisionLogSource } from './revisionGraph/revisionLogTypes';
 
@@ -30,6 +30,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'choose-repository' }
   | { readonly type: 'abort-merge' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
+  | { readonly type: 'set-flow-governance-options'; readonly options: FlowGovernanceOptionsUpdate }
   | {
     readonly type: 'compare-selected';
     readonly baseRevision: string;

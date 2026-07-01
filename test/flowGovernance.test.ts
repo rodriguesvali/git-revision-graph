@@ -7,6 +7,7 @@ import * as path from 'node:path';
 import {
   classifyFlowBranch,
   classifyFlowBranches,
+  applyFlowGovernanceOptionsUpdate,
   createDefaultFlowConfigFile,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
@@ -104,6 +105,28 @@ test('Flow Governance creates serializable view state and compact decorations', 
   assert.equal(decoration.badge, 'main');
   assert.equal(decoration.isProductionTrunk, true);
   assert.doesNotThrow(() => JSON.stringify(viewState));
+});
+
+test('Flow Governance applies option updates without rebuilding metadata', () => {
+  const result = normalizeFlowConfig({
+    schemaVersion: 1,
+    enabled: true
+  });
+  const branches = classifyFlowBranches(['main', 'sync/demo'], result.config);
+  const viewState = createFlowGovernanceViewState(result, branches);
+
+  const updated = applyFlowGovernanceOptionsUpdate(viewState, {
+    enabled: false,
+    visibleKinds: ['main'],
+    hideSyncBranches: false
+  });
+
+  assert.equal(updated.enabled, false);
+  assert.deepEqual(updated.filters.visibleKinds, ['main']);
+  assert.equal(updated.filters.hideSyncBranches, false);
+  assert.equal(updated.filters.highlightProductionTrunk, viewState.filters.highlightProductionTrunk);
+  assert.equal(updated.references, viewState.references);
+  assert.equal(updated.diagnostics, viewState.diagnostics);
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {

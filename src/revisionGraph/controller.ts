@@ -65,6 +65,7 @@ import {
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
 import type { FlowGovernanceSettings } from './flow';
+import { applyFlowGovernanceOptionsUpdate, FlowGovernanceOptionsUpdate } from './flow';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -265,6 +266,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       postCurrentState: () => {
         this.postCurrentState();
+      },
+      updateFlowGovernanceOptions: (options) => {
+        this.updateFlowGovernanceOptions(options);
       },
       clearLayoutCache: () => {
         return this.clearLayoutCache();
@@ -533,6 +537,19 @@ export class RevisionGraphController implements vscode.Disposable {
       highlightProductionTrunk: config.get<boolean>('highlightProductionTrunk'),
       showUnknownBranches: config.get<boolean>('showUnknownBranches')
     };
+  }
+
+  private updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void {
+    const flowGovernance = this.currentState.flowGovernance;
+    if (this.currentState.viewMode !== 'ready' || !flowGovernance) {
+      return;
+    }
+
+    this.currentState = {
+      ...this.currentState,
+      flowGovernance: applyFlowGovernanceOptionsUpdate(flowGovernance, options)
+    };
+    this.postCurrentState();
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

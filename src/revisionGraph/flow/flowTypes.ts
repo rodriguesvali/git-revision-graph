@@ -93,3 +93,11 @@ export interface FlowGovernanceViewState {
   readonly filters: FlowGovernanceFilterState;
   readonly references: readonly FlowBranchInfo[];
 }
+
+export interface FlowGovernanceOptionsUpdate {
+  readonly enabled?: boolean;
+  readonly visibleKinds?: readonly FlowBranchKind[];
+  readonly hideSyncBranches?: boolean;
+  readonly highlightProductionTrunk?: boolean;
+  readonly showUnknownBranches?: boolean;
+}
