@@ -228,14 +228,15 @@ Base image:
 
 - `mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm`
 
-This setup is intended to provide a consistent development environment with Node.js, npm, Python, and the `graphify` CLI available out of the box. The project-specific Graphify registration is intentionally manual; run `graphify install` after opening the rebuilt container when needed.
+This setup is intended to provide a consistent development environment with Node.js, npm, Python, and the latest available `graphify` CLI. The dev container maps `GEMINI_API_KEY` from the host environment through `containerEnv`. During `postCreateCommand`, the container installs npm dependencies, upgrades `graphifyy`, installs the Graphify Codex skill, and installs the Graphify Git hook.
 
 To use it:
 
-1. Open the project in VS Code.
-2. Run `Dev Containers: Reopen in Container`.
-3. Wait for the `postCreateCommand` to finish.
-4. Build and run the extension as usual.
+1. Export `GEMINI_API_KEY` in the host environment when Gemini-backed Graphify extraction is required.
+2. Open the project in VS Code.
+3. Run `Dev Containers: Reopen in Container`.
+4. Wait for the `postCreateCommand` to finish.
+5. Build and run the extension as usual.
 
 ## Commands
 
