@@ -8,10 +8,12 @@ import {
 import { validateGitBranchName } from './branchValidation';
 import { BranchCreationTarget, RefActionServices, RefActionTarget } from './types';
 
+type BranchRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager'>;
+
 export async function checkoutResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices
+  services: BranchRefActionServices
 ): Promise<void> {
   try {
     if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
@@ -46,7 +48,7 @@ export async function checkoutResolvedReference(
 export async function createBranchFromResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices
+  services: BranchRefActionServices
 ): Promise<void> {
   try {
     if (!await ensureWorkspaceReadyForMutation(repository, 'creating a new branch', services, { allowWorkspaceChanges: true })) {
@@ -156,7 +158,7 @@ function buildBranchOverwriteConfirmationMessage(
 
 async function promptNewBranchName(
   branchCreation: BranchCreationTarget,
-  services: RefActionServices
+  services: BranchRefActionServices
 ): Promise<{ readonly branchName: string; readonly overrideBranchIfExists: false } | undefined> {
   const branchName = await services.ui.promptBranchName({
     prompt: branchCreation.prompt,

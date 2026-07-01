@@ -1,7 +1,7 @@
 import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Change, Repository } from '../../git';
-import { RevisionLogEntry, RevisionLogSource } from '../../revisionGraphTypes';
+import type { RevisionLogEntry, RevisionLogSource } from '../revisionLogTypes';
 import { RevisionGraphRef } from '../model/commitGraphTypes';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';
 import {

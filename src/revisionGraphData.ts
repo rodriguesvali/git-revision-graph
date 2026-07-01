@@ -1,11 +1,16 @@
 import { buildCommitGraph } from './revisionGraph/model/commitGraph';
-import {
+import type {
   CommitGraph,
   ParsedRevisionGraphCommit,
   ProjectedGraph,
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from './revisionGraph/model/commitGraphTypes';
+import type {
+  RevisionGraphEdge,
+  RevisionGraphNode,
+  RevisionGraphScene
+} from './revisionGraph/model/sceneTypes';
 import {
   projectMajorOperationsGraph
 } from './revisionGraph/projection/graphProjection';
@@ -32,37 +37,15 @@ export type {
   RevisionGraphProjectionOptions,
   RevisionGraphRef
 };
+export type {
+  RevisionGraphEdge,
+  RevisionGraphEdgeRoutePoint,
+  RevisionGraphNode,
+  RevisionGraphNodeLayout,
+  RevisionGraphScene
+} from './revisionGraph/model/sceneTypes';
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
 export { projectMajorOperationsGraph };
-
-export interface RevisionGraphNode {
-  readonly hash: string;
-  readonly refs: readonly RevisionGraphRef[];
-  readonly author: string;
-  readonly date: string;
-  readonly subject: string;
-  readonly x: number;
-  readonly row: number;
-  readonly lane: number;
-}
-
-export interface RevisionGraphEdge {
-  readonly from: string;
-  readonly to: string;
-  readonly route?: readonly RevisionGraphEdgeRoutePoint[];
-}
-
-export interface RevisionGraphEdgeRoutePoint {
-  readonly x: number;
-  readonly y: number;
-}
-
-export interface RevisionGraphScene {
-  readonly nodes: readonly RevisionGraphNode[];
-  readonly edges: readonly RevisionGraphEdge[];
-  readonly laneCount: number;
-  readonly rowCount: number;
-}
 
 interface CommitLaneLayout {
   readonly hash: string;

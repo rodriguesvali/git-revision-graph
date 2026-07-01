@@ -7,10 +7,12 @@ import {
 } from './shared';
 import { RefActionServices } from './types';
 
+type ResetRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager' | 'refreshController'>;
+
 export async function resetCurrentBranchWorkspace(
   repository: Repository,
   includeUntracked: boolean,
-  services: RefActionServices
+  services: ResetRefActionServices
 ): Promise<void> {
   try {
     const currentBranch = repository.state.HEAD?.name;
@@ -56,7 +58,7 @@ export async function resetCurrentBranchToCommit(
   repository: Repository,
   commitHash: string,
   commitLabel: string,
-  services: RefActionServices
+  services: ResetRefActionServices
 ): Promise<boolean> {
   try {
     const currentBranch = repository.state.HEAD?.name;

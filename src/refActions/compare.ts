@@ -2,11 +2,13 @@ import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
 import { RefActionServices, RefSelection } from './types';
 
+type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter'>;
+
 export async function compareResolvedRefs(
   repository: Repository,
   left: RefSelection,
   right: RefSelection,
-  services: RefActionServices
+  services: CompareRefActionServices
 ): Promise<void> {
   try {
     await services.compareResultsPresenter.showLoadingBetweenRefs?.(repository, left, right);
@@ -29,7 +31,7 @@ export async function compareResolvedRefs(
 export async function compareResolvedRefWithWorktree(
   repository: Repository,
   target: RefSelection,
-  services: RefActionServices
+  services: CompareRefActionServices
 ): Promise<void> {
   try {
     await services.compareResultsPresenter.showLoadingWithWorktree?.(repository, target);

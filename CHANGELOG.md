@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.6
+
+### Release Preparation
+
+- Prepared an architecture risk-reduction patch after the published `1.5.5` package.
+- Version metadata is `1.5.6` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 528 tests through `npm test`, and
+  `git diff --check`.
+- Manual Extension Development Host validation was confirmed complete by the maintainer on
+  2026-07-01.
+- VSIX packaging and Marketplace publication were confirmed complete by the maintainer on
+  2026-07-01.
+
+### Reliability & Maintainability
+
+- Split native workbench reference-action services into smaller adapter modules while preserving
+  the existing factory, commands, prompts, confirmations, and user-facing Git workflows.
+- Narrowed selected reference-action workflow dependencies so tests and future changes can target
+  only the service capabilities each workflow uses.
+- Separated revision graph webview payload validation from state and current-repository
+  authorization rules, keeping malformed and stale webview messages bounded.
+- Extracted revision graph repository lifecycle and refresh coordination from the controller so
+  repository selection, repository-state signatures, follow-up refresh suppression, and
+  current-repository refresh requests are covered in a focused module.
+- Extracted revision graph type boundaries for graph-domain, revision-log, scene/layout, and
+  serializable webview contracts, removing the graph parsing and webview/shared import cycles.
+
+### Quality
+
+- Added targeted regression coverage for revision graph repository lifecycle behavior, type
+  boundary import cycles, and mixed branch/merge/tag/remote/stash projection continuity.
+- Added a fixed Extension Development Host smoke matrix for future release-candidate validation.
+
 ## 1.5.5
 
 ### Release Preparation

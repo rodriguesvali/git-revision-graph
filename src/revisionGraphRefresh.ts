@@ -1,4 +1,4 @@
-import type { RevisionGraphProjectionOptions } from './revisionGraphData';
+import type { RevisionGraphProjectionOptions } from './revisionGraph/model/commitGraphTypes';
 
 export type RevisionGraphRefreshIntent = 'full-rebuild' | 'projection-only';
 
