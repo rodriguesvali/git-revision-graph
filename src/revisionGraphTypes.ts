@@ -7,6 +7,7 @@ import type {
   RevisionGraphScene
 } from './revisionGraph/model/sceneTypes';
 import type { RevisionLogSource } from './revisionGraph/revisionLogTypes';
+import type { FlowGovernanceViewState } from './revisionGraph/flow/flowTypes';
 
 export type { RevisionLogEntry, RevisionLogSource } from './revisionGraph/revisionLogTypes';
 
@@ -93,6 +94,7 @@ export interface RevisionGraphViewState {
   readonly scene: RevisionGraphScene;
   readonly nodeLayouts: readonly RevisionGraphNodeLayout[];
   readonly references: readonly RevisionGraphViewReference[];
+  readonly flowGovernance?: FlowGovernanceViewState;
   readonly sceneLayoutKey: string;
   readonly baseCanvasWidth: number;
   readonly baseCanvasHeight: number;

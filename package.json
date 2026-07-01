@@ -95,6 +95,31 @@
           "minimum": 5000,
           "maximum": 300000,
           "description": "Maximum time in milliseconds allowed for the revision graph Git log command."
+        },
+        "gitRevisionGraph.flowGovernance.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Flow Governance metadata and Flow View defaults for repositories without a valid repository flow file."
+        },
+        "gitRevisionGraph.flowGovernance.configPath": {
+          "type": "string",
+          "default": ".git-revision-graph-flow.json",
+          "description": "Repository-relative path to the Flow Governance configuration file."
+        },
+        "gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hide sync/* branch refs by default when Flow Governance is enabled."
+        },
+        "gitRevisionGraph.flowGovernance.highlightProductionTrunk": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight configured production trunk branches when Flow Governance is enabled."
+        },
+        "gitRevisionGraph.flowGovernance.showUnknownBranches": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show unmatched branches as unknown when Flow Governance is enabled."
         }
       }
     }
