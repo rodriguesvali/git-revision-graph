@@ -6,7 +6,7 @@
 **Repository:** `rodriguesvali/git-revision-graph`  
 **Project status:** Existing published VS Code extension  
 **Feature status:** Final proposal for incremental specification and implementation  
-**Document version:** 2.1 - Final decisions resolved  
+**Document version:** 2.2 - Governed branch creation UX  
 **Language:** English  
 
 ---
@@ -350,6 +350,7 @@ Expected settings:
 
 - enable or disable Flow Governance;
 - define regex patterns for each branch kind;
+- define branch naming templates and form fields for governed branch creation;
 - define production branch names;
 - define production tag patterns;
 - define protected branch patterns;
@@ -374,6 +375,30 @@ Example:
     "package": "^package(/.+)?$",
     "bug": "^bug/.+",
     "hotfix": "^hotfix/.+"
+  },
+  "branchCreation": {
+    "task": {
+      "template": "task/{taskId}-{label}",
+      "fields": [
+        {
+          "name": "taskId",
+          "label": "Development task ID",
+          "required": true,
+          "pattern": "^[A-Z]+-\\d+$"
+        },
+        {
+          "name": "label",
+          "label": "Branch label",
+          "required": true,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        {
+          "name": "description",
+          "label": "Description",
+          "required": false
+        }
+      ]
+    }
   },
   "protectedBranches": ["main", "master", "release/*", "feature/*"],
   "requirePullRequestTargets": ["main", "master", "release/*", "feature/*"],
@@ -546,10 +571,24 @@ Task-to-feature association should use both naming conventions and Git ancestry.
 Naming provides the intended relationship, while ancestry validates or flags
 possible drift.
 
-The extension should provide a small assisted branch-creation form for governed
-branches such as `task/*`. For task branches, the form should let the user choose
-the target feature and then generate a consistent branch name from the configured
-pattern.
+Whenever the user starts a new governed flow by requesting creation of a branch
+inside the governance model, the extension must show an assisted branch-creation
+form. The form must be derived from the configured naming template and field
+definitions for the selected branch kind.
+
+For example, if the configured branch template is:
+
+```text
+task/{taskId}-{label}
+```
+
+the form should ask for `taskId` and `label`, validate each field with the
+configured regex rules, and then generate the final branch name. The form should
+also include an optional description field that can be used later in PR title,
+PR body, tooltips, or branch metadata.
+
+For task branches, the form should also let the user choose the target feature
+when the flow requires a task-to-feature relationship.
 
 Uncertain relationships must be marked as unknown or inconclusive. The extension
 must not invent a relationship.
@@ -703,6 +742,7 @@ src/
       flowConfig.ts
       flowBranchClassifier.ts
       flowBranchRules.ts
+      flowBranchCreation.ts
       flowTransitionPolicy.ts
       flowPromotionChecks.ts
       flowDiagnostics.ts
@@ -719,6 +759,7 @@ Suggested responsibilities:
 | `flowConfig.ts` | Read, validate, and normalize settings |
 | `flowBranchClassifier.ts` | Classify refs into semantic branch kinds |
 | `flowBranchRules.ts` | Centralize regex and default branch rules |
+| `flowBranchCreation.ts` | Build governed branch creation forms, validate fields, and generate branch names |
 | `flowTransitionPolicy.ts` | Define allowed source/target transitions and PR requirements |
 | `flowPromotionChecks.ts` | Validate release promotion readiness and ancestry |
 | `flowDiagnostics.ts` | Generate governance diagnostics |
@@ -770,6 +811,7 @@ the graph through badges, tooltips, filters, and contextual validation messages.
 Add contextual actions only when applicable:
 
 - Show Flow Details;
+- Create Governed Branch;
 - Hide Branch Type;
 - Show Related Branches;
 - Validate Release Promotion;
@@ -780,7 +822,34 @@ Add contextual actions only when applicable:
 - Run Cleanup Dry-Run;
 - Start Sync Sandbox.
 
-## 14.3 Contextual Governance Feedback
+## 14.3 Governed Branch Creation Form
+
+Whenever the user starts a new governed branch flow, the extension should open a
+small form instead of asking for a raw branch name first.
+
+The form should:
+
+- be generated from the selected branch kind configuration;
+- ask for each configured field, such as development task ID and label;
+- validate field values with configured regex patterns before branch creation;
+- show a preview of the resulting branch name;
+- block creation until required fields are valid;
+- include an optional description field;
+- use the optional description later as PR context when applicable.
+
+Example:
+
+```text
+Template: task/{taskId}-{label}
+
+Development task ID: ABC-123
+Label: checkout-error
+Description: Fix checkout error handling in governed flow
+
+Generated branch: task/ABC-123-checkout-error
+```
+
+## 14.4 Contextual Governance Feedback
 
 The MVP should avoid a full diagnostics surface. Governance feedback should
 appear only where it helps the current task:
@@ -791,7 +860,7 @@ appear only where it helps the current task:
 - warning prompts for direct governed merges;
 - fallback PR context when GitHub PR creation is unavailable.
 
-## 14.4 Notifications
+## 14.5 Notifications
 
 Avoid excessive notifications.
 
@@ -844,6 +913,8 @@ Included:
 - PR-required transition diagnostics;
 - release promotion ancestry check;
 - production-missing-from-release diagnostic;
+- governed branch creation forms generated from the flow configuration;
+- regex validation and branch-name preview before creating governed branches;
 - tooltips;
 - filters by diagnostic;
 - GitHub remote detection;
@@ -854,6 +925,8 @@ Included:
 Acceptance criteria:
 
 - the MVP supports GitHub PR creation for supported authenticated remotes;
+- governed branch creation uses the configured form, validates required fields,
+  and shows the generated branch name before creation;
 - the user understands why a transition requires a PR;
 - release promotion is blocked when production is not an ancestor;
 - inconclusive validation is reported honestly;
@@ -983,8 +1056,10 @@ The feature is ready when:
    Package branches may integrate tasks for different release or feature
    targets.
 2. Task-to-feature association uses both naming conventions and Git ancestry.
-   The extension should provide a small branch-creation form to help users pick
-   the target feature and generate a consistent task branch name.
+   Whenever the user starts a new governed branch flow, the extension should
+   show a small branch-creation form generated from the configured naming
+   template and field rules. The form should validate fields with regex, preview
+   the final branch name, and include an optional branch description.
 3. A diagnostics panel or separate diagnostics editor is not part of the MVP.
    Governance feedback starts as lightweight badges, tooltips, filters, warning
    prompts, and contextual validation messages.
