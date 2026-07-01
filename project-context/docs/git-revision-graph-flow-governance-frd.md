@@ -4,8 +4,8 @@
 - **Target extension:** Git Revision Graph (`rodriguesvali.git-revision-graph`)
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
-- **Feature status:** Approved product proposal, ready to enter the AAMAD development pipeline
-- **Document version:** 2.4 - Contextual Flow Governance menu rules
+- **Feature status:** Approved product proposal with an execution-ready Phase 1 baseline
+- **Document version:** 2.5 - Execution-ready Phase 1 governance baseline
 - **Language:** English
 
 ---
@@ -177,6 +177,54 @@ This means:
   Bitbucket PR integration.
 - Completing governed merges directly into protected destination branches.
 - Pushing Sync Sandbox helper branches automatically.
+
+### Phase 1 Execution Boundary
+
+Phase 1 is the first releasable implementation slice, not the whole Flow
+Governance program. It is complete when the extension can classify and decorate
+branches from validated configuration while preserving the current revision
+graph behavior for users who do not enable the feature.
+
+The Phase 1 implementation must include only these user-visible surfaces:
+
+- a Flow View toggle inside the existing revision graph toolbar or equivalent
+  in-graph control;
+- branch-kind filters inside the existing graph surface;
+- production trunk highlighting;
+- branch-kind badges or compact ref decorations;
+- an optional hidden-by-default treatment for `sync/*` refs;
+- unknown-branch feedback through badges, tooltips, filters, or contextual
+  graph feedback.
+
+The Phase 1 implementation must not add:
+
+- a new Activity Bar view;
+- a new persistent diagnostics panel;
+- a separate diagnostics editor;
+- automatic PR creation;
+- branch creation forms;
+- Sync Sandbox helper actions;
+- cleanup assistant actions;
+- provider authentication;
+- Git mutations other than optional creation or update of the versioned flow
+  configuration file after explicit confirmation.
+
+Any new VS Code contribution point introduced for Phase 1 must be listed in the
+focused feature artifact before coding starts. The preferred Phase 1 path is to
+avoid new command-palette commands and keep interaction inside the existing
+revision graph editor webview unless the implementation proves that a
+manifest-level command is necessary.
+
+The expected Phase 1 settings are limited to bootstrap and fallback behavior:
+
+- `gitRevisionGraph.flowGovernance.enabled`;
+- `gitRevisionGraph.flowGovernance.configPath`;
+- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`;
+- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`;
+- `gitRevisionGraph.flowGovernance.showUnknownBranches`.
+
+Repository-versioned configuration remains the authoritative source when
+present and valid. Settings are fallback inputs, not a second governance model.
 
 ---
 
@@ -352,7 +400,7 @@ to the remote.
 
 ## 11. Functional Requirements
 
-## FR01 - Flow Configuration
+### FR01 - Flow Configuration
 
 The extension must allow users to configure the branch governance model.
 
@@ -394,10 +442,73 @@ If the workspace is read-only or the extension cannot write the flow file, Flow
 Governance must remain usable with defaults or settings where available, and the
 user must receive a recoverable explanation.
 
-A JSON schema for `.git-revision-graph-flow.json` should be considered for
-editor validation and autocomplete.
+A JSON schema for `.git-revision-graph-flow.json` must be provided before the
+extension offers to create repository flow files, so users can validate and
+review the generated configuration outside the extension.
 
-Expected settings:
+### Phase 1 Configuration Contract
+
+The Phase 1 repository file must support this minimum normalized model:
+
+```ts
+type FlowConfigSchemaVersion = 1;
+
+type FlowConfigV1 = {
+  schemaVersion: FlowConfigSchemaVersion;
+  enabled?: boolean;
+  mainBranches?: string[];
+  patterns?: Partial<Record<FlowBranchKindWithoutMainOrUnknown, string>>;
+  hideSyncBranchesByDefault?: boolean;
+  highlightProductionTrunk?: boolean;
+  showUnknownBranches?: boolean;
+};
+
+type FlowBranchKindWithoutMainOrUnknown =
+  | 'release'
+  | 'sync'
+  | 'package'
+  | 'feature'
+  | 'task'
+  | 'bug'
+  | 'hotfix';
+```
+
+Phase 1 may include later-phase fields in the schema so repositories can prepare
+configuration early, but unsupported fields must be ignored with forward
+compatibility. Unsupported fields must not trigger Git actions, PR actions, or
+provider authentication in Phase 1.
+
+Validation rules:
+
+- `schemaVersion` is required and must be `1`;
+- `enabled`, `hideSyncBranchesByDefault`, `highlightProductionTrunk`, and
+  `showUnknownBranches` are booleans when present;
+- `mainBranches` must contain non-empty branch names and defaults to `main` and
+  `master`;
+- each branch-kind pattern must be a valid JavaScript regular expression string;
+- pattern evaluation order must be deterministic;
+- `mainBranches` classification wins before custom branch-kind patterns;
+- unmatched refs become `unknown`;
+- invalid configuration disables Flow Governance for that repository and keeps
+  the normal graph load path working.
+
+Precedence rules:
+
+1. If a repository flow file exists and is valid, use it as the selected source.
+2. If a repository flow file exists and is invalid, disable Flow Governance for
+   that repository and report the validation result.
+3. If no repository flow file exists, normalize workspace settings against
+   extension defaults.
+4. If workspace settings are absent, normalize user settings against extension
+   defaults.
+5. If no settings are present, use extension defaults only when the user enables
+   Flow View without creating a repository file.
+
+The Phase 1 implementation must not deep-merge repository files with settings.
+Only one selected source is normalized against defaults. This prevents ambiguous
+multi-root behavior and makes validation failures explainable.
+
+Full-feature expected settings and repository configuration fields:
 
 - enable or disable Flow Governance;
 - define regex patterns for each branch kind;
@@ -466,7 +577,7 @@ Example:
 }
 ```
 
-## FR02 - Semantic Branch Classification
+### FR02 - Semantic Branch Classification
 
 The extension must classify each loaded branch ref according to configured
 patterns.
@@ -501,7 +612,7 @@ type FlowBranchInfo = {
 Classification must happen in the extension host or shared model layer. The
 webview must not infer branch governance semantics from branch names on its own.
 
-## FR03 - Visual Decorations
+### FR03 - Visual Decorations
 
 The graph must render branch identity using non-disruptive visual decorations.
 
@@ -518,7 +629,7 @@ Expected behavior:
 Decorations are visual metadata. They must not become hard layout rules in the
 Phase 1 MVP.
 
-## FR04 - Flow View
+### FR04 - Flow View
 
 The extension should provide a Flow View mode that prioritizes branch-flow
 readability.
@@ -538,7 +649,7 @@ Suggested controls:
 The user must be able to reduce visual noise without losing access to the
 underlying Git history.
 
-## FR05 - PR-Gated Transition Diagnostics
+### FR05 - PR-Gated Transition Diagnostics
 
 The extension must detect governed source/target pairs and explain when final
 integration requires a PR.
@@ -559,7 +670,7 @@ Suggested severity:
 type FlowDiagnosticSeverity = 'info' | 'warning' | 'error';
 ```
 
-## FR06 - Release Readiness Checks
+### FR06 - Release Readiness Checks
 
 For `release/*` to `main` or `master`, the extension must check promotion
 readiness.
@@ -577,7 +688,7 @@ If the loaded graph window is insufficient to prove ancestry, the extension may
 use targeted Git CLI calls. The result must be reported as validated,
 blocked, or inconclusive.
 
-## FR07 - Production Equalization Assistant
+### FR07 - Production Equalization Assistant
 
 When release promotion is blocked, the extension may offer a guided equalization
 flow.
@@ -600,7 +711,7 @@ Expected behavior:
 
 Final merge of `sync/*` into `release/*` must happen through PR.
 
-## FR08 - Task, Feature, Package, Bug, And Hotfix Relationships
+### FR08 - Task, Feature, Package, Bug, And Hotfix Relationships
 
 The extension should identify branch relationships when they can be inferred
 reliably.
@@ -648,7 +759,7 @@ confidence should distinguish confirmed, probable, and inconclusive associations
 so the UI does not present weak inference as fact. The extension must not invent
 a relationship.
 
-## FR09 - Governance Diagnostics
+### FR09 - Governance Diagnostics
 
 The extension should identify flow issues such as:
 
@@ -680,7 +791,7 @@ server-side branch protection should catch invalid promotion attempts.
 Avoid notification spam. Notifications should be reserved for completed actions,
 errors, conflicts, and destructive confirmations.
 
-## FR10 - GitHub Pull Request Creation
+### FR10 - GitHub Pull Request Creation
 
 The GitHub PR creation phase must support automatic Pull Request creation for
 GitHub remotes.
@@ -714,7 +825,7 @@ approved for API-based enterprise PR creation in the same implementation cycle.
 The extension must not require GitLab, Azure DevOps, Bitbucket, or other
 provider support in the GitHub PR creation phase.
 
-## FR11 - Cleanup Assistant
+### FR11 - Cleanup Assistant
 
 The extension should identify branches that may be safe to clean up after
 consolidation.
@@ -752,7 +863,7 @@ Out of the cleanup assistant phase:
 
 ## 12. Non-Functional Requirements
 
-## NFR01 - Operational Safety
+### NFR01 - Operational Safety
 
 Any action that changes the repository must:
 
@@ -763,14 +874,14 @@ Any action that changes the repository must:
 - explain impact clearly;
 - allow cancellation before execution.
 
-## NFR02 - History Preservation
+### NFR02 - History Preservation
 
 The feature must not require squash to work.
 
 Recommended flows should preserve individual commits and explicit merge history
 where the team's provider policy allows it.
 
-## NFR03 - Performance
+### NFR03 - Performance
 
 Flow Governance must not force a full graph rebuild when only visual metadata
 changes.
@@ -784,14 +895,14 @@ Whenever possible:
 - use targeted Git CLI only for checks not available through the Git API or the
   loaded graph.
 
-## NFR04 - Configurability
+### NFR04 - Configurability
 
 The feature must not impose one branching model.
 
 It should provide useful defaults while allowing teams to adapt branch names,
 governed transitions, PR requirements, and diagnostics.
 
-## NFR05 - Compatibility
+### NFR05 - Compatibility
 
 Users who do not enable Flow Governance must not experience disruptive changes.
 
@@ -836,6 +947,11 @@ src/
       flowSyncPlan.ts
 ```
 
+Phase 1 must not require every file in this suggested directory. The first
+implementation should start with the minimum modules needed for configuration,
+classification, diagnostics, and decoration. Later files may be added only when
+their owning phase enters active scope.
+
 Suggested responsibilities:
 
 | File | Responsibility |
@@ -873,11 +989,30 @@ Webview rendering
 The webview should receive classified metadata from the extension host or shared
 model layer. It should render and filter; it should not own governance rules.
 
+### Phase 1 Integration Boundary
+
+The SAD must be updated before coding starts with the final module names and
+message contracts. The expected Phase 1 ownership boundary is:
+
+- extension host or shared revision graph model: configuration loading,
+  validation, normalization, branch classification, and diagnostic generation;
+- graph snapshot or view-model shaping layer: attaching flow metadata to refs
+  and preserving the existing commit graph without changing ancestry;
+- webview state: rendering badges, trunk highlight, filters, and hide/show
+  controls from metadata supplied by the host;
+- webview messages: user intent only, such as toggling Flow View or changing
+  filters;
+- no webview-side branch-name inference, policy evaluation, Git mutation, or
+  provider authentication.
+
+Phase 1 must include deterministic tests for pure classification and
+normalization logic before adding browser-side rendering behavior.
+
 ---
 
 ## 14. Recommended UX
 
-## 14.1 Toolbar
+### 14.1 Toolbar
 
 Start with lightweight controls:
 
@@ -891,7 +1026,7 @@ or a dedicated diagnostics panel for the Phase 1 MVP. Keep governance feedback
 close to the graph through badges, tooltips, filters, and contextual validation
 messages.
 
-## 14.2 Context Menu
+### 14.2 Context Menu
 
 The graph reference context menu is already dense. Flow Governance actions must
 be grouped under a dedicated `Flow Governance` submenu instead of being added as
@@ -936,7 +1071,7 @@ Examples:
 - Hide `Validate Release Promotion` for non-release references.
 - Hide `Run Cleanup Dry-Run` for protected branches and the current branch.
 
-## 14.3 Governed Branch Creation Form
+### 14.3 Governed Branch Creation Form
 
 Whenever the user starts a new governed branch flow, the extension should open a
 small form instead of asking for a raw branch name first.
@@ -963,7 +1098,7 @@ Description: Fix checkout error handling in governed flow
 Generated branch: task/ABC-123-checkout-error
 ```
 
-## 14.4 Contextual Governance Feedback
+### 14.4 Contextual Governance Feedback
 
 The initial implementation should avoid a full diagnostics surface. Governance
 feedback should appear only where it helps the current task:
@@ -974,7 +1109,7 @@ feedback should appear only where it helps the current task:
 - warning prompts for direct governed merges;
 - fallback PR context when GitHub PR creation is unavailable.
 
-## 14.5 Notifications
+### 14.5 Notifications
 
 Avoid excessive notifications.
 
@@ -990,7 +1125,7 @@ Use notifications only for:
 
 ## 15. Implementation Phases
 
-## Phase 1 MVP - Flow View And Configuration Foundation
+### Phase 1 MVP - Flow View And Configuration Foundation
 
 Goal: deliver visual governance without changing Git history, refs, branches,
 tags, remotes, or working tree contents except when the user explicitly creates
@@ -1029,7 +1164,49 @@ Acceptance criteria:
   repository;
 - existing graph behavior remains unchanged when disabled.
 
-## Phase 2 - PR-Gated Policy And GitHub Pull Requests
+Phase 1 implementation traceability:
+
+| Requirement | Expected implementation area | Required verification |
+|---|---|---|
+| Flow configuration | `package.json` settings, `src/revisionGraph/flow/*`, focused feature artifact | Config validation tests and manifest review |
+| Branch classification | shared revision graph model or `src/revisionGraph/flow/*` | Unit tests for default patterns, custom patterns, `main` precedence, and `unknown` fallback |
+| Flow metadata delivery | graph state/view-model shaping and controller message flow | Tests that metadata is delivered without changing commit ancestry |
+| Badges and trunk highlight | existing revision graph webview runtime and styles | Webview tests or focused shell/render checks |
+| Branch-kind filters | existing graph toolbar/filter state | Tests for filter state and no irreversible history hiding |
+| Multi-repository configuration | repository selection and controller state | Tests using separate repositories/config sources |
+| Disabled behavior | extension defaults and graph load path | Regression tests proving current graph behavior is unchanged |
+
+Phase 1 must update these artifacts before the release candidate is considered
+ready:
+
+- `project-context/2.build/features/<flow-governance-phase-1>.md` with scope,
+  acceptance criteria, risks, verification, and handoff notes;
+- `project-context/1.define/sad.md` with final integration boundaries and module
+  ownership;
+- `project-context/3.deliver/release.md` with target version, verification
+  plan, Marketplace impact, manual smoke matrix, and rollback notes;
+- `README.md` if Flow View, configuration, or user-visible settings ship;
+- `package.json` only if settings, commands, menus, activation events, schemas,
+  or contribution points are added.
+
+Phase 1 verification gate:
+
+- `npm run build` passes;
+- `npm test` passes;
+- config parser/classifier tests cover valid defaults, invalid regex, invalid
+  schema version, repository-file precedence, workspace fallback, user fallback,
+  and multi-repository independence;
+- focused webview tests or screenshots confirm badges, filters, trunk highlight,
+  and hidden `sync/*` treatment do not overlap or obscure existing graph
+  controls;
+- manual Extension Development Host smoke test covers graph load, repository
+  switching, Flow View on/off, filter toggles, refresh, empty repository state,
+  invalid config, and disabled behavior;
+- `git diff --check` passes before packaging;
+- no packaging, version bump, or Marketplace publish command is run without
+  maintainer approval.
+
+### Phase 2 - PR-Gated Policy And GitHub Pull Requests
 
 Goal: show governed transition policy, validate release readiness, and create
 GitHub Pull Requests for supported remotes.
@@ -1060,7 +1237,7 @@ Acceptance criteria:
 - GitHub PR creation failures fall back to URL/context handoff;
 - no diagnostic performs a destructive action.
 
-## Phase 3 - Production Equalization Assistant
+### Phase 3 - Production Equalization Assistant
 
 Goal: prepare safe production-to-release equalization when release promotion is
 blocked.
@@ -1086,7 +1263,7 @@ Acceptance criteria:
 - the user remains responsible for pushing the sync branch;
 - final integration into `release/*` is PR-gated.
 
-## Phase 4 - Cleanup Assistant
+### Phase 4 - Cleanup Assistant
 
 Goal: suggest safe branch cleanup after consolidation.
 
@@ -1105,7 +1282,7 @@ Acceptance criteria:
 - not-fully-merged branches require special confirmation or are blocked;
 - remote bulk deletion remains out of the cleanup assistant phase.
 
-## Phase 5 - Additional Provider PR Helpers
+### Phase 5 - Additional Provider PR Helpers
 
 Goal: expand PR handoff beyond GitHub without making the extension a full
 provider client.
@@ -1124,6 +1301,34 @@ Acceptance criteria:
   integration is implemented;
 - no PR is created silently;
 - provider-side policies remain authoritative.
+
+### Phase-Level Definition Of Ready
+
+A phase is ready to enter implementation only when:
+
+- the maintainer confirms the target version and package baseline;
+- the phase has a focused feature artifact under `project-context/2.build/features/`;
+- the artifact states included scope, excluded scope, acceptance criteria,
+  expected files or modules, test plan, manual smoke path, risks, and rollback
+  notes;
+- required changes to `package.json`, README, commands, settings, menus,
+  activation events, schemas, and tests are listed before coding starts;
+- any dependency addition, provider authentication scope, Marketplace change,
+  or destructive Git behavior has explicit maintainer approval;
+- unresolved assumptions are recorded in `project-context/1.define/open-questions.md`.
+
+### Phase-Level Definition Of Done
+
+A phase is done only when:
+
+- all acceptance criteria for that phase are met;
+- required project-context artifacts are updated;
+- build and relevant tests pass;
+- user-visible behavior is documented;
+- regression risk to existing compare, checkout, branch, merge, sync, delete,
+  diff, log, minimap, search, refresh, focus, empty-state, and multi-repository
+  workflows is checked;
+- release notes and rollback notes are ready if the work is release-bound.
 
 ---
 
@@ -1161,6 +1366,9 @@ The feature is ready when:
 | Performance degradation | Medium | Treat flow metadata as overlay and avoid unnecessary layout recompute |
 | Governance model feels too rigid | Medium | Make branch patterns and transition policy configurable |
 | Feature becomes a full Git/provider client | High | Keep provider integration optional and PR handoff lightweight |
+| Phase scope expands during implementation | High | Require phase artifacts, Definition of Ready, and maintainer approval for scope changes |
+| Settings, commands, README, and implementation drift apart | Medium | Track contribution-point changes in the feature artifact and verify `package.json` alignment |
+| Repository flow file conflicts with workspace settings | Medium | Use one selected config source normalized against defaults; avoid implicit deep merges |
 
 ---
 
@@ -1217,17 +1425,20 @@ The feature is ready when:
 ## 20. Final Recommendation
 
 Proceed with Flow Governance as an incremental, PR-gated governance layer through
-the AAMAD development pipeline.
+the AAMAD development pipeline. This FRD is the product baseline; individual
+phases still require focused build artifacts before implementation.
 
 Start with the Phase 1 MVP for Flow View and repository-versioned configuration
-foundation, then deliver GitHub-first PR-gated actions in a later phase.
-Production-to-release equalization through `sync/*` branches should follow
-without automatic helper-branch pushes.
+foundation. Phase 1 is intentionally limited to configuration, classification,
+visual metadata, filters, unknown-branch feedback, and non-mutating graph
+behavior. GitHub-first PR-gated actions, production equalization, cleanup, and
+additional provider helpers must remain separate implementation phases.
 
-Before implementation begins, open a focused feature artifact under
+Before Phase 1 implementation begins, open a focused feature artifact under
 `project-context/2.build/features/`, confirm the target release scope, update
-the SAD with integration boundaries, and record verification, Marketplace
-impact, and rollback notes.
+the SAD with final integration boundaries, list any `package.json` and README
+changes, and record verification, Marketplace impact, manual smoke coverage,
+and rollback notes in `project-context/3.deliver/release.md`.
 
 The most important product rule is:
 
