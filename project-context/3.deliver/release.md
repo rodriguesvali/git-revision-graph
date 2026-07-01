@@ -7,7 +7,8 @@ Last consolidated: 2026-07-01
 
 - Current package version: `1.5.6` in `package.json`.
 - Latest recorded published release: `1.5.5`.
-- Release cycle status: `1.5.6` is open for implementation.
+- Release cycle status: `1.5.6` implementation and release-candidate verification are complete;
+  packaging and Marketplace publication remain unconfirmed.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Last Completed Release
@@ -49,7 +50,7 @@ Before implementation begins for the next release:
 
 ## Planned Next Release: 1.5.6
 
-Status: Open
+Status: Release Candidate Ready
 Opened: 2026-07-01
 
 Focused build artifact:
@@ -64,6 +65,8 @@ Proposed scope:
 - Narrow touched ref action workflows so they depend on only the service capabilities they use.
 - Separate revision graph webview message payload validation from state/current-repository
   authorization rules.
+- Extract revision graph repository lifecycle and refresh coordination from
+  `src/revisionGraph/controller.ts` without changing graph webview behavior.
 - Add a fixed Extension Development Host smoke matrix for future release candidates.
 
 Release constraints:
@@ -84,11 +87,16 @@ Planned verification:
 
 Recorded verification:
 
-- `npm run build` passed on 2026-07-01.
+- `npm run build` passed on 2026-07-01 after repository lifecycle extraction.
 - Focused webview message validation/dispatcher tests passed on 2026-07-01.
-- `npm test` passed with 522 tests on 2026-07-01.
-- `git diff --check` passed on 2026-07-01.
-- Manual Extension Development Host smoke completed by maintainer confirmation on 2026-07-01.
+- Focused repository lifecycle, repository state-change, and repository selection tests passed on
+  2026-07-01.
+- `npm test` passed with 526 tests on 2026-07-01 after repository lifecycle extraction.
+- `git diff --check` passed on 2026-07-01 after repository lifecycle extraction.
+- Manual Extension Development Host smoke completed by maintainer confirmation on 2026-07-01 before
+  repository lifecycle extraction.
+- Final Extension Development Host smoke completed by maintainer confirmation on 2026-07-01 after
+  repository lifecycle extraction.
 
 ## Standard Release Verification
 
