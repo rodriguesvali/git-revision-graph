@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 
 import { CompareResultsViewProvider } from './compareResultsView';
 import { RefCommandServices } from './refCommands';
@@ -8,6 +9,8 @@ import { EMPTY_SCHEME, EmptyContentProvider, REF_SCHEME, RefContentProvider } fr
 import { compareRefs, compareWithWorktree, checkoutReference, mergeReference } from './refCommands';
 import { RefNode } from './refNodes';
 import { createRevisionGraphBackend } from './revisionGraph/backend';
+import { createFlowGovernanceConfig, createFlowConfigCommandServices } from './revisionGraph/flow/flowConfigCommand';
+import { DEFAULT_FLOW_CONFIG_PATH } from './revisionGraph/flow/flowConfig';
 import {
   onProjectedGraphLayoutCacheDidChange
 } from './revisionGraph/layout/layeredLayout';
@@ -105,6 +108,56 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand('gitRefs.merge', async (node?: RefNode) => {
       await mergeReference(git, node, commandServices);
+    }),
+    vscode.commands.registerCommand('gitRefs.createFlowGovernanceConfig', async () => {
+      await createFlowGovernanceConfig(git, createFlowConfigCommandServices({
+        ui: {
+          async pickRepository(items, placeHolder) {
+            const picked = await vscode.window.showQuickPick(items, { placeHolder });
+            return picked?.repository;
+          },
+          async confirmCreateConfig(message, actionLabel) {
+            const confirmation = await vscode.window.showWarningMessage(
+              message,
+              { modal: true },
+              actionLabel
+            );
+            return confirmation === actionLabel;
+          },
+          showInformationMessage(message) {
+            void vscode.window.showInformationMessage(message);
+          },
+          showWarningMessage(message) {
+            void vscode.window.showWarningMessage(message);
+          }
+        },
+        formatPath: vscode.workspace.asRelativePath,
+        getConfigPath(repository) {
+          const value = vscode.workspace
+            .getConfiguration('gitRevisionGraph.flowGovernance', repository.rootUri)
+            .get<unknown>('configPath');
+          return typeof value === 'string' ? value : DEFAULT_FLOW_CONFIG_PATH;
+        },
+        fileSystem: {
+          async exists(filePath) {
+            try {
+              await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          async writeFile(filePath, content) {
+            const uri = vscode.Uri.file(filePath);
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.dirname(filePath)));
+            await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(content));
+          },
+          async openTextDocument(filePath) {
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+            await vscode.window.showTextDocument(document, { preview: false });
+          }
+        }
+      }));
     }),
     vscode.commands.registerCommand('gitRefs.openRevisionGraph', async () => {
       await revisionGraphEditorPanel.open();

@@ -29,6 +29,8 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
+- Optional Flow Governance metadata overlay with branch-kind badges, production-trunk highlighting, and branch-kind filters when enabled by settings or a repository flow file
+- `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
@@ -74,6 +76,7 @@ Included in the MVP:
 - Toolbar and context menu actions inside the Revision Graph
 - Command Palette access to compare, compare-with-worktree, checkout, merge, and open graph actions
 - Command Palette access to `View Git Revision Graph` for opening or revealing the editor graph panel
+- Command Palette access to `Create Flow Governance Config` for bootstrapping the repository flow-file template
 - File-level diff opening through the native VS Code diff editor
 - Unified diff and revision log viewing for selected references
 - Local branch creation and reference deletion flows from the Revision Graph
@@ -109,6 +112,16 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - Enables graph loading diagnostics in the `Git Revision Graph` output channel.
 - `gitRevisionGraph.graphCommandTimeoutMs`
   - Controls the timeout for the revision graph `git log` command. The default is `60000` ms, with supported values from `5000` to `300000` ms.
+- `gitRevisionGraph.flowGovernance.enabled`
+  - Enables Flow Governance metadata and Flow View defaults when a repository flow file is not present. The default is `false`.
+- `gitRevisionGraph.flowGovernance.configPath`
+  - Repository-relative path for the Flow Governance configuration file. The default is `.git-revision-graph-flow.json`.
+- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`
+  - Hides `sync/*` branch refs by default when Flow Governance is enabled.
+- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`
+  - Highlights configured production trunk branches when Flow Governance is enabled.
+- `gitRevisionGraph.flowGovernance.showUnknownBranches`
+  - Shows unmatched branches as `unknown` when Flow Governance is enabled.
 
 ## Project Structure
 

@@ -181,9 +181,24 @@ test('package manifest relies on contributed commands for implicit activation', 
       'gitRefs.checkout',
       'gitRefs.compareRefs',
       'gitRefs.compareWithWorktree',
+      'gitRefs.createFlowGovernanceConfig',
       'gitRefs.merge',
       'gitRefs.openRevisionGraphEditor'
     ]
+  );
+});
+
+test('package manifest contributes the Flow Governance config creation command', () => {
+  const manifest = loadPackageManifest();
+
+  const command = manifest.contributes.commands.find(
+    (command) => command.command === 'gitRefs.createFlowGovernanceConfig'
+  );
+
+  assert.equal(command?.title, 'Create Flow Governance Config');
+  assert.equal(
+    manifest.contributes.menus['scm/title']?.some((menu) => menu.command === 'gitRefs.createFlowGovernanceConfig'),
+    false
   );
 });
 

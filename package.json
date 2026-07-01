@@ -57,6 +57,10 @@
         "title": "Merge Into Current Branch"
       },
       {
+        "command": "gitRefs.createFlowGovernanceConfig",
+        "title": "Create Flow Governance Config"
+      },
+      {
         "command": "gitRefs.openRevisionGraphEditor",
         "title": "View Git Revision Graph",
         "icon": {
