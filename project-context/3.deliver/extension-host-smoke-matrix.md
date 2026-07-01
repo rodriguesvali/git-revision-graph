@@ -19,6 +19,8 @@ risking user work.
   - at least one remote-tracking branch;
   - a file change suitable for Compare Results and worktree diff checks.
 - For multi-repository checks, open a workspace with two Git repositories.
+- For Flow Governance checks, use a disposable repository where creating or editing
+  `.git-revision-graph-flow.json` is acceptable.
 
 ## Core Graph
 
@@ -30,6 +32,19 @@ risking user work.
 | Repository switch | Use the graph repository picker to switch repositories. | The graph refreshes to the selected repository and stale actions from the prior repository are rejected. |
 | Refresh | Trigger normal refresh and empty-cache refresh. | Loading state appears, completes, and preserves usable graph interactions. |
 | Projection controls | Toggle branch/tag/stash/scope controls and focus modes. | Graph updates without stale selection, broken minimap, or incorrect toolbar state. |
+
+## Flow Governance
+
+| Area | Steps | Expected Result |
+| --- | --- | --- |
+| Config bootstrap | Run `Create Flow Governance Config` from the Command Palette in a disposable Git repository and confirm creation. | `.git-revision-graph-flow.json` is created at the configured repository-relative path, opened in the editor, and contains only Phase 1 fields. |
+| Existing config | Run `Create Flow Governance Config` again in the same repository. | The existing file opens without overwrite and no duplicate prompt writes a file. |
+| Multi-repository bootstrap | Open a workspace with two repositories and run `Create Flow Governance Config`. | Repository selection appears and the file is created/opened only in the selected repository. |
+| Enabled Flow View | Set `enabled` to `true` in the repository flow file and open or refresh `View Git Revision Graph`. | Flow Governance controls appear in the graph `View` menu and branch-kind badges render from host-provided metadata. |
+| Branch-kind filters | Toggle visible branch kinds, `Hide Sync Branches`, `Highlight Production Trunk`, and `Show Unknown Branches`. | Branch ref lines hide/show without changing graph topology, normal graph interactions remain available, and trunk highlighting follows the config. |
+| Invalid config | Temporarily make the flow file invalid JSON or use an invalid regex, then reload the graph. | The graph still loads, Flow Governance is disabled for that state, and normal graph actions remain usable. |
+| Disabled behavior | Set Flow Governance off through settings or config and refresh. | Existing graph behavior remains unchanged and no Flow Governance controls are shown unless metadata is present. |
+| Zero repository | Run `Create Flow Governance Config` from an empty non-Git workspace. | A concise no-repository information message appears and no file is written. |
 
 ## Review Workflows
 

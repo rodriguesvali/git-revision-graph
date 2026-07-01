@@ -1,6 +1,6 @@
 # Flow Governance Phase 1
 
-Status: In progress - repository config creation slice implemented
+Status: Release handoff ready
 Last updated: 2026-07-01
 Target baseline: `1.5.6`
 
@@ -87,6 +87,8 @@ Current results:
 - Focused Flow Governance message validation, dispatcher, handler, and type-boundary tests passed on 2026-07-01.
 - Focused revision graph webview tests passed on 2026-07-01.
 - Focused Flow Governance config command and package manifest tests passed on 2026-07-01.
+- `npm test` passed with 553 tests on 2026-07-01 after release-readiness updates.
+- `git diff --check` passed on 2026-07-01 after release-readiness updates.
 
 ## Risks
 
@@ -95,4 +97,4 @@ Current results:
 
 ## Handoff Notes
 
-Next implementation slice should update release readiness notes and, if desired, add manual Extension Development Host verification steps for Flow Governance.
+Release handoff should run the Flow Governance section of `project-context/3.deliver/extension-host-smoke-matrix.md` in an Extension Development Host before version bump, packaging, or Marketplace publication.

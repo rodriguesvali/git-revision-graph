@@ -7,9 +7,86 @@ Last consolidated: 2026-07-01
 
 - Current package version: `1.5.6` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.6` packaging and Marketplace publication were confirmed complete by
-  the maintainer on 2026-07-01.
+- Release cycle status: Flow Governance Phase 1 has implementation and automated verification
+  complete on top of the published `1.5.6` baseline. No version bump, VSIX packaging, or
+  Marketplace publication has been run.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Open Release Candidate: Flow Governance Phase 1
+
+Status: Implementation verified, manual smoke pending
+Opened: 2026-07-01
+Baseline package version: `1.5.6`
+Target version: pending maintainer approval
+
+Focused build artifact:
+
+- `project-context/2.build/features/flow-governance-phase-1.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Candidate scope:
+
+- Add Flow Governance Phase 1 as a non-mutating metadata overlay over the existing revision graph.
+- Add repository flow-file resolution with VS Code settings fallback and invalid-config diagnostics.
+- Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
+- Add Flow Governance webview controls, branch-kind filters, badges, production-trunk highlighting,
+  sync hiding, and unknown-branch visibility controls from host-provided metadata.
+- Add the `Create Flow Governance Config` Command Palette action with repository selection,
+  confirmation, repository-relative path validation, existing-file protection, and default
+  Phase 1 template content.
+- Update README and CHANGELOG notes for the shipped Phase 1 behavior.
+
+Explicitly out of scope:
+
+- PR creation, provider authentication, governed branch forms, promotion checks, equalization,
+  cleanup actions, direct merge policy enforcement, and release automation.
+- Git mutations other than explicit creation of the repository flow config after confirmation.
+- New views, menus, activation events, runtime dependencies, packaging, publication, or version bump.
+
+Release constraints:
+
+- Preserve existing graph loading, projection semantics, compare, diff, checkout, branch, merge,
+  sync, delete, stash, reset, Show Log, and Compare Results workflows.
+- Treat Flow Governance as metadata and local webview filtering only; it must not alter Git history,
+  refs, graph ancestry, or repository state.
+- Keep malformed/stale webview messages bounded by the existing message validation and repository
+  authorization layers.
+- Do not run packaging or Marketplace publication commands without explicit maintainer approval.
+
+Planned verification:
+
+- `npm run build`
+- `npm test`
+- `git diff --check`
+- Manual Extension Development Host smoke using the Flow Governance section of
+  `project-context/3.deliver/extension-host-smoke-matrix.md`.
+
+Recorded verification:
+
+- `npm run build` passed on 2026-07-01 during Flow Governance implementation.
+- Focused Flow Governance config, state, manifest, message validation, dispatcher, handler,
+  type-boundary, webview, and command tests passed on 2026-07-01.
+- `npm test` passed with 553 tests on 2026-07-01 after the release-readiness updates.
+- `git diff --check` passed on 2026-07-01 after the release-readiness updates.
+
+Marketplace impact:
+
+- User-visible additions are a Command Palette action, new configuration settings, README text, and
+  Flow Governance controls inside the existing revision graph webview when Flow Governance metadata
+  is present.
+- Marketplace copy should describe Phase 1 as branch classification, filtering, highlighting, and
+  config bootstrap only.
+- No Marketplace packaging metadata has been captured yet: VSIX filename, checksum, size,
+  publication timestamp, and clean-profile installed-version evidence remain pending approval.
+
+Rollback notes:
+
+- Before publication, revert the Flow Governance feature files, command contribution, settings,
+  README/CHANGELOG entries, and release artifacts as one feature rollback.
+- After publication, prefer a patch release that disables or removes Flow Governance surfaces while
+  preserving existing graph workflows.
+- Repository config files created by users are user-owned workspace files; rollback must not delete
+  them automatically.
 
 ## Last Completed Release
 
