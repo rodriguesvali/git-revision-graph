@@ -229,7 +229,14 @@ export function renderRevisionGraphScriptInteractions(): string {
         formatShortCommitHash(node.hash),
         node.subject || '',
         node.author || '',
-        ...node.refs.map((ref) => ref.name)
+        ...node.refs
+          .filter((ref) => isReferenceVisible({
+            id: createReferenceId(node.hash, ref.kind, ref.name),
+            hash: node.hash,
+            name: ref.name,
+            kind: ref.kind
+          }))
+          .map((ref) => ref.name)
       ];
       return candidateValues.some((value) => String(value).toLowerCase().includes(normalizedQuery));
     }
@@ -536,6 +543,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
         currentProjectionOptions.showStashes ? 'stash' : null,
         currentProjectionOptions.showMergeCommits ? 'merge commits' : null,
+        currentFlowGovernance && currentFlowGovernance.enabled ? 'flow governance' : null,
         minimapEnabled ? 'minimap' : null
       ].filter(Boolean);
       viewOptionsButton.title = visibleOptions.length > 0
@@ -562,6 +570,13 @@ export function renderRevisionGraphScriptInteractions(): string {
         syncMinimap('full');
       }
       syncToolbarActions();
+    }
+
+    function updateFlowGovernanceOptions(options) {
+      if (!hasFlowGovernanceState()) {
+        return;
+      }
+      vscode.postMessage(createRevisionGraphFlowGovernanceOptionsMessage(options));
     }
 
     function persistWebviewUiState() {
@@ -801,6 +816,23 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (showMinimapToggle) {
         showMinimapToggle.disabled = toolbarBusy;
       }
+      if (flowGovernanceEnabledToggle) {
+        flowGovernanceEnabledToggle.disabled = toolbarBusy || !hasFlowGovernanceState();
+      }
+      if (hideSyncBranchesToggle) {
+        hideSyncBranchesToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
+      }
+      if (highlightProductionTrunkToggle) {
+        highlightProductionTrunkToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
+      }
+      if (showUnknownBranchesToggle) {
+        showUnknownBranchesToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
+      }
+      if (flowKindOptions && typeof flowKindOptions.querySelectorAll === 'function') {
+        for (const input of flowKindOptions.querySelectorAll('[data-flow-kind]')) {
+          input.disabled = toolbarBusy || !isFlowGovernanceActive();
+        }
+      }
       if (rangeFilterClearButton) {
         rangeFilterClearButton.disabled = toolbarBusy;
       }
@@ -839,6 +871,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         showRemoteBranchesToggle,
         showStashesToggle,
         showMergeCommitsToggle,
+        flowGovernanceEnabledToggle,
+        hideSyncBranchesToggle,
+        highlightProductionTrunkToggle,
+        showUnknownBranchesToggle,
         searchInput,
         searchPrevButton,
         searchNextButton,

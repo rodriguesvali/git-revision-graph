@@ -21,6 +21,16 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Show Merge Commits/);
   assert.match(html, /id="showMinimapToggle"/);
   assert.match(html, /Show Minimap/);
+  assert.match(html, /id="flowGovernanceOptions"/);
+  assert.match(html, /id="flowGovernanceEnabledToggle"/);
+  assert.match(html, /Flow Governance/);
+  assert.match(html, /id="hideSyncBranchesToggle"/);
+  assert.match(html, /Hide Sync Branches/);
+  assert.match(html, /id="highlightProductionTrunkToggle"/);
+  assert.match(html, /Highlight Production Trunk/);
+  assert.match(html, /id="showUnknownBranchesToggle"/);
+  assert.match(html, /Show Unknown Branches/);
+  assert.match(html, /id="flowKindOptions"/);
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
   assert.doesNotMatch(html, /Show Current Branch Descendants/);
   assert.match(html, /id="searchInput"/);
@@ -103,6 +113,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /webview\.render-scene\.virtual-frame/);
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
+  assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
@@ -115,6 +126,9 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /\.view-controls \.toolbar-actions \{\s*display: flex;[\s\S]*?justify-content: flex-start;/);
   assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?margin-left: auto;[\s\S]*?\}/);
   assert.match(html, /\.view-controls \.toolbar-button \{[\s\S]*?border-radius: 0;/);
+  assert.match(html, /\.flow-badge \{/);
+  assert.match(html, /\.flow-kind-options \{/);
+  assert.match(html, /\.ref-line\.flow-production-trunk/);
   assert.match(html, /top: var\(--graph-top-offset\);/);
   assert.match(html, /right: 0;/);
   assert.match(html, /bottom: 0;/);
@@ -791,6 +805,171 @@ test('does not render a current branch descendants view option', () => {
   assert.doesNotMatch(html, /current branch descendants/);
 });
 
+test('renders Flow Governance badges and filters branch refs in the webview', () => {
+  const runtime = createWebviewRuntime();
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
+        enabled: true,
+        configSource: 'repository',
+        diagnostics: [],
+        branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
+        filters: {
+          visibleKinds: ['main', 'release', 'feature', 'unknown'],
+          hideSyncBranches: true,
+          highlightProductionTrunk: true,
+          showUnknownBranches: true
+        },
+        references: [
+          {
+            refName: 'main',
+            kind: 'main',
+            isEphemeral: false,
+            shouldHideByDefault: false,
+            diagnostics: []
+          },
+          {
+            refName: 'sync/generated',
+            kind: 'sync',
+            isEphemeral: true,
+            shouldHideByDefault: true,
+            diagnostics: []
+          },
+          {
+            refName: 'feature/demo',
+            kind: 'feature',
+            isEphemeral: false,
+            shouldHideByDefault: false,
+            diagnostics: []
+          }
+        ]
+      }
+    })
+  });
+
+  const flowOptions = runtime.elements.get('flowGovernanceOptions');
+  const flowKindOptions = runtime.elements.get('flowKindOptions');
+  const nodeLayer = runtime.elements.get('nodeLayer');
+  assert.ok(flowOptions);
+  assert.ok(flowKindOptions);
+  assert.ok(nodeLayer);
+
+  assert.equal(flowOptions.hidden, false);
+  assert.match(flowKindOptions.innerHTML, /data-flow-kind="main" checked/);
+  assert.match(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
+  assert.match(nodeLayer.innerHTML, /flow-production-trunk/);
+  assert.match(nodeLayer.innerHTML, /feature\/demo/);
+  assert.doesNotMatch(nodeLayer.innerHTML, /sync\/generated/);
+});
+
+test('posts Flow Governance option updates from the webview runtime', () => {
+  const runtime = createWebviewRuntime();
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
+        enabled: true,
+        configSource: 'repository',
+        diagnostics: [],
+        branchKinds: ['main', 'sync'],
+        filters: {
+          visibleKinds: ['main', 'sync'],
+          hideSyncBranches: false,
+          highlightProductionTrunk: true,
+          showUnknownBranches: true
+        },
+        references: []
+      }
+    })
+  });
+  runtime.context.updateFlowGovernanceOptions({ hideSyncBranches: true });
+
+  const lastMessage = runtime.postedMessages.at(-1);
+  assert.equal(lastMessage.type, 'set-flow-governance-options');
+  assert.deepEqual(lastMessage.options, { hideSyncBranches: true });
+});
+
+function createReadyGraphState(overrides: Record<string, unknown> = {}) {
+  return {
+    viewMode: 'ready',
+    hasRepositories: true,
+    repositoryPath: '/workspace/repo',
+    currentHeadName: 'main',
+    currentHeadUpstreamName: 'origin/main',
+    publishedLocalBranchNames: ['main'],
+    isWorkspaceDirty: false,
+    hasMergeConflicts: false,
+    hasConflictedMerge: false,
+    projectionOptions: {
+      refScope: 'all',
+      showTags: true,
+      showRemoteBranches: true,
+      showStashes: true,
+      showMergeCommits: false,
+      showCurrentBranchDescendants: false,
+      revisionRange: undefined,
+      descendantFocus: undefined
+    },
+    mergeBlockedTargets: [],
+    primaryAncestorNextByHash: {},
+    scene: {
+      nodes: [
+        {
+          hash: 'head1',
+          row: 0,
+          refs: [{ name: 'main', kind: 'head' }],
+          author: 'Ada',
+          date: '2026-04-08',
+          subject: 'Bootstrap'
+        },
+        {
+          hash: 'sync1',
+          row: 1,
+          refs: [{ name: 'sync/generated', kind: 'branch' }],
+          author: 'Ada',
+          date: '2026-04-09',
+          subject: 'Generated sync'
+        },
+        {
+          hash: 'feature1',
+          row: 2,
+          refs: [{ name: 'feature/demo', kind: 'branch' }],
+          author: 'Ada',
+          date: '2026-04-10',
+          subject: 'Feature work'
+        }
+      ],
+      edges: [
+        { from: 'head1', to: 'sync1' },
+        { from: 'sync1', to: 'feature1' }
+      ],
+      laneCount: 2,
+      rowCount: 3
+    },
+    nodeLayouts: [
+      { hash: 'head1', lane: 0, row: 0, x: 0, width: 140, height: 40, defaultLeft: 26, defaultTop: 88 },
+      { hash: 'sync1', lane: 1, row: 1, x: 180, width: 160, height: 40, defaultLeft: 206, defaultTop: 176 },
+      { hash: 'feature1', lane: 1, row: 2, x: 240, width: 160, height: 40, defaultLeft: 266, defaultTop: 264 }
+    ],
+    references: [
+      { id: 'head1::head::main', hash: 'head1', name: 'main', kind: 'head' },
+      { id: 'sync1::branch::sync/generated', hash: 'sync1', name: 'sync/generated', kind: 'branch' },
+      { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch' }
+    ],
+    sceneLayoutKey: 'head1:0:0|sync1:1:180|feature1:2:240',
+    baseCanvasWidth: 900,
+    baseCanvasHeight: 500,
+    emptyMessage: undefined,
+    loading: false,
+    loadingLabel: undefined,
+    errorMessage: undefined,
+    ...overrides
+  };
+}
+
 function createWebviewRuntime() {
   const html = renderRevisionGraphShellHtml();
   const match = html.match(/<script nonce="[^"]+">([\s\S]*)<\/script>/);
@@ -811,6 +990,7 @@ function createWebviewRuntime() {
     innerHTML = '';
     hidden = false;
     disabled = false;
+    checked = false;
     textContent = '';
     title = '';
     offsetWidth = 120;
@@ -853,6 +1033,10 @@ function createWebviewRuntime() {
 
     closest(): null {
       return null;
+    }
+
+    querySelectorAll(): MockElement[] {
+      return [];
     }
 
     getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
@@ -900,6 +1084,12 @@ function createWebviewRuntime() {
     'showStashesToggle',
     'showMergeCommitsToggle',
     'showMinimapToggle',
+    'flowGovernanceOptions',
+    'flowGovernanceEnabledToggle',
+    'hideSyncBranchesToggle',
+    'highlightProductionTrunkToggle',
+    'showUnknownBranchesToggle',
+    'flowKindOptions',
     'searchInput',
     'searchResultBadge',
     'searchPrevButton',
@@ -942,6 +1132,7 @@ function createWebviewRuntime() {
     addEventListener: () => {}
   };
   const vscodeState: Record<string, unknown> = {};
+  const postedMessages: any[] = [];
   const context = {
     console,
     window: windowObject,
@@ -951,7 +1142,9 @@ function createWebviewRuntime() {
       return 1;
     },
     acquireVsCodeApi: () => ({
-      postMessage: () => {},
+      postMessage: (message: any) => {
+        postedMessages.push(message);
+      },
       setState: (value: Record<string, unknown>) => {
         Object.assign(vscodeState, value);
       },
@@ -968,6 +1161,7 @@ function createWebviewRuntime() {
 
   return {
     context: context as Record<string, any>,
-    elements
+    elements,
+    postedMessages
   };
 }

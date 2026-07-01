@@ -39,6 +39,10 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'set-projection-options', options };
     }
 
+    function createRevisionGraphFlowGovernanceOptionsMessage(options) {
+      return { type: 'set-flow-governance-options', options };
+    }
+
     function createRevisionGraphCompareSelectedMessage(base, compare) {
       return {
         type: 'compare-selected',

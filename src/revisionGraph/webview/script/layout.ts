@@ -363,7 +363,7 @@ export function renderRevisionGraphScriptLayout(): string {
     }
 
     function getReference(refId) {
-      return references.find((ref) => ref.id === refId);
+      return references.find((ref) => ref.id === refId && isReferenceVisible(ref));
     }
 
     function syncMinimap(mode = 'full') {

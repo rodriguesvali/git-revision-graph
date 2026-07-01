@@ -246,6 +246,9 @@ export function renderRevisionGraphStyles(): string {
       padding: 6px 10px;
       font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; line-height: 1.15;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .ref-line + .ref-line {
       border-top: 1px solid rgba(0, 0, 0, 0.08);
@@ -272,6 +275,41 @@ export function renderRevisionGraphStyles(): string {
     }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
+    .ref-line.flow-production-trunk {
+      box-shadow: inset 4px 0 0 color-mix(in srgb, var(--accent) 76%, var(--node-head) 24%);
+      font-weight: 700;
+    }
+    .ref-line .ref-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .flow-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      min-width: 28px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 3px;
+      border: 1px solid rgba(0, 0, 0, 0.24);
+      background: color-mix(in srgb, var(--panel) 84%, white 16%);
+      color: var(--node-text-dark);
+      font-family: var(--vscode-font-family);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .flow-badge.flow-kind-main { background: color-mix(in srgb, var(--node-head) 82%, white 18%); color: white; }
+    .flow-badge.flow-kind-release { background: #42b883; color: #101414; }
+    .flow-badge.flow-kind-sync { background: #8c8f97; color: white; }
+    .flow-badge.flow-kind-package { background: #4aa3ff; color: #07131f; }
+    .flow-badge.flow-kind-feature { background: #19d60f; color: #102010; }
+    .flow-badge.flow-kind-task { background: #f0c34e; color: #1f1804; }
+    .flow-badge.flow-kind-bug { background: #ff7a59; color: #1f0803; }
+    .flow-badge.flow-kind-hotfix { background: #d62828; color: white; }
+    .flow-badge.flow-kind-unknown { background: color-mix(in srgb, var(--muted) 82%, var(--panel)); color: var(--text); }
     .context-menu {
       position: fixed;
       z-index: 60;
@@ -539,6 +577,27 @@ export function renderRevisionGraphStyles(): string {
     .view-options-menu label {
       justify-content: flex-start;
       width: 100%;
+    }
+    .view-options-section {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-top: 2px;
+      padding-top: 9px;
+      border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    }
+    .view-options-section[hidden] {
+      display: none;
+    }
+    .flow-kind-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 8px;
+      padding-top: 2px;
+    }
+    .flow-kind-options label.flow-kind-option {
+      gap: 5px;
+      min-width: 0;
     }
     .view-controls .search-controls {
       display: inline-flex;

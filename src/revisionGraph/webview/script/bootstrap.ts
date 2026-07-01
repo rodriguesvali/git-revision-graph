@@ -44,6 +44,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showStashesToggle = document.getElementById('showStashesToggle');
     const showMergeCommitsToggle = document.getElementById('showMergeCommitsToggle');
     const showMinimapToggle = document.getElementById('showMinimapToggle');
+    const flowGovernanceOptions = document.getElementById('flowGovernanceOptions');
+    const flowGovernanceEnabledToggle = document.getElementById('flowGovernanceEnabledToggle');
+    const hideSyncBranchesToggle = document.getElementById('hideSyncBranchesToggle');
+    const highlightProductionTrunkToggle = document.getElementById('highlightProductionTrunkToggle');
+    const showUnknownBranchesToggle = document.getElementById('showUnknownBranchesToggle');
+    const flowKindOptions = document.getElementById('flowKindOptions');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
     const searchPrevButton = document.getElementById('searchPrevButton');
@@ -77,6 +83,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       revisionRange: undefined,
       descendantFocus: undefined
     };
+    let currentFlowGovernance = null;
+    let flowReferenceByName = new Map();
     let mergeBlockedTargets = new Set();
     let graphNodes = [];
     let graphEdges = [];
@@ -129,6 +137,28 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let reloadLongPressTimer = 0;
     let suppressNextReloadClick = false;
     let reloadCacheMenu = null;
+    const flowKindLabels = {
+      main: 'Main',
+      release: 'Release',
+      sync: 'Sync',
+      package: 'Package',
+      feature: 'Feature',
+      task: 'Task',
+      bug: 'Bug',
+      hotfix: 'Hotfix',
+      unknown: 'Unknown'
+    };
+    const flowKindBadges = {
+      main: 'main',
+      release: 'rel',
+      sync: 'sync',
+      package: 'pkg',
+      feature: 'feat',
+      task: 'task',
+      bug: 'bug',
+      hotfix: 'hotfix',
+      unknown: '?'
+    };
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -210,6 +240,35 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (showMinimapToggle) {
       showMinimapToggle.addEventListener('change', () => {
         setMinimapEnabled(showMinimapToggle.checked);
+      });
+    }
+    if (flowGovernanceEnabledToggle) {
+      flowGovernanceEnabledToggle.addEventListener('change', () => {
+        updateFlowGovernanceOptions({ enabled: flowGovernanceEnabledToggle.checked });
+      });
+    }
+    if (hideSyncBranchesToggle) {
+      hideSyncBranchesToggle.addEventListener('change', () => {
+        updateFlowGovernanceOptions({ hideSyncBranches: hideSyncBranchesToggle.checked });
+      });
+    }
+    if (highlightProductionTrunkToggle) {
+      highlightProductionTrunkToggle.addEventListener('change', () => {
+        updateFlowGovernanceOptions({ highlightProductionTrunk: highlightProductionTrunkToggle.checked });
+      });
+    }
+    if (showUnknownBranchesToggle) {
+      showUnknownBranchesToggle.addEventListener('change', () => {
+        updateFlowGovernanceOptions({ showUnknownBranches: showUnknownBranchesToggle.checked });
+      });
+    }
+    if (flowKindOptions) {
+      flowKindOptions.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!target || target.type !== 'checkbox' || !target.dataset.flowKind) {
+          return;
+        }
+        updateFlowGovernanceOptions({ visibleKinds: getCheckedFlowBranchKinds() });
       });
     }
     if (searchInput) {
@@ -719,6 +778,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         hasMergeConflicts = !!nextState.hasMergeConflicts;
         hasConflictedMerge = !!nextState.hasConflictedMerge;
         currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
+        currentFlowGovernance = nextState.flowGovernance || null;
+        flowReferenceByName = buildFlowReferenceMap(currentFlowGovernance);
         mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
         references = nextState.references || [];
         syncRemoteTagStateCache(nextState, previousRepositoryPath, !!options.invalidateRemoteTagState);
@@ -741,7 +802,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (options.preserveSelection) {
         restoreSelectionSnapshot(selectionSnapshot);
       } else {
-        const availableReferenceIds = new Set(references.map((ref) => ref.id));
+        const availableReferenceIds = new Set(getVisibleReferences().map((ref) => ref.id));
         selected = selected.filter((refId) => availableReferenceIds.has(refId)).slice(0, 2);
       }
 
@@ -983,9 +1044,125 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (showMergeCommitsToggle) {
         showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
+      syncFlowGovernanceControls(state.flowGovernance || null);
       syncRangeFilter(state.projectionOptions.revisionRange);
       syncDescendantFilter(state.projectionOptions.descendantFocus);
       syncViewOptionsButton();
+    }
+
+    function buildFlowReferenceMap(flowGovernance) {
+      const nextMap = new Map();
+      if (!flowGovernance || !Array.isArray(flowGovernance.references)) {
+        return nextMap;
+      }
+      for (const branch of flowGovernance.references) {
+        if (branch && typeof branch.refName === 'string') {
+          nextMap.set(branch.refName, branch);
+        }
+      }
+      return nextMap;
+    }
+
+    function hasFlowGovernanceState(flowGovernance = currentFlowGovernance) {
+      return !!flowGovernance && Array.isArray(flowGovernance.branchKinds);
+    }
+
+    function isFlowGovernanceActive(flowGovernance = currentFlowGovernance) {
+      return hasFlowGovernanceState(flowGovernance) && flowGovernance.enabled === true;
+    }
+
+    function syncFlowGovernanceControls(flowGovernance = currentFlowGovernance) {
+      if (flowGovernanceOptions) {
+        flowGovernanceOptions.hidden = !hasFlowGovernanceState(flowGovernance);
+      }
+      if (!hasFlowGovernanceState(flowGovernance)) {
+        if (flowKindOptions) {
+          flowKindOptions.innerHTML = '';
+        }
+        return;
+      }
+
+      const filters = flowGovernance.filters || {};
+      if (flowGovernanceEnabledToggle) {
+        flowGovernanceEnabledToggle.checked = flowGovernance.enabled === true;
+      }
+      if (hideSyncBranchesToggle) {
+        hideSyncBranchesToggle.checked = filters.hideSyncBranches === true;
+      }
+      if (highlightProductionTrunkToggle) {
+        highlightProductionTrunkToggle.checked = filters.highlightProductionTrunk === true;
+      }
+      if (showUnknownBranchesToggle) {
+        showUnknownBranchesToggle.checked = filters.showUnknownBranches !== false;
+      }
+      renderFlowKindOptions(flowGovernance);
+    }
+
+    function renderFlowKindOptions(flowGovernance = currentFlowGovernance) {
+      if (!flowKindOptions || !hasFlowGovernanceState(flowGovernance)) {
+        return;
+      }
+
+      const visibleKinds = new Set((flowGovernance.filters && flowGovernance.filters.visibleKinds) || []);
+      const markup = flowGovernance.branchKinds
+        .map((kind) => {
+          const checked = visibleKinds.has(kind) ? ' checked' : '';
+          const label = flowKindLabels[kind] || kind;
+          return '<label class="flow-kind-option" for="flowKindToggle-' + escapeHtml(kind) + '">' +
+            '<input id="flowKindToggle-' + escapeHtml(kind) + '" type="checkbox" data-flow-kind="' + escapeHtml(kind) + '"' + checked + ' />' +
+            '<span class="flow-badge flow-kind-' + escapeHtml(kind) + '">' + escapeHtml(flowKindBadges[kind] || kind) + '</span>' +
+            '<span>' + escapeHtml(label) + '</span>' +
+          '</label>';
+        })
+        .join('');
+      if (flowKindOptions.innerHTML !== markup) {
+        flowKindOptions.innerHTML = markup;
+      }
+    }
+
+    function getCheckedFlowBranchKinds() {
+      if (!flowKindOptions || typeof flowKindOptions.querySelectorAll !== 'function') {
+        return [];
+      }
+      return Array.from(flowKindOptions.querySelectorAll('[data-flow-kind]'))
+        .filter((input) => input.checked)
+        .map((input) => input.dataset.flowKind)
+        .filter(Boolean);
+    }
+
+    function getFlowBranchInfo(refName) {
+      return flowReferenceByName.get(refName) || null;
+    }
+
+    function isReferenceVisible(reference) {
+      if (!reference) {
+        return false;
+      }
+      if (!isFlowGovernanceActive()) {
+        return true;
+      }
+
+      const flowBranch = getFlowBranchInfo(reference.name);
+      if (!flowBranch) {
+        return true;
+      }
+
+      const filters = currentFlowGovernance.filters || {};
+      const visibleKinds = new Set(filters.visibleKinds || []);
+      if (!visibleKinds.has(flowBranch.kind)) {
+        return false;
+      }
+      if (flowBranch.kind === 'sync' && filters.hideSyncBranches === true) {
+        return false;
+      }
+      if (flowBranch.kind === 'unknown' && filters.showUnknownBranches === false) {
+        return false;
+      }
+      return true;
+    }
+
+    function getVisibleReferences() {
+      return references.filter(isReferenceVisible);
     }
 
     function syncRangeFilter(revisionRange) {
@@ -1411,18 +1588,33 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       const nodeRenderKey = renderKey || getNodeRenderKey(node, layout);
       const y = layout.defaultTop;
-      const summary = node.refs.length === 0
+      const visibleRefs = node.refs.filter((ref) => isReferenceVisible({
+        id: createReferenceId(node.hash, ref.kind, ref.name),
+        hash: node.hash,
+        name: ref.name,
+        kind: ref.kind
+      }));
+      const summary = visibleRefs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
         : '';
       const baseBadge = '<span class="node-base-badge">(Base)</span>';
-      const refLines = node.refs
+      const refLines = visibleRefs
         .map((ref) => {
           const refId = createReferenceId(node.hash, ref.kind, ref.name);
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.name) + '</div>';
+          const flowBranch = getFlowBranchInfo(ref.name);
+          const flowKind = flowBranch ? flowBranch.kind : null;
+          const flowBadge = flowKind
+            ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '" title="' + escapeHtml(formatFlowBranchTitle(flowBranch)) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
+            : '';
+          const flowClass = flowKind ? ' flow-branch flow-kind-' + escapeHtml(flowKind) : '';
+          const trunkClass = flowBranch && flowBranch.kind === 'main' && currentFlowGovernance && currentFlowGovernance.filters && currentFlowGovernance.filters.highlightProductionTrunk
+            ? ' flow-production-trunk'
+            : '';
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + trunkClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
         })
         .join('');
 
-      return '<div class="node ' + getNodeClass(node) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node)) + '">' +
+      return '<div class="node ' + getNodeClass(node, visibleRefs) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node, visibleRefs)) + '">' +
         '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
         refLines +
         summary +
@@ -1435,16 +1627,23 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         return '';
       }
 
+      const visibleRefs = node.refs.filter((ref) => isReferenceVisible({
+        id: createReferenceId(node.hash, ref.kind, ref.name),
+        hash: node.hash,
+        name: ref.name,
+        kind: ref.kind
+      }));
       return JSON.stringify({
         hash: node.hash,
-        className: getNodeClass(node),
+        className: getNodeClass(node, visibleRefs),
         width: layout.width,
         height: layout.height,
         defaultLeft: layout.defaultLeft,
         defaultTop: layout.defaultTop,
-        refs: node.refs.map((ref) => [ref.kind, ref.name]),
-        title: formatNodeTitle(node),
-        summary: node.refs.length === 0 ? formatNodeSummary(node) : ''
+        refs: visibleRefs.map((ref) => [ref.kind, ref.name]),
+        flowGovernance: currentFlowGovernance ? currentFlowGovernance.filters : null,
+        title: formatNodeTitle(node, visibleRefs),
+        summary: visibleRefs.length === 0 ? formatNodeSummary(node) : ''
       });
     }
 
@@ -1554,12 +1753,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return String(Number(value.toFixed(3)));
     }
 
-    function getNodeClass(node) {
-      if (node.refs.length === 0) {
+    function getNodeClass(node, refs = node.refs) {
+      if (refs.length === 0) {
         return 'node-structural';
       }
 
-      const kinds = new Set(node.refs.map((ref) => ref.kind));
+      const kinds = new Set(refs.map((ref) => ref.kind));
       if (kinds.size === 1 && kinds.has('head')) {
         return 'node-head';
       }
@@ -1582,14 +1781,22 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 	      return formatShortCommitHash(node.hash);
 	    }
 
-    function formatNodeTitle(node) {
-      const refBlock = node.refs.length > 0
-        ? 'Refs:\\n' + node.refs.map((ref) => ref.name).join('\\n') + '\\n\\n'
+    function formatNodeTitle(node, refs = node.refs) {
+      const refBlock = refs.length > 0
+        ? 'Refs:\\n' + refs.map((ref) => ref.name).join('\\n') + '\\n\\n'
         : '';
       const author = node.author || 'Unknown author';
       const date = node.date || 'Unknown date';
       const subject = node.subject || 'Structural commit';
       return refBlock + node.hash + '\\n' + subject + '\\n' + author + ' on ' + date;
+    }
+
+    function formatFlowBranchTitle(branch) {
+      if (!branch) {
+        return '';
+      }
+      const kind = flowKindLabels[branch.kind] || branch.kind;
+      return kind + ' flow branch';
     }
 
 	    function describeEdgePath(sourceX, sourceY, targetX, targetY) {
@@ -1662,7 +1869,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function getSelectableTargets() {
-      const refTargets = references.map((reference) => ({
+      const refTargets = getVisibleReferences().map((reference) => ({
         id: reference.id,
         hash: reference.hash,
         name: reference.name,

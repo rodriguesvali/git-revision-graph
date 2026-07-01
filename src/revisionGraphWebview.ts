@@ -157,6 +157,25 @@ export function renderRevisionGraphShellHtml(): string {
           <input id="showMinimapToggle" type="checkbox" />
           <span>Show Minimap</span>
         </label>
+        <div class="view-options-section flow-governance-options" id="flowGovernanceOptions" hidden>
+          <label for="flowGovernanceEnabledToggle">
+            <input id="flowGovernanceEnabledToggle" type="checkbox" />
+            <span>Flow Governance</span>
+          </label>
+          <label for="hideSyncBranchesToggle">
+            <input id="hideSyncBranchesToggle" type="checkbox" />
+            <span>Hide Sync Branches</span>
+          </label>
+          <label for="highlightProductionTrunkToggle">
+            <input id="highlightProductionTrunkToggle" type="checkbox" />
+            <span>Highlight Production Trunk</span>
+          </label>
+          <label for="showUnknownBranchesToggle">
+            <input id="showUnknownBranchesToggle" type="checkbox" />
+            <span>Show Unknown Branches</span>
+          </label>
+          <div class="flow-kind-options" id="flowKindOptions" aria-label="Flow branch kinds"></div>
+        </div>
       </div>
     </div>
     <div class="search-controls toolbar-action-slot" aria-label="Search the loaded revision graph">

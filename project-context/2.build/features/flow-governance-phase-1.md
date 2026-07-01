@@ -1,6 +1,6 @@
 # Flow Governance Phase 1
 
-Status: In progress - message contract slice implemented
+Status: In progress - webview controls slice implemented
 Last updated: 2026-07-01
 Target baseline: `1.5.6`
 
@@ -16,11 +16,11 @@ Included:
 - Repository flow-file resolution with settings fallback and invalid-config diagnostics.
 - Runtime graph-state wiring that attaches Flow Governance metadata when enabled or invalid.
 - Host-side Flow View message validation, current-repository authorization, and in-memory state updates.
+- Webview Flow Governance controls, branch-kind filters, and branch badges backed by host-provided metadata.
 - Deterministic tests for config, classification, inert future fields, unknown diagnostics, sync hiding, and serializable state.
 
 Excluded:
 
-- Webview rendering controls.
 - Repository flow-file creation command.
 - PR creation, provider authentication, promotion checks, equalization, cleanup, direct merge policy, and governed branch creation forms.
 - Git mutations other than future explicit flow-file creation after confirmation.
@@ -52,6 +52,9 @@ The first slice intentionally stays pure and host-side:
 - `set-flow-governance-options` accepts only known Flow Governance options and branch kinds.
 - Flow Governance option updates require a ready current-repository graph state with Flow Governance metadata.
 - Flow Governance option updates do not trigger Git operations or graph rebuilds.
+- Webview Flow Governance controls are hidden until host state includes Flow Governance metadata.
+- Webview branch-kind filters and default sync/unknown hiding apply only to classified branch refs and preserve graph topology.
+- Flow Governance badges and production-trunk highlighting are rendered from host metadata, not client-side branch-name inference.
 - `package.json` settings remain aligned with the FRD/SAD.
 
 ## Verification
@@ -70,6 +73,7 @@ Focused tests:
 - `test/revisionGraphMessageDispatcher.test.ts` covers stale-repository rejection
 - `test/revisionGraphMessageHandler.test.ts` covers host-boundary update routing
 - `test/revisionGraphTypeBoundaries.test.ts` confirms the new type contract does not reintroduce import cycles
+- `test/revisionGraphWebview.test.ts` covers Flow Governance controls, message posting, badges, and branch-ref filtering
 
 Current results:
 
@@ -77,12 +81,13 @@ Current results:
 - Focused Flow Governance, manifest, revision graph state, and type-boundary tests passed on 2026-07-01.
 - Repository flow-file precedence, settings fallback, path guard, and invalid-config state tests passed on 2026-07-01.
 - Focused Flow Governance message validation, dispatcher, handler, and type-boundary tests passed on 2026-07-01.
+- Focused revision graph webview tests passed on 2026-07-01.
 
 ## Risks
 
 - Adding settings without runtime wiring can look like a complete feature. README and release notes must describe only shipped behavior when UI integration lands.
-- Later webview work must preserve graph fidelity and message authorization boundaries.
+- Later repository flow-file creation must preserve confirmation, path safety, and non-destructive defaults.
 
 ## Handoff Notes
 
-Next implementation slice should add webview rendering controls for Flow View and branch-kind filters.
+Next implementation slice should add the repository flow-file creation path, including confirmation, path validation, and focused tests.
