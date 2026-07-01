@@ -5,7 +5,8 @@
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
 - **Feature status:** Approved product proposal with an execution-ready Phase 1 baseline
-- **Document version:** 2.5 - Execution-ready Phase 1 governance baseline
+- **Package baseline at review:** `package.json` version `1.5.5` on 2026-07-01
+- **Document version:** 3.0 - Implementation-grade FRD baseline
 - **Language:** English
 
 ---
@@ -34,6 +35,31 @@ The current extension already provides:
 The Flow Governance Layer must build on those foundations. It should help teams
 understand branch roles and detect flow issues, while keeping official
 integration gates in the remote provider through Pull Requests.
+
+### Document Authority And Boundaries
+
+This FRD is the product requirements baseline for Flow Governance. It defines
+what the feature must accomplish, how success is evaluated, what is explicitly
+out of scope for each phase, and which release gates must be satisfied before
+shipping.
+
+The FRD is intentionally not the final implementation design. Architecture,
+module names, message contracts, and test placement are finalized in the SAD and
+focused build artifacts. Where this document suggests architecture or file
+names, those suggestions are non-normative unless the same rule is restated as
+a requirement, acceptance criterion, or phase gate.
+
+Requirement language is interpreted as follows:
+
+- **Must**: release-blocking requirement for the phase where it is assigned.
+- **Should**: expected behavior that may be deferred only with an explicit
+  documented tradeoff.
+- **May**: optional behavior or implementation choice.
+- **Out of scope**: must not be implemented in that phase without maintainer
+  approval and an updated phase artifact.
+
+Every implementation phase must preserve the published extension's current
+behavior unless the phase acceptance criteria explicitly say otherwise.
 
 ---
 
@@ -400,6 +426,30 @@ to the remote.
 
 ## 11. Functional Requirements
 
+The functional requirements are phased. A requirement is release-blocking only
+for the phase where it is assigned, unless a later phase explicitly depends on a
+Phase 1 foundation. Phase 1 must not implement later-phase user actions, Git
+mutations, provider authentication, or Pull Request automation.
+
+| Requirement | Phase | Priority | Release-blocking verification |
+|---|---:|---|---|
+| FR01 - Flow Configuration | 1 | Must | Config schema, normalization, precedence, invalid-config, and multi-repository tests |
+| FR02 - Semantic Branch Classification | 1 | Must | Unit tests for default patterns, custom patterns, main precedence, deterministic order, and unknown fallback |
+| FR03 - Visual Decorations | 1 | Must | Webview/render verification for badges, trunk highlight, sync hiding, and no control overlap |
+| FR04 - Flow View | 1 | Must | Flow View toggle and filter-state tests or focused render checks |
+| FR05 - PR-Gated Transition Diagnostics | 2 | Must for Phase 2 | Transition-policy tests and action-triggered diagnostic smoke tests |
+| FR06 - Release Readiness Checks | 2 | Must for Phase 2 | Ancestry validation tests for ready, blocked, inconclusive, and missing-ref states |
+| FR07 - Production Equalization Assistant | 3 | Must for Phase 3 | Safe-working-tree, conflict handoff, no-push, and no-force-push tests or smoke checks |
+| FR08 - Task, Feature, Package, Bug, And Hotfix Relationships | 2+ | Should | Relationship confidence tests and branch-creation form validation |
+| FR09 - Governance Diagnostics | 1+ | Must by surfaced subset | Phase-specific diagnostic tests; Phase 1 only requires unknown-branch feedback |
+| FR10 - GitHub Pull Request Creation | 2 | Must for Phase 2 | GitHub remote parsing, authentication fallback, API failure, and URL/context fallback tests |
+| FR11 - Cleanup Assistant | 4 | Must for Phase 4 | Candidate explanation, dry-run, protected/current branch, and confirmation tests |
+
+Phase 1 implementation scope is limited to FR01, FR02, FR03, FR04, and the
+unknown-branch subset of FR09. Any code path that creates branches, merges,
+pushes, deletes, authenticates with providers, opens Pull Requests, or validates
+release promotion belongs to a later phase.
+
 ### FR01 - Flow Configuration
 
 The extension must allow users to configure the branch governance model.
@@ -473,10 +523,21 @@ type FlowBranchKindWithoutMainOrUnknown =
   | 'hotfix';
 ```
 
-Phase 1 may include later-phase fields in the schema so repositories can prepare
-configuration early, but unsupported fields must be ignored with forward
-compatibility. Unsupported fields must not trigger Git actions, PR actions, or
-provider authentication in Phase 1.
+Phase 1 may recognize later-phase fields only for forward-compatible validation
+and preservation. Unsupported fields are inert metadata in Phase 1:
+
+- they must not alter classification, decorations, filters, diagnostics, or
+  action visibility unless the field is explicitly listed in the Phase 1
+  normalized model;
+- they must not trigger Git actions, PR actions, provider authentication,
+  branch creation, branch deletion, merge, push, pull, checkout, reset, stash,
+  tag creation, or cleanup behavior;
+- they must be excluded from the Phase 1 runtime decision model or carried only
+  in an `ignoredFields` or equivalent non-executable structure;
+- the default flow file generated by Phase 1 must contain only fields supported
+  by the Phase 1 normalized model;
+- tests must prove that representative future fields are ignored without
+  breaking graph load.
 
 Validation rules:
 
@@ -508,7 +569,8 @@ The Phase 1 implementation must not deep-merge repository files with settings.
 Only one selected source is normalized against defaults. This prevents ambiguous
 multi-root behavior and makes validation failures explainable.
 
-Full-feature expected settings and repository configuration fields:
+Full-feature expected settings and repository configuration fields for later
+phases:
 
 - enable or disable Flow Governance;
 - define regex patterns for each branch kind;
@@ -523,7 +585,7 @@ Full-feature expected settings and repository configuration fields:
 - configure where diagnostics appear;
 - configure whether GitHub PR creation is enabled.
 
-Example:
+Full-feature example, not the Phase 1 generated default:
 
 ```json
 {
@@ -1012,6 +1074,13 @@ normalization logic before adding browser-side rendering behavior.
 
 ## 14. Recommended UX
 
+This section describes the full UX direction for Flow Governance. Phase 1 owns
+only the Flow View toggle, branch-kind filters, trunk highlight, compact
+decorations, optional hidden `sync/*` treatment, and unknown-branch feedback.
+Context menus, governed branch creation forms, GitHub PR actions, Sync Sandbox
+actions, and cleanup actions are later-phase UX unless explicitly approved in a
+focused feature artifact.
+
 ### 14.1 Toolbar
 
 Start with lightweight controls:
@@ -1152,17 +1221,29 @@ Acceptance criteria:
 - configured branches are classified correctly;
 - unknown branches are marked as `unknown`;
 - `sync/*` refs can be hidden without removing commits from history;
+- hidden branch refs remain recoverable through filters or by disabling Flow
+  View;
+- Flow metadata never changes commit ancestry, graph ordering, ref identity, or
+  the underlying Git operations available outside Flow View;
 - creating `.git-revision-graph-flow.json` is allowed only after explicit user
   confirmation;
+- the generated Phase 1 flow file contains only Phase 1 supported fields;
 - if the user declines flow file creation, Flow View can run with defaults or
   workspace/user settings where available;
 - invalid regex or invalid flow configuration is reported without breaking graph
   load;
+- future-phase config fields are treated as inert metadata and cannot cause Git
+  operations, provider authentication, PR behavior, or extra action visibility;
 - config precedence is tested for repository file, workspace settings, user
   settings, and defaults;
 - multi-repository workspaces resolve flow configuration independently per
   repository;
-- existing graph behavior remains unchanged when disabled.
+- existing graph behavior remains unchanged when disabled;
+- Flow View controls use VS Code theme-compatible styling and accessible labels
+  or tooltips where icon-only controls are used;
+- any contributed setting, schema, command, menu, or activation event is listed
+  in the focused feature artifact and aligned with `package.json`, README, and
+  tests before release.
 
 Phase 1 implementation traceability:
 
@@ -1195,13 +1276,16 @@ Phase 1 verification gate:
 - `npm test` passes;
 - config parser/classifier tests cover valid defaults, invalid regex, invalid
   schema version, repository-file precedence, workspace fallback, user fallback,
-  and multi-repository independence;
+  multi-repository independence, Phase 1 default-file generation, and inert
+  future-field handling;
 - focused webview tests or screenshots confirm badges, filters, trunk highlight,
   and hidden `sync/*` treatment do not overlap or obscure existing graph
   controls;
 - manual Extension Development Host smoke test covers graph load, repository
   switching, Flow View on/off, filter toggles, refresh, empty repository state,
   invalid config, and disabled behavior;
+- manifest review confirms that new configuration keys, schemas, commands,
+  menus, views, and activation events, if any, match implementation and README;
 - `git diff --check` passes before packaging;
 - no packaging, version bump, or Marketplace publish command is run without
   maintainer approval.
@@ -1336,6 +1420,7 @@ A phase is done only when:
 
 The feature is ready when:
 
+- all phase-level Definitions of Done have been met for shipped phases;
 - Flow Governance can be enabled and disabled;
 - branch patterns are configured through a repository-versioned flow file;
 - a default flow file is provided when governance is activated;
@@ -1350,7 +1435,9 @@ The feature is ready when:
 - Sync Sandbox helper branches are not pushed automatically;
 - destructive actions require confirmation;
 - existing Git Revision Graph behavior remains intact;
-- users outside the governance model are not disrupted.
+- users outside the governance model are not disrupted;
+- release notes, README updates, rollback notes, and Marketplace impact notes
+  are complete for every shipped phase.
 
 ---
 
@@ -1374,20 +1461,51 @@ The feature is ready when:
 
 ## 18. Success Metrics
 
-- Users report reduced visual noise in branch-heavy repositories.
-- Flow View and flow filters are used repeatedly in branch-heavy repositories.
-- Flow diagnostics generate actionable validation results without blocking graph
-  load.
-- Release promotion diagnostics catch missing production commits before users
-  open or recommend promotion PRs.
-- PR context actions or GitHub PR creation are completed successfully for
-  supported GitHub remotes.
-- Production-to-release equalization flows are completed through PRs.
-- Cleanup dry-runs identify useful candidates without accidental deletion and
-  clearly report unknown provider-side PR state when unavailable.
-- Assisted branch operations have a low recoverable-error rate and do not leave
-  users without clear next steps.
-- Positive feedback compared with generic Git graph visualizers.
+Success is measured through release gates, manual validation, issue feedback,
+and optional future telemetry only if telemetry is explicitly approved. The
+extension must not add telemetry as an implied requirement of Flow Governance.
+
+Phase 1 release-gate metrics:
+
+- `npm run build`, `npm test`, and `git diff --check` pass for the release
+  candidate.
+- Config and classification tests cover every Phase 1 branch kind, custom
+  regex patterns, invalid regex, invalid schema version, selected-source
+  precedence, multi-repository independence, default-file generation, and inert
+  future-field handling.
+- Manual Extension Development Host smoke coverage passes for graph load,
+  repository switching, Flow View on/off, branch-kind filters, hidden `sync/*`
+  recovery, refresh, empty repository state, invalid config, and disabled
+  behavior.
+- Webview verification confirms badges, trunk highlight, filters, and Flow View
+  controls remain legible under at least the default light theme, default dark
+  theme, a narrow editor width, and a branch-heavy graph fixture.
+- Disabled Flow Governance produces no intentional user-visible change to
+  compare, checkout, branch, merge, sync, delete, diff, log, minimap, search,
+  refresh, focus, empty-state, or multi-repository workflows.
+- Phase 1 introduces no Git mutation path except explicit creation or update of
+  the versioned flow configuration file after user confirmation.
+
+Later-phase release-gate metrics:
+
+- PR-gated diagnostics return explicit `ready`, `blocked`, or `inconclusive`
+  outcomes for required transition checks.
+- GitHub PR creation either succeeds for supported authenticated GitHub remotes
+  or falls back to a PR URL/context handoff with a recoverable explanation.
+- Production equalization never pushes automatically, never force pushes, never
+  deletes helper branches on error, and hands conflict resolution to VS Code
+  Source Control.
+- Cleanup dry-runs explain every candidate, block protected/current branches,
+  and clearly report unknown provider-side PR state when unavailable.
+
+Post-release product signals:
+
+- Users of branch-heavy repositories report that Flow View reduces visual noise
+  without hiding needed history.
+- Maintainers receive fewer ambiguity reports about branch purpose, promotion
+  readiness, and cleanup candidates.
+- Repeated issue or discussion feedback indicates the feature is useful without
+  requiring teams to abandon their existing branch naming model.
 
 ---
 
