@@ -1072,10 +1072,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function syncFlowGovernanceControls(flowGovernance = currentFlowGovernance) {
+      const isActive = isFlowGovernanceActive(flowGovernance);
       if (flowGovernanceOptions) {
-        flowGovernanceOptions.hidden = !hasFlowGovernanceState(flowGovernance);
+        flowGovernanceOptions.hidden = !isActive;
       }
-      if (!hasFlowGovernanceState(flowGovernance)) {
+      if (!isActive) {
         if (flowKindOptions) {
           flowKindOptions.innerHTML = '';
         }

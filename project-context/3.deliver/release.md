@@ -7,14 +7,14 @@ Last consolidated: 2026-07-01
 
 - Current package version: `1.5.6` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: Flow Governance Phase 1 has implementation and automated verification
-  complete on top of the published `1.5.6` baseline. No version bump, VSIX packaging, or
-  Marketplace publication has been run.
+- Release cycle status: Flow Governance Phase 1 has implementation, automated verification, and
+  manual Extension Development Host smoke complete on top of the published `1.5.6` baseline. No
+  version bump, VSIX packaging, or Marketplace publication has been run.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Open Release Candidate: Flow Governance Phase 1
 
-Status: Implementation verified, manual smoke pending
+Status: Ready for version decision, packaging approval, and Marketplace release approval
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: pending maintainer approval
@@ -66,8 +66,11 @@ Recorded verification:
 - `npm run build` passed on 2026-07-01 during Flow Governance implementation.
 - Focused Flow Governance config, state, manifest, message validation, dispatcher, handler,
   type-boundary, webview, and command tests passed on 2026-07-01.
-- `npm test` passed with 553 tests on 2026-07-01 after the release-readiness updates.
-- `git diff --check` passed on 2026-07-01 after the release-readiness updates.
+- `npm test` passed with 554 tests on 2026-07-01 after the invalid-config smoke feedback fix.
+- `git diff --check` passed on 2026-07-01 after the invalid-config smoke feedback fix.
+- Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on
+  2026-07-01. Confirmed config creation, activation, invalid-config handling with hidden inert
+  controls, and normal graph usability.
 
 Marketplace impact:
 

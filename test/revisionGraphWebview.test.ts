@@ -864,6 +864,43 @@ test('renders Flow Governance badges and filters branch refs in the webview', ()
   assert.doesNotMatch(nodeLayer.innerHTML, /sync\/generated/);
 });
 
+test('hides Flow Governance controls when repository config is invalid', () => {
+  const runtime = createWebviewRuntime();
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
+        enabled: false,
+        configSource: 'invalid',
+        diagnostics: [
+          {
+            code: 'invalid-config',
+            severity: 'error',
+            message: 'Flow Governance config is invalid.'
+          }
+        ],
+        branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
+        filters: {
+          visibleKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
+          hideSyncBranches: true,
+          highlightProductionTrunk: true,
+          showUnknownBranches: true
+        },
+        references: []
+      }
+    })
+  });
+
+  const flowOptions = runtime.elements.get('flowGovernanceOptions');
+  const flowKindOptions = runtime.elements.get('flowKindOptions');
+  assert.ok(flowOptions);
+  assert.ok(flowKindOptions);
+
+  assert.equal(flowOptions.hidden, true);
+  assert.equal(flowKindOptions.innerHTML, '');
+});
+
 test('posts Flow Governance option updates from the webview runtime', () => {
   const runtime = createWebviewRuntime();
 

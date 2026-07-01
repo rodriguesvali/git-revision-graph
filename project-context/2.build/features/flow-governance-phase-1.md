@@ -1,6 +1,6 @@
 # Flow Governance Phase 1
 
-Status: Release handoff ready
+Status: Phase 1 complete - release approval pending
 Last updated: 2026-07-01
 Target baseline: `1.5.6`
 
@@ -49,6 +49,7 @@ The first slice intentionally stays pure and host-side:
 - The revision graph ready state remains unchanged until Flow Governance is explicitly wired.
 - Enabled fallback settings or valid repository flow files attach Flow Governance metadata to ready graph state.
 - Invalid repository flow files attach disabled Flow Governance diagnostics without breaking graph load.
+- Invalid repository flow files hide Flow Governance webview controls so users do not see inert filters.
 - `set-flow-governance-options` accepts only known Flow Governance options and branch kinds.
 - Flow Governance option updates require a ready current-repository graph state with Flow Governance metadata.
 - Flow Governance option updates do not trigger Git operations or graph rebuilds.
@@ -89,6 +90,9 @@ Current results:
 - Focused Flow Governance config command and package manifest tests passed on 2026-07-01.
 - `npm test` passed with 553 tests on 2026-07-01 after release-readiness updates.
 - `git diff --check` passed on 2026-07-01 after release-readiness updates.
+- Focused revision graph webview invalid-config regression passed on 2026-07-01 after smoke feedback.
+- `npm test` passed with 554 tests on 2026-07-01 after the invalid-config smoke feedback fix.
+- Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on 2026-07-01.
 
 ## Risks
 
@@ -97,4 +101,4 @@ Current results:
 
 ## Handoff Notes
 
-Release handoff should run the Flow Governance section of `project-context/3.deliver/extension-host-smoke-matrix.md` in an Extension Development Host before version bump, packaging, or Marketplace publication.
+Phase 1 is complete. Next step is maintainer decision on target version, version bump, VSIX packaging, and Marketplace publication.
