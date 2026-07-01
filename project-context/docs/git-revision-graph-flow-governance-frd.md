@@ -6,7 +6,7 @@
 **Repository:** `rodriguesvali/git-revision-graph`  
 **Project status:** Existing published VS Code extension  
 **Feature status:** Final proposal for incremental specification and implementation  
-**Document version:** 2.2 - Governed branch creation UX  
+**Document version:** 2.4 - Contextual Flow Governance menu rules  
 **Language:** English  
 
 ---
@@ -808,19 +808,48 @@ the graph through badges, tooltips, filters, and contextual validation messages.
 
 ## 14.2 Context Menu
 
-Add contextual actions only when applicable:
+The graph reference context menu is already dense. Flow Governance actions must
+be grouped under a dedicated `Flow Governance` submenu instead of being added as
+separate top-level context menu items.
 
-- Show Flow Details;
-- Create Governed Branch;
-- Hide Branch Type;
-- Show Related Branches;
-- Validate Release Promotion;
-- Prepare Production Equalization;
-- Create GitHub Pull Request, when the remote provider is supported;
-- Copy PR Context;
-- Open PR Compare URL, as fallback when available;
-- Run Cleanup Dry-Run;
-- Start Sync Sandbox.
+Show the `Flow Governance` submenu only when all of the following are true:
+
+- Flow Governance is enabled;
+- the selected reference belongs to a repository with valid flow configuration;
+- at least one Flow Governance action is applicable to the selected reference.
+
+If no Flow Governance action is applicable, do not show the submenu.
+
+### Contextual Action Visibility
+
+| Action | Show when |
+|---|---|
+| Show Flow Details | The selected reference has Flow Governance metadata, including `unknown`. |
+| Create Governed Branch | The selected reference can be used as the base for a configured governed branch flow and a `branchCreation` template exists for the target branch kind. |
+| Hide Branch Type | The selected reference has a hideable branch kind such as `sync`, `task`, `package`, or `bug`. Do not show for `main` or `master`. |
+| Show Related Branches | The selected reference has inferred or configured relationships, such as `task -> feature`, `package -> feature`, or `sync -> release`. |
+| Validate Release Promotion | The selected reference is classified as `release`. |
+| Prepare Production Equalization | The selected reference is a release and promotion validation shows that production is not an ancestor of the release. |
+| Create GitHub Pull Request | A governed source/target pair is resolved, the remote is GitHub, the source branch exists on the remote, and GitHub authentication is available or can be requested. |
+| Copy PR Context | A governed source/target pair is resolved, regardless of whether GitHub API creation is available. |
+| Open PR Compare URL | A governed source/target pair is resolved and the remote URL format is recognized well enough to build a compare or PR URL. |
+| Run Cleanup Dry-Run | The selected reference is a branch that may be removable, is not the current branch, is not protected, and cleanup rules are applicable. |
+| Start Sync Sandbox | The selected reference is a release blocked for promotion or another configured context requires equalization, and the working tree is safe enough to start the flow. |
+
+Prefer hiding actions that are not relevant to the selected reference. Show a
+disabled action only when the missing precondition teaches the user what to do
+next.
+
+Examples:
+
+- Show disabled `Create GitHub Pull Request` with a tooltip such as `Push the
+  source branch before creating a Pull Request` when source/target are known but
+  the source branch is not on the remote.
+- Show disabled `Start Sync Sandbox` with a tooltip such as `Resolve the current
+  merge or working tree state before starting equalization` when the action is
+  conceptually relevant but the repository is unsafe.
+- Hide `Validate Release Promotion` for non-release references.
+- Hide `Run Cleanup Dry-Run` for protected branches and the current branch.
 
 ## 14.3 Governed Branch Creation Form
 
