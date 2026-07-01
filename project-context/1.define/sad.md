@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-06-30
+Last consolidated: 2026-07-01
 
 ## Context
 
@@ -12,13 +12,16 @@ Last consolidated: 2026-06-30
 - `package.json` defines the published extension surface, contributed commands, Source Control toolbar entry, settings, extension dependency on `vscode.git`, and packaging scripts.
 - `src/extension.ts` owns activation, Git API acquisition, command registration, document content providers, and shared presenter/service construction.
 - `src/revisionGraphPanel.ts` exposes the revision graph editor panel entrypoints.
-- `src/revisionGraph/controller.ts` coordinates repository synchronization, graph state lifecycle, webview messages, and graph-side actions.
-- `src/revisionGraph/backend.ts`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/repository/snapshot.ts` load graph snapshots, revision logs, diffs, commit details, and merge-blocked metadata.
+- `src/revisionGraph/controller.ts` coordinates the graph webview surface, render state, repository lifecycle integration, webview messages, and graph-side actions.
+- `src/revisionGraph/repository/lifecycle.ts` owns repository attachment, repository-set changes, repository state signatures, active-repository transitions, and refresh request enrichment.
+- `src/revisionGraph/backend.ts`, `src/revisionGraph/backendServices/*`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/repository/snapshot.ts` load graph snapshots, revision logs, diffs, commit details, and merge-blocked metadata.
 - `src/revisionGraph/projection/*`, `src/revisionGraph/layout/*`, and model/query modules shape commit graph data, projection options, focus modes, layout, and cache behavior.
+- `src/revisionGraph/model/*`, `src/revisionGraph/revisionLogTypes.ts`, `src/revisionGraphData.ts`, and `src/revisionGraphTypes.ts` define graph domain types, serializable scene/view-state contracts, and compatibility re-exports across host and webview boundaries.
 - `src/revisionGraphWebview.ts` and `src/revisionGraph/webview/script/*` generate and run the browser-side graph UI, including virtualization, minimap, search, selection, context menus, and message handling.
+- `src/revisionGraph/messageValidation.ts`, `src/revisionGraph/messageAuthorization.ts`, `src/revisionGraph/messageDispatcher.ts`, and `src/revisionGraph/messageHandler.ts` split webview message parsing, state/current-repository authorization, dispatch, and action handling.
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
 - `src/refActions.ts` contains testable Git workflows.
-- `src/workbenchRefActionServices.ts` adapts those workflows to VS Code UI and targeted Git CLI helpers.
+- `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
 
 ## Product Surfaces
@@ -42,6 +45,121 @@ Last consolidated: 2026-06-30
 7. Native VS Code UI handles picks, confirmations, diffs, Source Control reveal, notifications, and editor panels.
 8. Repository changes and completed mutations refresh or reproject visible state according to the current snapshot and invalidation boundary.
 
+## Flow Governance Phase 1 Architecture
+
+Phase 1 of Flow Governance adds a non-mutating semantic overlay for branch classification, Flow View controls, branch-kind filters, production trunk highlighting, optional `sync/*` ref hiding, and unknown-branch feedback. It does not add PR automation, branch creation forms, governed merge policy, release promotion checks, cleanup actions, provider authentication, or Git mutations other than explicit creation/update of the repository-versioned flow configuration file after confirmation.
+
+### Phase 1 Modules
+
+Phase 1 should use a small `src/revisionGraph/flow/` module set. Later-phase modules must not be introduced until their owning phase enters active scope.
+
+- `flowTypes.ts`: serializable Phase 1 contracts for branch kinds, normalized config, branch metadata, diagnostics, filter state, and view-state payloads.
+- `flowDefaults.ts`: default branch kinds, main branch names, regex patterns, and default visual/filter options.
+- `flowConfig.ts`: repository flow-file loading, VS Code settings fallback, source precedence, validation, normalization, and default file content generation.
+- `flowBranchClassifier.ts`: deterministic branch classification from normalized config, including main-branch precedence and `unknown` fallback.
+- `flowDiagnostics.ts`: Phase 1 diagnostics only, limited to invalid configuration reporting and unknown-branch metadata.
+- `flowDecorations.ts`: mapping from branch metadata to compact view-model decorations consumed by the existing webview.
+- `flowState.ts`: host-side Flow View state transitions for enable/disable and branch-kind filters.
+
+Phase 1 must not add `flowBranchCreation.ts`, `flowTransitionPolicy.ts`, `flowPromotionChecks.ts`, `flowGithubPullRequests.ts`, `flowCleanupCandidates.ts`, or `flowSyncPlan.ts` unless the focused feature artifact explicitly expands scope with maintainer approval.
+
+### Configuration Boundary
+
+- Repository-versioned `.git-revision-graph-flow.json` is the authoritative source when present and valid.
+- Workspace settings and user settings are fallback inputs only. A repository flow file is not deep-merged with settings.
+- Configuration is resolved per active repository and must follow repository switching, repository closure, zero-repository state, and multi-root semantics owned by `RevisionGraphRepositoryLifecycle`.
+- Invalid repository configuration disables Flow Governance for that repository and reports a recoverable validation result without breaking normal graph loading.
+- Phase 1 generated flow files contain only supported Phase 1 fields.
+- Future-phase fields may be parsed for preservation/reporting, but they are inert and cannot affect classification, filters, actions, provider authentication, or Git mutation paths.
+
+Expected Phase 1 settings, if contributed, are:
+
+- `gitRevisionGraph.flowGovernance.enabled`
+- `gitRevisionGraph.flowGovernance.configPath`
+- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`
+- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`
+- `gitRevisionGraph.flowGovernance.showUnknownBranches`
+
+Any contributed settings, schema files, commands, menus, activation events, README text, and tests must be listed in the focused Phase 1 build artifact before coding starts.
+
+### Data Flow
+
+1. The revision graph resolves the active repository through the existing repository lifecycle.
+2. Flow configuration is loaded for that repository from the selected source and normalized against Phase 1 defaults.
+3. Graph snapshot loading remains owned by the existing backend and projection pipeline.
+4. Branch refs in the ready graph state are classified by host/shared model code using the normalized Flow Governance config.
+5. Flow metadata and Phase 1 diagnostics are attached to serializable graph view-state data without changing commit ancestry, ref identity, projection edges, compressed `through` paths, or layout ownership.
+6. The existing webview renders Flow View controls, badges, trunk highlight, filters, and hidden-by-default `sync/*` refs from supplied metadata.
+7. Webview messages express user intent only: toggle Flow View, update branch-kind filters, toggle hidden sync refs, toggle production trunk highlight, and toggle unknown-branch visibility.
+8. Host-side message validation and authorization accept only well-formed Flow View messages for the current repository/state and ignore or reject stale or malformed payloads.
+
+Flow metadata is an overlay. It must not be modeled as a Git ref mutation or as a substitute for the existing projection/focus modes.
+
+### Integration Boundaries
+
+- `RevisionGraphController` remains the public owner of the graph webview surface and should orchestrate Flow Governance only by calling focused flow helpers. It must not absorb classification, config validation, or decoration rules inline.
+- `RevisionGraphRepositoryLifecycle` remains the only repository lifecycle coordinator. Flow Governance must subscribe through controller/lifecycle integration points and must not add an independent repository tracker.
+- `RevisionGraphBackend` and `backendServices/*` remain responsible for Git data loading. Phase 1 Flow Governance must not add Git CLI calls for classification.
+- `src/revisionGraph/model/*` and serializable view-state contracts own host/webview type boundaries. Flow metadata types must be JSON-serializable and must not import Git parsing modules into webview shared contracts.
+- `messageValidation.ts` remains responsible for payload shape, while `messageAuthorization.ts` remains responsible for state/current-repository authorization. New Flow View messages must be covered in both places.
+- `src/revisionGraph/webview/script/*` may render metadata and maintain UI-local presentation state, but it must not infer branch governance from names, evaluate policy, read config, authenticate providers, or perform Git mutations.
+- `workbenchRefActionServices` and `refActions` are unchanged in Phase 1 except for regression coverage. Governance-specific branch creation, PR, merge, sync, and cleanup workflows are later-phase concerns.
+
+### View State And Messages
+
+Phase 1 view-state additions should be grouped under a single optional Flow Governance property on the ready graph state, for example:
+
+```ts
+type FlowGovernanceViewState = {
+  enabled: boolean;
+  configSource: 'repository' | 'workspace' | 'user' | 'defaults' | 'invalid' | 'disabled';
+  diagnostics: readonly FlowDiagnostic[];
+  branchKinds: readonly FlowBranchKind[];
+  filters: FlowGovernanceFilterState;
+  references: readonly FlowReferenceMetadata[];
+};
+```
+
+The exact type names are implementation details, but the contract must remain:
+
+- serializable;
+- scoped to the current repository;
+- absent or disabled when Flow Governance is off;
+- deterministic for tests;
+- independent from Git mutation services;
+- compatible with disabled behavior that preserves the current graph output.
+
+New messages should be limited to Flow View state changes. They must not carry arbitrary regex strings, raw config file contents, provider tokens, or Git operation requests.
+
+### Phase 1 Non-Goals
+
+- No new Activity Bar view, diagnostics panel, or diagnostics editor.
+- No PR creation, provider authentication, release promotion validation, transition policy enforcement, equalization assistant, cleanup assistant, or governed branch creation forms.
+- No direct governed merge blocking or warning behavior in Phase 1.
+- No automatic push, pull, checkout, branch, tag, stash, reset, merge, delete, or remote mutation.
+- No unbounded graph loading or full-history claim.
+- No runtime dependency addition without explicit approval.
+
+### Phase 1 Verification
+
+Required automated gates:
+
+- `npm run build`
+- `npm test`
+- `git diff --check`
+
+Focused verification must cover:
+
+- config validation and normalization for defaults, repository file, workspace fallback, user fallback, invalid schema version, invalid regex, inert future fields, and generated default file content;
+- branch classification for every Phase 1 branch kind, main precedence, deterministic pattern order, custom patterns, and unknown fallback;
+- repository lifecycle compatibility for zero repositories, repository switching, repository close/open, multi-root independence, and refresh after active repository changes;
+- message validation and authorization for all new Flow View messages, malformed payloads, stale repository state, loading state, and disabled Flow Governance;
+- type-boundary/import-cycle regression across graph Git parsing, graph model, view-state contracts, and webview shared code;
+- graph fidelity fixtures proving Flow metadata and hidden `sync/*` treatment do not alter ancestry, visible branch/remote/tag/stash anchors, hidden merge continuity, or compressed edge `through` paths;
+- webview rendering or shell checks for badges, trunk highlight, filters, hidden sync treatment, no control overlap, theme compatibility, and accessible labels/tooltips.
+
+Manual Extension Development Host smoke for Phase 1 must cover graph load, repository switching, Flow View on/off, branch-kind filters, hidden `sync/*` recovery, refresh, invalid config, empty repository state, disabled behavior, and existing compare/diff/log/context-menu basics.
+
 ## Architectural Constraints
 
 - Prefer `vscode.git` for repository state, refs, checkout, merge, pull, push, and file content.
@@ -51,6 +169,7 @@ Last consolidated: 2026-06-30
 - Preserve conflict guards before workspace-changing operations.
 - Preserve bounded graph loading rather than claiming unbounded full-history coverage.
 - Preserve the current split between graph backend, projection/layout, controller orchestration, webview presentation, workbench adapters, and testable ref actions.
+- Preserve the extracted repository lifecycle, backend service, message authorization, and graph model/type boundaries introduced in the `1.5.6` architecture baseline.
 - Require explicit approval for runtime dependency changes, contribution-surface changes, publishing, or version bumps.
 
 ## Current Decisions
@@ -61,6 +180,7 @@ Last consolidated: 2026-06-30
 - Descendant focus is based on Git ancestry in the loaded DAG, not visual row, timestamp, or screen position.
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
+- Flow Governance Phase 1 is a metadata overlay over the loaded graph. Its filters and decorations must not change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
 ## Quality Attributes
@@ -91,5 +211,7 @@ Last consolidated: 2026-06-30
 - `README.md`
 - `.codex/skills/vscode-extension-developer/references/project-map.md`
 - `project-context/1.define/prd.md`
+- `project-context/docs/git-revision-graph-flow-governance-frd.md`
+- `project-context/2.build/features/1.5.6-architecture-risk-reduction.md`
 - `project-context/docs/product-evolution-roadmap.md`
 - `project-context/docs/revision-graph-parity-plan.md`
