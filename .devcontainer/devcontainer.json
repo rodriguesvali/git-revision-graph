@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
   "runArgs": [
     "--env-file",
-    ".devcontainer/.env"
+    ".env"
   ],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {},
@@ -26,7 +26,8 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-azuretools.vscode-docker",
-        "openai.chatgpt"
+        "openai.chatgpt",
+        "rodriguesvali.git-revision-graph"
       ]
     }
   }
