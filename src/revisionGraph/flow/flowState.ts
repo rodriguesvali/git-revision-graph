@@ -2,7 +2,6 @@ import { FLOW_BRANCH_KINDS } from './flowDefaults';
 import {
   FlowBranchInfo,
   FlowGovernanceOptionsUpdate,
-  FlowGovernanceFilterState,
   FlowGovernanceViewState,
   FlowConfigResolution
 } from './flowTypes';
@@ -14,12 +13,6 @@ export function createFlowGovernanceViewState(
 ): FlowGovernanceViewState {
   const config = resolution.config;
   const enabled = resolution.ok && config.enabled;
-  const filters: FlowGovernanceFilterState = {
-    visibleKinds: FLOW_BRANCH_KINDS,
-    hideSyncBranches: config.hideSyncBranchesByDefault,
-    highlightProductionTrunk: config.highlightProductionTrunk,
-    showUnknownBranches: config.showUnknownBranches
-  };
 
   return {
     enabled,
@@ -29,8 +22,7 @@ export function createFlowGovernanceViewState(
       ...collectFlowBranchDiagnostics(references)
     ],
     branchKinds: FLOW_BRANCH_KINDS,
-    filters,
-    references: enabled ? references : []
+    references: resolution.ok ? references : []
   };
 }
 
@@ -40,12 +32,6 @@ export function applyFlowGovernanceOptionsUpdate(
 ): FlowGovernanceViewState {
   return {
     ...state,
-    enabled: update.enabled ?? state.enabled,
-    filters: {
-      visibleKinds: update.visibleKinds ?? state.filters.visibleKinds,
-      hideSyncBranches: update.hideSyncBranches ?? state.filters.hideSyncBranches,
-      highlightProductionTrunk: update.highlightProductionTrunk ?? state.filters.highlightProductionTrunk,
-      showUnknownBranches: update.showUnknownBranches ?? state.filters.showUnknownBranches
-    }
+    enabled: update.enabled ?? state.enabled
   };
 }

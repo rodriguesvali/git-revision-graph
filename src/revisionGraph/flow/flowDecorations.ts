@@ -5,8 +5,6 @@ export interface FlowReferenceDecoration {
   readonly kind: FlowBranchKind;
   readonly badge: string;
   readonly title: string;
-  readonly isProductionTrunk: boolean;
-  readonly hiddenByDefault: boolean;
 }
 
 const BADGES: Readonly<Record<FlowBranchKind, string>> = {
@@ -26,9 +24,7 @@ export function createFlowReferenceDecoration(branch: FlowBranchInfo): FlowRefer
     refName: branch.refName,
     kind: branch.kind,
     badge: BADGES[branch.kind],
-    title: createDecorationTitle(branch),
-    isProductionTrunk: branch.kind === 'main',
-    hiddenByDefault: branch.shouldHideByDefault
+    title: createDecorationTitle(branch)
   };
 }
 

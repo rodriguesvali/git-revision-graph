@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance Phase 1
 
-- Added an optional Flow Governance metadata overlay for branch classification, branch-kind badges,
-  production-trunk highlighting, and branch-kind filters in the revision graph webview.
+- Added an optional Flow Governance metadata overlay for branch classification and branch-kind
+  badges in the revision graph webview.
 - Added repository flow-file resolution with fallback VS Code settings, invalid-config diagnostics,
   and safe handling that does not alter Git history, refs, projection edges, or existing workflows.
 - Added `Create Flow Governance Config` to create the repository `.git-revision-graph-flow.json`

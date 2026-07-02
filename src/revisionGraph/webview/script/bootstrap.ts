@@ -46,11 +46,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showMinimapToggle = document.getElementById('showMinimapToggle');
     const flowGovernanceOptions = document.getElementById('flowGovernanceOptions');
     const flowGovernanceEnabledToggle = document.getElementById('flowGovernanceEnabledToggle');
-    const flowGovernanceDetailOptions = document.getElementById('flowGovernanceDetailOptions');
-    const hideSyncBranchesToggle = document.getElementById('hideSyncBranchesToggle');
-    const highlightProductionTrunkToggle = document.getElementById('highlightProductionTrunkToggle');
-    const showUnknownBranchesToggle = document.getElementById('showUnknownBranchesToggle');
-    const flowKindOptions = document.getElementById('flowKindOptions');
     const searchInput = document.getElementById('searchInput');
     const searchResultBadge = document.getElementById('searchResultBadge');
     const searchPrevButton = document.getElementById('searchPrevButton');
@@ -246,30 +241,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (flowGovernanceEnabledToggle) {
       flowGovernanceEnabledToggle.addEventListener('change', () => {
         updateFlowGovernanceOptions({ enabled: flowGovernanceEnabledToggle.checked });
-      });
-    }
-    if (hideSyncBranchesToggle) {
-      hideSyncBranchesToggle.addEventListener('change', () => {
-        updateFlowGovernanceOptions({ hideSyncBranches: hideSyncBranchesToggle.checked });
-      });
-    }
-    if (highlightProductionTrunkToggle) {
-      highlightProductionTrunkToggle.addEventListener('change', () => {
-        updateFlowGovernanceOptions({ highlightProductionTrunk: highlightProductionTrunkToggle.checked });
-      });
-    }
-    if (showUnknownBranchesToggle) {
-      showUnknownBranchesToggle.addEventListener('change', () => {
-        updateFlowGovernanceOptions({ showUnknownBranches: showUnknownBranchesToggle.checked });
-      });
-    }
-    if (flowKindOptions) {
-      flowKindOptions.addEventListener('change', (event) => {
-        const target = event.target;
-        if (!target || target.type !== 'checkbox' || !target.dataset.flowKind) {
-          return;
-        }
-        updateFlowGovernanceOptions({ visibleKinds: getCheckedFlowBranchKinds() });
       });
     }
     if (searchInput) {
@@ -1079,68 +1050,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         flowGovernanceOptions.hidden = !canShowControls;
       }
       if (!canShowControls) {
-        if (flowGovernanceDetailOptions) {
-          flowGovernanceDetailOptions.hidden = true;
-        }
-        if (flowKindOptions) {
-          flowKindOptions.innerHTML = '';
-        }
         return;
       }
 
-      const filters = flowGovernance.filters || {};
       if (flowGovernanceEnabledToggle) {
         flowGovernanceEnabledToggle.checked = flowGovernance.enabled === true;
       }
-      if (flowGovernanceDetailOptions) {
-        flowGovernanceDetailOptions.hidden = !isActive;
-      }
-      if (hideSyncBranchesToggle) {
-        hideSyncBranchesToggle.checked = filters.hideSyncBranches === true;
-      }
-      if (highlightProductionTrunkToggle) {
-        highlightProductionTrunkToggle.checked = filters.highlightProductionTrunk === true;
-      }
-      if (showUnknownBranchesToggle) {
-        showUnknownBranchesToggle.checked = filters.showUnknownBranches !== false;
-      }
-      if (isActive) {
-        renderFlowKindOptions(flowGovernance);
-      } else if (flowKindOptions) {
-        flowKindOptions.innerHTML = '';
-      }
-    }
-
-    function renderFlowKindOptions(flowGovernance = currentFlowGovernance) {
-      if (!flowKindOptions || !hasFlowGovernanceState(flowGovernance)) {
-        return;
-      }
-
-      const visibleKinds = new Set((flowGovernance.filters && flowGovernance.filters.visibleKinds) || []);
-      const markup = flowGovernance.branchKinds
-        .map((kind) => {
-          const checked = visibleKinds.has(kind) ? ' checked' : '';
-          const label = flowKindLabels[kind] || kind;
-          return '<label class="flow-kind-option" for="flowKindToggle-' + escapeHtml(kind) + '">' +
-            '<input id="flowKindToggle-' + escapeHtml(kind) + '" type="checkbox" data-flow-kind="' + escapeHtml(kind) + '"' + checked + ' />' +
-            '<span class="flow-badge flow-kind-' + escapeHtml(kind) + '">' + escapeHtml(flowKindBadges[kind] || kind) + '</span>' +
-            '<span>' + escapeHtml(label) + '</span>' +
-          '</label>';
-        })
-        .join('');
-      if (flowKindOptions.innerHTML !== markup) {
-        flowKindOptions.innerHTML = markup;
-      }
-    }
-
-    function getCheckedFlowBranchKinds() {
-      if (!flowKindOptions || typeof flowKindOptions.querySelectorAll !== 'function') {
-        return [];
-      }
-      return Array.from(flowKindOptions.querySelectorAll('[data-flow-kind]'))
-        .filter((input) => input.checked)
-        .map((input) => input.dataset.flowKind)
-        .filter(Boolean);
     }
 
     function getFlowBranchInfo(refName) {
@@ -1153,23 +1068,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
       if (!isFlowGovernanceActive()) {
         return true;
-      }
-
-      const flowBranch = getFlowBranchInfo(reference.name);
-      if (!flowBranch) {
-        return true;
-      }
-
-      const filters = currentFlowGovernance.filters || {};
-      const visibleKinds = new Set(filters.visibleKinds || []);
-      if (!visibleKinds.has(flowBranch.kind)) {
-        return false;
-      }
-      if (flowBranch.kind === 'sync' && filters.hideSyncBranches === true) {
-        return false;
-      }
-      if (flowBranch.kind === 'unknown' && filters.showUnknownBranches === false) {
-        return false;
       }
       return true;
     }
@@ -1614,16 +1512,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const refLines = visibleRefs
         .map((ref) => {
           const refId = createReferenceId(node.hash, ref.kind, ref.name);
-          const flowBranch = getFlowBranchInfo(ref.name);
+          const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(ref.name) : null;
           const flowKind = flowBranch ? flowBranch.kind : null;
           const flowBadge = flowKind
             ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '" title="' + escapeHtml(formatFlowBranchTitle(flowBranch)) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
             : '';
           const flowClass = flowKind ? ' flow-branch flow-kind-' + escapeHtml(flowKind) : '';
-          const trunkClass = flowBranch && flowBranch.kind === 'main' && currentFlowGovernance && currentFlowGovernance.filters && currentFlowGovernance.filters.highlightProductionTrunk
-            ? ' flow-production-trunk'
-            : '';
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + trunkClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
         })
         .join('');
 
@@ -1654,7 +1549,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         defaultLeft: layout.defaultLeft,
         defaultTop: layout.defaultTop,
         refs: visibleRefs.map((ref) => [ref.kind, ref.name]),
-        flowGovernance: currentFlowGovernance ? currentFlowGovernance.filters : null,
+        flowGovernance: currentFlowGovernance ? { enabled: currentFlowGovernance.enabled } : null,
         title: formatNodeTitle(node, visibleRefs),
         summary: visibleRefs.length === 0 ? formatNodeSummary(node) : ''
       });

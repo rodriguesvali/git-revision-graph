@@ -171,10 +171,7 @@ This means:
 - Flow configuration in a repository-versioned flow file, with VS Code settings
   used as fallback or bootstrap configuration.
 - Branch classification from configurable patterns.
-- Main-trunk highlighting.
 - Visual decorations by branch kind.
-- Flow filters by branch kind and diagnostics.
-- Optional hiding of ephemeral branch refs.
 - Basic unknown-branch diagnostics.
 - Lightweight contextual feedback only.
 - No Git history, ref, branch, tag, remote, merge, checkout, push, pull, or
@@ -218,11 +215,8 @@ The Phase 1 implementation must include only these user-visible surfaces:
 
 - a Flow View toggle inside the existing revision graph toolbar or equivalent
   in-graph control;
-- branch-kind filters inside the existing graph surface;
-- production trunk highlighting;
 - branch-kind badges or compact ref decorations;
-- an optional hidden-by-default treatment for `sync/*` refs;
-- unknown-branch feedback through badges, tooltips, filters, or contextual
+- unknown-branch feedback through badges, tooltips, or contextual
   graph feedback.
 
 The Phase 1 implementation must not add:
@@ -247,10 +241,7 @@ manifest-level command is necessary.
 The expected Phase 1 settings are limited to bootstrap and fallback behavior:
 
 - `gitRevisionGraph.flowGovernance.enabled`;
-- `gitRevisionGraph.flowGovernance.configPath`;
-- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`;
-- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`;
-- `gitRevisionGraph.flowGovernance.showUnknownBranches`.
+- `gitRevisionGraph.flowGovernance.configPath`.
 
 Repository-versioned configuration remains the authoritative source when
 present and valid. Settings are fallback inputs, not a second governance model.
@@ -438,8 +429,8 @@ mutations, provider authentication, or Pull Request automation.
 |---|---:|---|---|
 | FR01 - Flow Configuration | 1 | Must | Config schema, normalization, precedence, invalid-config, and multi-repository tests |
 | FR02 - Semantic Branch Classification | 1 | Must | Unit tests for default patterns, custom patterns, main precedence, deterministic order, and unknown fallback |
-| FR03 - Visual Decorations | 1 | Must | Webview/render verification for badges, trunk highlight, sync hiding, and no control overlap |
-| FR04 - Flow View | 1 | Must | Flow View toggle and filter-state tests or focused render checks |
+| FR03 - Visual Decorations | 1 | Must | Webview/render verification for badges, no branch hiding, and no control overlap |
+| FR04 - Flow View | 1 | Must | Flow View toggle tests or focused render checks |
 | FR05 - PR-Gated Transition Diagnostics | 2 | Must for Phase 2 | Transition-policy tests and action-triggered diagnostic smoke tests |
 | FR06 - Release Readiness Checks | 2 | Must for Phase 2 | Ancestry validation tests for ready, blocked, inconclusive, and missing-ref states |
 | FR07 - Production Equalization Assistant | 3 | Must for Phase 3 | Safe-working-tree, conflict handoff, no-push, and no-force-push tests or smoke checks |
@@ -511,9 +502,6 @@ type FlowConfigV1 = {
   enabled?: boolean;
   mainBranches?: string[];
   patterns?: Partial<Record<FlowBranchKindWithoutMainOrUnknown, string>>;
-  hideSyncBranchesByDefault?: boolean;
-  highlightProductionTrunk?: boolean;
-  showUnknownBranches?: boolean;
 };
 
 type FlowBranchKindWithoutMainOrUnknown =
@@ -529,7 +517,7 @@ type FlowBranchKindWithoutMainOrUnknown =
 Phase 1 may recognize later-phase fields only for forward-compatible validation
 and preservation. Unsupported fields are inert metadata in Phase 1:
 
-- they must not alter classification, decorations, filters, diagnostics, or
+- they must not alter classification, decorations, diagnostics, visibility, or
   action visibility unless the field is explicitly listed in the Phase 1
   normalized model;
 - they must not trigger Git actions, PR actions, provider authentication,
@@ -545,8 +533,7 @@ and preservation. Unsupported fields are inert metadata in Phase 1:
 Validation rules:
 
 - `schemaVersion` is required and must be `1`;
-- `enabled`, `hideSyncBranchesByDefault`, `highlightProductionTrunk`, and
-  `showUnknownBranches` are booleans when present;
+- `enabled` is a boolean when present;
 - `mainBranches` must contain non-empty branch names and defaults to `main` and
   `master`;
 - each branch-kind pattern must be a valid JavaScript regular expression string;
@@ -631,7 +618,6 @@ Full-feature example, not the Phase 1 generated default:
   "protectedBranches": ["main", "master", "release/*", "feature/*"],
   "requirePullRequestTargets": ["main", "master", "release/*", "feature/*"],
   "requireLinearHistoryTargets": ["main", "master"],
-  "hideSyncBranchesByDefault": true,
   "requirePullRequests": true,
   "directMergePolicy": "warn",
   "requireLinearReleasePromotion": true,
@@ -1092,10 +1078,10 @@ message contracts. The expected Phase 1 ownership boundary is:
 - serializable model/view-state contracts: flow metadata delivered to the
   webview must remain JSON-serializable and must not reintroduce import cycles
   between Git parsing, graph model, view state, and webview shared code;
-- webview state: rendering badges, trunk highlight, filters, and hide/show
-  controls from metadata supplied by the host;
-- webview messages: user intent only, such as toggling Flow View or changing
-  filters, with payload parsing and state/current-repository authorization kept
+- webview state: rendering badges and the Flow View toggle from metadata supplied
+  by the host;
+- webview messages: user intent only, such as toggling Flow View, with payload
+  parsing and state/current-repository authorization kept
   in the existing host-side message validation/authorization boundary;
 - no webview-side branch-name inference, policy evaluation, Git mutation, or
   provider authentication.
@@ -1108,8 +1094,8 @@ normalization logic before adding browser-side rendering behavior.
 ## 14. Recommended UX
 
 This section describes the full UX direction for Flow Governance. Phase 1 owns
-only the Flow View toggle, branch-kind filters, trunk highlight, compact
-decorations, optional hidden `sync/*` treatment, and unknown-branch feedback.
+only the Flow View toggle, compact branch-kind decorations, and unknown-branch
+feedback.
 Context menus, governed branch creation forms, GitHub PR actions, Sync Sandbox
 actions, and cleanup actions are later-phase UX unless explicitly approved in a
 focused feature artifact.
@@ -1239,9 +1225,6 @@ Included:
 - default flow file creation when Flow Governance is activated;
 - branch classification;
 - branch-kind badges;
-- branch-kind filters;
-- production trunk highlight;
-- optional `sync/*` ref hiding;
 - basic unknown-branch diagnostic;
 - lightweight contextual feedback only;
 - no Git ref, history, branch, tag, remote, merge, checkout, push, pull, or
@@ -1253,9 +1236,8 @@ Acceptance criteria:
 - users can enable and disable Flow View;
 - configured branches are classified correctly;
 - unknown branches are marked as `unknown`;
-- `sync/*` refs can be hidden without removing commits from history;
-- hidden branch refs remain recoverable through filters or by disabling Flow
-  View;
+- Flow Governance does not hide branch refs; all branch refs included by the
+  current graph projection remain visible;
 - Flow metadata never changes commit ancestry, graph ordering, ref identity, or
   the underlying Git operations available outside Flow View;
 - creating `.git-revision-graph-flow.json` is allowed only after explicit user
@@ -1288,9 +1270,8 @@ Phase 1 implementation traceability:
 | Repository lifecycle compatibility | existing revision graph repository lifecycle and controller integration points | Tests for repository switching, repository close/open, zero-repository state, and per-repository config independence |
 | Type-boundary compatibility | `src/revisionGraph/model/*`, serializable view-state contracts, and flow metadata types | Import-cycle regression and type-only boundary checks for graph source/model/view-state/webview shared code |
 | Message contract safety | existing revision graph message validation and authorization boundary | Tests for Flow View messages, malformed payloads, stale repository state, and disabled behavior |
-| Badges and trunk highlight | existing revision graph webview runtime and styles | Webview tests or focused shell/render checks |
-| Branch-kind filters | existing graph toolbar/filter state | Tests for filter state and no irreversible history hiding |
-| Graph fidelity preservation | projection fixtures covering branch, remote, tag, stash, hidden merge, and compressed paths | Tests proving flow metadata and hidden `sync/*` treatment do not alter ancestry, `through` paths, or visible anchors |
+| Badges | existing revision graph webview runtime and styles | Webview tests or focused shell/render checks |
+| Graph fidelity preservation | projection fixtures covering branch, remote, tag, stash, hidden merge, and compressed paths | Tests proving flow metadata does not alter ancestry, `through` paths, or visible anchors |
 | Multi-repository configuration | repository selection and controller state | Tests using separate repositories/config sources |
 | Disabled behavior | extension defaults and graph load path | Regression tests proving current graph behavior is unchanged |
 
@@ -1322,12 +1303,11 @@ Phase 1 verification gate:
   malformed payloads, stale repository state, and disabled Flow Governance;
 - graph type-boundary checks prove Flow Governance does not reintroduce import
   cycles between Git parsing, graph model, view state, and webview shared code;
-- graph fidelity fixtures prove badges, metadata, and hidden `sync/*` treatment
-  do not alter commit ancestry, visible branch/remote/tag/stash anchors, hidden
-  merge continuity, or compressed edge `through` paths;
-- focused webview tests or screenshots confirm badges, filters, trunk highlight,
-  and hidden `sync/*` treatment do not overlap or obscure existing graph
-  controls;
+- graph fidelity fixtures prove badges and metadata do not alter commit
+  ancestry, visible branch/remote/tag/stash anchors, hidden merge continuity, or
+  compressed edge `through` paths;
+- focused webview tests or screenshots confirm badges do not overlap or obscure
+  existing graph controls;
 - manual Extension Development Host smoke test covers graph load, repository
   switching, Flow View on/off, filter toggles, refresh, empty repository state,
   invalid config, and disabled behavior;
@@ -1521,12 +1501,11 @@ Phase 1 release-gate metrics:
   precedence, multi-repository independence, default-file generation, and inert
   future-field handling.
 - Manual Extension Development Host smoke coverage passes for graph load,
-  repository switching, Flow View on/off, branch-kind filters, hidden `sync/*`
-  recovery, refresh, empty repository state, invalid config, and disabled
-  behavior.
-- Webview verification confirms badges, trunk highlight, filters, and Flow View
-  controls remain legible under at least the default light theme, default dark
-  theme, a narrow editor width, and a branch-heavy graph fixture.
+  repository switching, Flow View on/off, all branch refs remaining visible,
+  refresh, empty repository state, invalid config, and disabled behavior.
+- Webview verification confirms badges and Flow View controls remain legible
+  under at least the default light theme, default dark theme, a narrow editor
+  width, and a branch-heavy graph fixture.
 - Disabled Flow Governance produces no intentional user-visible change to
   compare, checkout, branch, merge, sync, delete, diff, log, minimap, search,
   refresh, focus, empty-state, or multi-repository workflows.

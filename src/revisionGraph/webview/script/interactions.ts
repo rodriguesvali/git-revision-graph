@@ -819,20 +819,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (flowGovernanceEnabledToggle) {
         flowGovernanceEnabledToggle.disabled = toolbarBusy || !hasFlowGovernanceState();
       }
-      if (hideSyncBranchesToggle) {
-        hideSyncBranchesToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
-      }
-      if (highlightProductionTrunkToggle) {
-        highlightProductionTrunkToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
-      }
-      if (showUnknownBranchesToggle) {
-        showUnknownBranchesToggle.disabled = toolbarBusy || !isFlowGovernanceActive();
-      }
-      if (flowKindOptions && typeof flowKindOptions.querySelectorAll === 'function') {
-        for (const input of flowKindOptions.querySelectorAll('[data-flow-kind]')) {
-          input.disabled = toolbarBusy || !isFlowGovernanceActive();
-        }
-      }
       if (rangeFilterClearButton) {
         rangeFilterClearButton.disabled = toolbarBusy;
       }
@@ -872,9 +858,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         showStashesToggle,
         showMergeCommitsToggle,
         flowGovernanceEnabledToggle,
-        hideSyncBranchesToggle,
-        highlightProductionTrunkToggle,
-        showUnknownBranchesToggle,
         searchInput,
         searchPrevButton,
         searchNextButton,

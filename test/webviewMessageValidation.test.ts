@@ -281,22 +281,13 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({
       type: 'set-flow-governance-options',
       options: {
-        enabled: true,
-        visibleKinds: ['main', 'sync', 'sync'],
-        hideSyncBranches: false,
-        highlightProductionTrunk: false,
-        showUnknownBranches: true,
-        ignored: 'value'
+        enabled: true
       }
     }),
     {
       type: 'set-flow-governance-options',
       options: {
-        enabled: true,
-        visibleKinds: ['main', 'sync'],
-        hideSyncBranches: false,
-        highlightProductionTrunk: false,
-        showUnknownBranches: true
+        enabled: true
       }
     }
   );
@@ -454,14 +445,14 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+      { type: 'set-flow-governance-options', options: { enabled: false } },
       state
     ),
     false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+      { type: 'set-flow-governance-options', options: { enabled: false } },
       {
         ...state,
         flowGovernance: {
@@ -469,12 +460,6 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
           configSource: 'workspace',
           diagnostics: [],
           branchKinds: ['main', 'sync', 'unknown'],
-          filters: {
-            visibleKinds: ['main', 'sync', 'unknown'],
-            hideSyncBranches: true,
-            highlightProductionTrunk: true,
-            showUnknownBranches: true
-          },
           references: []
         }
       }

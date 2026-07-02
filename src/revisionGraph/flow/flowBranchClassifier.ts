@@ -9,7 +9,7 @@ import {
 export function classifyFlowBranch(refName: string, config: NormalizedFlowConfig): FlowBranchInfo {
   const kind = getFlowBranchKind(refName, config);
   const diagnostics: FlowDiagnostic[] = [];
-  if (kind === 'unknown' && config.showUnknownBranches) {
+  if (kind === 'unknown') {
     diagnostics.push({
       code: 'unknown-branch',
       severity: 'info',
@@ -22,7 +22,6 @@ export function classifyFlowBranch(refName: string, config: NormalizedFlowConfig
     refName,
     kind,
     isEphemeral: kind === 'sync',
-    shouldHideByDefault: kind === 'sync' && config.hideSyncBranchesByDefault,
     diagnostics
   };
 }

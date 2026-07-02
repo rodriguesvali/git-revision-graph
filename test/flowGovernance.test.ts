@@ -53,7 +53,7 @@ test('Flow Governance rejects invalid schema and invalid regex without throwing'
   );
 });
 
-test('Flow Governance classifies defaults with main precedence, sync hiding, and unknown fallback', () => {
+test('Flow Governance classifies defaults with main precedence and unknown fallback', () => {
   const result = normalizeFlowConfig({
     schemaVersion: 1,
     enabled: true,
@@ -73,7 +73,6 @@ test('Flow Governance classifies defaults with main precedence, sync hiding, and
     ['main', 'feature', 'release', 'sync', 'package', 'bug', 'hotfix', 'unknown']
   );
   assert.equal(branches[3].isEphemeral, true);
-  assert.equal(branches[3].shouldHideByDefault, true);
   assert.equal(branches[7].diagnostics[0]?.code, 'unknown-branch');
 });
 
@@ -101,10 +100,8 @@ test('Flow Governance creates serializable view state and compact decorations', 
 
   assert.equal(viewState.enabled, true);
   assert.equal(viewState.configSource, 'repository');
-  assert.equal(viewState.filters.hideSyncBranches, true);
   assert.equal(viewState.references.length, 2);
   assert.equal(decoration.badge, 'main');
-  assert.equal(decoration.isProductionTrunk, true);
   assert.doesNotThrow(() => JSON.stringify(viewState));
 });
 
@@ -117,17 +114,33 @@ test('Flow Governance applies option updates without rebuilding metadata', () =>
   const viewState = createFlowGovernanceViewState(result, branches);
 
   const updated = applyFlowGovernanceOptionsUpdate(viewState, {
-    enabled: false,
-    visibleKinds: ['main'],
-    hideSyncBranches: false
+    enabled: false
   });
 
   assert.equal(updated.enabled, false);
-  assert.deepEqual(updated.filters.visibleKinds, ['main']);
-  assert.equal(updated.filters.hideSyncBranches, false);
-  assert.equal(updated.filters.highlightProductionTrunk, viewState.filters.highlightProductionTrunk);
   assert.equal(updated.references, viewState.references);
   assert.equal(updated.diagnostics, viewState.diagnostics);
+});
+
+test('Flow Governance keeps classified refs while disabled so re-enable is immediate', () => {
+  const result = normalizeFlowConfig({
+    schemaVersion: 1,
+    enabled: false
+  });
+  const branches = classifyFlowBranches(['main', 'feature/demo'], result.config);
+  const viewState = createFlowGovernanceViewState(result, branches);
+
+  const updated = applyFlowGovernanceOptionsUpdate(viewState, {
+    enabled: true
+  });
+
+  assert.equal(viewState.enabled, false);
+  assert.deepEqual(viewState.references.map((ref) => [ref.refName, ref.kind]), [
+    ['main', 'main'],
+    ['feature/demo', 'feature']
+  ]);
+  assert.equal(updated.enabled, true);
+  assert.equal(updated.references, viewState.references);
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {
@@ -135,12 +148,9 @@ test('Flow Governance default file contains only Phase 1 fields', () => {
 
   assert.deepEqual(Object.keys(generated).sort(), [
     'enabled',
-    'hideSyncBranchesByDefault',
-    'highlightProductionTrunk',
     'mainBranches',
     'patterns',
-    'schemaVersion',
-    'showUnknownBranches'
+    'schemaVersion'
   ]);
 });
 
@@ -149,20 +159,17 @@ test('Flow Governance resolves repository file before fallback settings', async 
   await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
     schemaVersion: 1,
     enabled: true,
-    mainBranches: ['production'],
-    hideSyncBranchesByDefault: false
+    mainBranches: ['production']
   }));
 
   const result = await resolveFlowConfigForRepository(root, {
-    enabled: false,
-    hideSyncBranchesByDefault: true
+    enabled: false
   });
 
   assert.equal(result.ok, true);
   assert.equal(result.source, 'repository');
   assert.equal(result.config.enabled, true);
   assert.deepEqual(result.config.mainBranches, ['production']);
-  assert.equal(result.config.hideSyncBranchesByDefault, false);
 });
 
 test('Flow Governance persists repository option updates while preserving other config fields', async () => {
@@ -175,24 +182,23 @@ test('Flow Governance persists repository option updates while preserving other 
       feature: '^feature/.+'
     },
     hideSyncBranchesByDefault: true,
+    highlightProductionTrunk: true,
+    showUnknownBranches: true,
     futureField: {
       enabled: true
     }
   }));
 
   const result = await updateRepositoryFlowConfigOptions(root, undefined, {
-    enabled: false,
-    hideSyncBranches: false,
-    highlightProductionTrunk: false,
-    showUnknownBranches: false
+    enabled: false
   });
 
   assert.equal(result.ok, true);
   const persisted = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
   assert.equal(persisted.enabled, false);
-  assert.equal(persisted.hideSyncBranchesByDefault, false);
-  assert.equal(persisted.highlightProductionTrunk, false);
-  assert.equal(persisted.showUnknownBranches, false);
+  assert.equal(persisted.hideSyncBranchesByDefault, undefined);
+  assert.equal(persisted.highlightProductionTrunk, undefined);
+  assert.equal(persisted.showUnknownBranches, undefined);
   assert.deepEqual(persisted.patterns, { feature: '^feature/.+' });
   assert.deepEqual(persisted.futureField, { enabled: true });
 });
@@ -215,14 +221,12 @@ test('Flow Governance uses fallback settings when repository file is missing', a
 
   const result = await resolveFlowConfigForRepository(root, {
     enabled: true,
-    configPath: '.missing-flow.json',
-    showUnknownBranches: false
+    configPath: '.missing-flow.json'
   });
 
   assert.equal(result.ok, true);
   assert.equal(result.source, 'workspace');
   assert.equal(result.config.enabled, true);
-  assert.equal(result.config.showUnknownBranches, false);
 });
 
 test('Flow Governance rejects config paths outside the repository', async () => {

@@ -59,16 +59,12 @@ test('RevisionGraphMessageHandler applies Flow Governance option updates through
   await handler.handleMessage({
     type: 'set-flow-governance-options',
     options: {
-      enabled: true,
-      hideSyncBranches: false,
-      visibleKinds: ['main', 'feature']
+      enabled: true
     }
   });
 
   assert.deepEqual(updates, [{
-    enabled: true,
-    hideSyncBranches: false,
-    visibleKinds: ['main', 'feature']
+    enabled: true
   }]);
 });
 

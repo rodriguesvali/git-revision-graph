@@ -29,7 +29,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
-- Optional Flow Governance metadata overlay with branch-kind badges, production-trunk highlighting, and branch-kind filters when enabled by settings or a repository flow file
+- Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
@@ -116,12 +116,6 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - Enables Flow Governance metadata and Flow View defaults when a repository flow file is not present. The default is `false`.
 - `gitRevisionGraph.flowGovernance.configPath`
   - Repository-relative path for the Flow Governance configuration file. The default is `.git-revision-graph-flow.json`.
-- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`
-  - Hides `sync/*` branch refs by default when Flow Governance is enabled.
-- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`
-  - Highlights configured production trunk branches when Flow Governance is enabled.
-- `gitRevisionGraph.flowGovernance.showUnknownBranches`
-  - Shows unmatched branches as `unknown` when Flow Governance is enabled.
 
 ## Project Structure
 

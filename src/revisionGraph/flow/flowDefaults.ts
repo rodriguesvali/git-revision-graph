@@ -37,9 +37,6 @@ export const DEFAULT_FLOW_CONFIG: NormalizedFlowConfig = {
   enabled: false,
   mainBranches: ['main', 'master'],
   patterns: DEFAULT_FLOW_PATTERNS,
-  hideSyncBranchesByDefault: true,
-  highlightProductionTrunk: true,
-  showUnknownBranches: true,
   ignoredFields: []
 };
 
@@ -61,9 +58,6 @@ export function createDefaultFlowConfigFile(): string {
     schemaVersion: FLOW_CONFIG_SCHEMA_VERSION,
     enabled: true,
     mainBranches: ['main', 'master'],
-    patterns: DEFAULT_FLOW_PATTERNS,
-    hideSyncBranchesByDefault: true,
-    highlightProductionTrunk: true,
-    showUnknownBranches: true
+    patterns: DEFAULT_FLOW_PATTERNS
   }, null, 2)}\n`;
 }

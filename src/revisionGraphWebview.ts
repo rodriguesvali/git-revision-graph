@@ -162,21 +162,6 @@ export function renderRevisionGraphShellHtml(): string {
             <input id="flowGovernanceEnabledToggle" type="checkbox" />
             <span>Flow Governance</span>
           </label>
-          <div id="flowGovernanceDetailOptions">
-            <label for="hideSyncBranchesToggle">
-              <input id="hideSyncBranchesToggle" type="checkbox" />
-              <span>Hide Sync Branches</span>
-            </label>
-            <label for="highlightProductionTrunkToggle">
-              <input id="highlightProductionTrunkToggle" type="checkbox" />
-              <span>Highlight Production Trunk</span>
-            </label>
-            <label for="showUnknownBranchesToggle">
-              <input id="showUnknownBranchesToggle" type="checkbox" />
-              <span>Show Unknown Branches</span>
-            </label>
-            <div class="flow-kind-options" id="flowKindOptions" aria-label="Flow branch kinds"></div>
-          </div>
         </div>
       </div>
     </div>

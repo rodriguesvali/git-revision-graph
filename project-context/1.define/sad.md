@@ -47,19 +47,19 @@ Last consolidated: 2026-07-01
 
 ## Flow Governance Phase 1 Architecture
 
-Phase 1 of Flow Governance adds a non-mutating semantic overlay for branch classification, Flow View controls, branch-kind filters, production trunk highlighting, optional `sync/*` ref hiding, and unknown-branch feedback. It does not add PR automation, branch creation forms, governed merge policy, release promotion checks, cleanup actions, provider authentication, or Git mutations other than explicit creation/update of the repository-versioned flow configuration file after confirmation.
+Phase 1 of Flow Governance adds a non-mutating semantic overlay for branch classification, a single Flow Governance toggle, branch-kind badges, and unknown-branch feedback. It does not add branch visibility filters, production trunk highlighting, hidden `sync/*` treatment, PR automation, branch creation forms, governed merge policy, release promotion checks, cleanup actions, provider authentication, or Git mutations other than explicit creation/update of the repository-versioned flow configuration file after confirmation.
 
 ### Phase 1 Modules
 
 Phase 1 should use a small `src/revisionGraph/flow/` module set. Later-phase modules must not be introduced until their owning phase enters active scope.
 
-- `flowTypes.ts`: serializable Phase 1 contracts for branch kinds, normalized config, branch metadata, diagnostics, filter state, and view-state payloads.
-- `flowDefaults.ts`: default branch kinds, main branch names, regex patterns, and default visual/filter options.
+- `flowTypes.ts`: serializable Phase 1 contracts for branch kinds, normalized config, branch metadata, diagnostics, and view-state payloads.
+- `flowDefaults.ts`: default branch kinds, main branch names, regex patterns, and default enablement.
 - `flowConfig.ts`: repository flow-file loading, VS Code settings fallback, source precedence, validation, normalization, and default file content generation.
 - `flowBranchClassifier.ts`: deterministic branch classification from normalized config, including main-branch precedence and `unknown` fallback.
 - `flowDiagnostics.ts`: Phase 1 diagnostics only, limited to invalid configuration reporting and unknown-branch metadata.
 - `flowDecorations.ts`: mapping from branch metadata to compact view-model decorations consumed by the existing webview.
-- `flowState.ts`: host-side Flow View state transitions for enable/disable and branch-kind filters.
+- `flowState.ts`: host-side Flow Governance enable/disable state transitions.
 
 Phase 1 must not add `flowBranchCreation.ts`, `flowTransitionPolicy.ts`, `flowPromotionChecks.ts`, `flowGithubPullRequests.ts`, `flowCleanupCandidates.ts`, or `flowSyncPlan.ts` unless the focused feature artifact explicitly expands scope with maintainer approval.
 
@@ -70,15 +70,12 @@ Phase 1 must not add `flowBranchCreation.ts`, `flowTransitionPolicy.ts`, `flowPr
 - Configuration is resolved per active repository and must follow repository switching, repository closure, zero-repository state, and multi-root semantics owned by `RevisionGraphRepositoryLifecycle`.
 - Invalid repository configuration disables Flow Governance for that repository and reports a recoverable validation result without breaking normal graph loading.
 - Phase 1 generated flow files contain only supported Phase 1 fields.
-- Future-phase fields may be parsed for preservation/reporting, but they are inert and cannot affect classification, filters, actions, provider authentication, or Git mutation paths.
+- Future-phase fields may be parsed for preservation/reporting, but they are inert and cannot affect classification, visibility, actions, provider authentication, or Git mutation paths.
 
 Expected Phase 1 settings, if contributed, are:
 
 - `gitRevisionGraph.flowGovernance.enabled`
 - `gitRevisionGraph.flowGovernance.configPath`
-- `gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault`
-- `gitRevisionGraph.flowGovernance.highlightProductionTrunk`
-- `gitRevisionGraph.flowGovernance.showUnknownBranches`
 
 Any contributed settings, schema files, commands, menus, activation events, README text, and tests must be listed in the focused Phase 1 build artifact before coding starts.
 
@@ -89,8 +86,8 @@ Any contributed settings, schema files, commands, menus, activation events, READ
 3. Graph snapshot loading remains owned by the existing backend and projection pipeline.
 4. Branch refs in the ready graph state are classified by host/shared model code using the normalized Flow Governance config.
 5. Flow metadata and Phase 1 diagnostics are attached to serializable graph view-state data without changing commit ancestry, ref identity, projection edges, compressed `through` paths, or layout ownership.
-6. The existing webview renders Flow View controls, badges, trunk highlight, filters, and hidden-by-default `sync/*` refs from supplied metadata.
-7. Webview messages express user intent only: toggle Flow View, update branch-kind filters, toggle hidden sync refs, toggle production trunk highlight, and toggle unknown-branch visibility.
+6. The existing webview renders the Flow Governance toggle and branch-kind badges from supplied metadata.
+7. Webview messages express user intent only: toggle Flow Governance on or off.
 8. Host-side message validation and authorization accept only well-formed Flow View messages for the current repository/state and ignore or reject stale or malformed payloads.
 
 Flow metadata is an overlay. It must not be modeled as a Git ref mutation or as a substitute for the existing projection/focus modes.
@@ -115,7 +112,6 @@ type FlowGovernanceViewState = {
   configSource: 'repository' | 'workspace' | 'user' | 'defaults' | 'invalid' | 'disabled';
   diagnostics: readonly FlowDiagnostic[];
   branchKinds: readonly FlowBranchKind[];
-  filters: FlowGovernanceFilterState;
   references: readonly FlowReferenceMetadata[];
 };
 ```
@@ -155,10 +151,10 @@ Focused verification must cover:
 - repository lifecycle compatibility for zero repositories, repository switching, repository close/open, multi-root independence, and refresh after active repository changes;
 - message validation and authorization for all new Flow View messages, malformed payloads, stale repository state, loading state, and disabled Flow Governance;
 - type-boundary/import-cycle regression across graph Git parsing, graph model, view-state contracts, and webview shared code;
-- graph fidelity fixtures proving Flow metadata and hidden `sync/*` treatment do not alter ancestry, visible branch/remote/tag/stash anchors, hidden merge continuity, or compressed edge `through` paths;
-- webview rendering or shell checks for badges, trunk highlight, filters, hidden sync treatment, no control overlap, theme compatibility, and accessible labels/tooltips.
+- graph fidelity fixtures proving Flow metadata does not alter ancestry, visible branch/remote/tag/stash anchors, hidden merge continuity, or compressed edge `through` paths;
+- webview rendering or shell checks for badges, no control overlap, theme compatibility, and accessible labels/tooltips.
 
-Manual Extension Development Host smoke for Phase 1 must cover graph load, repository switching, Flow View on/off, branch-kind filters, hidden `sync/*` recovery, refresh, invalid config, empty repository state, disabled behavior, and existing compare/diff/log/context-menu basics.
+Manual Extension Development Host smoke for Phase 1 must cover graph load, repository switching, Flow Governance on/off, refresh, invalid config, empty repository state, disabled behavior, all branch refs remaining visible, and existing compare/diff/log/context-menu basics.
 
 ## Architectural Constraints
 
@@ -180,7 +176,7 @@ Manual Extension Development Host smoke for Phase 1 must cover graph load, repos
 - Descendant focus is based on Git ancestry in the loaded DAG, not visual row, timestamp, or screen position.
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
-- Flow Governance Phase 1 is a metadata overlay over the loaded graph. Its filters and decorations must not change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
+- Flow Governance Phase 1 is a metadata overlay over the loaded graph. It must not hide branch refs or change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
 ## Quality Attributes

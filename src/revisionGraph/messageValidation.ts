@@ -7,7 +7,7 @@ import type {
   RevisionGraphRef
 } from './model/commitGraphTypes';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
-import { FLOW_BRANCH_KINDS, FlowBranchKind, FlowGovernanceOptionsUpdate } from './flow';
+import { FlowGovernanceOptionsUpdate } from './flow';
 export {
   isRevisionGraphMessageAllowedForCurrentRepository,
   isRevisionGraphMessageAllowedForState
@@ -22,8 +22,6 @@ const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>
   'stash',
   'commit'
 ]);
-const FLOW_BRANCH_KIND_SET = new Set<FlowBranchKind>(FLOW_BRANCH_KINDS);
-
 export function validateRevisionGraphMessage(message: unknown): RevisionGraphMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {
     return undefined;
@@ -147,20 +145,17 @@ function validateFlowGovernanceOptions(value: unknown): FlowGovernanceOptionsUpd
   }
 
   const options: MutableFlowGovernanceOptionsUpdate = {};
-  for (const key of ['enabled', 'hideSyncBranches', 'highlightProductionTrunk', 'showUnknownBranches'] as const) {
-    if (value[key] !== undefined) {
-      if (!isBoolean(value[key])) {
-        return undefined;
-      }
-      options[key] = value[key];
-    }
-  }
-
-  if (value.visibleKinds !== undefined) {
-    if (!Array.isArray(value.visibleKinds) || value.visibleKinds.some((kind) => !isFlowBranchKind(kind))) {
+  if (value.enabled !== undefined) {
+    if (!isBoolean(value.enabled)) {
       return undefined;
     }
-    options.visibleKinds = [...new Set(value.visibleKinds)];
+    options.enabled = value.enabled;
+  }
+
+  for (const key of Object.keys(value)) {
+    if (key !== 'enabled') {
+      return undefined;
+    }
   }
 
   return Object.keys(options).length > 0 ? options : undefined;
@@ -303,8 +298,4 @@ function isRevisionGraphRefKind(value: unknown): value is RevisionGraphRef['kind
 
 function isRevisionGraphTargetKind(value: unknown): value is RevisionGraphRef['kind'] | 'commit' {
   return isString(value) && REVISION_GRAPH_TARGET_KINDS.has(value as RevisionGraphRef['kind'] | 'commit');
-}
-
-function isFlowBranchKind(value: unknown): value is FlowBranchKind {
-  return isString(value) && FLOW_BRANCH_KIND_SET.has(value as FlowBranchKind);
 }

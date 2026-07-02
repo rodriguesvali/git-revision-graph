@@ -18,17 +18,11 @@ export interface FlowConfigV1 {
   readonly enabled?: boolean;
   readonly mainBranches?: readonly string[];
   readonly patterns?: Partial<Record<FlowPatternBranchKind, string>>;
-  readonly hideSyncBranchesByDefault?: boolean;
-  readonly highlightProductionTrunk?: boolean;
-  readonly showUnknownBranches?: boolean;
 }
 
 export interface FlowGovernanceSettings {
   readonly enabled?: boolean;
   readonly configPath?: string;
-  readonly hideSyncBranchesByDefault?: boolean;
-  readonly highlightProductionTrunk?: boolean;
-  readonly showUnknownBranches?: boolean;
 }
 
 export interface NormalizedFlowConfig {
@@ -36,9 +30,6 @@ export interface NormalizedFlowConfig {
   readonly enabled: boolean;
   readonly mainBranches: readonly string[];
   readonly patterns: Readonly<Record<FlowPatternBranchKind, string>>;
-  readonly hideSyncBranchesByDefault: boolean;
-  readonly highlightProductionTrunk: boolean;
-  readonly showUnknownBranches: boolean;
   readonly ignoredFields: readonly string[];
 }
 
@@ -74,15 +65,7 @@ export interface FlowBranchInfo {
   readonly refName: string;
   readonly kind: FlowBranchKind;
   readonly isEphemeral: boolean;
-  readonly shouldHideByDefault: boolean;
   readonly diagnostics: readonly FlowDiagnostic[];
-}
-
-export interface FlowGovernanceFilterState {
-  readonly visibleKinds: readonly FlowBranchKind[];
-  readonly hideSyncBranches: boolean;
-  readonly highlightProductionTrunk: boolean;
-  readonly showUnknownBranches: boolean;
 }
 
 export interface FlowGovernanceViewState {
@@ -90,14 +73,9 @@ export interface FlowGovernanceViewState {
   readonly configSource: FlowConfigSource;
   readonly diagnostics: readonly FlowDiagnostic[];
   readonly branchKinds: readonly FlowBranchKind[];
-  readonly filters: FlowGovernanceFilterState;
   readonly references: readonly FlowBranchInfo[];
 }
 
 export interface FlowGovernanceOptionsUpdate {
   readonly enabled?: boolean;
-  readonly visibleKinds?: readonly FlowBranchKind[];
-  readonly hideSyncBranches?: boolean;
-  readonly highlightProductionTrunk?: boolean;
-  readonly showUnknownBranches?: boolean;
 }

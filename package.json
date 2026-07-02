@@ -109,21 +109,6 @@
           "type": "string",
           "default": ".git-revision-graph-flow.json",
           "description": "Repository-relative path to the Flow Governance configuration file."
-        },
-        "gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault": {
-          "type": "boolean",
-          "default": true,
-          "description": "Hide sync/* branch refs by default when Flow Governance is enabled."
-        },
-        "gitRevisionGraph.flowGovernance.highlightProductionTrunk": {
-          "type": "boolean",
-          "default": true,
-          "description": "Highlight configured production trunk branches when Flow Governance is enabled."
-        },
-        "gitRevisionGraph.flowGovernance.showUnknownBranches": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show unmatched branches as unknown when Flow Governance is enabled."
         }
       }
     }

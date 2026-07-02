@@ -29,8 +29,10 @@ Candidate scope:
 - Add Flow Governance Phase 1 as a non-mutating metadata overlay over the existing revision graph.
 - Add repository flow-file resolution with VS Code settings fallback and invalid-config diagnostics.
 - Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
-- Add Flow Governance webview controls, branch-kind filters, badges, production-trunk highlighting,
-  sync hiding, and unknown-branch visibility controls from host-provided metadata.
+- Add a Flow Governance webview toggle and branch-kind badges from host-provided metadata.
+- Keep all branch refs visible when Flow Governance is enabled; Phase 1 no longer includes
+  branch-kind filters, production-trunk highlighting, sync hiding, or unknown-branch visibility
+  controls.
 - Persist supported Flow Governance webview option changes back to the repository flow file when
   the active source is a valid repository config.
 - Add the `Create Flow Governance Config` Command Palette action with repository selection,
@@ -49,8 +51,8 @@ Release constraints:
 
 - Preserve existing graph loading, projection semantics, compare, diff, checkout, branch, merge,
   sync, delete, stash, reset, Show Log, and Compare Results workflows.
-- Treat Flow Governance as metadata and local webview filtering only; it must not alter Git history,
-  refs, graph ancestry, or repository state.
+- Treat Flow Governance as metadata only; it must not hide refs, alter Git history, graph ancestry,
+  or repository state.
 - Keep malformed/stale webview messages bounded by the existing message validation and repository
   authorization layers.
 - Do not run packaging or Marketplace publication commands without explicit maintainer approval.
@@ -82,6 +84,16 @@ Recorded verification:
 - `npm run build` passed on 2026-07-02 after disabled-config visibility refinement.
 - `npm test` passed with 558 tests on 2026-07-02 after disabled-config reload metadata preservation.
 - `git diff --check` passed on 2026-07-02 after disabled-config visibility refinement.
+- Branch visibility controls were removed on 2026-07-02 after product feedback; Flow Governance now
+  controls only whether branch-kind badges are shown.
+- `npm run build` passed on 2026-07-02 after branch visibility simplification.
+- `npm test` passed with 558 tests on 2026-07-02 after branch visibility simplification.
+- `git diff --check` passed on 2026-07-02 after branch visibility simplification.
+- Disabled Flow Governance state now preserves classified references so re-enabling immediately
+  renders badges without reopening the graph.
+- `npm run build` passed on 2026-07-02 after live re-enable badge rendering fix.
+- `npm test` passed with 560 tests on 2026-07-02 after live re-enable badge rendering fix.
+- `git diff --check` passed on 2026-07-02 after live re-enable badge rendering fix.
 - Targeted Extension Development Host smoke for repository config option persistence remains pending.
 - Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on
   2026-07-01. Confirmed config creation, activation, invalid-config handling with hidden inert

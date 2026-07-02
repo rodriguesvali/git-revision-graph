@@ -16,10 +16,10 @@ Included:
 - Repository flow-file resolution with settings fallback and invalid-config diagnostics.
 - Runtime graph-state wiring that attaches Flow Governance metadata when enabled or invalid.
 - Host-side Flow View message validation, current-repository authorization, and in-memory state updates.
-- Webview Flow Governance controls, branch-kind filters, and branch badges backed by host-provided metadata.
+- Webview Flow Governance toggle and branch badges backed by host-provided metadata.
 - Repository flow-file creation command with confirmation, path validation, existing-file protection, and default Phase 1 template content.
 - Repository flow-file persistence for webview option changes when the active Flow Governance source is a valid repository config file.
-- Deterministic tests for config, classification, inert future fields, unknown diagnostics, sync hiding, and serializable state.
+- Deterministic tests for config, classification, inert future fields, unknown diagnostics, and serializable state.
 
 Excluded:
 
@@ -46,6 +46,7 @@ The first slice intentionally stays pure and host-side:
 - Invalid schema or regex disables Flow Governance for that config result without throwing.
 - Future-phase fields are tracked as ignored and remain inert.
 - Generated Phase 1 config contains only Phase 1-supported fields.
+- Generated Phase 1 config does not include branch visibility, production-trunk highlight, or unknown-branch visibility fields.
 - Flow view-state helpers return JSON-serializable metadata.
 - The revision graph ready state remains unchanged until Flow Governance is explicitly wired.
 - Enabled fallback settings or valid repository flow files attach Flow Governance metadata to ready graph state.
@@ -54,13 +55,13 @@ The first slice intentionally stays pure and host-side:
 - Disabling Flow Governance from the webview keeps only the main toggle visible so users can re-enable it without reopening the graph.
 - Reloading a repository flow file with `enabled: false` keeps only the main Flow Governance toggle visible.
 - Disabling or re-enabling Flow Governance from the webview persists the `enabled` field when the active source is a valid repository flow file.
-- Webview changes to sync hiding, production-trunk highlighting, and unknown-branch visibility persist to the matching Phase 1 repository flow-file fields.
-- `set-flow-governance-options` accepts only known Flow Governance options and branch kinds.
+- Persisting Flow Governance options removes legacy `hideSyncBranchesByDefault`, `highlightProductionTrunk`, and `showUnknownBranches` keys from repository flow files.
+- `set-flow-governance-options` accepts only the Flow Governance `enabled` option.
 - Flow Governance option updates require a ready current-repository graph state with Flow Governance metadata.
 - Flow Governance option updates do not trigger Git operations or graph rebuilds.
 - Webview Flow Governance controls are hidden until host state includes Flow Governance metadata.
-- Webview branch-kind filters and default sync/unknown hiding apply only to classified branch refs and preserve graph topology.
-- Flow Governance badges and production-trunk highlighting are rendered from host metadata, not client-side branch-name inference.
+- Flow Governance never hides branch refs; all branch types remain visible when the graph projection includes them.
+- Flow Governance badges are rendered from host metadata, not client-side branch-name inference.
 - `Create Flow Governance Config` writes only inside the selected repository after explicit confirmation.
 - Existing repository flow files are opened without overwrite.
 - Invalid or escaping `configPath` values are rejected before filesystem writes.
@@ -111,6 +112,14 @@ Current results:
 - `npm run build` passed on 2026-07-02 after disabled-config visibility refinement.
 - `npm test` passed with 558 tests on 2026-07-02 after disabled-config reload metadata preservation.
 - `git diff --check` passed on 2026-07-02 after disabled-config visibility refinement.
+- Flow Governance branch visibility controls removed on 2026-07-02 after product feedback; Flow Governance is now a single toggle for all badges/decorations and never hides branch refs.
+- `npm run build` passed on 2026-07-02 after branch visibility simplification.
+- `npm test` passed with 558 tests on 2026-07-02 after branch visibility simplification.
+- `git diff --check` passed on 2026-07-02 after branch visibility simplification.
+- Disabled Flow Governance state now preserves classified references so re-enabling immediately renders badges without reopening the graph.
+- `npm run build` passed on 2026-07-02 after live re-enable badge rendering fix.
+- `npm test` passed with 560 tests on 2026-07-02 after live re-enable badge rendering fix.
+- `git diff --check` passed on 2026-07-02 after live re-enable badge rendering fix.
 - Targeted Extension Development Host smoke for repository config option persistence remains pending.
 
 ## Risks

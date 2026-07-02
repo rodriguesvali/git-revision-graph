@@ -259,12 +259,9 @@ test('package manifest contributes Flow Governance Phase 1 fallback settings', (
   assert.equal(properties['gitRevisionGraph.flowGovernance.enabled']?.default, false);
   assert.equal(properties['gitRevisionGraph.flowGovernance.configPath']?.type, 'string');
   assert.equal(properties['gitRevisionGraph.flowGovernance.configPath']?.default, '.git-revision-graph-flow.json');
-  assert.equal(properties['gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault']?.type, 'boolean');
-  assert.equal(properties['gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault']?.default, true);
-  assert.equal(properties['gitRevisionGraph.flowGovernance.highlightProductionTrunk']?.type, 'boolean');
-  assert.equal(properties['gitRevisionGraph.flowGovernance.highlightProductionTrunk']?.default, true);
-  assert.equal(properties['gitRevisionGraph.flowGovernance.showUnknownBranches']?.type, 'boolean');
-  assert.equal(properties['gitRevisionGraph.flowGovernance.showUnknownBranches']?.default, true);
+  assert.equal(properties['gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault'], undefined);
+  assert.equal(properties['gitRevisionGraph.flowGovernance.highlightProductionTrunk'], undefined);
+  assert.equal(properties['gitRevisionGraph.flowGovernance.showUnknownBranches'], undefined);
 });
 
 test('package manifest keeps runtime dependencies limited to shipped code dependencies', () => {

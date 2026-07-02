@@ -136,7 +136,7 @@ test('attaches Flow Governance metadata from fallback settings without changing 
   assert.equal(state.flowGovernance?.enabled, true);
   assert.equal(state.flowGovernance?.configSource, 'workspace');
   assert.deepEqual(
-    state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind, ref.shouldHideByDefault]),
+    state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind, ref.isEphemeral]),
     [
       ['main', 'main', false],
       ['sync/release-from-main', 'sync', true]
@@ -260,7 +260,13 @@ test('keeps disabled repository Flow Governance config available for reactivatio
 
   assert.equal(state.flowGovernance?.enabled, false);
   assert.equal(state.flowGovernance?.configSource, 'repository');
-  assert.deepEqual(state.flowGovernance?.references, []);
+  assert.deepEqual(
+    state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind]),
+    [
+      ['main', 'main'],
+      ['feature/demo', 'feature']
+    ]
+  );
   assert.ok(state.flowGovernance?.branchKinds.includes('feature'));
 });
 

@@ -24,14 +24,14 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="flowGovernanceOptions"/);
   assert.match(html, /id="flowGovernanceEnabledToggle"/);
   assert.match(html, /Flow Governance/);
-  assert.match(html, /id="flowGovernanceDetailOptions"/);
-  assert.match(html, /id="hideSyncBranchesToggle"/);
-  assert.match(html, /Hide Sync Branches/);
-  assert.match(html, /id="highlightProductionTrunkToggle"/);
-  assert.match(html, /Highlight Production Trunk/);
-  assert.match(html, /id="showUnknownBranchesToggle"/);
-  assert.match(html, /Show Unknown Branches/);
-  assert.match(html, /id="flowKindOptions"/);
+  assert.doesNotMatch(html, /id="flowGovernanceDetailOptions"/);
+  assert.doesNotMatch(html, /id="hideSyncBranchesToggle"/);
+  assert.doesNotMatch(html, /Hide Sync Branches/);
+  assert.doesNotMatch(html, /id="highlightProductionTrunkToggle"/);
+  assert.doesNotMatch(html, /Highlight Production Trunk/);
+  assert.doesNotMatch(html, /id="showUnknownBranchesToggle"/);
+  assert.doesNotMatch(html, /Show Unknown Branches/);
+  assert.doesNotMatch(html, /id="flowKindOptions"/);
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
   assert.doesNotMatch(html, /Show Current Branch Descendants/);
   assert.match(html, /id="searchInput"/);
@@ -128,8 +128,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?margin-left: auto;[\s\S]*?\}/);
   assert.match(html, /\.view-controls \.toolbar-button \{[\s\S]*?border-radius: 0;/);
   assert.match(html, /\.flow-badge \{/);
-  assert.match(html, /\.flow-kind-options \{/);
-  assert.match(html, /\.ref-line\.flow-production-trunk/);
+  assert.doesNotMatch(html, /\.flow-kind-options \{/);
+  assert.doesNotMatch(html, /\.ref-line\.flow-production-trunk/);
   assert.match(html, /top: var\(--graph-top-offset\);/);
   assert.match(html, /right: 0;/);
   assert.match(html, /bottom: 0;/);
@@ -806,7 +806,7 @@ test('does not render a current branch descendants view option', () => {
   assert.doesNotMatch(html, /current branch descendants/);
 });
 
-test('renders Flow Governance badges and filters branch refs in the webview', () => {
+test('renders Flow Governance badges without hiding branch refs in the webview', () => {
   const runtime = createWebviewRuntime();
 
   runtime.context.handleHostMessage({
@@ -817,32 +817,23 @@ test('renders Flow Governance badges and filters branch refs in the webview', ()
         configSource: 'repository',
         diagnostics: [],
         branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
-        filters: {
-          visibleKinds: ['main', 'release', 'feature', 'unknown'],
-          hideSyncBranches: true,
-          highlightProductionTrunk: true,
-          showUnknownBranches: true
-        },
         references: [
           {
             refName: 'main',
             kind: 'main',
             isEphemeral: false,
-            shouldHideByDefault: false,
             diagnostics: []
           },
           {
             refName: 'sync/generated',
             kind: 'sync',
             isEphemeral: true,
-            shouldHideByDefault: true,
             diagnostics: []
           },
           {
             refName: 'feature/demo',
             kind: 'feature',
             isEphemeral: false,
-            shouldHideByDefault: false,
             diagnostics: []
           }
         ]
@@ -851,18 +842,14 @@ test('renders Flow Governance badges and filters branch refs in the webview', ()
   });
 
   const flowOptions = runtime.elements.get('flowGovernanceOptions');
-  const flowKindOptions = runtime.elements.get('flowKindOptions');
   const nodeLayer = runtime.elements.get('nodeLayer');
   assert.ok(flowOptions);
-  assert.ok(flowKindOptions);
   assert.ok(nodeLayer);
 
   assert.equal(flowOptions.hidden, false);
-  assert.match(flowKindOptions.innerHTML, /data-flow-kind="main" checked/);
   assert.match(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
-  assert.match(nodeLayer.innerHTML, /flow-production-trunk/);
   assert.match(nodeLayer.innerHTML, /feature\/demo/);
-  assert.doesNotMatch(nodeLayer.innerHTML, /sync\/generated/);
+  assert.match(nodeLayer.innerHTML, /sync\/generated/);
 });
 
 test('hides Flow Governance controls when repository config is invalid', () => {
@@ -882,24 +869,15 @@ test('hides Flow Governance controls when repository config is invalid', () => {
           }
         ],
         branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
-        filters: {
-          visibleKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
-          hideSyncBranches: true,
-          highlightProductionTrunk: true,
-          showUnknownBranches: true
-        },
         references: []
       }
     })
   });
 
   const flowOptions = runtime.elements.get('flowGovernanceOptions');
-  const flowKindOptions = runtime.elements.get('flowKindOptions');
   assert.ok(flowOptions);
-  assert.ok(flowKindOptions);
 
   assert.equal(flowOptions.hidden, true);
-  assert.equal(flowKindOptions.innerHTML, '');
 });
 
 test('keeps Flow Governance toggle visible when disabled from the webview', () => {
@@ -913,12 +891,6 @@ test('keeps Flow Governance toggle visible when disabled from the webview', () =
         configSource: 'repository',
         diagnostics: [],
         branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
-        filters: {
-          visibleKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
-          hideSyncBranches: true,
-          highlightProductionTrunk: true,
-          showUnknownBranches: true
-        },
         references: []
       }
     })
@@ -926,17 +898,61 @@ test('keeps Flow Governance toggle visible when disabled from the webview', () =
 
   const flowOptions = runtime.elements.get('flowGovernanceOptions');
   const flowGovernanceEnabledToggle = runtime.elements.get('flowGovernanceEnabledToggle');
-  const flowGovernanceDetailOptions = runtime.elements.get('flowGovernanceDetailOptions');
-  const flowKindOptions = runtime.elements.get('flowKindOptions');
   assert.ok(flowOptions);
   assert.ok(flowGovernanceEnabledToggle);
-  assert.ok(flowGovernanceDetailOptions);
-  assert.ok(flowKindOptions);
 
   assert.equal(flowOptions.hidden, false);
   assert.equal(flowGovernanceEnabledToggle.checked, false);
-  assert.equal(flowGovernanceDetailOptions.hidden, true);
-  assert.equal(flowKindOptions.innerHTML, '');
+});
+
+test('renders Flow Governance badges immediately after re-enabling without reopening the graph', () => {
+  const runtime = createWebviewRuntime();
+
+  const disabledFlowGovernance = {
+    enabled: false,
+    configSource: 'repository',
+    diagnostics: [],
+    branchKinds: ['main', 'feature'],
+    references: [
+      {
+        refName: 'main',
+        kind: 'main',
+        isEphemeral: false,
+        diagnostics: []
+      },
+      {
+        refName: 'feature/demo',
+        kind: 'feature',
+        isEphemeral: false,
+        diagnostics: []
+      }
+    ]
+  };
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: disabledFlowGovernance
+    })
+  });
+
+  let nodeLayer = runtime.elements.get('nodeLayer');
+  assert.ok(nodeLayer);
+  assert.doesNotMatch(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
+        ...disabledFlowGovernance,
+        enabled: true
+      }
+    })
+  });
+
+  nodeLayer = runtime.elements.get('nodeLayer');
+  assert.ok(nodeLayer);
+  assert.match(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
 });
 
 test('posts Flow Governance option updates from the webview runtime', () => {
@@ -950,21 +966,15 @@ test('posts Flow Governance option updates from the webview runtime', () => {
         configSource: 'repository',
         diagnostics: [],
         branchKinds: ['main', 'sync'],
-        filters: {
-          visibleKinds: ['main', 'sync'],
-          hideSyncBranches: false,
-          highlightProductionTrunk: true,
-          showUnknownBranches: true
-        },
         references: []
       }
     })
   });
-  runtime.context.updateFlowGovernanceOptions({ hideSyncBranches: true });
+  runtime.context.updateFlowGovernanceOptions({ enabled: false });
 
   const lastMessage = runtime.postedMessages.at(-1);
   assert.equal(lastMessage.type, 'set-flow-governance-options');
-  assert.deepEqual(lastMessage.options, { hideSyncBranches: true });
+  assert.deepEqual(lastMessage.options, { enabled: false });
 });
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
@@ -1161,11 +1171,6 @@ function createWebviewRuntime() {
     'showMinimapToggle',
     'flowGovernanceOptions',
     'flowGovernanceEnabledToggle',
-    'flowGovernanceDetailOptions',
-    'hideSyncBranchesToggle',
-    'highlightProductionTrunkToggle',
-    'showUnknownBranchesToggle',
-    'flowKindOptions',
     'searchInput',
     'searchResultBadge',
     'searchPrevButton',

@@ -21,18 +21,12 @@ const PHASE_1_CONFIG_KEYS = new Set([
   'schemaVersion',
   'enabled',
   'mainBranches',
-  'patterns',
-  'hideSyncBranchesByDefault',
-  'highlightProductionTrunk',
-  'showUnknownBranches'
+  'patterns'
 ]);
 export const DEFAULT_FLOW_CONFIG_PATH = '.git-revision-graph-flow.json';
 
 export interface RepositoryFlowConfigOptionsUpdate {
   readonly enabled?: boolean;
-  readonly hideSyncBranches?: boolean;
-  readonly highlightProductionTrunk?: boolean;
-  readonly showUnknownBranches?: boolean;
 }
 
 export function normalizeFlowConfig(
@@ -51,15 +45,6 @@ export function normalizeFlowConfig(
   const ignoredFields = Object.keys(rawConfig).filter((key) => !PHASE_1_CONFIG_KEYS.has(key)).sort();
 
   const enabled = readOptionalBoolean(rawConfig, 'enabled', issues) ?? DEFAULT_FLOW_CONFIG.enabled;
-  const hideSyncBranchesByDefault =
-    readOptionalBoolean(rawConfig, 'hideSyncBranchesByDefault', issues)
-    ?? DEFAULT_FLOW_CONFIG.hideSyncBranchesByDefault;
-  const highlightProductionTrunk =
-    readOptionalBoolean(rawConfig, 'highlightProductionTrunk', issues)
-    ?? DEFAULT_FLOW_CONFIG.highlightProductionTrunk;
-  const showUnknownBranches =
-    readOptionalBoolean(rawConfig, 'showUnknownBranches', issues)
-    ?? DEFAULT_FLOW_CONFIG.showUnknownBranches;
   const mainBranches = readMainBranches(rawConfig.mainBranches, issues);
   const patterns = readPatterns(rawConfig.patterns, issues);
 
@@ -67,9 +52,6 @@ export function normalizeFlowConfig(
     enabled,
     mainBranches,
     patterns,
-    hideSyncBranchesByDefault,
-    highlightProductionTrunk,
-    showUnknownBranches,
     ignoredFields
   });
 
@@ -91,13 +73,7 @@ export function normalizeFlowSettings(
   }
 
   const config = createDefaultFlowConfig({
-    enabled: settings.enabled ?? DEFAULT_FLOW_CONFIG.enabled,
-    hideSyncBranchesByDefault:
-      settings.hideSyncBranchesByDefault ?? DEFAULT_FLOW_CONFIG.hideSyncBranchesByDefault,
-    highlightProductionTrunk:
-      settings.highlightProductionTrunk ?? DEFAULT_FLOW_CONFIG.highlightProductionTrunk,
-    showUnknownBranches:
-      settings.showUnknownBranches ?? DEFAULT_FLOW_CONFIG.showUnknownBranches
+    enabled: settings.enabled ?? DEFAULT_FLOW_CONFIG.enabled
   });
 
   return issues.length > 0 ? invalid(issues, config) : { ok: true, source, config, issues: [] };
@@ -160,17 +136,11 @@ export async function updateRepositoryFlowConfigOptions(
   }
 
   const nextConfig: Record<string, unknown> = { ...rawConfig };
+  delete nextConfig.hideSyncBranchesByDefault;
+  delete nextConfig.highlightProductionTrunk;
+  delete nextConfig.showUnknownBranches;
   if (update.enabled !== undefined) {
     nextConfig.enabled = update.enabled;
-  }
-  if (update.hideSyncBranches !== undefined) {
-    nextConfig.hideSyncBranchesByDefault = update.hideSyncBranches;
-  }
-  if (update.highlightProductionTrunk !== undefined) {
-    nextConfig.highlightProductionTrunk = update.highlightProductionTrunk;
-  }
-  if (update.showUnknownBranches !== undefined) {
-    nextConfig.showUnknownBranches = update.showUnknownBranches;
   }
 
   try {

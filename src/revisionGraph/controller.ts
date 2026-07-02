@@ -536,10 +536,7 @@ export class RevisionGraphController implements vscode.Disposable {
     const config = vscode.workspace.getConfiguration('gitRevisionGraph.flowGovernance', repository.rootUri);
     return {
       enabled: config.get<boolean>('enabled'),
-      configPath: config.get<string>('configPath'),
-      hideSyncBranchesByDefault: config.get<boolean>('hideSyncBranchesByDefault'),
-      highlightProductionTrunk: config.get<boolean>('highlightProductionTrunk'),
-      showUnknownBranches: config.get<boolean>('showUnknownBranches')
+      configPath: config.get<string>('configPath')
     };
   }
 
@@ -791,8 +788,5 @@ export class RevisionGraphController implements vscode.Disposable {
 }
 
 function hasPersistableFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): boolean {
-  return options.enabled !== undefined
-    || options.hideSyncBranches !== undefined
-    || options.highlightProductionTrunk !== undefined
-    || options.showUnknownBranches !== undefined;
+  return options.enabled !== undefined;
 }

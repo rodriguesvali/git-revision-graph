@@ -275,10 +275,6 @@ export function renderRevisionGraphStyles(): string {
     }
     .ref-line.base { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.55); font-weight: 700; }
     .ref-line.compare { box-shadow: inset 4px 0 0 rgba(0, 0, 0, 0.25); text-decoration: underline; }
-    .ref-line.flow-production-trunk {
-      box-shadow: inset 4px 0 0 color-mix(in srgb, var(--accent) 76%, var(--node-head) 24%);
-      font-weight: 700;
-    }
     .ref-line .ref-name {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -588,16 +584,6 @@ export function renderRevisionGraphStyles(): string {
     }
     .view-options-section[hidden] {
       display: none;
-    }
-    .flow-kind-options {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 8px;
-      padding-top: 2px;
-    }
-    .flow-kind-options label.flow-kind-option {
-      gap: 5px;
-      min-width: 0;
     }
     .view-controls .search-controls {
       display: inline-flex;

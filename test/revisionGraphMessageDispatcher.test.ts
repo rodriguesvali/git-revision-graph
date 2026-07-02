@@ -91,18 +91,12 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
       configSource: 'workspace' as const,
       diagnostics: [],
       branchKinds: ['main', 'sync', 'unknown'] as const,
-      filters: {
-        visibleKinds: ['main', 'sync', 'unknown'] as const,
-        hideSyncBranches: true,
-        highlightProductionTrunk: true,
-        showUnknownBranches: true
-      },
       references: []
     }
   };
 
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { hideSyncBranches: false } },
+    { type: 'set-flow-governance-options', options: { enabled: false } },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/repo',
@@ -112,7 +106,7 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
     }
   );
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { hideSyncBranches: true } },
+    { type: 'set-flow-governance-options', options: { enabled: true } },
     {
       currentState: { ...state, flowGovernance: undefined },
       currentRepositoryPath: '/workspace/repo',
@@ -122,7 +116,7 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
     }
   );
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { hideSyncBranches: true } },
+    { type: 'set-flow-governance-options', options: { enabled: true } },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/other',
@@ -133,7 +127,7 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
   );
 
   assert.deepEqual(dispatchedMessages, [
-    { type: 'set-flow-governance-options', options: { hideSyncBranches: false } }
+    { type: 'set-flow-governance-options', options: { enabled: false } }
   ]);
 });
 
