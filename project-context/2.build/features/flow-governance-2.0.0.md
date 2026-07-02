@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Build active - release promotion action slice complete
+Status: Build active - PR handoff slice complete
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -134,6 +134,17 @@ from an active release.
   action slice.
 - `git diff --check` passed on 2026-07-02 after the release promotion action
   slice.
+- PR handoff was added on 2026-07-02 for governed release-to-main promotion:
+  the release branch context menu can copy Pull Request context or open a
+  recognized GitHub compare URL without provider authentication.
+- Focused Flow Governance, message validation, authorization, handler, and
+  webview shell tests cover PR context generation, GitHub URL generation,
+  bounded webview messages, repository-scoped authorization, and menu wiring.
+- `npm run build` passed on 2026-07-02 after the PR handoff slice.
+- Focused message/webview/Flow Governance tests passed on 2026-07-02 with 571
+  compiled tests after the PR handoff slice.
+- `npm test` passed with 571 tests on 2026-07-02 after the PR handoff slice.
+- `git diff --check` passed on 2026-07-02 after the PR handoff slice.
 
 ## Manual Validation
 
@@ -156,7 +167,7 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-The release promotion validation action is the first host/webview integration
-over the policy/readiness/diagnostics layers. Next implementation slice should
-add PR handoff context for governed source/target pairs or improve persistence
-of readiness diagnostics in graph state.
+The release promotion validation and PR handoff actions now cover the first
+operational release-promotion path. Next implementation slice should add the
+production-to-release equalization assistant that prepares a local `sync/*`
+branch after explicit confirmation.

@@ -67,7 +67,9 @@ import {
 import type { FlowConfigSource, FlowGovernanceSettings } from './flow';
 import {
   applyFlowGovernanceOptionsUpdate,
+  buildGitHubPullRequestUrl,
   checkFlowPromotionReadiness,
+  createFlowPullRequestContext,
   createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
   updateRepositoryFlowConfigOptions
@@ -278,6 +280,12 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       validateFlowReleasePromotion: async (refName) => {
         await this.validateFlowReleasePromotion(refName);
+      },
+      copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
+        await this.copyFlowPullRequestContext(sourceRefName, targetRefName);
+      },
+      openFlowPullRequestUrl: async (sourceRefName, targetRefName) => {
+        await this.openFlowPullRequestUrl(sourceRefName, targetRefName);
       },
       clearLayoutCache: () => {
         return this.clearLayoutCache();
@@ -616,6 +624,27 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private resolveFlowProductionBranch(): string | undefined {
     return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
+  }
+
+  private async copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {
+    const context = createFlowPullRequestContext(sourceRefName, targetRefName);
+    await vscode.env.clipboard.writeText(context.text);
+    this.actionServices.ui.showInformationMessage(`Copied Pull Request context for ${sourceRefName} -> ${targetRefName}.`);
+  }
+
+  private async openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void> {
+    const repository = this.currentRepository;
+    if (!repository) {
+      return;
+    }
+
+    const url = buildGitHubPullRequestUrl(repository, sourceRefName, targetRefName);
+    if (!url) {
+      this.actionServices.ui.showInformationMessage('No GitHub remote is configured for this repository.');
+      return;
+    }
+
+    await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

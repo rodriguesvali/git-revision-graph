@@ -383,8 +383,13 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
         }
         if (flowBranch && flowBranch.kind === 'release') {
+          const productionBranchName = getFlowProductionBranchName();
           appendMenuSection('Flow Governance');
           appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
+          if (productionBranchName) {
+            appendMenuItem('Copy Promotion PR Context', () => postCopyFlowPullRequestContext(target.name, productionBranchName));
+            appendMenuItem('Open Promotion PR URL', () => postOpenFlowPullRequestUrl(target.name, productionBranchName));
+          }
         }
         if (canResetCurrentWorkspace) {
           appendMenuSection('Destructive');
@@ -593,6 +598,22 @@ export function renderRevisionGraphScriptInteractions(): string {
         null,
         'subtle'
       );
+    }
+
+    function postCopyFlowPullRequestContext(sourceRefName, targetRefName) {
+      vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName));
+    }
+
+    function postOpenFlowPullRequestUrl(sourceRefName, targetRefName) {
+      vscode.postMessage(createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName));
+    }
+
+    function getFlowProductionBranchName() {
+      if (!isFlowGovernanceActive() || !currentFlowGovernance || !Array.isArray(currentFlowGovernance.references)) {
+        return null;
+      }
+      const production = currentFlowGovernance.references.find((ref) => ref && ref.kind === 'main');
+      return production ? production.refName : null;
     }
 
     function persistWebviewUiState() {

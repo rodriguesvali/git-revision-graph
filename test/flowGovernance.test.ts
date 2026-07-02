@@ -8,8 +8,11 @@ import {
   classifyFlowBranch,
   classifyFlowBranches,
   applyFlowGovernanceOptionsUpdate,
+  buildGitHubPullRequestUrl,
+  buildGitHubPullRequestUrlFromRemoteUrl,
   checkFlowPromotionReadiness,
   createDefaultFlowConfigFile,
+  createFlowPullRequestContext,
   createFlowPromotionReadinessDiagnostic,
   createFlowTransitionDiagnostics,
   createFlowGovernanceViewState,
@@ -21,6 +24,7 @@ import {
   isFlowGovernedTransition,
   updateRepositoryFlowConfigOptions
 } from '../src/revisionGraph/flow';
+import { createRepository } from './fakes';
 
 test('Flow Governance normalizes Phase 1 defaults and ignores future fields inertly', () => {
   const result = normalizeFlowConfig({
@@ -311,6 +315,31 @@ test('Flow Governance creates release promotion readiness diagnostics', () => {
   assert.match(blocked.message, /Equalize production/);
   assert.equal(inconclusive.code, 'release-promotion-inconclusive');
   assert.match(inconclusive.message, /ambiguous argument/);
+});
+
+test('Flow Governance creates Pull Request context and GitHub compare URLs', () => {
+  const context = createFlowPullRequestContext('release/1.0.0', 'main');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [
+      { name: 'origin', fetchUrl: 'https://github.com/owner/project.git', pushUrl: undefined, isReadOnly: false }
+    ]
+  });
+
+  assert.equal(context.title, 'Merge release/1.0.0 into main');
+  assert.match(context.text, /Flow Governance requires final integration through a Pull Request/);
+  assert.equal(
+    buildGitHubPullRequestUrl(repository, 'release/1.0.0', 'main'),
+    'https://github.com/owner/project/compare/main...release%2F1.0.0?expand=1'
+  );
+  assert.equal(
+    buildGitHubPullRequestUrlFromRemoteUrl('git@github.com:owner/project.git', 'sync/release-from-main', 'release/1.0.0'),
+    'https://github.com/owner/project/compare/release%2F1.0.0...sync%2Frelease-from-main?expand=1'
+  );
+  assert.equal(
+    buildGitHubPullRequestUrlFromRemoteUrl('https://example.com/owner/project.git', 'release/1.0.0', 'main'),
+    undefined
+  );
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {

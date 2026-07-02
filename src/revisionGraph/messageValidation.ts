@@ -64,6 +64,16 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.refName)
         ? { type: 'validate-release-promotion', refName: message.refName }
         : undefined;
+    case 'copy-flow-pr-context':
+    case 'open-flow-pr-url':
+      return isBoundedNonEmptyString(message.sourceRefName)
+        && isBoundedNonEmptyString(message.targetRefName)
+        ? {
+          type: message.type,
+          sourceRefName: message.sourceRefName,
+          targetRefName: message.targetRefName
+        }
+        : undefined;
     case 'compare-selected':
       return isBoundedNonEmptyString(message.baseRevision)
         && isBoundedString(message.baseLabel)

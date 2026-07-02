@@ -84,6 +84,34 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
   assert.deepEqual(validations, ['release/1.0.0']);
 });
 
+test('RevisionGraphMessageHandler runs Pull Request handoff through the host boundary', async () => {
+  const calls: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async copyFlowPullRequestContext(sourceRefName, targetRefName) {
+      calls.push(`copy:${sourceRefName}->${targetRefName}`);
+    },
+    async openFlowPullRequestUrl(sourceRefName, targetRefName) {
+      calls.push(`open:${sourceRefName}->${targetRefName}`);
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'copy-flow-pr-context',
+    sourceRefName: 'release/1.0.0',
+    targetRefName: 'main'
+  });
+  await handler.handleMessage({
+    type: 'open-flow-pr-url',
+    sourceRefName: 'release/1.0.0',
+    targetRefName: 'main'
+  });
+
+  assert.deepEqual(calls, [
+    'copy:release/1.0.0->main',
+    'open:release/1.0.0->main'
+  ]);
+});
+
 test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {
   const calls: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -223,6 +251,8 @@ function createHost(
     postCurrentState() {},
     updateFlowGovernanceOptions() {},
     async validateFlowReleasePromotion() {},
+    async copyFlowPullRequestContext() {},
+    async openFlowPullRequestUrl() {},
     traceWebviewLoadEvent() {},
     createRemoteTagPublicationRequestContext(): RemoteTagPublicationRequestContext {
       return {

@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build active; release promotion action slice complete
+Status: Build active; PR handoff slice complete
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -131,6 +131,14 @@ Recorded verification:
   2026-07-02 after the release promotion action slice.
 - `npm test` passed with 569 tests on 2026-07-02 after the release promotion action slice.
 - `git diff --check` passed on 2026-07-02 after the release promotion action slice.
+- Flow Governance PR handoff was added on 2026-07-02 for governed release-to-main promotion,
+  including copyable Pull Request context and GitHub compare URL opening when an eligible remote
+  is configured.
+- `npm run build` passed on 2026-07-02 after the PR handoff slice.
+- Focused message/webview/Flow Governance tests passed with 571 compiled tests on
+  2026-07-02 after the PR handoff slice.
+- `npm test` passed with 571 tests on 2026-07-02 after the PR handoff slice.
+- `git diff --check` passed on 2026-07-02 after the PR handoff slice.
 
 Marketplace impact:
 

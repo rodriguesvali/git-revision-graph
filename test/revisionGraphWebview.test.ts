@@ -116,7 +116,11 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
   assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
   assert.match(html, /function createRevisionGraphValidateReleasePromotionMessage\(target\) \{\s*return \{ type: 'validate-release-promotion', refName: target\.name \};\s*\}/s);
+  assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
+  assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /Validate Release Promotion/);
+  assert.match(html, /Copy Promotion PR Context/);
+  assert.match(html, /Open Promotion PR URL/);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);

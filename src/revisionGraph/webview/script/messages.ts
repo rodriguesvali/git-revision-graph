@@ -47,6 +47,14 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'validate-release-promotion', refName: target.name };
     }
 
+    function createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName) {
+      return { type: 'copy-flow-pr-context', sourceRefName, targetRefName };
+    }
+
+    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName) {
+      return { type: 'open-flow-pr-url', sourceRefName, targetRefName };
+    }
+
     function createRevisionGraphCompareSelectedMessage(base, compare) {
       return {
         type: 'compare-selected',

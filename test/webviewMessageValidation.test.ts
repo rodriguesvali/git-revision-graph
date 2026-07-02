@@ -45,6 +45,14 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'copy-flow-pr-context', sourceRefName: '', targetRefName: 'main' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'open-flow-pr-url', sourceRefName: 'release/1.0.0', targetRefName: '' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({
       type: 'set-flow-governance-options',
       options: { visibleKinds: ['main', 'evil'] }
@@ -307,6 +315,30 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
   );
   assert.deepEqual(
     validateRevisionGraphMessage({
+      type: 'copy-flow-pr-context',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main'
+    }),
+    {
+      type: 'copy-flow-pr-context',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'open-flow-pr-url',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main'
+    }),
+    {
+      type: 'open-flow-pr-url',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
       type: 'load-trace',
       phase: 'webview.apply.update-state',
       durationMs: 4.6,
@@ -518,6 +550,46 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
           ]
         }
       }
+    ),
+    false
+  );
+  const governedFlowState: RevisionGraphViewState = {
+    ...state,
+    references: [
+      ...state.references,
+      { id: 'release1::branch::release/1.0.0', hash: 'release1', name: 'release/1.0.0', kind: 'branch', title: 'release/1.0.0' },
+      { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch', title: 'feature/demo' }
+    ],
+    flowGovernance: {
+      enabled: true,
+      configSource: 'workspace',
+      diagnostics: [],
+      branchKinds: ['main', 'feature', 'release', 'sync', 'unknown'],
+      references: [
+        { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
+        { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
+        { refName: 'feature/demo', kind: 'feature', isEphemeral: false, diagnostics: [] }
+      ]
+    }
+  };
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'release/1.0.0', targetRefName: 'main' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'main' },
+      governedFlowState
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'open-flow-pr-url', sourceRefName: 'release/1.0.0', targetRefName: 'missing' },
+      governedFlowState
     ),
     false
   );

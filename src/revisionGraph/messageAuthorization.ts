@@ -1,4 +1,5 @@
 import type { RevisionGraphRef } from './model/commitGraphTypes';
+import { isFlowGovernedTransition } from './flow';
 import {
   RevisionGraphMessage,
   RevisionGraphViewState,
@@ -30,6 +31,13 @@ export function isRevisionGraphMessageAllowedForState(
         && state.flowGovernance.references.some((ref) =>
           ref.refName === message.refName && ref.kind === 'release'
         );
+    case 'copy-flow-pr-context':
+    case 'open-flow-pr-url':
+      return state.viewMode === 'ready'
+        && state.flowGovernance?.enabled === true
+        && hasKnownReferenceName(state, message.sourceRefName)
+        && hasKnownReferenceName(state, message.targetRefName)
+        && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName);
     case 'pull-current-head':
     case 'push-current-head':
       return state.viewMode === 'ready'
@@ -111,6 +119,8 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
       return false;
     case 'set-flow-governance-options':
     case 'validate-release-promotion':
+    case 'copy-flow-pr-context':
+    case 'open-flow-pr-url':
       return true;
     case 'fetch-current-repository':
     case 'abort-merge':
@@ -161,6 +171,16 @@ function hasKnownCommitHash(state: RevisionGraphViewState, hash: string): boolea
 
 function hasKnownReferenceName(state: RevisionGraphViewState, refName: string): boolean {
   return state.viewMode === 'ready' && state.references.some((ref) => ref.name === refName);
+}
+
+function isKnownGovernedFlowTransition(
+  state: RevisionGraphViewState,
+  sourceRefName: string,
+  targetRefName: string
+): boolean {
+  const source = state.flowGovernance?.references.find((ref) => ref.refName === sourceRefName);
+  const target = state.flowGovernance?.references.find((ref) => ref.refName === targetRefName);
+  return !!source && !!target && isFlowGovernedTransition(source.kind, target.kind);
 }
 
 function hasKnownReference(

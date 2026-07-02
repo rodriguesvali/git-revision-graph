@@ -34,6 +34,8 @@ export interface RevisionGraphMessageHandlerHost
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
   validateFlowReleasePromotion(refName: string): Promise<void>;
+  copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;
+  openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void>;
   clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
     phase: string,
@@ -88,6 +90,12 @@ export class RevisionGraphMessageHandler {
         return;
       case 'validate-release-promotion':
         await this.host.validateFlowReleasePromotion(message.refName);
+        return;
+      case 'copy-flow-pr-context':
+        await this.host.copyFlowPullRequestContext(message.sourceRefName, message.targetRefName);
+        return;
+      case 'open-flow-pr-url':
+        await this.host.openFlowPullRequestUrl(message.sourceRefName, message.targetRefName);
         return;
       case 'compare-selected':
         await this.refActionWorkflow.compareSelected(
