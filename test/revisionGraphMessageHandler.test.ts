@@ -112,6 +112,23 @@ test('RevisionGraphMessageHandler runs Pull Request handoff through the host bou
   ]);
 });
 
+test('RevisionGraphMessageHandler prepares release equalization through the host boundary', async () => {
+  const calls: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async prepareFlowEqualization(releaseRefName, productionRefName) {
+      calls.push(`${productionRefName}->${releaseRefName}`);
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'prepare-flow-equalization',
+    releaseRefName: 'release/2.0.0',
+    productionRefName: 'main'
+  });
+
+  assert.deepEqual(calls, ['main->release/2.0.0']);
+});
+
 test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {
   const calls: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -251,6 +268,7 @@ function createHost(
     postCurrentState() {},
     updateFlowGovernanceOptions() {},
     async validateFlowReleasePromotion() {},
+    async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},
     async openFlowPullRequestUrl() {},
     traceWebviewLoadEvent() {},

@@ -45,6 +45,10 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'prepare-flow-equalization', releaseRefName: '', productionRefName: 'main' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'copy-flow-pr-context', sourceRefName: '', targetRefName: 'main' }),
     undefined
   );

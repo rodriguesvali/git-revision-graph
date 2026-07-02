@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Build active - PR handoff slice complete
+Status: Build complete - manual validation pending
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -145,6 +145,15 @@ from an active release.
   compiled tests after the PR handoff slice.
 - `npm test` passed with 571 tests on 2026-07-02 after the PR handoff slice.
 - `git diff --check` passed on 2026-07-02 after the PR handoff slice.
+- Production-to-release equalization was added on 2026-07-02 through the
+  release branch context menu. It prompts for a validated `sync/*` branch,
+  requires a clean workspace and explicit confirmation, creates the local
+  branch from release, merges production, never pushes, and reveals Source
+  Control when conflicts remain.
+- Equalization tests cover deterministic naming, local branch creation, merge,
+  the no-push invariant, `sync/*` enforcement, message boundaries, and webview
+  wiring.
+- `npm test` passed with 575 tests on 2026-07-02 after the equalization slice.
 
 ## Manual Validation
 
@@ -167,7 +176,6 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-The release promotion validation and PR handoff actions now cover the first
-operational release-promotion path. Next implementation slice should add the
-production-to-release equalization assistant that prepares a local `sync/*`
-branch after explicit confirmation.
+The planned operational Flow Governance build scope is implemented. Next step
+is Extension Development Host validation of readiness, PR handoff, successful
+equalization, conflict handoff, and the no-automatic-push invariant.

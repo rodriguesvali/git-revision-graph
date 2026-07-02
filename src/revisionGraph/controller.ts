@@ -72,6 +72,7 @@ import {
   createFlowPullRequestContext,
   createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
+  prepareFlowEqualizationBranch,
   updateRepositoryFlowConfigOptions
 } from './flow';
 
@@ -280,6 +281,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       validateFlowReleasePromotion: async (refName) => {
         await this.validateFlowReleasePromotion(refName);
+      },
+      prepareFlowEqualization: async (releaseRefName, productionRefName) => {
+        await this.prepareFlowEqualization(releaseRefName, productionRefName);
       },
       copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
         await this.copyFlowPullRequestContext(sourceRefName, targetRefName);
@@ -624,6 +628,27 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private resolveFlowProductionBranch(): string | undefined {
     return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
+  }
+
+  private async prepareFlowEqualization(releaseRefName: string, productionRefName: string): Promise<void> {
+    const repository = this.currentRepository;
+    if (!repository) {
+      return;
+    }
+
+    const outcome = await runGuardedRepositoryMutation(
+      this.mutationCoordinator,
+      repository,
+      this.actionServices,
+      (guardedRepository, services) => prepareFlowEqualizationBranch(
+          guardedRepository,
+          { releaseBranch: releaseRefName, productionBranch: productionRefName },
+          services
+        )
+    );
+    if (outcome.status === 'rejected') {
+      this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
+    }
   }
 
   private async copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {

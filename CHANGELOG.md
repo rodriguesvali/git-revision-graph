@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-### Flow Governance Phase 1
+### Flow Governance
 
 - Added an optional Flow Governance metadata overlay for branch classification and branch-kind
   badges in the revision graph webview.
@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
   protection.
 - Added tests for Flow Governance config normalization, classification, view-state serialization,
   message validation/authorization, webview rendering, and config-file creation.
+- Added release promotion ancestry validation, Pull Request context/URL handoff, and a confirmed
+  local `sync/*` equalization assistant that never pushes automatically.
 
 ## 1.5.6
 

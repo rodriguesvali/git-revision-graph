@@ -31,6 +31,12 @@ export function isRevisionGraphMessageAllowedForState(
         && state.flowGovernance.references.some((ref) =>
           ref.refName === message.refName && ref.kind === 'release'
         );
+    case 'prepare-flow-equalization':
+      return state.viewMode === 'ready'
+        && state.flowGovernance?.enabled === true
+        && hasKnownReferenceName(state, message.releaseRefName)
+        && hasKnownReferenceName(state, message.productionRefName)
+        && hasKnownFlowKinds(state, message.releaseRefName, 'release', message.productionRefName, 'main');
     case 'copy-flow-pr-context':
     case 'open-flow-pr-url':
       return state.viewMode === 'ready'
@@ -119,6 +125,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
       return false;
     case 'set-flow-governance-options':
     case 'validate-release-promotion':
+    case 'prepare-flow-equalization':
     case 'copy-flow-pr-context':
     case 'open-flow-pr-url':
       return true;
@@ -149,6 +156,17 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'merge':
       return true;
   }
+}
+
+function hasKnownFlowKinds(
+  state: RevisionGraphViewState,
+  firstRefName: string,
+  firstKind: 'release',
+  secondRefName: string,
+  secondKind: 'main'
+): boolean {
+  return state.flowGovernance?.references.some((ref) => ref.refName === firstRefName && ref.kind === firstKind) === true
+    && state.flowGovernance.references.some((ref) => ref.refName === secondRefName && ref.kind === secondKind);
 }
 
 function isKnownRevisionLogSource(state: RevisionGraphViewState, source: RevisionLogSource): boolean {

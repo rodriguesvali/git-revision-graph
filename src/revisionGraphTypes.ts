@@ -32,6 +32,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
   | { readonly type: 'set-flow-governance-options'; readonly options: FlowGovernanceOptionsUpdate }
   | { readonly type: 'validate-release-promotion'; readonly refName: string }
+  | { readonly type: 'prepare-flow-equalization'; readonly releaseRefName: string; readonly productionRefName: string }
   | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
   | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }
   | {

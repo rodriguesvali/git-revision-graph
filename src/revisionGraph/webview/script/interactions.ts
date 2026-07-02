@@ -385,8 +385,9 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (flowBranch && flowBranch.kind === 'release') {
           const productionBranchName = getFlowProductionBranchName();
           appendMenuSection('Flow Governance');
-          appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
+            appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
           if (productionBranchName) {
+            appendMenuItem('Prepare Production Equalization', () => postPrepareFlowEqualization(target.name, productionBranchName));
             appendMenuItem('Copy Promotion PR Context', () => postCopyFlowPullRequestContext(target.name, productionBranchName));
             appendMenuItem('Open Promotion PR URL', () => postOpenFlowPullRequestUrl(target.name, productionBranchName));
           }
@@ -597,6 +598,13 @@ export function renderRevisionGraphScriptInteractions(): string {
         'Validating release promotion...',
         null,
         'subtle'
+      );
+    }
+
+    function postPrepareFlowEqualization(releaseRefName, productionRefName) {
+      postMessageWithLoading(
+        createRevisionGraphPrepareFlowEqualizationMessage(releaseRefName, productionRefName),
+        'Preparing production equalization...'
       );
     }
 

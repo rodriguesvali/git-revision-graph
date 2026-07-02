@@ -21,10 +21,17 @@ import {
   interpretFlowPromotionAncestorExitCode,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
+  suggestFlowEqualizationBranchName,
   isFlowGovernedTransition,
   updateRepositoryFlowConfigOptions
 } from '../src/revisionGraph/flow';
 import { createRepository } from './fakes';
+
+test('Flow Governance suggests local sync branch names for release equalization', () => {
+  assert.equal(suggestFlowEqualizationBranchName('release/2.0.0'), 'sync/2.0.0');
+  assert.equal(suggestFlowEqualizationBranchName('release/2026 Q3'), 'sync/2026-Q3');
+  assert.equal(suggestFlowEqualizationBranchName('release/'), 'sync/release');
+});
 
 test('Flow Governance normalizes Phase 1 defaults and ignores future fields inertly', () => {
   const result = normalizeFlowConfig({

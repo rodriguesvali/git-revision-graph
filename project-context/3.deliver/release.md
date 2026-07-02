@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build active; PR handoff slice complete
+Status: Build complete; manual operational smoke pending
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -139,6 +139,10 @@ Recorded verification:
   2026-07-02 after the PR handoff slice.
 - `npm test` passed with 571 tests on 2026-07-02 after the PR handoff slice.
 - `git diff --check` passed on 2026-07-02 after the PR handoff slice.
+- Flow Governance production-to-release equalization was added on 2026-07-02
+  with clean-workspace and confirmation guards, validated local `sync/*`
+  naming, no automatic push, and Source Control conflict handoff.
+- `npm test` passed with 575 tests on 2026-07-02 after the equalization slice.
 
 Marketplace impact:
 

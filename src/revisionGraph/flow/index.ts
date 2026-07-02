@@ -3,6 +3,7 @@ export * from './flowConfig';
 export * from './flowDecorations';
 export * from './flowDefaults';
 export * from './flowDiagnostics';
+export * from './flowEqualization';
 export * from './flowPromotionChecks';
 export * from './flowPullRequestContext';
 export * from './flowState';
