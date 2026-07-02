@@ -79,3 +79,31 @@ export interface FlowGovernanceViewState {
 export interface FlowGovernanceOptionsUpdate {
   readonly enabled?: boolean;
 }
+
+export type FlowDirectMergePolicy = 'off' | 'warn' | 'block';
+
+export type FlowDirectMergeAction = 'allow' | 'warn' | 'block';
+
+export type FlowTransitionRuleId =
+  | 'release-to-main'
+  | 'task-to-feature'
+  | 'package-to-feature'
+  | 'hotfix-to-main'
+  | 'bug-to-main'
+  | 'bug-to-release'
+  | 'bug-to-feature'
+  | 'sync-to-release';
+
+export interface FlowTransitionPolicyOptions {
+  readonly directMergePolicy?: FlowDirectMergePolicy;
+}
+
+export interface FlowTransitionEvaluation {
+  readonly sourceKind: FlowBranchKind;
+  readonly targetKind: FlowBranchKind;
+  readonly ruleId?: FlowTransitionRuleId;
+  readonly requiresPullRequest: boolean;
+  readonly directMergePolicy: FlowDirectMergePolicy;
+  readonly directMergeAction: FlowDirectMergeAction;
+  readonly message?: string;
+}

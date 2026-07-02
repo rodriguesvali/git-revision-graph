@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Definition active
+Status: Build active - policy engine slice complete
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -97,6 +97,17 @@ from an active release.
   refs or alter graph topology.
 - Ref-action tests for governed merge warning/block boundaries when implemented.
 
+## Verification
+
+- Pure transition-policy model implemented on 2026-07-02 in
+  `src/revisionGraph/flow/flowTransitionPolicy.ts`.
+- Focused Flow Governance policy tests cover all governed default pairs,
+  non-governed pairs, and direct merge policy outcomes for `off`, `warn`, and
+  `block`.
+- `npm run build` passed on 2026-07-02 after the policy engine slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
+  563 compiled tests after the policy engine slice.
+
 ## Manual Validation
 
 - Open the graph in an Extension Development Host.
@@ -118,6 +129,6 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-Start implementation with the pure policy/readiness layer before wiring UI or
-Git mutations. Keep each slice independently testable and update
-`project-context/3.deliver/release.md` after each completed slice.
+The pure transition-policy layer is available for readiness checks, UI wiring,
+or Git mutation guardrails. Next implementation slice should add release
+promotion readiness before wiring contextual graph actions.

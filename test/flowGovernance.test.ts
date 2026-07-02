@@ -11,8 +11,10 @@ import {
   createDefaultFlowConfigFile,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
+  evaluateFlowTransition,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
+  isFlowGovernedTransition,
   updateRepositoryFlowConfigOptions
 } from '../src/revisionGraph/flow';
 
@@ -141,6 +143,55 @@ test('Flow Governance keeps classified refs while disabled so re-enable is immed
   ]);
   assert.equal(updated.enabled, true);
   assert.equal(updated.references, viewState.references);
+});
+
+test('Flow Governance transition policy marks governed integrations as PR-required', () => {
+  const governedPairs = [
+    ['release', 'main', 'release-to-main'],
+    ['task', 'feature', 'task-to-feature'],
+    ['package', 'feature', 'package-to-feature'],
+    ['hotfix', 'main', 'hotfix-to-main'],
+    ['bug', 'main', 'bug-to-main'],
+    ['bug', 'release', 'bug-to-release'],
+    ['bug', 'feature', 'bug-to-feature'],
+    ['sync', 'release', 'sync-to-release']
+  ] as const;
+
+  for (const [sourceKind, targetKind, ruleId] of governedPairs) {
+    const result = evaluateFlowTransition(sourceKind, targetKind);
+
+    assert.equal(result.ruleId, ruleId);
+    assert.equal(result.requiresPullRequest, true);
+    assert.equal(result.directMergePolicy, 'warn');
+    assert.equal(result.directMergeAction, 'warn');
+    assert.match(result.message ?? '', /requires a Pull Request/);
+    assert.equal(isFlowGovernedTransition(sourceKind, targetKind), true);
+  }
+});
+
+test('Flow Governance transition policy leaves non-governed integrations unblocked', () => {
+  const result = evaluateFlowTransition('feature', 'main');
+
+  assert.equal(result.ruleId, undefined);
+  assert.equal(result.requiresPullRequest, false);
+  assert.equal(result.directMergePolicy, 'warn');
+  assert.equal(result.directMergeAction, 'allow');
+  assert.equal(result.message, undefined);
+  assert.equal(isFlowGovernedTransition('feature', 'main'), false);
+});
+
+test('Flow Governance direct merge policy supports off, warn, and block', () => {
+  assert.equal(evaluateFlowTransition('release', 'main', {
+    directMergePolicy: 'off'
+  }).directMergeAction, 'allow');
+
+  assert.equal(evaluateFlowTransition('release', 'main', {
+    directMergePolicy: 'warn'
+  }).directMergeAction, 'warn');
+
+  assert.equal(evaluateFlowTransition('release', 'main', {
+    directMergePolicy: 'block'
+  }).directMergeAction, 'block');
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {

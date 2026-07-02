@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Definition active; implementation slices pending
+Status: Build active; policy engine slice complete
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -109,6 +109,11 @@ Recorded verification:
 - Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on
   2026-07-01. Confirmed config creation, activation, invalid-config handling with hidden inert
   controls, session disable/re-enable affordance, and normal graph usability.
+- Flow Governance transition policy engine was added on 2026-07-02 with deterministic governed
+  pair matching and direct merge policy outcomes.
+- `npm run build` passed on 2026-07-02 after the policy engine slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed with 563 compiled tests on
+  2026-07-02 after the policy engine slice.
 
 Marketplace impact:
 
