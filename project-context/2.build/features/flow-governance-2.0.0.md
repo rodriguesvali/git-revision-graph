@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Build active - policy engine slice complete
+Status: Build active - readiness slice complete
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -107,6 +107,14 @@ from an active release.
 - `npm run build` passed on 2026-07-02 after the policy engine slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
   563 compiled tests after the policy engine slice.
+- Release promotion readiness implemented on 2026-07-02 in
+  `src/revisionGraph/flow/flowPromotionChecks.ts`.
+- Focused Flow Governance readiness tests cover `ready`, `blocked`, and
+  `inconclusive` outcomes, merge-base argument construction, and missing/error
+  states.
+- `npm run build` passed on 2026-07-02 after the readiness slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
+  566 compiled tests after the readiness slice.
 
 ## Manual Validation
 
@@ -129,6 +137,6 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-The pure transition-policy layer is available for readiness checks, UI wiring,
-or Git mutation guardrails. Next implementation slice should add release
-promotion readiness before wiring contextual graph actions.
+The pure transition-policy and release-readiness layers are available for
+diagnostic composition and later UI wiring. Next implementation slice should
+compose contextual governance diagnostics before adding graph actions.

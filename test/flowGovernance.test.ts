@@ -8,10 +8,12 @@ import {
   classifyFlowBranch,
   classifyFlowBranches,
   applyFlowGovernanceOptionsUpdate,
+  checkFlowPromotionReadiness,
   createDefaultFlowConfigFile,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
   evaluateFlowTransition,
+  interpretFlowPromotionAncestorExitCode,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
   isFlowGovernedTransition,
@@ -192,6 +194,74 @@ test('Flow Governance direct merge policy supports off, warn, and block', () => 
   assert.equal(evaluateFlowTransition('release', 'main', {
     directMergePolicy: 'block'
   }).directMergeAction, 'block');
+});
+
+test('Flow Governance promotion readiness interprets ancestry exit codes', () => {
+  assert.equal(
+    interpretFlowPromotionAncestorExitCode(0, 'main', 'release/1.0.0').status,
+    'ready'
+  );
+  assert.equal(
+    interpretFlowPromotionAncestorExitCode(1, 'main', 'release/1.0.0').status,
+    'blocked'
+  );
+  assert.equal(
+    interpretFlowPromotionAncestorExitCode(128, 'main', 'release/1.0.0').status,
+    'inconclusive'
+  );
+});
+
+test('Flow Governance promotion readiness runs merge-base ancestry checks', async () => {
+  const calls: string[][] = [];
+  const ready = await checkFlowPromotionReadiness({
+    repositoryPath: '/repo',
+    productionBranch: 'main',
+    releaseBranch: 'release/1.0.0',
+    async execGit(_repositoryPath, args) {
+      (calls as string[][]).push([...args]);
+      return { stdout: '', stderr: '' };
+    }
+  });
+
+  assert.equal(ready.status, 'ready');
+  assert.match(ready.message, /promotion-ready/);
+  assert.deepEqual(calls[0], [
+    'merge-base',
+    '--is-ancestor',
+    '--end-of-options',
+    'main',
+    'release/1.0.0'
+  ]);
+});
+
+test('Flow Governance promotion readiness reports blocked and inconclusive states', async () => {
+  const blocked = await checkFlowPromotionReadiness({
+    repositoryPath: '/repo',
+    productionBranch: 'main',
+    releaseBranch: 'release/1.0.0',
+    async execGit() {
+      throw Object.assign(new Error('not ancestor'), {
+        code: 1,
+        stderr: ''
+      });
+    }
+  });
+  const inconclusive = await checkFlowPromotionReadiness({
+    repositoryPath: '/repo',
+    productionBranch: 'main',
+    releaseBranch: 'release/1.0.0',
+    async execGit() {
+      throw Object.assign(new Error('fatal: ambiguous argument'), {
+        code: 128,
+        stderr: 'fatal: ambiguous argument'
+      });
+    }
+  });
+
+  assert.equal(blocked.status, 'blocked');
+  assert.match(blocked.message, /Equalize production/);
+  assert.equal(inconclusive.status, 'inconclusive');
+  assert.match(inconclusive.detail ?? '', /ambiguous argument/);
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {

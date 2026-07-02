@@ -107,3 +107,13 @@ export interface FlowTransitionEvaluation {
   readonly directMergeAction: FlowDirectMergeAction;
   readonly message?: string;
 }
+
+export type FlowPromotionReadinessStatus = 'ready' | 'blocked' | 'inconclusive';
+
+export interface FlowPromotionReadiness {
+  readonly status: FlowPromotionReadinessStatus;
+  readonly productionBranch: string;
+  readonly releaseBranch: string;
+  readonly message: string;
+  readonly detail?: string;
+}

@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build active; policy engine slice complete
+Status: Build active; readiness slice complete
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -114,6 +114,11 @@ Recorded verification:
 - `npm run build` passed on 2026-07-02 after the policy engine slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed with 563 compiled tests on
   2026-07-02 after the policy engine slice.
+- Flow Governance release promotion readiness was added on 2026-07-02 with
+  `ready`, `blocked`, and `inconclusive` outcomes backed by `git merge-base --is-ancestor`.
+- `npm run build` passed on 2026-07-02 after the readiness slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed with 566 compiled tests on
+  2026-07-02 after the readiness slice.
 
 Marketplace impact:
 
