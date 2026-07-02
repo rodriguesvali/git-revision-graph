@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Build active - readiness slice complete
+Status: Build active - diagnostics slice complete
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -115,6 +115,13 @@ from an active release.
 - `npm run build` passed on 2026-07-02 after the readiness slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
   566 compiled tests after the readiness slice.
+- Contextual governance diagnostics were expanded on 2026-07-02 in
+  `src/revisionGraph/flow/flowDiagnostics.ts`.
+- Focused Flow Governance diagnostics tests cover PR-required, direct-merge
+  blocked, non-governed transitions, and release promotion readiness diagnostics.
+- `npm run build` passed on 2026-07-02 after the diagnostics slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
+  568 compiled tests after the diagnostics slice.
 
 ## Manual Validation
 
@@ -137,6 +144,6 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-The pure transition-policy and release-readiness layers are available for
-diagnostic composition and later UI wiring. Next implementation slice should
-compose contextual governance diagnostics before adding graph actions.
+The pure transition-policy, release-readiness, and diagnostic composition layers
+are available for later UI wiring. Next implementation slice should expose these
+diagnostics through host/webview messages or graph context actions.

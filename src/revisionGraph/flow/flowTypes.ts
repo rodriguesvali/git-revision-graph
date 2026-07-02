@@ -55,10 +55,19 @@ export type FlowConfigResolution =
 export type FlowDiagnosticSeverity = 'info' | 'warning' | 'error';
 
 export interface FlowDiagnostic {
-  readonly code: 'unknown-branch' | 'invalid-config';
+  readonly code:
+    | 'unknown-branch'
+    | 'invalid-config'
+    | 'pr-required'
+    | 'direct-merge-blocked'
+    | 'release-promotion-ready'
+    | 'release-promotion-blocked'
+    | 'release-promotion-inconclusive';
   readonly severity: FlowDiagnosticSeverity;
   readonly message: string;
   readonly refName?: string;
+  readonly sourceRefName?: string;
+  readonly targetRefName?: string;
 }
 
 export interface FlowBranchInfo {

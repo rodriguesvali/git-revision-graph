@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build active; readiness slice complete
+Status: Build active; diagnostics slice complete
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -119,6 +119,11 @@ Recorded verification:
 - `npm run build` passed on 2026-07-02 after the readiness slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed with 566 compiled tests on
   2026-07-02 after the readiness slice.
+- Flow Governance contextual diagnostics were expanded on 2026-07-02 for
+  PR-required transitions, direct-merge blocking, and release promotion readiness outcomes.
+- `npm run build` passed on 2026-07-02 after the diagnostics slice.
+- `npm test -- --test-name-pattern "Flow Governance"` passed with 568 compiled tests on
+  2026-07-02 after the diagnostics slice.
 
 Marketplace impact:
 

@@ -10,6 +10,8 @@ import {
   applyFlowGovernanceOptionsUpdate,
   checkFlowPromotionReadiness,
   createDefaultFlowConfigFile,
+  createFlowPromotionReadinessDiagnostic,
+  createFlowTransitionDiagnostics,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
   evaluateFlowTransition,
@@ -262,6 +264,53 @@ test('Flow Governance promotion readiness reports blocked and inconclusive state
   assert.match(blocked.message, /Equalize production/);
   assert.equal(inconclusive.status, 'inconclusive');
   assert.match(inconclusive.detail ?? '', /ambiguous argument/);
+});
+
+test('Flow Governance creates PR-required transition diagnostics', () => {
+  const diagnostics = createFlowTransitionDiagnostics(
+    evaluateFlowTransition('release', 'main'),
+    'release/1.0.0',
+    'main'
+  );
+  const blockedDiagnostics = createFlowTransitionDiagnostics(
+    evaluateFlowTransition('release', 'main', { directMergePolicy: 'block' }),
+    'release/1.0.0',
+    'main'
+  );
+  const ignoredDiagnostics = createFlowTransitionDiagnostics(
+    evaluateFlowTransition('feature', 'main'),
+    'feature/demo',
+    'main'
+  );
+
+  assert.equal(diagnostics[0]?.code, 'pr-required');
+  assert.equal(diagnostics[0]?.severity, 'warning');
+  assert.equal(diagnostics[0]?.sourceRefName, 'release/1.0.0');
+  assert.equal(diagnostics[0]?.targetRefName, 'main');
+  assert.equal(blockedDiagnostics[0]?.code, 'direct-merge-blocked');
+  assert.equal(blockedDiagnostics[0]?.severity, 'error');
+  assert.equal(ignoredDiagnostics.length, 0);
+});
+
+test('Flow Governance creates release promotion readiness diagnostics', () => {
+  const ready = createFlowPromotionReadinessDiagnostic(
+    interpretFlowPromotionAncestorExitCode(0, 'main', 'release/1.0.0')
+  );
+  const blocked = createFlowPromotionReadinessDiagnostic(
+    interpretFlowPromotionAncestorExitCode(1, 'main', 'release/1.0.0')
+  );
+  const inconclusive = createFlowPromotionReadinessDiagnostic({
+    ...interpretFlowPromotionAncestorExitCode(128, 'main', 'release/1.0.0'),
+    detail: 'fatal: ambiguous argument'
+  });
+
+  assert.equal(ready.code, 'release-promotion-ready');
+  assert.equal(ready.severity, 'info');
+  assert.equal(blocked.code, 'release-promotion-blocked');
+  assert.equal(blocked.severity, 'warning');
+  assert.match(blocked.message, /Equalize production/);
+  assert.equal(inconclusive.code, 'release-promotion-inconclusive');
+  assert.match(inconclusive.message, /ambiguous argument/);
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {
