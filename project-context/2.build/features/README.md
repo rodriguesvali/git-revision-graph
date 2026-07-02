@@ -9,7 +9,7 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-None. Open the next feature here only after the target scope is approved.
+- `flow-governance-2.0.0.md`: operational Flow Governance release scope.
 
 ## Required Shape
 

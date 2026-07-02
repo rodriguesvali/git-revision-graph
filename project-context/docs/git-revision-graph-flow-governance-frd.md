@@ -4,9 +4,9 @@
 - **Target extension:** Git Revision Graph (`rodriguesvali.git-revision-graph`)
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
-- **Feature status:** Approved product proposal with an execution-ready Phase 1 baseline
+- **Feature status:** Approved product proposal; Phase 1 foundation implemented, 2.0.0 scope now targets operational governance value
 - **Package baseline at review:** `package.json` version `1.5.6` on 2026-07-01
-- **Document version:** 3.0 - Implementation-grade FRD baseline
+- **Document version:** 3.1 - 2.0.0 operational governance alignment
 - **Language:** English
 
 ---
@@ -14,8 +14,8 @@
 ## 1. Overview
 
 The Flow Governance Layer adds a configurable semantic layer for interpreting,
-decorating, filtering, diagnosing, and assisting governed Git branch flows inside
-Git Revision Graph.
+decorating, diagnosing, and assisting governed Git branch flows inside Git
+Revision Graph.
 
 This is not a new product and it must not replace the existing extension
 architecture. It extends the current revision graph experience by adding
@@ -71,7 +71,7 @@ behavior unless the phase acceptance criteria explicitly say otherwise.
 Add a visual and operational governance layer that can:
 
 1. classify branch refs from configurable patterns;
-2. reduce visual noise in branch-heavy repositories;
+2. reduce ambiguity in branch-heavy repositories without hiding branch refs;
 3. highlight the production trunk (`main` or `master`);
 4. group or relate branches such as tasks, features, releases, hotfixes, bugs,
    one or more package branches, and sync branches;
@@ -96,7 +96,7 @@ visually noisy and difficult to audit.
 
 Common problems include:
 
-- too many visible branches at once;
+- too many branches with unclear roles;
 - difficulty identifying the production trunk;
 - no visual distinction between permanent, temporary, and ephemeral branches;
 - old or consolidated branches remaining in the repository;
@@ -149,7 +149,7 @@ This means:
 ### Developers
 
 - Understand where their branch fits in the configured flow.
-- Reduce visual graph noise.
+- Reduce ambiguity in branch-heavy repositories.
 - Find related tasks, features, releases, and hotfixes faster.
 - Receive actionable diagnostics before opening a PR.
 - Use existing Git Revision Graph actions with more context.
@@ -257,7 +257,7 @@ is the recommended default.
 |---|---|---:|---|---|
 | Main | `main` or `master` | Permanent | Production trunk | Highlighted trunk |
 | Release | `release/*` | Temporary | UAT, release candidate, or version preparation | Release badge |
-| Sync | `sync/*` | Ephemeral | Safe equalization branch | Hidden by default when configured |
+| Sync | `sync/*` | Ephemeral | Safe equalization branch | Sync badge |
 | Package | `package` or `package/*` | Temporary or reusable | Integration branch for tasks targeting different releases or features | Technical or dashed line |
 | Feature | `feature/*` | Medium or long | Feature aggregator | Continuous branch identity |
 | Task | `task/*` | Short | Atomic development unit | Groupable by issue ID |
@@ -570,7 +570,6 @@ phases:
 - define protected branch patterns;
 - define PR-required target patterns;
 - define linear-history or fast-forward-only target patterns;
-- hide ephemeral branches by default;
 - configure direct-merge handling for governed pairs;
 - configure where diagnostics appear;
 - configure whether GitHub PR creation is enabled.
@@ -672,9 +671,9 @@ Expected behavior:
 - highlight `main` or `master` as the production trunk;
 - show badges for release, hotfix, bug, package, sync, feature, task, and
   unknown branches;
-- optionally hide ephemeral `sync/*` refs without deleting commits from the
-  loaded graph;
 - show unknown branches with a lightweight attention indicator;
+- keep all branch refs visible whenever the current graph projection includes
+  them;
 - avoid decorations that reduce graph legibility.
 
 Decorations are visual metadata. They must not become hard layout rules in the
@@ -688,17 +687,11 @@ readability.
 Suggested controls:
 
 - Flow View;
-- Hide Sync Branches;
-- Show Releases;
-- Show Features;
-- Show Tasks;
-- Show Bugs;
-- Show Hotfixes;
-- Show Unknown Branches;
-- Highlight Production Trunk.
+- contextual governance feedback;
+- diagnostic focus or search helpers that do not hide branch refs.
 
-The user must be able to reduce visual noise without losing access to the
-underlying Git history.
+The user must be able to reduce ambiguity without losing access to the
+underlying Git refs or history.
 
 ### FR05 - PR-Gated Transition Diagnostics
 
@@ -830,7 +823,7 @@ Diagnostics may appear as:
 
 - graph badges;
 - node or ref tooltips;
-- filters;
+- diagnostic focus or search helpers that do not hide branch refs;
 - contextual validation messages triggered by user actions;
 - contextual actions.
 
@@ -941,7 +934,7 @@ Whenever possible:
 
 - classify branches as an overlay;
 - reuse compatible graph snapshots;
-- update badges, filters, and decorations without recomputing layout;
+- update badges, diagnostics, and decorations without recomputing layout;
 - avoid extra Git process fan-out;
 - use targeted Git CLI only for checks not available through the Git API or the
   loaded graph.
@@ -1059,7 +1052,8 @@ Webview rendering
 ```
 
 The webview should receive classified metadata from the extension host or shared
-model layer. It should render and filter; it should not own governance rules.
+model layer. It should render supplied metadata and dispatch explicit user
+intents; it should not own governance rules.
 
 ### Phase 1 Integration Boundary
 
@@ -1105,14 +1099,12 @@ focused feature artifact.
 Start with lightweight controls:
 
 - Flow View;
-- Flow Filters;
-- Hide Sync Branches;
-- Highlight Production Trunk.
+- contextual governance feedback;
+- promotion/readiness actions when their owning phase is active.
 
 Avoid adding a new persistent Activity Bar view, a separate diagnostics editor,
 or a dedicated diagnostics panel for the Phase 1 MVP. Keep governance feedback
-close to the graph through badges, tooltips, filters, and contextual validation
-messages.
+close to the graph through badges, tooltips, and contextual validation messages.
 
 ### 14.2 Context Menu
 
@@ -1134,7 +1126,6 @@ If no Flow Governance action is applicable, do not show the submenu.
 |---|---|
 | Show Flow Details | The selected reference has Flow Governance metadata, including `unknown`. |
 | Create Governed Branch | The selected reference can be used as the base for a configured governed branch flow and a `branchCreation` template exists for the target branch kind. |
-| Hide Branch Type | The selected reference has a hideable branch kind such as `sync`, `task`, `package`, or `bug`. Do not show for `main` or `master`. |
 | Show Related Branches | The selected reference has inferred or configured relationships, such as `task -> feature`, `package -> feature`, or `sync -> release`. |
 | Validate Release Promotion | The selected reference is classified as `release`. |
 | Prepare Production Equalization | The selected reference is a release and promotion validation shows that production is not an ancestor of the release. |
@@ -1309,13 +1300,32 @@ Phase 1 verification gate:
 - focused webview tests or screenshots confirm badges do not overlap or obscure
   existing graph controls;
 - manual Extension Development Host smoke test covers graph load, repository
-  switching, Flow View on/off, filter toggles, refresh, empty repository state,
+  switching, Flow View on/off, refresh, empty repository state,
   invalid config, and disabled behavior;
 - manifest review confirms that new configuration keys, schemas, commands,
   menus, views, and activation events, if any, match implementation and README;
 - `git diff --check` passes before packaging;
 - no packaging, version bump, or Marketplace publish command is run without
   maintainer approval.
+
+### 2.0.0 Release Scope - Operational Flow Governance
+
+Goal: ship Flow Governance only when it provides operational value beyond visual
+classification.
+
+The 2.0.0 release should include the completed Phase 1 foundation plus:
+
+- PR-required transition policy diagnostics for governed source/target pairs;
+- release promotion ancestry validation with `ready`, `blocked`, and
+  `inconclusive` outcomes;
+- contextual graph feedback that explains why a transition requires a PR;
+- PR handoff through copyable context or recognized GitHub compare/PR URLs;
+- production-to-release equalization guidance using `sync/*` helper branches,
+  without automatic push and without final direct merge into the release branch.
+
+2.0.0 must not reintroduce branch hiding or branch-type visibility checkboxes.
+All branch refs included by the current graph projection remain visible; Flow
+Governance adds meaning, diagnostics, and guided actions on top of them.
 
 ### Phase 2 - PR-Gated Policy And GitHub Pull Requests
 
@@ -1330,7 +1340,7 @@ Included:
 - governed branch creation forms generated from the flow configuration;
 - regex validation and branch-name preview before creating governed branches;
 - tooltips;
-- filters by diagnostic;
+- diagnostic focus helpers that do not hide branch refs;
 - GitHub remote detection;
 - GitHub authentication through VS Code;
 - automatic GitHub PR creation;
@@ -1452,7 +1462,7 @@ The feature is ready when:
 - branch patterns are configured through a repository-versioned flow file;
 - a default flow file is provided when governance is activated;
 - branches are classified correctly;
-- visual governance reduces noise without hiding history irreversibly;
+- visual governance reduces ambiguity without hiding branch refs;
 - diagnostics are understandable and actionable;
 - governed final integrations are PR-gated;
 - GitHub Pull Requests can be created automatically for supported GitHub
@@ -1473,7 +1483,7 @@ The feature is ready when:
 | Risk | Impact | Mitigation |
 |---|---:|---|
 | Incorrect branch classification | Medium | Explicit regex settings and `unknown` fallback |
-| Visual noise from too many badges | Medium | Filters, compact badges, and Flow View toggle |
+| Visual noise from too many badges | Medium | Compact badges, contextual feedback, and Flow View toggle |
 | False release readiness result | High | Use ancestry checks; report inconclusive states honestly |
 | Unsafe cleanup recommendation | High | Dry-run, protected branches, explicit confirmation |
 | Sync Sandbox creates complex conflicts | High | Pause and hand off to VS Code Source Control |
@@ -1526,8 +1536,8 @@ Later-phase release-gate metrics:
 
 Post-release product signals:
 
-- Users of branch-heavy repositories report that Flow View reduces visual noise
-  without hiding needed history.
+- Users of branch-heavy repositories report that Flow Governance reduces
+  ambiguity without hiding needed refs or history.
 - Maintainers receive fewer ambiguity reports about branch purpose, promotion
   readiness, and cleanup candidates.
 - Repeated issue or discussion feedback indicates the feature is useful without
@@ -1547,8 +1557,8 @@ Post-release product signals:
    the final branch name, and include an optional branch description.
 3. A diagnostics panel or separate diagnostics editor is not part of the Phase 1
    MVP.
-   Governance feedback starts as lightweight badges, tooltips, filters, warning
-   prompts, and contextual validation messages.
+   Governance feedback starts as lightweight badges, tooltips, warning prompts,
+   and contextual validation messages.
 4. Flow configuration is repository-versioned by default in a file such as
    `.git-revision-graph-flow.json`. When governance is activated, the extension
    should provide a default file.
@@ -1572,13 +1582,12 @@ Proceed with Flow Governance as an incremental, PR-gated governance layer throug
 the AAMAD development pipeline. This FRD is the product baseline; individual
 phases still require focused build artifacts before implementation.
 
-Start with the Phase 1 MVP for Flow View and repository-versioned configuration
-foundation. Phase 1 is intentionally limited to configuration, classification,
-visual metadata, filters, unknown-branch feedback, and non-mutating graph
-behavior. GitHub-first PR-gated actions, production equalization, cleanup, and
-additional provider helpers must remain separate implementation phases.
+Treat the completed Phase 1 work as the technical foundation, not as the final
+2.0.0 product value. The next release should continue with PR-gated transition
+diagnostics, release readiness, PR handoff, and production-to-release
+equalization guidance before publication.
 
-Before Phase 1 implementation begins, open a focused feature artifact under
+Before implementation continues, open a focused 2.0.0 feature artifact under
 `project-context/2.build/features/`, confirm the target release scope, update
 the SAD with final integration boundaries, list any `package.json` and README
 changes, and record verification, Marketplace impact, manual smoke coverage,

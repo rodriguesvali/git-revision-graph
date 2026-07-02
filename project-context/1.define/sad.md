@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-07-01
+Last consolidated: 2026-07-02
 
 ## Context
 
@@ -156,6 +156,30 @@ Focused verification must cover:
 
 Manual Extension Development Host smoke for Phase 1 must cover graph load, repository switching, Flow Governance on/off, refresh, invalid config, empty repository state, disabled behavior, all branch refs remaining visible, and existing compare/diff/log/context-menu basics.
 
+## Flow Governance 2.0.0 Architecture Direction
+
+Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and add operational governance value before release. The target architecture keeps classification, policy, diagnostics, promotion checks, PR handoff, and sync planning in focused flow modules while preserving the existing revision graph controller, repository lifecycle, backend, and native workbench action boundaries.
+
+2.0.0 must not reintroduce branch visibility filters, branch-type visibility checkboxes, hidden `sync/*` treatment, or webview-side branch governance inference. All branch refs included by the current graph projection remain visible. Flow Governance adds classification, diagnostics, readiness results, and guided actions over the graph.
+
+### 2.0.0 Candidate Modules
+
+- `flowTransitionPolicy.ts`: pure governed source/target transition matching and direct-merge policy outcomes.
+- `flowPromotionChecks.ts`: release promotion ancestry validation with `ready`, `blocked`, and `inconclusive` results.
+- `flowDiagnostics.ts`: expanded governance diagnostics built from host-side classification, transition policy, and readiness results.
+- `flowPullRequestContext.ts`: provider-neutral PR title/body/context and recognized GitHub compare/PR URL generation without requiring authentication.
+- `flowSyncPlan.ts`: production-to-release equalization planning, sync branch naming, precondition checks, and no-push handoff metadata.
+
+GitHub API PR creation, cleanup candidates, additional provider APIs, and persistent diagnostics panels remain outside the initial 2.0.0 architecture unless the focused feature artifact is explicitly expanded.
+
+### 2.0.0 Integration Boundaries
+
+- Transition policy and release readiness must be deterministic host-side logic with unit coverage before webview wiring.
+- The webview may display diagnostics and dispatch explicit user intents, but it must not evaluate branch policy, read configuration, call provider APIs, or perform Git operations.
+- Release readiness may use targeted Git ancestry checks where the public Git API is insufficient, and must report missing refs or command errors as inconclusive rather than ready or blocked.
+- PR handoff should work without provider authentication first by copying PR context or opening recognized compare/PR URLs.
+- Equalization may create a local `sync/*` branch and merge production only after explicit confirmation and only when existing clean-worktree/conflict guards pass. It must never push automatically and must never perform the final governed merge into `release/*`.
+
 ## Architectural Constraints
 
 - Prefer `vscode.git` for repository state, refs, checkout, merge, pull, push, and file content.
@@ -177,6 +201,7 @@ Manual Extension Development Host smoke for Phase 1 must cover graph load, repos
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
 - Flow Governance Phase 1 is a metadata overlay over the loaded graph. It must not hide branch refs or change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
+- Flow Governance 2.0.0 is not releasable as badges alone; it should add PR-required diagnostics, release readiness, PR handoff, and safe equalization guidance before publication.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
 ## Quality Attributes

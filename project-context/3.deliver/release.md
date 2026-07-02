@@ -8,25 +8,27 @@ Last consolidated: 2026-07-02
 - Current package version: `1.5.6` in `package.json`.
 - Latest recorded published release: `1.5.6`.
 - Release cycle status: Flow Governance Phase 1 has implementation, automated verification, and
-  manual Extension Development Host smoke complete on top of the published `1.5.6` baseline. No
-  version bump, VSIX packaging, or Marketplace publication has been run.
+  manual Extension Development Host smoke complete on top of the published `1.5.6` baseline, but
+  it will not ship as a standalone release. The next release target is `2.0.0` with operational
+  Flow Governance value.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release Candidate: Flow Governance Phase 1
+## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Ready for targeted Flow Governance persistence smoke, then version decision and release approval
+Status: Definition active; implementation slices pending
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
-Target version: pending maintainer approval
+Target version: `2.0.0`
 
 Focused build artifact:
 
 - `project-context/2.build/features/flow-governance-phase-1.md`
+- `project-context/2.build/features/flow-governance-2.0.0.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Candidate scope:
 
-- Add Flow Governance Phase 1 as a non-mutating metadata overlay over the existing revision graph.
+- Keep Flow Governance Phase 1 as the foundation, not as the final release value.
 - Add repository flow-file resolution with VS Code settings fallback and invalid-config diagnostics.
 - Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
 - Add a Flow Governance webview toggle and branch-kind badges from host-provided metadata.
@@ -38,13 +40,19 @@ Candidate scope:
 - Add the `Create Flow Governance Config` Command Palette action with repository selection,
   confirmation, repository-relative path validation, existing-file protection, and default
   Phase 1 template content.
-- Update README and CHANGELOG notes for the shipped Phase 1 behavior.
+- Add PR-required transition diagnostics for governed source/target pairs.
+- Add release promotion readiness checks with `ready`, `blocked`, and `inconclusive` outcomes.
+- Add PR handoff through copyable context or recognized GitHub compare/PR URLs.
+- Add production-to-release equalization guidance using local `sync/*` helper branches without
+  automatic push.
+- Update README and CHANGELOG notes for the shipped 2.0.0 behavior.
 
 Explicitly out of scope:
 
-- PR creation, provider authentication, governed branch forms, promotion checks, equalization,
-  cleanup actions, direct merge policy enforcement, and release automation.
+- Provider-authenticated PR creation, cleanup actions, bulk branch deletion, full release
+  automation, and additional provider APIs.
 - Git mutations other than explicit creation of the repository flow config after confirmation.
+- Automatic push, final governed direct merges, or automatic conflict resolution.
 - New views, menus, activation events, runtime dependencies, packaging, publication, or version bump.
 
 Release constraints:
@@ -53,6 +61,8 @@ Release constraints:
   sync, delete, stash, reset, Show Log, and Compare Results workflows.
 - Treat Flow Governance as metadata only; it must not hide refs, alter Git history, graph ancestry,
   or repository state.
+- Treat Flow Governance 2.0.0 as operational guidance: diagnostics and handoff may guide actions,
+  but final governed integration remains PR-gated.
 - Keep malformed/stale webview messages bounded by the existing message validation and repository
   authorization layers.
 - Do not run packaging or Marketplace publication commands without explicit maintainer approval.
@@ -94,7 +104,8 @@ Recorded verification:
 - `npm run build` passed on 2026-07-02 after live re-enable badge rendering fix.
 - `npm test` passed with 560 tests on 2026-07-02 after live re-enable badge rendering fix.
 - `git diff --check` passed on 2026-07-02 after live re-enable badge rendering fix.
-- Targeted Extension Development Host smoke for repository config option persistence remains pending.
+- Targeted Extension Development Host smoke for repository config option persistence was completed
+  by maintainer confirmation on 2026-07-02 after live re-enable badge rendering was fixed.
 - Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on
   2026-07-01. Confirmed config creation, activation, invalid-config handling with hidden inert
   controls, session disable/re-enable affordance, and normal graph usability.
@@ -104,8 +115,8 @@ Marketplace impact:
 - User-visible additions are a Command Palette action, new configuration settings, README text, and
   Flow Governance controls inside the existing revision graph webview when Flow Governance metadata
   is present.
-- Marketplace copy should describe Phase 1 as branch classification, filtering, highlighting, and
-  config bootstrap only.
+- Marketplace copy should describe 2.0.0 as branch classification, PR-required diagnostics,
+  release readiness, PR handoff, and safe equalization guidance. It must not claim branch hiding.
 - No Marketplace packaging metadata has been captured yet: VSIX filename, checksum, size,
   publication timestamp, and clean-profile installed-version evidence remain pending approval.
 
