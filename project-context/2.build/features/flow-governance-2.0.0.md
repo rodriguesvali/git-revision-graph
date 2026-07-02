@@ -1,6 +1,6 @@
 # Flow Governance 2.0.0
 
-Status: Build active - diagnostics slice complete
+Status: Build active - release promotion action slice complete
 Last updated: 2026-07-02
 Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
 
@@ -122,6 +122,18 @@ from an active release.
 - `npm run build` passed on 2026-07-02 after the diagnostics slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
   568 compiled tests after the diagnostics slice.
+- The first graph-visible governance action was added on 2026-07-02:
+  `Validate Release Promotion` appears for Flow Governance release branches and
+  reports readiness through the existing VS Code notification surface.
+- Focused message validation, authorization, handler, and webview shell tests
+  cover the `validate-release-promotion` message and context action.
+- `npm run build` passed on 2026-07-02 after the release promotion action slice.
+- Focused message/webview/Flow Governance tests passed on 2026-07-02 with 569
+  compiled tests after the release promotion action slice.
+- `npm test` passed with 569 tests on 2026-07-02 after the release promotion
+  action slice.
+- `git diff --check` passed on 2026-07-02 after the release promotion action
+  slice.
 
 ## Manual Validation
 
@@ -144,6 +156,7 @@ safe production-to-release equalization guidance.
 
 ## Handoff Notes
 
-The pure transition-policy, release-readiness, and diagnostic composition layers
-are available for later UI wiring. Next implementation slice should expose these
-diagnostics through host/webview messages or graph context actions.
+The release promotion validation action is the first host/webview integration
+over the policy/readiness/diagnostics layers. Next implementation slice should
+add PR handoff context for governed source/target pairs or improve persistence
+of readiness diagnostics in graph state.

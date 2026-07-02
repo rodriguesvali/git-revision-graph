@@ -68,6 +68,22 @@ test('RevisionGraphMessageHandler applies Flow Governance option updates through
   }]);
 });
 
+test('RevisionGraphMessageHandler validates release promotion through the host boundary', async () => {
+  const validations: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async validateFlowReleasePromotion(refName) {
+      validations.push(refName);
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'validate-release-promotion',
+    refName: 'release/1.0.0'
+  });
+
+  assert.deepEqual(validations, ['release/1.0.0']);
+});
+
 test('RevisionGraphMessageHandler clears graph caches before empty-cache refresh', async () => {
   const calls: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -206,6 +222,7 @@ function createHost(
     postHostMessage() {},
     postCurrentState() {},
     updateFlowGovernanceOptions() {},
+    async validateFlowReleasePromotion() {},
     traceWebviewLoadEvent() {},
     createRemoteTagPublicationRequestContext(): RemoteTagPublicationRequestContext {
       return {

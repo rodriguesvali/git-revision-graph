@@ -67,6 +67,8 @@ import {
 import type { FlowConfigSource, FlowGovernanceSettings } from './flow';
 import {
   applyFlowGovernanceOptionsUpdate,
+  checkFlowPromotionReadiness,
+  createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
   updateRepositoryFlowConfigOptions
 } from './flow';
@@ -273,6 +275,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       updateFlowGovernanceOptions: (options) => {
         void this.updateFlowGovernanceOptions(options);
+      },
+      validateFlowReleasePromotion: async (refName) => {
+        await this.validateFlowReleasePromotion(refName);
       },
       clearLayoutCache: () => {
         return this.clearLayoutCache();
@@ -578,6 +583,39 @@ export class RevisionGraphController implements vscode.Disposable {
         `Could not update Flow Governance config: ${result.issue.message}`
       );
     }
+  }
+
+  private async validateFlowReleasePromotion(releaseBranch: string): Promise<void> {
+    const repository = this.currentRepository;
+    const flowGovernance = this.currentState.flowGovernance;
+    if (!repository || this.currentState.viewMode !== 'ready' || !flowGovernance?.enabled) {
+      return;
+    }
+
+    const productionBranch = this.resolveFlowProductionBranch();
+    if (!productionBranch) {
+      this.actionServices.ui.showWarningMessage(
+        `Release promotion readiness is inconclusive for ${releaseBranch}: no production branch is visible in the current graph.`
+      );
+      return;
+    }
+
+    const readiness = await checkFlowPromotionReadiness({
+      repositoryPath: repository.rootUri.fsPath,
+      productionBranch,
+      releaseBranch
+    });
+    const diagnostic = createFlowPromotionReadinessDiagnostic(readiness);
+    if (diagnostic.severity === 'info') {
+      this.actionServices.ui.showInformationMessage(diagnostic.message);
+      return;
+    }
+
+    this.actionServices.ui.showWarningMessage(diagnostic.message);
+  }
+
+  private resolveFlowProductionBranch(): string | undefined {
+    return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

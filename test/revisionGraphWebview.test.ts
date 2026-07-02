@@ -115,6 +115,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
   assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
+  assert.match(html, /function createRevisionGraphValidateReleasePromotionMessage\(target\) \{\s*return \{ type: 'validate-release-promotion', refName: target\.name \};\s*\}/s);
+  assert.match(html, /Validate Release Promotion/);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);

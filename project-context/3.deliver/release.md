@@ -15,7 +15,7 @@ Last consolidated: 2026-07-02
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build active; diagnostics slice complete
+Status: Build active; release promotion action slice complete
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: `2.0.0`
@@ -124,6 +124,13 @@ Recorded verification:
 - `npm run build` passed on 2026-07-02 after the diagnostics slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed with 568 compiled tests on
   2026-07-02 after the diagnostics slice.
+- Flow Governance `Validate Release Promotion` context action was added on 2026-07-02 for
+  release branches in the existing graph context menu.
+- `npm run build` passed on 2026-07-02 after the release promotion action slice.
+- Focused message/webview/Flow Governance tests passed with 569 compiled tests on
+  2026-07-02 after the release promotion action slice.
+- `npm test` passed with 569 tests on 2026-07-02 after the release promotion action slice.
+- `git diff --check` passed on 2026-07-02 after the release promotion action slice.
 
 Marketplace impact:
 

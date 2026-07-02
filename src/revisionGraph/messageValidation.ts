@@ -60,6 +60,10 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       const options = validateFlowGovernanceOptions(message.options);
       return options ? { type: 'set-flow-governance-options', options } : undefined;
     }
+    case 'validate-release-promotion':
+      return isBoundedNonEmptyString(message.refName)
+        ? { type: 'validate-release-promotion', refName: message.refName }
+        : undefined;
     case 'compare-selected':
       return isBoundedNonEmptyString(message.baseRevision)
         && isBoundedString(message.baseLabel)

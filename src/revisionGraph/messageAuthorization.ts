@@ -23,6 +23,13 @@ export function isRevisionGraphMessageAllowedForState(
       return true;
     case 'set-flow-governance-options':
       return state.viewMode === 'ready' && !!state.flowGovernance;
+    case 'validate-release-promotion':
+      return state.viewMode === 'ready'
+        && state.flowGovernance?.enabled === true
+        && hasKnownReferenceName(state, message.refName)
+        && state.flowGovernance.references.some((ref) =>
+          ref.refName === message.refName && ref.kind === 'release'
+        );
     case 'pull-current-head':
     case 'push-current-head':
       return state.viewMode === 'ready'
@@ -103,6 +110,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'set-projection-options':
       return false;
     case 'set-flow-governance-options':
+    case 'validate-release-promotion':
       return true;
     case 'fetch-current-repository':
     case 'abort-merge':

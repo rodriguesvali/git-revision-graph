@@ -334,6 +334,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       const focusDescendantsActionLabel = !hasComparisonSelection
         ? getFocusDescendantsActionLabel(target)
         : null;
+      const flowBranch = isFlowGovernanceActive() && target.kind !== 'commit'
+        ? getFlowBranchInfo(target.name)
+        : null;
 
       contextMenu.innerHTML = '';
       if (hasComparisonSelection) {
@@ -378,6 +381,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
+        }
+        if (flowBranch && flowBranch.kind === 'release') {
+          appendMenuSection('Flow Governance');
+          appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
         }
         if (canResetCurrentWorkspace) {
           appendMenuSection('Destructive');
@@ -577,6 +584,15 @@ export function renderRevisionGraphScriptInteractions(): string {
         return;
       }
       vscode.postMessage(createRevisionGraphFlowGovernanceOptionsMessage(options));
+    }
+
+    function postValidateReleasePromotion(target) {
+      postMessageWithLoading(
+        createRevisionGraphValidateReleasePromotionMessage(target),
+        'Validating release promotion...',
+        null,
+        'subtle'
+      );
     }
 
     function persistWebviewUiState() {
