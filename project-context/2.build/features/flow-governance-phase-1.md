@@ -1,7 +1,7 @@
 # Flow Governance Phase 1
 
 Status: Phase 1 complete - release approval pending
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 Target baseline: `1.5.6`
 
 ## Scope
@@ -18,6 +18,7 @@ Included:
 - Host-side Flow View message validation, current-repository authorization, and in-memory state updates.
 - Webview Flow Governance controls, branch-kind filters, and branch badges backed by host-provided metadata.
 - Repository flow-file creation command with confirmation, path validation, existing-file protection, and default Phase 1 template content.
+- Repository flow-file persistence for webview option changes when the active Flow Governance source is a valid repository config file.
 - Deterministic tests for config, classification, inert future fields, unknown diagnostics, sync hiding, and serializable state.
 
 Excluded:
@@ -50,6 +51,10 @@ The first slice intentionally stays pure and host-side:
 - Enabled fallback settings or valid repository flow files attach Flow Governance metadata to ready graph state.
 - Invalid repository flow files attach disabled Flow Governance diagnostics without breaking graph load.
 - Invalid repository flow files hide Flow Governance webview controls so users do not see inert filters.
+- Disabling Flow Governance from the webview keeps only the main toggle visible so users can re-enable it without reopening the graph.
+- Reloading a repository flow file with `enabled: false` keeps only the main Flow Governance toggle visible.
+- Disabling or re-enabling Flow Governance from the webview persists the `enabled` field when the active source is a valid repository flow file.
+- Webview changes to sync hiding, production-trunk highlighting, and unknown-branch visibility persist to the matching Phase 1 repository flow-file fields.
 - `set-flow-governance-options` accepts only known Flow Governance options and branch kinds.
 - Flow Governance option updates require a ready current-repository graph state with Flow Governance metadata.
 - Flow Governance option updates do not trigger Git operations or graph rebuilds.
@@ -79,6 +84,7 @@ Focused tests:
 - `test/revisionGraphTypeBoundaries.test.ts` confirms the new type contract does not reintroduce import cycles
 - `test/revisionGraphWebview.test.ts` covers Flow Governance controls, message posting, badges, and branch-ref filtering
 - `test/flowGovernanceCommand.test.ts` covers repository config creation, cancellation, existing files, and path guards
+- `test/flowGovernance.test.ts` covers repository config option persistence while preserving unrelated and future fields
 
 Current results:
 
@@ -93,6 +99,19 @@ Current results:
 - Focused revision graph webview invalid-config regression passed on 2026-07-01 after smoke feedback.
 - `npm test` passed with 554 tests on 2026-07-01 after the invalid-config smoke feedback fix.
 - Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on 2026-07-01.
+- Focused revision graph webview session-disable regression passed on 2026-07-01 after smoke feedback.
+- `npm test` passed with 555 tests on 2026-07-01 after the session-disable smoke feedback fix.
+- `git diff --check` passed on 2026-07-01 after the session-disable smoke feedback fix.
+- Repository config option persistence implemented on 2026-07-02 after smoke feedback that disabling Flow Governance was session-only.
+- `npm run build` passed on 2026-07-02 after repository config option persistence.
+- `npm test` passed with 557 tests on 2026-07-02 after repository config option persistence.
+- `git diff --check` passed on 2026-07-02 after repository config option persistence.
+- Reloaded disabled repository config now keeps only the main Flow Governance toggle visible on 2026-07-02 after smoke feedback.
+- Ready graph state now preserves disabled repository Flow Governance metadata after reload on 2026-07-02.
+- `npm run build` passed on 2026-07-02 after disabled-config visibility refinement.
+- `npm test` passed with 558 tests on 2026-07-02 after disabled-config reload metadata preservation.
+- `git diff --check` passed on 2026-07-02 after disabled-config visibility refinement.
+- Targeted Extension Development Host smoke for repository config option persistence remains pending.
 
 ## Risks
 

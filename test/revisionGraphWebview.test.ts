@@ -24,6 +24,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="flowGovernanceOptions"/);
   assert.match(html, /id="flowGovernanceEnabledToggle"/);
   assert.match(html, /Flow Governance/);
+  assert.match(html, /id="flowGovernanceDetailOptions"/);
   assert.match(html, /id="hideSyncBranchesToggle"/);
   assert.match(html, /Hide Sync Branches/);
   assert.match(html, /id="highlightProductionTrunkToggle"/);
@@ -901,6 +902,43 @@ test('hides Flow Governance controls when repository config is invalid', () => {
   assert.equal(flowKindOptions.innerHTML, '');
 });
 
+test('keeps Flow Governance toggle visible when disabled from the webview', () => {
+  const runtime = createWebviewRuntime();
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
+        enabled: false,
+        configSource: 'repository',
+        diagnostics: [],
+        branchKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
+        filters: {
+          visibleKinds: ['main', 'release', 'sync', 'feature', 'unknown'],
+          hideSyncBranches: true,
+          highlightProductionTrunk: true,
+          showUnknownBranches: true
+        },
+        references: []
+      }
+    })
+  });
+
+  const flowOptions = runtime.elements.get('flowGovernanceOptions');
+  const flowGovernanceEnabledToggle = runtime.elements.get('flowGovernanceEnabledToggle');
+  const flowGovernanceDetailOptions = runtime.elements.get('flowGovernanceDetailOptions');
+  const flowKindOptions = runtime.elements.get('flowKindOptions');
+  assert.ok(flowOptions);
+  assert.ok(flowGovernanceEnabledToggle);
+  assert.ok(flowGovernanceDetailOptions);
+  assert.ok(flowKindOptions);
+
+  assert.equal(flowOptions.hidden, false);
+  assert.equal(flowGovernanceEnabledToggle.checked, false);
+  assert.equal(flowGovernanceDetailOptions.hidden, true);
+  assert.equal(flowKindOptions.innerHTML, '');
+});
+
 test('posts Flow Governance option updates from the webview runtime', () => {
   const runtime = createWebviewRuntime();
 
@@ -1123,6 +1161,7 @@ function createWebviewRuntime() {
     'showMinimapToggle',
     'flowGovernanceOptions',
     'flowGovernanceEnabledToggle',
+    'flowGovernanceDetailOptions',
     'hideSyncBranchesToggle',
     'highlightProductionTrunkToggle',
     'showUnknownBranchesToggle',

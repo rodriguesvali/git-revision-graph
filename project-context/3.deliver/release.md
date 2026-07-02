@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-07-01
+Last consolidated: 2026-07-02
 
 ## Current State
 
@@ -14,7 +14,7 @@ Last consolidated: 2026-07-01
 
 ## Open Release Candidate: Flow Governance Phase 1
 
-Status: Ready for version decision, packaging approval, and Marketplace release approval
+Status: Ready for targeted Flow Governance persistence smoke, then version decision and release approval
 Opened: 2026-07-01
 Baseline package version: `1.5.6`
 Target version: pending maintainer approval
@@ -31,6 +31,8 @@ Candidate scope:
 - Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
 - Add Flow Governance webview controls, branch-kind filters, badges, production-trunk highlighting,
   sync hiding, and unknown-branch visibility controls from host-provided metadata.
+- Persist supported Flow Governance webview option changes back to the repository flow file when
+  the active source is a valid repository config.
 - Add the `Create Flow Governance Config` Command Palette action with repository selection,
   confirmation, repository-relative path validation, existing-file protection, and default
   Phase 1 template content.
@@ -66,11 +68,24 @@ Recorded verification:
 - `npm run build` passed on 2026-07-01 during Flow Governance implementation.
 - Focused Flow Governance config, state, manifest, message validation, dispatcher, handler,
   type-boundary, webview, and command tests passed on 2026-07-01.
-- `npm test` passed with 554 tests on 2026-07-01 after the invalid-config smoke feedback fix.
-- `git diff --check` passed on 2026-07-01 after the invalid-config smoke feedback fix.
+- `npm test` passed with 555 tests on 2026-07-01 after the session-disable smoke feedback fix.
+- `git diff --check` passed on 2026-07-01 after the session-disable smoke feedback fix.
+- Repository config option persistence was added on 2026-07-02 after smoke feedback that disabling
+  Flow Governance did not update `.git-revision-graph-flow.json`.
+- `npm run build` passed on 2026-07-02 after repository config option persistence.
+- `npm test` passed with 557 tests on 2026-07-02 after repository config option persistence.
+- `git diff --check` passed on 2026-07-02 after repository config option persistence.
+- Reloaded disabled repository config now keeps only the main Flow Governance toggle visible on
+  2026-07-02 after smoke feedback.
+- Ready graph state now preserves disabled repository Flow Governance metadata after reload on
+  2026-07-02.
+- `npm run build` passed on 2026-07-02 after disabled-config visibility refinement.
+- `npm test` passed with 558 tests on 2026-07-02 after disabled-config reload metadata preservation.
+- `git diff --check` passed on 2026-07-02 after disabled-config visibility refinement.
+- Targeted Extension Development Host smoke for repository config option persistence remains pending.
 - Manual Extension Development Host Flow Governance smoke completed by maintainer confirmation on
   2026-07-01. Confirmed config creation, activation, invalid-config handling with hidden inert
-  controls, and normal graph usability.
+  controls, session disable/re-enable affordance, and normal graph usability.
 
 Marketplace impact:
 

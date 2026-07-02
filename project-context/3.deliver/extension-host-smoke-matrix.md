@@ -1,7 +1,7 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
@@ -41,7 +41,9 @@ risking user work.
 | Existing config | Run `Create Flow Governance Config` again in the same repository. | The existing file opens without overwrite and no duplicate prompt writes a file. |
 | Multi-repository bootstrap | Open a workspace with two repositories and run `Create Flow Governance Config`. | Repository selection appears and the file is created/opened only in the selected repository. |
 | Enabled Flow View | Set `enabled` to `true` in the repository flow file and open or refresh `View Git Revision Graph`. | Flow Governance controls appear in the graph `View` menu and branch-kind badges render from host-provided metadata. |
-| Branch-kind filters | Toggle visible branch kinds, `Hide Sync Branches`, `Highlight Production Trunk`, and `Show Unknown Branches`. | Branch ref lines hide/show without changing graph topology, normal graph interactions remain available, and trunk highlighting follows the config. |
+| Branch-kind filters | Toggle visible branch kinds, `Hide Sync Branches`, `Highlight Production Trunk`, and `Show Unknown Branches`. | Branch ref lines hide/show without changing graph topology, normal graph interactions remain available, trunk highlighting follows the config, and supported Phase 1 option toggles persist to the repository flow file. |
+| Repository config disable | Uncheck `Flow Governance` in the graph `View` menu when the active source is `.git-revision-graph-flow.json`, then reload the extension or reopen the graph. | Flow decorations and filters stop applying, only the `Flow Governance` checkbox remains visible, and the repository flow file is updated with `"enabled": false`. |
+| Repository config re-enable | Check `Flow Governance` again in the graph `View` menu. | Flow decorations and filters apply again and the repository flow file is updated with `"enabled": true`. |
 | Invalid config | Temporarily make the flow file invalid JSON or use an invalid regex, then reload the graph. | The graph still loads, Flow Governance controls are hidden for that state, and normal graph actions remain usable. |
 | Disabled behavior | Set Flow Governance off through settings or config and refresh. | Existing graph behavior remains unchanged and no Flow Governance controls are shown unless metadata is present. |
 | Zero repository | Run `Create Flow Governance Config` from an empty non-Git workspace. | A concise no-repository information message appears and no file is written. |

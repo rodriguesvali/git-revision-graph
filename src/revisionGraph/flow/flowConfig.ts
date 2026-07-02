@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 
 import {
@@ -27,6 +27,13 @@ const PHASE_1_CONFIG_KEYS = new Set([
   'showUnknownBranches'
 ]);
 export const DEFAULT_FLOW_CONFIG_PATH = '.git-revision-graph-flow.json';
+
+export interface RepositoryFlowConfigOptionsUpdate {
+  readonly enabled?: boolean;
+  readonly hideSyncBranches?: boolean;
+  readonly highlightProductionTrunk?: boolean;
+  readonly showUnknownBranches?: boolean;
+}
 
 export function normalizeFlowConfig(
   rawConfig: unknown,
@@ -119,6 +126,63 @@ export async function resolveFlowConfigForRepository(
   }
 
   return normalizeFlowSettings(settings, settings ? 'workspace' : 'defaults');
+}
+
+export async function updateRepositoryFlowConfigOptions(
+  repositoryRootPath: string,
+  settings: FlowGovernanceSettings | undefined,
+  update: RepositoryFlowConfigOptionsUpdate
+): Promise<
+  | { readonly ok: true; readonly path: string }
+  | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
+> {
+  const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
+  const resolvedConfigPath = resolveRepositoryConfigPath(repositoryRootPath, configPath);
+  if (!resolvedConfigPath.ok) {
+    return { ok: false, issue: resolvedConfigPath.issue };
+  }
+
+  let rawConfig: unknown;
+  try {
+    rawConfig = JSON.parse(await readFile(resolvedConfigPath.path, 'utf8'));
+  } catch (error) {
+    return {
+      ok: false,
+      issue: { path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }
+    };
+  }
+
+  if (!isRecord(rawConfig)) {
+    return {
+      ok: false,
+      issue: { path: '$', message: 'Flow configuration must be a JSON object.' }
+    };
+  }
+
+  const nextConfig: Record<string, unknown> = { ...rawConfig };
+  if (update.enabled !== undefined) {
+    nextConfig.enabled = update.enabled;
+  }
+  if (update.hideSyncBranches !== undefined) {
+    nextConfig.hideSyncBranchesByDefault = update.hideSyncBranches;
+  }
+  if (update.highlightProductionTrunk !== undefined) {
+    nextConfig.highlightProductionTrunk = update.highlightProductionTrunk;
+  }
+  if (update.showUnknownBranches !== undefined) {
+    nextConfig.showUnknownBranches = update.showUnknownBranches;
+  }
+
+  try {
+    await writeFile(resolvedConfigPath.path, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
+  } catch (error) {
+    return {
+      ok: false,
+      issue: { path: '$', message: `Could not write Flow Governance config: ${getErrorMessage(error)}` }
+    };
+  }
+
+  return { ok: true, path: resolvedConfigPath.path };
 }
 
 function readOptionalBoolean(

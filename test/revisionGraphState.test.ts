@@ -211,6 +211,59 @@ test('attaches invalid Flow Governance diagnostics from repository config withou
   );
 });
 
+test('keeps disabled repository Flow Governance config available for reactivation after reload', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-state-'));
+  await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
+    schemaVersion: 1,
+    enabled: false
+  }));
+  const repository = createRepository({
+    root,
+    head: createHead('main', 0, 0),
+    refs: [
+      createRef({ type: RefType.Head, name: 'main' }),
+      createRef({ type: RefType.Head, name: 'feature/demo' })
+    ]
+  });
+  const graph = buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-04-08',
+      subject: 'Bootstrap',
+      refs: [
+        { name: 'main', kind: 'head' },
+        { name: 'feature/demo', kind: 'branch' }
+      ]
+    }
+  ]);
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot() {
+      return {
+        graph,
+        loadedAt: Date.now(),
+        requestedLimit: 6000
+      };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY
+  );
+
+  assert.equal(state.flowGovernance?.enabled, false);
+  assert.equal(state.flowGovernance?.configSource, 'repository');
+  assert.deepEqual(state.flowGovernance?.references, []);
+  assert.ok(state.flowGovernance?.branchKinds.includes('feature'));
+});
+
 test('applies repository overlay refs before projecting a ready graph state', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

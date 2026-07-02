@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -12,7 +12,8 @@ import {
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
   normalizeFlowConfig,
-  resolveFlowConfigForRepository
+  resolveFlowConfigForRepository,
+  updateRepositoryFlowConfigOptions
 } from '../src/revisionGraph/flow';
 
 test('Flow Governance normalizes Phase 1 defaults and ignores future fields inertly', () => {
@@ -162,6 +163,51 @@ test('Flow Governance resolves repository file before fallback settings', async 
   assert.equal(result.config.enabled, true);
   assert.deepEqual(result.config.mainBranches, ['production']);
   assert.equal(result.config.hideSyncBranchesByDefault, false);
+});
+
+test('Flow Governance persists repository option updates while preserving other config fields', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  await writeFile(configPath, JSON.stringify({
+    schemaVersion: 1,
+    enabled: true,
+    patterns: {
+      feature: '^feature/.+'
+    },
+    hideSyncBranchesByDefault: true,
+    futureField: {
+      enabled: true
+    }
+  }));
+
+  const result = await updateRepositoryFlowConfigOptions(root, undefined, {
+    enabled: false,
+    hideSyncBranches: false,
+    highlightProductionTrunk: false,
+    showUnknownBranches: false
+  });
+
+  assert.equal(result.ok, true);
+  const persisted = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
+  assert.equal(persisted.enabled, false);
+  assert.equal(persisted.hideSyncBranchesByDefault, false);
+  assert.equal(persisted.highlightProductionTrunk, false);
+  assert.equal(persisted.showUnknownBranches, false);
+  assert.deepEqual(persisted.patterns, { feature: '^feature/.+' });
+  assert.deepEqual(persisted.futureField, { enabled: true });
+});
+
+test('Flow Governance rejects repository option persistence outside the repository', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+
+  const result = await updateRepositoryFlowConfigOptions(root, {
+    configPath: '../outside.json'
+  }, {
+    enabled: false
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.issue.path, 'configPath');
 });
 
 test('Flow Governance uses fallback settings when repository file is missing', async () => {

@@ -64,8 +64,12 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
-import type { FlowGovernanceSettings } from './flow';
-import { applyFlowGovernanceOptionsUpdate, FlowGovernanceOptionsUpdate } from './flow';
+import type { FlowConfigSource, FlowGovernanceSettings } from './flow';
+import {
+  applyFlowGovernanceOptionsUpdate,
+  FlowGovernanceOptionsUpdate,
+  updateRepositoryFlowConfigOptions
+} from './flow';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -268,7 +272,7 @@ export class RevisionGraphController implements vscode.Disposable {
         this.postCurrentState();
       },
       updateFlowGovernanceOptions: (options) => {
-        this.updateFlowGovernanceOptions(options);
+        void this.updateFlowGovernanceOptions(options);
       },
       clearLayoutCache: () => {
         return this.clearLayoutCache();
@@ -539,17 +543,44 @@ export class RevisionGraphController implements vscode.Disposable {
     };
   }
 
-  private updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void {
+  private async updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void> {
     const flowGovernance = this.currentState.flowGovernance;
     if (this.currentState.viewMode !== 'ready' || !flowGovernance) {
       return;
     }
 
+    const repository = this.currentRepository;
+    const configSource = flowGovernance.configSource;
+    const settings = repository ? this.resolveFlowGovernanceSettings(repository) : undefined;
     this.currentState = {
       ...this.currentState,
       flowGovernance: applyFlowGovernanceOptionsUpdate(flowGovernance, options)
     };
     this.postCurrentState();
+
+    await this.persistFlowGovernanceOptions(repository, settings, configSource, options);
+  }
+
+  private async persistFlowGovernanceOptions(
+    repository: Repository | undefined,
+    settings: FlowGovernanceSettings | undefined,
+    configSource: FlowConfigSource,
+    options: FlowGovernanceOptionsUpdate
+  ): Promise<void> {
+    if (!repository || configSource !== 'repository' || !hasPersistableFlowGovernanceOptions(options)) {
+      return;
+    }
+
+    const result = await updateRepositoryFlowConfigOptions(
+      repository.rootUri.fsPath,
+      settings,
+      options
+    );
+    if (!result.ok) {
+      void vscode.window.showWarningMessage(
+        `Could not update Flow Governance config: ${result.issue.message}`
+      );
+    }
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {
@@ -757,4 +788,11 @@ export class RevisionGraphController implements vscode.Disposable {
   ): void {
     this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
   }
+}
+
+function hasPersistableFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): boolean {
+  return options.enabled !== undefined
+    || options.hideSyncBranches !== undefined
+    || options.highlightProductionTrunk !== undefined
+    || options.showUnknownBranches !== undefined;
 }

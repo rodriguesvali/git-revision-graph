@@ -406,7 +406,9 @@ async function buildFlowGovernanceViewState(
     .map((ref) => ref.name);
   const flowReferences = classifyFlowBranches([...new Set(branchRefs)], resolution.config);
   const state = createFlowGovernanceViewState(resolution, flowReferences);
-  return state.enabled || state.configSource === 'invalid' ? state : undefined;
+  return state.enabled || state.configSource === 'repository' || state.configSource === 'invalid'
+    ? state
+    : undefined;
 }
 
 export function buildRevisionGraphSceneLayoutKey(

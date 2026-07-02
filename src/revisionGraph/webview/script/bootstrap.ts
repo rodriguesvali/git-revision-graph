@@ -46,6 +46,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const showMinimapToggle = document.getElementById('showMinimapToggle');
     const flowGovernanceOptions = document.getElementById('flowGovernanceOptions');
     const flowGovernanceEnabledToggle = document.getElementById('flowGovernanceEnabledToggle');
+    const flowGovernanceDetailOptions = document.getElementById('flowGovernanceDetailOptions');
     const hideSyncBranchesToggle = document.getElementById('hideSyncBranchesToggle');
     const highlightProductionTrunkToggle = document.getElementById('highlightProductionTrunkToggle');
     const showUnknownBranchesToggle = document.getElementById('showUnknownBranchesToggle');
@@ -1073,10 +1074,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function syncFlowGovernanceControls(flowGovernance = currentFlowGovernance) {
       const isActive = isFlowGovernanceActive(flowGovernance);
+      const canShowControls = hasFlowGovernanceState(flowGovernance) && flowGovernance.configSource !== 'invalid';
       if (flowGovernanceOptions) {
-        flowGovernanceOptions.hidden = !isActive;
+        flowGovernanceOptions.hidden = !canShowControls;
       }
-      if (!isActive) {
+      if (!canShowControls) {
+        if (flowGovernanceDetailOptions) {
+          flowGovernanceDetailOptions.hidden = true;
+        }
         if (flowKindOptions) {
           flowKindOptions.innerHTML = '';
         }
@@ -1087,6 +1092,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (flowGovernanceEnabledToggle) {
         flowGovernanceEnabledToggle.checked = flowGovernance.enabled === true;
       }
+      if (flowGovernanceDetailOptions) {
+        flowGovernanceDetailOptions.hidden = !isActive;
+      }
       if (hideSyncBranchesToggle) {
         hideSyncBranchesToggle.checked = filters.hideSyncBranches === true;
       }
@@ -1096,7 +1104,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       if (showUnknownBranchesToggle) {
         showUnknownBranchesToggle.checked = filters.showUnknownBranches !== false;
       }
-      renderFlowKindOptions(flowGovernance);
+      if (isActive) {
+        renderFlowKindOptions(flowGovernance);
+      } else if (flowKindOptions) {
+        flowKindOptions.innerHTML = '';
+      }
     }
 
     function renderFlowKindOptions(flowGovernance = currentFlowGovernance) {
