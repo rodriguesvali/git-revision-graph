@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.7
+
+### Release Preparation
+
+- Closed the `1.5.7` development scope with three focused revision graph UX improvements.
+- Version metadata is `1.5.7` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 528 tests through `npm test`, and
+  `git diff --check`.
+- VSIX packaging and Marketplace publication remain pending explicit maintainer approval.
+
+### UX Improvements
+
+- Removed `Reset Workspace to HEAD` and `Reset Workspace and Remove Untracked Files` from the
+  graph context menu while preserving commit-level `Reset to this` workflows.
+- Changed the graph toolbar `Push` action so a short click performs a normal push and a 500 ms
+  press opens force-with-lease and force push options below the button.
+- Replaced the ambiguous reset-zoom glyph with a compact `1:1` actual-size icon while preserving
+  its behavior, tooltip, accessible label, and `Alt+0` shortcut.
+
 ## 1.5.6
 
 ### Release Preparation

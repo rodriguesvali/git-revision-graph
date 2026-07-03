@@ -7,14 +7,15 @@ Last consolidated: 2026-07-03
 
 - Current package version: `1.5.7` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.7` is open for small, scoped improvements; packaging and Marketplace
-  publication have not started.
+- Release cycle status: `1.5.7` development scope is closed and ready for final smoke and
+  packaging; Marketplace publication has not started.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Active Release: 1.5.7
 
-Status: Open
+Status: Ready for packaging
 Opened: 2026-07-03
+Development scope closed: 2026-07-03
 
 Focused build artifact:
 
@@ -53,9 +54,18 @@ Planned verification:
 
 Marketplace and rollback notes:
 
-- Marketplace impact is not yet determined; record user-visible changes as scope is approved.
+- Marketplace impact is limited to the three revision graph UX changes listed above; there are no
+  new commands, settings, views, activation events, or dependencies.
 - No packaging or publication action is authorized by opening the release.
 - Keep improvements as small, separable changes so a regression can be reverted before packaging.
+
+Recorded verification:
+
+- `npm run build` passed on 2026-07-03.
+- `npm test` passed with 528 tests on 2026-07-03.
+- `git diff --check` passed on 2026-07-03.
+- `CHANGELOG.md` release notes were prepared on 2026-07-03.
+- Final Extension Development Host smoke and VSIX packaging evidence remain pending.
 
 ## Last Completed Release
 
