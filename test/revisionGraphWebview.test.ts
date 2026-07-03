@@ -374,11 +374,12 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(createRevisionGraphResetCurrentWorkspaceMessage\(includeUntracked\)\);/s);
-  assert.match(html, /const canResetCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasConflictedMerge;/s);
+  assert.doesNotMatch(html, /canResetCurrentWorkspace/);
+  assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);
+  assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace and Remove Untracked Files'/);
   assert.match(html, /let hasMergeConflicts = false;/);
   assert.match(html, /hasMergeConflicts = !!nextState\.hasMergeConflicts;/);
   assert.match(html, /const canStashCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasMergeConflicts;/s);
-  assert.match(html, /if \(canResetCurrentWorkspace\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Reset Workspace to HEAD', \(\) => postResetCurrentWorkspace\(false\), \{ destructive: true \}\);\s*appendMenuItem\('Reset Workspace and Remove Untracked Files', \(\) => postResetCurrentWorkspace\(true\), \{ destructive: true \}\);/s);
   assert.match(html, /if \(canStashCurrentWorkspace\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Save', \(\) => postStashSave\(\)\);/s);
   assert.match(html, /if \(target\.kind === 'stash'\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Apply', \(\) => postStashApply\(target\)\);\s*appendMenuItem\('Stash Pop', \(\) => postStashPop\(target\)\);\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Remove Stash', \(\) => postStashDrop\(target\), \{ destructive: true \}\);/s);
   assert.match(html, /function createRevisionGraphStashSaveMessage\(\) \{\s*return \{ type: 'stash-save' \};\s*\}/s);

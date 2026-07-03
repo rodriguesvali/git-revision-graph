@@ -50,7 +50,6 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Merge a selected reference into the current branch, with merge conflicts reported in a modal dialog before further repository operations continue
 - Abort a conflicted merge from the `HEAD` reference context menu after confirmation
 - Save workspace changes to a stash from the `HEAD` reference context menu and apply, pop, or remove the visible stash reference
-- Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference

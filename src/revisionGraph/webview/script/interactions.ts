@@ -300,10 +300,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canPublishBranch =
         (target.kind === 'head' || target.kind === 'branch') &&
         !publishedLocalBranchNames.has(target.name);
-      const canResetCurrentWorkspace =
-        target.kind === 'head' &&
-        isWorkspaceDirty &&
-        !hasConflictedMerge;
       const canAbortConflictedMerge =
         target.kind === 'head' &&
         hasConflictedMerge;
@@ -371,11 +367,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
-        }
-        if (canResetCurrentWorkspace) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Reset Workspace to HEAD', () => postResetCurrentWorkspace(false), { destructive: true });
-          appendMenuItem('Reset Workspace and Remove Untracked Files', () => postResetCurrentWorkspace(true), { destructive: true });
         }
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');

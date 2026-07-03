@@ -25,6 +25,8 @@ Initial scope:
 
 - Deliver small, independently reviewable improvements agreed with the maintainer during the
   `1.5.7` cycle.
+- Remove `Reset Workspace to HEAD` and `Reset Workspace and Remove Untracked Files` from the graph
+  context menu while preserving commit reset workflows.
 - Preserve existing extension architecture and Marketplace contribution points unless an approved
   improvement explicitly requires a change.
 
