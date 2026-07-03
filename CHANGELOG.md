@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
   message validation/authorization, webview rendering, and config-file creation.
 - Added release promotion ancestry validation, Pull Request context/URL handoff, and a confirmed
   local `sync/*` equalization assistant that never pushes automatically.
+- Added a first-position `Flow Governance` submenu on classified refs, including `Start New Release`
+  and `Start New Feature` actions on `main` that use the existing branch-creation workflow.
 
 ## 1.5.8
 

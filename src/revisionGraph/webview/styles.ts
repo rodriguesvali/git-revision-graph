@@ -374,6 +374,40 @@ export function renderRevisionGraphStyles(): string {
       background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
     .context-menu-item:disabled { opacity: 0.45; cursor: default; }
+    .context-menu-submenu {
+      position: relative;
+    }
+    .context-submenu-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .context-menu-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .context-menu-chevron {
+      flex: 0 0 auto;
+      color: var(--muted);
+    }
+    .context-submenu {
+      position: fixed;
+      z-index: 61;
+      width: 220px;
+      max-width: calc(100vw - 16px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--bg) 96%, var(--panel));
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      padding: 6px;
+      display: none;
+    }
+    .context-menu-submenu.open > .context-submenu {
+      display: block;
+    }
     .context-separator {
       height: 1px;
       margin: 6px 4px;

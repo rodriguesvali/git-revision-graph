@@ -127,6 +127,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(releaseRefName, productionRefName\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
+  assert.match(html, /Start New Release/);
+  assert.match(html, /Start New Feature/);
   assert.match(html, /Validate Release Promotion/);
   assert.match(html, /Prepare Production Equalization/);
   assert.match(html, /Copy Promotion PR Context/);
@@ -425,7 +427,6 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
   assert.doesNotMatch(html, /appendMenuSubmenu\('Remote'/);
-  assert.doesNotMatch(html, /context-menu-chevron/);
   assert.match(html, /function getCurrentHeadRemoteActionState\(\)/);
   assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
@@ -454,6 +455,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
+  assert.match(html, /\} else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => postCreateBranch\(target\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => postCreateBranch\(target\) \}\s*\);/s);
+  assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
@@ -484,16 +488,23 @@ test('renders structural commit actions for compare and branch creation', () => 
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.doesNotMatch(html, /function appendMenuSubmenu\(label, entries\)/);
+  assert.match(html, /function appendMenuSubmenu\(label, entries\)/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
   assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
   assert.match(html, /\.context-menu-item:not\(:disabled\):hover,[\s\S]*?background: color-mix\(in srgb, var\(--accent\) 12%, transparent\);/);
+  assert.match(html, /\.context-menu-submenu \{\s*position: relative;\s*\}/s);
+  assert.match(html, /\.context-submenu-trigger \{[^}]*justify-content: space-between;/s);
+  assert.match(html, /\.context-submenu \{\s*position: fixed;\s*z-index: 61;/s);
+  assert.match(html, /\.context-menu-submenu\.open > \.context-submenu \{\s*display: block;\s*\}/s);
   assert.match(html, /button\.className = 'context-menu-item';/);
+  assert.match(html, /button\.className = 'context-menu-item context-submenu-trigger';/);
   assert.doesNotMatch(html, /context-menu-group/);
-  assert.doesNotMatch(html, /context-submenu/);
-  assert.doesNotMatch(html, /context-menu-chevron/);
+  assert.match(html, /context-submenu/);
+  assert.match(html, /context-menu-chevron/);
   assert.match(html, /function appendMenuSection\(label\)/);
-  assert.doesNotMatch(html, /context-section-label/);
+  assert.match(html, /appendMenuSection\('Flow Governance'\);\s*appendMenuSubmenu\('Flow Governance', entries\);/s);
+  assert.match(html, /function openContextSubmenu\(group\)/);
+  assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);

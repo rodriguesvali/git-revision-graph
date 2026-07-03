@@ -370,6 +370,7 @@ export function renderRevisionGraphScriptInteractions(): string {
           syncSelection();
         });
       } else {
+        appendFlowGovernanceActions(flowBranch, target);
         appendMenuSection('Inspect');
         appendMenuItem('Show Log', () => postShowLogTarget(target));
         appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
@@ -385,16 +386,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
           appendMenuSection('Branch Operations');
           appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
-        }
-        if (flowBranch && flowBranch.kind === 'release') {
-          const productionBranchName = getFlowProductionBranchName();
-          appendMenuSection('Flow Governance');
-          appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
-          if (productionBranchName) {
-            appendMenuItem('Prepare Production Equalization', () => postPrepareFlowEqualization(target.name, productionBranchName));
-            appendMenuItem('Copy Promotion PR Context', () => postCopyFlowPullRequestContext(target.name, productionBranchName));
-            appendMenuItem('Open Promotion PR URL', () => postOpenFlowPullRequestUrl(target.name, productionBranchName));
-          }
         }
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
@@ -468,6 +459,35 @@ export function renderRevisionGraphScriptInteractions(): string {
       placeContextMenu(clientX, clientY);
     }
 
+    function appendFlowGovernanceActions(flowBranch, target) {
+      if (!flowBranch) {
+        return;
+      }
+
+      const entries = [];
+      if (flowBranch.kind === 'main') {
+        entries.push(
+          { label: 'Start New Release', onClick: () => postCreateBranch(target) },
+          { label: 'Start New Feature', onClick: () => postCreateBranch(target) }
+        );
+      } else if (flowBranch.kind === 'release') {
+        const productionBranchName = getFlowProductionBranchName();
+        entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
+        if (productionBranchName) {
+          entries.push(
+            { label: 'Prepare Production Equalization', onClick: () => postPrepareFlowEqualization(target.name, productionBranchName) },
+            { label: 'Copy Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
+            { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
+          );
+        }
+      }
+
+      if (entries.length > 0) {
+        appendMenuSection('Flow Governance');
+        appendMenuSubmenu('Flow Governance', entries);
+      }
+    }
+
     function appendMenuSection(label) {
       if (!contextMenu || contextMenu.dataset.currentSection === label) {
         return;
@@ -481,9 +501,141 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
     }
 
+    function appendMenuSubmenu(label, entries) {
+      const group = document.createElement('div');
+      group.className = 'context-menu-submenu';
+
+      const button = document.createElement('button');
+      button.className = 'context-menu-item context-submenu-trigger';
+      button.type = 'button';
+      button.setAttribute('aria-haspopup', 'menu');
+      button.setAttribute('aria-expanded', 'false');
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'context-menu-label';
+      labelSpan.textContent = label;
+      button.appendChild(labelSpan);
+
+      const chevron = document.createElement('span');
+      chevron.className = 'context-menu-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '>';
+      button.appendChild(chevron);
+
+      const submenu = document.createElement('div');
+      submenu.className = 'context-submenu';
+      submenu.setAttribute('role', 'menu');
+      submenu.setAttribute('aria-label', label);
+
+      for (const entry of entries) {
+        const submenuButton = document.createElement('button');
+        submenuButton.className = 'context-menu-item';
+        submenuButton.type = 'button';
+        submenuButton.textContent = entry.label;
+        submenuButton.addEventListener('click', () => {
+          entry.onClick();
+          closeContextMenu();
+        });
+        submenuButton.addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            closeContextSubmenu(group);
+            button.focus();
+          } else if (event.key === 'Escape') {
+            event.preventDefault();
+            closeContextMenu();
+          }
+        });
+        submenu.appendChild(submenuButton);
+      }
+
+      group.addEventListener('mouseenter', () => openContextSubmenu(group));
+      group.addEventListener('mouseleave', () => closeContextSubmenu(group));
+      group.addEventListener('focusin', () => openContextSubmenu(group));
+      group.addEventListener('focusout', (event) => {
+        if (!group.contains(event.relatedTarget)) {
+          closeContextSubmenu(group);
+        }
+      });
+      button.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openContextSubmenu(group);
+          submenu.querySelector('.context-menu-item')?.focus();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          closeContextMenu();
+        }
+      });
+
+      group.appendChild(button);
+      group.appendChild(submenu);
+      contextMenu.appendChild(group);
+    }
+
+    function openContextSubmenu(group) {
+      closeContextSubmenus(group);
+      group.classList.add('open');
+      const trigger = group.querySelector('.context-submenu-trigger');
+      const submenu = group.querySelector('.context-submenu');
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+      if (submenu) {
+        placeContextSubmenu(group, submenu);
+      }
+    }
+
+    function closeContextSubmenus(exceptGroup = null) {
+      for (const group of contextMenu.querySelectorAll('.context-menu-submenu.open')) {
+        if (group === exceptGroup) {
+          continue;
+        }
+        closeContextSubmenu(group);
+      }
+    }
+
+    function closeContextSubmenu(group) {
+      group.classList.remove('open');
+      const trigger = group.querySelector('.context-submenu-trigger');
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function placeContextSubmenu(group, submenu) {
+      const margin = 8;
+      submenu.style.left = '0px';
+      submenu.style.top = '0px';
+      const anchorRect = typeof group.getBoundingClientRect === 'function'
+        ? group.getBoundingClientRect()
+        : { left: 0, right: 250, top: 0 };
+      const submenuRect = typeof submenu.getBoundingClientRect === 'function'
+        ? submenu.getBoundingClientRect()
+        : { width: 220, height: 120 };
+      const width = submenuRect.width || 220;
+      const height = submenuRect.height || 120;
+      const windowWidth = window.innerWidth || 1024;
+      const windowHeight = window.innerHeight || 768;
+      let left = anchorRect.right + 6;
+      if (left + width > windowWidth - margin) {
+        left = anchorRect.left - width - 6;
+      }
+      let top = anchorRect.top - 6;
+      if (top + height > windowHeight - margin) {
+        top = windowHeight - height - margin;
+      }
+      if (top < margin) {
+        top = margin;
+      }
+      submenu.style.left = Math.max(margin, left) + 'px';
+      submenu.style.top = top + 'px';
+    }
+
     function appendMenuItem(label, onClick, options = {}) {
       const button = document.createElement('button');
       button.className = 'context-menu-item';
+      button.type = 'button';
       if (options.primary) {
         button.classList.add('primary');
       }

@@ -30,6 +30,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Log` al
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload with an empty-cache split option, push with split-button force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
+- Flow Governance `main` context submenu actions for starting a new release or feature branch from `main`
 - Flow Governance release readiness, Pull Request handoff, and confirmed local `sync/*` equalization from production into a release without automatic push
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run

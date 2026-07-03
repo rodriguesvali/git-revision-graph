@@ -1,8 +1,8 @@
 # Flow Governance 2.0.0
 
 Status: Build complete - manual validation pending
-Last updated: 2026-07-02
-Baseline: `1.5.6` plus completed Flow Governance Phase 1 foundation
+Last updated: 2026-07-03
+Baseline: `1.5.8` plus completed Flow Governance Phase 1 foundation
 
 ## Goal
 
@@ -16,12 +16,16 @@ from an active release.
 
 1. The user opens the existing Git Revision Graph.
 2. Flow Governance classifies visible branch refs and shows compact badges.
-3. The user selects a governed source or target branch.
-4. The graph explains applicable governance policy, including whether a PR is
+3. The user activates Flow Governance and opens the `main` reference context menu.
+4. The graph shows a first-position `Flow Governance` context submenu. Hovering
+   or focusing that item reveals `Start New Release` and `Start New Feature`
+   actions that start the existing branch-creation workflow from `main`.
+5. The user selects a governed source or target branch.
+6. The graph explains applicable governance policy, including whether a PR is
    required.
-5. For `release/*` promotion, the user can validate whether production is an
+7. For `release/*` promotion, the user can validate whether production is an
    ancestor of the release.
-6. If promotion is blocked, the extension guides the user toward a `sync/*`
+8. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
 
 ## Scope
@@ -70,6 +74,9 @@ from an active release.
 - Blocked release promotion explains that production contains commits missing
   from the release.
 - PR handoff is available without requiring provider authentication.
+- When Flow Governance is active, a branch classified as `main` shows a
+  first-position `Flow Governance` submenu with `Start New Release` and
+  `Start New Feature`, separated from the standard context-menu actions.
 - Equalization prepares only a local `sync/*` path after confirmation, never
   pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
@@ -154,6 +161,20 @@ from an active release.
   the no-push invariant, `sync/*` enforcement, message boundaries, and webview
   wiring.
 - `npm test` passed with 575 tests on 2026-07-02 after the equalization slice.
+- The `main` branch Flow Governance context menu now exposes a first-position
+  `Flow Governance` submenu with `Start New Release` and `Start New Feature` as
+  entrypoints into the existing branch-creation workflow from `main`.
+- `npm run build` passed on 2026-07-03 after adding the `main` branch Flow
+  Governance start actions.
+- `npm test` passed with 573 tests on 2026-07-03 after adding the `main` branch
+  Flow Governance start actions.
+- The Flow Governance context menu was collapsed into a first-position submenu
+  on 2026-07-03, with hover/focus access to governed actions and a separator
+  before standard graph actions.
+- `npm run build` passed on 2026-07-03 after adding the Flow Governance
+  context submenu.
+- `npm test` passed with 573 tests on 2026-07-03 after adding the Flow
+  Governance context submenu.
 
 ## Manual Validation
 
