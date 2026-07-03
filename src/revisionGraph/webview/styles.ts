@@ -315,7 +315,7 @@ export function renderRevisionGraphStyles(): string {
       outline: none;
       background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
-    .context-item {
+    .context-menu-item {
       width: 100%;
       text-align: left;
       border: 0;
@@ -328,14 +328,18 @@ export function renderRevisionGraphStyles(): string {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .context-item.primary {
+    .context-menu-item.primary {
       font-weight: 700;
     }
-    .context-item.destructive {
+    .context-menu-item.destructive {
       color: var(--vscode-errorForeground);
     }
-    .context-item:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-    .context-item:disabled { opacity: 0.45; cursor: default; }
+    .context-menu-item:not(:disabled):hover,
+    .context-menu-item:not(:disabled):focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .context-menu-item:disabled { opacity: 0.45; cursor: default; }
     .context-separator {
       height: 1px;
       margin: 6px 4px;

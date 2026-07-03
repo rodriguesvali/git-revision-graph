@@ -39,6 +39,9 @@ test('renders a dense compare review list with visible and contextual actions', 
   const html = renderCompareResultsWebviewHtml();
 
   assert.match(html, /class="list-header"/);
+  assert.match(html, /--compare-row-hover: color-mix\(\s*in srgb,\s*var\(--vscode-list-hoverBackground, var\(--vscode-editorHoverWidget-background\)\) 86%,\s*var\(--vscode-list-inactiveSelectionBackground, transparent\)\s*\);/s);
+  assert.match(html, /--compare-row-hover-accent: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 44%, transparent\);/);
+  assert.match(html, /--compare-menu-item-hover: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 12%, transparent\);/);
   assert.match(html, /grid-template-columns: 88px minmax\(180px, 1\.4fr\) minmax\(120px, 0\.8fr\) 116px;/);
   assert.match(html, /class="status-badge"/);
   assert.match(html, /class="status-dot"/);
@@ -79,6 +82,12 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /role="option"/);
   assert.match(html, /cursor: pointer;/);
   assert.match(html, /user-select: none;/);
+  assert.match(html, /\.row:hover \{\s*background:\s*linear-gradient\(\s*90deg,\s*var\(--compare-row-hover-accent\) 0 3px,\s*transparent 3px 100%\s*\),\s*var\(--compare-row-hover\);\s*box-shadow: inset 0 0 0 1px var\(--compare-row-hover-outline\);/s);
+  assert.match(html, /\.row\[data-selected="true"\]:hover \{/);
+  assert.match(html, /\.context-menu-item \{[\s\S]*?border-radius: 7px;[\s\S]*?font-size: 12px;/);
+  assert.match(html, /\.context-menu-item:hover,[\s\S]*?background: var\(--compare-menu-item-hover\);/);
+  assert.match(html, /class="context-menu-item"/);
+  assert.doesNotMatch(html, /context-menu-button/);
   assert.match(html, /event\.button !== 1/);
   assert.match(html, /Double-click to open diff\. Press Shift\+F10 or Enter for actions\./);
   assert.match(html, /function openContextMenuForElement\(items, element\)/);

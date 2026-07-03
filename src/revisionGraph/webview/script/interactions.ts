@@ -463,7 +463,7 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function appendMenuItem(label, onClick, options = {}) {
       const button = document.createElement('button');
-      button.className = 'context-item';
+      button.className = 'context-menu-item';
       if (options.primary) {
         button.classList.add('primary');
       }

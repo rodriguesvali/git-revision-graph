@@ -463,7 +463,9 @@ test('renders grouped graph context menus', () => {
 
   assert.doesNotMatch(html, /function appendMenuSubmenu\(label, entries\)/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
-  assert.match(html, /\.context-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+  assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+  assert.match(html, /\.context-menu-item:not\(:disabled\):hover,[\s\S]*?background: color-mix\(in srgb, var\(--accent\) 12%, transparent\);/);
+  assert.match(html, /button\.className = 'context-menu-item';/);
   assert.doesNotMatch(html, /context-menu-group/);
   assert.doesNotMatch(html, /context-submenu/);
   assert.doesNotMatch(html, /context-menu-chevron/);
@@ -484,7 +486,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /appendMenuSection\('Destructive'\);/);
   assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
   assert.match(html, /placeContextMenu\(clientX, clientY\);/);
-  assert.doesNotMatch(html, /contextMenu\.querySelector\('\\.context-item'\)\?\.focus\(\);/);
+  assert.doesNotMatch(html, /contextMenu\.querySelector\('\\.context-menu-item'\)\?\.focus\(\);/);
   assert.doesNotMatch(html, /selectionActionBar/);
   assert.doesNotMatch(html, /appendSelectionAction/);
 });
