@@ -17,7 +17,10 @@ export async function createTagFromResolvedReference(
 ): Promise<void> {
   try {
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before creating a new tag.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before creating a new tag.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return;
     }
@@ -71,7 +74,10 @@ export async function pushTagResolvedReference(
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing a tag.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before pushing a tag.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }
@@ -121,7 +127,10 @@ export async function deleteRemoteTagResolvedReference(
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before deleting a remote tag.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before deleting a remote tag.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }

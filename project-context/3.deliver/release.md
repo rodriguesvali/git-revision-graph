@@ -1,23 +1,22 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-07-02
+Last consolidated: 2026-07-03
 
 ## Current State
 
-- Current package version: `1.5.6` in `package.json`.
-- Latest recorded published release: `1.5.6`.
-- Release cycle status: Flow Governance Phase 1 has implementation, automated verification, and
-  manual Extension Development Host smoke complete on top of the published `1.5.6` baseline, but
-  it will not ship as a standalone release. The next release target is `2.0.0` with operational
-  Flow Governance value.
+- Current package version: `1.5.8` in `package.json`.
+- Latest recorded published release: `1.5.8`.
+- Release cycle status: `1.5.8` was published by maintainer confirmation on 2026-07-03. Flow
+  Governance Phase 1 and operational Flow Governance work remain staged for the next release target,
+  `2.0.0`, now rebased on the published `1.5.8` baseline.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
 Status: Build complete; manual operational smoke pending
 Opened: 2026-07-01
-Baseline package version: `1.5.6`
+Baseline package version: `1.5.8`
 Target version: `2.0.0`
 
 Focused build artifact:
@@ -163,7 +162,88 @@ Rollback notes:
 - Repository config files created by users are user-owned workspace files; rollback must not delete
   them automatically.
 
-## Last Completed Release
+## Completed Release: 1.5.8
+
+Status: Published
+Opened: 2026-07-03
+Development scope closed: 2026-07-03
+Published: 2026-07-03 by maintainer confirmation
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.8-blocking-warning-visibility.md`
+- `project-context/2.build/features/1.5.8-dead-code-cleanup.md`
+- `project-context/2.build/features/1.5.8-toolbar-split-buttons.md`
+- `project-context/2.build/features/1.5.8-reset-to-reference.md`
+- `project-context/2.build/features/1.5.8-show-log-hover-contrast.md`
+- `project-context/2.build/features/1.5.8-compare-hover-contrast.md`
+- `project-context/2.build/features/1.5.8-context-menu-item-standardization.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Initial scope:
+
+- Open `1.5.8` from the published `1.5.7` baseline.
+- Replace transient warning toasts with native modal warnings when a user-requested Git mutation is
+  aborted by a dirty workspace, merge conflict, missing mutation prerequisite, invalid target, or
+  concurrent repository mutation.
+- Preserve existing destructive confirmations, success notifications, benign no-op messages,
+  Source Control reveal behavior, and Git mutation guards.
+- Keep the change inside the existing native VS Code UI adapters and scoped workflow modules.
+- Replace the toolbar long-press affordances introduced in `1.5.7` with explicit split buttons for
+  `Push` force modes and empty-cache `Reload`.
+- Expose `Reset to this` from non-HEAD graph references while resetting by the selected commit hash.
+- Improve Show Log and Compare Results row/context-menu hover contrast and standardize webview menu
+  item styling on `context-menu-item`.
+- Remove dead code left behind by earlier graph-surface and workspace-reset changes.
+
+Marketplace and rollback notes:
+
+- Marketplace impact was limited to the recorded revision graph UX changes; there were no new
+  commands, settings, views, activation events, or dependencies.
+- Marketplace publication was confirmed by the maintainer on 2026-07-03.
+- Keep improvements as small, separable rollback candidates for follow-up patches.
+
+Recorded verification:
+
+- `npm run build` passed on 2026-07-03.
+- `npm test` passed with 526 tests on 2026-07-03.
+- `git diff --check` passed on 2026-07-03.
+- `CHANGELOG.md` release notes were prepared on 2026-07-03.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+
+## Completed Release: 1.5.7
+
+Status: Published
+Opened: 2026-07-03
+Development scope closed: 2026-07-03
+Published: 2026-07-03 by maintainer confirmation
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.7-small-improvements.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Initial scope:
+
+- Deliver small, independently reviewable improvements agreed with the maintainer during the
+  `1.5.7` cycle.
+- Remove `Reset Workspace to HEAD` and `Reset Workspace and Remove Untracked Files` from the graph
+  context menu while preserving commit reset workflows.
+- Make toolbar `Push` perform a normal push on short click and expose force-with-lease and force
+  modes from the 500 ms long-press menu.
+- Replace the ambiguous reset-zoom toolbar glyph with a `1:1` actual-size icon.
+- Preserve existing extension architecture and Marketplace contribution points unless an approved
+  improvement explicitly requires a change.
+
+Recorded verification:
+
+- `npm run build` passed on 2026-07-03.
+- `npm test` passed with 528 tests on 2026-07-03.
+- `git diff --check` passed on 2026-07-03.
+- `CHANGELOG.md` release notes were prepared on 2026-07-03.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+
+## Previous Completed Release: 1.5.6
 
 `1.5.6` was recorded as completed by maintainer confirmation on 2026-07-01.
 

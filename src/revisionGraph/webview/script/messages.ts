@@ -139,6 +139,19 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'checkout', refName: target.name, refKind: target.kind };
     }
 
+    function createRevisionGraphResetToCommitMessage(target) {
+      const message = {
+        type: 'reset-to-commit',
+        commitHash: target.hash,
+        label: target.label,
+        targetKind: target.kind
+      };
+      if (target.kind !== 'commit') {
+        message.targetName = target.name;
+      }
+      return message;
+    }
+
     function createRevisionGraphSyncCurrentHeadMessage() {
       return { type: 'sync-current-head' };
     }
@@ -147,12 +160,8 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'pull-current-head' };
     }
 
-    function createRevisionGraphPushCurrentHeadMessage() {
-      return { type: 'push-current-head' };
-    }
-
-    function createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked) {
-      return { type: 'reset-current-workspace', includeUntracked: !!includeUntracked };
+    function createRevisionGraphPushCurrentHeadMessage(mode) {
+      return { type: 'push-current-head', mode: mode };
     }
 
     function createRevisionGraphStashSaveMessage() {

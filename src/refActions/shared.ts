@@ -104,13 +104,19 @@ export async function ensureWorkspaceReadyForMutation(
   options: { readonly allowWorkspaceChanges?: boolean } = {}
 ): Promise<boolean> {
   if (hasMergeConflicts(repository)) {
-    services.ui.showWarningMessage(`Resolve the current conflicts in Source Control before ${operationDescription}.`);
+    await services.ui.showWarningMessage(
+      `Resolve the current conflicts in Source Control before ${operationDescription}.`,
+      { modal: true }
+    );
     await services.ui.showSourceControl();
     return false;
   }
 
   if (!options.allowWorkspaceChanges && hasWorkspaceChanges(repository)) {
-    services.ui.showWarningMessage(`The workspace must be clean before ${operationDescription}. Review, stash, or commit the current changes first.`);
+    await services.ui.showWarningMessage(
+      `The workspace must be clean before ${operationDescription}. Review, stash, or commit the current changes first.`,
+      { modal: true }
+    );
     return false;
   }
 

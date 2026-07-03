@@ -336,7 +336,6 @@ function createActionServices(informationMessages: string[]): RefActionServices 
       async createTag() {},
       async resetBranch() {},
       async resetCurrentBranch() {},
-      async resetWorkspace() {},
       async getRemoteNames() {
         return [];
       },

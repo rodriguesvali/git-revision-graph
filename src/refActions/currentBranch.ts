@@ -28,7 +28,10 @@ export async function publishLocalBranchResolvedReference(
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before publishing a branch.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before publishing a branch.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }
@@ -124,7 +127,10 @@ export async function syncCurrentHeadWithUpstream(
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before synchronizing the current branch.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before synchronizing the current branch.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }
@@ -177,7 +183,10 @@ export async function pullCurrentBranchFromUpstream(
     const currentBranch = repository.state.HEAD?.name;
     const upstream = repository.state.HEAD?.upstream;
     if (!currentBranch) {
-      services.ui.showWarningMessage('A local current branch is required before pulling.');
+      await services.ui.showWarningMessage(
+        'A local current branch is required before pulling.',
+        { modal: true }
+      );
       return false;
     }
 
@@ -222,13 +231,17 @@ export async function pullCurrentBranchFromUpstream(
 
 export async function pushCurrentBranchToUpstream(
   repository: Repository,
-  services: RefActionServices
+  services: RefActionServices,
+  requestedMode?: CurrentBranchPushMode
 ): Promise<boolean> {
   try {
     const currentBranch = repository.state.HEAD?.name;
     const upstream = repository.state.HEAD?.upstream;
     if (!currentBranch) {
-      services.ui.showWarningMessage('A local current branch is required before pushing.');
+      await services.ui.showWarningMessage(
+        'A local current branch is required before pushing.',
+        { modal: true }
+      );
       return false;
     }
 
@@ -238,13 +251,16 @@ export async function pushCurrentBranchToUpstream(
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before pushing.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before pushing.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }
 
     const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
-    const pushMode = await services.ui.pickCurrentBranchPushMode({
+    const pushMode = requestedMode ?? await services.ui.pickCurrentBranchPushMode({
       branchName: currentBranch,
       upstreamLabel
     });

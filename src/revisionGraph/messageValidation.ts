@@ -36,9 +36,12 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'abort-merge':
     case 'sync-current-head':
     case 'pull-current-head':
-    case 'push-current-head':
     case 'stash-save':
       return { type: message.type };
+    case 'push-current-head':
+      return message.mode === 'normal' || message.mode === 'force-with-lease' || message.mode === 'force'
+        ? { type: 'push-current-head', mode: message.mode }
+        : undefined;
     case 'load-trace':
       return isBoundedNonEmptyString(message.phase, 120)
         && isNonNegativeFiniteNumber(message.durationMs)
@@ -120,6 +123,37 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
         : undefined;
+    case 'reset-to-commit': {
+      if (
+        !isBoundedNonEmptyString(message.commitHash) ||
+        !isBoundedString(message.label) ||
+        !isRevisionGraphTargetKind(message.targetKind)
+      ) {
+        return undefined;
+      }
+
+      if (message.targetKind === 'commit') {
+        return message.targetName === undefined || isBoundedString(message.targetName)
+          ? {
+            type: 'reset-to-commit',
+            commitHash: message.commitHash,
+            label: message.label,
+            targetKind: message.targetKind,
+            targetName: undefined
+          }
+          : undefined;
+      }
+
+      return isBoundedNonEmptyString(message.targetName)
+        ? {
+          type: 'reset-to-commit',
+          commitHash: message.commitHash,
+          label: message.label,
+          targetKind: message.targetKind,
+          targetName: message.targetName
+        }
+        : undefined;
+    }
     case 'create-branch':
     case 'create-tag':
       return isBoundedNonEmptyString(message.revision)
@@ -138,10 +172,6 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         && isBoundedString(message.label)
         && isRevisionGraphRefKind(message.refKind)
         ? { type: message.type, refName: message.refName, label: message.label, refKind: message.refKind }
-        : undefined;
-    case 'reset-current-workspace':
-      return isBoolean(message.includeUntracked)
-        ? { type: 'reset-current-workspace', includeUntracked: message.includeUntracked }
         : undefined;
     case 'delete':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)

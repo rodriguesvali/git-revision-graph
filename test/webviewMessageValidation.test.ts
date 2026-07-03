@@ -33,6 +33,14 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'reset-to-commit', commitHash: 'tag1', label: 'v1.0.0', targetKind: 'evil', targetName: 'v1.0.0' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'reset-to-commit', commitHash: 'tag1', label: 'v1.0.0', targetKind: 'tag' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'load-trace', phase: '', durationMs: 1 }),
     undefined
   );
@@ -266,8 +274,35 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
   assert.deepEqual(
-    validateRevisionGraphMessage({ type: 'reset-current-workspace', includeUntracked: true }),
-    { type: 'reset-current-workspace', includeUntracked: true }
+    validateRevisionGraphMessage({
+      type: 'reset-to-commit',
+      commitHash: 'tag1',
+      label: 'v1.0.0',
+      targetKind: 'tag',
+      targetName: 'v1.0.0'
+    }),
+    {
+      type: 'reset-to-commit',
+      commitHash: 'tag1',
+      label: 'v1.0.0',
+      targetKind: 'tag',
+      targetName: 'v1.0.0'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'reset-to-commit',
+      commitHash: 'structural1',
+      label: 'structural1',
+      targetKind: 'commit'
+    }),
+    {
+      type: 'reset-to-commit',
+      commitHash: 'structural1',
+      label: 'structural1',
+      targetKind: 'commit',
+      targetName: undefined
+    }
   );
   assert.deepEqual(
     validateRevisionGraphMessage({ type: 'stash-save' }),
@@ -290,9 +325,11 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'pull-current-head' }
   );
   assert.deepEqual(
-    validateRevisionGraphMessage({ type: 'push-current-head' }),
-    { type: 'push-current-head' }
+    validateRevisionGraphMessage({ type: 'push-current-head', mode: 'force-with-lease' }),
+    { type: 'push-current-head', mode: 'force-with-lease' }
   );
+  assert.equal(validateRevisionGraphMessage({ type: 'push-current-head' }), undefined);
+  assert.equal(validateRevisionGraphMessage({ type: 'push-current-head', mode: 'unsafe' }), undefined);
   assert.deepEqual(
     validateRevisionGraphMessage({
       type: 'set-flow-governance-options',
@@ -403,6 +440,89 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'tag1',
+        label: 'v1.0.0',
+        targetKind: 'tag',
+        targetName: 'v1.0.0'
+      },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'structural1',
+        label: 'structural1',
+        targetKind: 'commit'
+      },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'head1',
+        label: 'main',
+        targetKind: 'head',
+        targetName: 'main'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'tag1',
+        label: 'v1.0.0',
+        targetKind: 'tag',
+        targetName: 'missing'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'stash1',
+        label: 'stash',
+        targetKind: 'stash',
+        targetName: 'stash'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'head1',
+        label: 'main',
+        targetKind: 'branch',
+        targetName: 'main'
+      },
+      {
+        ...state,
+        references: [
+          ...state.references,
+          { id: 'head1::branch::main', hash: 'head1', name: 'main', kind: 'branch', title: 'main' }
+        ]
+      }
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
       { type: 'push-tag', refName: 'main', label: 'main', refKind: 'head' },
       state
     ),
@@ -425,20 +545,6 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { ...state, hasMergeConflicts: true, hasConflictedMerge: true, isWorkspaceDirty: true }
     ),
     true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'reset-current-workspace', includeUntracked: false },
-      state
-    ),
-    true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'reset-current-workspace', includeUntracked: false },
-      { ...state, currentHeadName: 'missing' }
-    ),
-    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState({ type: 'stash-save' }, state),
@@ -476,19 +582,19 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     true
   );
   assert.equal(
-    isRevisionGraphMessageAllowedForState({ type: 'push-current-head' }, state),
+    isRevisionGraphMessageAllowedForState({ type: 'push-current-head', mode: 'normal' }, state),
     true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'push-current-head' },
+      { type: 'push-current-head', mode: 'force-with-lease' },
       { ...state, currentHeadUpstreamName: undefined }
     ),
     false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'push-current-head' },
+      { type: 'push-current-head', mode: 'force' },
       { ...state, publishedLocalBranchNames: [] }
     ),
     false

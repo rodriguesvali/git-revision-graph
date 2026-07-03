@@ -57,6 +57,7 @@ import {
   createMutationGuardedRepository,
   RepositoryMutationCoordinator
 } from './repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
 
 const SHOW_LOG_PAGE_SIZE = 50;
 
@@ -539,7 +540,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         () => lease.assertCurrent()
       )
     );
-    this.reportRejectedMutation(outcome.status);
+    await this.reportRejectedMutation(outcome.status);
   }
 
   private async copyFileName(commitHash: string, changeId: string): Promise<void> {
@@ -630,7 +631,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         () => lease.assertCurrent()
       )
     );
-    this.reportRejectedMutation(outcome.status);
+    await this.reportRejectedMutation(outcome.status);
   }
 
   private async resetToCommit(commitHash: string): Promise<void> {
@@ -653,14 +654,12 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         createMutationGuardedRefActionServices(services, lease)
       )
     );
-    this.reportRejectedMutation(outcome.status);
+    await this.reportRejectedMutation(outcome.status);
   }
 
-  private reportRejectedMutation(status: 'completed' | 'rejected'): void {
+  private async reportRejectedMutation(status: 'completed' | 'rejected'): Promise<void> {
     if (status === 'rejected') {
-      void vscode.window.showWarningMessage(
-        'Another Git operation is already running for this repository.'
-      );
+      await showConcurrentRepositoryMutationWarning(vscode.window);
     }
   }
 

@@ -16,7 +16,14 @@ export function renderShowLogWebviewHtml(): string {
   <style>
     :root {
       color-scheme: var(--vscode-color-scheme);
-      --show-log-row-hover: color-mix(in srgb, var(--vscode-list-hoverBackground) 68%, transparent);
+      --show-log-row-hover: color-mix(
+        in srgb,
+        var(--vscode-list-hoverBackground, var(--vscode-editorHoverWidget-background)) 86%,
+        var(--vscode-list-inactiveSelectionBackground, transparent)
+      );
+      --show-log-row-hover-accent: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 44%, transparent);
+      --show-log-row-hover-outline: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 22%, transparent);
+      --show-log-menu-item-hover: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 12%, transparent);
       --show-log-row-active: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 18%, transparent);
       --show-log-graph-width: 64px;
       --show-log-author-width: 132px;
@@ -291,6 +298,7 @@ export function renderShowLogWebviewHtml(): string {
       padding: 0 12px;
       cursor: pointer;
       user-select: none;
+      transition: background 90ms ease, box-shadow 90ms ease;
     }
     .commit-entry + .commit-entry .commit-row::before {
       content: '';
@@ -302,7 +310,14 @@ export function renderShowLogWebviewHtml(): string {
       background: color-mix(in srgb, var(--vscode-panel-border) 32%, transparent);
     }
     .commit-row:hover {
-      background: color-mix(in srgb, var(--show-log-row-hover) 70%, transparent);
+      background:
+        linear-gradient(
+          90deg,
+          var(--show-log-row-hover-accent) 0 3px,
+          transparent 3px 100%
+        ),
+        var(--show-log-row-hover);
+      box-shadow: inset 0 0 0 1px var(--show-log-row-hover-outline);
     }
     .commit-row[data-expanded="true"] {
       background:
@@ -312,6 +327,16 @@ export function renderShowLogWebviewHtml(): string {
           transparent 2px 100%
         ),
         color-mix(in srgb, var(--show-log-row-active) 16%, transparent);
+    }
+    .commit-row[data-expanded="true"]:hover {
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 52%, var(--show-log-row-active)) 0 3px,
+          transparent 3px 100%
+        ),
+        color-mix(in srgb, var(--show-log-row-hover) 58%, var(--show-log-row-active));
+      box-shadow: inset 0 0 0 1px var(--show-log-row-hover-outline);
     }
     .commit-row:focus-visible {
       outline: none;
@@ -690,7 +715,7 @@ export function renderShowLogWebviewHtml(): string {
       box-shadow: 0 10px 24px color-mix(in srgb, var(--vscode-widget-shadow, #000) 60%, transparent);
     }
     .context-menu[hidden] { display: none; }
-    .context-menu-button {
+    .context-menu-item {
       display: block;
       width: 100%;
       padding: 7px 10px;
@@ -702,10 +727,10 @@ export function renderShowLogWebviewHtml(): string {
       cursor: pointer;
       font-size: 12px;
     }
-    .context-menu-button:hover,
-    .context-menu-button:focus-visible {
+    .context-menu-item:hover,
+    .context-menu-item:focus-visible {
       outline: none;
-      background: var(--vscode-list-hoverBackground);
+      background: var(--show-log-menu-item-hover);
     }
     .context-menu-group {
       position: relative;
@@ -725,11 +750,9 @@ export function renderShowLogWebviewHtml(): string {
       cursor: default;
       font-size: 12px;
     }
-    .context-menu-parent:hover,
-    .context-menu-parent:focus-visible,
     .context-menu-group:focus-within > .context-menu-parent {
       outline: none;
-      background: var(--vscode-list-hoverBackground);
+      background: var(--show-log-menu-item-hover);
     }
     .context-menu-chevron {
       flex-shrink: 0;
@@ -1621,23 +1644,23 @@ export function renderShowLogWebviewHtml(): string {
       }
       if (compareSelection) {
         contextMenu.innerHTML = ''
-          + '<button class="context-menu-button" type="button" data-menu-action="compareCommits">Compare</button>'
-          + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
+          + '<button class="context-menu-item" type="button" data-menu-action="compareCommits">Compare</button>'
+          + '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
           + copyReferenceNameMenu;
         showContextMenuAt(clientX, clientY);
         return;
       }
       if (isMultiSelectedContext(commitHash)) {
-        contextMenu.innerHTML = '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>';
+        contextMenu.innerHTML = '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>';
         showContextMenuAt(clientX, clientY);
         return;
       }
       contextMenu.innerHTML = ''
-        + '<button class="context-menu-button" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="resetToCommit">Reset to this</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="copyCommitHash">Copy Hash</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="resetToCommit">Reset to this</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="copyCommitHash">Copy Hash</button>'
         + copyReferenceNameMenu;
       showContextMenuAt(clientX, clientY);
     }
@@ -1648,18 +1671,18 @@ export function renderShowLogWebviewHtml(): string {
         return '';
       }
       if (refs.length === 1) {
-        return '<button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(refs[0].name) + '">Copy Ref Name</button>';
+        return '<button class="context-menu-item" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(refs[0].name) + '">Copy Ref Name</button>';
       }
 
       return ''
         + '<div class="context-menu-group">'
-        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy Ref Name">'
+        + '  <div class="context-menu-parent context-menu-item" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy Ref Name">'
         + '    <span>Copy Ref Name</span>'
         + '    <span class="context-menu-chevron">›</span>'
         + '  </div>'
         + '  <div class="context-submenu" role="menu" aria-label="Copy Ref Name">'
         + refs.map((ref) =>
-          '    <button class="context-menu-button" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.name) + '</button>'
+          '    <button class="context-menu-item" type="button" data-menu-action="copyReferenceName" data-ref-name="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.name) + '</button>'
         ).join('')
         + '  </div>'
         + '</div>';
@@ -1671,17 +1694,17 @@ export function renderShowLogWebviewHtml(): string {
         return;
       }
       contextMenu.innerHTML = ''
-        + '<button class="context-menu-button" type="button" data-menu-action="openFile">Compare</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="compareWithWorktree">Compare with Worktree</button>'
-        + '<button class="context-menu-button" type="button" data-menu-action="revertFileToCommit">Revert to this</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="openFile">Compare</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="compareWithWorktree">Compare with Worktree</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="revertFileToCommit">Revert to this</button>'
         + '<div class="context-menu-group">'
-        + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy to Clipboard">'
+        + '  <div class="context-menu-parent context-menu-item" tabindex="0" role="button" aria-haspopup="menu" aria-label="Copy to Clipboard">'
         + '    <span>Copy to Clipboard</span>'
         + '    <span class="context-menu-chevron">›</span>'
         + '  </div>'
         + '  <div class="context-submenu" role="menu" aria-label="Copy to Clipboard">'
-        + '    <button class="context-menu-button" type="button" data-menu-action="copyFileName">File Name</button>'
-        + '    <button class="context-menu-button" type="button" data-menu-action="copyFullPath">Full Path</button>'
+        + '    <button class="context-menu-item" type="button" data-menu-action="copyFileName">File Name</button>'
+        + '    <button class="context-menu-item" type="button" data-menu-action="copyFullPath">Full Path</button>'
         + '  </div>'
         + '</div>';
       showContextMenuAt(clientX, clientY);
@@ -1707,7 +1730,7 @@ export function renderShowLogWebviewHtml(): string {
       const top = Math.min(clientY, window.innerHeight - rect.height - margin);
       contextMenu.style.left = Math.max(margin, left) + 'px';
       contextMenu.style.top = Math.max(margin, top) + 'px';
-      contextMenu.querySelector('.context-menu-button')?.focus();
+      contextMenu.querySelector('.context-menu-item')?.focus();
     }
 
     function closeContextMenu() {

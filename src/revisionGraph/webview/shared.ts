@@ -21,7 +21,6 @@ export {
   REF_LINE_HEIGHT
 } from '../layout/nodeSizing';
 
-export const ROW_HEIGHT = 140;
 export const ROW_VERTICAL_GAP = 48;
 const ROW_CORRIDOR_EDGE_EXTRA_GAP = 24;
 const ROW_FAN_OUT_EXTRA_GAP = 44;
@@ -299,30 +298,6 @@ function minNumber(values: readonly number[], fallback: number): number {
   }
 
   return Number.isFinite(min) ? min : fallback;
-}
-
-export function renderNode(node: RevisionGraphNode, width: number, x: number): string {
-  const layout = buildNodeLayouts({
-    nodes: [node],
-    edges: [],
-    laneCount: Math.max(node.lane + 1, 1),
-    rowCount: Math.max(node.row + 1, 1)
-  })[0];
-  const y = layout.defaultTop;
-  const nodeClass = getNodeClass(node);
-  const height = getNodeHeight(node);
-  const refLines = node.refs
-    .map((ref) => `<div class="ref-line kind-${escapeHtml(ref.kind)}" data-ref-id="${escapeHtml(createReferenceId(node.hash, ref.kind, ref.name))}" data-ref-name="${escapeHtml(ref.name)}" data-ref-kind="${escapeHtml(ref.kind)}">${escapeHtml(ref.name)}<span class="base-suffix"> (Base)</span></div>`)
-    .join('');
-  const summary = shouldRenderNodeSummary(node)
-    ? `<div class="node-summary">${escapeHtml(formatNodeSummary(node))}</div>`
-    : '';
-
-  return `<div class="node ${nodeClass}" data-node-hash="${node.hash}" data-node-width="${width}" data-node-height="${height}" data-default-left="${x}" data-default-top="${y}" style="left:${x}px; top:${y}px; width:${width}px" title="${escapeHtml(formatNodeTitle(node))}">
-    <button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>
-    ${refLines}
-    ${summary}
-  </div>`;
 }
 
 export function renderEdge(

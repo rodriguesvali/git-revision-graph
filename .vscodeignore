@@ -1,4 +1,5 @@
 .codex/**
+.graphifyignore
 .devcontainer/**
 .git/**
 .github/**
@@ -20,3 +21,4 @@ PUBLISHING.md
 .venv/**
 .env
 graphify-out/**
+scripts/**

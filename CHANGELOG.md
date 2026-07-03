@@ -18,6 +18,66 @@ All notable changes to this project will be documented in this file.
 - Added release promotion ancestry validation, Pull Request context/URL handoff, and a confirmed
   local `sync/*` equalization assistant that never pushes automatically.
 
+## 1.5.8
+
+### Release Preparation
+
+- Opened the `1.5.8` development cycle on top of the published `1.5.7` baseline to improve the
+  visibility of messages that explain why a requested Git operation was blocked.
+- Version metadata is `1.5.8` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 526 tests through `npm test`, and
+  `git diff --check`.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+
+### UX Improvements
+
+- Present operation-blocking precondition warnings as modal messages so conflict, dirty-workspace,
+  missing-current-branch, invalid-target, and concurrent-operation guards cannot disappear as
+  transient toasts.
+- Preserve existing modal destructive confirmations and keep success feedback and benign no-op
+  states non-modal.
+- Centralized the concurrent-repository-operation warning so the revision graph, Show Log, Compare
+  Results, and command entrypoints consistently present and await the same modal message.
+- Replaced the hidden toolbar long-press affordances with explicit split buttons: `Push` keeps a
+  normal-push primary action with force options in the menu, and `Reload` keeps a normal reload
+  primary action with the empty-cache reload in the menu.
+- Exposed `Reset to this` from visible non-HEAD graph references while still resetting by the
+  selected commit hash after confirmation.
+- Improved Show Log and Compare Results hover contrast for dark themes, including clearer row
+  feedback and a shared rounded context-menu item highlight across graph, Show Log, and Compare
+  Results menus.
+- Replaced the ambiguous reset-zoom glyph with a compact `1:1` actual-size icon while preserving
+  its behavior, tooltip, accessible label, and `Alt+0` shortcut.
+
+### Code Clean
+
+- Removed the unreachable workspace-reset protocol, workflow, Git implementation, and tests left
+  behind after the graph menu actions were removed in `1.5.7`; commit-level reset remains intact.
+- Removed the legacy side-bar revision graph provider and unused reference-presentation and message-
+  validation helpers.
+- Excluded internal scripts and Graphify configuration from the packaged extension.
+- Removed the legacy `context-menu-button` hook from production webviews so `context-menu-item` is
+  the single menu-item class.
+
+## 1.5.7
+
+### Release Preparation
+
+- Closed the `1.5.7` development scope with three focused revision graph UX improvements.
+- Version metadata is `1.5.7` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 528 tests through `npm test`, and
+  `git diff --check`.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+
+### UX Improvements
+
+- Removed `Reset Workspace to HEAD` and `Reset Workspace and Remove Untracked Files` from the
+  graph context menu while preserving commit-level `Reset to this` workflows.
+- Changed the graph toolbar `Push` action so a short click performs a normal push and a 500 ms
+  press opens force-with-lease and force push options below the button.
+- Replaced the ambiguous reset-zoom glyph with a compact `1:1` actual-size icon while preserving
+  its behavior, tooltip, accessible label, and `Alt+0` shortcut.
+
 ## 1.5.6
 
 ### Release Preparation

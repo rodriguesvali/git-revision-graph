@@ -16,7 +16,7 @@ Since `0.0.31`, Git Revision Graph no longer opens from its own primary Activity
 - Click `View Git Revision Graph` in the Source Control toolbar.
 - Or run `View Git Revision Graph` from the Command Palette.
 
-The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` also open as on-demand editor panels when those workflows are active.
+The graph opens as a singleton editor panel. `Compare Results` and `Show Log` also open as on-demand editor panels when those workflows are active.
 
 ## Goals
 
@@ -28,7 +28,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 ## Current Features
 
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
-- Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
+- Toolbar controls for reload with an empty-cache split option, push with split-button force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
 - Flow Governance release readiness, Pull Request handoff, and confirmed local `sync/*` equalization from production into a release without automatic push
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
@@ -36,12 +36,13 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
+- Reset the current branch to a selected non-HEAD graph reference or visible commit, using the target commit hash after confirmation
 - Focus the graph on a selected `base..compare` range from the two-reference context menu, with a removable range filter in the graph toolbar
 - Focus the graph on one visible revision and all loaded descendants from its single-revision context menu, excluding older and unrelated history through Git ancestry rather than visual position
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` editor panel that presents comparisons as a compact review queue with source/target context, status filters, rename paths, a `Unified Diff` action for ref-to-ref and ref-to-worktree comparisons, double-click file diff opening, and context actions for compare with worktree and worktree restore flows
 - On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
-- Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes and copying visible ref names
+- Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes, copying visible ref names, and consistent rounded menu-item highlighting across graph, Show Log, and Compare Results menus
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches with an explicit `Override branch if exists` option when the local branch name already exists or is currently checked out
 - Create a new local branch from a local branch, remote branch, tag, or visible unreferenced commit
@@ -53,8 +54,8 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - Merge a selected reference into the current branch, with merge conflicts reported in a modal dialog before further repository operations continue
 - Abort a conflicted merge from the `HEAD` reference context menu after confirmation
 - Save workspace changes to a stash from the `HEAD` reference context menu and apply, pop, or remove the visible stash reference
-- Reset the current branch workspace from the graph context menu, with a separate option to remove untracked files
 - Block workspace-changing actions while conflicts remain unresolved, and reveal Source Control to resolve them
+- Present operation-blocking Git precondition warnings as modal VS Code messages so aborted actions clearly explain what needs attention
 - Delete local branches, tags, and remote branches from the Revision Graph, with safe handling for tracked local branches
 - Selection highlighting for the primary ancestor and descendant path related to the first selected reference
 - Graphs load already organized by the extension host, with layout cache misses calculated in a worker thread plus a `Center HEAD` action and zoom reset controls in both the graph toolbar and minimap
@@ -266,6 +267,7 @@ Additional actions are available directly inside the Revision Graph context menu
 - Delete a local branch, tag, or remote branch
 - Sync the current tracked `HEAD` branch with its upstream
 - Copy a selected reference name to the clipboard
+- Reset the current branch to a selected non-HEAD reference or visible commit
 - Focus the graph on a selected `base..compare` pair
 - Focus the graph on one selected revision and all of its loaded descendants
 - Show a compact log for a selected target or a selected `base..compare` pair

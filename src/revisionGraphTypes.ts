@@ -49,6 +49,13 @@ export type RevisionGraphMessage =
   | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | {
+    readonly type: 'reset-to-commit';
+    readonly commitHash: string;
+    readonly label: string;
+    readonly targetKind: RevisionGraphRef['kind'] | 'commit';
+    readonly targetName?: string;
+  }
+  | {
     readonly type: 'create-branch';
     readonly revision: string;
     readonly label: string;
@@ -66,8 +73,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'publish-branch'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'pull-current-head' }
-  | { readonly type: 'push-current-head' }
-  | { readonly type: 'reset-current-workspace'; readonly includeUntracked: boolean }
+  | { readonly type: 'push-current-head'; readonly mode: 'normal' | 'force-with-lease' | 'force' }
   | { readonly type: 'stash-save' }
   | { readonly type: 'stash-apply'; readonly refName: string }
   | { readonly type: 'stash-pop'; readonly refName: string }

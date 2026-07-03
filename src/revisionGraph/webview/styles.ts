@@ -349,7 +349,7 @@ export function renderRevisionGraphStyles(): string {
       outline: none;
       background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
-    .context-item {
+    .context-menu-item {
       width: 100%;
       text-align: left;
       border: 0;
@@ -362,14 +362,18 @@ export function renderRevisionGraphStyles(): string {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .context-item.primary {
+    .context-menu-item.primary {
       font-weight: 700;
     }
-    .context-item.destructive {
+    .context-menu-item.destructive {
       color: var(--vscode-errorForeground);
     }
-    .context-item:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-    .context-item:disabled { opacity: 0.45; cursor: default; }
+    .context-menu-item:not(:disabled):hover,
+    .context-menu-item:not(:disabled):focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .context-menu-item:disabled { opacity: 0.45; cursor: default; }
     .context-separator {
       height: 1px;
       margin: 6px 4px;
@@ -741,10 +745,34 @@ export function renderRevisionGraphStyles(): string {
       font-size: 15px;
       font-weight: 700;
     }
+    .view-controls .toolbar-split-button {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      gap: 0;
+    }
+    .view-controls .toolbar-split-button .split-primary {
+      width: 30px;
+      min-width: 30px;
+    }
+    .view-controls .toolbar-split-button .split-menu {
+      width: 20px;
+      min-width: 20px;
+      border-left: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
+      color: var(--muted);
+    }
+    .view-controls .toolbar-split-button .split-menu .toolbar-icon {
+      width: 12px;
+      height: 12px;
+      stroke-width: 1.65;
+    }
     .view-controls .toolbar-action-slot .toolbar-button {
       border-color: transparent;
       background: transparent;
       box-shadow: none;
+    }
+    .view-controls .toolbar-action-slot .toolbar-split-button .split-menu {
+      border-left-color: color-mix(in srgb, var(--border) 62%, transparent);
     }
     .view-controls .toolbar-action-slot .toolbar-button:not(:disabled):hover {
       border-color: color-mix(in srgb, var(--accent) 26%, transparent);

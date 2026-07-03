@@ -40,6 +40,14 @@ export function renderCompareResultsWebviewHtml(): string {
   <style>
     :root {
       color-scheme: var(--vscode-color-scheme);
+      --compare-row-hover: color-mix(
+        in srgb,
+        var(--vscode-list-hoverBackground, var(--vscode-editorHoverWidget-background)) 86%,
+        var(--vscode-list-inactiveSelectionBackground, transparent)
+      );
+      --compare-row-hover-accent: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 44%, transparent);
+      --compare-row-hover-outline: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 22%, transparent);
+      --compare-menu-item-hover: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 12%, transparent);
     }
     * {
       box-sizing: border-box;
@@ -250,16 +258,43 @@ export function renderCompareResultsWebviewHtml(): string {
       border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 32%, transparent);
       cursor: pointer;
       user-select: none;
+      transition: background 90ms ease, box-shadow 90ms ease;
     }
     .row:hover {
-      background: color-mix(in srgb, var(--vscode-list-hoverBackground) 72%, transparent);
+      background:
+        linear-gradient(
+          90deg,
+          var(--compare-row-hover-accent) 0 3px,
+          transparent 3px 100%
+        ),
+        var(--compare-row-hover);
+      box-shadow: inset 0 0 0 1px var(--compare-row-hover-outline);
     }
     .row[data-selected="true"] {
       background: color-mix(in srgb, var(--vscode-list-activeSelectionBackground) 52%, var(--vscode-list-hoverBackground));
     }
+    .row[data-selected="true"]:hover {
+      background:
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 52%, var(--vscode-list-activeSelectionBackground)) 0 3px,
+          transparent 3px 100%
+        ),
+        color-mix(in srgb, var(--compare-row-hover) 58%, var(--vscode-list-activeSelectionBackground));
+      box-shadow: inset 0 0 0 1px var(--compare-row-hover-outline);
+    }
     .row:focus-visible {
       outline: none;
-      box-shadow: inset 2px 0 0 var(--vscode-focusBorder);
+      background:
+        linear-gradient(
+          90deg,
+          var(--compare-row-hover-accent) 0 3px,
+          transparent 3px 100%
+        ),
+        var(--compare-row-hover);
+      box-shadow:
+        inset 3px 0 0 var(--compare-row-hover-accent),
+        inset 0 0 0 1px var(--compare-row-hover-outline);
     }
     .status-cell,
     .file-cell,
@@ -405,7 +440,7 @@ export function renderCompareResultsWebviewHtml(): string {
     .context-menu[hidden] {
       display: none;
     }
-    .context-menu-button {
+    .context-menu-item {
       display: block;
       width: 100%;
       padding: 7px 10px;
@@ -417,10 +452,10 @@ export function renderCompareResultsWebviewHtml(): string {
       cursor: pointer;
       font-size: 12px;
     }
-    .context-menu-button:hover,
-    .context-menu-button:focus-visible {
+    .context-menu-item:hover,
+    .context-menu-item:focus-visible {
       outline: none;
-      background: var(--vscode-list-hoverBackground);
+      background: var(--compare-menu-item-hover);
     }
     .context-menu-group {
       position: relative;
@@ -440,11 +475,9 @@ export function renderCompareResultsWebviewHtml(): string {
       cursor: default;
       font-size: 12px;
     }
-    .context-menu-parent:hover,
-    .context-menu-parent:focus-visible,
     .context-menu-group:focus-within > .context-menu-parent {
       outline: none;
-      background: var(--vscode-list-hoverBackground);
+      background: var(--compare-menu-item-hover);
     }
     .context-menu-chevron {
       flex-shrink: 0;
@@ -1082,19 +1115,19 @@ export function renderCompareResultsWebviewHtml(): string {
         if (entry.submenu) {
           return ''
             + '<div class="context-menu-group">'
-            + '  <div class="context-menu-parent" tabindex="0" role="button" aria-haspopup="menu" aria-label="' + escapeHtml(entry.label) + '">'
+            + '  <div class="context-menu-parent context-menu-item" tabindex="0" role="button" aria-haspopup="menu" aria-label="' + escapeHtml(entry.label) + '">'
             + '    <span>' + escapeHtml(entry.label) + '</span>'
             + '    <span class="context-menu-chevron">›</span>'
             + '  </div>'
             + '  <div class="context-submenu" role="menu" aria-label="' + escapeHtml(entry.label) + '">'
             + entry.submenu.map((child) =>
-              '<button class="context-menu-button" type="button" data-menu-action="' + escapeHtml(child.action) + '">' + escapeHtml(child.label) + '</button>'
+              '<button class="context-menu-item" type="button" data-menu-action="' + escapeHtml(child.action) + '">' + escapeHtml(child.label) + '</button>'
             ).join('')
             + '  </div>'
             + '</div>';
         }
 
-        return '<button class="context-menu-button" type="button" data-menu-action="' + escapeHtml(entry.action) + '">' + escapeHtml(entry.label) + '</button>';
+        return '<button class="context-menu-item" type="button" data-menu-action="' + escapeHtml(entry.action) + '">' + escapeHtml(entry.label) + '</button>';
       }).join('');
       contextMenu.hidden = false;
       contextMenu.style.left = '0px';
@@ -1107,7 +1140,7 @@ export function renderCompareResultsWebviewHtml(): string {
       contextMenu.style.left = Math.max(margin, left) + 'px';
       contextMenu.style.top = Math.max(margin, top) + 'px';
 
-      contextMenu.querySelector('.context-menu-button')?.focus();
+      contextMenu.querySelector('.context-menu-item')?.focus();
     }
 
     function openContextMenuForElement(items, element) {

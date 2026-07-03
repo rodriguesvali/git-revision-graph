@@ -51,23 +51,29 @@ test('RevisionGraphRefActionWorkflow skips reference actions without a current r
   assert.equal(checkoutCount, 0);
 });
 
-test('RevisionGraphRefActionWorkflow preserves reset workspace options', async () => {
-  const includeUntrackedValues: boolean[] = [];
+test('RevisionGraphRefActionWorkflow resets the current branch to a graph commit hash', async () => {
+  const repository = createRepository('/repo');
+  const resets: Array<{ readonly repositoryPath: string; readonly commitHash: string; readonly commitLabel: string }> = [];
   const workflow = new RevisionGraphRefActionWorkflow(
-    createHost({
-      repository: createRepository('/repo')
-    }),
+    createHost({ repository }),
     {
-      async resetCurrentBranchWorkspace(_repository, includeUntracked) {
-        includeUntrackedValues.push(includeUntracked);
+      async resetCurrentBranchToCommit(currentRepository, commitHash, commitLabel) {
+        resets.push({
+          repositoryPath: currentRepository.rootUri.fsPath,
+          commitHash,
+          commitLabel
+        });
       }
     }
   );
 
-  await workflow.resetCurrentWorkspace(true);
-  await workflow.resetCurrentWorkspace(false);
+  await workflow.resetToCommit('abc123', 'v1.0.0');
 
-  assert.deepEqual(includeUntrackedValues, [true, false]);
+  assert.deepEqual(resets, [{
+    repositoryPath: '/repo',
+    commitHash: 'abc123',
+    commitLabel: 'v1.0.0'
+  }]);
 });
 
 test('RevisionGraphRefActionWorkflow posts current state before awaiting a modal error', async () => {
@@ -175,7 +181,6 @@ function createActionServices(
       async createTag() {},
       async resetBranch() {},
       async resetCurrentBranch() {},
-      async resetWorkspace() {},
       async getRemoteNames() {
         return [];
       },

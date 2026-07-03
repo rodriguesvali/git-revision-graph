@@ -64,6 +64,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
 import type { FlowConfigSource, FlowGovernanceSettings } from './flow';
 import {
   applyFlowGovernanceOptionsUpdate,
@@ -101,16 +102,6 @@ interface ReusableRevisionGraphSnapshot {
   readonly repositoryPath: string;
   readonly snapshot: RevisionGraphSnapshot;
   readonly snapshotOptions: RevisionGraphProjectionOptions;
-}
-
-function createWebviewViewSurface(view: vscode.WebviewView): RevisionGraphWebviewSurface {
-  return {
-    webview: view.webview,
-    onDidDispose: (listener) => view.onDidDispose(listener),
-    setTitle: (title) => {
-      view.title = title;
-    }
-  };
 }
 
 function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWebviewSurface {
@@ -310,9 +301,7 @@ export class RevisionGraphController implements vscode.Disposable {
           action
         );
         if (outcome.status === 'rejected') {
-          void vscode.window.showWarningMessage(
-            'Another Git operation is already running for this repository.'
-          );
+          await showConcurrentRepositoryMutationWarning(vscode.window);
           return undefined;
         }
 
@@ -337,10 +326,6 @@ export class RevisionGraphController implements vscode.Disposable {
     this.loadTrace.dispose();
 
     this.repositoryLifecycle.dispose();
-  }
-
-  async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
-    await this.resolveWebviewSurface(createWebviewViewSurface(view));
   }
 
   async resolveWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
@@ -415,20 +400,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
-  }
-
-  async chooseRepository(): Promise<void> {
-    const pickedRepository = await pickRevisionGraphRepository(this.git, true);
-    if (!pickedRepository) {
-      return;
-    }
-
-    this.repositoryLifecycle.setCurrentRepository(pickedRepository);
-    await this.open();
-  }
-
-  async fetchCurrentRepository(): Promise<void> {
-    await this.runFetchCurrentRepository();
   }
 
   async refresh(requestLike: RevisionGraphRefreshRequestLike = 'full-rebuild'): Promise<void> {
@@ -704,9 +675,7 @@ export class RevisionGraphController implements vscode.Disposable {
       )
     );
     if (outcome.status === 'rejected') {
-      void vscode.window.showWarningMessage(
-        'Another Git operation is already running for this repository.'
-      );
+      await showConcurrentRepositoryMutationWarning(vscode.window);
     }
   }
 

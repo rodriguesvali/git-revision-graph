@@ -307,10 +307,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       const canPublishBranch =
         (target.kind === 'head' || target.kind === 'branch') &&
         !publishedLocalBranchNames.has(target.name);
-      const canResetCurrentWorkspace =
-        target.kind === 'head' &&
-        isWorkspaceDirty &&
-        !hasConflictedMerge;
       const canAbortConflictedMerge =
         target.kind === 'head' &&
         hasConflictedMerge;
@@ -318,6 +314,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         target.kind === 'head' &&
         isWorkspaceDirty &&
         !hasMergeConflicts;
+      const canResetToTarget =
+        target.kind !== 'head' &&
+        target.kind !== 'stash' &&
+        !(target.kind === 'branch' && !!currentHeadName && target.name === currentHeadName);
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -356,6 +356,10 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
         }
+        if (canResetToTarget) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
+        }
         if (canStashCurrentWorkspace) {
           appendMenuSection('Stash');
           appendMenuItem('Stash Save', () => postStashSave());
@@ -385,21 +389,20 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (flowBranch && flowBranch.kind === 'release') {
           const productionBranchName = getFlowProductionBranchName();
           appendMenuSection('Flow Governance');
-            appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
+          appendMenuItem('Validate Release Promotion', () => postValidateReleasePromotion(target));
           if (productionBranchName) {
             appendMenuItem('Prepare Production Equalization', () => postPrepareFlowEqualization(target.name, productionBranchName));
             appendMenuItem('Copy Promotion PR Context', () => postCopyFlowPullRequestContext(target.name, productionBranchName));
             appendMenuItem('Open Promotion PR URL', () => postOpenFlowPullRequestUrl(target.name, productionBranchName));
           }
         }
-        if (canResetCurrentWorkspace) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Reset Workspace to HEAD', () => postResetCurrentWorkspace(false), { destructive: true });
-          appendMenuItem('Reset Workspace and Remove Untracked Files', () => postResetCurrentWorkspace(true), { destructive: true });
-        }
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
+        }
+        if (canResetToTarget) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
         }
         if (canStashCurrentWorkspace) {
           appendMenuSection('Stash');
@@ -480,7 +483,7 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function appendMenuItem(label, onClick, options = {}) {
       const button = document.createElement('button');
-      button.className = 'context-item';
+      button.className = 'context-menu-item';
       if (options.primary) {
         button.classList.add('primary');
       }
@@ -709,16 +712,16 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage(createRevisionGraphCheckoutMessage(target));
     }
 
+    function postResetToCommit(target) {
+      vscode.postMessage(createRevisionGraphResetToCommitMessage(target));
+    }
+
     function postSyncCurrentHead() {
       vscode.postMessage(createRevisionGraphSyncCurrentHeadMessage());
     }
 
     function postPullCurrentHead() {
       vscode.postMessage(createRevisionGraphPullCurrentHeadMessage());
-    }
-
-    function postPushCurrentHead() {
-      vscode.postMessage(createRevisionGraphPushCurrentHeadMessage());
     }
 
     function getCurrentHeadRemoteActionState() {
@@ -828,6 +831,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (reloadButton) {
         reloadButton.disabled = toolbarBusy;
       }
+      if (reloadMenuButton) {
+        reloadMenuButton.disabled = toolbarBusy;
+      }
       if (fetchAllButton) {
         fetchAllButton.disabled = toolbarBusy || !hasRepository;
       }
@@ -840,6 +846,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         pushButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
         pushButton.title = 'Push to ' + remoteActionState.upstreamLabel;
         pushButton.setAttribute('aria-label', pushButton.title);
+      }
+      if (pushMenuButton) {
+        pushMenuButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
+        pushMenuButton.title = 'More push options for ' + remoteActionState.upstreamLabel;
+        pushMenuButton.setAttribute('aria-label', pushMenuButton.title);
       }
       if (syncButton) {
         syncButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
@@ -910,9 +921,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         rangeFilterClearButton,
         descendantFilterClearButton,
         reloadButton,
+        reloadMenuButton,
         fetchAllButton,
         pullButton,
         pushButton,
+        pushMenuButton,
         syncButton,
         centerHeadButton,
         zoomOutButton,

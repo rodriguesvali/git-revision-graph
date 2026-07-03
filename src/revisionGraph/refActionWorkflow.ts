@@ -9,9 +9,9 @@ import {
   deleteResolvedReference,
   mergeResolvedReference,
   publishLocalBranchResolvedReference,
+  resetCurrentBranchToCommit,
   RefActionKind,
   RefActionServices,
-  resetCurrentBranchWorkspace,
   saveCurrentWorkspaceToStash,
   applyStashResolvedReference,
   popStashResolvedReference,
@@ -50,6 +50,12 @@ export interface RevisionGraphRefActionWorkflowDependencies {
     target: RefActionTarget,
     services: RefActionServices
   ): Promise<unknown>;
+  resetCurrentBranchToCommit?(
+    repository: Repository,
+    commitHash: string,
+    commitLabel: string,
+    services: RefActionServices
+  ): Promise<unknown>;
   createBranchFromResolvedReference?(
     repository: Repository,
     target: RefActionTarget,
@@ -63,11 +69,6 @@ export interface RevisionGraphRefActionWorkflowDependencies {
   publishLocalBranchResolvedReference?(
     repository: Repository,
     target: RefActionTarget,
-    services: RefActionServices
-  ): Promise<unknown>;
-  resetCurrentBranchWorkspace?(
-    repository: Repository,
-    includeUntracked: boolean,
     services: RefActionServices
   ): Promise<unknown>;
   saveCurrentWorkspaceToStash?(
@@ -114,6 +115,9 @@ export class RevisionGraphRefActionWorkflow {
   private readonly checkoutResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['checkoutResolvedReference']
   >;
+  private readonly resetCurrentBranchToCommit: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['resetCurrentBranchToCommit']
+  >;
   private readonly createBranchFromResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['createBranchFromResolvedReference']
   >;
@@ -122,9 +126,6 @@ export class RevisionGraphRefActionWorkflow {
   >;
   private readonly publishLocalBranchResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['publishLocalBranchResolvedReference']
-  >;
-  private readonly resetCurrentBranchWorkspace: NonNullable<
-    RevisionGraphRefActionWorkflowDependencies['resetCurrentBranchWorkspace']
   >;
   private readonly saveCurrentWorkspaceToStash: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['saveCurrentWorkspaceToStash']
@@ -154,14 +155,13 @@ export class RevisionGraphRefActionWorkflow {
     this.compareResolvedRefWithWorktree =
       dependencies.compareResolvedRefWithWorktree ?? compareResolvedRefWithWorktree;
     this.checkoutResolvedReference = dependencies.checkoutResolvedReference ?? checkoutResolvedReference;
+    this.resetCurrentBranchToCommit = dependencies.resetCurrentBranchToCommit ?? resetCurrentBranchToCommit;
     this.createBranchFromResolvedReference =
       dependencies.createBranchFromResolvedReference ?? createBranchFromResolvedReference;
     this.createTagFromResolvedReference =
       dependencies.createTagFromResolvedReference ?? createTagFromResolvedReference;
     this.publishLocalBranchResolvedReference =
       dependencies.publishLocalBranchResolvedReference ?? publishLocalBranchResolvedReference;
-    this.resetCurrentBranchWorkspace =
-      dependencies.resetCurrentBranchWorkspace ?? resetCurrentBranchWorkspace;
     this.saveCurrentWorkspaceToStash =
       dependencies.saveCurrentWorkspaceToStash ?? saveCurrentWorkspaceToStash;
     this.applyStashResolvedReference =
@@ -216,6 +216,12 @@ export class RevisionGraphRefActionWorkflow {
     );
   }
 
+  async resetToCommit(commitHash: string, commitLabel: string): Promise<void> {
+    await this.runMutationWithCurrentRepository((repository, services) =>
+      this.resetCurrentBranchToCommit(repository, commitHash, commitLabel, services)
+    );
+  }
+
   async createBranch(revision: string, label: string, refKind: RefActionKind): Promise<void> {
     await this.runMutationWithCurrentRepository((repository, services) =>
       this.createBranchFromResolvedReference(
@@ -243,12 +249,6 @@ export class RevisionGraphRefActionWorkflow {
         { refName, label, kind: refKind },
         services
       )
-    );
-  }
-
-  async resetCurrentWorkspace(includeUntracked: boolean): Promise<void> {
-    await this.runMutationWithCurrentRepository((repository, services) =>
-      this.resetCurrentBranchWorkspace(repository, includeUntracked, services)
     );
   }
 

@@ -133,6 +133,9 @@ export class RevisionGraphMessageHandler {
       case 'checkout':
         await this.refActionWorkflow.checkout(message.refName, message.refKind as RefActionKind);
         return;
+      case 'reset-to-commit':
+        await this.refActionWorkflow.resetToCommit(message.commitHash, message.label);
+        return;
       case 'create-branch':
         await this.refActionWorkflow.createBranch(
           message.revision,
@@ -170,10 +173,7 @@ export class RevisionGraphMessageHandler {
         await this.currentHeadWorkflow.pullCurrentHead();
         return;
       case 'push-current-head':
-        await this.currentHeadWorkflow.pushCurrentHead();
-        return;
-      case 'reset-current-workspace':
-        await this.refActionWorkflow.resetCurrentWorkspace(message.includeUntracked);
+        await this.currentHeadWorkflow.pushCurrentHead(message.mode);
         return;
       case 'stash-save':
         if (!await this.refActionWorkflow.stashSave()) {

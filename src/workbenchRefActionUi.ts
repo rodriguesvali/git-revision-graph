@@ -126,8 +126,13 @@ export function createWorkbenchRefActionUi(): RefActionUi {
     showInformationMessage(message) {
       void vscode.window.showInformationMessage(message);
     },
-    showWarningMessage(message) {
-      void vscode.window.showWarningMessage(message);
+    async showWarningMessage(message, options) {
+      if (options) {
+        await vscode.window.showWarningMessage(message, options);
+        return;
+      }
+
+      await vscode.window.showWarningMessage(message);
     },
     async showErrorMessage(message, options) {
       if (options) {

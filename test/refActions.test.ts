@@ -27,7 +27,6 @@ import {
   RefActionMessageOptions,
   RefActionServices,
   resetCurrentBranchToCommit,
-  resetCurrentBranchWorkspace,
   saveCurrentWorkspaceToStash,
   syncCurrentHeadWithUpstream
 } from '../src/refActions';
@@ -44,6 +43,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly services: RefActionServices;
   readonly infoMessages: string[];
   readonly warningMessages: string[];
+  readonly warningMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }>;
   readonly errorMessages: string[];
   readonly errorMessageRequests: Array<{
     readonly message: string;
@@ -67,7 +70,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }>;
   readonly deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }>;
-  readonly workspaceResets: Array<{ readonly includeUntracked: boolean }>;
   readonly abortedMerges: number;
   readonly stashSaves: number;
   readonly stashApplies: string[];
@@ -82,6 +84,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
 } {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
+  const warningMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }> = [];
   const errorMessages: string[] = [];
   const errorMessageRequests: Array<{
     readonly message: string;
@@ -104,7 +110,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const pushedTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteTags: Array<{ readonly remoteName: string; readonly tagName: string }> = [];
   const deletedRemoteBranches: Array<{ readonly remoteName: string; readonly branchName: string }> = [];
-  const workspaceResets: Array<{ readonly includeUntracked: boolean }> = [];
   let stashSaves = 0;
   const stashApplies: string[] = [];
   const stashPops: string[] = [];
@@ -148,8 +153,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       showInformationMessage(message) {
         infoMessages.push(message);
       },
-      showWarningMessage(message) {
+      showWarningMessage(message, options) {
         warningMessages.push(message);
+        warningMessageRequests.push({ message, options });
       },
       async showErrorMessage(message, options) {
         errorMessages.push(message);
@@ -225,9 +231,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       async resetCurrentBranch(_repository, refName) {
         resetCurrentBranchRefs.push(refName);
       },
-      async resetWorkspace(_repository, includeUntracked) {
-        workspaceResets.push({ includeUntracked });
-      },
       async getRemoteNames() {
         return ['origin'];
       },
@@ -277,6 +280,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     services,
     infoMessages,
     warningMessages,
+    warningMessageRequests,
     errorMessages,
     errorMessageRequests,
     get sourceControlOpens() {
@@ -294,7 +298,6 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     pushedTags,
     deletedRemoteTags,
     deletedRemoteBranches,
-    workspaceResets,
     get abortedMerges() {
       return abortedMerges;
     },
@@ -586,6 +589,7 @@ test('checkoutResolvedReference blocks workspace-changing operations while confl
 
   assert.deepEqual(repository.calls.checkout, []);
   assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before checking out another reference.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
   assert.equal(harness.sourceControlOpens, 1);
 });
 
@@ -1203,6 +1207,7 @@ test('createTagFromResolvedReference blocks tag creation while conflicts are unr
 
   assert.deepEqual(harness.createdTags, []);
   assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before creating a new tag.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
   assert.equal(harness.sourceControlOpens, 1);
 });
 
@@ -2434,69 +2439,6 @@ test('dropStashResolvedReference removes a stash even when the workspace is dirt
   });
 });
 
-test('resetCurrentBranchWorkspace resets tracked workspace changes and keeps untracked files', async () => {
-  const repository = createRepository({
-    root: '/workspace/repo',
-    head: createHead('main'),
-    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })],
-    untrackedChanges: [createChange({ uriPath: '/workspace/repo/tmp.txt', status: Status.UNTRACKED })]
-  });
-  const harness = createServices();
-
-  await resetCurrentBranchWorkspace(repository, false, harness.services);
-
-  assert.deepEqual(harness.workspaceResets, [{ includeUntracked: false }]);
-  assert.deepEqual(harness.confirmRequests, [
-    {
-      message: 'Reset workspace on main to HEAD?\n\nThis discards tracked changes and staged changes in this repository. Untracked files are kept.',
-      confirmLabel: 'Reset Workspace'
-    }
-  ]);
-  assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'full-rebuild',
-    repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout'],
-    clearSnapshotCache: true
-  });
-  assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were kept.');
-});
-
-test('resetCurrentBranchWorkspace can remove untracked files when explicitly requested', async () => {
-  const repository = createRepository({
-    root: '/workspace/repo',
-    head: createHead('main'),
-    workingTreeChanges: [createChange({ uriPath: '/workspace/repo/src/app.ts', status: Status.MODIFIED })],
-    untrackedChanges: [createChange({ uriPath: '/workspace/repo/tmp.txt', status: Status.UNTRACKED })]
-  });
-  const harness = createServices();
-
-  await resetCurrentBranchWorkspace(repository, true, harness.services);
-
-  assert.deepEqual(harness.workspaceResets, [{ includeUntracked: true }]);
-  assert.deepEqual(harness.confirmRequests, [
-    {
-      message: 'Reset workspace on main to HEAD and remove untracked files?\n\nThis discards tracked changes, staged changes, and untracked files in this repository.',
-      confirmLabel: 'Reset and Remove Untracked'
-    }
-  ]);
-  assert.equal(harness.infoMessages[0], 'Workspace reset to main HEAD. Untracked files were removed.');
-});
-
-test('resetCurrentBranchWorkspace refuses conflicted merges', async () => {
-  const repository = createRepository({
-    root: '/workspace/repo',
-    head: createHead('main'),
-    mergeChanges: [createChange({ uriPath: '/workspace/repo/src/conflict.ts', status: Status.BOTH_MODIFIED })]
-  });
-  const harness = createServices();
-
-  await resetCurrentBranchWorkspace(repository, true, harness.services);
-
-  assert.deepEqual(harness.workspaceResets, []);
-  assert.deepEqual(harness.confirmRequests, []);
-  assert.equal(harness.warningMessages[0], 'Abort or resolve the current conflicted merge before resetting the workspace.');
-});
-
 test('resetCurrentBranchToCommit resets a clean current branch and refreshes the graph', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -2537,6 +2479,7 @@ test('resetCurrentBranchToCommit requires a clean workspace', async () => {
   assert.deepEqual(harness.resetCurrentBranchRefs, []);
   assert.deepEqual(harness.confirmRequests, []);
   assert.equal(harness.warningMessages[0], 'The workspace must be clean before resetting main to abc123. Review, stash, or commit the current changes first.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
 });
 
 test('pushCurrentBranchToUpstream pushes the current branch to its upstream', async () => {
@@ -2544,9 +2487,13 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
     root: '/workspace/repo',
     head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
   });
-  const harness = createServices();
+  const harness = createServices({
+    async pickCurrentBranchPushMode() {
+      throw new Error('The toolbar-selected push mode should bypass the mode picker.');
+    }
+  });
 
-  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services, 'normal');
 
   assert.equal(didPush, true);
   assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);
