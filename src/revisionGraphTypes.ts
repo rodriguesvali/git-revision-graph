@@ -61,7 +61,6 @@ export type RevisionGraphMessage =
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'pull-current-head' }
   | { readonly type: 'push-current-head'; readonly mode: 'normal' | 'force-with-lease' | 'force' }
-  | { readonly type: 'reset-current-workspace'; readonly includeUntracked: boolean }
   | { readonly type: 'stash-save' }
   | { readonly type: 'stash-apply'; readonly refName: string }
   | { readonly type: 'stash-pop'; readonly refName: string }

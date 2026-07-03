@@ -29,12 +29,6 @@ export function createWorkbenchReferenceManager(): ReferenceManager {
     async resetCurrentBranch(repository, refName) {
       await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', refName], GIT_EXEC_LOCAL_MUTATION_PROFILE);
     },
-    async resetWorkspace(repository, includeUntracked) {
-      await execGitWithResult(repository.rootUri.fsPath, ['reset', '--hard', 'HEAD'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
-      if (includeUntracked) {
-        await execGitWithResult(repository.rootUri.fsPath, ['clean', '-fd'], GIT_EXEC_LOCAL_MUTATION_PROFILE);
-      }
-    },
     async getRemoteNames(repository) {
       return getRepositoryRemoteNames(repository);
     },

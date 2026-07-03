@@ -28,10 +28,6 @@ export function isRevisionGraphMessageAllowedForState(
         && !!state.currentHeadUpstreamName
         && state.publishedLocalBranchNames.includes(state.currentHeadName)
         && state.references.some((ref) => ref.kind === 'head' && ref.name === state.currentHeadName);
-    case 'reset-current-workspace':
-      return state.viewMode === 'ready'
-        && !!state.currentHeadName
-        && state.references.some((ref) => ref.kind === 'head' && ref.name === state.currentHeadName);
     case 'stash-save':
       return state.viewMode === 'ready'
         && state.isWorkspaceDirty
@@ -105,7 +101,6 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'sync-current-head':
     case 'pull-current-head':
     case 'push-current-head':
-    case 'reset-current-workspace':
     case 'stash-save':
     case 'stash-apply':
     case 'stash-pop':

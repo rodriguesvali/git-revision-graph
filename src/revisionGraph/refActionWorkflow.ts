@@ -11,7 +11,6 @@ import {
   publishLocalBranchResolvedReference,
   RefActionKind,
   RefActionServices,
-  resetCurrentBranchWorkspace,
   saveCurrentWorkspaceToStash,
   applyStashResolvedReference,
   popStashResolvedReference,
@@ -63,11 +62,6 @@ export interface RevisionGraphRefActionWorkflowDependencies {
   publishLocalBranchResolvedReference?(
     repository: Repository,
     target: RefActionTarget,
-    services: RefActionServices
-  ): Promise<unknown>;
-  resetCurrentBranchWorkspace?(
-    repository: Repository,
-    includeUntracked: boolean,
     services: RefActionServices
   ): Promise<unknown>;
   saveCurrentWorkspaceToStash?(
@@ -123,9 +117,6 @@ export class RevisionGraphRefActionWorkflow {
   private readonly publishLocalBranchResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['publishLocalBranchResolvedReference']
   >;
-  private readonly resetCurrentBranchWorkspace: NonNullable<
-    RevisionGraphRefActionWorkflowDependencies['resetCurrentBranchWorkspace']
-  >;
   private readonly saveCurrentWorkspaceToStash: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['saveCurrentWorkspaceToStash']
   >;
@@ -160,8 +151,6 @@ export class RevisionGraphRefActionWorkflow {
       dependencies.createTagFromResolvedReference ?? createTagFromResolvedReference;
     this.publishLocalBranchResolvedReference =
       dependencies.publishLocalBranchResolvedReference ?? publishLocalBranchResolvedReference;
-    this.resetCurrentBranchWorkspace =
-      dependencies.resetCurrentBranchWorkspace ?? resetCurrentBranchWorkspace;
     this.saveCurrentWorkspaceToStash =
       dependencies.saveCurrentWorkspaceToStash ?? saveCurrentWorkspaceToStash;
     this.applyStashResolvedReference =
@@ -243,12 +232,6 @@ export class RevisionGraphRefActionWorkflow {
         { refName, label, kind: refKind },
         services
       )
-    );
-  }
-
-  async resetCurrentWorkspace(includeUntracked: boolean): Promise<void> {
-    await this.runMutationWithCurrentRepository((repository, services) =>
-      this.resetCurrentBranchWorkspace(repository, includeUntracked, services)
     );
   }
 

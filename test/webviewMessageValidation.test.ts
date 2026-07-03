@@ -232,10 +232,6 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
   assert.deepEqual(
-    validateRevisionGraphMessage({ type: 'reset-current-workspace', includeUntracked: true }),
-    { type: 'reset-current-workspace', includeUntracked: true }
-  );
-  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'stash-save' }),
     { type: 'stash-save' }
   );
@@ -345,20 +341,6 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { ...state, hasMergeConflicts: true, hasConflictedMerge: true, isWorkspaceDirty: true }
     ),
     true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'reset-current-workspace', includeUntracked: false },
-      state
-    ),
-    true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'reset-current-workspace', includeUntracked: false },
-      { ...state, currentHeadName: 'missing' }
-    ),
-    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState({ type: 'stash-save' }, state),

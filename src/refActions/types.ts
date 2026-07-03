@@ -99,7 +99,6 @@ export interface ReferenceManager {
   createTag(repository: Repository, tagName: string, refName: string): Promise<void>;
   resetBranch(repository: Repository, branchName: string, refName: string): Promise<void>;
   resetCurrentBranch(repository: Repository, refName: string): Promise<void>;
-  resetWorkspace(repository: Repository, includeUntracked: boolean): Promise<void>;
   getRemoteNames(repository: Repository): Promise<readonly string[]>;
   pushCurrentBranch(repository: Repository, remoteName: string, branchName: string, mode: CurrentBranchPushMode): Promise<boolean>;
   pushTag(repository: Repository, remoteName: string, tagName: string): Promise<void>;

@@ -62,8 +62,10 @@ Recorded verification:
 
 - Version metadata and release artifacts opened on 2026-07-03.
 - `npm run build` passed on 2026-07-03.
-- `npm test` passed with 529 tests on 2026-07-03.
+- `npm test` passed with 525 tests on 2026-07-03 after dead-code removal.
 - `git diff --check` passed on 2026-07-03.
+- Static dependency analysis found the expected extension and layout-worker roots with no import
+  cycles; VSIX inspection confirmed internal scripts and `.graphifyignore` are excluded.
 - Manual Extension Development Host smoke and VSIX packaging evidence remain pending.
 
 ## Superseded Release Candidate: 1.5.7

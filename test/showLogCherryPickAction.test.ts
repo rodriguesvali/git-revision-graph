@@ -346,7 +346,6 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
         async createTag() {},
         async resetBranch() {},
         async resetCurrentBranch() {},
-        async resetWorkspace() {},
         async getRemoteNames() {
           return [];
         },

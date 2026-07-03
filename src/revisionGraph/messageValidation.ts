@@ -115,10 +115,6 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         && isRevisionGraphRefKind(message.refKind)
         ? { type: message.type, refName: message.refName, label: message.label, refKind: message.refKind }
         : undefined;
-    case 'reset-current-workspace':
-      return isBoolean(message.includeUntracked)
-        ? { type: 'reset-current-workspace', includeUntracked: message.includeUntracked }
-        : undefined;
     case 'delete':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'delete', refName: message.refName, refKind: message.refKind }

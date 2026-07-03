@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - Opened the `1.5.8` development cycle to improve the visibility of messages that explain why a
   requested Git operation was blocked.
 - Version metadata is `1.5.8` in `package.json` and `package-lock.json`.
-- Automated verification passed with `npm run build`, 529 tests through `npm test`, and
+- Automated verification passed with `npm run build`, 525 tests through `npm test`, and
   `git diff --check`; Extension Development Host validation, VSIX packaging, and Marketplace
   publication remain pending.
 
@@ -22,6 +22,14 @@ All notable changes to this project will be documented in this file.
   states non-modal.
 - Centralized the concurrent-repository-operation warning so the revision graph, Show Log, Compare
   Results, and command entrypoints consistently present and await the same modal message.
+
+### Code Clean
+
+- Removed the unreachable workspace-reset protocol, workflow, Git implementation, and tests left
+  behind after the graph menu actions were removed in `1.5.7`; commit-level reset remains intact.
+- Removed the legacy side-bar revision graph provider and unused reference-presentation and message-
+  validation helpers.
+- Excluded internal scripts and Graphify configuration from the packaged extension.
 
 ## 1.5.7
 

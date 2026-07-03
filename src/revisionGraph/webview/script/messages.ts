@@ -131,10 +131,6 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'push-current-head', mode: mode };
     }
 
-    function createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked) {
-      return { type: 'reset-current-workspace', includeUntracked: !!includeUntracked };
-    }
-
     function createRevisionGraphStashSaveMessage() {
       return { type: 'stash-save' };
     }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefType, Status } from '../src/git';
-import { getReferenceDescription, getReferenceHandle, getReferenceShortLabel, getReferenceTooltip, getSuggestedLocalBranchName } from '../src/refPresentation';
+import { getReferenceDescription, getReferenceHandle, getReferenceShortLabel, getReferenceTooltip } from '../src/refPresentation';
 import { getRepositoryRelativeChangePath, getRepositoryRelativeUriPath, getStatusLabel, toChangeQuickPickItems } from '../src/changePresentation';
 import { createChange, createHead, createRef, createRepository } from './fakes';
 
@@ -29,7 +29,6 @@ test('formats remote refs and preserves nested branch names for tracking branche
   assert.equal(getReferenceHandle(remoteRef), 'origin/feature/nested');
   assert.equal(getReferenceShortLabel(remoteRef), 'feature/nested');
   assert.equal(getReferenceDescription(repository, remoteRef), 'origin');
-  assert.equal(getSuggestedLocalBranchName(remoteRef), 'feature/nested');
 });
 
 test('builds change quick pick items from renamed files using target path', () => {

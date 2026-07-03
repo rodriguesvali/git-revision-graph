@@ -151,9 +151,6 @@ export class RevisionGraphMessageHandler {
       case 'push-current-head':
         await this.currentHeadWorkflow.pushCurrentHead(message.mode);
         return;
-      case 'reset-current-workspace':
-        await this.refActionWorkflow.resetCurrentWorkspace(message.includeUntracked);
-        return;
       case 'stash-save':
         if (!await this.refActionWorkflow.stashSave()) {
           this.host.postCurrentState();

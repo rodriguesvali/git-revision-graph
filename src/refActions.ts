@@ -38,8 +38,7 @@ export {
   mergeResolvedReference
 } from './refActions/merge';
 export {
-  resetCurrentBranchToCommit,
-  resetCurrentBranchWorkspace
+  resetCurrentBranchToCommit
 } from './refActions/reset';
 export {
   createTagFromResolvedReference,

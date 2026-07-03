@@ -51,25 +51,6 @@ test('RevisionGraphRefActionWorkflow skips reference actions without a current r
   assert.equal(checkoutCount, 0);
 });
 
-test('RevisionGraphRefActionWorkflow preserves reset workspace options', async () => {
-  const includeUntrackedValues: boolean[] = [];
-  const workflow = new RevisionGraphRefActionWorkflow(
-    createHost({
-      repository: createRepository('/repo')
-    }),
-    {
-      async resetCurrentBranchWorkspace(_repository, includeUntracked) {
-        includeUntrackedValues.push(includeUntracked);
-      }
-    }
-  );
-
-  await workflow.resetCurrentWorkspace(true);
-  await workflow.resetCurrentWorkspace(false);
-
-  assert.deepEqual(includeUntrackedValues, [true, false]);
-});
-
 test('RevisionGraphRefActionWorkflow posts current state before awaiting a modal error', async () => {
   const repository = createRepository('/repo');
   const events: string[] = [];
@@ -175,7 +156,6 @@ function createActionServices(
       async createTag() {},
       async resetBranch() {},
       async resetCurrentBranch() {},
-      async resetWorkspace() {},
       async getRemoteNames() {
         return [];
       },

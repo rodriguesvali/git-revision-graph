@@ -51,24 +51,3 @@ export function getReferenceTooltip(repository: Repository, ref: Ref): string {
 
   return parts.join('\n');
 }
-
-export function getReferenceIcon(ref: Ref): string {
-  switch (ref.type) {
-    case RefType.Head:
-      return 'git-branch';
-    case RefType.RemoteHead:
-      return 'cloud';
-    case RefType.Tag:
-      return 'tag';
-  }
-
-  return 'git-commit';
-}
-
-export function getSuggestedLocalBranchName(ref: Ref): string {
-  return getReferenceShortLabel(ref);
-}
-
-export function compareRefsByName(left: Ref, right: Ref): number {
-  return getReferenceShortLabel(left).localeCompare(getReferenceShortLabel(right));
-}
