@@ -125,10 +125,13 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let lastVirtualSceneKey = '';
     let virtualNodeIndex = new Map();
     let virtualEdgeIndex = new Map();
-    const RELOAD_LONG_PRESS_DELAY_MS = 500;
+    const TOOLBAR_LONG_PRESS_DELAY_MS = 500;
     let reloadLongPressTimer = 0;
     let suppressNextReloadClick = false;
     let reloadCacheMenu = null;
+    let pushLongPressTimer = 0;
+    let suppressNextPushClick = false;
+    let pushModeMenu = null;
 
     window.addEventListener('message', (event) => {
       handleHostMessage(event.data);
@@ -165,8 +168,22 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       });
     }
     if (pushButton) {
-      pushButton.addEventListener('click', () => {
-        vscode.postMessage(createRevisionGraphPushCurrentHeadMessage());
+      pushButton.addEventListener('pointerdown', (event) => {
+        if (pushButton.disabled || (event.button !== undefined && event.button !== 0)) {
+          return;
+        }
+        schedulePushLongPressMenu();
+      });
+      pushButton.addEventListener('pointerup', cancelPushLongPressMenu);
+      pushButton.addEventListener('pointercancel', cancelPushLongPressMenu);
+      pushButton.addEventListener('pointerleave', cancelPushLongPressMenu);
+      pushButton.addEventListener('click', (event) => {
+        if (suppressNextPushClick) {
+          suppressNextPushClick = false;
+          event.preventDefault();
+          return;
+        }
+        pushCurrentHead('normal');
       });
     }
     if (syncButton) {
@@ -413,8 +430,17 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       ) {
         closeReloadCacheMenu();
       }
+      if (
+        pushModeMenu &&
+        !pushModeMenu.hidden &&
+        !pushModeMenu.contains(event.target) &&
+        !(pushButton && pushButton.contains(event.target))
+      ) {
+        closePushModeMenu();
+      }
     });
     window.addEventListener('blur', closeReloadCacheMenu);
+    window.addEventListener('blur', closePushModeMenu);
     window.addEventListener('keydown', (event) => {
       const isSearchInputFocused = document.activeElement === searchInput;
       if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
@@ -463,6 +489,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         closeContextMenu();
         closeViewOptionsMenu();
         closeReloadCacheMenu();
+        closePushModeMenu();
         if (endNodeDrag(false)) {
           applyNodeLayout(false);
         }
@@ -504,7 +531,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         reloadLongPressTimer = 0;
         suppressNextReloadClick = true;
         showReloadCacheMenu();
-      }, RELOAD_LONG_PRESS_DELAY_MS);
+      }, TOOLBAR_LONG_PRESS_DELAY_MS);
     }
 
     function cancelReloadLongPressMenu() {
@@ -556,6 +583,77 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         reloadCacheMenu.hidden = true;
       }
       suppressNextReloadClick = false;
+    }
+
+    function pushCurrentHead(mode) {
+      closePushModeMenu();
+      vscode.postMessage(createRevisionGraphPushCurrentHeadMessage(mode));
+    }
+
+    function schedulePushLongPressMenu() {
+      cancelPushLongPressMenu();
+      pushLongPressTimer = window.setTimeout(() => {
+        pushLongPressTimer = 0;
+        suppressNextPushClick = true;
+        showPushModeMenu();
+      }, TOOLBAR_LONG_PRESS_DELAY_MS);
+    }
+
+    function cancelPushLongPressMenu() {
+      if (pushLongPressTimer) {
+        window.clearTimeout(pushLongPressTimer);
+        pushLongPressTimer = 0;
+      }
+    }
+
+    function showPushModeMenu() {
+      if (!pushButton) {
+        return;
+      }
+      if (!pushModeMenu) {
+        pushModeMenu = document.createElement('div');
+        pushModeMenu.className = 'reload-cache-menu push-mode-menu';
+        pushModeMenu.hidden = true;
+        pushModeMenu.setAttribute('role', 'menu');
+        const pushModes = [
+          { label: 'Push with Force With Lease', mode: 'force-with-lease' },
+          { label: 'Push with Force', mode: 'force' }
+        ];
+        pushModes.forEach((pushMode) => {
+          const modeButton = document.createElement('button');
+          modeButton.type = 'button';
+          modeButton.className = 'reload-cache-menu-button';
+          modeButton.textContent = pushMode.label;
+          modeButton.setAttribute('role', 'menuitem');
+          modeButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            pushCurrentHead(pushMode.mode);
+          });
+          pushModeMenu.appendChild(modeButton);
+        });
+        document.body.appendChild(pushModeMenu);
+      }
+
+      pushModeMenu.hidden = false;
+      const buttonRect = pushButton.getBoundingClientRect();
+      const menuRect = pushModeMenu.getBoundingClientRect();
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const leftLimit = Math.max(8, viewportWidth - menuRect.width - 8);
+      const left = Math.min(Math.max(8, buttonRect.left), leftLimit);
+      pushModeMenu.style.left = left + 'px';
+      pushModeMenu.style.top = Math.max(8, buttonRect.bottom + 6) + 'px';
+      const firstButton = pushModeMenu.querySelector('button');
+      if (firstButton) {
+        firstButton.focus();
+      }
+    }
+
+    function closePushModeMenu() {
+      cancelPushLongPressMenu();
+      if (pushModeMenu) {
+        pushModeMenu.hidden = true;
+      }
+      suppressNextPushClick = false;
     }
 
     function endMinimapDrag() {

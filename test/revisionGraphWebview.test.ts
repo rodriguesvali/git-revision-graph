@@ -171,7 +171,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /const pullButton = document\.getElementById\('pullButton'\);/);
   assert.match(html, /const pushButton = document\.getElementById\('pushButton'\);/);
   assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
-  assert.match(html, /const RELOAD_LONG_PRESS_DELAY_MS = 500;/);
+  assert.match(html, /const TOOLBAR_LONG_PRESS_DELAY_MS = 500;/);
   assert.match(
     html,
     /reloadButton\.addEventListener\('pointerdown', \(event\) => \{[\s\S]*?scheduleReloadLongPressMenu\(\);[\s\S]*?reloadButton\.addEventListener\('click', \(event\) => \{[\s\S]*?reloadRevisionGraph\(\);/s
@@ -193,8 +193,17 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);
-  assert.match(html, /pushButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(\)\);/s);
-  assert.doesNotMatch(html, /postMessageWithLoading\(createRevisionGraphPushCurrentHeadMessage\(\), 'Pushing current branch\.\.\.', pushButton\);/);
+  assert.match(
+    html,
+    /pushButton\.addEventListener\('pointerdown', \(event\) => \{[\s\S]*?schedulePushLongPressMenu\(\);[\s\S]*?pushButton\.addEventListener\('click', \(event\) => \{[\s\S]*?pushCurrentHead\('normal'\);/s
+  );
+  assert.match(html, /pushButton\.addEventListener\('pointerup', cancelPushLongPressMenu\);/);
+  assert.match(html, /pushButton\.addEventListener\('pointercancel', cancelPushLongPressMenu\);/);
+  assert.match(html, /pushButton\.addEventListener\('pointerleave', cancelPushLongPressMenu\);/);
+  assert.match(html, /\{ label: 'Push with Force With Lease', mode: 'force-with-lease' \}/);
+  assert.match(html, /\{ label: 'Push with Force', mode: 'force' \}/);
+  assert.match(html, /pushModeMenu\.style\.top = Math\.max\(8, buttonRect\.bottom \+ 6\) \+ 'px';/);
+  assert.match(html, /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(mode\)\);/s);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
   assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
@@ -372,7 +381,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
-  assert.match(html, /function postPushCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(\)\);/s);
+  assert.match(html, /function createRevisionGraphPushCurrentHeadMessage\(mode\) \{\s*return \{ type: 'push-current-head', mode: mode \};/s);
   assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(createRevisionGraphResetCurrentWorkspaceMessage\(includeUntracked\)\);/s);
   assert.doesNotMatch(html, /canResetCurrentWorkspace/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);

@@ -149,7 +149,7 @@ export class RevisionGraphMessageHandler {
         await this.currentHeadWorkflow.pullCurrentHead();
         return;
       case 'push-current-head':
-        await this.currentHeadWorkflow.pushCurrentHead();
+        await this.currentHeadWorkflow.pushCurrentHead(message.mode);
         return;
       case 'reset-current-workspace':
         await this.refActionWorkflow.resetCurrentWorkspace(message.includeUntracked);

@@ -17,7 +17,11 @@ export interface RevisionGraphCurrentHeadWorkflowHost extends Partial<Repository
 export interface RevisionGraphCurrentHeadWorkflowDependencies {
   syncCurrentHeadWithUpstream?(repository: Repository, services: RefActionServices): Promise<boolean>;
   pullCurrentBranchFromUpstream?(repository: Repository, services: RefActionServices): Promise<boolean>;
-  pushCurrentBranchToUpstream?(repository: Repository, services: RefActionServices): Promise<boolean>;
+  pushCurrentBranchToUpstream?(
+    repository: Repository,
+    services: RefActionServices,
+    mode?: 'normal' | 'force-with-lease' | 'force'
+  ): Promise<boolean>;
 }
 
 export class RevisionGraphCurrentHeadWorkflow {
@@ -55,9 +59,9 @@ export class RevisionGraphCurrentHeadWorkflow {
     );
   }
 
-  async pushCurrentHead(): Promise<void> {
+  async pushCurrentHead(mode: 'normal' | 'force-with-lease' | 'force' = 'normal'): Promise<void> {
     await this.runCurrentHeadAction((repository, services) =>
-      this.pushCurrentBranchToUpstream(repository, services)
+      this.pushCurrentBranchToUpstream(repository, services, mode)
     );
   }
 

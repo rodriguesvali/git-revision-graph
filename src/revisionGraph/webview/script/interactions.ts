@@ -648,10 +648,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       vscode.postMessage(createRevisionGraphPullCurrentHeadMessage());
     }
 
-    function postPushCurrentHead() {
-      vscode.postMessage(createRevisionGraphPushCurrentHeadMessage());
-    }
-
     function getCurrentHeadRemoteActionState() {
       const canUseCurrentHeadRemote =
         currentState &&

@@ -28,7 +28,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 ## Current Features
 
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
-- Toolbar controls for reload, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
+- Toolbar controls for reload, push with long-press force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation

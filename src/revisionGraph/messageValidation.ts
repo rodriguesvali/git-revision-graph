@@ -36,9 +36,12 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'abort-merge':
     case 'sync-current-head':
     case 'pull-current-head':
-    case 'push-current-head':
     case 'stash-save':
       return { type: message.type };
+    case 'push-current-head':
+      return message.mode === 'normal' || message.mode === 'force-with-lease' || message.mode === 'force'
+        ? { type: 'push-current-head', mode: message.mode }
+        : undefined;
     case 'load-trace':
       return isBoundedNonEmptyString(message.phase, 120)
         && isNonNegativeFiniteNumber(message.durationMs)

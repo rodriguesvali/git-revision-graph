@@ -222,7 +222,8 @@ export async function pullCurrentBranchFromUpstream(
 
 export async function pushCurrentBranchToUpstream(
   repository: Repository,
-  services: RefActionServices
+  services: RefActionServices,
+  requestedMode?: CurrentBranchPushMode
 ): Promise<boolean> {
   try {
     const currentBranch = repository.state.HEAD?.name;
@@ -244,7 +245,7 @@ export async function pushCurrentBranchToUpstream(
     }
 
     const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
-    const pushMode = await services.ui.pickCurrentBranchPushMode({
+    const pushMode = requestedMode ?? await services.ui.pickCurrentBranchPushMode({
       branchName: currentBranch,
       upstreamLabel
     });

@@ -128,6 +128,7 @@ test('RevisionGraphCurrentHeadWorkflow does not post current state before awaiti
 
 test('RevisionGraphCurrentHeadWorkflow does not post current state when an action schedules refresh', async () => {
   let postCurrentStateCount = 0;
+  let requestedMode: string | undefined;
   const workflow = new RevisionGraphCurrentHeadWorkflow(
     createHost({
       repository: createRepository('/repo'),
@@ -136,15 +137,17 @@ test('RevisionGraphCurrentHeadWorkflow does not post current state when an actio
       }
     }),
     {
-      async pushCurrentBranchToUpstream() {
+      async pushCurrentBranchToUpstream(_repository, _services, mode) {
+        requestedMode = mode;
         return true;
       }
     }
   );
 
-  await workflow.pushCurrentHead();
+  await workflow.pushCurrentHead('force-with-lease');
 
   assert.equal(postCurrentStateCount, 0);
+  assert.equal(requestedMode, 'force-with-lease');
 });
 
 test('RevisionGraphCurrentHeadWorkflow posts current state when no repository is selected', async () => {

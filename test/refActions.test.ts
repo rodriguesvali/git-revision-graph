@@ -2544,9 +2544,13 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
     root: '/workspace/repo',
     head: createHead('main', 1, 0, { remote: 'origin', name: 'main' })
   });
-  const harness = createServices();
+  const harness = createServices({
+    async pickCurrentBranchPushMode() {
+      throw new Error('The toolbar-selected push mode should bypass the mode picker.');
+    }
+  });
 
-  const didPush = await pushCurrentBranchToUpstream(repository, harness.services);
+  const didPush = await pushCurrentBranchToUpstream(repository, harness.services, 'normal');
 
   assert.equal(didPush, true);
   assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);

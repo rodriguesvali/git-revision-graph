@@ -256,9 +256,11 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'pull-current-head' }
   );
   assert.deepEqual(
-    validateRevisionGraphMessage({ type: 'push-current-head' }),
-    { type: 'push-current-head' }
+    validateRevisionGraphMessage({ type: 'push-current-head', mode: 'force-with-lease' }),
+    { type: 'push-current-head', mode: 'force-with-lease' }
   );
+  assert.equal(validateRevisionGraphMessage({ type: 'push-current-head' }), undefined);
+  assert.equal(validateRevisionGraphMessage({ type: 'push-current-head', mode: 'unsafe' }), undefined);
   assert.deepEqual(
     validateRevisionGraphMessage({
       type: 'load-trace',
@@ -394,19 +396,19 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     true
   );
   assert.equal(
-    isRevisionGraphMessageAllowedForState({ type: 'push-current-head' }, state),
+    isRevisionGraphMessageAllowedForState({ type: 'push-current-head', mode: 'normal' }, state),
     true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'push-current-head' },
+      { type: 'push-current-head', mode: 'force-with-lease' },
       { ...state, currentHeadUpstreamName: undefined }
     ),
     false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'push-current-head' },
+      { type: 'push-current-head', mode: 'force' },
       { ...state, publishedLocalBranchNames: [] }
     ),
     false

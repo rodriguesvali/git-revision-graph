@@ -127,8 +127,8 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'pull-current-head' };
     }
 
-    function createRevisionGraphPushCurrentHeadMessage() {
-      return { type: 'push-current-head' };
+    function createRevisionGraphPushCurrentHeadMessage(mode) {
+      return { type: 'push-current-head', mode: mode };
     }
 
     function createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked) {

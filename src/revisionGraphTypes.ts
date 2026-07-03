@@ -60,7 +60,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'publish-branch'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'sync-current-head' }
   | { readonly type: 'pull-current-head' }
-  | { readonly type: 'push-current-head' }
+  | { readonly type: 'push-current-head'; readonly mode: 'normal' | 'force-with-lease' | 'force' }
   | { readonly type: 'reset-current-workspace'; readonly includeUntracked: boolean }
   | { readonly type: 'stash-save' }
   | { readonly type: 'stash-apply'; readonly refName: string }
