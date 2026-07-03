@@ -1,35 +1,48 @@
 # Release Readiness
 
-Status: Active
+Status: Published
 Last consolidated: 2026-07-03
 
 ## Current State
 
 - Current package version: `1.5.8` in `package.json`.
-- Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.8` development scope is complete; manual Extension Development Host
-  validation and packaging remain pending.
+- Latest recorded published release: `1.5.8`.
+- Release cycle status: `1.5.8` was published by maintainer confirmation on 2026-07-03.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Active Release: 1.5.8
+## Completed Release: 1.5.8
 
-Status: Ready for manual smoke
+Status: Published
 Opened: 2026-07-03
 Development scope closed: 2026-07-03
+Published: 2026-07-03 by maintainer confirmation
 
 Focused build artifact:
 
 - `project-context/2.build/features/1.5.8-blocking-warning-visibility.md`
+- `project-context/2.build/features/1.5.8-dead-code-cleanup.md`
+- `project-context/2.build/features/1.5.8-toolbar-split-buttons.md`
+- `project-context/2.build/features/1.5.8-reset-to-reference.md`
+- `project-context/2.build/features/1.5.8-show-log-hover-contrast.md`
+- `project-context/2.build/features/1.5.8-compare-hover-contrast.md`
+- `project-context/2.build/features/1.5.8-context-menu-item-standardization.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Initial scope:
 
+- Open `1.5.8` from the published `1.5.7` baseline.
 - Replace transient warning toasts with native modal warnings when a user-requested Git mutation is
   aborted by a dirty workspace, merge conflict, missing mutation prerequisite, invalid target, or
   concurrent repository mutation.
 - Preserve existing destructive confirmations, success notifications, benign no-op messages,
   Source Control reveal behavior, and Git mutation guards.
 - Keep the change inside the existing native VS Code UI adapters and scoped workflow modules.
+- Replace the toolbar long-press affordances introduced in `1.5.7` with explicit split buttons for
+  `Push` force modes and empty-cache `Reload`.
+- Expose `Reset to this` from non-HEAD graph references while resetting by the selected commit hash.
+- Improve Show Log and Compare Results row/context-menu hover contrast and standardize webview menu
+  item styling on `context-menu-item`.
+- Remove dead code left behind by earlier graph-surface and workspace-reset changes.
 
 Release constraints and risks:
 
@@ -39,7 +52,10 @@ Release constraints and risks:
   workbench ergonomics.
 - Await modal dismissal where subsequent UI behavior, such as revealing Source Control, depends on
   message ordering.
-- Do not package, publish, or bump beyond `1.5.8` without explicit maintainer approval.
+- Preserve the published `1.5.7` toolbar default behavior while making advanced actions more
+  discoverable through explicit split buttons.
+- Keep reset actions destructive, confirmed, clean-worktree guarded, and commit-hash based.
+- Do not bump beyond `1.5.8` or publish follow-up packages without explicit maintainer approval.
 
 Planned verification:
 
@@ -47,33 +63,39 @@ Planned verification:
 - `npm run build`
 - `npm test`
 - `git diff --check`
-- Manual Extension Development Host smoke for dirty-workspace, conflict, missing-prerequisite, and
-  concurrent-operation rejection flows.
+- Manual Extension Development Host smoke for dirty-workspace, conflict, missing-prerequisite,
+  concurrent-operation rejection, toolbar split-button, reset-to-reference, Show Log hover, and
+  Compare Results hover flows.
 
 Marketplace and rollback notes:
 
 - No new commands, settings, views, activation events, dependencies, or Marketplace contribution
-  points are planned.
-- No packaging or publication action is authorized by opening the release.
-- The UI contract and call-site changes should remain separable so modal behavior can be reverted
-  without changing Git guards or mutation semantics.
+  points are included.
+- Marketplace-facing release notes are prepared in `CHANGELOG.md`; the README now reflects the
+  final split-button, reset-to-reference, modal-warning, and menu-highlight behavior.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+- Keep modal-warning, toolbar split-button, reset-to-reference, and hover/menu styling changes
+  separable so any regression can be reverted as a focused patch.
 
 Recorded verification:
 
 - Version metadata and release artifacts opened on 2026-07-03.
 - `npm run build` passed on 2026-07-03.
-- `npm test` passed with 525 tests on 2026-07-03 after dead-code removal.
+- `npm test` passed with 526 tests on 2026-07-03 after menu-item standardization.
 - `git diff --check` passed on 2026-07-03.
 - Static dependency analysis found the expected extension and layout-worker roots with no import
   cycles; VSIX inspection confirmed internal scripts and `.graphifyignore` are excluded.
-- Manual Extension Development Host smoke and VSIX packaging evidence remain pending.
+- `CHANGELOG.md` and `README.md` publication artifacts were revised on 2026-07-03.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
+- Manual Extension Development Host smoke evidence, VSIX filename, checksum, size, publication
+  timestamp, and clean-profile installation evidence were not supplied.
 
-## Superseded Release Candidate: 1.5.7
+## Completed Release: 1.5.7
 
-Status: Superseded before packaging
+Status: Published
 Opened: 2026-07-03
 Development scope closed: 2026-07-03
-Superseded by: `1.5.8` on 2026-07-03
+Published: 2026-07-03 by maintainer confirmation
 
 Focused build artifact:
 
@@ -86,10 +108,8 @@ Initial scope:
   `1.5.7` cycle.
 - Remove `Reset Workspace to HEAD` and `Reset Workspace and Remove Untracked Files` from the graph
   context menu while preserving commit reset workflows.
-- Make toolbar `Push` perform a normal push on the primary button and expose force-with-lease and
-  force modes from an explicit split-button menu.
-- Expose `Reset to this` from non-HEAD graph references while resetting by the selected commit hash.
-- Improve Show Log and Compare Results row/context-menu hover contrast for dark themes.
+- Make toolbar `Push` perform a normal push on short click and expose force-with-lease and force
+  modes from the 500 ms long-press menu.
 - Replace the ambiguous reset-zoom toolbar glyph with a `1:1` actual-size icon.
 - Preserve existing extension architecture and Marketplace contribution points unless an approved
   improvement explicitly requires a change.
@@ -102,7 +122,7 @@ Release constraints and risks:
   workbench ergonomics.
 - Keep `package.json`, command registrations, menus, views, README, and tests aligned when a
   contribution point changes.
-- Do not package, publish, or bump beyond `1.5.7` without explicit maintainer approval.
+- Do not bump beyond `1.5.7` or publish follow-up packages without explicit maintainer approval.
 
 Planned verification:
 
@@ -114,10 +134,10 @@ Planned verification:
 
 Marketplace and rollback notes:
 
-- Marketplace impact is limited to the three revision graph UX changes listed above; there are no
-  new commands, settings, views, activation events, or dependencies.
-- No packaging or publication action is authorized by opening the release.
-- Keep improvements as small, separable changes so a regression can be reverted before packaging.
+- Marketplace impact is limited to the three recorded revision graph UX changes; there are no new
+  commands, settings, views, activation events, or dependencies.
+- Marketplace publication was confirmed by the maintainer on 2026-07-03.
+- Keep improvements as small, separable rollback candidates for follow-up patches.
 
 Recorded verification:
 
@@ -125,9 +145,9 @@ Recorded verification:
 - `npm test` passed with 528 tests on 2026-07-03.
 - `git diff --check` passed on 2026-07-03.
 - `CHANGELOG.md` release notes were prepared on 2026-07-03.
-- Final Extension Development Host smoke and VSIX packaging evidence remain pending.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-03.
 
-## Last Completed Release
+## Previous Completed Release
 
 `1.5.6` was recorded as completed by maintainer confirmation on 2026-07-01.
 
