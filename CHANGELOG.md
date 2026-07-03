@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.8
+
+### Release Preparation
+
+- Opened the `1.5.8` development cycle to improve the visibility of messages that explain why a
+  requested Git operation was blocked.
+- Version metadata is `1.5.8` in `package.json` and `package-lock.json`.
+- Implementation, automated verification, Extension Development Host validation, VSIX packaging,
+  and Marketplace publication remain pending.
+
+### Planned UX Improvements
+
+- Present operation-blocking precondition warnings as modal messages so conflict, dirty-workspace,
+  missing-current-branch, invalid-target, and concurrent-operation guards cannot disappear as
+  transient toasts.
+- Preserve existing modal destructive confirmations and keep success feedback and benign no-op
+  states non-modal.
+
 ## 1.5.7
 
 ### Release Preparation

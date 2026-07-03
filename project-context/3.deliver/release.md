@@ -5,17 +5,68 @@ Last consolidated: 2026-07-03
 
 ## Current State
 
-- Current package version: `1.5.7` in `package.json`.
+- Current package version: `1.5.8` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.7` development scope is closed and ready for final smoke and
-  packaging; Marketplace publication has not started.
+- Release cycle status: `1.5.8` is open for development; implementation has not started.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Active Release: 1.5.7
+## Active Release: 1.5.8
 
-Status: Ready for packaging
+Status: Open for development
+Opened: 2026-07-03
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.8-blocking-warning-visibility.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Initial scope:
+
+- Replace transient warning toasts with native modal warnings when a user-requested Git mutation is
+  aborted by a dirty workspace, merge conflict, missing mutation prerequisite, invalid target, or
+  concurrent repository mutation.
+- Preserve existing destructive confirmations, success notifications, benign no-op messages,
+  Source Control reveal behavior, and Git mutation guards.
+- Keep the change inside the existing native VS Code UI adapters and scoped workflow modules.
+
+Release constraints and risks:
+
+- Avoid broad modalization: only warnings that explain an aborted user-requested operation are in
+  scope.
+- Preserve multi-repository behavior, empty-state handling, conflict guards, and native VS Code
+  workbench ergonomics.
+- Await modal dismissal where subsequent UI behavior, such as revealing Source Control, depends on
+  message ordering.
+- Do not package, publish, or bump beyond `1.5.8` without explicit maintainer approval.
+
+Planned verification:
+
+- Focused ref-action, workflow, controller, Show Log, and Compare Results tests.
+- `npm run build`
+- `npm test`
+- `git diff --check`
+- Manual Extension Development Host smoke for dirty-workspace, conflict, missing-prerequisite, and
+  concurrent-operation rejection flows.
+
+Marketplace and rollback notes:
+
+- No new commands, settings, views, activation events, dependencies, or Marketplace contribution
+  points are planned.
+- No packaging or publication action is authorized by opening the release.
+- The UI contract and call-site changes should remain separable so modal behavior can be reverted
+  without changing Git guards or mutation semantics.
+
+Recorded verification:
+
+- Version metadata and release artifacts opened on 2026-07-03.
+- Implementation and verification remain pending.
+
+## Superseded Release Candidate: 1.5.7
+
+Status: Superseded before packaging
 Opened: 2026-07-03
 Development scope closed: 2026-07-03
+Superseded by: `1.5.8` on 2026-07-03
 
 Focused build artifact:
 
