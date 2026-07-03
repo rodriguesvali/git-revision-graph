@@ -96,6 +96,37 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
         : undefined;
+    case 'reset-to-commit': {
+      if (
+        !isBoundedNonEmptyString(message.commitHash) ||
+        !isBoundedString(message.label) ||
+        !isRevisionGraphTargetKind(message.targetKind)
+      ) {
+        return undefined;
+      }
+
+      if (message.targetKind === 'commit') {
+        return message.targetName === undefined || isBoundedString(message.targetName)
+          ? {
+            type: 'reset-to-commit',
+            commitHash: message.commitHash,
+            label: message.label,
+            targetKind: message.targetKind,
+            targetName: undefined
+          }
+          : undefined;
+      }
+
+      return isBoundedNonEmptyString(message.targetName)
+        ? {
+          type: 'reset-to-commit',
+          commitHash: message.commitHash,
+          label: message.label,
+          targetKind: message.targetKind,
+          targetName: message.targetName
+        }
+        : undefined;
+    }
     case 'create-branch':
     case 'create-tag':
       return isBoundedNonEmptyString(message.revision)

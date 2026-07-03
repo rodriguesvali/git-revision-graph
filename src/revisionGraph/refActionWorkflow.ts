@@ -9,6 +9,7 @@ import {
   deleteResolvedReference,
   mergeResolvedReference,
   publishLocalBranchResolvedReference,
+  resetCurrentBranchToCommit,
   RefActionKind,
   RefActionServices,
   saveCurrentWorkspaceToStash,
@@ -47,6 +48,12 @@ export interface RevisionGraphRefActionWorkflowDependencies {
   checkoutResolvedReference?(
     repository: Repository,
     target: RefActionTarget,
+    services: RefActionServices
+  ): Promise<unknown>;
+  resetCurrentBranchToCommit?(
+    repository: Repository,
+    commitHash: string,
+    commitLabel: string,
     services: RefActionServices
   ): Promise<unknown>;
   createBranchFromResolvedReference?(
@@ -108,6 +115,9 @@ export class RevisionGraphRefActionWorkflow {
   private readonly checkoutResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['checkoutResolvedReference']
   >;
+  private readonly resetCurrentBranchToCommit: NonNullable<
+    RevisionGraphRefActionWorkflowDependencies['resetCurrentBranchToCommit']
+  >;
   private readonly createBranchFromResolvedReference: NonNullable<
     RevisionGraphRefActionWorkflowDependencies['createBranchFromResolvedReference']
   >;
@@ -145,6 +155,7 @@ export class RevisionGraphRefActionWorkflow {
     this.compareResolvedRefWithWorktree =
       dependencies.compareResolvedRefWithWorktree ?? compareResolvedRefWithWorktree;
     this.checkoutResolvedReference = dependencies.checkoutResolvedReference ?? checkoutResolvedReference;
+    this.resetCurrentBranchToCommit = dependencies.resetCurrentBranchToCommit ?? resetCurrentBranchToCommit;
     this.createBranchFromResolvedReference =
       dependencies.createBranchFromResolvedReference ?? createBranchFromResolvedReference;
     this.createTagFromResolvedReference =
@@ -202,6 +213,12 @@ export class RevisionGraphRefActionWorkflow {
         { refName, label: refName, kind: refKind },
         services
       )
+    );
+  }
+
+  async resetToCommit(commitHash: string, commitLabel: string): Promise<void> {
+    await this.runMutationWithCurrentRepository((repository, services) =>
+      this.resetCurrentBranchToCommit(repository, commitHash, commitLabel, services)
     );
   }
 

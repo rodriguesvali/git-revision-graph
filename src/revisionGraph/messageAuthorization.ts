@@ -54,6 +54,8 @@ export function isRevisionGraphMessageAllowedForState(
     case 'checkout':
     case 'delete':
       return isRevisionGraphRefKind(message.refKind) && hasKnownReference(state, message.refName, message.refKind);
+    case 'reset-to-commit':
+      return isResetToCommitTargetAllowed(state, message);
     case 'create-branch':
     case 'create-tag':
       return message.refKind === 'commit'
@@ -112,6 +114,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'copy-commit-hash':
     case 'copy-ref-name':
     case 'checkout':
+    case 'reset-to-commit':
     case 'create-branch':
     case 'create-tag':
     case 'resolve-remote-tag-state':
@@ -152,6 +155,44 @@ function hasKnownReference(
   refKind: RevisionGraphRef['kind']
 ): boolean {
   return state.viewMode === 'ready' && state.references.some((ref) => ref.name === refName && ref.kind === refKind);
+}
+
+function isResetToCommitTargetAllowed(
+  state: RevisionGraphViewState,
+  message: Extract<RevisionGraphMessage, { readonly type: 'reset-to-commit' }>
+): boolean {
+  if (state.viewMode !== 'ready' || message.targetKind === 'head' || message.targetKind === 'stash') {
+    return false;
+  }
+
+  if (!hasKnownCommitHash(state, message.commitHash)) {
+    return false;
+  }
+
+  if (message.targetKind === 'commit') {
+    return true;
+  }
+
+  if (!message.targetName) {
+    return false;
+  }
+
+  if (message.targetKind === 'branch' && message.targetName === state.currentHeadName) {
+    return false;
+  }
+
+  return hasKnownReferenceAtCommit(state, message.targetName, message.targetKind, message.commitHash);
+}
+
+function hasKnownReferenceAtCommit(
+  state: RevisionGraphViewState,
+  refName: string,
+  refKind: RevisionGraphRef['kind'],
+  commitHash: string
+): boolean {
+  return state.viewMode === 'ready' && state.references.some((ref) =>
+    ref.name === refName && ref.kind === refKind && ref.hash === commitHash
+  );
 }
 
 function isRevisionGraphRefKind(value: unknown): value is RevisionGraphRef['kind'] {

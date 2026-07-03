@@ -88,6 +88,7 @@ Initial scope:
   context menu while preserving commit reset workflows.
 - Make toolbar `Push` perform a normal push on the primary button and expose force-with-lease and
   force modes from an explicit split-button menu.
+- Expose `Reset to this` from non-HEAD graph references while resetting by the selected commit hash.
 - Replace the ambiguous reset-zoom toolbar glyph with a `1:1` actual-size icon.
 - Preserve existing extension architecture and Marketplace contribution points unless an approved
   improvement explicitly requires a change.

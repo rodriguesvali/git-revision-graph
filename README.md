@@ -33,6 +33,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Logs` a
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
 - Virtualized graph rendering for large revision graphs, with only the visible node and edge window rendered into the webview DOM during navigation
 - Compare between two selected references or visible unreferenced commits, including changed files, unified diff, and revision log actions
+- Reset the current branch to a selected non-HEAD graph reference or visible commit, using the target commit hash after confirmation
 - Focus the graph on a selected `base..compare` range from the two-reference context menu, with a removable range filter in the graph toolbar
 - Focus the graph on one visible revision and all loaded descendants from its single-revision context menu, excluding older and unrelated history through Git ancestry rather than visual position
 - Compare a selected reference or unreferenced commit against the current worktree

@@ -307,6 +307,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         target.kind === 'head' &&
         isWorkspaceDirty &&
         !hasMergeConflicts;
+      const canResetToTarget =
+        target.kind !== 'head' &&
+        target.kind !== 'stash' &&
+        !(target.kind === 'branch' && !!currentHeadName && target.name === currentHeadName);
       const hasComparisonSelection =
         selected.length === 2 &&
         base &&
@@ -342,6 +346,10 @@ export function renderRevisionGraphScriptInteractions(): string {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
         }
+        if (canResetToTarget) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
+        }
         if (canStashCurrentWorkspace) {
           appendMenuSection('Stash');
           appendMenuItem('Stash Save', () => postStashSave());
@@ -371,6 +379,10 @@ export function renderRevisionGraphScriptInteractions(): string {
         if (canAbortConflictedMerge) {
           appendMenuSection('Destructive');
           appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
+        }
+        if (canResetToTarget) {
+          appendMenuSection('Destructive');
+          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
         }
         if (canStashCurrentWorkspace) {
           appendMenuSection('Stash');
@@ -638,6 +650,10 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function postCheckout(target) {
       vscode.postMessage(createRevisionGraphCheckoutMessage(target));
+    }
+
+    function postResetToCommit(target) {
+      vscode.postMessage(createRevisionGraphResetToCommitMessage(target));
     }
 
     function postSyncCurrentHead() {

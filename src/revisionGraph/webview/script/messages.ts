@@ -119,6 +119,19 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'checkout', refName: target.name, refKind: target.kind };
     }
 
+    function createRevisionGraphResetToCommitMessage(target) {
+      const message = {
+        type: 'reset-to-commit',
+        commitHash: target.hash,
+        label: target.label,
+        targetKind: target.kind
+      };
+      if (target.kind !== 'commit') {
+        message.targetName = target.name;
+      }
+      return message;
+    }
+
     function createRevisionGraphSyncCurrentHeadMessage() {
       return { type: 'sync-current-head' };
     }

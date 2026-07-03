@@ -51,6 +51,31 @@ test('RevisionGraphRefActionWorkflow skips reference actions without a current r
   assert.equal(checkoutCount, 0);
 });
 
+test('RevisionGraphRefActionWorkflow resets the current branch to a graph commit hash', async () => {
+  const repository = createRepository('/repo');
+  const resets: Array<{ readonly repositoryPath: string; readonly commitHash: string; readonly commitLabel: string }> = [];
+  const workflow = new RevisionGraphRefActionWorkflow(
+    createHost({ repository }),
+    {
+      async resetCurrentBranchToCommit(currentRepository, commitHash, commitLabel) {
+        resets.push({
+          repositoryPath: currentRepository.rootUri.fsPath,
+          commitHash,
+          commitLabel
+        });
+      }
+    }
+  );
+
+  await workflow.resetToCommit('abc123', 'v1.0.0');
+
+  assert.deepEqual(resets, [{
+    repositoryPath: '/repo',
+    commitHash: 'abc123',
+    commitLabel: 'v1.0.0'
+  }]);
+});
+
 test('RevisionGraphRefActionWorkflow posts current state before awaiting a modal error', async () => {
   const repository = createRepository('/repo');
   const events: string[] = [];

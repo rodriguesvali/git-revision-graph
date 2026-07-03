@@ -394,6 +394,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCopyRefNameMessage\(target\)\);/s);
   assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy Ref Name', \(\) => postCopyRefName\(target\)\);/s);
   assert.doesNotMatch(html, /Copy ref name to clipboard/);
+  assert.match(html, /function createRevisionGraphResetToCommitMessage\(target\)/);
+  assert.match(html, /type: 'reset-to-commit',\s*commitHash: target\.hash,\s*label: target\.label,\s*targetKind: target\.kind/s);
+  assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*message\.targetName = target\.name;\s*\}/s);
   assert.match(html, /function createRevisionGraphCreateBranchMessage\(target\)/);
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCreateTagMessage\(target\)\);/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
@@ -407,6 +410,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function createRevisionGraphPushCurrentHeadMessage\(mode\) \{\s*return \{ type: 'push-current-head', mode: mode \};/s);
+  assert.match(html, /const canResetToTarget =\s*target\.kind !== 'head' &&\s*target\.kind !== 'stash' &&\s*!\(target\.kind === 'branch' && !!currentHeadName && target\.name === currentHeadName\);/s);
+  assert.match(html, /appendMenuItem\('Reset to this', \(\) => postResetToCommit\(target\), \{ destructive: true \}\);/);
+  assert.match(html, /function postResetToCommit\(target\) \{\s*vscode\.postMessage\(createRevisionGraphResetToCommitMessage\(target\)\);/s);
   assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(createRevisionGraphResetCurrentWorkspaceMessage\(includeUntracked\)\);/s);
   assert.doesNotMatch(html, /canResetCurrentWorkspace/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);

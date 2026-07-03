@@ -112,6 +112,9 @@ export class RevisionGraphMessageHandler {
       case 'checkout':
         await this.refActionWorkflow.checkout(message.refName, message.refKind as RefActionKind);
         return;
+      case 'reset-to-commit':
+        await this.refActionWorkflow.resetToCommit(message.commitHash, message.label);
+        return;
       case 'create-branch':
         await this.refActionWorkflow.createBranch(
           message.revision,

@@ -43,6 +43,13 @@ export type RevisionGraphMessage =
   | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | {
+    readonly type: 'reset-to-commit';
+    readonly commitHash: string;
+    readonly label: string;
+    readonly targetKind: RevisionGraphRef['kind'] | 'commit';
+    readonly targetName?: string;
+  }
+  | {
     readonly type: 'create-branch';
     readonly revision: string;
     readonly label: string;

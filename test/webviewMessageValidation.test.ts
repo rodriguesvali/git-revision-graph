@@ -33,6 +33,14 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'reset-to-commit', commitHash: 'tag1', label: 'v1.0.0', targetKind: 'evil', targetName: 'v1.0.0' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'reset-to-commit', commitHash: 'tag1', label: 'v1.0.0', targetKind: 'tag' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'load-trace', phase: '', durationMs: 1 }),
     undefined
   );
@@ -232,6 +240,37 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'reset-to-commit',
+      commitHash: 'tag1',
+      label: 'v1.0.0',
+      targetKind: 'tag',
+      targetName: 'v1.0.0'
+    }),
+    {
+      type: 'reset-to-commit',
+      commitHash: 'tag1',
+      label: 'v1.0.0',
+      targetKind: 'tag',
+      targetName: 'v1.0.0'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'reset-to-commit',
+      commitHash: 'structural1',
+      label: 'structural1',
+      targetKind: 'commit'
+    }),
+    {
+      type: 'reset-to-commit',
+      commitHash: 'structural1',
+      label: 'structural1',
+      targetKind: 'commit',
+      targetName: undefined
+    }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'stash-save' }),
     { type: 'stash-save' }
   );
@@ -314,6 +353,89 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-ref-name', refName: 'missing', refKind: 'branch' },
       state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'tag1',
+        label: 'v1.0.0',
+        targetKind: 'tag',
+        targetName: 'v1.0.0'
+      },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'structural1',
+        label: 'structural1',
+        targetKind: 'commit'
+      },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'head1',
+        label: 'main',
+        targetKind: 'head',
+        targetName: 'main'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'tag1',
+        label: 'v1.0.0',
+        targetKind: 'tag',
+        targetName: 'missing'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'stash1',
+        label: 'stash',
+        targetKind: 'stash',
+        targetName: 'stash'
+      },
+      state
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'reset-to-commit',
+        commitHash: 'head1',
+        label: 'main',
+        targetKind: 'branch',
+        targetName: 'main'
+      },
+      {
+        ...state,
+        references: [
+          ...state.references,
+          { id: 'head1::branch::main', hash: 'head1', name: 'main', kind: 'branch', title: 'main' }
+        ]
+      }
     ),
     false
   );
