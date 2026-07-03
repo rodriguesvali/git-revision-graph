@@ -20,6 +20,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from './repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
 
 const GIT_EXTENSION_CONFIG_SECTION = 'git';
 const GIT_PATH_CONFIG_KEY = 'path';
@@ -159,9 +160,7 @@ function createCommandServices(
         action
       );
       if (outcome.status === 'rejected') {
-        void vscode.window.showWarningMessage(
-          'Another Git operation is already running for this repository.'
-        );
+        await showConcurrentRepositoryMutationWarning(vscode.window);
         return undefined;
       }
       return outcome.value;

@@ -17,12 +17,18 @@ export async function resetCurrentBranchWorkspace(
   try {
     const currentBranch = repository.state.HEAD?.name;
     if (!currentBranch) {
-      services.ui.showWarningMessage('A local current branch is required before resetting the workspace.');
+      await services.ui.showWarningMessage(
+        'A local current branch is required before resetting the workspace.',
+        { modal: true }
+      );
       return;
     }
 
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Abort or resolve the current conflicted merge before resetting the workspace.');
+      await services.ui.showWarningMessage(
+        'Abort or resolve the current conflicted merge before resetting the workspace.',
+        { modal: true }
+      );
       return;
     }
 
@@ -63,7 +69,10 @@ export async function resetCurrentBranchToCommit(
   try {
     const currentBranch = repository.state.HEAD?.name;
     if (!currentBranch) {
-      services.ui.showWarningMessage('A local current branch is required before resetting to a commit.');
+      await services.ui.showWarningMessage(
+        'A local current branch is required before resetting to a commit.',
+        { modal: true }
+      );
       return false;
     }
 

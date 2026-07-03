@@ -14,7 +14,10 @@ export async function saveCurrentWorkspaceToStash(
 ): Promise<boolean> {
   try {
     if (hasMergeConflicts(repository)) {
-      services.ui.showWarningMessage('Resolve the current conflicts in Source Control before saving workspace changes to a stash.');
+      await services.ui.showWarningMessage(
+        'Resolve the current conflicts in Source Control before saving workspace changes to a stash.',
+        { modal: true }
+      );
       await services.ui.showSourceControl();
       return false;
     }
@@ -102,7 +105,10 @@ async function runStashMutation(
 ): Promise<boolean> {
   try {
     if (target.kind !== 'stash') {
-      services.ui.showWarningMessage('Select a stash reference before running this action.');
+      await services.ui.showWarningMessage(
+        'Select a stash reference before running this action.',
+        { modal: true }
+      );
       return false;
     }
 

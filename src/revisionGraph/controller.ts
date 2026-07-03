@@ -64,6 +64,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -284,9 +285,7 @@ export class RevisionGraphController implements vscode.Disposable {
           action
         );
         if (outcome.status === 'rejected') {
-          void vscode.window.showWarningMessage(
-            'Another Git operation is already running for this repository.'
-          );
+          await showConcurrentRepositoryMutationWarning(vscode.window);
           return undefined;
         }
 
@@ -552,9 +551,7 @@ export class RevisionGraphController implements vscode.Disposable {
       )
     );
     if (outcome.status === 'rejected') {
-      void vscode.window.showWarningMessage(
-        'Another Git operation is already running for this repository.'
-      );
+      await showConcurrentRepositoryMutationWarning(vscode.window);
     }
   }
 

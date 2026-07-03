@@ -44,6 +44,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly services: RefActionServices;
   readonly infoMessages: string[];
   readonly warningMessages: string[];
+  readonly warningMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }>;
   readonly errorMessages: string[];
   readonly errorMessageRequests: Array<{
     readonly message: string;
@@ -82,6 +86,10 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
 } {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
+  const warningMessageRequests: Array<{
+    readonly message: string;
+    readonly options: RefActionMessageOptions | undefined;
+  }> = [];
   const errorMessages: string[] = [];
   const errorMessageRequests: Array<{
     readonly message: string;
@@ -148,8 +156,9 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       showInformationMessage(message) {
         infoMessages.push(message);
       },
-      showWarningMessage(message) {
+      showWarningMessage(message, options) {
         warningMessages.push(message);
+        warningMessageRequests.push({ message, options });
       },
       async showErrorMessage(message, options) {
         errorMessages.push(message);
@@ -277,6 +286,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     services,
     infoMessages,
     warningMessages,
+    warningMessageRequests,
     errorMessages,
     errorMessageRequests,
     get sourceControlOpens() {
@@ -586,6 +596,7 @@ test('checkoutResolvedReference blocks workspace-changing operations while confl
 
   assert.deepEqual(repository.calls.checkout, []);
   assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before checking out another reference.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
   assert.equal(harness.sourceControlOpens, 1);
 });
 
@@ -1203,6 +1214,7 @@ test('createTagFromResolvedReference blocks tag creation while conflicts are unr
 
   assert.deepEqual(harness.createdTags, []);
   assert.equal(harness.warningMessages[0], 'Resolve the current conflicts in Source Control before creating a new tag.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
   assert.equal(harness.sourceControlOpens, 1);
 });
 
@@ -2537,6 +2549,7 @@ test('resetCurrentBranchToCommit requires a clean workspace', async () => {
   assert.deepEqual(harness.resetCurrentBranchRefs, []);
   assert.deepEqual(harness.confirmRequests, []);
   assert.equal(harness.warningMessages[0], 'The workspace must be clean before resetting main to abc123. Review, stash, or commit the current changes first.');
+  assert.deepEqual(harness.warningMessageRequests[0]?.options, { modal: true });
 });
 
 test('pushCurrentBranchToUpstream pushes the current branch to its upstream', async () => {

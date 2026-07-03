@@ -9,16 +9,19 @@ All notable changes to this project will be documented in this file.
 - Opened the `1.5.8` development cycle to improve the visibility of messages that explain why a
   requested Git operation was blocked.
 - Version metadata is `1.5.8` in `package.json` and `package-lock.json`.
-- Implementation, automated verification, Extension Development Host validation, VSIX packaging,
-  and Marketplace publication remain pending.
+- Automated verification passed with `npm run build`, 529 tests through `npm test`, and
+  `git diff --check`; Extension Development Host validation, VSIX packaging, and Marketplace
+  publication remain pending.
 
-### Planned UX Improvements
+### UX Improvements
 
 - Present operation-blocking precondition warnings as modal messages so conflict, dirty-workspace,
   missing-current-branch, invalid-target, and concurrent-operation guards cannot disappear as
   transient toasts.
 - Preserve existing modal destructive confirmations and keep success feedback and benign no-op
   states non-modal.
+- Centralized the concurrent-repository-operation warning so the revision graph, Show Log, Compare
+  Results, and command entrypoints consistently present and await the same modal message.
 
 ## 1.5.7
 

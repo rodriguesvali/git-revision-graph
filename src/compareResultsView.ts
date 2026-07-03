@@ -45,6 +45,7 @@ import {
   createMutationGuardedRepository,
   RepositoryMutationCoordinator
 } from './repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
 
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 
@@ -183,9 +184,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       )
     );
     if (outcome.status === 'rejected') {
-      void vscode.window.showWarningMessage(
-        'Another Git operation is already running for this repository.'
-      );
+      await showConcurrentRepositoryMutationWarning(vscode.window);
       return false;
     }
     return outcome.value;

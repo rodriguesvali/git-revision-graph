@@ -7,13 +7,15 @@ Last consolidated: 2026-07-03
 
 - Current package version: `1.5.8` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.8` is open for development; implementation has not started.
+- Release cycle status: `1.5.8` development scope is complete; manual Extension Development Host
+  validation and packaging remain pending.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
 ## Active Release: 1.5.8
 
-Status: Open for development
+Status: Ready for manual smoke
 Opened: 2026-07-03
+Development scope closed: 2026-07-03
 
 Focused build artifact:
 
@@ -59,7 +61,10 @@ Marketplace and rollback notes:
 Recorded verification:
 
 - Version metadata and release artifacts opened on 2026-07-03.
-- Implementation and verification remain pending.
+- `npm run build` passed on 2026-07-03.
+- `npm test` passed with 529 tests on 2026-07-03.
+- `git diff --check` passed on 2026-07-03.
+- Manual Extension Development Host smoke and VSIX packaging evidence remain pending.
 
 ## Superseded Release Candidate: 1.5.7
 
