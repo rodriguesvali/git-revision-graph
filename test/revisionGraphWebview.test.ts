@@ -72,6 +72,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /<div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">[\s\S]*?id="zoomOutButton"[\s\S]*?id="zoomResetButton"[\s\S]*?id="zoomInButton"/);
   assert.match(html, /id="zoomOutButton"[\s\S]*?data-icon="minus"/);
   assert.match(html, /id="zoomResetButton"[\s\S]*?data-icon="reset"/);
+  assert.match(html, /data-icon="reset"[\s\S]*?<path d="M3\.2 5\.4 4\.8 4v8"><\/path>[\s\S]*?<circle cx="7\.8" cy="6\.2" r="0\.45"><\/circle>[\s\S]*?<circle cx="7\.8" cy="9\.8" r="0\.45"><\/circle>[\s\S]*?<path d="M10\.2 5\.4 11\.8 4v8"><\/path>/);
+  assert.doesNotMatch(html, /data-icon="reset"[\s\S]*?<circle cx="8" cy="8" r="4\.8"><\/circle>/);
   assert.match(html, /id="zoomInButton"[\s\S]*?data-icon="plus"/);
   assert.match(html, /id="graphSvg"/);
   assert.match(html, /id="edgeLayer"/);
