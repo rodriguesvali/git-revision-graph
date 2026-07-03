@@ -93,16 +93,6 @@ interface ReusableRevisionGraphSnapshot {
   readonly snapshotOptions: RevisionGraphProjectionOptions;
 }
 
-function createWebviewViewSurface(view: vscode.WebviewView): RevisionGraphWebviewSurface {
-  return {
-    webview: view.webview,
-    onDidDispose: (listener) => view.onDidDispose(listener),
-    setTitle: (title) => {
-      view.title = title;
-    }
-  };
-}
-
 function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWebviewSurface {
   return {
     webview: panel.webview,
@@ -312,10 +302,6 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repositoryLifecycle.dispose();
   }
 
-  async resolveWebviewView(view: vscode.WebviewView): Promise<void> {
-    await this.resolveWebviewSurface(createWebviewViewSurface(view));
-  }
-
   async resolveWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
     await this.resolveWebviewSurface(createWebviewPanelSurface(panel));
   }
@@ -388,20 +374,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     await this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
-  }
-
-  async chooseRepository(): Promise<void> {
-    const pickedRepository = await pickRevisionGraphRepository(this.git, true);
-    if (!pickedRepository) {
-      return;
-    }
-
-    this.repositoryLifecycle.setCurrentRepository(pickedRepository);
-    await this.open();
-  }
-
-  async fetchCurrentRepository(): Promise<void> {
-    await this.runFetchCurrentRepository();
   }
 
   async refresh(requestLike: RevisionGraphRefreshRequestLike = 'full-rebuild'): Promise<void> {
