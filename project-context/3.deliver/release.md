@@ -1,15 +1,56 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-07-01
+Last consolidated: 2026-07-03
 
 ## Current State
 
-- Current package version: `1.5.6` in `package.json`.
+- Current package version: `1.5.7` in `package.json`.
 - Latest recorded published release: `1.5.6`.
-- Release cycle status: `1.5.6` packaging and Marketplace publication were confirmed complete by
-  the maintainer on 2026-07-01.
+- Release cycle status: `1.5.7` is open for small, scoped improvements; packaging and Marketplace
+  publication have not started.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Active Release: 1.5.7
+
+Status: Open
+Opened: 2026-07-03
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.7-small-improvements.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Initial scope:
+
+- Deliver small, independently reviewable improvements agreed with the maintainer during the
+  `1.5.7` cycle.
+- Preserve existing extension architecture and Marketplace contribution points unless an approved
+  improvement explicitly requires a change.
+
+Release constraints and risks:
+
+- Keep each improvement scoped with explicit acceptance criteria and regression coverage where
+  behavior changes.
+- Preserve multi-repository behavior, empty-state handling, conflict guards, and native VS Code
+  workbench ergonomics.
+- Keep `package.json`, command registrations, menus, views, README, and tests aligned when a
+  contribution point changes.
+- Do not package, publish, or bump beyond `1.5.7` without explicit maintainer approval.
+
+Planned verification:
+
+- `npm run build`
+- `npm test` for behavior, graph, controller, command, webview, or Git workflow changes.
+- `git diff --check`
+- Manual Extension Development Host smoke using
+  `project-context/3.deliver/extension-host-smoke-matrix.md` for affected user-facing workflows.
+
+Marketplace and rollback notes:
+
+- Marketplace impact is not yet determined; record user-visible changes as scope is approved.
+- No packaging or publication action is authorized by opening the release.
+- Keep improvements as small, separable changes so a regression can be reverted before packaging.
 
 ## Last Completed Release
 
