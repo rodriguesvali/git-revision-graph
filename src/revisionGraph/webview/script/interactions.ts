@@ -755,6 +755,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (reloadButton) {
         reloadButton.disabled = toolbarBusy;
       }
+      if (reloadMenuButton) {
+        reloadMenuButton.disabled = toolbarBusy;
+      }
       if (fetchAllButton) {
         fetchAllButton.disabled = toolbarBusy || !hasRepository;
       }
@@ -767,6 +770,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         pushButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
         pushButton.title = 'Push to ' + remoteActionState.upstreamLabel;
         pushButton.setAttribute('aria-label', pushButton.title);
+      }
+      if (pushMenuButton) {
+        pushMenuButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
+        pushMenuButton.title = 'More push options for ' + remoteActionState.upstreamLabel;
+        pushMenuButton.setAttribute('aria-label', pushMenuButton.title);
       }
       if (syncButton) {
         syncButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
@@ -833,9 +841,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         rangeFilterClearButton,
         descendantFilterClearButton,
         reloadButton,
+        reloadMenuButton,
         fetchAllButton,
         pullButton,
         pushButton,
+        pushMenuButton,
         syncButton,
         centerHeadButton,
         zoomOutButton,

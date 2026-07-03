@@ -32,9 +32,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingMessage = document.getElementById('loadingMessage');
     const reloadButton = document.getElementById('reloadButton');
+    const reloadMenuButton = document.getElementById('reloadMenuButton');
     const fetchAllButton = document.getElementById('fetchAllButton');
     const pullButton = document.getElementById('pullButton');
     const pushButton = document.getElementById('pushButton');
+    const pushMenuButton = document.getElementById('pushMenuButton');
     const syncButton = document.getElementById('syncButton');
     const scopeSelect = document.getElementById('scopeSelect');
     const viewOptionsButton = document.getElementById('viewOptionsButton');
@@ -125,12 +127,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     let lastVirtualSceneKey = '';
     let virtualNodeIndex = new Map();
     let virtualEdgeIndex = new Map();
-    const TOOLBAR_LONG_PRESS_DELAY_MS = 500;
-    let reloadLongPressTimer = 0;
-    let suppressNextReloadClick = false;
     let reloadCacheMenu = null;
-    let pushLongPressTimer = 0;
-    let suppressNextPushClick = false;
     let pushModeMenu = null;
 
     window.addEventListener('message', (event) => {
@@ -139,22 +136,18 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     vscode.postMessage(createRevisionGraphWebviewReadyMessage());
 
     if (reloadButton) {
-      reloadButton.addEventListener('pointerdown', (event) => {
-        if (reloadButton.disabled || (event.button !== undefined && event.button !== 0)) {
-          return;
-        }
-        scheduleReloadLongPressMenu();
-      });
-      reloadButton.addEventListener('pointerup', cancelReloadLongPressMenu);
-      reloadButton.addEventListener('pointercancel', cancelReloadLongPressMenu);
-      reloadButton.addEventListener('pointerleave', cancelReloadLongPressMenu);
-      reloadButton.addEventListener('click', (event) => {
-        if (suppressNextReloadClick) {
-          suppressNextReloadClick = false;
-          event.preventDefault();
-          return;
-        }
+      reloadButton.addEventListener('click', () => {
         reloadRevisionGraph();
+      });
+    }
+    if (reloadMenuButton) {
+      reloadMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (reloadCacheMenu && !reloadCacheMenu.hidden) {
+          closeReloadCacheMenu();
+        } else {
+          showReloadCacheMenu();
+        }
       });
     }
     if (fetchAllButton) {
@@ -168,22 +161,18 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       });
     }
     if (pushButton) {
-      pushButton.addEventListener('pointerdown', (event) => {
-        if (pushButton.disabled || (event.button !== undefined && event.button !== 0)) {
-          return;
-        }
-        schedulePushLongPressMenu();
-      });
-      pushButton.addEventListener('pointerup', cancelPushLongPressMenu);
-      pushButton.addEventListener('pointercancel', cancelPushLongPressMenu);
-      pushButton.addEventListener('pointerleave', cancelPushLongPressMenu);
-      pushButton.addEventListener('click', (event) => {
-        if (suppressNextPushClick) {
-          suppressNextPushClick = false;
-          event.preventDefault();
-          return;
-        }
+      pushButton.addEventListener('click', () => {
         pushCurrentHead('normal');
+      });
+    }
+    if (pushMenuButton) {
+      pushMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (pushModeMenu && !pushModeMenu.hidden) {
+          closePushModeMenu();
+        } else {
+          showPushModeMenu();
+        }
       });
     }
     if (syncButton) {
@@ -426,7 +415,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         reloadCacheMenu &&
         !reloadCacheMenu.hidden &&
         !reloadCacheMenu.contains(event.target) &&
-        !(reloadButton && reloadButton.contains(event.target))
+        !(reloadButton && reloadButton.contains(event.target)) &&
+        !(reloadMenuButton && reloadMenuButton.contains(event.target))
       ) {
         closeReloadCacheMenu();
       }
@@ -434,7 +424,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         pushModeMenu &&
         !pushModeMenu.hidden &&
         !pushModeMenu.contains(event.target) &&
-        !(pushButton && pushButton.contains(event.target))
+        !(pushButton && pushButton.contains(event.target)) &&
+        !(pushMenuButton && pushMenuButton.contains(event.target))
       ) {
         closePushModeMenu();
       }
@@ -525,28 +516,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       );
     }
 
-    function scheduleReloadLongPressMenu() {
-      cancelReloadLongPressMenu();
-      reloadLongPressTimer = window.setTimeout(() => {
-        reloadLongPressTimer = 0;
-        suppressNextReloadClick = true;
-        showReloadCacheMenu();
-      }, TOOLBAR_LONG_PRESS_DELAY_MS);
-    }
-
-    function cancelReloadLongPressMenu() {
-      if (reloadLongPressTimer) {
-        window.clearTimeout(reloadLongPressTimer);
-        reloadLongPressTimer = 0;
-      }
-    }
-
     function showReloadCacheMenu() {
-      if (!reloadButton) {
+      if (!reloadMenuButton || reloadMenuButton.disabled) {
         return;
       }
+      closePushModeMenu();
       if (!reloadCacheMenu) {
         reloadCacheMenu = document.createElement('div');
+        reloadCacheMenu.id = 'reloadCacheMenu';
         reloadCacheMenu.className = 'reload-cache-menu';
         reloadCacheMenu.hidden = true;
         reloadCacheMenu.setAttribute('role', 'menu');
@@ -564,7 +541,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       reloadCacheMenu.hidden = false;
-      const buttonRect = reloadButton.getBoundingClientRect();
+      reloadMenuButton.setAttribute('aria-expanded', 'true');
+      const buttonRect = reloadMenuButton.getBoundingClientRect();
       const menuRect = reloadCacheMenu.getBoundingClientRect();
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const leftLimit = Math.max(8, viewportWidth - menuRect.width - 8);
@@ -578,11 +556,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function closeReloadCacheMenu() {
-      cancelReloadLongPressMenu();
       if (reloadCacheMenu) {
         reloadCacheMenu.hidden = true;
       }
-      suppressNextReloadClick = false;
+      if (reloadMenuButton) {
+        reloadMenuButton.setAttribute('aria-expanded', 'false');
+      }
     }
 
     function pushCurrentHead(mode) {
@@ -590,28 +569,14 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       vscode.postMessage(createRevisionGraphPushCurrentHeadMessage(mode));
     }
 
-    function schedulePushLongPressMenu() {
-      cancelPushLongPressMenu();
-      pushLongPressTimer = window.setTimeout(() => {
-        pushLongPressTimer = 0;
-        suppressNextPushClick = true;
-        showPushModeMenu();
-      }, TOOLBAR_LONG_PRESS_DELAY_MS);
-    }
-
-    function cancelPushLongPressMenu() {
-      if (pushLongPressTimer) {
-        window.clearTimeout(pushLongPressTimer);
-        pushLongPressTimer = 0;
-      }
-    }
-
     function showPushModeMenu() {
-      if (!pushButton) {
+      if (!pushMenuButton || pushMenuButton.disabled) {
         return;
       }
+      closeReloadCacheMenu();
       if (!pushModeMenu) {
         pushModeMenu = document.createElement('div');
+        pushModeMenu.id = 'pushModeMenu';
         pushModeMenu.className = 'reload-cache-menu push-mode-menu';
         pushModeMenu.hidden = true;
         pushModeMenu.setAttribute('role', 'menu');
@@ -635,7 +600,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       pushModeMenu.hidden = false;
-      const buttonRect = pushButton.getBoundingClientRect();
+      pushMenuButton.setAttribute('aria-expanded', 'true');
+      const buttonRect = pushMenuButton.getBoundingClientRect();
       const menuRect = pushModeMenu.getBoundingClientRect();
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
       const leftLimit = Math.max(8, viewportWidth - menuRect.width - 8);
@@ -649,11 +615,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     }
 
     function closePushModeMenu() {
-      cancelPushLongPressMenu();
       if (pushModeMenu) {
         pushModeMenu.hidden = true;
       }
-      suppressNextPushClick = false;
+      if (pushMenuButton) {
+        pushMenuButton.setAttribute('aria-expanded', 'false');
+      }
     }
 
     function endMinimapDrag() {

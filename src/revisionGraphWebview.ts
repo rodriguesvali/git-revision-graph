@@ -8,6 +8,7 @@ import {
 type ToolbarIconName =
   | 'arrow-down'
   | 'arrow-up'
+  | 'chevron-down'
   | 'cloud-download'
   | 'close'
   | 'focus-range'
@@ -31,6 +32,10 @@ function renderToolbarIcon(iconName: ToolbarIconName): string {
       return `<svg class="toolbar-icon" data-icon="arrow-down" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <path d="M8 3v10"></path>
           <path d="M4.4 9.4 8 13l3.6-3.6"></path>
+        </svg>`;
+    case 'chevron-down':
+      return `<svg class="toolbar-icon" data-icon="chevron-down" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M4.6 6.2 8 9.6l3.4-3.4"></path>
         </svg>`;
     case 'close':
       return `<svg class="toolbar-icon" data-icon="close" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -220,13 +225,25 @@ export function renderRevisionGraphShellHtml(): string {
           title="Pull current branch"
           aria-label="Pull current branch"
         >${renderToolbarIcon('repo-pull')}</button>
-        <button
-          id="pushButton"
-          class="toolbar-button icon-only"
-          type="button"
-          title="Push current branch"
-          aria-label="Push current branch"
-        >${renderToolbarIcon('repo-push')}</button>
+        <span class="toolbar-split-button" role="group" aria-label="Push actions">
+          <button
+            id="pushButton"
+            class="toolbar-button icon-only split-primary"
+            type="button"
+            title="Push current branch"
+            aria-label="Push current branch"
+          >${renderToolbarIcon('repo-push')}</button>
+          <button
+            id="pushMenuButton"
+            class="toolbar-button icon-only split-menu"
+            type="button"
+            title="More push options"
+            aria-label="More push options"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="pushModeMenu"
+          >${renderToolbarIcon('chevron-down')}</button>
+        </span>
         <button
           id="fetchAllButton"
           class="toolbar-button icon-only"
@@ -234,13 +251,25 @@ export function renderRevisionGraphShellHtml(): string {
           title="Fetch all remotes"
           aria-label="Fetch all remotes"
         >${renderToolbarIcon('cloud-download')}</button>
-        <button
-          id="reloadButton"
-          class="toolbar-button icon-only"
-          type="button"
-          title="Reload revision graph"
-          aria-label="Reload revision graph"
-        >${renderToolbarIcon('refresh')}</button>
+        <span class="toolbar-split-button" role="group" aria-label="Reload actions">
+          <button
+            id="reloadButton"
+            class="toolbar-button icon-only split-primary"
+            type="button"
+            title="Reload revision graph"
+            aria-label="Reload revision graph"
+          >${renderToolbarIcon('refresh')}</button>
+          <button
+            id="reloadMenuButton"
+            class="toolbar-button icon-only split-menu"
+            type="button"
+            title="More reload options"
+            aria-label="More reload options"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="reloadCacheMenu"
+          >${renderToolbarIcon('chevron-down')}</button>
+        </span>
       </div>
       <div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">
         <button

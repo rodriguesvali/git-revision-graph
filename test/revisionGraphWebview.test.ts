@@ -51,20 +51,26 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="fetchAllButton"/);
   assert.doesNotMatch(html, /id="fetchButton"/);
   assert.match(html, /id="reloadButton"/);
+  assert.match(html, /id="reloadMenuButton"/);
   assert.doesNotMatch(html, />\s*<span>Reload<\/span>/);
   assert.match(html, /id="pullButton"/);
   assert.match(html, /id="pushButton"/);
+  assert.match(html, /id="pushMenuButton"/);
   assert.match(html, /id="syncButton"/);
   assert.match(html, /id="centerHeadButton"[\s\S]*?data-icon="target"/);
   assert.match(html, /id="syncButton"[\s\S]*?data-icon="sync"/);
   assert.match(html, /id="pullButton"[\s\S]*?data-icon="repo-pull"/);
   assert.match(html, /id="pushButton"[\s\S]*?data-icon="repo-push"/);
+  assert.match(html, /id="pushMenuButton"[\s\S]*?data-icon="chevron-down"/);
   assert.match(html, /id="fetchAllButton"[\s\S]*?data-icon="cloud-download"/);
   assert.match(html, /id="reloadButton"[\s\S]*?data-icon="refresh"/);
+  assert.match(html, /id="reloadMenuButton"[\s\S]*?data-icon="chevron-down"/);
+  assert.match(html, /class="toolbar-split-button" role="group" aria-label="Push actions"/);
+  assert.match(html, /class="toolbar-split-button" role="group" aria-label="Reload actions"/);
   assert.match(html, /\.view-controls \.toolbar-icon \{\s*position: static;\s*inset: auto;/);
   assert.doesNotMatch(html, /workspace-led/);
   assert.doesNotMatch(html, /id="workspaceLed"/);
-  assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"/);
+  assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="pushMenuButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"[\s\S]*?id="reloadMenuButton"/);
   assert.doesNotMatch(html, /id="abortMergeButton"/);
   assert.match(html, /id="zoomOutButton"/);
   assert.match(html, /id="zoomResetButton"/);
@@ -169,14 +175,19 @@ test('reloads the graph from the webview toolbar', () => {
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /const reloadButton = document\.getElementById\('reloadButton'\);/);
+  assert.match(html, /const reloadMenuButton = document\.getElementById\('reloadMenuButton'\);/);
   assert.match(html, /const fetchAllButton = document\.getElementById\('fetchAllButton'\);/);
   assert.match(html, /const pullButton = document\.getElementById\('pullButton'\);/);
   assert.match(html, /const pushButton = document\.getElementById\('pushButton'\);/);
+  assert.match(html, /const pushMenuButton = document\.getElementById\('pushMenuButton'\);/);
   assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
-  assert.match(html, /const TOOLBAR_LONG_PRESS_DELAY_MS = 500;/);
   assert.match(
     html,
-    /reloadButton\.addEventListener\('pointerdown', \(event\) => \{[\s\S]*?scheduleReloadLongPressMenu\(\);[\s\S]*?reloadButton\.addEventListener\('click', \(event\) => \{[\s\S]*?reloadRevisionGraph\(\);/s
+    /reloadButton\.addEventListener\('click', \(\) => \{\s*reloadRevisionGraph\(\);\s*\}\);/s
+  );
+  assert.match(
+    html,
+    /reloadMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(reloadCacheMenu && !reloadCacheMenu\.hidden\) \{\s*closeReloadCacheMenu\(\);\s*\} else \{\s*showReloadCacheMenu\(\);\s*\}\s*\}\);/s
   );
   assert.match(
     html,
@@ -187,30 +198,41 @@ test('reloads the graph from the webview toolbar', () => {
     /function reloadRevisionGraphWithEmptyCache\(\) \{\s*closeReloadCacheMenu\(\);\s*postMessageWithLoading\(\s*createRevisionGraphRefreshWithEmptyCacheMessage\(\),\s*'Reloading revision graph with empty cache\.\.\.',\s*reloadButton\s*\);/s
   );
   assert.match(html, /createRevisionGraphRefreshWithEmptyCacheMessage\(\)/);
+  assert.match(html, /reloadCacheMenu\.id = 'reloadCacheMenu';/);
   assert.match(html, /emptyCacheButton\.textContent = 'With Empty Cache';/);
-  assert.match(html, /reloadButton\.addEventListener\('pointerup', cancelReloadLongPressMenu\);/);
-  assert.match(html, /reloadButton\.addEventListener\('pointercancel', cancelReloadLongPressMenu\);/);
-  assert.match(html, /reloadButton\.addEventListener\('pointerleave', cancelReloadLongPressMenu\);/);
+  assert.match(html, /reloadMenuButton\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.match(html, /reloadMenuButton\.setAttribute\('aria-expanded', 'false'\);/);
+  assert.match(html, /const buttonRect = reloadMenuButton\.getBoundingClientRect\(\);/);
   assert.match(html, /\.reload-cache-menu/);
   assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);
   assert.match(
     html,
-    /pushButton\.addEventListener\('pointerdown', \(event\) => \{[\s\S]*?schedulePushLongPressMenu\(\);[\s\S]*?pushButton\.addEventListener\('click', \(event\) => \{[\s\S]*?pushCurrentHead\('normal'\);/s
+    /pushButton\.addEventListener\('click', \(\) => \{\s*pushCurrentHead\('normal'\);\s*\}\);/s
   );
-  assert.match(html, /pushButton\.addEventListener\('pointerup', cancelPushLongPressMenu\);/);
-  assert.match(html, /pushButton\.addEventListener\('pointercancel', cancelPushLongPressMenu\);/);
-  assert.match(html, /pushButton\.addEventListener\('pointerleave', cancelPushLongPressMenu\);/);
+  assert.match(
+    html,
+    /pushMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(pushModeMenu && !pushModeMenu\.hidden\) \{\s*closePushModeMenu\(\);\s*\} else \{\s*showPushModeMenu\(\);\s*\}\s*\}\);/s
+  );
+  assert.match(html, /pushModeMenu\.id = 'pushModeMenu';/);
   assert.match(html, /\{ label: 'Push with Force With Lease', mode: 'force-with-lease' \}/);
   assert.match(html, /\{ label: 'Push with Force', mode: 'force' \}/);
+  assert.match(html, /pushMenuButton\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.match(html, /pushMenuButton\.setAttribute\('aria-expanded', 'false'\);/);
+  assert.match(html, /const buttonRect = pushMenuButton\.getBoundingClientRect\(\);/);
   assert.match(html, /pushModeMenu\.style\.top = Math\.max\(8, buttonRect\.bottom \+ 6\) \+ 'px';/);
   assert.match(html, /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(mode\)\);/s);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*syncButton,\s*centerHeadButton,/s);
+  assert.match(html, /reloadMenuButton\.disabled = toolbarBusy;/);
+  assert.match(html, /pushMenuButton\.disabled = toolbarBusy \|\| !remoteActionState\.canUseCurrentHeadRemote;/);
+  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
+  assert.doesNotMatch(html, /TOOLBAR_LONG_PRESS_DELAY_MS/);
+  assert.doesNotMatch(html, /scheduleReloadLongPressMenu/);
+  assert.doesNotMatch(html, /schedulePushLongPressMenu/);
 });
 
 test('preserves the current viewport when zooming or resetting from toolbar buttons', () => {
@@ -381,6 +403,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function getCurrentHeadRemoteActionState\(\)/);
   assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
+  assert.match(html, /pushMenuButton\.title = 'More push options for ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function createRevisionGraphPushCurrentHeadMessage\(mode\) \{\s*return \{ type: 'push-current-head', mode: mode \};/s);
@@ -899,9 +922,11 @@ function createWebviewRuntime() {
     'loadingOverlay',
     'loadingMessage',
     'reloadButton',
+    'reloadMenuButton',
     'fetchAllButton',
     'pullButton',
     'pushButton',
+    'pushMenuButton',
     'syncButton',
     'scopeSelect',
     'viewOptions',
