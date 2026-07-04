@@ -47,6 +47,18 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'validate-release-promotion', refName: target.name };
     }
 
+    function createRevisionGraphStartFlowReleaseMessage(target, name, description) {
+      const message = {
+        type: 'start-flow-release',
+        sourceRefName: target.name,
+        name: name
+      };
+      if (description) {
+        message.description = description;
+      }
+      return message;
+    }
+
     function createRevisionGraphPrepareFlowEqualizationMessage(releaseRefName, productionRefName) {
       return { type: 'prepare-flow-equalization', releaseRefName, productionRefName };
     }

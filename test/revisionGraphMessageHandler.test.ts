@@ -84,6 +84,28 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
   assert.deepEqual(validations, ['release/1.0.0']);
 });
 
+test('RevisionGraphMessageHandler starts Flow Governance releases through the host boundary', async () => {
+  const calls: Array<{ readonly sourceRefName: string; readonly name: string; readonly description: string | undefined }> = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async startFlowRelease(sourceRefName, name, description) {
+      calls.push({ sourceRefName, name, description });
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'start-flow-release',
+    sourceRefName: 'main',
+    name: '2.0.0',
+    description: 'Release train'
+  });
+
+  assert.deepEqual(calls, [{
+    sourceRefName: 'main',
+    name: '2.0.0',
+    description: 'Release train'
+  }]);
+});
+
 test('RevisionGraphMessageHandler runs Pull Request handoff through the host boundary', async () => {
   const calls: string[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -268,6 +290,7 @@ function createHost(
     postCurrentState() {},
     updateFlowGovernanceOptions() {},
     async validateFlowReleasePromotion() {},
+    async startFlowRelease() {},
     async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},
     async openFlowPullRequestUrl() {},

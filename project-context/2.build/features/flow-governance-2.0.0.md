@@ -18,14 +18,18 @@ from an active release.
 2. Flow Governance classifies visible branch refs and shows compact badges.
 3. The user activates Flow Governance and opens the `main` reference context menu.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
-   or focusing that item reveals `Start New Release` and `Start New Feature`
-   actions that start the existing branch-creation workflow from `main`.
-5. The user selects a governed source or target branch.
-6. The graph explains applicable governance policy, including whether a PR is
+   or focusing that item reveals `Start New Release` and `Start New Feature`.
+5. The user chooses `Start New Release`, fills the required release name and
+   optional description, and confirms.
+6. The extension validates the input, derives the release branch from
+   `patterns.release`, creates and checks out the branch from `main`, and saves
+   the description as Git branch metadata when provided.
+7. The user selects a governed source or target branch.
+8. The graph explains applicable governance policy, including whether a PR is
    required.
-7. For `release/*` promotion, the user can validate whether production is an
+9. For `release/*` promotion, the user can validate whether production is an
    ancestor of the release.
-8. If promotion is blocked, the extension guides the user toward a `sync/*`
+10. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
 
 ## Scope
@@ -77,6 +81,9 @@ from an active release.
 - When Flow Governance is active, a branch classified as `main` shows a
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
+- `Start New Release` collects a required name and optional description,
+  validates the resulting branch against `patterns.release`, creates a local
+  release branch from `main`, and never pushes automatically.
 - Equalization prepares only a local `sync/*` path after confirmation, never
   pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
@@ -162,8 +169,7 @@ from an active release.
   wiring.
 - `npm test` passed with 575 tests on 2026-07-02 after the equalization slice.
 - The `main` branch Flow Governance context menu now exposes a first-position
-  `Flow Governance` submenu with `Start New Release` and `Start New Feature` as
-  entrypoints into the existing branch-creation workflow from `main`.
+  `Flow Governance` submenu with `Start New Release` and `Start New Feature`.
 - `npm run build` passed on 2026-07-03 after adding the `main` branch Flow
   Governance start actions.
 - `npm test` passed with 573 tests on 2026-07-03 after adding the `main` branch
@@ -175,6 +181,15 @@ from an active release.
   context submenu.
 - `npm test` passed with 573 tests on 2026-07-03 after adding the Flow
   Governance context submenu.
+- `Start New Release` was promoted from the generic branch-creation workflow to
+  a Flow Governance release form on 2026-07-03. The host derives branch names
+  from `patterns.release`, validates the final Git branch name, creates and
+  checks out the local branch from `main`, and stores branch description metadata
+  when provided.
+- `npm run build` passed on 2026-07-03 after adding the Start New Release form
+  workflow.
+- `npm test` passed with 577 tests on 2026-07-03 after adding the Start New
+  Release form workflow.
 
 ## Manual Validation
 

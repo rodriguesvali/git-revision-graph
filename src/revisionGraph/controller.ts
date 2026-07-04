@@ -74,6 +74,8 @@ import {
   createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
   prepareFlowEqualizationBranch,
+  resolveFlowConfigForRepository,
+  startFlowReleaseBranch,
   updateRepositoryFlowConfigOptions
 } from './flow';
 
@@ -272,6 +274,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       validateFlowReleasePromotion: async (refName) => {
         await this.validateFlowReleasePromotion(refName);
+      },
+      startFlowRelease: async (sourceRefName, name, description) => {
+        await this.startFlowRelease(sourceRefName, name, description);
       },
       prepareFlowEqualization: async (releaseRefName, productionRefName) => {
         await this.prepareFlowEqualization(releaseRefName, productionRefName);
@@ -599,6 +604,43 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private resolveFlowProductionBranch(): string | undefined {
     return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
+  }
+
+  private async startFlowRelease(
+    sourceRefName: string,
+    name: string,
+    description: string | undefined
+  ): Promise<void> {
+    const repository = this.currentRepository;
+    if (!repository) {
+      return;
+    }
+
+    const settings = this.resolveFlowGovernanceSettings(repository);
+    const flowConfig = await resolveFlowConfigForRepository(repository.rootUri.fsPath, settings);
+    if (!flowConfig.ok || !flowConfig.config.enabled) {
+      this.actionServices.ui.showWarningMessage('Flow Governance is not available for this repository.');
+      return;
+    }
+
+    const outcome = await runGuardedRepositoryMutation(
+      this.mutationCoordinator,
+      repository,
+      this.actionServices,
+      (guardedRepository, services) => startFlowReleaseBranch(
+        guardedRepository,
+        {
+          sourceBranch: sourceRefName,
+          name,
+          config: flowConfig.config,
+          ...(description !== undefined ? { description } : {})
+        },
+        services
+      )
+    );
+    if (outcome.status === 'rejected') {
+      this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
+    }
   }
 
   private async prepareFlowEqualization(releaseRefName: string, productionRefName: string): Promise<void> {

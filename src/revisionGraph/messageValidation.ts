@@ -67,6 +67,23 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.refName)
         ? { type: 'validate-release-promotion', refName: message.refName }
         : undefined;
+    case 'start-flow-release':
+      return isBoundedNonEmptyString(message.sourceRefName)
+        && isBoundedNonEmptyString(message.name, 240)
+        && (message.description === undefined || isBoundedString(message.description, 2048))
+        ? message.description === undefined
+          ? {
+            type: 'start-flow-release',
+            sourceRefName: message.sourceRefName,
+            name: message.name
+          }
+          : {
+            type: 'start-flow-release',
+            sourceRefName: message.sourceRefName,
+            name: message.name,
+            description: message.description
+          }
+        : undefined;
     case 'prepare-flow-equalization':
       return isBoundedNonEmptyString(message.releaseRefName)
         && isBoundedNonEmptyString(message.productionRefName)

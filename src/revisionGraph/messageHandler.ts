@@ -34,6 +34,7 @@ export interface RevisionGraphMessageHandlerHost
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
   validateFlowReleasePromotion(refName: string): Promise<void>;
+  startFlowRelease(sourceRefName: string, name: string, description: string | undefined): Promise<void>;
   prepareFlowEqualization(releaseRefName: string, productionRefName: string): Promise<void>;
   copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;
   openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void>;
@@ -91,6 +92,9 @@ export class RevisionGraphMessageHandler {
         return;
       case 'validate-release-promotion':
         await this.host.validateFlowReleasePromotion(message.refName);
+        return;
+      case 'start-flow-release':
+        await this.host.startFlowRelease(message.sourceRefName, message.name, message.description);
         return;
       case 'prepare-flow-equalization':
         await this.host.prepareFlowEqualization(message.releaseRefName, message.productionRefName);

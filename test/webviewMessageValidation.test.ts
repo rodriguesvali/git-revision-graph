@@ -53,6 +53,23 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'start-flow-release', sourceRefName: 'main', name: '' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'start-flow-release', sourceRefName: '', name: '2.0.0' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'start-flow-release',
+      sourceRefName: 'main',
+      name: '2.0.0',
+      description: 'a'.repeat(2049)
+    }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'prepare-flow-equalization', releaseRefName: '', productionRefName: 'main' }),
     undefined
   );
@@ -352,6 +369,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     {
       type: 'validate-release-promotion',
       refName: 'release/1.0.0'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'start-flow-release',
+      sourceRefName: 'main',
+      name: '2.0.0',
+      description: 'Release train'
+    }),
+    {
+      type: 'start-flow-release',
+      sourceRefName: 'main',
+      name: '2.0.0',
+      description: 'Release train'
     }
   );
   assert.deepEqual(
@@ -688,6 +719,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       governedFlowState
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-release', sourceRefName: 'main', name: '2.0.0' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-release', sourceRefName: 'release/1.0.0', name: '2.0.0' },
+      governedFlowState
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
