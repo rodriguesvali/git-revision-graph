@@ -17,9 +17,11 @@ All notable changes to this project will be documented in this file.
   message validation/authorization, webview rendering, and config-file creation.
 - Added release promotion ancestry validation, Pull Request context/URL handoff, and a confirmed
   local `sync/*` equalization assistant that never pushes automatically.
-- Added a first-position `Flow Governance` submenu on classified refs. `Start New Release` now
-  opens a name/description form and creates a local release branch from `main` using the
-  configured release pattern.
+- Added a first-position `Flow Governance` submenu on classified refs. `Start New Release` and
+  `Start New Feature` now share a name/description form and create local branches from `main`
+  using the configured release or feature pattern.
+- Expanded reference cards using their branch-name length plus reserved badge space, keeping
+  longer governed branch names visible while retaining ellipsis for exceptional names.
 
 ## 1.5.8
 

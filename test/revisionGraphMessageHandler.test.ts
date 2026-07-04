@@ -84,26 +84,47 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
   assert.deepEqual(validations, ['release/1.0.0']);
 });
 
-test('RevisionGraphMessageHandler starts Flow Governance releases through the host boundary', async () => {
-  const calls: Array<{ readonly sourceRefName: string; readonly name: string; readonly description: string | undefined }> = [];
+test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
+  const calls: Array<{
+    readonly branchKind: 'release' | 'feature';
+    readonly sourceRefName: string;
+    readonly name: string;
+    readonly description: string | undefined;
+  }> = [];
   const handler = new RevisionGraphMessageHandler(createHost({
-    async startFlowRelease(sourceRefName, name, description) {
-      calls.push({ sourceRefName, name, description });
+    async startFlowBranch(branchKind, sourceRefName, name, description) {
+      calls.push({ branchKind, sourceRefName, name, description });
     }
   }));
 
   await handler.handleMessage({
-    type: 'start-flow-release',
+    type: 'start-flow-branch',
+    branchKind: 'release',
     sourceRefName: 'main',
     name: '2.0.0',
     description: 'Release train'
   });
-
-  assert.deepEqual(calls, [{
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    branchKind: 'feature',
     sourceRefName: 'main',
-    name: '2.0.0',
-    description: 'Release train'
-  }]);
+    name: 'checkout-redesign'
+  });
+
+  assert.deepEqual(calls, [
+    {
+      branchKind: 'release',
+      sourceRefName: 'main',
+      name: '2.0.0',
+      description: 'Release train'
+    },
+    {
+      branchKind: 'feature',
+      sourceRefName: 'main',
+      name: 'checkout-redesign',
+      description: undefined
+    }
+  ]);
 });
 
 test('RevisionGraphMessageHandler runs Pull Request handoff through the host boundary', async () => {
@@ -290,7 +311,7 @@ function createHost(
     postCurrentState() {},
     updateFlowGovernanceOptions() {},
     async validateFlowReleasePromotion() {},
-    async startFlowRelease() {},
+    async startFlowBranch() {},
     async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},
     async openFlowPullRequestUrl() {},

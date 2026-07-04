@@ -7,33 +7,37 @@ import {
   prepareFullRebuildRefresh
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
-import type { NormalizedFlowConfig } from './flowTypes';
+import type { FlowPatternBranchKind, NormalizedFlowConfig } from './flowTypes';
 
-export interface StartFlowReleaseBranchOptions {
+export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature'>;
+
+export interface StartFlowBranchOptions {
+  readonly kind: FlowStartBranchKind;
   readonly sourceBranch: string;
   readonly name: string;
   readonly description?: string;
   readonly config: NormalizedFlowConfig;
 }
 
-export interface FlowReleaseBranchNameResult {
+export interface FlowBranchNameResult {
   readonly ok: boolean;
   readonly branchName?: string;
   readonly message?: string;
 }
 
-export function resolveFlowReleaseBranchName(
+export function resolveFlowBranchName(
+  kind: FlowStartBranchKind,
   name: string,
   config: Pick<NormalizedFlowConfig, 'patterns'>
-): FlowReleaseBranchNameResult {
+): FlowBranchNameResult {
   const trimmedName = name.trim();
   if (trimmedName.length === 0) {
     return { ok: false, message: 'Name is required.' };
   }
 
-  const releasePattern = config.patterns.release;
-  const releaseRegex = new RegExp(releasePattern);
-  const prefix = inferFlowBranchLiteralPrefix(releasePattern);
+  const branchPattern = config.patterns[kind];
+  const branchRegex = new RegExp(branchPattern);
+  const prefix = inferFlowBranchLiteralPrefix(branchPattern);
   const candidates = getUniqueCandidates([
     trimmedName,
     prefix && !trimmedName.startsWith(prefix) ? `${prefix}${trimmedName}` : undefined
@@ -45,35 +49,37 @@ export function resolveFlowReleaseBranchName(
       continue;
     }
 
-    if (releaseRegex.test(candidate)) {
+    if (branchRegex.test(candidate)) {
       return { ok: true, branchName: candidate };
     }
   }
 
   return {
     ok: false,
-    message: `Release branch name must be a valid Git branch and match ${releasePattern}.`
+    message: `${getFlowBranchKindLabel(kind)} branch name must be a valid Git branch and match ${branchPattern}.`
   };
 }
 
-export async function startFlowReleaseBranch(
+export async function startFlowBranch(
   repository: Repository,
-  options: StartFlowReleaseBranchOptions,
+  options: StartFlowBranchOptions,
   services: RefActionServices
 ): Promise<void> {
-  if (!await ensureWorkspaceReadyForMutation(repository, 'starting a new release', services, { allowWorkspaceChanges: true })) {
+  const branchKindLabel = getFlowBranchKindLabel(options.kind);
+  const operationLabel = `starting a new ${options.kind}`;
+  if (!await ensureWorkspaceReadyForMutation(repository, operationLabel, services, { allowWorkspaceChanges: true })) {
     return;
   }
 
-  const branchNameResult = resolveFlowReleaseBranchName(options.name, options.config);
+  const branchNameResult = resolveFlowBranchName(options.kind, options.name, options.config);
   if (!branchNameResult.ok || !branchNameResult.branchName) {
-    await services.ui.showErrorMessage(`Could not start the release. ${branchNameResult.message ?? 'Invalid release name.'}`);
+    await services.ui.showErrorMessage(`Could not start the ${options.kind}. ${branchNameResult.message ?? `Invalid ${options.kind} name.`}`);
     return;
   }
 
   const branchName = branchNameResult.branchName;
   if (await getLocalBranch(repository, branchName)) {
-    await services.ui.showErrorMessage(`Could not start the release. Branch ${branchName} already exists.`);
+    await services.ui.showErrorMessage(`Could not start the ${options.kind}. Branch ${branchName} already exists.`);
     return;
   }
 
@@ -89,13 +95,13 @@ export async function startFlowReleaseBranch(
         await setGitBranchDescription(repository.rootUri.fsPath, branchName, description);
       } catch (error) {
         await services.ui.showWarningMessage(
-          toOperationError(`Release branch ${branchName} was created, but its description could not be saved.`, error)
+          toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error)
         );
       }
     }
 
     services.refreshController.refresh(preparedRefresh.request);
-    services.ui.showInformationMessage(`Release branch ${branchName} was created and checked out from ${options.sourceBranch}.`);
+    services.ui.showInformationMessage(`${branchKindLabel} branch ${branchName} was created and checked out from ${options.sourceBranch}.`);
   } catch (error) {
     if (!branchCreated) {
       preparedRefresh.cancel();
@@ -103,8 +109,23 @@ export async function startFlowReleaseBranch(
       services.refreshController.refresh(preparedRefresh.request);
     }
 
-    await services.ui.showErrorMessage(toOperationError('Could not start the release.', error));
+    await services.ui.showErrorMessage(toOperationError(`Could not start the ${options.kind}.`, error));
   }
+}
+
+export function resolveFlowReleaseBranchName(
+  name: string,
+  config: Pick<NormalizedFlowConfig, 'patterns'>
+): FlowBranchNameResult {
+  return resolveFlowBranchName('release', name, config);
+}
+
+export async function startFlowReleaseBranch(
+  repository: Repository,
+  options: Omit<StartFlowBranchOptions, 'kind'>,
+  services: RefActionServices
+): Promise<void> {
+  await startFlowBranch(repository, { ...options, kind: 'release' }, services);
 }
 
 function inferFlowBranchLiteralPrefix(pattern: string): string | undefined {
@@ -161,4 +182,8 @@ async function setGitBranchDescription(
     ['config', `branch.${branchName}.description`, description],
     GIT_EXEC_LOCAL_MUTATION_PROFILE
   );
+}
+
+function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {
+  return kind === 'release' ? 'Release' : 'Feature';
 }

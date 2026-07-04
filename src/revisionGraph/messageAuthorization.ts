@@ -31,10 +31,11 @@ export function isRevisionGraphMessageAllowedForState(
         && state.flowGovernance.references.some((ref) =>
           ref.refName === message.refName && ref.kind === 'release'
         );
-    case 'start-flow-release':
+    case 'start-flow-branch':
       return state.viewMode === 'ready'
         && state.flowGovernance?.enabled === true
         && hasKnownReferenceName(state, message.sourceRefName)
+        && (message.branchKind === 'release' || message.branchKind === 'feature')
         && state.flowGovernance.references.some((ref) =>
           ref.refName === message.sourceRefName && ref.kind === 'main'
         );
@@ -130,7 +131,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
       return false;
     case 'set-flow-governance-options':
     case 'validate-release-promotion':
-    case 'start-flow-release':
+    case 'start-flow-branch':
     case 'prepare-flow-equalization':
     case 'copy-flow-pr-context':
     case 'open-flow-pr-url':

@@ -1,9 +1,10 @@
 import { formatShortCommitHash } from '../../commitHash';
 
 export const NODE_MIN_WIDTH = 128;
-export const NODE_MAX_WIDTH = 360;
+export const NODE_MAX_WIDTH = 480;
 export const NODE_CONTENT_CHAR_WIDTH = 7.4;
-export const NODE_WIDTH_PADDING = 28;
+export const NODE_REF_BADGE_RESERVE = 48;
+export const NODE_WIDTH_PADDING = 28 + NODE_REF_BADGE_RESERVE;
 export const REF_LINE_HEIGHT = 25;
 export const REF_LINE_DIVIDER_HEIGHT = 1;
 export const NODE_SUMMARY_HEIGHT = 22;

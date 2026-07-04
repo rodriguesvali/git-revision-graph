@@ -47,9 +47,10 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'validate-release-promotion', refName: target.name };
     }
 
-    function createRevisionGraphStartFlowReleaseMessage(target, name, description) {
+    function createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description) {
       const message = {
-        type: 'start-flow-release',
+        type: 'start-flow-branch',
+        branchKind: branchKind,
         sourceRefName: target.name,
         name: name
       };

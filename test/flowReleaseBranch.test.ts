@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import { RefActionServices } from '../src/refActions';
 import {
   DEFAULT_FLOW_CONFIG,
+  resolveFlowBranchName,
   resolveFlowReleaseBranchName,
+  startFlowBranch,
   startFlowReleaseBranch
 } from '../src/revisionGraph/flow';
 import { RefType } from '../src/git';
@@ -34,6 +36,21 @@ test('Flow Governance release branch names follow the configured release pattern
   );
 });
 
+test('Flow Governance feature branch names follow the configured feature pattern', () => {
+  assert.deepEqual(
+    resolveFlowBranchName('feature', 'checkout-redesign', DEFAULT_FLOW_CONFIG),
+    { ok: true, branchName: 'feature/checkout-redesign' }
+  );
+  assert.deepEqual(
+    resolveFlowBranchName('feature', 'feature/checkout-redesign', DEFAULT_FLOW_CONFIG),
+    { ok: true, branchName: 'feature/checkout-redesign' }
+  );
+  assert.equal(
+    resolveFlowBranchName('feature', 'bad feature name', DEFAULT_FLOW_CONFIG).ok,
+    false
+  );
+});
+
 test('Flow Governance starts a local release branch from main', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
@@ -55,6 +72,30 @@ test('Flow Governance starts a local release branch from main', async () => {
   assert.deepEqual(upstreamClears, ['release/2.0.0']);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Release branch release\/2\.0\.0 was created/);
+});
+
+test('Flow Governance starts a local feature branch from main', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'checkout-redesign',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'feature/checkout-redesign',
+    checkout: true,
+    ref: 'main'
+  }]);
+  assert.deepEqual(upstreamClears, ['feature/checkout-redesign']);
+  assert.equal(refreshes.length, 1);
+  assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
 });
 
 test('Flow Governance refuses an existing release branch before mutation', async () => {

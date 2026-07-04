@@ -65,7 +65,7 @@ import {
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
-import type { FlowConfigSource, FlowGovernanceSettings } from './flow';
+import type { FlowConfigSource, FlowGovernanceSettings, FlowStartBranchKind } from './flow';
 import {
   applyFlowGovernanceOptionsUpdate,
   buildGitHubPullRequestUrl,
@@ -75,7 +75,7 @@ import {
   FlowGovernanceOptionsUpdate,
   prepareFlowEqualizationBranch,
   resolveFlowConfigForRepository,
-  startFlowReleaseBranch,
+  startFlowBranch,
   updateRepositoryFlowConfigOptions
 } from './flow';
 
@@ -275,8 +275,8 @@ export class RevisionGraphController implements vscode.Disposable {
       validateFlowReleasePromotion: async (refName) => {
         await this.validateFlowReleasePromotion(refName);
       },
-      startFlowRelease: async (sourceRefName, name, description) => {
-        await this.startFlowRelease(sourceRefName, name, description);
+      startFlowBranch: async (branchKind, sourceRefName, name, description) => {
+        await this.startFlowBranch(branchKind, sourceRefName, name, description);
       },
       prepareFlowEqualization: async (releaseRefName, productionRefName) => {
         await this.prepareFlowEqualization(releaseRefName, productionRefName);
@@ -606,7 +606,8 @@ export class RevisionGraphController implements vscode.Disposable {
     return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
   }
 
-  private async startFlowRelease(
+  private async startFlowBranch(
+    branchKind: FlowStartBranchKind,
     sourceRefName: string,
     name: string,
     description: string | undefined
@@ -627,9 +628,10 @@ export class RevisionGraphController implements vscode.Disposable {
       this.mutationCoordinator,
       repository,
       this.actionServices,
-      (guardedRepository, services) => startFlowReleaseBranch(
+      (guardedRepository, services) => startFlowBranch(
         guardedRepository,
         {
+          kind: branchKind,
           sourceBranch: sourceRefName,
           name,
           config: flowConfig.config,

@@ -1,7 +1,7 @@
 # Flow Governance 2.0.0
 
 Status: Build complete - manual validation pending
-Last updated: 2026-07-03
+Last updated: 2026-07-04
 Baseline: `1.5.8` plus completed Flow Governance Phase 1 foundation
 
 ## Goal
@@ -19,11 +19,11 @@ from an active release.
 3. The user activates Flow Governance and opens the `main` reference context menu.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
    or focusing that item reveals `Start New Release` and `Start New Feature`.
-5. The user chooses `Start New Release`, fills the required release name and
-   optional description, and confirms.
-6. The extension validates the input, derives the release branch from
-   `patterns.release`, creates and checks out the branch from `main`, and saves
-   the description as Git branch metadata when provided.
+5. The user chooses `Start New Release` or `Start New Feature`, fills the
+   required name and optional description, and confirms.
+6. The extension validates the input, derives the branch from `patterns.release`
+   or `patterns.feature`, creates and checks out the branch from `main`, and
+   saves the description as Git branch metadata when provided.
 7. The user selects a governed source or target branch.
 8. The graph explains applicable governance policy, including whether a PR is
    required.
@@ -71,6 +71,8 @@ from an active release.
 
 - Flow Governance never hides branch refs; all refs included by the current
   graph projection remain visible.
+- Reference cards reserve room for Flow Governance badges and expand for common
+  long branch names, using ellipsis only after the bounded maximum width.
 - Governed source/target pairs produce deterministic PR-required diagnostics.
 - Direct governed merge handling defaults to `warn` and can be configured later
   without changing the policy engine contract.
@@ -81,9 +83,10 @@ from an active release.
 - When Flow Governance is active, a branch classified as `main` shows a
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
-- `Start New Release` collects a required name and optional description,
-  validates the resulting branch against `patterns.release`, creates a local
-  release branch from `main`, and never pushes automatically.
+- `Start New Release` and `Start New Feature` share a required-name and
+  optional-description form, validate the resulting branch against
+  `patterns.release` or `patterns.feature`, create a local branch from `main`,
+  and never push automatically.
 - Equalization prepares only a local `sync/*` path after confirmation, never
   pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
@@ -182,19 +185,29 @@ from an active release.
 - `npm test` passed with 573 tests on 2026-07-03 after adding the Flow
   Governance context submenu.
 - `Start New Release` was promoted from the generic branch-creation workflow to
-  a Flow Governance release form on 2026-07-03. The host derives branch names
-  from `patterns.release`, validates the final Git branch name, creates and
-  checks out the local branch from `main`, and stores branch description metadata
-  when provided.
-- `npm run build` passed on 2026-07-03 after adding the Start New Release form
-  workflow.
-- `npm test` passed with 577 tests on 2026-07-03 after adding the Start New
-  Release form workflow.
+  a Flow Governance release form on 2026-07-03. `Start New Feature` was aligned
+  with the same shared form and host workflow on 2026-07-04. The host derives
+  branch names from `patterns.release` or `patterns.feature`, validates the
+  final Git branch name, creates and checks out the local branch from `main`,
+  and stores branch description metadata when provided.
+- `npm run build` passed on 2026-07-04 after sharing the Flow Governance start
+  branch form across release and feature workflows.
+- `npm test` passed with 579 tests on 2026-07-04 after adding the Start New
+  Feature form workflow.
+- Governed reference card sizing was expanded on 2026-07-04 to account for the
+  badge beside the branch name while keeping a bounded maximum width.
+- `npm run build` and `npm test` passed with 581 tests on 2026-07-04 after the
+  governed reference card sizing adjustment.
 
 ## Manual Validation
 
 - Open the graph in an Extension Development Host.
 - Enable Flow Governance with a repository config file.
+- Verify `Start New Release` and `Start New Feature` from the `main` Flow
+  Governance submenu create local branches through the shared required-name and
+  optional-description form.
+- Verify long governed branch names remain readable beside their badges and
+  exceptional names are truncated only at the bounded maximum card width.
 - Select governed branch pairs and verify PR-required explanations.
 - Validate a ready release and a blocked release.
 - Confirm blocked release guidance points to equalization.

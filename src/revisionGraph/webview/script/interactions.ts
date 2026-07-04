@@ -467,8 +467,8 @@ export function renderRevisionGraphScriptInteractions(): string {
       const entries = [];
       if (flowBranch.kind === 'main') {
         entries.push(
-          { label: 'Start New Release', onClick: () => showFlowReleaseForm(target) },
-          { label: 'Start New Feature', onClick: () => postCreateBranch(target) }
+          { label: 'Start New Release', onClick: () => showFlowBranchForm(target, 'release') },
+          { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') }
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
@@ -651,23 +651,27 @@ export function renderRevisionGraphScriptInteractions(): string {
       contextMenu.appendChild(button);
     }
 
-    function showFlowReleaseForm(target) {
+    function showFlowBranchForm(target, branchKind) {
       closeContextMenu();
-      const dialog = ensureFlowReleaseDialog();
+      const dialog = ensureFlowBranchDialog();
+      const copy = getFlowBranchDialogCopy(branchKind);
       dialog.target = target;
+      dialog.branchKind = branchKind;
+      dialog.title.textContent = copy.title;
+      dialog.submitButton.textContent = copy.submitLabel;
       dialog.nameInput.value = '';
       dialog.descriptionInput.value = '';
-      setFlowReleaseDialogError(dialog, '');
+      setFlowBranchDialogError(dialog, '');
       dialog.backdrop.hidden = false;
       document.body.classList.add('flow-dialog-open');
       window.setTimeout(() => dialog.nameInput.focus(), 0);
     }
 
-    function ensureFlowReleaseDialog() {
-      let backdrop = document.getElementById('flowReleaseDialog');
+    function ensureFlowBranchDialog() {
+      let backdrop = document.getElementById('flowBranchDialog');
       if (!backdrop) {
         backdrop = document.createElement('div');
-        backdrop.id = 'flowReleaseDialog';
+        backdrop.id = 'flowBranchDialog';
         backdrop.className = 'flow-dialog-backdrop';
         backdrop.hidden = true;
 
@@ -675,22 +679,21 @@ export function renderRevisionGraphScriptInteractions(): string {
         form.className = 'flow-dialog';
         form.setAttribute('role', 'dialog');
         form.setAttribute('aria-modal', 'true');
-        form.setAttribute('aria-labelledby', 'flowReleaseDialogTitle');
+        form.setAttribute('aria-labelledby', 'flowBranchDialogTitle');
 
         const title = document.createElement('h2');
-        title.id = 'flowReleaseDialogTitle';
+        title.id = 'flowBranchDialogTitle';
         title.className = 'flow-dialog-title';
-        title.textContent = 'Start New Release';
         form.appendChild(title);
 
         const nameLabel = document.createElement('label');
         nameLabel.className = 'flow-form-field';
-        nameLabel.setAttribute('for', 'flowReleaseNameInput');
+        nameLabel.setAttribute('for', 'flowBranchNameInput');
         const nameText = document.createElement('span');
         nameText.className = 'flow-form-label';
         nameText.textContent = 'Name *';
         const nameInput = document.createElement('input');
-        nameInput.id = 'flowReleaseNameInput';
+        nameInput.id = 'flowBranchNameInput';
         nameInput.className = 'flow-form-input';
         nameInput.type = 'text';
         nameInput.required = true;
@@ -703,12 +706,12 @@ export function renderRevisionGraphScriptInteractions(): string {
 
         const descriptionLabel = document.createElement('label');
         descriptionLabel.className = 'flow-form-field';
-        descriptionLabel.setAttribute('for', 'flowReleaseDescriptionInput');
+        descriptionLabel.setAttribute('for', 'flowBranchDescriptionInput');
         const descriptionText = document.createElement('span');
         descriptionText.className = 'flow-form-label';
         descriptionText.textContent = 'Description';
         const descriptionInput = document.createElement('textarea');
-        descriptionInput.id = 'flowReleaseDescriptionInput';
+        descriptionInput.id = 'flowBranchDescriptionInput';
         descriptionInput.className = 'flow-form-input flow-form-textarea';
         descriptionInput.maxLength = 2048;
         descriptionLabel.appendChild(descriptionText);
@@ -740,66 +743,83 @@ export function renderRevisionGraphScriptInteractions(): string {
 
         backdrop.addEventListener('click', (event) => {
           if (event.target === backdrop) {
-            closeFlowReleaseDialog();
+            closeFlowBranchDialog();
           }
         });
-        cancelButton.addEventListener('click', closeFlowReleaseDialog);
+        cancelButton.addEventListener('click', closeFlowBranchDialog);
         form.addEventListener('keydown', (event) => {
           if (event.key === 'Escape') {
             event.preventDefault();
-            closeFlowReleaseDialog();
+            closeFlowBranchDialog();
           }
         });
         form.addEventListener('submit', (event) => {
           event.preventDefault();
-          const dialog = ensureFlowReleaseDialog();
+          const dialog = ensureFlowBranchDialog();
           const name = dialog.nameInput.value.trim();
           const description = dialog.descriptionInput.value.trim();
           if (!name) {
-            setFlowReleaseDialogError(dialog, 'Name is required.');
+            setFlowBranchDialogError(dialog, 'Name is required.');
             dialog.nameInput.focus();
             return;
           }
 
           const target = dialog.target;
-          if (!target) {
-            closeFlowReleaseDialog();
+          const branchKind = dialog.branchKind;
+          if (!target || !branchKind) {
+            closeFlowBranchDialog();
             return;
           }
 
-          vscode.postMessage(createRevisionGraphStartFlowReleaseMessage(target, name, description));
-          closeFlowReleaseDialog();
+          vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
+          closeFlowBranchDialog();
         });
       }
 
       return {
         backdrop,
         form: backdrop.querySelector('.flow-dialog'),
-        nameInput: backdrop.querySelector('#flowReleaseNameInput'),
-        descriptionInput: backdrop.querySelector('#flowReleaseDescriptionInput'),
+        title: backdrop.querySelector('#flowBranchDialogTitle'),
+        submitButton: backdrop.querySelector('.flow-dialog-button.primary'),
+        nameInput: backdrop.querySelector('#flowBranchNameInput'),
+        descriptionInput: backdrop.querySelector('#flowBranchDescriptionInput'),
         error: backdrop.querySelector('.flow-form-error'),
         get target() {
-          return backdrop.__flowReleaseTarget || null;
+          return backdrop.__flowBranchTarget || null;
         },
         set target(value) {
-          backdrop.__flowReleaseTarget = value;
+          backdrop.__flowBranchTarget = value;
+        },
+        get branchKind() {
+          return backdrop.__flowBranchKind || null;
+        },
+        set branchKind(value) {
+          backdrop.__flowBranchKind = value;
         }
       };
     }
 
-    function closeFlowReleaseDialog() {
-      const backdrop = document.getElementById('flowReleaseDialog');
+    function closeFlowBranchDialog() {
+      const backdrop = document.getElementById('flowBranchDialog');
       if (!backdrop) {
         return;
       }
       backdrop.hidden = true;
-      backdrop.__flowReleaseTarget = null;
+      backdrop.__flowBranchTarget = null;
+      backdrop.__flowBranchKind = null;
       document.body.classList.remove('flow-dialog-open');
     }
 
-    function setFlowReleaseDialogError(dialog, message) {
+    function setFlowBranchDialogError(dialog, message) {
       dialog.error.textContent = message;
       dialog.error.hidden = !message;
+    }
+
+    function getFlowBranchDialogCopy(branchKind) {
+      if (branchKind === 'feature') {
+        return { title: 'Start New Feature', submitLabel: 'Create Feature' };
+      }
+      return { title: 'Start New Release', submitLabel: 'Create Release' };
     }
 
     function escapeHtml(value) {

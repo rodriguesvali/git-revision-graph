@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   estimateRevisionGraphNodeHeight,
-  estimateRevisionGraphNodeWidth
+  estimateRevisionGraphNodeWidth,
+  NODE_CONTENT_CHAR_WIDTH,
+  NODE_MAX_WIDTH,
+  NODE_REF_BADGE_RESERVE
 } from '../src/revisionGraph/layout/nodeSizing';
 
 test('estimates wider cards for long reference labels', () => {
@@ -19,6 +22,27 @@ test('estimates wider cards for long reference labels', () => {
   });
 
   assert.ok(longWidth > shortWidth);
+});
+
+test('reserves horizontal space for a Flow Governance badge beside the branch name', () => {
+  const branchName = 'release/customer-notification-preferences';
+  const width = estimateRevisionGraphNodeWidth({
+    hash: 'head1',
+    subject: 'Short subject',
+    refs: [{ name: branchName }]
+  });
+
+  assert.ok(width >= Math.ceil(branchName.length * NODE_CONTENT_CHAR_WIDTH) + NODE_REF_BADGE_RESERVE);
+});
+
+test('bounds exceptionally long reference cards while allowing common branch names to grow', () => {
+  const width = estimateRevisionGraphNodeWidth({
+    hash: 'head1',
+    subject: 'Short subject',
+    refs: [{ name: `feature/${'very-long-segment-'.repeat(40)}` }]
+  });
+
+  assert.equal(width, NODE_MAX_WIDTH);
 });
 
 test('estimates taller cards when a node renders multiple references', () => {

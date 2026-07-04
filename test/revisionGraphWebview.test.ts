@@ -127,7 +127,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(releaseRefName, productionRefName\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
-  assert.match(html, /function createRevisionGraphStartFlowReleaseMessage\(target, name, description\)/);
+  assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
   assert.match(html, /Validate Release Promotion/);
@@ -457,7 +457,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /\} else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
-  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowReleaseForm\(target\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => postCreateBranch\(target\) \}\s*\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \}\s*\);/s);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
@@ -508,11 +508,12 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /appendMenuSection\('Flow Governance'\);\s*appendMenuSubmenu\('Flow Governance', entries\);/s);
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
-  assert.match(html, /function showFlowReleaseForm\(target\)/);
+  assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
+  assert.match(html, /function getFlowBranchDialogCopy\(branchKind\)/);
   assert.match(html, /nameText\.textContent = 'Name \*';/);
   assert.match(html, /nameInput\.setAttribute\('aria-required', 'true'\);/);
   assert.match(html, /descriptionText\.textContent = 'Description';/);
-  assert.match(html, /vscode\.postMessage\(createRevisionGraphStartFlowReleaseMessage\(target, name, description\)\);/);
+  assert.match(html, /vscode\.postMessage\(createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)\);/);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);
