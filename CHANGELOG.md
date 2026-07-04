@@ -25,6 +25,9 @@ All notable changes to this project will be documented in this file.
 - Added `Start New Task` to the Flow Governance submenu for feature branches. Its shared form
   combines the required Dev Task number and short name, applies `patterns.task`, and creates the
   local task branch from the selected feature without pushing.
+- Replaced the browser-native multi-reference tooltip with a compact tooltip for the hovered or
+  focused reference, including its badge, full name, optional Git branch description, commit
+  subject, short hash, author, and date.
 
 ## 1.5.8
 

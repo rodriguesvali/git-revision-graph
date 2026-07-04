@@ -77,6 +77,9 @@ from an active release.
   graph projection remain visible.
 - Reference cards reserve room for Flow Governance badges and expand for common
   long branch names, using ellipsis only after the bounded maximum width.
+- Hovering or focusing a reference shows a compact reference-specific tooltip
+  with its badge, full name, optional branch description, commit subject, short
+  hash, author, and date instead of the browser-native multi-reference block.
 - Governed source/target pairs produce deterministic PR-required diagnostics.
 - Direct governed merge handling defaults to `warn` and can be configured later
   without changing the policy engine contract.
@@ -213,6 +216,11 @@ from an active release.
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
   2026-07-04 and covered at the final rendered-script boundary.
+- Reference tooltips were redesigned on 2026-07-04. Local
+  `branch.<name>.description` values are loaded in one bounded Git config query
+  and included only when present; loading failures do not block the graph.
+- `npm run build` and `npm test` passed with 585 tests on 2026-07-04 after the
+  reference tooltip redesign.
 
 ## Manual Validation
 
@@ -226,6 +234,9 @@ from an active release.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task and
   ShortName, creates `task/<task-dev>-<short-name>` from that feature under the
   default configuration, and stores an optional description.
+- Hover and keyboard-focus refs with and without descriptions, including refs
+  near viewport edges, and verify the tooltip remains legible without covering
+  the selected reference.
 - Select governed branch pairs and verify PR-required explanations.
 - Validate a ready release and a blocked release.
 - Confirm blocked release guidance points to equalization.

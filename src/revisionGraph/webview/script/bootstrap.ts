@@ -21,6 +21,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     const statusMessage = document.getElementById('statusMessage');
     const statusActionButton = document.getElementById('statusActionButton');
     const contextMenu = document.getElementById('contextMenu');
+    const referenceTooltip = document.getElementById('referenceTooltip');
     const graphMinimap = document.getElementById('graphMinimap');
     const minimapSvg = document.getElementById('minimapSvg');
     const minimapEdgeLayer = document.getElementById('minimapEdgeLayer');
@@ -377,6 +378,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       syncMinimap('viewport');
     });
     viewport.addEventListener('scroll', closeContextMenu);
+    viewport.addEventListener('scroll', hideReferenceTooltip);
     window.addEventListener('resize', () => {
       readViewportLayoutSize();
       syncCanvasSize();
@@ -384,6 +386,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       scheduleVirtualSceneRender('resize', true);
       syncMinimap();
       closeContextMenu();
+      hideReferenceTooltip();
     });
     window.addEventListener('mousemove', (event) => {
       if (minimapDragState) {
@@ -1494,6 +1497,39 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         syncSelection();
       });
 
+      nodeLayer.addEventListener('mouseover', (event) => {
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        if (refElement && (!event.relatedTarget || !refElement.contains(event.relatedTarget))) {
+          showReferenceTooltip(refElement);
+        }
+      });
+      nodeLayer.addEventListener('mouseout', (event) => {
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        if (refElement && (!event.relatedTarget || !refElement.contains(event.relatedTarget))) {
+          hideReferenceTooltip();
+        }
+      });
+      nodeLayer.addEventListener('focusin', (event) => {
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        if (refElement) {
+          showReferenceTooltip(refElement);
+        }
+      });
+      nodeLayer.addEventListener('focusout', hideReferenceTooltip);
+      nodeLayer.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        const refElement = findEventTargetElement(event, '[data-ref-id]');
+        const refId = refElement ? refElement.getAttribute('data-ref-id') : '';
+        if (!refId) {
+          return;
+        }
+        event.preventDefault();
+        toggleSelection(refId, event.ctrlKey || event.metaKey);
+        syncSelection();
+      });
+
       nodeLayer.addEventListener('contextmenu', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
         if (refElement) {
@@ -1549,6 +1585,68 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       sceneEventHandlersBound = true;
     }
 
+    function showReferenceTooltip(refElement) {
+      if (!referenceTooltip || !refElement) {
+        return;
+      }
+      const refId = refElement.getAttribute('data-ref-id');
+      const reference = refId ? getReference(refId) : null;
+      const node = reference ? sceneNodeByHash.get(reference.hash) : null;
+      if (!reference || !node) {
+        hideReferenceTooltip();
+        return;
+      }
+
+      const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(reference.name) : null;
+      const flowKind = flowBranch ? flowBranch.kind : null;
+      const badgeLabel = flowKind
+        ? (flowKindBadges[flowKind] || flowKind)
+        : getReferenceKindLabel(reference.kind);
+      const badgeClass = flowKind ? ' flow-kind-' + escapeHtml(flowKind) : '';
+      const description = reference.description
+        ? '<div class="reference-tooltip-description">' + escapeHtml(reference.description) + '</div>'
+        : '';
+      referenceTooltip.innerHTML =
+        '<div class="reference-tooltip-header">' +
+          '<span class="flow-badge' + badgeClass + '">' + escapeHtml(badgeLabel) + '</span>' +
+          '<span class="reference-tooltip-name">' + escapeHtml(reference.name) + '</span>' +
+        '</div>' +
+        description +
+        '<div class="reference-tooltip-subject">' + escapeHtml(node.subject || 'Structural commit') + '</div>' +
+        '<div class="reference-tooltip-meta">' +
+          '<span class="reference-tooltip-hash">' + escapeHtml(formatShortCommitHash(node.hash)) + '</span>' +
+          '<span>' + escapeHtml(node.author || 'Unknown author') + '</span>' +
+          '<span>' + escapeHtml(node.date || 'Unknown date') + '</span>' +
+        '</div>';
+      referenceTooltip.hidden = false;
+      placeReferenceTooltip(refElement);
+    }
+
+    function hideReferenceTooltip() {
+      if (referenceTooltip) {
+        referenceTooltip.hidden = true;
+      }
+    }
+
+    function placeReferenceTooltip(refElement) {
+      const margin = 12;
+      const gap = 10;
+      const anchor = refElement.getBoundingClientRect();
+      const tooltipRect = referenceTooltip.getBoundingClientRect();
+      let left = anchor.right + gap;
+      if (left + tooltipRect.width > window.innerWidth - margin) {
+        left = anchor.left - tooltipRect.width - gap;
+      }
+      const top = Math.max(margin, Math.min(anchor.top - 4, window.innerHeight - tooltipRect.height - margin));
+      referenceTooltip.style.left = Math.max(margin, left) + 'px';
+      referenceTooltip.style.top = top + 'px';
+    }
+
+    function getReferenceKindLabel(kind) {
+      const labels = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
+      return labels[kind] || kind;
+    }
+
     function findEventTargetElement(event, selector) {
       const target = event.target;
       if (!target || typeof target.closest !== 'function') {
@@ -1580,14 +1678,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(ref.name) : null;
           const flowKind = flowBranch ? flowBranch.kind : null;
           const flowBadge = flowKind
-            ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '" title="' + escapeHtml(formatFlowBranchTitle(flowBranch)) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
+            ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
             : '';
           const flowClass = flowKind ? ' flow-branch flow-kind-' + escapeHtml(flowKind) : '';
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '" tabindex="0" aria-describedby="referenceTooltip">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
         })
         .join('');
 
-      return '<div class="node ' + getNodeClass(node, visibleRefs) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px" title="' + escapeHtml(formatNodeTitle(node, visibleRefs)) + '">' +
+      const nodeTitle = visibleRefs.length === 0 ? ' title="' + escapeHtml(formatNodeTitle(node, visibleRefs)) + '"' : '';
+      return '<div class="node ' + getNodeClass(node, visibleRefs) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px"' + nodeTitle + '>' +
         '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
         refLines +
         summary +
@@ -1762,14 +1861,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const date = node.date || 'Unknown date';
       const subject = node.subject || 'Structural commit';
       return refBlock + node.hash + '\\n' + subject + '\\n' + author + ' on ' + date;
-    }
-
-    function formatFlowBranchTitle(branch) {
-      if (!branch) {
-        return '';
-      }
-      const kind = flowKindLabels[branch.kind] || branch.kind;
-      return kind + ' flow branch';
     }
 
 	    function describeEdgePath(sourceX, sourceY, targetX, targetY) {

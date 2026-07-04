@@ -18,6 +18,7 @@ import type {
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { RevisionGraphSnapshotLoadContext } from '../backendServices/snapshot';
+import { loadGitBranchDescriptions } from '../repository/branchDescriptions';
 import {
   RevisionGraphViewReference,
   RevisionGraphViewState
@@ -55,6 +56,7 @@ export interface RevisionGraphRepositoryOverlay {
 export interface RevisionGraphViewStateBuildContext {
   readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
   readonly flowGovernanceSettings?: FlowGovernanceSettings;
+  readonly branchDescriptions?: ReadonlyMap<string, string>;
 }
 
 export async function buildReadyRevisionGraphViewStateBundle(
@@ -355,6 +357,10 @@ async function buildReadyRevisionGraphViewStateFromParts(
   );
   traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
   throwIfAborted(signal, 'The revision graph load was aborted.');
+  const flowGovernance = await buildFlowGovernanceViewState(repository, references, context?.flowGovernanceSettings);
+  const branchDescriptions = context?.branchDescriptions
+    ?? (flowGovernance ? await loadGitBranchDescriptions(repository.rootUri.fsPath, signal) : new Map());
+  const describedReferences = applyBranchDescriptions(references, branchDescriptions);
   const baseCanvasWidth = Math.max(
     880,
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)
@@ -381,8 +387,8 @@ async function buildReadyRevisionGraphViewStateFromParts(
     primaryAncestorNextByHash,
     scene,
     nodeLayouts,
-    references,
-    flowGovernance: await buildFlowGovernanceViewState(repository, references, context?.flowGovernanceSettings),
+    references: describedReferences,
+    flowGovernance,
     sceneLayoutKey: buildRevisionGraphSceneLayoutKey(nodeLayouts, scene.edges),
     baseCanvasWidth,
     baseCanvasHeight,
@@ -456,6 +462,19 @@ function buildViewReferences(scene: RevisionGraphScene): RevisionGraphViewRefere
       title: ref.name
     }))
   );
+}
+
+function applyBranchDescriptions(
+  references: readonly RevisionGraphViewReference[],
+  descriptions: ReadonlyMap<string, string>
+): RevisionGraphViewReference[] {
+  return references.map((reference) => {
+    if (reference.kind !== 'head' && reference.kind !== 'branch') {
+      return reference;
+    }
+    const description = descriptions.get(reference.name);
+    return description ? { ...reference, description } : reference;
+  });
 }
 
 function buildOverlayRefsByHash(

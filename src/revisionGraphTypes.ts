@@ -94,6 +94,7 @@ export interface RevisionGraphViewReference {
   readonly name: string;
   readonly kind: RevisionGraphRef['kind'];
   readonly title: string;
+  readonly description?: string;
 }
 
 export interface RevisionGraphViewState {

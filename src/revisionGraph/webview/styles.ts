@@ -306,6 +306,59 @@ export function renderRevisionGraphStyles(): string {
     .flow-badge.flow-kind-bug { background: #ff7a59; color: #1f0803; }
     .flow-badge.flow-kind-hotfix { background: #d62828; color: white; }
     .flow-badge.flow-kind-unknown { background: color-mix(in srgb, var(--muted) 82%, var(--panel)); color: var(--text); }
+    .reference-tooltip {
+      position: fixed;
+      z-index: 58;
+      width: min(360px, calc(100vw - 24px));
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--panel) 96%, var(--bg));
+      color: var(--text);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+      pointer-events: none;
+    }
+    .reference-tooltip[hidden] { display: none; }
+    .reference-tooltip-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .reference-tooltip-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .reference-tooltip-description {
+      margin-top: 9px;
+      padding-left: 9px;
+      border-left: 2px solid var(--accent);
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .reference-tooltip-subject {
+      margin-top: 10px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .reference-tooltip-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .reference-tooltip-hash {
+      font-family: var(--vscode-editor-font-family, monospace);
+    }
     .context-menu {
       position: fixed;
       z-index: 60;

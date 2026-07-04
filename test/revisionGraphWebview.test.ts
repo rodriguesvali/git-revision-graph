@@ -131,6 +131,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
   assert.match(html, /Start New Task/);
+  assert.match(html, /id="referenceTooltip" role="tooltip" hidden/);
   assert.match(html, /Validate Release Promotion/);
   assert.match(html, /Prepare Production Equalization/);
   assert.match(html, /Copy Promotion PR Context/);
@@ -502,6 +503,12 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.flow-dialog-backdrop \{\s*position: fixed;\s*inset: 0;\s*z-index: 75;/s);
   assert.match(html, /\.flow-form-input \{[^}]*border: 1px solid var\(--border\);/s);
   assert.match(html, /\.flow-form-field\[hidden\] \{\s*display: none;\s*\}/s);
+  assert.match(html, /\.reference-tooltip \{[\s\S]*?position: fixed;[\s\S]*?width: min\(360px, calc\(100vw - 24px\)\);/s);
+  assert.match(html, /function showReferenceTooltip\(refElement\)/);
+  assert.match(html, /reference\.description[\s\S]*?reference-tooltip-description/);
+  assert.match(html, /function placeReferenceTooltip\(refElement\)/);
+  assert.match(html, /tabindex="0" aria-describedby="referenceTooltip"/);
+  assert.match(html, /const nodeTitle = visibleRefs\.length === 0/);
   assert.match(html, /button\.className = 'context-menu-item';/);
   assert.match(html, /button\.className = 'context-menu-item context-submenu-trigger';/);
   assert.doesNotMatch(html, /context-menu-group/);

@@ -129,7 +129,10 @@ test('attaches Flow Governance metadata from fallback settings without changing 
       flowGovernanceSettings: {
         enabled: true,
         configPath: '.missing-flow.json'
-      }
+      },
+      branchDescriptions: new Map([
+        ['main', 'Primary integration branch']
+      ])
     }
   );
 
@@ -150,6 +153,14 @@ test('attaches Flow Governance metadata from fallback settings without changing 
       ['origin/feature/demo', 'remote'],
       ['v1.0.0', 'tag']
     ]
+  );
+  assert.equal(
+    state.references.find((ref) => ref.name === 'main')?.description,
+    'Primary integration branch'
+  );
+  assert.equal(
+    state.references.find((ref) => ref.name === 'origin/feature/demo')?.description,
+    undefined
   );
 });
 
