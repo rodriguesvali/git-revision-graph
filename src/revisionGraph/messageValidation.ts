@@ -69,7 +69,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         : undefined;
     case 'start-flow-branch':
       return isBoundedNonEmptyString(message.sourceRefName)
-        && (message.branchKind === 'release' || message.branchKind === 'feature')
+        && (message.branchKind === 'release' || message.branchKind === 'feature' || message.branchKind === 'task')
         && isBoundedNonEmptyString(message.name, 240)
         && (message.description === undefined || isBoundedString(message.description, 2048))
         ? message.description === undefined

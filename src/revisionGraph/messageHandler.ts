@@ -35,7 +35,7 @@ export interface RevisionGraphMessageHandlerHost
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
   validateFlowReleasePromotion(refName: string): Promise<void>;
   startFlowBranch(
-    branchKind: 'release' | 'feature',
+    branchKind: 'release' | 'feature' | 'task',
     sourceRefName: string,
     name: string,
     description: string | undefined

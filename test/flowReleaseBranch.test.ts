@@ -51,6 +51,17 @@ test('Flow Governance feature branch names follow the configured feature pattern
   );
 });
 
+test('Flow Governance task branch names combine the Dev Task number and short name', () => {
+  assert.deepEqual(
+    resolveFlowBranchName('task', '4312-adjust-timeout', DEFAULT_FLOW_CONFIG),
+    { ok: true, branchName: 'task/4312-adjust-timeout' }
+  );
+  assert.equal(
+    resolveFlowBranchName('task', '4312 adjust timeout', DEFAULT_FLOW_CONFIG).ok,
+    false
+  );
+});
+
 test('Flow Governance starts a local release branch from main', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
@@ -96,6 +107,31 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.deepEqual(upstreamClears, ['feature/checkout-redesign']);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
+});
+
+test('Flow Governance starts a local task branch from its feature', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
+
+  await startFlowBranch(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/checkout-redesign',
+    name: '4312-adjust-timeout',
+    description: 'Keep checkout requests bounded',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'task/4312-adjust-timeout',
+    checkout: true,
+    ref: 'feature/checkout-redesign'
+  }]);
+  assert.deepEqual(upstreamClears, ['task/4312-adjust-timeout']);
+  assert.equal(refreshes.length, 1);
+  assert.match(informationMessages[0] ?? '', /Task branch task\/4312-adjust-timeout was created/);
 });
 
 test('Flow Governance refuses an existing release branch before mutation', async () => {

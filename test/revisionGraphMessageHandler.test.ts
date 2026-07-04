@@ -86,7 +86,7 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
 
 test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
   const calls: Array<{
-    readonly branchKind: 'release' | 'feature';
+    readonly branchKind: 'release' | 'feature' | 'task';
     readonly sourceRefName: string;
     readonly name: string;
     readonly description: string | undefined;
@@ -110,6 +110,13 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     sourceRefName: 'main',
     name: 'checkout-redesign'
   });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    branchKind: 'task',
+    sourceRefName: 'feature/checkout-redesign',
+    name: '4312-adjust-timeout',
+    description: 'Keep checkout requests bounded'
+  });
 
   assert.deepEqual(calls, [
     {
@@ -123,6 +130,12 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
       sourceRefName: 'main',
       name: 'checkout-redesign',
       description: undefined
+    },
+    {
+      branchKind: 'task',
+      sourceRefName: 'feature/checkout-redesign',
+      name: '4312-adjust-timeout',
+      description: 'Keep checkout requests bounded'
     }
   ]);
 });

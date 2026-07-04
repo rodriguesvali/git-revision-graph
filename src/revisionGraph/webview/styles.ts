@@ -446,6 +446,9 @@ export function renderRevisionGraphStyles(): string {
       gap: 6px;
       margin-bottom: 12px;
     }
+    .flow-form-field[hidden] {
+      display: none;
+    }
     .flow-form-label {
       color: var(--muted);
       font-size: 12px;

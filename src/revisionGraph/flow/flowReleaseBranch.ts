@@ -9,7 +9,7 @@ import {
 import type { RefActionServices } from '../../refActions/types';
 import type { FlowPatternBranchKind, NormalizedFlowConfig } from './flowTypes';
 
-export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature'>;
+export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task'>;
 
 export interface StartFlowBranchOptions {
   readonly kind: FlowStartBranchKind;
@@ -185,5 +185,8 @@ async function setGitBranchDescription(
 }
 
 function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {
-  return kind === 'release' ? 'Release' : 'Feature';
+  if (kind === 'release') {
+    return 'Release';
+  }
+  return kind === 'feature' ? 'Feature' : 'Task';
 }

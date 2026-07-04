@@ -470,6 +470,8 @@ export function renderRevisionGraphScriptInteractions(): string {
           { label: 'Start New Release', onClick: () => showFlowBranchForm(target, 'release') },
           { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') }
         );
+      } else if (flowBranch.kind === 'feature') {
+        entries.push({ label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') });
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
@@ -659,12 +661,20 @@ export function renderRevisionGraphScriptInteractions(): string {
       dialog.branchKind = branchKind;
       dialog.title.textContent = copy.title;
       dialog.submitButton.textContent = copy.submitLabel;
+      dialog.nameLabel.hidden = branchKind === 'task';
+      dialog.nameInput.required = branchKind !== 'task';
+      dialog.taskDevLabel.hidden = branchKind !== 'task';
+      dialog.taskDevInput.required = branchKind === 'task';
+      dialog.shortNameLabel.hidden = branchKind !== 'task';
+      dialog.shortNameInput.required = branchKind === 'task';
       dialog.nameInput.value = '';
+      dialog.taskDevInput.value = '';
+      dialog.shortNameInput.value = '';
       dialog.descriptionInput.value = '';
       setFlowBranchDialogError(dialog, '');
       dialog.backdrop.hidden = false;
       document.body.classList.add('flow-dialog-open');
-      window.setTimeout(() => dialog.nameInput.focus(), 0);
+      window.setTimeout(() => (branchKind === 'task' ? dialog.taskDevInput : dialog.nameInput).focus(), 0);
     }
 
     function ensureFlowBranchDialog() {
@@ -687,6 +697,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         form.appendChild(title);
 
         const nameLabel = document.createElement('label');
+        nameLabel.id = 'flowBranchNameLabel';
         nameLabel.className = 'flow-form-field';
         nameLabel.setAttribute('for', 'flowBranchNameInput');
         const nameText = document.createElement('span');
@@ -703,6 +714,45 @@ export function renderRevisionGraphScriptInteractions(): string {
         nameLabel.appendChild(nameText);
         nameLabel.appendChild(nameInput);
         form.appendChild(nameLabel);
+
+        const taskDevLabel = document.createElement('label');
+        taskDevLabel.id = 'flowBranchTaskDevLabel';
+        taskDevLabel.className = 'flow-form-field';
+        taskDevLabel.setAttribute('for', 'flowBranchTaskDevInput');
+        taskDevLabel.hidden = true;
+        const taskDevText = document.createElement('span');
+        taskDevText.className = 'flow-form-label';
+        taskDevText.textContent = 'Task Dev *';
+        const taskDevInput = document.createElement('input');
+        taskDevInput.id = 'flowBranchTaskDevInput';
+        taskDevInput.className = 'flow-form-input';
+        taskDevInput.type = 'text';
+        taskDevInput.inputMode = 'numeric';
+        taskDevInput.setAttribute('aria-required', 'true');
+        taskDevInput.maxLength = 40;
+        taskDevInput.autocomplete = 'off';
+        taskDevLabel.appendChild(taskDevText);
+        taskDevLabel.appendChild(taskDevInput);
+        form.appendChild(taskDevLabel);
+
+        const shortNameLabel = document.createElement('label');
+        shortNameLabel.id = 'flowBranchShortNameLabel';
+        shortNameLabel.className = 'flow-form-field';
+        shortNameLabel.setAttribute('for', 'flowBranchShortNameInput');
+        shortNameLabel.hidden = true;
+        const shortNameText = document.createElement('span');
+        shortNameText.className = 'flow-form-label';
+        shortNameText.textContent = 'ShortName *';
+        const shortNameInput = document.createElement('input');
+        shortNameInput.id = 'flowBranchShortNameInput';
+        shortNameInput.className = 'flow-form-input';
+        shortNameInput.type = 'text';
+        shortNameInput.setAttribute('aria-required', 'true');
+        shortNameInput.maxLength = 199;
+        shortNameInput.autocomplete = 'off';
+        shortNameLabel.appendChild(shortNameText);
+        shortNameLabel.appendChild(shortNameInput);
+        form.appendChild(shortNameLabel);
 
         const descriptionLabel = document.createElement('label');
         descriptionLabel.className = 'flow-form-field';
@@ -756,16 +806,30 @@ export function renderRevisionGraphScriptInteractions(): string {
         form.addEventListener('submit', (event) => {
           event.preventDefault();
           const dialog = ensureFlowBranchDialog();
-          const name = dialog.nameInput.value.trim();
+          const branchKind = dialog.branchKind;
+          const taskDev = dialog.taskDevInput.value.trim();
+          const shortName = dialog.shortNameInput.value.trim();
+          const name = branchKind === 'task'
+            ? taskDev + '-' + shortName
+            : dialog.nameInput.value.trim();
           const description = dialog.descriptionInput.value.trim();
-          if (!name) {
+          if (branchKind === 'task' && !/^[0-9]+$/.test(taskDev)) {
+            setFlowBranchDialogError(dialog, 'Task Dev must be a number.');
+            dialog.taskDevInput.focus();
+            return;
+          }
+          if (branchKind === 'task' && !shortName) {
+            setFlowBranchDialogError(dialog, 'ShortName is required.');
+            dialog.shortNameInput.focus();
+            return;
+          }
+          if (branchKind !== 'task' && !name) {
             setFlowBranchDialogError(dialog, 'Name is required.');
             dialog.nameInput.focus();
             return;
           }
 
           const target = dialog.target;
-          const branchKind = dialog.branchKind;
           if (!target || !branchKind) {
             closeFlowBranchDialog();
             return;
@@ -781,7 +845,12 @@ export function renderRevisionGraphScriptInteractions(): string {
         form: backdrop.querySelector('.flow-dialog'),
         title: backdrop.querySelector('#flowBranchDialogTitle'),
         submitButton: backdrop.querySelector('.flow-dialog-button.primary'),
+        nameLabel: backdrop.querySelector('#flowBranchNameLabel'),
         nameInput: backdrop.querySelector('#flowBranchNameInput'),
+        taskDevLabel: backdrop.querySelector('#flowBranchTaskDevLabel'),
+        taskDevInput: backdrop.querySelector('#flowBranchTaskDevInput'),
+        shortNameLabel: backdrop.querySelector('#flowBranchShortNameLabel'),
+        shortNameInput: backdrop.querySelector('#flowBranchShortNameInput'),
         descriptionInput: backdrop.querySelector('#flowBranchDescriptionInput'),
         error: backdrop.querySelector('.flow-form-error'),
         get target() {
@@ -816,6 +885,9 @@ export function renderRevisionGraphScriptInteractions(): string {
     }
 
     function getFlowBranchDialogCopy(branchKind) {
+      if (branchKind === 'task') {
+        return { title: 'Start New Task', submitLabel: 'Create Task' };
+      }
       if (branchKind === 'feature') {
         return { title: 'Start New Feature', submitLabel: 'Create Feature' };
       }

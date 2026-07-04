@@ -35,9 +35,9 @@ export function isRevisionGraphMessageAllowedForState(
       return state.viewMode === 'ready'
         && state.flowGovernance?.enabled === true
         && hasKnownReferenceName(state, message.sourceRefName)
-        && (message.branchKind === 'release' || message.branchKind === 'feature')
         && state.flowGovernance.references.some((ref) =>
-          ref.refName === message.sourceRefName && ref.kind === 'main'
+          ref.refName === message.sourceRefName
+            && ref.kind === (message.branchKind === 'task' ? 'feature' : 'main')
         );
     case 'prepare-flow-equalization':
       return state.viewMode === 'ready'

@@ -24,12 +24,16 @@ from an active release.
 6. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
    saves the description as Git branch metadata when provided.
-7. The user selects a governed source or target branch.
-8. The graph explains applicable governance policy, including whether a PR is
+7. From a feature branch, the user can choose `Flow Governance > Start New Task`,
+   enter the required Dev Task number and short name plus an optional description,
+   and create a task branch named from `<task-dev>-<short-name>` through
+   `patterns.task`.
+8. The user selects a governed source or target branch.
+9. The graph explains applicable governance policy, including whether a PR is
    required.
-9. For `release/*` promotion, the user can validate whether production is an
+10. For `release/*` promotion, the user can validate whether production is an
    ancestor of the release.
-10. If promotion is blocked, the extension guides the user toward a `sync/*`
+11. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
 
 ## Scope
@@ -87,6 +91,10 @@ from an active release.
   optional-description form, validate the resulting branch against
   `patterns.release` or `patterns.feature`, create a local branch from `main`,
   and never push automatically.
+- A branch classified as `feature` shows `Flow Governance > Start New Task`.
+  Its form requires a numeric Dev Task and a short name, accepts an optional
+  description, combines the values as `<task-dev>-<short-name>`, validates the
+  result through `patterns.task`, and creates the local branch from that feature.
 - Equalization prepares only a local `sync/*` path after confirmation, never
   pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
@@ -198,6 +206,13 @@ from an active release.
   badge beside the branch name while keeping a bounded maximum width.
 - `npm run build` and `npm test` passed with 581 tests on 2026-07-04 after the
   governed reference card sizing adjustment.
+- `Start New Task` was added on 2026-07-04 for feature branches, reusing the
+  governed branch creation workflow with task-specific fields and source-kind
+  authorization.
+- `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
+  Start New Task workflow.
+- The generated webview numeric validation for Dev Task was corrected on
+  2026-07-04 and covered at the final rendered-script boundary.
 
 ## Manual Validation
 
@@ -208,6 +223,9 @@ from an active release.
   optional-description form.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
+- On a feature branch, verify `Start New Task` requires a numeric Dev Task and
+  ShortName, creates `task/<task-dev>-<short-name>` from that feature under the
+  default configuration, and stores an optional description.
 - Select governed branch pairs and verify PR-required explanations.
 - Validate a ready release and a blocked release.
 - Confirm blocked release guidance points to equalization.

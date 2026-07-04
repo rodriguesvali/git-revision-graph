@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file.
   using the configured release or feature pattern.
 - Expanded reference cards using their branch-name length plus reserved badge space, keeping
   longer governed branch names visible while retaining ellipsis for exceptional names.
+- Added `Start New Task` to the Flow Governance submenu for feature branches. Its shared form
+  combines the required Dev Task number and short name, applies `patterns.task`, and creates the
+  local task branch from the selected feature without pushing.
 
 ## 1.5.8
 

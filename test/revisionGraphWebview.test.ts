@@ -130,6 +130,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
+  assert.match(html, /Start New Task/);
   assert.match(html, /Validate Release Promotion/);
   assert.match(html, /Prepare Production Equalization/);
   assert.match(html, /Copy Promotion PR Context/);
@@ -458,6 +459,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /\} else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
   assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \}\s*\);/s);
+  assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
@@ -499,6 +501,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.context-menu-submenu\.open > \.context-submenu \{\s*display: block;\s*\}/s);
   assert.match(html, /\.flow-dialog-backdrop \{\s*position: fixed;\s*inset: 0;\s*z-index: 75;/s);
   assert.match(html, /\.flow-form-input \{[^}]*border: 1px solid var\(--border\);/s);
+  assert.match(html, /\.flow-form-field\[hidden\] \{\s*display: none;\s*\}/s);
   assert.match(html, /button\.className = 'context-menu-item';/);
   assert.match(html, /button\.className = 'context-menu-item context-submenu-trigger';/);
   assert.doesNotMatch(html, /context-menu-group/);
@@ -509,6 +512,10 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
   assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
+  assert.match(html, /taskDevText\.textContent = 'Task Dev \*';/);
+  assert.match(html, /shortNameText\.textContent = 'ShortName \*';/);
+  assert.match(html, /taskDev \+ '-' \+ shortName/);
+  assert.match(html, /!\/\^\[0-9\]\+\$\/\.test\(taskDev\)/);
   assert.match(html, /function getFlowBranchDialogCopy\(branchKind\)/);
   assert.match(html, /nameText\.textContent = 'Name \*';/);
   assert.match(html, /nameInput\.setAttribute\('aria-required', 'true'\);/);
