@@ -193,6 +193,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /patch\.sourceToken !== currentState\.sourceToken/);
   assert.match(html, /currentCommits\.length !== patch\.previousCommitCount/);
   assert.match(html, /commits: currentCommits\.concat\(patch\.commits \|\| \[\]\)/);
+  assert.match(html, /function syncShowLogChrome\(state\)/);
+  assert.match(html, /syncShowLogChrome\(currentState\);/);
+  assert.match(html, /showAllBranchesToggle\.disabled = !!state\.loading \|\| !!state\.loadingMore;/);
   assert.match(html, /commitList\.insertAdjacentHTML\('beforeend', appendedMarkup\);/);
   assert.match(html, /function syncLoadMoreBlock\(state\)/);
   assert.match(html, /function renderCommitEntry\(commit, index\)/);

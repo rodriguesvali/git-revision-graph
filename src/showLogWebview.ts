@@ -1000,27 +1000,8 @@ export function renderShowLogWebviewHtml(): string {
         hasMore: false
       };
 
-      summary.textContent = state.summary || 'Show Log';
-      summaryCount.textContent = state.summaryCount || '';
-      loadingChip.dataset.visible = state.loading ? 'true' : 'false';
-      loadingChip.textContent = 'Loading';
+      syncShowLogChrome(state);
       syncSelectedCommitHashes(state.commits || []);
-      if (filterInput instanceof HTMLInputElement) {
-        const nextFilterText = state.filterText || '';
-        if (filterInput.value !== nextFilterText) {
-          filterInput.value = nextFilterText;
-        }
-        filterInput.disabled = state.kind !== 'visible';
-      }
-      if (filterClear instanceof HTMLButtonElement) {
-        filterClear.hidden = !(state.filterText || '').trim();
-        filterClear.disabled = state.kind !== 'visible';
-      }
-      if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
-        showAllBranchesControl.hidden = !state.canToggleAllBranches;
-        showAllBranchesToggle.checked = !!state.showAllBranches;
-        showAllBranchesToggle.disabled = !!state.loading || !!state.loadingMore;
-      }
 
       const sections = [];
       if (state.errorMessage) {
@@ -1066,8 +1047,7 @@ export function renderShowLogWebviewHtml(): string {
         return true;
       }
 
-      summaryCount.textContent = currentState.summaryCount || '';
-      loadingChip.dataset.visible = currentState.loading ? 'true' : 'false';
+      syncShowLogChrome(currentState);
       const commitList = content.querySelector('.commit-list');
       if (!commitList) {
         render();
@@ -1084,6 +1064,36 @@ export function renderShowLogWebviewHtml(): string {
       syncLoadMoreObserver();
       restorePendingCommitFileFilterFocus();
       return true;
+    }
+
+    function syncShowLogChrome(state) {
+      if (!summary || !summaryCount || !loadingChip) {
+        return;
+      }
+
+      summary.textContent = state.summary || 'Show Log';
+      summaryCount.textContent = state.summaryCount || '';
+      loadingChip.dataset.visible = state.loading ? 'true' : 'false';
+      loadingChip.textContent = 'Loading';
+
+      if (filterInput instanceof HTMLInputElement) {
+        const nextFilterText = state.filterText || '';
+        if (filterInput.value !== nextFilterText) {
+          filterInput.value = nextFilterText;
+        }
+        filterInput.disabled = state.kind !== 'visible';
+      }
+
+      if (filterClear instanceof HTMLButtonElement) {
+        filterClear.hidden = !(state.filterText || '').trim();
+        filterClear.disabled = state.kind !== 'visible';
+      }
+
+      if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
+        showAllBranchesControl.hidden = !state.canToggleAllBranches;
+        showAllBranchesToggle.checked = !!state.showAllBranches;
+        showAllBranchesToggle.disabled = !!state.loading || !!state.loadingMore;
+      }
     }
 
     function renderTableHeader() {
