@@ -469,7 +469,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function formatWebviewTooltipDate\(value, fallbackText\)/);
   assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);
   assert.match(html, /reference-tooltip-kind/);
-  assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 17px;[\s\S]*?padding: 2px 5px;/s);
+  assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 19px;[\s\S]*?padding: 3px 5px 2px;/s);
   assert.doesNotMatch(html, /flowKindBadges/);
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);

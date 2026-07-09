@@ -287,22 +287,22 @@ export function renderRevisionGraphStyles(): string {
     .reference-tooltip[hidden] { display: none; }
     .reference-tooltip-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
     }
     .reference-tooltip-kind {
       display: inline-flex;
       align-items: center;
       flex: 0 0 auto;
-      min-height: 17px;
-      padding: 2px 5px;
+      min-height: 19px;
+      padding: 3px 5px 2px;
       border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
       border-radius: 4px;
       background: color-mix(in srgb, var(--accent) 18%, var(--panel));
       color: var(--text);
       font-size: 10px;
       font-weight: 700;
-      line-height: 1;
+      line-height: 12px;
       text-transform: uppercase;
     }
     .reference-tooltip-name {
