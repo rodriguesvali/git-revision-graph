@@ -465,8 +465,8 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.reference-tooltip \{[\s\S]*?position: fixed;[\s\S]*?width: min\(360px, calc\(100vw - 24px\)\);/s);
   assert.match(html, /function showReferenceTooltip\(refElement\)/);
   assert.match(html, /reference\.description[\s\S]*?reference-tooltip-description/);
-  assert.match(html, /formatReferenceTooltipDate\(node\.date\)/);
-  assert.match(html, /function formatReferenceTooltipDate\(value\)/);
+  assert.match(html, /formatWebviewTooltipDate\(node\.date, 'Unknown date'\)/);
+  assert.match(html, /function formatWebviewTooltipDate\(value, fallbackText\)/);
   assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);
   assert.match(html, /reference-tooltip-kind/);
   assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 17px;[\s\S]*?padding: 2px 5px;/s);
@@ -474,8 +474,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseleave', scheduleHideReferenceTooltip\)/);
-  assert.match(html, /data-reference-tooltip-action="copy-commit-hash"/);
-  assert.match(html, /title="Copy Hash" aria-label="Copy Hash" data-reference-tooltip-action="copy-commit-hash"[\s\S]*?<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">/);
+  assert.match(html, /renderCopyHashIconButton\('reference-tooltip-action reference-tooltip-action-icon', 'data-reference-tooltip-action', 'copy-commit-hash', node\.hash\)/);
   assert.match(html, /\.reference-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--accent\)\);/s);
   assert.match(html, /\.reference-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
   assert.match(html, /data-reference-tooltip-action="open-commit-on-github"/);

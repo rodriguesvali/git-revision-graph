@@ -1,4 +1,5 @@
 import { Repository } from '../git';
+import { isAbortError } from '../errors';
 import { RefActionKind } from '../refActions';
 import { RevisionGraphCommitShortStat, RevisionGraphMessage } from '../revisionGraphTypes';
 import { formatShortCommitHash } from '../commitHash';
@@ -30,7 +31,10 @@ export interface RevisionGraphMessageHandlerHost
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
-  loadCommitShortStat(repository: Repository, commitHash: string): Promise<RevisionGraphCommitShortStat | undefined>;
+  loadCommitShortStat(
+    repository: Repository,
+    commitHash: string
+  ): Promise<RevisionGraphCommitShortStat | undefined>;
   openCommitOnGitHub(repository: Repository, commitHash: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
@@ -110,7 +114,16 @@ export class RevisionGraphMessageHandler {
         return;
       case 'load-commit-short-stat':
         await this.runWithCurrentRepository(async (repository) => {
-          const shortStat = await this.host.loadCommitShortStat(repository, message.commitHash);
+          let shortStat: RevisionGraphCommitShortStat | undefined;
+          try {
+            shortStat = await this.host.loadCommitShortStat(repository, message.commitHash);
+          } catch (error) {
+            if (isAbortError(error)) {
+              return;
+            }
+
+            throw error;
+          }
           if (this.host.getCurrentRepository()?.rootUri.fsPath !== repository.rootUri.fsPath) {
             return;
           }

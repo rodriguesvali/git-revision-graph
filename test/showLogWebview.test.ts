@@ -63,7 +63,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function restorePendingCommitFileFilterFocus\(\)/);
   assert.match(html, /data-merge="' \+ \(commit\.isMerge \? 'true' : 'false'\)/);
   assert.match(html, /renderCommit\(commit, index\)/);
-  assert.match(html, /formatCommitRowDate\(commit\.date\)/);
+  assert.match(html, /formatWebviewShortDate\(commit\.date\)/);
   assert.match(html, /renderTopology\(commit\.topology, commit\.isMerge, index === 0, mainGraphHeight\)/);
   assert.match(html, /const laneTopY = isFirstVisible && lane === topology\.nodeLane \? centerY : topY;/);
   assert.match(html, /\.graph-node-solid/);
@@ -74,8 +74,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\.commit-tooltip \{/);
   assert.match(html, /var\(--vscode-editorHoverWidget-background/);
   assert.match(html, /function renderCommitTooltip\(commit\)/);
-  assert.match(html, /formatCommitTooltipDate\(commit\.date\)/);
-  assert.match(html, /function formatCommitTooltipDate\(value\)/);
+  assert.match(html, /formatWebviewTooltipDate\(commit\.date, 'unknown date'\)/);
+  assert.match(html, /function formatWebviewTooltipDate\(value, fallbackText\)/);
   assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);
   assert.match(html, /function parseCoAuthors\(message\)/);
   assert.match(html, /function showCommitTooltip\(commitHash, event\)/);
@@ -88,8 +88,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\}, 500\);/);
   assert.match(html, /function cancelCommitTooltipHide\(\)/);
   assert.match(html, /pointer-events: auto;/);
-  assert.match(html, /data-tooltip-action="copyCommitHash"/);
-  assert.match(html, /title="Copy Hash" aria-label="Copy Hash" data-tooltip-action="copyCommitHash"[\s\S]*?<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">/);
+  assert.match(html, /renderCopyHashIconButton\('commit-tooltip-action commit-tooltip-action-icon', 'data-tooltip-action', 'copyCommitHash', commit\.hash\)/);
   assert.match(html, /\.commit-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--vscode-focusBorder\)\);/s);
   assert.match(html, /\.commit-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
   assert.match(html, /data-tooltip-action="openCommitOnGitHub"/);
