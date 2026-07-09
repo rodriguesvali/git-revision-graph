@@ -8,8 +8,9 @@ All notable changes to this project will be documented in this file.
 
 - Opened the `1.5.9` cosmetic-improvement cycle on top of the published `1.5.8` baseline.
 - Version metadata is `1.5.9` in `package.json` and `package-lock.json`.
-- Automated verification passed with `npm run build`, 532 tests through `npm test`, and
+- Automated verification passed with `npm run build`, 533 tests through `npm test`, and
   `git diff --check`.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-09.
 
 ### UX Improvements
 
@@ -21,6 +22,20 @@ All notable changes to this project will be documented in this file.
 - Added keyboard focus and selection support to individual references in graph cards.
 - Made reference details interactive with delayed dismissal, on-demand cached change statistics,
   commit-hash copying, and GitHub commit opening when a supported remote is configured.
+- Aligned Show Log reference badges and commit tooltips with the graph card visual language,
+  including kind icons, matching mixed graph-card colors, compact hash actions, and the same
+  tooltip date formatting.
+- Corrected slash-containing local branch decorations such as `feature/teste03` and
+  `task/1-new-task` so they render with branch styling rather than remote styling.
+- Fixed Show Log incremental paging so toolbar controls such as `Show All Branches` are re-enabled
+  after the next page finishes loading.
+
+### Code Quality
+
+- Extracted shared webview display helpers for tooltip dates and copy-hash icon actions.
+- Made lazy tooltip change-stat loading abort-aware across repository and view lifecycle changes.
+- Extracted the reference-tooltip runtime into a dedicated webview script segment and tightened
+  related coverage.
 
 ## 1.5.8
 

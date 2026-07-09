@@ -1,19 +1,20 @@
 # Release Readiness
 
-Status: Release 1.5.9 in validation
-Last consolidated: 2026-07-07
+Status: Release 1.5.9 published
+Last consolidated: 2026-07-09
 
 ## Current State
 
 - Current package version: `1.5.9` in `package.json`.
-- Latest recorded published release: `1.5.8`.
-- Release cycle status: `1.5.9` is open for cosmetic reference-tooltip improvements.
+- Latest recorded published release: `1.5.9`.
+- Release cycle status: `1.5.9` was published by maintainer confirmation on 2026-07-09.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Current Release: 1.5.9
+## Completed Release: 1.5.9
 
-Status: Build complete - manual validation pending
+Status: Published
 Opened: 2026-07-07
+Published: 2026-07-09 by maintainer confirmation
 Baseline: published `1.5.8`
 
 Focused build artifact:
@@ -30,6 +31,12 @@ Approved scope:
   reference.
 - Keep the popover interactive and expose copy-hash and supported GitHub commit actions.
 - Exclude the Flow Governance branch-kind badge and all other governance behavior from `1.5.9`.
+- Align Show Log reference badges and commit tooltips with the graph card reference presentation,
+  including kind icons, matching mixed colors, compact copy-hash actions, and consistent tooltip
+  date formatting.
+- Treat slash-containing local branch decorations such as `feature/teste03` and `task/1-new-task`
+  as local branches when repository ref metadata confirms or fallback parsing has no remote hint.
+- Keep Show Log toolbar controls coherent after incremental next-page loading.
 - Preserve the published extension architecture, multi-repository behavior, empty states, and
   existing reference actions.
 
@@ -38,8 +45,8 @@ Release constraints and risks:
 - No new commands, settings, views, dependencies, activation events, or contribution points.
 - Local Git config metadata reads must fail open and remain abort-aware; commit statistics must use
   a bounded, cached, on-demand query rather than slowing the initial graph load.
-- Tooltip placement, theme contrast, and keyboard focus require manual Extension Development Host
-  validation.
+- Tooltip placement, theme contrast, keyboard focus, Show Log badge contrast, and incremental
+  paging require manual Extension Development Host validation.
 - Do not package, publish, or bump beyond `1.5.9` without explicit maintainer approval.
 
 Planned verification:
@@ -52,13 +59,19 @@ Planned verification:
 - Manual smoke for local/remote/tag/stash references, multi-ref nodes, long names, descriptions,
   pointer transfer into the popover, statistics, clipboard/GitHub actions, viewport edges,
   scrolling, resizing, keyboard selection, GitHub/non-GitHub remotes, and dark/light themes.
+- Manual smoke for Show Log row and tooltip badges, `Show All Branches` toggling, and automatic
+  next-page loading.
 
 Marketplace and rollback notes:
 
-- Marketplace impact is limited to the tooltip presentation documented in README and CHANGELOG.
-- Rollback is a focused removal of branch-description metadata loading and the reference tooltip;
-  no persisted extension setting, data migration, or contribution-point change is involved.
-- VSIX packaging and Marketplace publication have not been run.
+- Marketplace impact is limited to the reference tooltip, Show Log reference-badge presentation,
+  and paging fix documented in README and CHANGELOG.
+- No new commands, settings, views, activation events, dependencies, or Marketplace contribution
+  points are included.
+- Rollback is a focused revert of the reference-tooltip, branch-description metadata loading,
+  Show Log badge rendering, and incremental toolbar-sync changes; no persisted extension setting,
+  data migration, or contribution-point change is involved.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-09.
 
 Recorded verification:
 
@@ -68,7 +81,14 @@ Recorded verification:
 - `git diff --check` passed on 2026-07-07.
 - SOLID/Clean Code follow-up verification passed on 2026-07-09 with `npm run build`,
   `npm test` (533 tests), and `git diff --check`.
-- Manual Extension Development Host smoke is pending.
+- Show Log badge, branch-classification, color-alignment, and paging follow-up verification passed
+  on 2026-07-09 with `npm run build`, focused Show Log/revision graph tests, `npm test`
+  (533 tests), and `git diff --check`.
+- `README.md`, `CHANGELOG.md`, the `1.5.9` feature artifact, `release.md`, `deployment.md`, and
+  `operations.md` were prepared for `1.5.9` publication handoff on 2026-07-09.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-09.
+- VSIX filename, checksum, size, Marketplace publication timestamp, clean-profile install result,
+  and manual Extension Development Host smoke evidence were not supplied.
 
 ## Completed Release: 1.5.8
 
