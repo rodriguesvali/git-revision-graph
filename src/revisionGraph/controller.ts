@@ -43,6 +43,8 @@ import {
 import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
+import { loadCommitShortStat } from './repository/commitShortStat';
+import { openShowLogCommitOnGitHub } from '../showLog/remoteCommitAction';
 import {
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
@@ -189,6 +191,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private currentState: RevisionGraphViewState;
   private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   private reusableGraphSnapshot: ReusableRevisionGraphSnapshot | undefined;
+  private commitShortStatAbortController = new AbortController();
   private readonly mutationCoordinator: RepositoryMutationCoordinator;
   private readonly ownsMutationCoordinator: boolean;
 
@@ -211,6 +214,7 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repositoryLifecycle = new RevisionGraphRepositoryLifecycle(git, {
       onCurrentRepositoryChanging: (repository) => {
         this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
+        this.abortCommitShortStatRequests();
       },
       onCurrentRepositoryChanged: (repositoryChanged) => {
         if (repositoryChanged) {
@@ -248,6 +252,10 @@ export class RevisionGraphController implements vscode.Disposable {
       pickRepository: () => pickRevisionGraphRepository(this.git, true),
       openUnifiedDiff: (repository, left, right) =>
         openUnifiedDiffDocument(repository, left, right, this.backend),
+      loadCommitShortStat: (repository, commitHash) =>
+        loadCommitShortStat(repository.rootUri.fsPath, commitHash, this.commitShortStatAbortController.signal),
+      openCommitOnGitHub: (repository, commitHash) =>
+        openShowLogCommitOnGitHub(repository, commitHash).then(() => undefined),
       getCurrentRepository: () => this.currentRepository,
       setCurrentRepository: (repository) => {
         this.repositoryLifecycle.setCurrentRepository(repository);
@@ -323,6 +331,7 @@ export class RevisionGraphController implements vscode.Disposable {
     if (this.currentRepository) {
       this.mutationCoordinator.invalidate(this.currentRepository.rootUri.fsPath);
     }
+    this.abortCommitShortStatRequests();
     if (this.ownsMutationCoordinator) {
       this.mutationCoordinator.dispose();
     }
@@ -345,6 +354,7 @@ export class RevisionGraphController implements vscode.Disposable {
       view.onDidDispose(() => {
         if (this.view === view) {
           this.renderCoordinator.cancel();
+          this.abortCommitShortStatRequests();
           this.view = undefined;
         }
         this.disposeViewDisposables();
@@ -872,6 +882,11 @@ export class RevisionGraphController implements vscode.Disposable {
     while (this.viewDisposables.length > 0) {
       this.viewDisposables.pop()?.dispose();
     }
+  }
+
+  private abortCommitShortStatRequests(): void {
+    this.commitShortStatAbortController.abort();
+    this.commitShortStatAbortController = new AbortController();
   }
 
   private syncViewTitle(): void {

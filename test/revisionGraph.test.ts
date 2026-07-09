@@ -72,11 +72,13 @@ test('NUL-framed graph log preserves record and field separator characters in su
 });
 
 test('parses decoration labels by type', () => {
-  assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, release'), [
+  assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, feature/teste03, task/1-new-task, release'), [
     { name: 'main', kind: 'head' },
     { name: 'stash', kind: 'stash' },
     { name: 'v2.0.0', kind: 'tag' },
     { name: 'origin/feature/demo', kind: 'remote' },
+    { name: 'feature/teste03', kind: 'branch' },
+    { name: 'task/1-new-task', kind: 'branch' },
     { name: 'release', kind: 'branch' }
   ]);
 });
@@ -90,7 +92,7 @@ test('builds default git log args for all refs', () => {
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=6000',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
@@ -118,7 +120,7 @@ test('builds git log args that exclude tags and scope to local branches', () => 
       '--decorate-refs-exclude=refs/tags/*',
       '--decorate-refs-exclude=refs/remotes/*',
       '--decorate-refs-exclude=refs/stash',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=12000',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
@@ -140,7 +142,7 @@ test('builds show log git args for a target revision', () => {
       'log',
       '--topo-order',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=51',
       '--skip=100',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
@@ -168,7 +170,7 @@ test('builds show log git args for a target revision with all branches enabled',
       'log',
       '--topo-order',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=51',
       '--skip=0',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
@@ -194,7 +196,7 @@ test('builds show log git args for a revision range', () => {
       'log',
       '--topo-order',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=51',
       '--skip=0',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
@@ -219,7 +221,7 @@ test('builds show log git args with an option terminator before option-like revi
       'log',
       '--topo-order',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=51',
       '--skip=0',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
@@ -1097,7 +1099,7 @@ test('builds current branch git log args from all refs by default so descendants
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=6000',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
@@ -1117,7 +1119,7 @@ test('builds current branch git log args from all refs for legacy descendant opt
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=6000',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]
@@ -1136,7 +1138,7 @@ test('builds origin head git log args from all refs so descendants can be projec
       '--topo-order',
       '--simplify-by-decoration',
       '--decorate=short',
-      '--date=short',
+      '--date=iso-strict',
       '--max-count=6000',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%s%x00%D'
     ]

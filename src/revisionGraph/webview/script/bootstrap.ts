@@ -433,6 +433,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     if (typeof document.addEventListener === 'function') {
       document.addEventListener('mouseleave', endPointerDrivenInteractions);
     }
+    bindReferenceTooltipEvents();
     window.addEventListener('click', (event) => {
       if (!contextMenu.contains(event.target)) {
         closeContextMenu();
@@ -716,6 +717,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         case 'set-remote-tag-state':
           setRemoteTagState(message.tagName, message.state);
           return;
+        case 'set-commit-short-stat':
+          setCommitShortStat(message.commitHash, message.shortStat);
+          return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');
           return;
@@ -809,6 +813,10 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       const scenePlacementSnapshot = options.preserveViewport ? captureScenePlacementSnapshot() : null;
       const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
       const previousSceneLayoutKey = sceneLayoutKey;
+      if (previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null)) {
+        clearReferenceTooltipCommitStats();
+        hideReferenceTooltip();
+      }
       traceWebviewPhase('webview.apply.state-model', () => {
         currentState = nextState;
         currentHeadName = nextState.currentHeadName || null;
@@ -1506,7 +1514,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       nodeLayer.addEventListener('mouseout', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
         if (refElement && (!event.relatedTarget || !refElement.contains(event.relatedTarget))) {
-          hideReferenceTooltip();
+          scheduleHideReferenceTooltip();
         }
       });
       nodeLayer.addEventListener('focusin', (event) => {
@@ -1515,7 +1523,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
           showReferenceTooltip(refElement);
         }
       });
-      nodeLayer.addEventListener('focusout', hideReferenceTooltip);
+      nodeLayer.addEventListener('focusout', handleReferenceTooltipReferenceFocusOut);
       nodeLayer.addEventListener('keydown', (event) => {
         if (event.key !== 'Enter' && event.key !== ' ') {
           return;
@@ -1585,68 +1593,6 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       sceneEventHandlersBound = true;
     }
 
-    function showReferenceTooltip(refElement) {
-      if (!referenceTooltip || !refElement) {
-        return;
-      }
-      const refId = refElement.getAttribute('data-ref-id');
-      const reference = refId ? getReference(refId) : null;
-      const node = reference ? sceneNodeByHash.get(reference.hash) : null;
-      if (!reference || !node) {
-        hideReferenceTooltip();
-        return;
-      }
-
-      const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(reference.name) : null;
-      const flowKind = flowBranch ? flowBranch.kind : null;
-      const badgeLabel = flowKind
-        ? (flowKindBadges[flowKind] || flowKind)
-        : getReferenceKindLabel(reference.kind);
-      const badgeClass = flowKind ? ' flow-kind-' + escapeHtml(flowKind) : '';
-      const description = reference.description
-        ? '<div class="reference-tooltip-description">' + escapeHtml(reference.description) + '</div>'
-        : '';
-      referenceTooltip.innerHTML =
-        '<div class="reference-tooltip-header">' +
-          '<span class="flow-badge' + badgeClass + '">' + escapeHtml(badgeLabel) + '</span>' +
-          '<span class="reference-tooltip-name">' + escapeHtml(reference.name) + '</span>' +
-        '</div>' +
-        description +
-        '<div class="reference-tooltip-subject">' + escapeHtml(node.subject || 'Structural commit') + '</div>' +
-        '<div class="reference-tooltip-meta">' +
-          '<span class="reference-tooltip-hash">' + escapeHtml(formatShortCommitHash(node.hash)) + '</span>' +
-          '<span>' + escapeHtml(node.author || 'Unknown author') + '</span>' +
-          '<span>' + escapeHtml(node.date || 'Unknown date') + '</span>' +
-        '</div>';
-      referenceTooltip.hidden = false;
-      placeReferenceTooltip(refElement);
-    }
-
-    function hideReferenceTooltip() {
-      if (referenceTooltip) {
-        referenceTooltip.hidden = true;
-      }
-    }
-
-    function placeReferenceTooltip(refElement) {
-      const margin = 12;
-      const gap = 10;
-      const anchor = refElement.getBoundingClientRect();
-      const tooltipRect = referenceTooltip.getBoundingClientRect();
-      let left = anchor.right + gap;
-      if (left + tooltipRect.width > window.innerWidth - margin) {
-        left = anchor.left - tooltipRect.width - gap;
-      }
-      const top = Math.max(margin, Math.min(anchor.top - 4, window.innerHeight - tooltipRect.height - margin));
-      referenceTooltip.style.left = Math.max(margin, left) + 'px';
-      referenceTooltip.style.top = top + 'px';
-    }
-
-    function getReferenceKindLabel(kind) {
-      const labels = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
-      return labels[kind] || kind;
-    }
-
     function findEventTargetElement(event, selector) {
       const target = event.target;
       if (!target || typeof target.closest !== 'function') {
@@ -1681,7 +1627,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
             ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
             : '';
           const flowClass = flowKind ? ' flow-branch flow-kind-' + escapeHtml(flowKind) : '';
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '" tabindex="0" aria-describedby="referenceTooltip">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
+          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '" tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
         })
         .join('');
 

@@ -30,7 +30,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Log` al
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload with an empty-cache split option, push with split-button force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
-- Contextual reference tooltips with the full ref name, Flow Governance description when available, commit subject, short hash, author, and date
+- Interactive contextual reference details with a neutral reference kind or Flow Governance badge, full ref name, optional local Git branch description, commit subject, author, date, on-demand change statistics, hash copying, and GitHub commit opening for supported remotes
 - Flow Governance context actions for starting release and feature branches from `main`, plus task branches from a feature using a Dev Task number, short name, and optional description
 - Flow Governance release readiness, Pull Request handoff, and confirmed local `sync/*` equalization from production into a release without automatic push
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
@@ -43,7 +43,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Log` al
 - Focus the graph on one visible revision and all loaded descendants from its single-revision context menu, excluding older and unrelated history through Git ancestry rather than visual position
 - Compare a selected reference or unreferenced commit against the current worktree
 - On-demand `Compare Results` editor panel that presents comparisons as a compact review queue with source/target context, status filters, rename paths, a `Unified Diff` action for ref-to-ref and ref-to-worktree comparisons, double-click file diff opening, and context actions for compare with worktree and worktree restore flows
-- On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
+- On-demand `Show Log` editor panel that appears from the graph context menu and renders a compact commit history for a selected ref/commit or an explicit `base..compare` range, with kind-aware reference badges, inline changed files, commit-to-worktree comparison, reset-to-commit, and double-click file diff opening for the expanded commit
 - Grouped graph context menu actions for any visible commit, including copying the full commit hash from referenced and unreferenced nodes, copying visible ref names, and consistent rounded menu-item highlighting across graph, Show Log, and Compare Results menus
 - Checkout of local and remote branch references
 - Guided checkout flow for remote branches with an explicit `Override branch if exists` option when the local branch name already exists or is currently checked out
@@ -334,6 +334,10 @@ Use both automated and manual checks when changing command behavior:
    - select one tag and delete it from a remote
    - delete a local branch, tag, and remote branch from the graph
    - change scope and visibility options from the graph toolbar
+   - hover and keyboard-focus local, remote, tag, and stash references to verify the interactive
+     reference tooltip, copy-hash action, GitHub action, and branch descriptions
+   - open `Show Log`, verify reference badge colors/icons, toggle `Show All Branches`, and scroll
+     far enough to trigger automatic next-page loading
 
 The extension continues to rely on the public API of the built-in `vscode.git` extension for repository and ref operations, and uses targeted `git` commands only for graph/history data that the API does not expose.
 

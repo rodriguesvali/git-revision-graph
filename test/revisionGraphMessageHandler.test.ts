@@ -221,6 +221,35 @@ test('RevisionGraphMessageHandler handles clipboard copy actions through the hos
   assert.deepEqual(informationMessages, ['Copied commit abcdef12.', 'Copied ref main.']);
 });
 
+test('RevisionGraphMessageHandler loads tooltip stats and opens commits on GitHub', async () => {
+  const repository = createRepository('/workspace/repo');
+  const hostMessages: unknown[] = [];
+  const openedCommitHashes: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    getCurrentRepository: () => repository,
+    async loadCommitShortStat(_repository, commitHash) {
+      assert.equal(commitHash, 'head1');
+      return { files: 3, insertions: 8, deletions: 2 };
+    },
+    async openCommitOnGitHub(_repository, commitHash) {
+      openedCommitHashes.push(commitHash);
+    },
+    postHostMessage(message) {
+      hostMessages.push(message);
+    }
+  }));
+
+  await handler.handleMessage({ type: 'load-commit-short-stat', commitHash: 'head1' });
+  await handler.handleMessage({ type: 'open-commit-on-github', commitHash: 'head1' });
+
+  assert.deepEqual(hostMessages, [{
+    type: 'set-commit-short-stat',
+    commitHash: 'head1',
+    shortStat: { files: 3, insertions: 8, deletions: 2 }
+  }]);
+  assert.deepEqual(openedCommitHashes, ['head1']);
+});
+
 test('RevisionGraphMessageHandler runs repository-scoped host actions with the current repository', async () => {
   const repository = createRepository('/workspace/repo');
   const openedDiffs: Array<{ repositoryPath: string; left: string; right: string }> = [];
@@ -306,6 +335,10 @@ function createHost(
       return undefined;
     },
     async openUnifiedDiff() {},
+    async loadCommitShortStat() {
+      return undefined;
+    },
+    async openCommitOnGitHub() {},
     getCurrentRepository() {
       return undefined;
     },

@@ -296,6 +296,14 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'load-commit-short-stat', commitHash: 'head1' }),
+    { type: 'load-commit-short-stat', commitHash: 'head1' }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({ type: 'open-commit-on-github', commitHash: 'head1' }),
+    { type: 'open-commit-on-github', commitHash: 'head1' }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({
       type: 'reset-to-commit',
       commitHash: 'tag1',
@@ -498,6 +506,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       state
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'load-commit-short-stat', commitHash: 'head1' },
+      state
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'open-commit-on-github', commitHash: 'missing' },
+      state
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
@@ -826,6 +848,14 @@ test('isRevisionGraphMessageAllowedForCurrentRepository rejects stale repository
       '/workspace/other'
     ),
     false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForCurrentRepository(
+      { type: 'load-commit-short-stat', commitHash: 'head1' },
+      { ...state, loading: true, loadingLabel: 'Refreshing revision graph...' },
+      '/workspace/repo'
+    ),
+    true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForCurrentRepository(

@@ -2,6 +2,7 @@ import {
   createWebviewContentSecurityPolicy,
   createWebviewNonce
 } from './webviewSecurity';
+import { renderWebviewDisplayHelpers } from './webviewDisplayHelpers';
 
 export function renderShowLogWebviewHtml(): string {
   const nonce = createWebviewNonce();
@@ -29,11 +30,16 @@ export function renderShowLogWebviewHtml(): string {
       --show-log-author-width: 132px;
       --show-log-date-width: 84px;
       --show-log-resizer-hit-width: 8px;
-      --show-log-ref-branch: #19d60f;
-      --show-log-ref-head: #d62828;
-      --show-log-ref-tag: #f7f300;
-      --show-log-ref-remote: #f6d8a8;
-      --show-log-ref-stash: #8c8f97;
+      --show-log-ref-base-branch: #19d60f;
+      --show-log-ref-base-head: #d62828;
+      --show-log-ref-base-tag: #f7f300;
+      --show-log-ref-base-remote: #f6d8a8;
+      --show-log-ref-base-stash: #8c8f97;
+      --show-log-ref-branch: color-mix(in srgb, var(--show-log-ref-base-branch) 88%, white 12%);
+      --show-log-ref-head: color-mix(in srgb, var(--show-log-ref-base-head) 92%, white 8%);
+      --show-log-ref-tag: color-mix(in srgb, var(--show-log-ref-base-tag) 90%, white 10%);
+      --show-log-ref-remote: color-mix(in srgb, var(--show-log-ref-base-remote) 88%, white 12%);
+      --show-log-ref-stash: color-mix(in srgb, var(--show-log-ref-base-stash) 92%, white 8%);
     }
     * { box-sizing: border-box; }
     body {
@@ -522,46 +528,52 @@ export function renderShowLogWebviewHtml(): string {
       display: inline-flex;
       flex: 0 1 auto;
       align-items: center;
+      gap: 3px;
       min-width: 0;
-      max-width: 144px;
-      padding: 1px 5px 4px;
+      max-width: 180px;
+      min-height: 17px;
+      padding: 1px 6px;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--show-log-ref-color) 34%, transparent);
+      border: 1px solid color-mix(in srgb, var(--show-log-ref-color) 72%, transparent);
+      overflow: hidden;
+      font-size: 9.5px;
+      line-height: 13px;
+      font-weight: 600;
+      color: color-mix(in srgb, black 88%, var(--show-log-ref-color) 12%);
+      background: var(--show-log-ref-color);
+    }
+    .ref-badge-icon {
+      flex: 0 0 auto;
+      width: 11px;
+      height: 11px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ref-badge-label {
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 8.5px;
-      line-height: 1.15;
-      font-weight: 600;
-      color: color-mix(in srgb, var(--vscode-foreground) 88%, var(--show-log-ref-color) 12%);
-      background: color-mix(in srgb, var(--show-log-ref-color) 14%, transparent);
-    }
-    .ref-badge::after {
-      content: '';
-      position: absolute;
-      left: 5px;
-      right: 5px;
-      bottom: 2px;
-      height: 2px;
-      border-radius: 999px;
-      background: var(--show-log-ref-color);
     }
     .ref-badge[data-ref-kind="head"] {
       --show-log-ref-color: var(--show-log-ref-head);
+      color: white;
     }
     .ref-badge[data-ref-kind="branch"] {
       --show-log-ref-color: var(--show-log-ref-branch);
     }
     .ref-badge[data-ref-kind="remote"] {
       --show-log-ref-color: var(--show-log-ref-remote);
-      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
     }
     .ref-badge[data-ref-kind="tag"] {
       --show-log-ref-color: var(--show-log-ref-tag);
-      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
     }
     .ref-badge[data-ref-kind="stash"] {
       --show-log-ref-color: var(--show-log-ref-stash);
+      color: white;
     }
     .stats {
       flex: 0 0 auto;
@@ -870,7 +882,7 @@ export function renderShowLogWebviewHtml(): string {
       font-size: 11px;
     }
     .commit-tooltip-hash {
-      color: var(--vscode-textLink-foreground);
+      color: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
       font-family: var(--vscode-editor-font-family, monospace);
     }
     .commit-tooltip-action {
@@ -884,6 +896,17 @@ export function renderShowLogWebviewHtml(): string {
       background: transparent;
       font: inherit;
       cursor: pointer;
+    }
+    .commit-tooltip-action-icon {
+      justify-content: center;
+      width: 22px;
+      min-width: 22px;
+      padding: 2px;
+    }
+    .commit-tooltip-action-icon svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
     }
     .commit-tooltip-action:hover,
     .commit-tooltip-action:focus-visible {
@@ -915,6 +938,7 @@ export function renderShowLogWebviewHtml(): string {
   <div class="context-menu" id="contextMenu" hidden></div>
   <div class="commit-tooltip" id="commitTooltip" role="tooltip" hidden></div>
   <script nonce="${nonce}">
+    ${renderWebviewDisplayHelpers()}
     const vscode = acquireVsCodeApi();
     const COMMIT_FILE_FILTERS_KEY = 'showLogCommitFileFilters';
     let currentState = null;
@@ -976,27 +1000,8 @@ export function renderShowLogWebviewHtml(): string {
         hasMore: false
       };
 
-      summary.textContent = state.summary || 'Show Log';
-      summaryCount.textContent = state.summaryCount || '';
-      loadingChip.dataset.visible = state.loading ? 'true' : 'false';
-      loadingChip.textContent = 'Loading';
+      syncShowLogChrome(state);
       syncSelectedCommitHashes(state.commits || []);
-      if (filterInput instanceof HTMLInputElement) {
-        const nextFilterText = state.filterText || '';
-        if (filterInput.value !== nextFilterText) {
-          filterInput.value = nextFilterText;
-        }
-        filterInput.disabled = state.kind !== 'visible';
-      }
-      if (filterClear instanceof HTMLButtonElement) {
-        filterClear.hidden = !(state.filterText || '').trim();
-        filterClear.disabled = state.kind !== 'visible';
-      }
-      if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
-        showAllBranchesControl.hidden = !state.canToggleAllBranches;
-        showAllBranchesToggle.checked = !!state.showAllBranches;
-        showAllBranchesToggle.disabled = !!state.loading || !!state.loadingMore;
-      }
 
       const sections = [];
       if (state.errorMessage) {
@@ -1042,8 +1047,7 @@ export function renderShowLogWebviewHtml(): string {
         return true;
       }
 
-      summaryCount.textContent = currentState.summaryCount || '';
-      loadingChip.dataset.visible = currentState.loading ? 'true' : 'false';
+      syncShowLogChrome(currentState);
       const commitList = content.querySelector('.commit-list');
       if (!commitList) {
         render();
@@ -1060,6 +1064,36 @@ export function renderShowLogWebviewHtml(): string {
       syncLoadMoreObserver();
       restorePendingCommitFileFilterFocus();
       return true;
+    }
+
+    function syncShowLogChrome(state) {
+      if (!summary || !summaryCount || !loadingChip) {
+        return;
+      }
+
+      summary.textContent = state.summary || 'Show Log';
+      summaryCount.textContent = state.summaryCount || '';
+      loadingChip.dataset.visible = state.loading ? 'true' : 'false';
+      loadingChip.textContent = 'Loading';
+
+      if (filterInput instanceof HTMLInputElement) {
+        const nextFilterText = state.filterText || '';
+        if (filterInput.value !== nextFilterText) {
+          filterInput.value = nextFilterText;
+        }
+        filterInput.disabled = state.kind !== 'visible';
+      }
+
+      if (filterClear instanceof HTMLButtonElement) {
+        filterClear.hidden = !(state.filterText || '').trim();
+        filterClear.disabled = state.kind !== 'visible';
+      }
+
+      if (showAllBranchesControl && showAllBranchesToggle instanceof HTMLInputElement) {
+        showAllBranchesControl.hidden = !state.canToggleAllBranches;
+        showAllBranchesToggle.checked = !!state.showAllBranches;
+        showAllBranchesToggle.disabled = !!state.loading || !!state.loadingMore;
+      }
     }
 
     function renderTableHeader() {
@@ -1151,17 +1185,59 @@ export function renderShowLogWebviewHtml(): string {
         + '    </div>'
         + '  </div>'
         + '  <div class="author-cell">' + escapeHtml(commit.author) + '</div>'
-        + '  <div class="date-cell">' + escapeHtml(commit.date) + '</div>'
+        + '  <div class="date-cell">' + escapeHtml(formatWebviewShortDate(commit.date)) + '</div>'
         + (commit.expanded ? renderCommitFiles(commit) : '')
         + '</div>';
     }
 
     function renderRefBadge(ref) {
-      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '" title="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.label) + '</span>';
+      return renderShowLogRefBadge(ref, true);
     }
 
     function renderTooltipRefBadge(ref) {
-      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.label) + '</span>';
+      return renderShowLogRefBadge(ref, false);
+    }
+
+    function renderShowLogRefBadge(ref, includeTitle) {
+      const title = includeTitle ? ' title="' + escapeHtml(ref.name) + '"' : '';
+      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '"' + title + '>' +
+        renderShowLogRefBadgeIcon(ref.kind) +
+        '<span class="ref-badge-label">' + escapeHtml(ref.label) + '</span>' +
+      '</span>';
+    }
+
+    function renderShowLogRefBadgeIcon(kind) {
+      switch (kind) {
+        case 'head':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="8" cy="8" r="5.3"></circle>' +
+            '<circle cx="8" cy="8" r="1.8"></circle>' +
+          '</svg>';
+        case 'branch':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="5" cy="4" r="1.7"></circle>' +
+            '<circle cx="11" cy="12" r="1.7"></circle>' +
+            '<path d="M5 5.7v2.1a4.2 4.2 0 0 0 4.2 4.2H9.3"></path>' +
+          '</svg>';
+        case 'remote':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M5.3 12.5h6.2a2.8 2.8 0 0 0 .5-5.6 4.1 4.1 0 0 0-7.7-1.4A3.2 3.2 0 0 0 5.3 12.5Z"></path>' +
+          '</svg>';
+        case 'tag':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M2.8 3.5v4.1l5.6 5.6 4.4-4.4-5.6-5.3H2.8Z"></path>' +
+            '<circle cx="5.2" cy="5.8" r="0.8"></circle>' +
+          '</svg>';
+        case 'stash':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M3 5.2h10l-1.1 7H4.1L3 5.2Z"></path>' +
+            '<path d="M5.1 5.2 6.2 3h3.6l1.1 2.2"></path>' +
+          '</svg>';
+        default:
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="8" cy="8" r="4.5"></circle>' +
+          '</svg>';
+      }
     }
 
     function renderTopology(topology, isMerge, isFirstVisible, height) {
@@ -1451,7 +1527,7 @@ export function renderShowLogWebviewHtml(): string {
         + '  <span class="commit-tooltip-avatar">' + escapeHtml(getAuthorInitials(commit.author)) + '</span>'
         + '  <div class="commit-tooltip-author-line">'
         + '    <span class="commit-tooltip-author">' + escapeHtml(commit.author || 'Unknown author') + '</span>'
-        + '    <span class="commit-tooltip-muted">committed on ' + escapeHtml(commit.date || 'unknown date') + '</span>'
+        + '    <span class="commit-tooltip-muted">committed on ' + escapeHtml(formatWebviewTooltipDate(commit.date, 'unknown date')) + '</span>'
         + '  </div>'
         + '</div>'
         + refs
@@ -1461,7 +1537,7 @@ export function renderShowLogWebviewHtml(): string {
         + stats
         + '<div class="commit-tooltip-footer">'
         + '  <span class="commit-tooltip-hash">' + escapeHtml(commit.shortHash) + '</span>'
-        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="copyCommitHash" data-commit-hash="' + escapeHtml(commit.hash) + '">Copy Hash</button>'
+        + renderCopyHashIconButton('commit-tooltip-action commit-tooltip-action-icon', 'data-tooltip-action', 'copyCommitHash', commit.hash)
         + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="openCommitOnGitHub" data-commit-hash="' + escapeHtml(commit.hash) + '">Open on GitHub</button>'
         + '</div>';
     }

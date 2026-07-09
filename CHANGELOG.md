@@ -25,9 +25,44 @@ All notable changes to this project will be documented in this file.
 - Added `Start New Task` to the Flow Governance submenu for feature branches. Its shared form
   combines the required Dev Task number and short name, applies `patterns.task`, and creates the
   local task branch from the selected feature without pushing.
+- Extended the interactive reference tooltip with Flow Governance badges while preserving the
+  full ref name, optional Git branch description, commit details, on-demand change statistics,
+  hash copying, and supported GitHub commit opening introduced in `1.5.9`.
+
+## 1.5.9
+
+### Release Preparation
+
+- Opened the `1.5.9` cosmetic-improvement cycle on top of the published `1.5.8` baseline.
+- Version metadata is `1.5.9` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 533 tests through `npm test`, and
+  `git diff --check`.
+- VSIX packaging and Marketplace publication were confirmed by the maintainer on 2026-07-09.
+
+### UX Improvements
+
 - Replaced the browser-native multi-reference tooltip with a compact tooltip for the hovered or
-  focused reference, including its badge, full name, optional Git branch description, commit
-  subject, short hash, author, and date.
+  focused reference, including its neutral reference kind, full name, optional local Git branch
+  description, commit subject, short hash, author, and date.
+- Kept Flow Governance branch-kind badges out of the `1.5.9` tooltip while reusing the cosmetic
+  presentation established by baseline `6f3342a90618586b429bc41114231c3bfc0fd9c6`.
+- Added keyboard focus and selection support to individual references in graph cards.
+- Made reference details interactive with delayed dismissal, on-demand cached change statistics,
+  commit-hash copying, and GitHub commit opening when a supported remote is configured.
+- Aligned Show Log reference badges and commit tooltips with the graph card visual language,
+  including kind icons, matching mixed graph-card colors, compact hash actions, and the same
+  tooltip date formatting.
+- Corrected slash-containing local branch decorations such as `feature/teste03` and
+  `task/1-new-task` so they render with branch styling rather than remote styling.
+- Fixed Show Log incremental paging so toolbar controls such as `Show All Branches` are re-enabled
+  after the next page finishes loading.
+
+### Code Quality
+
+- Extracted shared webview display helpers for tooltip dates and copy-hash icon actions.
+- Made lazy tooltip change-stat loading abort-aware across repository and view lifecycle changes.
+- Extracted the reference-tooltip runtime into a dedicated webview script segment and tightened
+  related coverage.
 
 ## 1.5.8
 

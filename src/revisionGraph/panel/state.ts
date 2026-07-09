@@ -358,9 +358,11 @@ async function buildReadyRevisionGraphViewStateFromParts(
   traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
   throwIfAborted(signal, 'The revision graph load was aborted.');
   const flowGovernance = await buildFlowGovernanceViewState(repository, references, context?.flowGovernanceSettings);
+  const branchDescriptionsStartedAt = nowMs();
   const branchDescriptions = context?.branchDescriptions
-    ?? (flowGovernance ? await loadGitBranchDescriptions(repository.rootUri.fsPath, signal) : new Map());
+    ?? await loadGitBranchDescriptions(repository.rootUri.fsPath, signal);
   const describedReferences = applyBranchDescriptions(references, branchDescriptions);
+  traceDuration(trace, 'state.branchDescriptions', branchDescriptionsStartedAt, `described=${describedReferences.filter((reference) => reference.description).length}`);
   const baseCanvasWidth = Math.max(
     880,
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)

@@ -297,15 +297,24 @@ export function renderRevisionGraphStyles(): string {
       line-height: 1;
       text-transform: uppercase;
     }
-    .flow-badge.flow-kind-main { background: color-mix(in srgb, var(--node-head) 82%, white 18%); color: white; }
-    .flow-badge.flow-kind-release { background: #42b883; color: #101414; }
-    .flow-badge.flow-kind-sync { background: #8c8f97; color: white; }
-    .flow-badge.flow-kind-package { background: #4aa3ff; color: #07131f; }
-    .flow-badge.flow-kind-feature { background: #19d60f; color: #102010; }
-    .flow-badge.flow-kind-task { background: #f0c34e; color: #1f1804; }
-    .flow-badge.flow-kind-bug { background: #ff7a59; color: #1f0803; }
-    .flow-badge.flow-kind-hotfix { background: #d62828; color: white; }
-    .flow-badge.flow-kind-unknown { background: color-mix(in srgb, var(--muted) 82%, var(--panel)); color: var(--text); }
+    .flow-badge.flow-kind-main,
+    .reference-tooltip-kind.flow-kind-main { background: color-mix(in srgb, var(--node-head) 82%, white 18%); color: white; }
+    .flow-badge.flow-kind-release,
+    .reference-tooltip-kind.flow-kind-release { background: #42b883; color: #101414; }
+    .flow-badge.flow-kind-sync,
+    .reference-tooltip-kind.flow-kind-sync { background: #8c8f97; color: white; }
+    .flow-badge.flow-kind-package,
+    .reference-tooltip-kind.flow-kind-package { background: #4aa3ff; color: #07131f; }
+    .flow-badge.flow-kind-feature,
+    .reference-tooltip-kind.flow-kind-feature { background: #19d60f; color: #102010; }
+    .flow-badge.flow-kind-task,
+    .reference-tooltip-kind.flow-kind-task { background: #f0c34e; color: #1f1804; }
+    .flow-badge.flow-kind-bug,
+    .reference-tooltip-kind.flow-kind-bug { background: #ff7a59; color: #1f0803; }
+    .flow-badge.flow-kind-hotfix,
+    .reference-tooltip-kind.flow-kind-hotfix { background: #d62828; color: white; }
+    .flow-badge.flow-kind-unknown,
+    .reference-tooltip-kind.flow-kind-unknown { background: color-mix(in srgb, var(--muted) 82%, var(--panel)); color: var(--text); }
     .reference-tooltip {
       position: fixed;
       z-index: 58;
@@ -316,13 +325,28 @@ export function renderRevisionGraphStyles(): string {
       background: color-mix(in srgb, var(--panel) 96%, var(--bg));
       color: var(--text);
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
-      pointer-events: none;
+      pointer-events: auto;
     }
     .reference-tooltip[hidden] { display: none; }
     .reference-tooltip-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
+    }
+    .reference-tooltip-kind {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      min-height: 19px;
+      padding: 3px 5px 2px;
+      border: 1px solid color-mix(in srgb, currentColor 32%, transparent);
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 12px;
+      text-transform: uppercase;
     }
     .reference-tooltip-name {
       min-width: 0;
@@ -357,7 +381,58 @@ export function renderRevisionGraphStyles(): string {
       line-height: 1.35;
     }
     .reference-tooltip-hash {
+      color: var(--vscode-textLink-foreground, var(--accent));
       font-family: var(--vscode-editor-font-family, monospace);
+    }
+    .reference-tooltip-stats {
+      margin-top: 10px;
+      color: var(--text);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .reference-tooltip-stats[hidden] { display: none; }
+    .reference-tooltip-muted { color: var(--muted); }
+    .reference-tooltip-insertions { color: var(--vscode-gitDecoration-addedResourceForeground, #2ea043); }
+    .reference-tooltip-deletions { color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149); }
+    .reference-tooltip-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .reference-tooltip-action {
+      min-height: 22px;
+      padding: 2px 6px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--vscode-textLink-foreground, var(--accent));
+      font: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .reference-tooltip-action-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      min-width: 22px;
+      padding: 2px;
+    }
+    .reference-tooltip-action-icon svg {
+      position: static;
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+    .reference-tooltip-action:hover,
+    .reference-tooltip-action:focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--vscode-textLink-activeForeground, var(--text));
     }
     .context-menu {
       position: fixed;
