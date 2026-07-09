@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.9
+
+### Release Preparation
+
+- Opened the `1.5.9` cosmetic-improvement cycle on top of the published `1.5.8` baseline.
+- Version metadata is `1.5.9` in `package.json` and `package-lock.json`.
+- Automated verification passed with `npm run build`, 532 tests through `npm test`, and
+  `git diff --check`.
+
+### UX Improvements
+
+- Replaced the browser-native multi-reference tooltip with a compact tooltip for the hovered or
+  focused reference, including its neutral reference kind, full name, optional local Git branch
+  description, commit subject, short hash, author, and date.
+- Kept Flow Governance branch-kind badges out of the `1.5.9` tooltip while reusing the cosmetic
+  presentation established by baseline `6f3342a90618586b429bc41114231c3bfc0fd9c6`.
+- Added keyboard focus and selection support to individual references in graph cards.
+- Made reference details interactive with delayed dismissal, on-demand cached change statistics,
+  commit-hash copying, and GitHub commit opening when a supported remote is configured.
+
 ## 1.5.8
 
 ### Release Preparation

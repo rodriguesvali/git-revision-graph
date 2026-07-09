@@ -88,6 +88,11 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: 'copy-commit-hash', commitHash: message.commitHash }
         : undefined;
+    case 'load-commit-short-stat':
+    case 'open-commit-on-github':
+      return isBoundedNonEmptyString(message.commitHash)
+        ? { type: message.type, commitHash: message.commitHash }
+        : undefined;
     case 'copy-ref-name':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'copy-ref-name', refName: message.refName, refKind: message.refKind }

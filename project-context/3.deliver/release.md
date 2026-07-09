@@ -1,14 +1,72 @@
 # Release Readiness
 
-Status: Published
-Last consolidated: 2026-07-03
+Status: Release 1.5.9 in validation
+Last consolidated: 2026-07-07
 
 ## Current State
 
-- Current package version: `1.5.8` in `package.json`.
+- Current package version: `1.5.9` in `package.json`.
 - Latest recorded published release: `1.5.8`.
-- Release cycle status: `1.5.8` was published by maintainer confirmation on 2026-07-03.
+- Release cycle status: `1.5.9` is open for cosmetic reference-tooltip improvements.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Current Release: 1.5.9
+
+Status: Build complete - manual validation pending
+Opened: 2026-07-07
+Baseline: published `1.5.8`
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.5.9-reference-tooltips.md`
+- Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
+
+Approved scope:
+
+- Backport the improved reference-tooltip presentation from development baseline
+  `6f3342a90618586b429bc41114231c3bfc0fd9c6`.
+- Show a neutral reference kind, full name, optional local Git branch description, commit subject,
+  short hash, author, date, and lazily loaded change statistics for the hovered or keyboard-focused
+  reference.
+- Keep the popover interactive and expose copy-hash and supported GitHub commit actions.
+- Exclude the Flow Governance branch-kind badge and all other governance behavior from `1.5.9`.
+- Preserve the published extension architecture, multi-repository behavior, empty states, and
+  existing reference actions.
+
+Release constraints and risks:
+
+- No new commands, settings, views, dependencies, activation events, or contribution points.
+- Local Git config metadata reads must fail open and remain abort-aware; commit statistics must use
+  a bounded, cached, on-demand query rather than slowing the initial graph load.
+- Tooltip placement, theme contrast, and keyboard focus require manual Extension Development Host
+  validation.
+- Do not package, publish, or bump beyond `1.5.9` without explicit maintainer approval.
+
+Planned verification:
+
+- Focused branch-description, short-stat, message-boundary, GitHub action, graph state, and webview
+  shell tests.
+- `npm run build`
+- `npm test`
+- `git diff --check`
+- Manual smoke for local/remote/tag/stash references, multi-ref nodes, long names, descriptions,
+  pointer transfer into the popover, statistics, clipboard/GitHub actions, viewport edges,
+  scrolling, resizing, keyboard selection, GitHub/non-GitHub remotes, and dark/light themes.
+
+Marketplace and rollback notes:
+
+- Marketplace impact is limited to the tooltip presentation documented in README and CHANGELOG.
+- Rollback is a focused removal of branch-description metadata loading and the reference tooltip;
+  no persisted extension setting, data migration, or contribution-point change is involved.
+- VSIX packaging and Marketplace publication have not been run.
+
+Recorded verification:
+
+- Version metadata and release artifacts opened on 2026-07-07.
+- `npm run build` passed on 2026-07-07.
+- `npm test` passed with 532 tests on 2026-07-07.
+- `git diff --check` passed on 2026-07-07.
+- Manual Extension Development Host smoke is pending.
 
 ## Completed Release: 1.5.8
 

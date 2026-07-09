@@ -9,7 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-None. Open the next feature here only after the target scope is approved.
+- `1.5.9-reference-tooltips.md` — cosmetic reference tooltip backport from the 2.0.0 development
+  baseline, excluding Flow Governance branch-kind badges.
 
 ## Required Shape
 

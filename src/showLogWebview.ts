@@ -870,7 +870,7 @@ export function renderShowLogWebviewHtml(): string {
       font-size: 11px;
     }
     .commit-tooltip-hash {
-      color: var(--vscode-textLink-foreground);
+      color: var(--vscode-textLink-foreground, var(--vscode-focusBorder));
       font-family: var(--vscode-editor-font-family, monospace);
     }
     .commit-tooltip-action {
@@ -884,6 +884,17 @@ export function renderShowLogWebviewHtml(): string {
       background: transparent;
       font: inherit;
       cursor: pointer;
+    }
+    .commit-tooltip-action-icon {
+      justify-content: center;
+      width: 22px;
+      min-width: 22px;
+      padding: 2px;
+    }
+    .commit-tooltip-action-icon svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
     }
     .commit-tooltip-action:hover,
     .commit-tooltip-action:focus-visible {
@@ -1461,7 +1472,11 @@ export function renderShowLogWebviewHtml(): string {
         + stats
         + '<div class="commit-tooltip-footer">'
         + '  <span class="commit-tooltip-hash">' + escapeHtml(commit.shortHash) + '</span>'
-        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="copyCommitHash" data-commit-hash="' + escapeHtml(commit.hash) + '">Copy Hash</button>'
+        + '  <button class="commit-tooltip-action commit-tooltip-action-icon" type="button" title="Copy Hash" aria-label="Copy Hash" data-tooltip-action="copyCommitHash" data-commit-hash="' + escapeHtml(commit.hash) + '">'
+        + '    <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">'
+        + '      <path d="M5 1.75A1.75 1.75 0 0 1 6.75 0h5.5A1.75 1.75 0 0 1 14 1.75v7.5A1.75 1.75 0 0 1 12.25 11h-5.5A1.75 1.75 0 0 1 5 9.25v-7.5ZM6.75 1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h5.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25h-5.5ZM2 4.75C2 3.784 2.784 3 3.75 3h.5a.75.75 0 0 1 0 1.5h-.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h5.5a.25.25 0 0 0 .25-.25v-.5a.75.75 0 0 1 1.5 0v.5A1.75 1.75 0 0 1 9.25 14h-5.5A1.75 1.75 0 0 1 2 12.25v-7.5Z"></path>'
+        + '    </svg>'
+        + '  </button>'
         + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="openCommitOnGitHub" data-commit-hash="' + escapeHtml(commit.hash) + '">Open on GitHub</button>'
         + '</div>';
     }

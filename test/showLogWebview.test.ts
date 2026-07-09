@@ -85,6 +85,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function cancelCommitTooltipHide\(\)/);
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /data-tooltip-action="copyCommitHash"/);
+  assert.match(html, /title="Copy Hash" aria-label="Copy Hash" data-tooltip-action="copyCommitHash"[\s\S]*?<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">/);
+  assert.match(html, /\.commit-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--vscode-focusBorder\)\);/s);
+  assert.match(html, /\.commit-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
   assert.match(html, /data-tooltip-action="openCommitOnGitHub"/);
   assert.match(html, /Copy Hash/);
   assert.match(html, /Open on GitHub/);

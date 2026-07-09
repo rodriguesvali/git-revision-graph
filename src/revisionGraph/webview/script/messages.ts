@@ -111,6 +111,14 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'copy-commit-hash', commitHash };
     }
 
+    function createRevisionGraphLoadCommitShortStatMessage(commitHash) {
+      return { type: 'load-commit-short-stat', commitHash };
+    }
+
+    function createRevisionGraphOpenCommitOnGitHubMessage(commitHash) {
+      return { type: 'open-commit-on-github', commitHash };
+    }
+
     function createRevisionGraphCopyRefNameMessage(target) {
       return { type: 'copy-ref-name', refName: target.name, refKind: target.kind };
     }

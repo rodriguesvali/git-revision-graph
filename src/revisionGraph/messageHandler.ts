@@ -1,7 +1,8 @@
 import { Repository } from '../git';
 import { RefActionKind } from '../refActions';
-import { RevisionGraphMessage } from '../revisionGraphTypes';
+import { RevisionGraphCommitShortStat, RevisionGraphMessage } from '../revisionGraphTypes';
 import { formatShortCommitHash } from '../commitHash';
+import { createRevisionGraphCommitShortStatMessage } from './hostMessages';
 import { ShowLogPresenter } from '../showLogView';
 import {
   RevisionGraphRemoteTagWorkflow,
@@ -29,6 +30,8 @@ export interface RevisionGraphMessageHandlerHost
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
   openUnifiedDiff(repository: Repository, left: string, right: string): Promise<void>;
+  loadCommitShortStat(repository: Repository, commitHash: string): Promise<RevisionGraphCommitShortStat | undefined>;
+  openCommitOnGitHub(repository: Repository, commitHash: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
   clearLayoutCache(): PromiseLike<void> | void;
@@ -104,6 +107,20 @@ export class RevisionGraphMessageHandler {
       case 'copy-commit-hash':
         await this.host.writeClipboard(message.commitHash);
         this.host.actionServices.ui.showInformationMessage(`Copied commit ${formatShortCommitHash(message.commitHash)}.`);
+        return;
+      case 'load-commit-short-stat':
+        await this.runWithCurrentRepository(async (repository) => {
+          const shortStat = await this.host.loadCommitShortStat(repository, message.commitHash);
+          if (this.host.getCurrentRepository()?.rootUri.fsPath !== repository.rootUri.fsPath) {
+            return;
+          }
+          this.host.postHostMessage(createRevisionGraphCommitShortStatMessage(message.commitHash, shortStat));
+        });
+        return;
+      case 'open-commit-on-github':
+        await this.runWithCurrentRepository((repository) =>
+          this.host.openCommitOnGitHub(repository, message.commitHash)
+        );
         return;
       case 'copy-ref-name':
         await this.host.writeClipboard(message.refName);

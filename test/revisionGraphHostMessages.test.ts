@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  createRevisionGraphCommitShortStatMessage,
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
   createRevisionGraphLoadingMessage,
@@ -40,6 +41,22 @@ test('builds revision graph remote tag host messages with stable payloads', () =
     type: 'set-remote-tag-state',
     tagName: 'v1.0.0',
     state: 'published'
+  });
+});
+
+test('builds revision graph commit stat host messages with explicit empty results', () => {
+  assert.deepEqual(
+    createRevisionGraphCommitShortStatMessage('abc123', { files: 2, insertions: 5, deletions: 1 }),
+    {
+      type: 'set-commit-short-stat',
+      commitHash: 'abc123',
+      shortStat: { files: 2, insertions: 5, deletions: 1 }
+    }
+  );
+  assert.deepEqual(createRevisionGraphCommitShortStatMessage('abc123', undefined), {
+    type: 'set-commit-short-stat',
+    commitHash: 'abc123',
+    shortStat: null
   });
 });
 

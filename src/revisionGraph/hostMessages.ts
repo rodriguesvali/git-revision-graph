@@ -1,5 +1,6 @@
 import {
   RemoteTagPublicationState,
+  RevisionGraphCommitShortStat,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -35,6 +36,17 @@ export function createRevisionGraphRemoteTagStateMessage(
     type: 'set-remote-tag-state',
     tagName,
     state
+  };
+}
+
+export function createRevisionGraphCommitShortStatMessage(
+  commitHash: string,
+  shortStat: RevisionGraphCommitShortStat | undefined
+): RevisionGraphViewHostMessage {
+  return {
+    type: 'set-commit-short-stat',
+    commitHash,
+    shortStat: shortStat ?? null
   };
 }
 

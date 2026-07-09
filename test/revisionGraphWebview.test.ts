@@ -87,6 +87,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="statusCard"/);
   assert.match(html, /id="statusMessage"/);
   assert.match(html, /id="statusActionButton"/);
+  assert.match(html, /id="referenceTooltip" role="dialog" aria-label="Reference details" hidden/);
   assert.match(html, /id="graphMinimap"/);
   assert.match(html, /id="minimapZoomOutButton"/);
   assert.match(html, /id="minimapZoomResetButton"/);
@@ -461,6 +462,27 @@ test('renders structural commit actions for compare and branch creation', () => 
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /\.reference-tooltip \{[\s\S]*?position: fixed;[\s\S]*?width: min\(360px, calc\(100vw - 24px\)\);/s);
+  assert.match(html, /function showReferenceTooltip\(refElement\)/);
+  assert.match(html, /reference\.description[\s\S]*?reference-tooltip-description/);
+  assert.match(html, /reference-tooltip-kind/);
+  assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 17px;[\s\S]*?padding: 2px 5px;/s);
+  assert.doesNotMatch(html, /flowKindBadges/);
+  assert.match(html, /pointer-events: auto;/);
+  assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);
+  assert.match(html, /referenceTooltip\.addEventListener\('mouseleave', scheduleHideReferenceTooltip\)/);
+  assert.match(html, /data-reference-tooltip-action="copy-commit-hash"/);
+  assert.match(html, /title="Copy Hash" aria-label="Copy Hash" data-reference-tooltip-action="copy-commit-hash"[\s\S]*?<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">/);
+  assert.match(html, /\.reference-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--accent\)\);/s);
+  assert.match(html, /\.reference-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
+  assert.match(html, /data-reference-tooltip-action="open-commit-on-github"/);
+  assert.match(html, /createRevisionGraphLoadCommitShortStatMessage\(commitHash\)/);
+  assert.match(html, /case 'set-commit-short-stat':/);
+  assert.match(html, /reference-tooltip-insertions/);
+  assert.match(html, /reference-tooltip-deletions/);
+  assert.match(html, /function placeReferenceTooltip\(refElement\)/);
+  assert.match(html, /tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog"/);
+  assert.match(html, /const nodeTitle = node\.refs\.length === 0/);
   assert.doesNotMatch(html, /function appendMenuSubmenu\(label, entries\)/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
   assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);

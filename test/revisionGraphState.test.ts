@@ -60,7 +60,15 @@ test('builds a serializable ready state for the persistent webview shell', async
     repository,
     createDefaultRevisionGraphProjectionOptions(),
     backend,
-    LIMIT_POLICY
+    LIMIT_POLICY,
+    undefined,
+    undefined,
+    {
+      branchDescriptions: new Map([
+        ['main', 'Primary integration branch'],
+        ['origin/main', 'Remote descriptions are not attached']
+      ])
+    }
   );
 
   assert.equal(state.viewMode, 'ready');
@@ -69,6 +77,8 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.deepEqual(state.publishedLocalBranchNames, ['main']);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
+  assert.equal(state.references.find((ref) => ref.name === 'main')?.description, 'Primary integration branch');
+  assert.equal(state.references.find((ref) => ref.name === 'origin/main')?.description, undefined);
   assert.deepEqual(state.primaryAncestorNextByHash, {});
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);

@@ -40,6 +40,8 @@ export type RevisionGraphMessage =
   | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
   | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
   | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
+  | { readonly type: 'load-commit-short-stat'; readonly commitHash: string }
+  | { readonly type: 'open-commit-on-github'; readonly commitHash: string }
   | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
   | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
   | {
@@ -81,6 +83,7 @@ export interface RevisionGraphViewReference {
   readonly name: string;
   readonly kind: RevisionGraphRef['kind'];
   readonly title: string;
+  readonly description?: string;
 }
 
 export interface RevisionGraphViewState {
@@ -110,6 +113,12 @@ export interface RevisionGraphViewState {
 
 export type RemoteTagPublicationState = 'published' | 'unpublished' | 'unknown';
 
+export interface RevisionGraphCommitShortStat {
+  readonly files: number;
+  readonly insertions: number;
+  readonly deletions: number;
+}
+
 export interface RevisionGraphHostTraceContext {
   readonly requestId: number;
   readonly sentAtMs: number;
@@ -119,6 +128,7 @@ export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: RemoteTagPublicationState }
+  | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: RevisionGraphCommitShortStat | null }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
 
