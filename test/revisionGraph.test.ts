@@ -72,11 +72,13 @@ test('NUL-framed graph log preserves record and field separator characters in su
 });
 
 test('parses decoration labels by type', () => {
-  assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, release'), [
+  assert.deepEqual(parseDecorationRefs('HEAD -> main, refs/stash, tag: v2.0.0, origin/feature/demo, feature/teste03, task/1-new-task, release'), [
     { name: 'main', kind: 'head' },
     { name: 'stash', kind: 'stash' },
     { name: 'v2.0.0', kind: 'tag' },
     { name: 'origin/feature/demo', kind: 'remote' },
+    { name: 'feature/teste03', kind: 'branch' },
+    { name: 'task/1-new-task', kind: 'branch' },
     { name: 'release', kind: 'branch' }
   ]);
 });

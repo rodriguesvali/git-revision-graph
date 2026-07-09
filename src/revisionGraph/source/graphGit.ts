@@ -81,12 +81,16 @@ export function parseDecorationRefs(
         return { name: label, kind: knownKind };
       }
 
-      if (label.includes('/')) {
+      if (isLikelyRemoteDecoration(label)) {
         return { name: label, kind: 'remote' };
       }
 
       return { name: label, kind: 'branch' };
     });
+}
+
+function isLikelyRemoteDecoration(label: string): boolean {
+  return /^(?:origin|upstream|fork)\//.test(label);
 }
 
 export function getRevisionGraphGitFormat(): string {

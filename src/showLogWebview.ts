@@ -30,11 +30,16 @@ export function renderShowLogWebviewHtml(): string {
       --show-log-author-width: 132px;
       --show-log-date-width: 84px;
       --show-log-resizer-hit-width: 8px;
-      --show-log-ref-branch: #5bbaf9;
-      --show-log-ref-head: #3794ff;
-      --show-log-ref-tag: #f7d95c;
-      --show-log-ref-remote: #f2a93b;
-      --show-log-ref-stash: #b180d7;
+      --show-log-ref-base-branch: #19d60f;
+      --show-log-ref-base-head: #d62828;
+      --show-log-ref-base-tag: #f7f300;
+      --show-log-ref-base-remote: #f6d8a8;
+      --show-log-ref-base-stash: #8c8f97;
+      --show-log-ref-branch: color-mix(in srgb, var(--show-log-ref-base-branch) 88%, white 12%);
+      --show-log-ref-head: color-mix(in srgb, var(--show-log-ref-base-head) 92%, white 8%);
+      --show-log-ref-tag: color-mix(in srgb, var(--show-log-ref-base-tag) 90%, white 10%);
+      --show-log-ref-remote: color-mix(in srgb, var(--show-log-ref-base-remote) 88%, white 12%);
+      --show-log-ref-stash: color-mix(in srgb, var(--show-log-ref-base-stash) 92%, white 8%);
     }
     * { box-sizing: border-box; }
     body {
@@ -534,8 +539,8 @@ export function renderShowLogWebviewHtml(): string {
       font-size: 9.5px;
       line-height: 13px;
       font-weight: 600;
-      color: var(--vscode-button-foreground, #ffffff);
-      background: color-mix(in srgb, var(--show-log-ref-color) 88%, black 8%);
+      color: color-mix(in srgb, black 88%, var(--show-log-ref-color) 12%);
+      background: var(--show-log-ref-color);
     }
     .ref-badge-icon {
       flex: 0 0 auto;
@@ -555,6 +560,7 @@ export function renderShowLogWebviewHtml(): string {
     }
     .ref-badge[data-ref-kind="head"] {
       --show-log-ref-color: var(--show-log-ref-head);
+      color: white;
     }
     .ref-badge[data-ref-kind="branch"] {
       --show-log-ref-color: var(--show-log-ref-branch);
@@ -564,10 +570,10 @@ export function renderShowLogWebviewHtml(): string {
     }
     .ref-badge[data-ref-kind="tag"] {
       --show-log-ref-color: var(--show-log-ref-tag);
-      color: color-mix(in srgb, black 80%, var(--vscode-foreground) 20%);
     }
     .ref-badge[data-ref-kind="stash"] {
       --show-log-ref-color: var(--show-log-ref-stash);
+      color: white;
     }
     .stats {
       flex: 0 0 auto;

@@ -31,10 +31,14 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\.commit-file-search-row \{\s*display: flex;\s*justify-content: flex-end;/);
   assert.match(html, /\.graph-continuation-row\.search \{\s*min-height: 36px;/);
   assert.match(html, /\.graph-continuation-row\.search \.commit-files-graph \.graph-svg \{\s*min-height: 36px;/);
-  assert.match(html, /--show-log-ref-branch: #5bbaf9;/);
-  assert.match(html, /--show-log-ref-head: #3794ff;/);
-  assert.match(html, /--show-log-ref-tag: #f7d95c;/);
-  assert.match(html, /--show-log-ref-remote: #f2a93b;/);
+  assert.match(html, /--show-log-ref-base-branch: #19d60f;/);
+  assert.match(html, /--show-log-ref-base-head: #d62828;/);
+  assert.match(html, /--show-log-ref-base-tag: #f7f300;/);
+  assert.match(html, /--show-log-ref-base-remote: #f6d8a8;/);
+  assert.match(html, /--show-log-ref-branch: color-mix\(in srgb, var\(--show-log-ref-base-branch\) 88%, white 12%\);/);
+  assert.match(html, /--show-log-ref-head: color-mix\(in srgb, var\(--show-log-ref-base-head\) 92%, white 8%\);/);
+  assert.match(html, /--show-log-ref-tag: color-mix\(in srgb, var\(--show-log-ref-base-tag\) 90%, white 10%\);/);
+  assert.match(html, /--show-log-ref-remote: color-mix\(in srgb, var\(--show-log-ref-base-remote\) 88%, white 12%\);/);
   assert.doesNotMatch(html, /\.ref-badge::after/);
   assert.match(html, /\.ref-badge\[data-ref-kind="head"\]/);
   assert.match(html, /\.ref-badge\[data-ref-kind="branch"\]/);
