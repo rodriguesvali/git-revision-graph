@@ -30,11 +30,11 @@ export function renderShowLogWebviewHtml(): string {
       --show-log-author-width: 132px;
       --show-log-date-width: 84px;
       --show-log-resizer-hit-width: 8px;
-      --show-log-ref-branch: #19d60f;
-      --show-log-ref-head: #d62828;
-      --show-log-ref-tag: #f7f300;
-      --show-log-ref-remote: #f6d8a8;
-      --show-log-ref-stash: #8c8f97;
+      --show-log-ref-branch: #5bbaf9;
+      --show-log-ref-head: #3794ff;
+      --show-log-ref-tag: #f7d95c;
+      --show-log-ref-remote: #f2a93b;
+      --show-log-ref-stash: #b180d7;
     }
     * { box-sizing: border-box; }
     body {
@@ -523,29 +523,35 @@ export function renderShowLogWebviewHtml(): string {
       display: inline-flex;
       flex: 0 1 auto;
       align-items: center;
+      gap: 3px;
       min-width: 0;
-      max-width: 144px;
-      padding: 1px 5px 4px;
+      max-width: 180px;
+      min-height: 17px;
+      padding: 1px 6px;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--show-log-ref-color) 34%, transparent);
+      border: 1px solid color-mix(in srgb, var(--show-log-ref-color) 72%, transparent);
+      overflow: hidden;
+      font-size: 9.5px;
+      line-height: 13px;
+      font-weight: 600;
+      color: var(--vscode-button-foreground, #ffffff);
+      background: color-mix(in srgb, var(--show-log-ref-color) 88%, black 8%);
+    }
+    .ref-badge-icon {
+      flex: 0 0 auto;
+      width: 11px;
+      height: 11px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ref-badge-label {
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 8.5px;
-      line-height: 1.15;
-      font-weight: 600;
-      color: color-mix(in srgb, var(--vscode-foreground) 88%, var(--show-log-ref-color) 12%);
-      background: color-mix(in srgb, var(--show-log-ref-color) 14%, transparent);
-    }
-    .ref-badge::after {
-      content: '';
-      position: absolute;
-      left: 5px;
-      right: 5px;
-      bottom: 2px;
-      height: 2px;
-      border-radius: 999px;
-      background: var(--show-log-ref-color);
     }
     .ref-badge[data-ref-kind="head"] {
       --show-log-ref-color: var(--show-log-ref-head);
@@ -555,11 +561,10 @@ export function renderShowLogWebviewHtml(): string {
     }
     .ref-badge[data-ref-kind="remote"] {
       --show-log-ref-color: var(--show-log-ref-remote);
-      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
     }
     .ref-badge[data-ref-kind="tag"] {
       --show-log-ref-color: var(--show-log-ref-tag);
-      color: color-mix(in srgb, var(--vscode-foreground) 84%, black 16%);
+      color: color-mix(in srgb, black 80%, var(--vscode-foreground) 20%);
     }
     .ref-badge[data-ref-kind="stash"] {
       --show-log-ref-color: var(--show-log-ref-stash);
@@ -1170,11 +1175,53 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function renderRefBadge(ref) {
-      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '" title="' + escapeHtml(ref.name) + '">' + escapeHtml(ref.label) + '</span>';
+      return renderShowLogRefBadge(ref, true);
     }
 
     function renderTooltipRefBadge(ref) {
-      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '">' + escapeHtml(ref.label) + '</span>';
+      return renderShowLogRefBadge(ref, false);
+    }
+
+    function renderShowLogRefBadge(ref, includeTitle) {
+      const title = includeTitle ? ' title="' + escapeHtml(ref.name) + '"' : '';
+      return '<span class="ref-badge" data-ref-kind="' + escapeHtml(ref.kind) + '"' + title + '>' +
+        renderShowLogRefBadgeIcon(ref.kind) +
+        '<span class="ref-badge-label">' + escapeHtml(ref.label) + '</span>' +
+      '</span>';
+    }
+
+    function renderShowLogRefBadgeIcon(kind) {
+      switch (kind) {
+        case 'head':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="8" cy="8" r="5.3"></circle>' +
+            '<circle cx="8" cy="8" r="1.8"></circle>' +
+          '</svg>';
+        case 'branch':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="5" cy="4" r="1.7"></circle>' +
+            '<circle cx="11" cy="12" r="1.7"></circle>' +
+            '<path d="M5 5.7v2.1a4.2 4.2 0 0 0 4.2 4.2H9.3"></path>' +
+          '</svg>';
+        case 'remote':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M5.3 12.5h6.2a2.8 2.8 0 0 0 .5-5.6 4.1 4.1 0 0 0-7.7-1.4A3.2 3.2 0 0 0 5.3 12.5Z"></path>' +
+          '</svg>';
+        case 'tag':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M2.8 3.5v4.1l5.6 5.6 4.4-4.4-5.6-5.3H2.8Z"></path>' +
+            '<circle cx="5.2" cy="5.8" r="0.8"></circle>' +
+          '</svg>';
+        case 'stash':
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<path d="M3 5.2h10l-1.1 7H4.1L3 5.2Z"></path>' +
+            '<path d="M5.1 5.2 6.2 3h3.6l1.1 2.2"></path>' +
+          '</svg>';
+        default:
+          return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
+            '<circle cx="8" cy="8" r="4.5"></circle>' +
+          '</svg>';
+      }
     }
 
     function renderTopology(topology, isMerge, isFirstVisible, height) {
