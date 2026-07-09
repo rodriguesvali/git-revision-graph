@@ -85,10 +85,19 @@ export function renderWebviewDisplayHelpers(): string {
     }
 
     function renderCopyHashIconButton(buttonClassName, actionAttributeName, actionName, commitHash) {
-      return '<button class="' + escapeHtml(buttonClassName) + '" type="button" title="Copy Hash" aria-label="Copy Hash" ' +
-        actionAttributeName + '="' + escapeHtml(actionName) + '" data-commit-hash="' + escapeHtml(commitHash) + '">' +
+      return '<button class="' + escapeWebviewDisplayAttribute(buttonClassName) + '" type="button" title="Copy Hash" aria-label="Copy Hash" ' +
+        escapeWebviewDisplayAttribute(actionAttributeName) + '="' + escapeWebviewDisplayAttribute(actionName) + '" data-commit-hash="' + escapeWebviewDisplayAttribute(commitHash) + '">' +
         renderCopyHashIcon() +
       '</button>';
+    }
+
+    function escapeWebviewDisplayAttribute(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function renderCopyHashIcon() {

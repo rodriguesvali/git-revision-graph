@@ -66,6 +66,8 @@ Recorded verification:
 - `npm run build` passed on 2026-07-07.
 - `npm test` passed with 532 tests on 2026-07-07.
 - `git diff --check` passed on 2026-07-07.
+- SOLID/Clean Code follow-up verification passed on 2026-07-09 with `npm run build`,
+  `npm test` (533 tests), and `git diff --check`.
 - Manual Extension Development Host smoke is pending.
 
 ## Completed Release: 1.5.8

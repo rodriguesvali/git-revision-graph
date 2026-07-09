@@ -10,15 +10,7 @@ test('webview display helpers format dates and render copy hash buttons', () => 
     Date,
     Number,
     String,
-    Math,
-    escapeHtml(value: unknown) {
-      return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
+    Math
   } as Record<string, unknown>;
 
   vm.createContext(context);
@@ -33,14 +25,15 @@ test('webview display helpers format dates and render copy hash buttons', () => 
   );
 
   const button = helpers.renderCopyHashIconButton(
-    'commit-tooltip-action commit-tooltip-action-icon',
+    'commit-tooltip-action commit-tooltip-action-icon "quoted"',
     'data-tooltip-action',
     'copyCommitHash',
-    'abc123'
+    'abc&"123'
   );
 
   assert.match(button, /title="Copy Hash" aria-label="Copy Hash"/);
+  assert.match(button, /class="commit-tooltip-action commit-tooltip-action-icon &quot;quoted&quot;"/);
   assert.match(button, /data-tooltip-action="copyCommitHash"/);
-  assert.match(button, /data-commit-hash="abc123"/);
+  assert.match(button, /data-commit-hash="abc&amp;&quot;123"/);
   assert.match(button, /<svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">/);
 });

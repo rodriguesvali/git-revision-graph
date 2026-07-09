@@ -472,8 +472,15 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 19px;[\s\S]*?padding: 3px 5px 2px;/s);
   assert.doesNotMatch(html, /flowKindBadges/);
   assert.match(html, /pointer-events: auto;/);
+  assert.match(html, /function bindReferenceTooltipEvents\(\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseleave', scheduleHideReferenceTooltip\)/);
+  assert.match(html, /referenceTooltip\.addEventListener\('focusin', cancelHideReferenceTooltip\)/);
+  assert.match(html, /referenceTooltip\.addEventListener\('focusout', handleReferenceTooltipFocusOut\)/);
+  assert.match(html, /nodeLayer\.addEventListener\('focusout', handleReferenceTooltipReferenceFocusOut\)/);
+  assert.match(html, /isReferenceTooltipFocusTarget\(event && event\.relatedTarget\)/);
+  assert.match(html, /function clearReferenceTooltipCommitStats\(\)/);
+  assert.match(html, /clearReferenceTooltipCommitStats\(\);\s*hideReferenceTooltip\(\);/s);
   assert.match(html, /renderCopyHashIconButton\('reference-tooltip-action reference-tooltip-action-icon', 'data-reference-tooltip-action', 'copy-commit-hash', node\.hash\)/);
   assert.match(html, /\.reference-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--accent\)\);/s);
   assert.match(html, /\.reference-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
