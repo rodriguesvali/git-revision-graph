@@ -1557,7 +1557,7 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         '<div class="reference-tooltip-subject">' + escapeHtml(node.subject || 'Structural commit') + '</div>' +
         '<div class="reference-tooltip-meta">' +
           '<span>' + escapeHtml(node.author || 'Unknown author') + '</span>' +
-          '<span>' + escapeHtml(node.date || 'Unknown date') + '</span>' +
+          '<span>' + escapeHtml(formatReferenceTooltipDate(node.date)) + '</span>' +
         '</div>' +
         renderReferenceTooltipStatsBlock(
           node.hash,
@@ -1664,6 +1664,73 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
     function getReferenceKindLabel(kind) {
       const labels = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
       return labels[kind] || kind;
+    }
+
+    function formatReferenceTooltipDate(value) {
+      const text = typeof value === 'string' ? value.trim() : '';
+      if (!text) {
+        return 'Unknown date';
+      }
+
+      const parsed = parseReferenceTooltipDate(text);
+      if (!parsed) {
+        return text;
+      }
+
+      const absolute = formatReferenceTooltipAbsoluteDate(parsed.date, parsed.hasTime);
+      if (!parsed.hasTime) {
+        return absolute;
+      }
+
+      return formatReferenceTooltipRelativeDate(parsed.date, new Date()) + ' (' + absolute + ')';
+    }
+
+    function parseReferenceTooltipDate(text) {
+      const dateOnlyMatch = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(text);
+      if (dateOnlyMatch) {
+        const date = new Date(
+          Number(dateOnlyMatch[1]),
+          Number(dateOnlyMatch[2]) - 1,
+          Number(dateOnlyMatch[3])
+        );
+        return Number.isNaN(date.getTime()) ? null : { date, hasTime: false };
+      }
+
+      const date = new Date(text);
+      return Number.isNaN(date.getTime()) ? null : { date, hasTime: true };
+    }
+
+    function formatReferenceTooltipAbsoluteDate(date, hasTime) {
+      const options = hasTime
+        ? { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+        : { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Intl.DateTimeFormat('en-US', options).format(date);
+    }
+
+    function formatReferenceTooltipRelativeDate(date, now) {
+      const diffMs = now.getTime() - date.getTime();
+      const absMs = Math.abs(diffMs);
+      const minuteMs = 60 * 1000;
+      const hourMs = 60 * minuteMs;
+      const dayMs = 24 * hourMs;
+      const monthMs = 30 * dayMs;
+      const yearMs = 365 * dayMs;
+      const units = [
+        { label: 'year', ms: yearMs },
+        { label: 'month', ms: monthMs },
+        { label: 'day', ms: dayMs },
+        { label: 'hour', ms: hourMs },
+        { label: 'minute', ms: minuteMs }
+      ];
+
+      for (const unit of units) {
+        if (absMs >= unit.ms) {
+          const count = Math.max(1, Math.round(absMs / unit.ms));
+          return count + ' ' + unit.label + (count === 1 ? '' : 's') + (diffMs >= 0 ? ' ago' : ' from now');
+        }
+      }
+
+      return diffMs >= 0 ? 'just now' : 'right now';
     }
 
     function findEventTargetElement(event, selector) {

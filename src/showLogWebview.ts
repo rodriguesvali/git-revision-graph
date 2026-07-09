@@ -1162,7 +1162,7 @@ export function renderShowLogWebviewHtml(): string {
         + '    </div>'
         + '  </div>'
         + '  <div class="author-cell">' + escapeHtml(commit.author) + '</div>'
-        + '  <div class="date-cell">' + escapeHtml(commit.date) + '</div>'
+        + '  <div class="date-cell">' + escapeHtml(formatCommitRowDate(commit.date)) + '</div>'
         + (commit.expanded ? renderCommitFiles(commit) : '')
         + '</div>';
     }
@@ -1450,6 +1450,90 @@ export function renderShowLogWebviewHtml(): string {
         .replace(/'/g, '&#39;');
     }
 
+    function formatCommitRowDate(value) {
+      const text = typeof value === 'string' ? value.trim() : '';
+      if (!text) {
+        return '';
+      }
+
+      const parsed = parseCommitTooltipDate(text);
+      if (!parsed) {
+        return text;
+      }
+
+      const year = parsed.date.getFullYear();
+      const month = String(parsed.date.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.date.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    function formatCommitTooltipDate(value) {
+      const text = typeof value === 'string' ? value.trim() : '';
+      if (!text) {
+        return 'unknown date';
+      }
+
+      const parsed = parseCommitTooltipDate(text);
+      if (!parsed) {
+        return text;
+      }
+
+      const absolute = formatCommitTooltipAbsoluteDate(parsed.date, parsed.hasTime);
+      if (!parsed.hasTime) {
+        return absolute;
+      }
+
+      return formatCommitTooltipRelativeDate(parsed.date, new Date()) + ' (' + absolute + ')';
+    }
+
+    function parseCommitTooltipDate(text) {
+      const dateOnlyMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(text);
+      if (dateOnlyMatch) {
+        const date = new Date(
+          Number(dateOnlyMatch[1]),
+          Number(dateOnlyMatch[2]) - 1,
+          Number(dateOnlyMatch[3])
+        );
+        return Number.isNaN(date.getTime()) ? null : { date, hasTime: false };
+      }
+
+      const date = new Date(text);
+      return Number.isNaN(date.getTime()) ? null : { date, hasTime: true };
+    }
+
+    function formatCommitTooltipAbsoluteDate(date, hasTime) {
+      const options = hasTime
+        ? { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+        : { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Intl.DateTimeFormat('en-US', options).format(date);
+    }
+
+    function formatCommitTooltipRelativeDate(date, now) {
+      const diffMs = now.getTime() - date.getTime();
+      const absMs = Math.abs(diffMs);
+      const minuteMs = 60 * 1000;
+      const hourMs = 60 * minuteMs;
+      const dayMs = 24 * hourMs;
+      const monthMs = 30 * dayMs;
+      const yearMs = 365 * dayMs;
+      const units = [
+        { label: 'year', ms: yearMs },
+        { label: 'month', ms: monthMs },
+        { label: 'day', ms: dayMs },
+        { label: 'hour', ms: hourMs },
+        { label: 'minute', ms: minuteMs }
+      ];
+
+      for (const unit of units) {
+        if (absMs >= unit.ms) {
+          const count = Math.max(1, Math.round(absMs / unit.ms));
+          return count + ' ' + unit.label + (count === 1 ? '' : 's') + (diffMs >= 0 ? ' ago' : ' from now');
+        }
+      }
+
+      return diffMs >= 0 ? 'just now' : 'right now';
+    }
+
     function renderCommitTooltip(commit) {
       const coAuthors = parseCoAuthors(commit.message);
       const body = getTooltipBody(commit.message, commit.subject);
@@ -1462,7 +1546,7 @@ export function renderShowLogWebviewHtml(): string {
         + '  <span class="commit-tooltip-avatar">' + escapeHtml(getAuthorInitials(commit.author)) + '</span>'
         + '  <div class="commit-tooltip-author-line">'
         + '    <span class="commit-tooltip-author">' + escapeHtml(commit.author || 'Unknown author') + '</span>'
-        + '    <span class="commit-tooltip-muted">committed on ' + escapeHtml(commit.date || 'unknown date') + '</span>'
+        + '    <span class="commit-tooltip-muted">committed on ' + escapeHtml(formatCommitTooltipDate(commit.date)) + '</span>'
         + '  </div>'
         + '</div>'
         + refs

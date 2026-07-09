@@ -465,6 +465,9 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.reference-tooltip \{[\s\S]*?position: fixed;[\s\S]*?width: min\(360px, calc\(100vw - 24px\)\);/s);
   assert.match(html, /function showReferenceTooltip\(refElement\)/);
   assert.match(html, /reference\.description[\s\S]*?reference-tooltip-description/);
+  assert.match(html, /formatReferenceTooltipDate\(node\.date\)/);
+  assert.match(html, /function formatReferenceTooltipDate\(value\)/);
+  assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);
   assert.match(html, /reference-tooltip-kind/);
   assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 17px;[\s\S]*?padding: 2px 5px;/s);
   assert.doesNotMatch(html, /flowKindBadges/);

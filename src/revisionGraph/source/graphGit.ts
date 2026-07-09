@@ -129,7 +129,7 @@ export function buildRevisionGraphGitLogArgs(
   }
 
   args.push(
-    '--date=short',
+    '--date=iso-strict',
     `--max-count=${limit}`,
     `--pretty=format:${getRevisionGraphGitFormat()}`
   );
@@ -147,7 +147,7 @@ export function buildRevisionLogGitArgs(
     'log',
     '--topo-order',
     '--decorate=short',
-    '--date=short',
+    '--date=iso-strict',
     `--max-count=${limit}`,
     `--skip=${skip}`,
     `--pretty=format:${getRevisionLogFormat()}`,
