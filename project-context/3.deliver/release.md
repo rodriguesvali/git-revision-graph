@@ -147,6 +147,9 @@ Recorded verification:
   badge alignment, and paging fixes alongside Flow Governance badges and actions.
 - Integration verification passed on 2026-07-09 with `npm run build`, `npm test` (590 tests), and
   `git diff --check`.
+- The 2026-07-09 `main` equalization conflict resolution preserved the published `1.5.9` tooltip
+  behavior alongside Flow Governance badges and actions; `npm run build`, `npm test` (590 tests),
+  and `git diff --check` passed after resolution.
 
 Marketplace impact:
 
