@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "mainBranches": [
+    "main",
+    "master"
+  ],
+  "patterns": {
+    "release": "^release/.+",
+    "sync": "^sync/.+",
+    "package": "^package(?:/.+)?$",
+    "feature": "^feature/.+",
+    "task": "^task/.+",
+    "bug": "^bug/.+",
+    "hotfix": "^hotfix/.+"
+  }
+}
