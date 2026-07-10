@@ -47,7 +47,7 @@ export interface RefActionUi {
     readonly upstreamLabel: string;
   }): Promise<CurrentBranchPushMode | undefined>;
   confirm(options: { readonly message: string; readonly confirmLabel: string }): Promise<boolean>;
-  showInformationMessage(message: string): void;
+  showInformationMessage(message: string, options?: RefActionMessageOptions): Promise<void> | void;
   showWarningMessage(message: string, options?: RefActionMessageOptions): Promise<void> | void;
   showErrorMessage(message: string, options?: RefActionMessageOptions): Promise<void>;
   showSourceControl(): Promise<void>;

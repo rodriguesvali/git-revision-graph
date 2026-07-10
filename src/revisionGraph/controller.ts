@@ -43,6 +43,7 @@ import {
 import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
+import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 import { loadCommitShortStat } from './repository/commitShortStat';
 import { openShowLogCommitOnGitHub } from '../showLog/remoteCommitAction';
 import {
@@ -590,10 +591,16 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
+    const actionServices = withCurrentStateBeforeBlockingMessage(
+      this.actionServices,
+      () => this.postCurrentState()
+    );
+
     const productionBranch = this.resolveFlowProductionBranch();
     if (!productionBranch) {
-      this.actionServices.ui.showWarningMessage(
-        `Release promotion readiness is inconclusive for ${releaseBranch}: no production branch is visible in the current graph.`
+      await actionServices.ui.showWarningMessage(
+        `Release promotion readiness is inconclusive for ${releaseBranch}: no production branch is visible in the current graph.`,
+        { modal: true }
       );
       return;
     }
@@ -605,11 +612,11 @@ export class RevisionGraphController implements vscode.Disposable {
     });
     const diagnostic = createFlowPromotionReadinessDiagnostic(readiness);
     if (diagnostic.severity === 'info') {
-      this.actionServices.ui.showInformationMessage(diagnostic.message);
+      await actionServices.ui.showInformationMessage(diagnostic.message, { modal: true });
       return;
     }
 
-    this.actionServices.ui.showWarningMessage(diagnostic.message);
+    await actionServices.ui.showWarningMessage(diagnostic.message, { modal: true });
   }
 
   private resolveFlowProductionBranch(): string | undefined {

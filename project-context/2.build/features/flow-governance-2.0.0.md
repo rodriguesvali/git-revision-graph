@@ -89,6 +89,9 @@ from an active release.
 - Direct governed merge handling defaults to `warn` and can be configured later
   without changing the policy engine contract.
 - Release promotion validation reports `ready`, `blocked`, or `inconclusive`.
+- Release promotion validation clears its in-graph progress state before showing
+  the result in a modal VS Code dialog; successful results use an information
+  dialog and blocked or inconclusive results use a warning dialog.
 - Blocked release promotion explains that production contains commits missing
   from the release.
 - PR handoff is available without requiring provider authentication.
@@ -243,6 +246,13 @@ from an active release.
   description, and the workflow creates only a local checked-out branch.
 - `npm run build` and `npm test` passed with 596 tests on 2026-07-10 after the
   Start New Bug workflow.
+- `Validate Release Promotion` result presentation was corrected on 2026-07-10.
+  The host now posts a non-loading graph state before awaiting a modal result,
+  so `Validating release promotion...` is removed before the dialog opens.
+  Ready results use modal information; blocked, missing-production, and
+  inconclusive results use modal warnings.
+- `npm run build` and `npm test` passed with 598 tests on 2026-07-10 after the
+  release-promotion result presentation correction.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -266,6 +276,9 @@ from an active release.
 - Verify `Start New Bug` appears for both release and feature references,
   requires Bug ID, short name, and description, and creates and checks out
   `bug/<bug-id>-<short-name>` from the selected source without publishing it.
+- On a release reference, run `Validate Release Promotion` and verify that
+  `Validating release promotion...` disappears before the modal result dialog
+  opens. Repeat for ready, blocked, and inconclusive outcomes.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task and

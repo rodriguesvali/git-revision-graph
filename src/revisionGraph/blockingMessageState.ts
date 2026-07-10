@@ -8,6 +8,20 @@ export function withCurrentStateBeforeBlockingMessage(
     ...services,
     ui: {
       ...services.ui,
+      async showInformationMessage(message, options) {
+        if (options?.modal) {
+          postCurrentState();
+        }
+
+        await services.ui.showInformationMessage(message, options);
+      },
+      async showWarningMessage(message, options) {
+        if (options?.modal) {
+          postCurrentState();
+        }
+
+        await services.ui.showWarningMessage(message, options);
+      },
       async showErrorMessage(message, options) {
         if (options?.modal) {
           postCurrentState();

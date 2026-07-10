@@ -123,8 +123,13 @@ export function createWorkbenchRefActionUi(): RefActionUi {
       );
       return confirmation === options.confirmLabel;
     },
-    showInformationMessage(message) {
-      void vscode.window.showInformationMessage(message);
+    async showInformationMessage(message, options) {
+      if (options) {
+        await vscode.window.showInformationMessage(message, options);
+        return;
+      }
+
+      await vscode.window.showInformationMessage(message);
     },
     async showWarningMessage(message, options) {
       if (options) {
