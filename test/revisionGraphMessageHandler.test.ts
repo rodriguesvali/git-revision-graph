@@ -86,7 +86,7 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
 
 test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
   const calls: Array<{
-    readonly branchKind: 'release' | 'feature' | 'task';
+    readonly branchKind: 'release' | 'feature' | 'task' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
     readonly description: string | undefined;
@@ -117,6 +117,13 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     name: '4312-adjust-timeout',
     description: 'Keep checkout requests bounded'
   });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    branchKind: 'hotfix',
+    sourceRefName: 'main',
+    name: 'INC-482-login-timeout',
+    description: 'Restore login availability'
+  });
 
   assert.deepEqual(calls, [
     {
@@ -136,6 +143,12 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
       sourceRefName: 'feature/checkout-redesign',
       name: '4312-adjust-timeout',
       description: 'Keep checkout requests bounded'
+    },
+    {
+      branchKind: 'hotfix',
+      sourceRefName: 'main',
+      name: 'INC-482-login-timeout',
+      description: 'Restore login availability'
     }
   ]);
 });

@@ -67,6 +67,15 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(
     validateRevisionGraphMessage({
       type: 'start-flow-branch',
+      branchKind: 'hotfix',
+      sourceRefName: 'main',
+      name: 'INC-482-login-timeout'
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
       branchKind: 'feature',
       sourceRefName: 'main',
       name: '2.0.0',
@@ -428,6 +437,22 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       sourceRefName: 'feature/demo',
       name: '4312-adjust-timeout',
       description: 'Keep checkout requests bounded'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
+      branchKind: 'hotfix',
+      sourceRefName: 'main',
+      name: 'INC-482-login-timeout',
+      description: 'Restore login availability'
+    }),
+    {
+      type: 'start-flow-branch',
+      branchKind: 'hotfix',
+      sourceRefName: 'main',
+      name: 'INC-482-login-timeout',
+      description: 'Restore login availability'
     }
   );
   assert.deepEqual(
@@ -796,6 +821,19 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'feature/demo', name: '4312-adjust-timeout' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'start-flow-branch',
+        branchKind: 'hotfix',
+        sourceRefName: 'main',
+        name: 'INC-482-login-timeout',
+        description: 'Restore login availability'
+      },
       governedFlowState
     ),
     true

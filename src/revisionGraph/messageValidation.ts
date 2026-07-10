@@ -69,9 +69,14 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         : undefined;
     case 'start-flow-branch':
       return isBoundedNonEmptyString(message.sourceRefName)
-        && (message.branchKind === 'release' || message.branchKind === 'feature' || message.branchKind === 'task')
+        && (message.branchKind === 'release'
+          || message.branchKind === 'feature'
+          || message.branchKind === 'task'
+          || message.branchKind === 'hotfix')
         && isBoundedNonEmptyString(message.name, 240)
-        && (message.description === undefined || isBoundedString(message.description, 2048))
+        && (message.branchKind === 'hotfix'
+          ? isBoundedNonEmptyString(message.description, 2048)
+          : message.description === undefined || isBoundedString(message.description, 2048))
         ? message.description === undefined
           ? {
             type: 'start-flow-branch',
@@ -84,7 +89,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
             branchKind: message.branchKind,
             sourceRefName: message.sourceRefName,
             name: message.name,
-            description: message.description
+            description: message.description as string
           }
         : undefined;
     case 'prepare-flow-equalization':

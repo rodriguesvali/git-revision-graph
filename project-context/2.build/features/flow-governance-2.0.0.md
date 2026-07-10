@@ -18,7 +18,8 @@ from an active release.
 2. Flow Governance classifies visible branch refs and shows compact badges.
 3. The user activates Flow Governance and opens the `main` reference context menu.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
-   or focusing that item reveals `Start New Release` and `Start New Feature`.
+   or focusing that item reveals `Start New Release`, `Start New Feature`, and
+   `Start New Hot Fix`.
 5. The user chooses `Start New Release` or `Start New Feature`, fills the
    required name and optional description, and confirms.
 6. The extension validates the input, derives the branch from `patterns.release`
@@ -94,6 +95,11 @@ from an active release.
   optional-description form, validate the resulting branch against
   `patterns.release` or `patterns.feature`, create a local branch from `main`,
   and never push automatically.
+- `Start New Hot Fix` is available from a branch classified as `main`. Its form
+  requires a Hotfix ID, short name, and description, combines the identifying
+  values as `<hotfix-id>-<short-name>`, validates the result through
+  `patterns.hotfix`, creates and checks out the local branch from `main`, stores
+  its description, and never pushes automatically.
 - A branch classified as `feature` shows `Flow Governance > Start New Task`.
   Its form requires a numeric Dev Task and a short name, accepts an optional
   description, combines the values as `<task-dev>-<short-name>`, validates the
@@ -212,6 +218,14 @@ from an active release.
 - `Start New Task` was added on 2026-07-04 for feature branches, reusing the
   governed branch creation workflow with task-specific fields and source-kind
   authorization.
+- `Start New Hot Fix` was added on 2026-07-10 for `main`, reusing the governed
+  branch workflow with required Hotfix ID, short name, and description fields.
+  The host composes and validates `hotfix/<hotfix-id>-<short-name>` under the
+  default configuration, enforces the description again at the trusted host
+  boundary, creates the local branch from `main`, and does not push it.
+- `npm run build` and `npm test` passed with 593 tests on 2026-07-10 after the
+  Start New Hot Fix workflow; `graphify update .` refreshed the code knowledge
+  graph after implementation.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -229,6 +243,9 @@ from an active release.
 - Verify `Start New Release` and `Start New Feature` from the `main` Flow
   Governance submenu create local branches through the shared required-name and
   optional-description form.
+- Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
+  Hotfix ID, short name, and description, then creates and checks out
+  `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task and

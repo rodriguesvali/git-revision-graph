@@ -132,6 +132,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
   assert.match(html, /Start New Task/);
+  assert.match(html, /Start New Hot Fix/);
   assert.match(html, /id="referenceTooltip" role="dialog" aria-label="Reference details" hidden/);
   assert.match(html, /Validate Release Promotion/);
   assert.match(html, /Prepare Production Equalization/);
@@ -460,7 +461,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
   assert.match(html, /\} else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
-  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \}\s*\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
@@ -552,8 +553,11 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
   assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
-  assert.match(html, /taskDevText\.textContent = 'Task Dev \*';/);
-  assert.match(html, /shortNameText\.textContent = 'ShortName \*';/);
+  assert.match(html, /taskDevText\.textContent = 'Dev Task \*';/);
+  assert.match(html, /shortNameText\.textContent = 'Short name \*';/);
+  assert.match(html, /branchKind === 'hotfix' \? 'Hotfix ID \*' : 'Dev Task \*'/);
+  assert.match(html, /branchKind === 'hotfix' \? 'Description \*' : 'Description'/);
+  assert.match(html, /branchKind === 'hotfix' && !description/);
   assert.match(html, /taskDev \+ '-' \+ shortName/);
   assert.match(html, /!\/\^\[0-9\]\+\$\/\.test\(taskDev\)/);
   assert.match(html, /function getFlowBranchDialogCopy\(branchKind\)/);

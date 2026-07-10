@@ -9,7 +9,7 @@ import {
 import type { RefActionServices } from '../../refActions/types';
 import type { FlowPatternBranchKind, NormalizedFlowConfig } from './flowTypes';
 
-export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task'>;
+export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task' | 'hotfix'>;
 
 export interface StartFlowBranchOptions {
   readonly kind: FlowStartBranchKind;
@@ -74,6 +74,11 @@ export async function startFlowBranch(
   const branchNameResult = resolveFlowBranchName(options.kind, options.name, options.config);
   if (!branchNameResult.ok || !branchNameResult.branchName) {
     await services.ui.showErrorMessage(`Could not start the ${options.kind}. ${branchNameResult.message ?? `Invalid ${options.kind} name.`}`);
+    return;
+  }
+
+  if (options.kind === 'hotfix' && !options.description?.trim()) {
+    await services.ui.showErrorMessage('Could not start the hotfix. Description is required.');
     return;
   }
 
@@ -188,5 +193,8 @@ function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {
   if (kind === 'release') {
     return 'Release';
   }
-  return kind === 'feature' ? 'Feature' : 'Task';
+  if (kind === 'feature') {
+    return 'Feature';
+  }
+  return kind === 'task' ? 'Task' : 'Hotfix';
 }

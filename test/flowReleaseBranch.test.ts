@@ -62,6 +62,17 @@ test('Flow Governance task branch names combine the Dev Task number and short na
   );
 });
 
+test('Flow Governance hotfix branch names combine the Hotfix ID and short name', () => {
+  assert.deepEqual(
+    resolveFlowBranchName('hotfix', 'INC-482-login-timeout', DEFAULT_FLOW_CONFIG),
+    { ok: true, branchName: 'hotfix/INC-482-login-timeout' }
+  );
+  assert.equal(
+    resolveFlowBranchName('hotfix', 'INC 482 login timeout', DEFAULT_FLOW_CONFIG).ok,
+    false
+  );
+});
+
 test('Flow Governance starts a local release branch from main', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
@@ -132,6 +143,48 @@ test('Flow Governance starts a local task branch from its feature', async () => 
   assert.deepEqual(upstreamClears, ['task/4312-adjust-timeout']);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Task branch task\/4312-adjust-timeout was created/);
+});
+
+test('Flow Governance starts a local hotfix branch from main with a required description', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
+
+  await startFlowBranch(repository, {
+    kind: 'hotfix',
+    sourceBranch: 'main',
+    name: 'INC-482-login-timeout',
+    description: 'Restore login availability while the permanent fix is prepared',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'hotfix/INC-482-login-timeout',
+    checkout: true,
+    ref: 'main'
+  }]);
+  assert.deepEqual(upstreamClears, ['hotfix/INC-482-login-timeout']);
+  assert.equal(refreshes.length, 1);
+  assert.match(informationMessages[0] ?? '', /Hotfix branch hotfix\/INC-482-login-timeout was created/);
+});
+
+test('Flow Governance refuses a hotfix without a description before mutation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = createReleaseServices({ errors });
+
+  await startFlowBranch(repository, {
+    kind: 'hotfix',
+    sourceBranch: 'main',
+    name: 'INC-482-login-timeout',
+    description: '   ',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.match(errors[0] ?? '', /Description is required/);
 });
 
 test('Flow Governance refuses an existing release branch before mutation', async () => {

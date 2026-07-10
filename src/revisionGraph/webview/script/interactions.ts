@@ -468,7 +468,8 @@ export function renderRevisionGraphScriptInteractions(): string {
       if (flowBranch.kind === 'main') {
         entries.push(
           { label: 'Start New Release', onClick: () => showFlowBranchForm(target, 'release') },
-          { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') }
+          { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') },
+          { label: 'Start New Hot Fix', onClick: () => showFlowBranchForm(target, 'hotfix') }
         );
       } else if (flowBranch.kind === 'feature') {
         entries.push({ label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') });
@@ -661,12 +662,21 @@ export function renderRevisionGraphScriptInteractions(): string {
       dialog.branchKind = branchKind;
       dialog.title.textContent = copy.title;
       dialog.submitButton.textContent = copy.submitLabel;
-      dialog.nameLabel.hidden = branchKind === 'task';
-      dialog.nameInput.required = branchKind !== 'task';
-      dialog.taskDevLabel.hidden = branchKind !== 'task';
-      dialog.taskDevInput.required = branchKind === 'task';
-      dialog.shortNameLabel.hidden = branchKind !== 'task';
-      dialog.shortNameInput.required = branchKind === 'task';
+      const usesStructuredName = branchKind === 'task' || branchKind === 'hotfix';
+      dialog.nameLabel.hidden = usesStructuredName;
+      dialog.nameInput.required = !usesStructuredName;
+      dialog.nameInput.setAttribute('aria-required', String(!usesStructuredName));
+      dialog.taskDevLabel.hidden = !usesStructuredName;
+      dialog.taskDevInput.required = usesStructuredName;
+      dialog.taskDevInput.setAttribute('aria-required', String(usesStructuredName));
+      dialog.taskDevText.textContent = branchKind === 'hotfix' ? 'Hotfix ID *' : 'Dev Task *';
+      dialog.taskDevInput.inputMode = branchKind === 'task' ? 'numeric' : 'text';
+      dialog.shortNameLabel.hidden = !usesStructuredName;
+      dialog.shortNameInput.required = usesStructuredName;
+      dialog.shortNameInput.setAttribute('aria-required', String(usesStructuredName));
+      dialog.descriptionText.textContent = branchKind === 'hotfix' ? 'Description *' : 'Description';
+      dialog.descriptionInput.required = branchKind === 'hotfix';
+      dialog.descriptionInput.setAttribute('aria-required', String(branchKind === 'hotfix'));
       dialog.nameInput.value = '';
       dialog.taskDevInput.value = '';
       dialog.shortNameInput.value = '';
@@ -674,7 +684,7 @@ export function renderRevisionGraphScriptInteractions(): string {
       setFlowBranchDialogError(dialog, '');
       dialog.backdrop.hidden = false;
       document.body.classList.add('flow-dialog-open');
-      window.setTimeout(() => (branchKind === 'task' ? dialog.taskDevInput : dialog.nameInput).focus(), 0);
+      window.setTimeout(() => (usesStructuredName ? dialog.taskDevInput : dialog.nameInput).focus(), 0);
     }
 
     function ensureFlowBranchDialog() {
@@ -722,7 +732,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         taskDevLabel.hidden = true;
         const taskDevText = document.createElement('span');
         taskDevText.className = 'flow-form-label';
-        taskDevText.textContent = 'Task Dev *';
+        taskDevText.textContent = 'Dev Task *';
         const taskDevInput = document.createElement('input');
         taskDevInput.id = 'flowBranchTaskDevInput';
         taskDevInput.className = 'flow-form-input';
@@ -742,7 +752,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         shortNameLabel.hidden = true;
         const shortNameText = document.createElement('span');
         shortNameText.className = 'flow-form-label';
-        shortNameText.textContent = 'ShortName *';
+        shortNameText.textContent = 'Short name *';
         const shortNameInput = document.createElement('input');
         shortNameInput.id = 'flowBranchShortNameInput';
         shortNameInput.className = 'flow-form-input';
@@ -809,23 +819,34 @@ export function renderRevisionGraphScriptInteractions(): string {
           const branchKind = dialog.branchKind;
           const taskDev = dialog.taskDevInput.value.trim();
           const shortName = dialog.shortNameInput.value.trim();
-          const name = branchKind === 'task'
+          const usesStructuredName = branchKind === 'task' || branchKind === 'hotfix';
+          const name = usesStructuredName
             ? taskDev + '-' + shortName
             : dialog.nameInput.value.trim();
           const description = dialog.descriptionInput.value.trim();
           if (branchKind === 'task' && !/^[0-9]+$/.test(taskDev)) {
-            setFlowBranchDialogError(dialog, 'Task Dev must be a number.');
+            setFlowBranchDialogError(dialog, 'Dev Task must be a number.');
             dialog.taskDevInput.focus();
             return;
           }
-          if (branchKind === 'task' && !shortName) {
-            setFlowBranchDialogError(dialog, 'ShortName is required.');
+          if (branchKind === 'hotfix' && !taskDev) {
+            setFlowBranchDialogError(dialog, 'Hotfix ID is required.');
+            dialog.taskDevInput.focus();
+            return;
+          }
+          if (usesStructuredName && !shortName) {
+            setFlowBranchDialogError(dialog, 'Short name is required.');
             dialog.shortNameInput.focus();
             return;
           }
-          if (branchKind !== 'task' && !name) {
+          if (!usesStructuredName && !name) {
             setFlowBranchDialogError(dialog, 'Name is required.');
             dialog.nameInput.focus();
+            return;
+          }
+          if (branchKind === 'hotfix' && !description) {
+            setFlowBranchDialogError(dialog, 'Description is required.');
+            dialog.descriptionInput.focus();
             return;
           }
 
@@ -848,9 +869,11 @@ export function renderRevisionGraphScriptInteractions(): string {
         nameLabel: backdrop.querySelector('#flowBranchNameLabel'),
         nameInput: backdrop.querySelector('#flowBranchNameInput'),
         taskDevLabel: backdrop.querySelector('#flowBranchTaskDevLabel'),
+        taskDevText: backdrop.querySelector('#flowBranchTaskDevLabel .flow-form-label'),
         taskDevInput: backdrop.querySelector('#flowBranchTaskDevInput'),
         shortNameLabel: backdrop.querySelector('#flowBranchShortNameLabel'),
         shortNameInput: backdrop.querySelector('#flowBranchShortNameInput'),
+        descriptionText: backdrop.querySelector('[for="flowBranchDescriptionInput"] .flow-form-label'),
         descriptionInput: backdrop.querySelector('#flowBranchDescriptionInput'),
         error: backdrop.querySelector('.flow-form-error'),
         get target() {
@@ -890,6 +913,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       if (branchKind === 'feature') {
         return { title: 'Start New Feature', submitLabel: 'Create Feature' };
+      }
+      if (branchKind === 'hotfix') {
+        return { title: 'Start New Hot Fix', submitLabel: 'Create Hot Fix' };
       }
       return { title: 'Start New Release', submitLabel: 'Create Release' };
     }
