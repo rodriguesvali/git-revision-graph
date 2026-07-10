@@ -472,9 +472,13 @@ export function renderRevisionGraphScriptInteractions(): string {
           { label: 'Start New Hot Fix', onClick: () => showFlowBranchForm(target, 'hotfix') }
         );
       } else if (flowBranch.kind === 'feature') {
-        entries.push({ label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') });
+        entries.push(
+          { label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') },
+          { label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') }
+        );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
+        entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
         entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
         if (productionBranchName) {
           entries.push(
@@ -662,21 +666,24 @@ export function renderRevisionGraphScriptInteractions(): string {
       dialog.branchKind = branchKind;
       dialog.title.textContent = copy.title;
       dialog.submitButton.textContent = copy.submitLabel;
-      const usesStructuredName = branchKind === 'task' || branchKind === 'hotfix';
+      const usesStructuredName = branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
+      const requiresDescription = branchKind === 'bug' || branchKind === 'hotfix';
       dialog.nameLabel.hidden = usesStructuredName;
       dialog.nameInput.required = !usesStructuredName;
       dialog.nameInput.setAttribute('aria-required', String(!usesStructuredName));
       dialog.taskDevLabel.hidden = !usesStructuredName;
       dialog.taskDevInput.required = usesStructuredName;
       dialog.taskDevInput.setAttribute('aria-required', String(usesStructuredName));
-      dialog.taskDevText.textContent = branchKind === 'hotfix' ? 'Hotfix ID *' : 'Dev Task *';
+      dialog.taskDevText.textContent = branchKind === 'bug'
+        ? 'Bug ID *'
+        : branchKind === 'hotfix' ? 'Hotfix ID *' : 'Dev Task *';
       dialog.taskDevInput.inputMode = branchKind === 'task' ? 'numeric' : 'text';
       dialog.shortNameLabel.hidden = !usesStructuredName;
       dialog.shortNameInput.required = usesStructuredName;
       dialog.shortNameInput.setAttribute('aria-required', String(usesStructuredName));
-      dialog.descriptionText.textContent = branchKind === 'hotfix' ? 'Description *' : 'Description';
-      dialog.descriptionInput.required = branchKind === 'hotfix';
-      dialog.descriptionInput.setAttribute('aria-required', String(branchKind === 'hotfix'));
+      dialog.descriptionText.textContent = requiresDescription ? 'Description *' : 'Description';
+      dialog.descriptionInput.required = requiresDescription;
+      dialog.descriptionInput.setAttribute('aria-required', String(requiresDescription));
       dialog.nameInput.value = '';
       dialog.taskDevInput.value = '';
       dialog.shortNameInput.value = '';
@@ -819,7 +826,7 @@ export function renderRevisionGraphScriptInteractions(): string {
           const branchKind = dialog.branchKind;
           const taskDev = dialog.taskDevInput.value.trim();
           const shortName = dialog.shortNameInput.value.trim();
-          const usesStructuredName = branchKind === 'task' || branchKind === 'hotfix';
+          const usesStructuredName = branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
           const name = usesStructuredName
             ? taskDev + '-' + shortName
             : dialog.nameInput.value.trim();
@@ -834,6 +841,11 @@ export function renderRevisionGraphScriptInteractions(): string {
             dialog.taskDevInput.focus();
             return;
           }
+          if (branchKind === 'bug' && !taskDev) {
+            setFlowBranchDialogError(dialog, 'Bug ID is required.');
+            dialog.taskDevInput.focus();
+            return;
+          }
           if (usesStructuredName && !shortName) {
             setFlowBranchDialogError(dialog, 'Short name is required.');
             dialog.shortNameInput.focus();
@@ -844,7 +856,7 @@ export function renderRevisionGraphScriptInteractions(): string {
             dialog.nameInput.focus();
             return;
           }
-          if (branchKind === 'hotfix' && !description) {
+          if ((branchKind === 'bug' || branchKind === 'hotfix') && !description) {
             setFlowBranchDialogError(dialog, 'Description is required.');
             dialog.descriptionInput.focus();
             return;
@@ -916,6 +928,9 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       if (branchKind === 'hotfix') {
         return { title: 'Start New Hot Fix', submitLabel: 'Create Hot Fix' };
+      }
+      if (branchKind === 'bug') {
+        return { title: 'Start New Bug', submitLabel: 'Create Bug' };
       }
       return { title: 'Start New Release', submitLabel: 'Create Release' };
     }

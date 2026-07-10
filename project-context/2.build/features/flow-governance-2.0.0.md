@@ -29,12 +29,16 @@ from an active release.
    enter the required Dev Task number and short name plus an optional description,
    and create a task branch named from `<task-dev>-<short-name>` through
    `patterns.task`.
-8. The user selects a governed source or target branch.
-9. The graph explains applicable governance policy, including whether a PR is
+8. From a release or feature branch, the user can choose
+   `Flow Governance > Start New Bug`, enter the required Bug ID, short name, and
+   description, and create a bug branch named from `<bug-id>-<short-name>`
+   through `patterns.bug`.
+9. The user selects a governed source or target branch.
+10. The graph explains applicable governance policy, including whether a PR is
    required.
-10. For `release/*` promotion, the user can validate whether production is an
+11. For `release/*` promotion, the user can validate whether production is an
    ancestor of the release.
-11. If promotion is blocked, the extension guides the user toward a `sync/*`
+12. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
 
 ## Scope
@@ -104,6 +108,12 @@ from an active release.
   Its form requires a numeric Dev Task and a short name, accepts an optional
   description, combines the values as `<task-dev>-<short-name>`, validates the
   result through `patterns.task`, and creates the local branch from that feature.
+- Branches classified as `release` or `feature` show
+  `Flow Governance > Start New Bug`. Its form requires a Bug ID, short name, and
+  description, combines the identifying values as `<bug-id>-<short-name>`,
+  validates the result through `patterns.bug`, creates and checks out the local
+  branch from the selected source, stores its description, and never pushes
+  automatically.
 - Equalization prepares only a local `sync/*` path after confirmation, never
   pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
@@ -226,6 +236,13 @@ from an active release.
 - `npm run build` and `npm test` passed with 593 tests on 2026-07-10 after the
   Start New Hot Fix workflow; `graphify update .` refreshed the code knowledge
   graph after implementation.
+- `Start New Bug` was added on 2026-07-10 for references classified as `release`
+  or `feature`. Its required Bug ID, short name, and description produce
+  `bug/<bug-id>-<short-name>` under the default configuration. Message
+  authorization rejects all other source kinds, the trusted host rechecks the
+  description, and the workflow creates only a local checked-out branch.
+- `npm run build` and `npm test` passed with 596 tests on 2026-07-10 after the
+  Start New Bug workflow.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -246,6 +263,9 @@ from an active release.
 - Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
   Hotfix ID, short name, and description, then creates and checks out
   `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
+- Verify `Start New Bug` appears for both release and feature references,
+  requires Bug ID, short name, and description, and creates and checks out
+  `bug/<bug-id>-<short-name>` from the selected source without publishing it.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task and

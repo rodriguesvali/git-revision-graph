@@ -34,7 +34,7 @@ export type RevisionGraphMessage =
   | { readonly type: 'validate-release-promotion'; readonly refName: string }
   | {
     readonly type: 'start-flow-branch';
-    readonly branchKind: 'release' | 'feature' | 'task' | 'hotfix';
+    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
     readonly description?: string;

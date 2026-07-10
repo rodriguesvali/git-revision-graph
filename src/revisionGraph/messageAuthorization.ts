@@ -37,7 +37,7 @@ export function isRevisionGraphMessageAllowedForState(
         && hasKnownReferenceName(state, message.sourceRefName)
         && state.flowGovernance.references.some((ref) =>
           ref.refName === message.sourceRefName
-            && ref.kind === (message.branchKind === 'task' ? 'feature' : 'main')
+            && isAllowedFlowStartSourceKind(message.branchKind, ref.kind)
         );
     case 'prepare-flow-equalization':
       return state.viewMode === 'ready'
@@ -105,6 +105,19 @@ export function isRevisionGraphMessageAllowedForState(
     case 'merge':
       return hasKnownReferenceName(state, message.refName);
   }
+}
+
+function isAllowedFlowStartSourceKind(
+  branchKind: Extract<RevisionGraphMessage, { readonly type: 'start-flow-branch' }>['branchKind'],
+  sourceKind: NonNullable<RevisionGraphViewState['flowGovernance']>['references'][number]['kind']
+): boolean {
+  if (branchKind === 'task') {
+    return sourceKind === 'feature';
+  }
+  if (branchKind === 'bug') {
+    return sourceKind === 'release' || sourceKind === 'feature';
+  }
+  return sourceKind === 'main';
 }
 
 export function isRevisionGraphMessageAllowedForCurrentRepository(

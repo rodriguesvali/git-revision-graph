@@ -72,9 +72,10 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         && (message.branchKind === 'release'
           || message.branchKind === 'feature'
           || message.branchKind === 'task'
+          || message.branchKind === 'bug'
           || message.branchKind === 'hotfix')
         && isBoundedNonEmptyString(message.name, 240)
-        && (message.branchKind === 'hotfix'
+        && (message.branchKind === 'bug' || message.branchKind === 'hotfix'
           ? isBoundedNonEmptyString(message.description, 2048)
           : message.description === undefined || isBoundedString(message.description, 2048))
         ? message.description === undefined

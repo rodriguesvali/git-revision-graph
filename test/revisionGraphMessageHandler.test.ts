@@ -86,7 +86,7 @@ test('RevisionGraphMessageHandler validates release promotion through the host b
 
 test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
   const calls: Array<{
-    readonly branchKind: 'release' | 'feature' | 'task' | 'hotfix';
+    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
     readonly description: string | undefined;
@@ -124,6 +124,13 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     name: 'INC-482-login-timeout',
     description: 'Restore login availability'
   });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    branchKind: 'bug',
+    sourceRefName: 'release/2.0.0',
+    name: 'BUG-731-payment-rounding',
+    description: 'Correct payment rounding'
+  });
 
   assert.deepEqual(calls, [
     {
@@ -149,6 +156,12 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
       sourceRefName: 'main',
       name: 'INC-482-login-timeout',
       description: 'Restore login availability'
+    },
+    {
+      branchKind: 'bug',
+      sourceRefName: 'release/2.0.0',
+      name: 'BUG-731-payment-rounding',
+      description: 'Correct payment rounding'
     }
   ]);
 });

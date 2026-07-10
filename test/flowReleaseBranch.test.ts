@@ -73,6 +73,17 @@ test('Flow Governance hotfix branch names combine the Hotfix ID and short name',
   );
 });
 
+test('Flow Governance bug branch names combine the Bug ID and short name', () => {
+  assert.deepEqual(
+    resolveFlowBranchName('bug', 'BUG-731-payment-rounding', DEFAULT_FLOW_CONFIG),
+    { ok: true, branchName: 'bug/BUG-731-payment-rounding' }
+  );
+  assert.equal(
+    resolveFlowBranchName('bug', 'BUG 731 payment rounding', DEFAULT_FLOW_CONFIG).ok,
+    false
+  );
+});
+
 test('Flow Governance starts a local release branch from main', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
@@ -179,6 +190,48 @@ test('Flow Governance refuses a hotfix without a description before mutation', a
     kind: 'hotfix',
     sourceBranch: 'main',
     name: 'INC-482-login-timeout',
+    description: '   ',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.match(errors[0] ?? '', /Description is required/);
+});
+
+test('Flow Governance starts a local bug branch from release with a required description', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
+
+  await startFlowBranch(repository, {
+    kind: 'bug',
+    sourceBranch: 'release/2.0.0',
+    name: 'BUG-731-payment-rounding',
+    description: 'Correct rounding in the release payment summary',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'bug/BUG-731-payment-rounding',
+    checkout: true,
+    ref: 'release/2.0.0'
+  }]);
+  assert.deepEqual(upstreamClears, ['bug/BUG-731-payment-rounding']);
+  assert.equal(refreshes.length, 1);
+  assert.match(informationMessages[0] ?? '', /Bug branch bug\/BUG-731-payment-rounding was created/);
+});
+
+test('Flow Governance refuses a bug without a description before mutation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = createReleaseServices({ errors });
+
+  await startFlowBranch(repository, {
+    kind: 'bug',
+    sourceBranch: 'feature/payment-summary',
+    name: 'BUG-731-payment-rounding',
     description: '   ',
     config: DEFAULT_FLOW_CONFIG
   }, services);

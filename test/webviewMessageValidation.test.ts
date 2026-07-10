@@ -76,6 +76,15 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(
     validateRevisionGraphMessage({
       type: 'start-flow-branch',
+      branchKind: 'bug',
+      sourceRefName: 'release/1.0.0',
+      name: 'BUG-731-payment-rounding'
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
       branchKind: 'feature',
       sourceRefName: 'main',
       name: '2.0.0',
@@ -453,6 +462,22 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       sourceRefName: 'main',
       name: 'INC-482-login-timeout',
       description: 'Restore login availability'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
+      branchKind: 'bug',
+      sourceRefName: 'release/1.0.0',
+      name: 'BUG-731-payment-rounding',
+      description: 'Correct payment rounding'
+    }),
+    {
+      type: 'start-flow-branch',
+      branchKind: 'bug',
+      sourceRefName: 'release/1.0.0',
+      name: 'BUG-731-payment-rounding',
+      description: 'Correct payment rounding'
     }
   );
   assert.deepEqual(
@@ -837,6 +862,34 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       governedFlowState
     ),
     true
+  );
+  for (const sourceRefName of ['release/1.0.0', 'feature/demo']) {
+    assert.equal(
+      isRevisionGraphMessageAllowedForState(
+        {
+          type: 'start-flow-branch',
+          branchKind: 'bug',
+          sourceRefName,
+          name: 'BUG-731-payment-rounding',
+          description: 'Correct payment rounding'
+        },
+        governedFlowState
+      ),
+      true
+    );
+  }
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'start-flow-branch',
+        branchKind: 'bug',
+        sourceRefName: 'main',
+        name: 'BUG-731-payment-rounding',
+        description: 'Correct payment rounding'
+      },
+      governedFlowState
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
