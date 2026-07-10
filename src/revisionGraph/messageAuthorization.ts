@@ -1,5 +1,5 @@
 import type { RevisionGraphRef } from './model/commitGraphTypes';
-import { isFlowGovernedTransition } from './flow';
+import { FlowBranchKind, isFlowGovernedTransition } from './flow';
 import {
   RevisionGraphMessage,
   RevisionGraphViewState,
@@ -42,9 +42,11 @@ export function isRevisionGraphMessageAllowedForState(
     case 'prepare-flow-equalization':
       return state.viewMode === 'ready'
         && state.flowGovernance?.enabled === true
-        && hasKnownReferenceName(state, message.releaseRefName)
-        && hasKnownReferenceName(state, message.productionRefName)
-        && hasKnownFlowKinds(state, message.releaseRefName, 'release', message.productionRefName, 'main');
+        && hasKnownReferenceName(state, message.targetRefName)
+        && hasKnownReferenceName(state, message.originRefName)
+        && message.targetRefName !== message.originRefName
+        && isKnownFlowKind(state, message.targetRefName, 'release', 'feature')
+        && isKnownFlowKind(state, message.originRefName, 'main', 'release');
     case 'copy-flow-pr-context':
     case 'open-flow-pr-url':
       return state.viewMode === 'ready'
@@ -185,15 +187,14 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
   }
 }
 
-function hasKnownFlowKinds(
+function isKnownFlowKind(
   state: RevisionGraphViewState,
-  firstRefName: string,
-  firstKind: 'release',
-  secondRefName: string,
-  secondKind: 'main'
+  refName: string,
+  ...kinds: readonly FlowBranchKind[]
 ): boolean {
-  return state.flowGovernance?.references.some((ref) => ref.refName === firstRefName && ref.kind === firstKind) === true
-    && state.flowGovernance.references.some((ref) => ref.refName === secondRefName && ref.kind === secondKind);
+  return state.flowGovernance?.references.some((ref) =>
+    ref.refName === refName && kinds.includes(ref.kind)
+  ) === true;
 }
 
 function isKnownRevisionLogSource(state: RevisionGraphViewState, source: RevisionLogSource): boolean {

@@ -39,7 +39,12 @@ export type RevisionGraphMessage =
     readonly name: string;
     readonly description?: string;
   }
-  | { readonly type: 'prepare-flow-equalization'; readonly releaseRefName: string; readonly productionRefName: string }
+  | {
+    readonly type: 'prepare-flow-equalization';
+    readonly targetRefName: string;
+    readonly originRefName: string;
+    readonly description: string;
+  }
   | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
   | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }
   | {

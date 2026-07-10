@@ -1,4 +1,5 @@
 export * from './flowBranchClassifier';
+export * from './flowBranchDescription';
 export * from './flowConfig';
 export * from './flowDecorations';
 export * from './flowDefaults';

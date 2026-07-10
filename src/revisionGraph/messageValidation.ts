@@ -94,12 +94,14 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
           }
         : undefined;
     case 'prepare-flow-equalization':
-      return isBoundedNonEmptyString(message.releaseRefName)
-        && isBoundedNonEmptyString(message.productionRefName)
+      return isBoundedNonEmptyString(message.targetRefName)
+        && isBoundedNonEmptyString(message.originRefName)
+        && isBoundedNonEmptyString(message.description, 2048)
         ? {
           type: 'prepare-flow-equalization',
-          releaseRefName: message.releaseRefName,
-          productionRefName: message.productionRefName
+          targetRefName: message.targetRefName,
+          originRefName: message.originRefName,
+          description: message.description
         }
         : undefined;
     case 'copy-flow-pr-context':

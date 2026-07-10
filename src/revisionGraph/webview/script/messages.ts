@@ -60,8 +60,8 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return message;
     }
 
-    function createRevisionGraphPrepareFlowEqualizationMessage(releaseRefName, productionRefName) {
-      return { type: 'prepare-flow-equalization', releaseRefName, productionRefName };
+    function createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description) {
+      return { type: 'prepare-flow-equalization', targetRefName, originRefName, description };
     }
 
     function createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName) {

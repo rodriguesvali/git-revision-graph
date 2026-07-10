@@ -47,7 +47,7 @@ export interface RevisionGraphMessageHandlerHost
     name: string,
     description: string | undefined
   ): Promise<void>;
-  prepareFlowEqualization(releaseRefName: string, productionRefName: string): Promise<void>;
+  prepareFlowEqualization(targetRefName: string, originRefName: string, description: string): Promise<void>;
   copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;
   openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void>;
   clearLayoutCache(): PromiseLike<void> | void;
@@ -109,7 +109,11 @@ export class RevisionGraphMessageHandler {
         await this.host.startFlowBranch(message.branchKind, message.sourceRefName, message.name, message.description);
         return;
       case 'prepare-flow-equalization':
-        await this.host.prepareFlowEqualization(message.releaseRefName, message.productionRefName);
+        await this.host.prepareFlowEqualization(
+          message.targetRefName,
+          message.originRefName,
+          message.description
+        );
         return;
       case 'copy-flow-pr-context':
         await this.host.copyFlowPullRequestContext(message.sourceRefName, message.targetRefName);

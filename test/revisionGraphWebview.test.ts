@@ -125,7 +125,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
   assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
   assert.match(html, /function createRevisionGraphValidateReleasePromotionMessage\(target\) \{\s*return \{ type: 'validate-release-promotion', refName: target\.name \};\s*\}/s);
-  assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(releaseRefName, productionRefName\)/);
+  assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(targetRefName, originRefName, description\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
@@ -136,7 +136,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Start New Bug/);
   assert.match(html, /id="referenceTooltip" role="dialog" aria-label="Reference details" hidden/);
   assert.match(html, /Validate Release Promotion/);
-  assert.match(html, /Prepare Production Equalization/);
+  assert.match(html, /Prepare Equalization/);
+  assert.doesNotMatch(html, /Prepare Production Equalization/);
   assert.match(html, /Copy Promotion PR Context/);
   assert.match(html, /Open Promotion PR URL/);
   assert.match(html, /type: 'load-trace'/);
@@ -465,7 +466,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
+  assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
+  assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
@@ -568,6 +571,13 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /nameInput\.setAttribute\('aria-required', 'true'\);/);
   assert.match(html, /descriptionText\.textContent = 'Description';/);
   assert.match(html, /vscode\.postMessage\(createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)\);/);
+  assert.match(html, /function showFlowEqualizationForm\(target\)/);
+  assert.match(html, /originText\.textContent = 'Origin branch \*';/);
+  assert.match(html, /descriptionText\.textContent = 'Description \*';/);
+  assert.match(html, /reference\.kind === 'main' \|\| reference\.kind === 'release'/);
+  assert.match(html, /reference\.refName !== targetRefName/);
+  assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\)/);
+  assert.match(html, /'Preparing equalization\.\.\.'/);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);
@@ -1100,6 +1110,32 @@ test('posts Flow Governance option updates from the webview runtime', () => {
   const lastMessage = runtime.postedMessages.at(-1);
   assert.equal(lastMessage.type, 'set-flow-governance-options');
   assert.deepEqual(lastMessage.options, { enabled: false });
+});
+
+test('lists main and other active releases as equalization origins', () => {
+  const runtime = createWebviewRuntime();
+  vm.runInContext(`
+    currentFlowGovernance = {
+      enabled: true,
+      branchKinds: ['main', 'release', 'feature'],
+      references: [
+        { refName: 'release/2.0.0', kind: 'release' },
+        { refName: 'release/1.9.0', kind: 'release' },
+        { refName: 'main', kind: 'main' },
+        { refName: 'release/1.9.0', kind: 'release' },
+        { refName: 'feature/payment', kind: 'feature' }
+      ]
+    };
+  `, runtime.context);
+
+  assert.deepEqual(
+    Array.from(runtime.context.getFlowEqualizationOrigins('release/2.0.0')),
+    ['main', 'release/1.9.0']
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.getFlowEqualizationOrigins('feature/payment')),
+    ['main', 'release/1.9.0', 'release/2.0.0']
+  );
 });
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {

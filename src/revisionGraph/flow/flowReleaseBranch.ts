@@ -1,5 +1,4 @@
 import { toOperationError } from '../../errorDetail';
-import { execGit, GIT_EXEC_LOCAL_MUTATION_PROFILE } from '../../gitExec';
 import { Repository } from '../../git';
 import { validateGitBranchName } from '../../refActions/branchValidation';
 import {
@@ -8,6 +7,7 @@ import {
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import type { FlowPatternBranchKind, NormalizedFlowConfig } from './flowTypes';
+import { setFlowBranchDescription } from './flowBranchDescription';
 
 export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task' | 'bug' | 'hotfix'>;
 
@@ -97,7 +97,7 @@ export async function startFlowBranch(
     const description = options.description?.trim();
     if (description) {
       try {
-        await setGitBranchDescription(repository.rootUri.fsPath, branchName, description);
+        await setFlowBranchDescription(repository.rootUri.fsPath, branchName, description);
       } catch (error) {
         await services.ui.showWarningMessage(
           toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error)
@@ -175,18 +175,6 @@ async function getLocalBranch(repository: Repository, branchName: string): Promi
   } catch {
     return undefined;
   }
-}
-
-async function setGitBranchDescription(
-  repositoryPath: string,
-  branchName: string,
-  description: string
-): Promise<void> {
-  await execGit(
-    repositoryPath,
-    ['config', `branch.${branchName}.description`, description],
-    GIT_EXEC_LOCAL_MUTATION_PROFILE
-  );
 }
 
 function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {

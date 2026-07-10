@@ -7,15 +7,21 @@ import {
   shouldRevealSourceControlAfterWorkspaceConflict
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
+import { setFlowBranchDescription } from './flowBranchDescription';
 
 export interface PrepareFlowEqualizationOptions {
-  readonly productionBranch: string;
-  readonly releaseBranch: string;
+  readonly originBranch: string;
+  readonly targetBranch: string;
+  readonly description: string;
 }
 
-export function suggestFlowEqualizationBranchName(releaseBranch: string): string {
-  const suffix = releaseBranch
-    .replace(/^release\//, '')
+export interface FlowEqualizationDependencies {
+  readonly setDescription?: typeof setFlowBranchDescription;
+}
+
+export function suggestFlowEqualizationBranchName(targetBranch: string): string {
+  const suffix = targetBranch
+    .replace(/^(?:release|feature)\//, '')
     .replace(/[^A-Za-z0-9._/-]+/g, '-')
     .replace(/^[/.-]+|[/.-]+$/g, '')
     .replace(/\/{2,}/g, '/');
@@ -25,48 +31,52 @@ export function suggestFlowEqualizationBranchName(releaseBranch: string): string
 export async function prepareFlowEqualizationBranch(
   repository: Repository,
   options: PrepareFlowEqualizationOptions,
-  services: RefActionServices
+  services: RefActionServices,
+  dependencies: FlowEqualizationDependencies = {}
 ): Promise<void> {
-  const { productionBranch, releaseBranch } = options;
-  if (!await ensureWorkspaceReadyForMutation(repository, 'preparing release equalization', services)) {
+  const { originBranch, targetBranch } = options;
+  if (!await ensureWorkspaceReadyForMutation(repository, 'preparing branch equalization', services)) {
     return;
   }
 
-  const branchName = await services.ui.promptBranchName({
-    prompt: `Create a Local Sync Branch from ${releaseBranch}`,
-    value: suggestFlowEqualizationBranchName(releaseBranch)
-  });
-  if (!branchName) {
+  const description = options.description.trim();
+  if (!description) {
+    await services.ui.showErrorMessage('Could not prepare equalization. Description is required.');
     return;
   }
 
+  if (originBranch === targetBranch) {
+    await services.ui.showErrorMessage('Could not prepare equalization. Origin branch must differ from the target branch.');
+    return;
+  }
+
+  const branchName = suggestFlowEqualizationBranchName(targetBranch);
   const validationMessage = validateGitBranchName(branchName);
   if (validationMessage) {
-    await services.ui.showErrorMessage(`Could not prepare release equalization. ${validationMessage}`);
-    return;
-  }
-  if (!branchName.startsWith('sync/')) {
-    await services.ui.showErrorMessage('Could not prepare release equalization. The helper branch must use the sync/* prefix.');
-    return;
-  }
-
-  const confirmed = await services.ui.confirm({
-    message: `Prepare ${branchName} from ${releaseBranch} and merge ${productionBranch} into it?\n\nThis creates and checks out a local branch. It will not push or merge into ${releaseBranch}.`,
-    confirmLabel: 'Prepare Sync Branch'
-  });
-  if (!confirmed) {
+    await services.ui.showErrorMessage(`Could not prepare equalization. ${validationMessage}`);
     return;
   }
 
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   let branchCreated = false;
   try {
-    await repository.createBranch(branchName, true, releaseBranch);
+    await repository.createBranch(branchName, true, targetBranch);
     branchCreated = true;
-    await repository.merge(productionBranch);
+    try {
+      await (dependencies.setDescription ?? setFlowBranchDescription)(
+        repository.rootUri.fsPath,
+        branchName,
+        description
+      );
+    } catch (error) {
+      await services.ui.showWarningMessage(
+        toOperationError(`${branchName} was created, but its description could not be saved.`, error)
+      );
+    }
+    await repository.merge(originBranch);
     services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(
-      `${branchName} was created locally from ${releaseBranch} and equalized with ${productionBranch}. Review it, then publish and open a Pull Request when ready.`
+      `${branchName} was created locally from ${targetBranch} and equalized with ${originBranch}. Review it, then publish and open a Pull Request when ready.`
     );
   } catch (error) {
     if (!branchCreated) {

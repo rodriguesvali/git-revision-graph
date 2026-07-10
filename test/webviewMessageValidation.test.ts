@@ -93,7 +93,21 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
-    validateRevisionGraphMessage({ type: 'prepare-flow-equalization', releaseRefName: '', productionRefName: 'main' }),
+    validateRevisionGraphMessage({
+      type: 'prepare-flow-equalization',
+      targetRefName: '',
+      originRefName: 'main',
+      description: 'Bring production forward'
+    }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'prepare-flow-equalization',
+      targetRefName: 'release/2.0.0',
+      originRefName: 'main',
+      description: ''
+    }),
     undefined
   );
   assert.equal(
@@ -482,6 +496,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
   );
   assert.deepEqual(
     validateRevisionGraphMessage({
+      type: 'prepare-flow-equalization',
+      targetRefName: 'release/2.0.0',
+      originRefName: 'release/1.9.0',
+      description: 'Bring the stable fix forward'
+    }),
+    {
+      type: 'prepare-flow-equalization',
+      targetRefName: 'release/2.0.0',
+      originRefName: 'release/1.9.0',
+      description: 'Bring the stable fix forward'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
       type: 'copy-flow-pr-context',
       sourceRefName: 'release/1.0.0',
       targetRefName: 'main'
@@ -808,6 +836,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     references: [
       ...state.references,
       { id: 'release1::branch::release/1.0.0', hash: 'release1', name: 'release/1.0.0', kind: 'branch', title: 'release/1.0.0' },
+      { id: 'release2::branch::release/2.0.0', hash: 'release2', name: 'release/2.0.0', kind: 'branch', title: 'release/2.0.0' },
       { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch', title: 'feature/demo' }
     ],
     flowGovernance: {
@@ -818,6 +847,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       references: [
         { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
         { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
+        { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
         { refName: 'feature/demo', kind: 'feature', isEphemeral: false, diagnostics: [] }
       ]
     }
@@ -891,6 +921,48 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     ),
     false
   );
+  for (const originRefName of ['main', 'release/1.0.0']) {
+    assert.equal(
+      isRevisionGraphMessageAllowedForState(
+        {
+          type: 'prepare-flow-equalization',
+          targetRefName: 'release/2.0.0',
+          originRefName,
+          description: 'Bring the stable fix forward'
+        },
+        governedFlowState
+      ),
+      true
+    );
+  }
+  for (const originRefName of ['main', 'release/1.0.0']) {
+    assert.equal(
+      isRevisionGraphMessageAllowedForState(
+        {
+          type: 'prepare-flow-equalization',
+          targetRefName: 'feature/demo',
+          originRefName,
+          description: 'Bring the stable baseline into the feature'
+        },
+        governedFlowState
+      ),
+      true
+    );
+  }
+  for (const originRefName of ['release/2.0.0', 'feature/demo']) {
+    assert.equal(
+      isRevisionGraphMessageAllowedForState(
+        {
+          type: 'prepare-flow-equalization',
+          targetRefName: 'release/2.0.0',
+          originRefName,
+          description: 'Invalid origin'
+        },
+        governedFlowState
+      ),
+      false
+    );
+  }
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'main', name: '4312-adjust-timeout' },

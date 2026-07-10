@@ -40,6 +40,10 @@ from an active release.
    ancestor of the release.
 12. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
+13. From a release or feature branch, the user can choose
+   `Prepare Equalization`, select `main` or an active release as the origin,
+   enter a required description, and prepare a local `sync/*` branch without an
+   automatic push.
 
 ## Scope
 
@@ -51,8 +55,8 @@ from an active release.
   `inconclusive` outcomes.
 - Add contextual diagnostics close to the graph surface.
 - Add PR handoff through copyable context or recognized GitHub compare/PR URLs.
-- Add a first production-to-release equalization assistant that can prepare a
-  local `sync/*` branch after confirmation, without pushing automatically.
+- Provide a release and feature equalization assistant that can prepare a local
+  `sync/*` branch from `main` or an active release, without pushing automatically.
 
 ## Non-Goals
 
@@ -117,8 +121,12 @@ from an active release.
   validates the result through `patterns.bug`, creates and checks out the local
   branch from the selected source, stores its description, and never pushes
   automatically.
-- Equalization prepares only a local `sync/*` path after confirmation, never
-  pushes automatically, and hands conflicts to VS Code Source Control.
+- Release and feature branches show `Flow Governance > Prepare Equalization`.
+  Its form requires an origin branch and description. The origin list contains
+  `main` and visible active releases, excludes the target when applicable, and
+  orders `main` first. Submission creates a deterministic local `sync/*` branch
+  from the target branch, stores the description, merges the selected origin,
+  never pushes automatically, and hands conflicts to VS Code Source Control.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
   search, focus, refresh, empty-state, and multi-repository behavior remains
   intact.
@@ -253,6 +261,21 @@ from an active release.
   inconclusive results use modal warnings.
 - `npm run build` and `npm test` passed with 598 tests on 2026-07-10 after the
   release-promotion result presentation correction.
+- Equalization was generalized on 2026-07-10. `Prepare Production Equalization`
+  is now `Prepare Equalization`, with a single form for required Origin branch
+  and Description. Eligible origins are `main` and other visible releases; the
+  selected target release is excluded in both the webview and trusted message
+  authorization. The deterministic local `sync/*` branch stores the supplied
+  description, merges the selected origin, and is not pushed automatically.
+- `npm run build` and `npm test` passed with 600 tests on 2026-07-10 after the
+  generalized equalization workflow.
+- `Prepare Equalization` was extended to feature branches on 2026-07-10. The
+  message contract now models a generic target branch, authorization accepts
+  release and feature targets, and feature helpers use
+  `sync/<feature-short-name>` while retaining the same eligible origins and
+  no-push guarantee.
+- `npm run build` and `npm test` passed with 601 tests on 2026-07-10 after
+  extending equalization to feature branches.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -279,6 +302,11 @@ from an active release.
 - On a release reference, run `Validate Release Promotion` and verify that
   `Validating release promotion...` disappears before the modal result dialog
   opens. Repeat for ready, blocked, and inconclusive outcomes.
+- On release and feature references, open `Prepare Equalization` and verify that
+  Origin branch lists `main` plus active releases but not the target when it is
+  itself a release. Verify Description is required, submission prepares the
+  local `sync/*` branch from the selected target, merges the selected origin,
+  and performs no push.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task and

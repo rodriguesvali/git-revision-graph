@@ -474,15 +474,16 @@ export function renderRevisionGraphScriptInteractions(): string {
       } else if (flowBranch.kind === 'feature') {
         entries.push(
           { label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') },
-          { label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') }
+          { label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') },
+          { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) }
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
         entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
+        entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
         if (productionBranchName) {
           entries.push(
-            { label: 'Prepare Production Equalization', onClick: () => postPrepareFlowEqualization(target.name, productionBranchName) },
             { label: 'Copy Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
             { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
           );
@@ -914,6 +915,199 @@ export function renderRevisionGraphScriptInteractions(): string {
       document.body.classList.remove('flow-dialog-open');
     }
 
+    function showFlowEqualizationForm(target) {
+      closeContextMenu();
+      const dialog = ensureFlowEqualizationDialog();
+      dialog.target = target;
+      dialog.originSelect.textContent = '';
+      const origins = getFlowEqualizationOrigins(target.name);
+      if (origins.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No eligible origin branches';
+        option.disabled = true;
+        option.selected = true;
+        dialog.originSelect.appendChild(option);
+      } else {
+        for (const origin of origins) {
+          const option = document.createElement('option');
+          option.value = origin;
+          option.textContent = origin;
+          dialog.originSelect.appendChild(option);
+        }
+      }
+      dialog.descriptionInput.value = '';
+      setFlowEqualizationDialogError(dialog, '');
+      dialog.backdrop.hidden = false;
+      document.body.classList.add('flow-dialog-open');
+      window.setTimeout(() => dialog.originSelect.focus(), 0);
+    }
+
+    function ensureFlowEqualizationDialog() {
+      let backdrop = document.getElementById('flowEqualizationDialog');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'flowEqualizationDialog';
+        backdrop.className = 'flow-dialog-backdrop';
+        backdrop.hidden = true;
+
+        const form = document.createElement('form');
+        form.className = 'flow-dialog';
+        form.setAttribute('role', 'dialog');
+        form.setAttribute('aria-modal', 'true');
+        form.setAttribute('aria-labelledby', 'flowEqualizationDialogTitle');
+
+        const title = document.createElement('h2');
+        title.id = 'flowEqualizationDialogTitle';
+        title.className = 'flow-dialog-title';
+        title.textContent = 'Prepare Equalization';
+        form.appendChild(title);
+
+        const originLabel = document.createElement('label');
+        originLabel.className = 'flow-form-field';
+        originLabel.setAttribute('for', 'flowEqualizationOriginInput');
+        const originText = document.createElement('span');
+        originText.className = 'flow-form-label';
+        originText.textContent = 'Origin branch *';
+        const originSelect = document.createElement('select');
+        originSelect.id = 'flowEqualizationOriginInput';
+        originSelect.className = 'flow-form-input';
+        originSelect.required = true;
+        originSelect.setAttribute('aria-required', 'true');
+        originLabel.appendChild(originText);
+        originLabel.appendChild(originSelect);
+        form.appendChild(originLabel);
+
+        const descriptionLabel = document.createElement('label');
+        descriptionLabel.className = 'flow-form-field';
+        descriptionLabel.setAttribute('for', 'flowEqualizationDescriptionInput');
+        const descriptionText = document.createElement('span');
+        descriptionText.className = 'flow-form-label';
+        descriptionText.textContent = 'Description *';
+        const descriptionInput = document.createElement('textarea');
+        descriptionInput.id = 'flowEqualizationDescriptionInput';
+        descriptionInput.className = 'flow-form-input flow-form-textarea';
+        descriptionInput.required = true;
+        descriptionInput.setAttribute('aria-required', 'true');
+        descriptionInput.maxLength = 2048;
+        descriptionLabel.appendChild(descriptionText);
+        descriptionLabel.appendChild(descriptionInput);
+        form.appendChild(descriptionLabel);
+
+        const error = document.createElement('div');
+        error.className = 'flow-form-error';
+        error.setAttribute('role', 'alert');
+        error.hidden = true;
+        form.appendChild(error);
+
+        const actions = document.createElement('div');
+        actions.className = 'flow-dialog-actions';
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'flow-dialog-button';
+        cancelButton.type = 'button';
+        cancelButton.textContent = 'Cancel';
+        const submitButton = document.createElement('button');
+        submitButton.className = 'flow-dialog-button primary';
+        submitButton.type = 'submit';
+        submitButton.textContent = 'Prepare Equalization';
+        actions.appendChild(cancelButton);
+        actions.appendChild(submitButton);
+        form.appendChild(actions);
+
+        backdrop.appendChild(form);
+        document.body.appendChild(backdrop);
+        backdrop.addEventListener('click', (event) => {
+          if (event.target === backdrop) {
+            closeFlowEqualizationDialog();
+          }
+        });
+        cancelButton.addEventListener('click', closeFlowEqualizationDialog);
+        form.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeFlowEqualizationDialog();
+          }
+        });
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const dialog = ensureFlowEqualizationDialog();
+          const originRefName = dialog.originSelect.value;
+          const description = dialog.descriptionInput.value.trim();
+          if (!originRefName) {
+            setFlowEqualizationDialogError(dialog, 'Origin branch is required.');
+            dialog.originSelect.focus();
+            return;
+          }
+          if (!description) {
+            setFlowEqualizationDialogError(dialog, 'Description is required.');
+            dialog.descriptionInput.focus();
+            return;
+          }
+          const target = dialog.target;
+          if (!target) {
+            closeFlowEqualizationDialog();
+            return;
+          }
+
+          closeFlowEqualizationDialog();
+          postPrepareFlowEqualization(target.name, originRefName, description);
+        });
+      }
+
+      return {
+        backdrop,
+        originSelect: backdrop.querySelector('#flowEqualizationOriginInput'),
+        descriptionInput: backdrop.querySelector('#flowEqualizationDescriptionInput'),
+        error: backdrop.querySelector('.flow-form-error'),
+        get target() {
+          return backdrop.__flowEqualizationTarget || null;
+        },
+        set target(value) {
+          backdrop.__flowEqualizationTarget = value;
+        }
+      };
+    }
+
+    function closeFlowEqualizationDialog() {
+      const backdrop = document.getElementById('flowEqualizationDialog');
+      if (!backdrop) {
+        return;
+      }
+      backdrop.hidden = true;
+      backdrop.__flowEqualizationTarget = null;
+      document.body.classList.remove('flow-dialog-open');
+    }
+
+    function setFlowEqualizationDialogError(dialog, message) {
+      dialog.error.textContent = message;
+      dialog.error.hidden = !message;
+    }
+
+    function getFlowEqualizationOrigins(targetRefName) {
+      if (!isFlowGovernanceActive() || !currentFlowGovernance || !Array.isArray(currentFlowGovernance.references)) {
+        return [];
+      }
+
+      const originsByName = new Map();
+      for (const reference of currentFlowGovernance.references) {
+        if (
+          reference
+          && reference.refName !== targetRefName
+          && (reference.kind === 'main' || reference.kind === 'release')
+        ) {
+          originsByName.set(reference.refName, reference.kind);
+        }
+      }
+      return [...originsByName.entries()]
+        .sort(([leftName, leftKind], [rightName, rightKind]) => {
+          if (leftKind !== rightKind) {
+            return leftKind === 'main' ? -1 : 1;
+          }
+          return leftName.localeCompare(rightName);
+        })
+        .map(([refName]) => refName);
+    }
+
     function setFlowBranchDialogError(dialog, message) {
       dialog.error.textContent = message;
       dialog.error.hidden = !message;
@@ -1040,10 +1234,10 @@ export function renderRevisionGraphScriptInteractions(): string {
       );
     }
 
-    function postPrepareFlowEqualization(releaseRefName, productionRefName) {
+    function postPrepareFlowEqualization(targetRefName, originRefName, description) {
       postMessageWithLoading(
-        createRevisionGraphPrepareFlowEqualizationMessage(releaseRefName, productionRefName),
-        'Preparing production equalization...'
+        createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description),
+        'Preparing equalization...'
       );
     }
 

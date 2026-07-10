@@ -287,8 +287,8 @@ export class RevisionGraphController implements vscode.Disposable {
       startFlowBranch: async (branchKind, sourceRefName, name, description) => {
         await this.startFlowBranch(branchKind, sourceRefName, name, description);
       },
-      prepareFlowEqualization: async (releaseRefName, productionRefName) => {
-        await this.prepareFlowEqualization(releaseRefName, productionRefName);
+      prepareFlowEqualization: async (targetRefName, originRefName, description) => {
+        await this.prepareFlowEqualization(targetRefName, originRefName, description);
       },
       copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
         await this.copyFlowPullRequestContext(sourceRefName, targetRefName);
@@ -662,7 +662,11 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   }
 
-  private async prepareFlowEqualization(releaseRefName: string, productionRefName: string): Promise<void> {
+  private async prepareFlowEqualization(
+    targetRefName: string,
+    originRefName: string,
+    description: string
+  ): Promise<void> {
     const repository = this.currentRepository;
     if (!repository) {
       return;
@@ -674,7 +678,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.actionServices,
       (guardedRepository, services) => prepareFlowEqualizationBranch(
           guardedRepository,
-          { releaseBranch: releaseRefName, productionBranch: productionRefName },
+          { targetBranch: targetRefName, originBranch: originRefName, description },
           services
         )
     );
