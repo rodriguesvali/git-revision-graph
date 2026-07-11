@@ -7,6 +7,7 @@ export * from './flowDiagnostics';
 export * from './flowEqualization';
 export * from './flowPromotionChecks';
 export * from './flowPullRequestContext';
+export * from './flowPullRequestTargets';
 export * from './flowReleaseBranch';
 export * from './flowState';
 export * from './flowTransitionPolicy';

@@ -872,12 +872,23 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
         { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
         { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
         { refName: 'feature/demo', kind: 'feature', isEphemeral: false, diagnostics: [] }
+      ],
+      pullRequestTargets: [
+        { sourceRefName: 'release/1.0.0', targetRefName: 'main', status: 'ahead' },
+        { sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0', status: 'ahead' }
       ]
     }
   };
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-flow-pr-context', sourceRefName: 'release/1.0.0', targetRefName: 'main' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0' },
       governedFlowState
     ),
     true

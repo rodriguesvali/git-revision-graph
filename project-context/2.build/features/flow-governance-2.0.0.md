@@ -276,10 +276,9 @@ from an active release.
   no-push guarantee.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-10 after
   extending equalization to feature branches.
-- Hotfix references now expose `Promotion PR Context` and
-  `Open Promotion PR URL` in their Flow Governance context submenu when the
-  production branch is available. Both actions use the selected hotfix as the
-  PR source and the configured production branch as the target.
+- Hotfix references expose `Promotion PR Context` only when the hotfix has at
+  least one commit ahead of the configured production branch. The selected
+  hotfix is the PR source and production is the target.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-11 after
   adding the hotfix promotion PR handoff actions.
 - `Promotion PR Context` now opens a review form populated by the trusted
@@ -304,6 +303,23 @@ from an active release.
   button or changing form alignment.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-11 after the
   copy-icon occupancy adjustment.
+- Pull Request context eligibility now uses a bounded host-side
+  `git rev-list --count --max-count=1 <target>..<source>` check. Release and
+  hotfix actions are hidden unless they are ahead of production; inconclusive
+  checks fail closed.
+- Feature references always expose `Promotion PR Context`. The form lists all
+  classified release branches as targets and warns when the feature has no
+  commits ahead of the selected release or the check is inconclusive. Copy and
+  GitHub actions remain disabled until an eligible release is selected.
+- `feature -> release` is now an explicit governed PR transition. The GitHub
+  action moved into the context form, so `Open Promotion PR URL` is no longer a
+  separate context-menu item for any branch kind.
+- `npm run build` and `npm test` passed with 603 tests on 2026-07-11 after the
+  ahead-aware unified Pull Request context workflow.
+- GitHub Pull Request URLs now use the documented `quick_pull=1`, `title`, and
+  `body` query parameters. The title and description come from the same trusted
+  Flow Governance context shown in the form, so GitHub opens with both fields
+  pre-populated instead of deriving the title from commits.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -324,12 +340,16 @@ from an active release.
 - Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
   Hotfix ID, short name, and description, then creates and checks out
   `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
-- On a hotfix reference, verify the Flow Governance submenu exposes
-  `Promotion PR Context` and `Open Promotion PR URL`, targeting the
-  configured production branch.
+- On a hotfix or release with no commits ahead of production, verify the Flow
+  Governance submenu omits `Promotion PR Context`. Add a source-only commit and
+  verify the action appears targeting production.
 - Run `Promotion PR Context` and verify the form displays
   `<source> -> <target>` without a copy action, plus populated Title and
   Description fields with independent copy icons on the right.
+- On a feature, verify `Promotion PR Context` remains available and lists every
+  classified release. Selecting a release with no source-only commits must show
+  an alert and disable copy/GitHub actions; selecting an eligible release must
+  populate the context and enable `Open Pull Request on GitHub`.
 - The context-menu label is `Promotion PR Context`; the earlier `Copy`
   prefix was removed because copying happens per field inside the review form.
 - Verify `Start New Bug` appears for both release and feature references,

@@ -20,6 +20,7 @@ export const FLOW_GOVERNED_TRANSITION_RULES: readonly FlowTransitionRule[] = [
   { id: 'task-to-feature', sourceKind: 'task', targetKind: 'feature' },
   { id: 'package-to-feature', sourceKind: 'package', targetKind: 'feature' },
   { id: 'hotfix-to-main', sourceKind: 'hotfix', targetKind: 'main' },
+  { id: 'feature-to-release', sourceKind: 'feature', targetKind: 'release' },
   { id: 'bug-to-main', sourceKind: 'bug', targetKind: 'main' },
   { id: 'bug-to-release', sourceKind: 'bug', targetKind: 'release' },
   { id: 'bug-to-feature', sourceKind: 'bug', targetKind: 'feature' },

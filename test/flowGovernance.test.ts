@@ -19,6 +19,7 @@ import {
   createFlowReferenceDecoration,
   evaluateFlowTransition,
   interpretFlowPromotionAncestorExitCode,
+  loadFlowPullRequestTargets,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
   suggestFlowEqualizationBranchName,
@@ -167,6 +168,7 @@ test('Flow Governance transition policy marks governed integrations as PR-requir
     ['task', 'feature', 'task-to-feature'],
     ['package', 'feature', 'package-to-feature'],
     ['hotfix', 'main', 'hotfix-to-main'],
+    ['feature', 'release', 'feature-to-release'],
     ['bug', 'main', 'bug-to-main'],
     ['bug', 'release', 'bug-to-release'],
     ['bug', 'feature', 'bug-to-feature'],
@@ -183,6 +185,50 @@ test('Flow Governance transition policy marks governed integrations as PR-requir
     assert.match(result.message ?? '', /requires a Pull Request/);
     assert.equal(isFlowGovernedTransition(sourceKind, targetKind), true);
   }
+});
+
+test('Flow Governance resolves Pull Request targets and ahead status for release, hotfix, and feature branches', async () => {
+  const references = [
+    { refName: 'main', kind: 'main' as const, isEphemeral: false, diagnostics: [] },
+    { refName: 'release/2.0.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
+    { refName: 'release/2.1.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
+    { refName: 'hotfix/INC-482-login', kind: 'hotfix' as const, isEphemeral: false, diagnostics: [] },
+    { refName: 'feature/payment', kind: 'feature' as const, isEphemeral: false, diagnostics: [] }
+  ];
+  const ranges: string[] = [];
+
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', references, undefined, async (_path, args) => {
+    const range = args.at(-1) ?? '';
+    ranges.push(range);
+    return { stdout: range === 'release/2.0.0..feature/payment' ? '0\n' : '1\n', stderr: '' };
+  });
+
+  assert.deepEqual(ranges, [
+    'main..release/2.0.0',
+    'main..release/2.1.0',
+    'main..hotfix/INC-482-login',
+    'release/2.0.0..feature/payment',
+    'release/2.1.0..feature/payment'
+  ]);
+  assert.deepEqual(targets.map((target) => [target.sourceRefName, target.targetRefName, target.status]), [
+    ['release/2.0.0', 'main', 'ahead'],
+    ['release/2.1.0', 'main', 'ahead'],
+    ['hotfix/INC-482-login', 'main', 'ahead'],
+    ['feature/payment', 'release/2.0.0', 'not-ahead'],
+    ['feature/payment', 'release/2.1.0', 'ahead']
+  ]);
+});
+
+test('Flow Governance marks Pull Request ahead checks as unknown when Git fails', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
+    { refName: 'hotfix/INC-482-login', kind: 'hotfix', isEphemeral: false, diagnostics: [] }
+  ], undefined, async () => {
+    throw new Error('missing ref');
+  });
+
+  assert.equal(targets[0]?.status, 'unknown');
+  assert.match(targets[0]?.detail ?? '', /missing ref/);
 });
 
 test('Flow Governance transition policy leaves non-governed integrations unblocked', () => {
@@ -338,11 +384,11 @@ test('Flow Governance creates Pull Request context and GitHub compare URLs', () 
   assert.match(context.text, /Flow Governance requires final integration through a Pull Request/);
   assert.equal(
     buildGitHubPullRequestUrl(repository, 'release/1.0.0', 'main'),
-    'https://github.com/owner/project/compare/main...release%2F1.0.0?expand=1'
+    'https://github.com/owner/project/compare/main...release%2F1.0.0?quick_pull=1&title=Merge+release%2F1.0.0+into+main&body=Source%3A+release%2F1.0.0%0ATarget%3A+main%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
   assert.equal(
     buildGitHubPullRequestUrlFromRemoteUrl('git@github.com:owner/project.git', 'sync/release-from-main', 'release/1.0.0'),
-    'https://github.com/owner/project/compare/release%2F1.0.0...sync%2Frelease-from-main?expand=1'
+    'https://github.com/owner/project/compare/release%2F1.0.0...sync%2Frelease-from-main?quick_pull=1&title=Merge+sync%2Frelease-from-main+into+release%2F1.0.0&body=Source%3A+sync%2Frelease-from-main%0ATarget%3A+release%2F1.0.0%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
   assert.equal(
     buildGitHubPullRequestUrlFromRemoteUrl('https://example.com/owner/project.git', 'release/1.0.0', 'main'),

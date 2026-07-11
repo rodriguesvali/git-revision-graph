@@ -54,7 +54,12 @@ export function isRevisionGraphMessageAllowedForState(
         && state.flowGovernance?.enabled === true
         && hasKnownReferenceName(state, message.sourceRefName)
         && hasKnownReferenceName(state, message.targetRefName)
-        && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName);
+        && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName)
+        && state.flowGovernance.pullRequestTargets?.some((target) =>
+          target.sourceRefName === message.sourceRefName
+            && target.targetRefName === message.targetRefName
+            && target.status === 'ahead'
+        ) === true;
     case 'pull-current-head':
     case 'push-current-head':
       return state.viewMode === 'ready'

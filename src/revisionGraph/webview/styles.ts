@@ -651,6 +651,22 @@ export function renderRevisionGraphStyles(): string {
     .flow-pr-context-copy-row .flow-form-textarea {
       min-height: 96px;
     }
+    .flow-pr-context-warning {
+      margin: 0 0 12px;
+      border-left: 2px solid var(--vscode-editorWarning-foreground, #cca700);
+      background: color-mix(in srgb, var(--vscode-editorWarning-foreground, #cca700) 8%, transparent);
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .flow-pr-context-warning[hidden] {
+      display: none;
+    }
+    .flow-pr-context-copy:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
     .flow-form-error {
       margin: 0 0 12px;
       color: var(--vscode-errorForeground);

@@ -141,7 +141,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /Prepare Production Equalization/);
   assert.match(html, /Promotion PR Context/);
   assert.doesNotMatch(html, /Copy Promotion PR Context/);
-  assert.match(html, /Open Promotion PR URL/);
+  assert.doesNotMatch(html, /Open Promotion PR URL/);
+  assert.match(html, /openButton\.textContent = 'Open Pull Request on GitHub';/);
   assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
   assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
   assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
@@ -480,9 +481,12 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
+  assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
-  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?const productionBranchName = getFlowProductionBranchName\(\);[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, productionBranchName\)[\s\S]*?Open Promotion PR URL[\s\S]*?postOpenFlowPullRequestUrl\(target\.name, productionBranchName\)/);
+  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?isFlowPullRequestTargetAhead\(target\.name, productionBranchName\)[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
+  assert.match(html, /targetText\.textContent = 'Target release';/);
+  assert.match(html, /candidate\.status === 'not-ahead'[\s\S]*?has no commits ahead of[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);

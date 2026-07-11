@@ -83,6 +83,14 @@ export interface FlowGovernanceViewState {
   readonly diagnostics: readonly FlowDiagnostic[];
   readonly branchKinds: readonly FlowBranchKind[];
   readonly references: readonly FlowBranchInfo[];
+  readonly pullRequestTargets?: readonly FlowPullRequestTargetInfo[];
+}
+
+export interface FlowPullRequestTargetInfo {
+  readonly sourceRefName: string;
+  readonly targetRefName: string;
+  readonly status: 'ahead' | 'not-ahead' | 'unknown';
+  readonly detail?: string;
 }
 
 export interface FlowGovernanceOptionsUpdate {
@@ -98,6 +106,7 @@ export type FlowTransitionRuleId =
   | 'task-to-feature'
   | 'package-to-feature'
   | 'hotfix-to-main'
+  | 'feature-to-release'
   | 'bug-to-main'
   | 'bug-to-release'
   | 'bug-to-feature'

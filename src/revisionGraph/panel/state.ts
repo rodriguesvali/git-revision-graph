@@ -37,6 +37,7 @@ import {
   createFlowGovernanceViewState,
   FlowGovernanceSettings,
   FlowGovernanceViewState,
+  loadFlowPullRequestTargets,
   resolveFlowConfigForRepository
 } from '../flow';
 
@@ -414,8 +415,12 @@ async function buildFlowGovernanceViewState(
     .map((ref) => ref.name);
   const flowReferences = classifyFlowBranches([...new Set(branchRefs)], resolution.config);
   const state = createFlowGovernanceViewState(resolution, flowReferences);
+  const pullRequestTargets = state.enabled
+    ? await loadFlowPullRequestTargets(repository.rootUri.fsPath, state.references)
+    : [];
+  const enrichedState: FlowGovernanceViewState = { ...state, pullRequestTargets };
   return state.enabled || state.configSource === 'repository' || state.configSource === 'invalid'
-    ? state
+    ? enrichedState
     : undefined;
 }
 

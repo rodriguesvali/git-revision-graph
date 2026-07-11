@@ -475,25 +475,24 @@ export function renderRevisionGraphScriptInteractions(): string {
         entries.push(
           { label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') },
           { label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') },
-          { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) }
+          { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) },
+          { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
         entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
-        if (productionBranchName) {
+        if (productionBranchName && isFlowPullRequestTargetAhead(target.name, productionBranchName)) {
           entries.push(
-            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
-            { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
+            { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
           );
         }
       } else if (flowBranch.kind === 'hotfix') {
         const productionBranchName = getFlowProductionBranchName();
-        if (productionBranchName) {
+        if (productionBranchName && isFlowPullRequestTargetAhead(target.name, productionBranchName)) {
           entries.push(
-            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
-            { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
+            { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
           );
         }
       }
@@ -923,16 +922,33 @@ export function renderRevisionGraphScriptInteractions(): string {
       document.body.classList.remove('flow-dialog-open');
     }
 
-    function showFlowPullRequestContextForm(context) {
+    function openFlowPullRequestContextForm(target) {
+      closeContextMenu();
       const dialog = ensureFlowPullRequestContextDialog();
-      dialog.sourceRefName = context.sourceRefName;
-      dialog.targetRefName = context.targetRefName;
-      dialog.flow.textContent = context.sourceRefName + ' -> ' + context.targetRefName;
-      dialog.titleInput.value = context.title;
-      dialog.descriptionInput.value = context.description;
+      dialog.sourceRefName = target.name;
+      dialog.targetSelect.textContent = '';
+      const targets = getFlowPullRequestTargets(target.name);
+      dialog.targetLabel.hidden = targets.length <= 1;
+      for (const candidate of targets) {
+        const option = document.createElement('option');
+        option.value = candidate.targetRefName;
+        option.textContent = candidate.targetRefName;
+        dialog.targetSelect.appendChild(option);
+      }
       dialog.backdrop.hidden = false;
       document.body.classList.add('flow-dialog-open');
-      window.setTimeout(() => dialog.closeButton.focus(), 0);
+      applyFlowPullRequestTargetSelection();
+      window.setTimeout(() => (dialog.targetLabel.hidden ? dialog.closeButton : dialog.targetSelect).focus(), 0);
+    }
+
+    function showFlowPullRequestContextForm(context) {
+      const dialog = ensureFlowPullRequestContextDialog();
+      if (dialog.sourceRefName !== context.sourceRefName || dialog.targetRefName !== context.targetRefName) {
+        return;
+      }
+      dialog.titleInput.value = context.title;
+      dialog.descriptionInput.value = context.description;
+      setFlowPullRequestContextActionsEnabled(true);
     }
 
     function ensureFlowPullRequestContextDialog() {
@@ -971,18 +987,42 @@ export function renderRevisionGraphScriptInteractions(): string {
         flowField.appendChild(flow);
         dialog.appendChild(flowField);
 
+        const targetLabel = document.createElement('label');
+        targetLabel.className = 'flow-form-field';
+        targetLabel.setAttribute('for', 'flowPullRequestTargetSelect');
+        const targetText = document.createElement('span');
+        targetText.className = 'flow-form-label';
+        targetText.textContent = 'Target release';
+        const targetSelect = document.createElement('select');
+        targetSelect.id = 'flowPullRequestTargetSelect';
+        targetSelect.className = 'flow-form-input';
+        targetLabel.appendChild(targetText);
+        targetLabel.appendChild(targetSelect);
+        dialog.insertBefore(targetLabel, flowField);
+
         const titleField = createFlowPullRequestContextField('Title', 'flowPullRequestTitleInput', false);
         const descriptionField = createFlowPullRequestContextField('Description', 'flowPullRequestDescriptionInput', true);
         dialog.appendChild(titleField.container);
         dialog.appendChild(descriptionField.container);
 
+        const warning = document.createElement('div');
+        warning.className = 'flow-pr-context-warning';
+        warning.setAttribute('role', 'alert');
+        warning.hidden = true;
+        dialog.appendChild(warning);
+
         const actions = document.createElement('div');
         actions.className = 'flow-dialog-actions';
         const closeButton = document.createElement('button');
-        closeButton.className = 'flow-dialog-button primary';
+        closeButton.className = 'flow-dialog-button';
         closeButton.type = 'button';
         closeButton.textContent = 'Close';
+        const openButton = document.createElement('button');
+        openButton.className = 'flow-dialog-button primary';
+        openButton.type = 'button';
+        openButton.textContent = 'Open Pull Request on GitHub';
         actions.appendChild(closeButton);
+        actions.appendChild(openButton);
         dialog.appendChild(actions);
 
         backdrop.appendChild(dialog);
@@ -990,6 +1030,13 @@ export function renderRevisionGraphScriptInteractions(): string {
 
         titleField.copyButton.addEventListener('click', () => copyFlowPullRequestContextField('title'));
         descriptionField.copyButton.addEventListener('click', () => copyFlowPullRequestContextField('description'));
+        targetSelect.addEventListener('change', applyFlowPullRequestTargetSelection);
+        openButton.addEventListener('click', () => {
+          const current = ensureFlowPullRequestContextDialog();
+          if (current.sourceRefName && current.targetRefName) {
+            postOpenFlowPullRequestUrl(current.sourceRefName, current.targetRefName);
+          }
+        });
         closeButton.addEventListener('click', closeFlowPullRequestContextDialog);
         backdrop.addEventListener('click', (event) => {
           if (event.target === backdrop) {
@@ -1007,14 +1054,84 @@ export function renderRevisionGraphScriptInteractions(): string {
       return {
         backdrop,
         flow: backdrop.querySelector('.flow-pr-context-flow'),
+        targetLabel: backdrop.querySelector('[for="flowPullRequestTargetSelect"]'),
+        targetSelect: backdrop.querySelector('#flowPullRequestTargetSelect'),
         titleInput: backdrop.querySelector('#flowPullRequestTitleInput'),
         descriptionInput: backdrop.querySelector('#flowPullRequestDescriptionInput'),
-        closeButton: backdrop.querySelector('.flow-dialog-button.primary'),
+        titleCopyButton: backdrop.querySelector('[aria-label="Copy Title"]'),
+        descriptionCopyButton: backdrop.querySelector('[aria-label="Copy Description"]'),
+        warning: backdrop.querySelector('.flow-pr-context-warning'),
+        closeButton: backdrop.querySelector('.flow-dialog-button:not(.primary)'),
+        openButton: backdrop.querySelector('.flow-dialog-button.primary'),
         get sourceRefName() { return backdrop.__flowPrSourceRefName || ''; },
         set sourceRefName(value) { backdrop.__flowPrSourceRefName = value; },
         get targetRefName() { return backdrop.__flowPrTargetRefName || ''; },
         set targetRefName(value) { backdrop.__flowPrTargetRefName = value; }
       };
+    }
+
+    function applyFlowPullRequestTargetSelection() {
+      const dialog = ensureFlowPullRequestContextDialog();
+      const candidate = getFlowPullRequestTargets(dialog.sourceRefName).find((target) =>
+        target.targetRefName === dialog.targetSelect.value
+      ) || getFlowPullRequestTargets(dialog.sourceRefName)[0];
+      dialog.targetRefName = candidate ? candidate.targetRefName : '';
+      dialog.targetSelect.value = dialog.targetRefName;
+      dialog.flow.textContent = dialog.targetRefName
+        ? dialog.sourceRefName + ' -> ' + dialog.targetRefName
+        : dialog.sourceRefName + ' -> no release available';
+      dialog.titleInput.value = '';
+      dialog.descriptionInput.value = '';
+
+      if (!candidate) {
+        setFlowPullRequestContextWarning('No release branch is available as a Pull Request target.');
+        setFlowPullRequestContextActionsEnabled(false);
+        return;
+      }
+      if (candidate.status === 'not-ahead') {
+        setFlowPullRequestContextWarning(
+          dialog.sourceRefName + ' has no commits ahead of ' + dialog.targetRefName + '. Choose another release.'
+        );
+        setFlowPullRequestContextActionsEnabled(false);
+        return;
+      }
+      if (candidate.status === 'unknown') {
+        setFlowPullRequestContextWarning('Could not verify whether this branch has commits ahead of the selected release.');
+        setFlowPullRequestContextActionsEnabled(false);
+        return;
+      }
+
+      setFlowPullRequestContextWarning('');
+      setFlowPullRequestContextActionsEnabled(false);
+      postCopyFlowPullRequestContext(dialog.sourceRefName, dialog.targetRefName);
+    }
+
+    function setFlowPullRequestContextWarning(message) {
+      const warning = ensureFlowPullRequestContextDialog().warning;
+      warning.textContent = message;
+      warning.hidden = !message;
+    }
+
+    function setFlowPullRequestContextActionsEnabled(enabled) {
+      const dialog = ensureFlowPullRequestContextDialog();
+      dialog.titleCopyButton.disabled = !enabled;
+      dialog.descriptionCopyButton.disabled = !enabled;
+      dialog.openButton.disabled = !enabled;
+    }
+
+    function getFlowPullRequestTargets(sourceRefName) {
+      if (!currentFlowGovernance || !Array.isArray(currentFlowGovernance.pullRequestTargets)) {
+        return [];
+      }
+      return currentFlowGovernance.pullRequestTargets.filter((target) =>
+        target && target.sourceRefName === sourceRefName
+      );
+    }
+
+    function isFlowPullRequestTargetAhead(sourceRefName, targetRefName) {
+      return getFlowPullRequestTargets(sourceRefName).some((target) =>
+        target.targetRefName === targetRefName && target.status === 'ahead'
+      );
     }
 
     function createFlowPullRequestContextField(labelText, inputId, multiline) {

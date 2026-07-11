@@ -46,7 +46,7 @@ export function buildGitHubPullRequestUrl(
   }
 
   const compare = `${encodeURIComponent(targetRefName)}...${encodeURIComponent(sourceRefName)}`;
-  return `https://github.com/${encodeURIComponent(remote.owner)}/${encodeURIComponent(remote.repositoryName)}/compare/${compare}?expand=1`;
+  return buildGitHubPullRequestCreationUrl(remote, compare, sourceRefName, targetRefName);
 }
 
 export function buildGitHubPullRequestUrlFromRemoteUrl(
@@ -60,7 +60,22 @@ export function buildGitHubPullRequestUrlFromRemoteUrl(
   }
 
   const compare = `${encodeURIComponent(targetRefName)}...${encodeURIComponent(sourceRefName)}`;
-  return `https://github.com/${encodeURIComponent(remote.owner)}/${encodeURIComponent(remote.repositoryName)}/compare/${compare}?expand=1`;
+  return buildGitHubPullRequestCreationUrl(remote, compare, sourceRefName, targetRefName);
+}
+
+function buildGitHubPullRequestCreationUrl(
+  remote: GitHubRepositoryRemote,
+  compare: string,
+  sourceRefName: string,
+  targetRefName: string
+): string {
+  const context = createFlowPullRequestContext(sourceRefName, targetRefName);
+  const query = new URLSearchParams({
+    quick_pull: '1',
+    title: context.title,
+    body: context.body
+  });
+  return `https://github.com/${encodeURIComponent(remote.owner)}/${encodeURIComponent(remote.repositoryName)}/compare/${compare}?${query.toString()}`;
 }
 
 function findGitHubRepositoryRemote(remotes: readonly Remote[]): GitHubRepositoryRemote | undefined {
