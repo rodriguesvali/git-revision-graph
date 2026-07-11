@@ -484,7 +484,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
         if (productionBranchName) {
           entries.push(
-            { label: 'Copy Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
+            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
             { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
           );
         }
@@ -492,7 +492,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         const productionBranchName = getFlowProductionBranchName();
         if (productionBranchName) {
           entries.push(
-            { label: 'Copy Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
+            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
             { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
           );
         }
