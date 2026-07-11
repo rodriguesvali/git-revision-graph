@@ -74,6 +74,7 @@ import {
   applyFlowGovernanceOptionsUpdate,
   buildGitHubPullRequestUrl,
   checkFlowPromotionReadiness,
+  checkFlowPullRequestTarget,
   createFlowPullRequestContext,
   createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
@@ -692,6 +693,22 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private async copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {
+    const repository = this.currentRepository;
+    if (!repository) {
+      return;
+    }
+    const eligibility = await checkFlowPullRequestTarget(
+      repository.rootUri.fsPath,
+      sourceRefName,
+      targetRefName
+    );
+    if (eligibility.status !== 'ahead') {
+      const message = eligibility.status === 'not-ahead'
+        ? `${sourceRefName} has no commits ahead of ${targetRefName}. Pull Request context was not opened.`
+        : `Could not verify whether ${sourceRefName} has commits ahead of ${targetRefName}. Pull Request context was not opened.`;
+      await this.actionServices.ui.showWarningMessage(message, { modal: true });
+      return;
+    }
     const context = createFlowPullRequestContext(sourceRefName, targetRefName);
     this.postHostMessage(createRevisionGraphFlowPullRequestContextMessage(
       context.sourceRefName,

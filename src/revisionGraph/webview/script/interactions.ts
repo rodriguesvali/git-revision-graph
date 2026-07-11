@@ -483,16 +483,16 @@ export function renderRevisionGraphScriptInteractions(): string {
         entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
         entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
-        if (productionBranchName && isFlowPullRequestTargetAhead(target.name, productionBranchName)) {
+        if (productionBranchName) {
           entries.push(
-            { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
+            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
       } else if (flowBranch.kind === 'hotfix') {
         const productionBranchName = getFlowProductionBranchName();
-        if (productionBranchName && isFlowPullRequestTargetAhead(target.name, productionBranchName)) {
+        if (productionBranchName) {
           entries.push(
-            { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
+            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
       }
@@ -943,8 +943,23 @@ export function renderRevisionGraphScriptInteractions(): string {
 
     function showFlowPullRequestContextForm(context) {
       const dialog = ensureFlowPullRequestContextDialog();
-      if (dialog.sourceRefName !== context.sourceRefName || dialog.targetRefName !== context.targetRefName) {
+      if (!dialog.backdrop.hidden && (
+        dialog.sourceRefName !== context.sourceRefName || dialog.targetRefName !== context.targetRefName
+      )) {
         return;
+      }
+      if (dialog.backdrop.hidden) {
+        dialog.sourceRefName = context.sourceRefName;
+        dialog.targetRefName = context.targetRefName;
+        dialog.targetSelect.textContent = '';
+        const option = document.createElement('option');
+        option.value = context.targetRefName;
+        option.textContent = context.targetRefName;
+        dialog.targetSelect.appendChild(option);
+        dialog.targetLabel.hidden = true;
+        dialog.flow.textContent = context.sourceRefName + ' -> ' + context.targetRefName;
+        dialog.backdrop.hidden = false;
+        document.body.classList.add('flow-dialog-open');
       }
       dialog.titleInput.value = context.title;
       dialog.descriptionInput.value = context.description;
@@ -1125,12 +1140,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       }
       return currentFlowGovernance.pullRequestTargets.filter((target) =>
         target && target.sourceRefName === sourceRefName
-      );
-    }
-
-    function isFlowPullRequestTargetAhead(sourceRefName, targetRefName) {
-      return getFlowPullRequestTargets(sourceRefName).some((target) =>
-        target.targetRefName === targetRefName && target.status === 'ahead'
       );
     }
 

@@ -48,6 +48,11 @@ export function isRevisionGraphMessageAllowedForState(
         && isKnownFlowKind(state, message.targetRefName, 'release', 'feature')
         && isKnownFlowKind(state, message.originRefName, 'main', 'release');
     case 'copy-flow-pr-context':
+      return state.viewMode === 'ready'
+        && state.flowGovernance?.enabled === true
+        && hasKnownReferenceName(state, message.sourceRefName)
+        && hasKnownReferenceName(state, message.targetRefName)
+        && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName);
     case 'copy-flow-pr-context-field':
     case 'open-flow-pr-url':
       return state.viewMode === 'ready'

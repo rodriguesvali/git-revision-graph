@@ -276,9 +276,9 @@ from an active release.
   no-push guarantee.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-10 after
   extending equalization to feature branches.
-- Hotfix references expose `Promotion PR Context` only when the hotfix has at
-  least one commit ahead of the configured production branch. The selected
-  hotfix is the PR source and production is the target.
+- Hotfix and release references expose `Promotion PR Context` whenever the
+  configured production branch is available. Activating it performs a fresh
+  host-side ahead check before opening the form.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-11 after
   adding the hotfix promotion PR handoff actions.
 - `Promotion PR Context` now opens a review form populated by the trusted
@@ -303,10 +303,11 @@ from an active release.
   button or changing form alignment.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-11 after the
   copy-icon occupancy adjustment.
-- Pull Request context eligibility now uses a bounded host-side
+- Pull Request context eligibility uses a bounded host-side
   `git rev-list --count --max-count=1 <target>..<source>` check. Release and
-  hotfix actions are hidden unless they are ahead of production; inconclusive
-  checks fail closed.
+  hotfix actions remain visible, but a source with no commits ahead produces a
+  modal warning and aborts the context workflow. Inconclusive checks also warn
+  and fail closed.
 - Feature references always expose `Promotion PR Context`. The form lists all
   classified release branches as targets and warns when the feature has no
   commits ahead of the selected release or the check is inconclusive. Copy and
@@ -341,8 +342,9 @@ from an active release.
   Hotfix ID, short name, and description, then creates and checks out
   `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
 - On a hotfix or release with no commits ahead of production, verify the Flow
-  Governance submenu omits `Promotion PR Context`. Add a source-only commit and
-  verify the action appears targeting production.
+  Governance submenu still exposes `Promotion PR Context`; activating it must
+  show a modal warning and leave the context form closed. Add a source-only
+  commit and verify the same action opens the form targeting production.
 - Run `Promotion PR Context` and verify the form displays
   `<source> -> <target>` without a copy action, plus populated Title and
   Description fields with independent copy icons on the right.

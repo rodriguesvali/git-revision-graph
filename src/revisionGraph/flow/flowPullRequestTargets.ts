@@ -38,22 +38,37 @@ export async function loadFlowPullRequestTargets(
     }
   }
 
-  return Promise.all(candidates.map(async (candidate): Promise<FlowPullRequestTargetInfo> => {
-    try {
-      const result = await execGit(
-        repositoryPath,
-        ['rev-list', '--count', '--max-count=1', '--end-of-options', `${candidate.targetRefName}..${candidate.sourceRefName}`],
-        { ...GIT_EXEC_METADATA_PROFILE, signal }
-      );
-      return {
-        ...candidate,
-        status: Number.parseInt(result.stdout.trim(), 10) > 0 ? 'ahead' : 'not-ahead'
-      };
-    } catch (error) {
-      if (isAbortError(error)) {
-        throw error;
-      }
-      return { ...candidate, status: 'unknown', detail: toErrorDetail(error) };
+  return Promise.all(candidates.map((candidate) => checkFlowPullRequestTarget(
+    repositoryPath,
+    candidate.sourceRefName,
+    candidate.targetRefName,
+    signal,
+    execGit
+  )));
+}
+
+export async function checkFlowPullRequestTarget(
+  repositoryPath: string,
+  sourceRefName: string,
+  targetRefName: string,
+  signal?: AbortSignal,
+  execGit: FlowPullRequestTargetGitExecutor = execGitWithResult
+): Promise<FlowPullRequestTargetInfo> {
+  try {
+    const result = await execGit(
+      repositoryPath,
+      ['rev-list', '--count', '--max-count=1', '--end-of-options', `${targetRefName}..${sourceRefName}`],
+      { ...GIT_EXEC_METADATA_PROFILE, signal }
+    );
+    return {
+      sourceRefName,
+      targetRefName,
+      status: Number.parseInt(result.stdout.trim(), 10) > 0 ? 'ahead' : 'not-ahead'
+    };
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
     }
-  }));
+    return { sourceRefName, targetRefName, status: 'unknown', detail: toErrorDetail(error) };
+  }
 }

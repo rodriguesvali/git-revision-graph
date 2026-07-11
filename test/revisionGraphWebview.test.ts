@@ -484,7 +484,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
-  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?isFlowPullRequestTargetAhead\(target\.name, productionBranchName\)[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
+  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?if \(productionBranchName\)[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, productionBranchName\)/);
   assert.match(html, /targetText\.textContent = 'Target release';/);
   assert.match(html, /candidate\.status === 'not-ahead'[\s\S]*?has no commits ahead of[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
