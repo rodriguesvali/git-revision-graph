@@ -31,7 +31,7 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Log` al
 - Toolbar controls for reload with an empty-cache split option, push with split-button force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
 - Interactive contextual reference details with a neutral reference kind or Flow Governance badge, full ref name, optional local Git branch description, commit subject, author, date, on-demand change statistics, hash copying, and GitHub commit opening for supported remotes
-- Flow Governance context actions for starting release, feature, and hotfix branches from `main`; bugs from a release or feature using a Bug ID, short name, and description; and tasks from a feature using a Dev Task number, short name, and optional description
+- Flow Governance context actions for starting release, feature, and hotfix branches from `main`; bugs from a release or feature using a Bug ID, short name, and description; and tasks from a feature using a Dev Task number, short name, and optional description, with optional confirmed publication after creation
 - Flow Governance Pull Request handoff with remote-source preflight, confirmed publish/push assistance, divergence protection, and local `sync/*` equalization of release or feature branches from `main` or an active release without automatic push
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run

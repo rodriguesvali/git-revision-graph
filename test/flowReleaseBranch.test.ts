@@ -131,6 +131,119 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
 });
 
+test('Flow Governance offers to publish a newly created branch and sets upstream', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const informationMessages: string[] = [];
+  const services = createReleaseServices({
+    confirmations,
+    confirmResult: true,
+    remoteNames: ['origin'],
+    informationMessages
+  });
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'checkout-redesign',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.match(confirmations[0]?.message ?? '', /created and checked out.*Publish it to a remote now/);
+  assert.equal(confirmations[0]?.confirmLabel, 'Publish Branch');
+  assert.deepEqual(repository.calls.push, [{
+    remoteName: 'origin',
+    branchName: 'feature/checkout-redesign',
+    setUpstream: true
+  }]);
+  assert.match(informationMessages[0] ?? '', /published to origin\/feature\/checkout-redesign/);
+});
+
+test('Flow Governance lets the user choose the publication remote', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const remotePicks: Array<{ readonly names: readonly string[]; readonly placeHolder: string }> = [];
+  const services = createReleaseServices({
+    confirmResult: true,
+    remoteNames: ['origin', 'fork'],
+    pickedRemoteName: 'fork',
+    remotePicks
+  });
+
+  await startFlowReleaseBranch(repository, {
+    sourceBranch: 'main',
+    name: '2.0.0',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(remotePicks, [{
+    names: ['origin', 'fork'],
+    placeHolder: 'Choose a remote for release/2.0.0'
+  }]);
+  assert.equal(repository.calls.push[0]?.remoteName, 'fork');
+  assert.equal(repository.calls.push[0]?.setUpstream, true);
+});
+
+test('Flow Governance keeps a newly created branch local when publication is declined', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const services = createReleaseServices({ confirmResult: false, remoteNames: ['origin'] });
+
+  await startFlowBranch(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/checkout-redesign',
+    name: '4312-adjust-timeout',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.equal(repository.calls.createBranch.length, 1);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance keeps a newly created branch local when no remote is configured', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const services = createReleaseServices({
+    confirmResult: true,
+    remoteNames: [],
+    informationMessages
+  });
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'checkout-redesign',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.push, []);
+  assert.match(informationMessages[0] ?? '', /created locally, but no Git remote is configured/);
+});
+
+test('Flow Governance preserves the local branch when publication fails', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  repository.push = async () => {
+    throw new Error('remote unavailable');
+  };
+  const errors: string[] = [];
+  const refreshes: unknown[] = [];
+  const services = createReleaseServices({
+    confirmResult: true,
+    remoteNames: ['origin'],
+    errors,
+    refreshes
+  });
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'checkout-redesign',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.equal(repository.calls.createBranch.length, 1);
+  assert.equal(refreshes.length, 1);
+  assert.match(errors[0] ?? '', /was created locally, but could not be published.*remote unavailable/);
+});
+
 test('Flow Governance starts a local task branch from its feature', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
@@ -265,16 +378,27 @@ function createReleaseServices(options: {
   readonly informationMessages?: string[];
   readonly upstreamClears?: string[];
   readonly refreshes?: unknown[];
+  readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;
+  readonly confirmResult?: boolean;
+  readonly remoteNames?: readonly string[];
+  readonly pickedRemoteName?: string;
+  readonly remotePicks?: Array<{ readonly names: readonly string[]; readonly placeHolder: string }>;
 } = {}): RefActionServices {
   return {
     ui: {
       async pickChange() { return undefined; },
-      async pickRemoteName() { return undefined; },
+      async pickRemoteName(names, placeHolder) {
+        options.remotePicks?.push({ names: [...names], placeHolder });
+        return options.pickedRemoteName;
+      },
       async promptBranchName() { return undefined; },
       async promptTagName() { return undefined; },
       async promptRemoteBranchCheckout() { return undefined; },
       async pickCurrentBranchPushMode() { return undefined; },
-      async confirm() { return false; },
+      async confirm(confirmation) {
+        options.confirmations?.push(confirmation);
+        return options.confirmResult ?? false;
+      },
       showInformationMessage(message) { options.informationMessages?.push(message); },
       showWarningMessage() {},
       async showErrorMessage(message) { options.errors?.push(message); },
@@ -300,7 +424,7 @@ function createReleaseServices(options: {
       async createTag() {},
       async resetBranch() {},
       async resetCurrentBranch() {},
-      async getRemoteNames() { return []; },
+      async getRemoteNames() { return options.remoteNames ?? []; },
       async pushCurrentBranch() { return true; },
       async pushTag() {},
       async deleteRemoteTag() {},

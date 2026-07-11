@@ -1,4 +1,9 @@
-import { toOperationError } from '../../errorDetail';
+import {
+  isNonInteractiveGitAuthenticationError,
+  isRemotePermissionDeniedError,
+  toErrorDetail,
+  toOperationError
+} from '../../errorDetail';
 import { Repository } from '../../git';
 import { validateGitBranchName } from '../../refActions/branchValidation';
 import {
@@ -105,8 +110,8 @@ export async function startFlowBranch(
       }
     }
 
+    await offerFlowBranchPublication(repository, branchName, branchKindLabel, options.sourceBranch, services);
     services.refreshController.refresh(preparedRefresh.request);
-    services.ui.showInformationMessage(`${branchKindLabel} branch ${branchName} was created and checked out from ${options.sourceBranch}.`);
   } catch (error) {
     if (!branchCreated) {
       preparedRefresh.cancel();
@@ -115,6 +120,65 @@ export async function startFlowBranch(
     }
 
     await services.ui.showErrorMessage(toOperationError(`Could not start the ${options.kind}.`, error));
+  }
+}
+
+async function offerFlowBranchPublication(
+  repository: Repository,
+  branchName: string,
+  branchKindLabel: string,
+  sourceBranch: string,
+  services: RefActionServices
+): Promise<void> {
+  const publishRequested = await services.ui.confirm({
+    message: `${branchKindLabel} branch ${branchName} was created and checked out. Publish it to a remote now?`,
+    confirmLabel: 'Publish Branch'
+  });
+  if (!publishRequested) {
+    services.ui.showInformationMessage(
+      `${branchKindLabel} branch ${branchName} was created and checked out from ${sourceBranch}.`
+    );
+    return;
+  }
+
+  try {
+    const remoteNames = await services.referenceManager.getRemoteNames(repository);
+    if (remoteNames.length === 0) {
+      services.ui.showInformationMessage(
+        `${branchKindLabel} branch ${branchName} was created locally, but no Git remote is configured.`
+      );
+      return;
+    }
+
+    const remoteName = remoteNames.length === 1
+      ? remoteNames[0]
+      : await services.ui.pickRemoteName(remoteNames, `Choose a remote for ${branchName}`);
+    if (!remoteName) {
+      services.ui.showInformationMessage(
+        `${branchKindLabel} branch ${branchName} was created locally and was not published.`
+      );
+      return;
+    }
+
+    await repository.push(remoteName, branchName, true);
+    services.ui.showInformationMessage(
+      `${branchKindLabel} branch ${branchName} was created and published to ${remoteName}/${branchName}.`
+    );
+  } catch (error) {
+    const operationMessage = `${branchKindLabel} branch ${branchName} was created locally, but could not be published.`;
+    if (isNonInteractiveGitAuthenticationError(error)) {
+      await services.ui.showErrorMessage(
+        `${operationMessage} Git authentication is unavailable for this operation. ` +
+        `Open Source Control and run "Git: Publish Branch", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
+      );
+      await services.ui.showSourceControl();
+      return;
+    }
+
+    await services.ui.showErrorMessage(
+      toOperationError(operationMessage, error),
+      isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+    );
   }
 }
 

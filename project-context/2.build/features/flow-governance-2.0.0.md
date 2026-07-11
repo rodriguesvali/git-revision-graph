@@ -254,6 +254,13 @@ from an active release.
   description, and the workflow creates only a local checked-out branch.
 - `npm run build` and `npm test` passed with 596 tests on 2026-07-10 after the
   Start New Bug workflow.
+- All governed branch creation workflows now ask whether the newly created and
+  checked-out branch should be published. Acceptance selects a remote when
+  needed and performs a normal push with upstream tracking; declining,
+  canceling remote selection, missing remotes, authentication errors, and push
+  failures preserve the successfully created local branch.
+- `npm run build`, `npm test` (607 tests), and `git diff --check` passed on
+  2026-07-11 after optional governed-branch publication was added.
 - `Validate Release Promotion` result presentation was corrected on 2026-07-10.
   The host now posts a non-loading graph state before awaiting a modal result,
   so `Validating release promotion...` is removed before the dialog opens.
@@ -356,7 +363,7 @@ from an active release.
   optional-description form.
 - Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
   Hotfix ID, short name, and description, then creates and checks out
-  `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
+  `hotfix/<hotfix-id>-<short-name>` and offers to publish it.
 - On a hotfix or release with no commits ahead of production, verify the Flow
   Governance submenu still exposes `Promotion PR Context`; activating it must
   show a modal warning and leave the context form closed. Add a source-only
@@ -377,8 +384,8 @@ from an active release.
 - The context-menu label is `Promotion PR Context`; the earlier `Copy`
   prefix was removed because copying happens per field inside the review form.
 - Verify `Start New Bug` appears for both release and feature references,
-  requires Bug ID, short name, and description, and creates and checks out
-  `bug/<bug-id>-<short-name>` from the selected source without publishing it.
+  requires Bug ID, short name, and description, creates and checks out
+  `bug/<bug-id>-<short-name>` from the selected source, and offers to publish it.
 - On release and feature references, open `Prepare Equalization` and verify that
   Origin branch lists `main` plus active releases but not the target when it is
   itself a release. Verify Description is required, submission prepares the
