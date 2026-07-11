@@ -469,6 +469,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
+  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?const productionBranchName = getFlowProductionBranchName\(\);[\s\S]*?Copy Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, productionBranchName\)[\s\S]*?Open Promotion PR URL[\s\S]*?postOpenFlowPullRequestUrl\(target\.name, productionBranchName\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);

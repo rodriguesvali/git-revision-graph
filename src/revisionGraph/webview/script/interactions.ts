@@ -488,6 +488,14 @@ export function renderRevisionGraphScriptInteractions(): string {
             { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
           );
         }
+      } else if (flowBranch.kind === 'hotfix') {
+        const productionBranchName = getFlowProductionBranchName();
+        if (productionBranchName) {
+          entries.push(
+            { label: 'Copy Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) },
+            { label: 'Open Promotion PR URL', onClick: () => postOpenFlowPullRequestUrl(target.name, productionBranchName) }
+          );
+        }
       }
 
       if (entries.length > 0) {

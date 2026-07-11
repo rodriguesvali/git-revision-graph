@@ -276,6 +276,12 @@ from an active release.
   no-push guarantee.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-10 after
   extending equalization to feature branches.
+- Hotfix references now expose `Copy Promotion PR Context` and
+  `Open Promotion PR URL` in their Flow Governance context submenu when the
+  production branch is available. Both actions use the selected hotfix as the
+  PR source and the configured production branch as the target.
+- `npm run build` and `npm test` passed with 601 tests on 2026-07-11 after
+  adding the hotfix promotion PR handoff actions.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -296,6 +302,9 @@ from an active release.
 - Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
   Hotfix ID, short name, and description, then creates and checks out
   `hotfix/<hotfix-id>-<short-name>` locally without publishing it.
+- On a hotfix reference, verify the Flow Governance submenu exposes
+  `Copy Promotion PR Context` and `Open Promotion PR URL`, targeting the
+  configured production branch.
 - Verify `Start New Bug` appears for both release and feature references,
   requires Bug ID, short name, and description, and creates and checks out
   `bug/<bug-id>-<short-name>` from the selected source without publishing it.
