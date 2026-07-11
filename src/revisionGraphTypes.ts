@@ -46,6 +46,12 @@ export type RevisionGraphMessage =
     readonly description: string;
   }
   | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
+  | {
+    readonly type: 'copy-flow-pr-context-field';
+    readonly sourceRefName: string;
+    readonly targetRefName: string;
+    readonly field: 'title' | 'description';
+  }
   | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }
   | {
     readonly type: 'compare-selected';
@@ -148,6 +154,13 @@ export type RevisionGraphViewHostMessage =
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: RemoteTagPublicationState }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: RevisionGraphCommitShortStat | null }
+  | {
+    readonly type: 'show-flow-pr-context';
+    readonly sourceRefName: string;
+    readonly targetRefName: string;
+    readonly title: string;
+    readonly description: string;
+  }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
 

@@ -569,6 +569,12 @@ export function renderRevisionGraphStyles(): string {
       font-weight: 700;
       letter-spacing: 0;
     }
+    .flow-dialog-description {
+      margin: -6px 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
     .flow-form-field {
       display: grid;
       gap: 6px;
@@ -598,6 +604,52 @@ export function renderRevisionGraphStyles(): string {
     .flow-form-textarea {
       min-height: 76px;
       resize: vertical;
+    }
+    .flow-pr-context-dialog {
+      width: min(560px, calc(100vw - 40px));
+    }
+    .flow-pr-context-flow {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--panel) 78%, transparent);
+      color: var(--text);
+      padding: 7px 8px;
+      font-family: var(--vscode-editor-font-family, monospace);
+    }
+    .flow-pr-context-copy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 26px;
+      align-items: start;
+      gap: 4px;
+    }
+    .flow-pr-context-copy {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      min-width: 26px;
+      height: 30px;
+      border: 0;
+      border-radius: 3px;
+      background: transparent;
+      color: var(--vscode-textLink-foreground, var(--accent));
+      padding: 0;
+      cursor: pointer;
+    }
+    .flow-pr-context-copy:hover,
+    .flow-pr-context-copy:focus-visible {
+      outline: none;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--vscode-textLink-activeForeground, var(--text));
+    }
+    .flow-pr-context-copy svg {
+      position: static;
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+    }
+    .flow-pr-context-copy-row .flow-form-textarea {
+      min-height: 96px;
     }
     .flow-form-error {
       margin: 0 0 12px;

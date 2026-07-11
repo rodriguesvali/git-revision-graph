@@ -48,6 +48,7 @@ export function isRevisionGraphMessageAllowedForState(
         && isKnownFlowKind(state, message.targetRefName, 'release', 'feature')
         && isKnownFlowKind(state, message.originRefName, 'main', 'release');
     case 'copy-flow-pr-context':
+    case 'copy-flow-pr-context-field':
     case 'open-flow-pr-url':
       return state.viewMode === 'ready'
         && state.flowGovernance?.enabled === true
@@ -154,6 +155,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'start-flow-branch':
     case 'prepare-flow-equalization':
     case 'copy-flow-pr-context':
+    case 'copy-flow-pr-context-field':
     case 'open-flow-pr-url':
       return true;
     case 'fetch-current-repository':

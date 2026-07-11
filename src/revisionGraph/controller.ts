@@ -48,6 +48,7 @@ import { loadCommitShortStat } from './repository/commitShortStat';
 import { openShowLogCommitOnGitHub } from '../showLog/remoteCommitAction';
 import {
   createRevisionGraphErrorMessage,
+  createRevisionGraphFlowPullRequestContextMessage,
   createRevisionGraphInitStateMessage,
   createRevisionGraphLoadingMessage,
   createRevisionGraphRemoteTagStateMessage,
@@ -292,6 +293,9 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
         await this.copyFlowPullRequestContext(sourceRefName, targetRefName);
+      },
+      copyFlowPullRequestContextField: async (sourceRefName, targetRefName, field) => {
+        await this.copyFlowPullRequestContextField(sourceRefName, targetRefName, field);
       },
       openFlowPullRequestUrl: async (sourceRefName, targetRefName) => {
         await this.openFlowPullRequestUrl(sourceRefName, targetRefName);
@@ -689,8 +693,21 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private async copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {
     const context = createFlowPullRequestContext(sourceRefName, targetRefName);
-    await vscode.env.clipboard.writeText(context.text);
-    this.actionServices.ui.showInformationMessage(`Copied Pull Request context for ${sourceRefName} -> ${targetRefName}.`);
+    this.postHostMessage(createRevisionGraphFlowPullRequestContextMessage(
+      context.sourceRefName,
+      context.targetRefName,
+      context.title,
+      context.body
+    ));
+  }
+
+  private async copyFlowPullRequestContextField(
+    sourceRefName: string,
+    targetRefName: string,
+    field: 'title' | 'description'
+  ): Promise<void> {
+    const context = createFlowPullRequestContext(sourceRefName, targetRefName);
+    await vscode.env.clipboard.writeText(field === 'title' ? context.title : context.body);
   }
 
   private async openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void> {

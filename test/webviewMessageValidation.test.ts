@@ -115,6 +115,15 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({
+      type: 'copy-flow-pr-context-field',
+      sourceRefName: 'hotfix/INC-482-login-timeout',
+      targetRefName: 'main',
+      field: 'body'
+    }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'open-flow-pr-url', sourceRefName: 'release/1.0.0', targetRefName: '' }),
     undefined
   );
@@ -534,6 +543,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
   );
   assert.deepEqual(
     validateRevisionGraphMessage({
+      type: 'copy-flow-pr-context-field',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main',
+      field: 'description'
+    }),
+    {
+      type: 'copy-flow-pr-context-field',
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main',
+      field: 'description'
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
       type: 'load-trace',
       phase: 'webview.apply.update-state',
       durationMs: 4.6,
@@ -855,6 +878,18 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-flow-pr-context', sourceRefName: 'release/1.0.0', targetRefName: 'main' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'copy-flow-pr-context-field',
+        sourceRefName: 'release/1.0.0',
+        targetRefName: 'main',
+        field: 'title'
+      },
       governedFlowState
     ),
     true

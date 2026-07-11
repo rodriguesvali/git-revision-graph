@@ -923,6 +923,152 @@ export function renderRevisionGraphScriptInteractions(): string {
       document.body.classList.remove('flow-dialog-open');
     }
 
+    function showFlowPullRequestContextForm(context) {
+      const dialog = ensureFlowPullRequestContextDialog();
+      dialog.sourceRefName = context.sourceRefName;
+      dialog.targetRefName = context.targetRefName;
+      dialog.flow.textContent = context.sourceRefName + ' -> ' + context.targetRefName;
+      dialog.titleInput.value = context.title;
+      dialog.descriptionInput.value = context.description;
+      dialog.backdrop.hidden = false;
+      document.body.classList.add('flow-dialog-open');
+      window.setTimeout(() => dialog.closeButton.focus(), 0);
+    }
+
+    function ensureFlowPullRequestContextDialog() {
+      let backdrop = document.getElementById('flowPullRequestContextDialog');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'flowPullRequestContextDialog';
+        backdrop.className = 'flow-dialog-backdrop';
+        backdrop.hidden = true;
+
+        const dialog = document.createElement('div');
+        dialog.className = 'flow-dialog flow-pr-context-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-labelledby', 'flowPullRequestContextDialogTitle');
+
+        const heading = document.createElement('h2');
+        heading.id = 'flowPullRequestContextDialogTitle';
+        heading.className = 'flow-dialog-title';
+        heading.textContent = 'Promotion Pull Request Context';
+        dialog.appendChild(heading);
+
+        const introduction = document.createElement('p');
+        introduction.className = 'flow-dialog-description';
+        introduction.textContent = 'Review the generated context and copy each field into your Pull Request.';
+        dialog.appendChild(introduction);
+
+        const flowField = document.createElement('div');
+        flowField.className = 'flow-form-field';
+        const flowLabel = document.createElement('span');
+        flowLabel.className = 'flow-form-label';
+        flowLabel.textContent = 'Flow';
+        const flow = document.createElement('div');
+        flow.className = 'flow-pr-context-flow';
+        flowField.appendChild(flowLabel);
+        flowField.appendChild(flow);
+        dialog.appendChild(flowField);
+
+        const titleField = createFlowPullRequestContextField('Title', 'flowPullRequestTitleInput', false);
+        const descriptionField = createFlowPullRequestContextField('Description', 'flowPullRequestDescriptionInput', true);
+        dialog.appendChild(titleField.container);
+        dialog.appendChild(descriptionField.container);
+
+        const actions = document.createElement('div');
+        actions.className = 'flow-dialog-actions';
+        const closeButton = document.createElement('button');
+        closeButton.className = 'flow-dialog-button primary';
+        closeButton.type = 'button';
+        closeButton.textContent = 'Close';
+        actions.appendChild(closeButton);
+        dialog.appendChild(actions);
+
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        titleField.copyButton.addEventListener('click', () => copyFlowPullRequestContextField('title'));
+        descriptionField.copyButton.addEventListener('click', () => copyFlowPullRequestContextField('description'));
+        closeButton.addEventListener('click', closeFlowPullRequestContextDialog);
+        backdrop.addEventListener('click', (event) => {
+          if (event.target === backdrop) {
+            closeFlowPullRequestContextDialog();
+          }
+        });
+        dialog.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeFlowPullRequestContextDialog();
+          }
+        });
+      }
+
+      return {
+        backdrop,
+        flow: backdrop.querySelector('.flow-pr-context-flow'),
+        titleInput: backdrop.querySelector('#flowPullRequestTitleInput'),
+        descriptionInput: backdrop.querySelector('#flowPullRequestDescriptionInput'),
+        closeButton: backdrop.querySelector('.flow-dialog-button.primary'),
+        get sourceRefName() { return backdrop.__flowPrSourceRefName || ''; },
+        set sourceRefName(value) { backdrop.__flowPrSourceRefName = value; },
+        get targetRefName() { return backdrop.__flowPrTargetRefName || ''; },
+        set targetRefName(value) { backdrop.__flowPrTargetRefName = value; }
+      };
+    }
+
+    function createFlowPullRequestContextField(labelText, inputId, multiline) {
+      const container = document.createElement('div');
+      container.className = 'flow-form-field';
+      const label = document.createElement('label');
+      label.className = 'flow-form-label';
+      label.setAttribute('for', inputId);
+      label.textContent = labelText;
+      const row = document.createElement('div');
+      row.className = 'flow-pr-context-copy-row';
+      const input = document.createElement(multiline ? 'textarea' : 'input');
+      input.id = inputId;
+      input.className = 'flow-form-input' + (multiline ? ' flow-form-textarea' : '');
+      input.readOnly = true;
+      if (!multiline) {
+        input.type = 'text';
+      }
+      const copyButton = document.createElement('button');
+      copyButton.className = 'flow-pr-context-copy';
+      copyButton.type = 'button';
+      copyButton.title = 'Copy ' + labelText;
+      copyButton.setAttribute('aria-label', 'Copy ' + labelText);
+      copyButton.innerHTML = renderCopyHashIcon();
+      row.appendChild(input);
+      row.appendChild(copyButton);
+      container.appendChild(label);
+      container.appendChild(row);
+      return { container, input, copyButton };
+    }
+
+    function copyFlowPullRequestContextField(field) {
+      const dialog = ensureFlowPullRequestContextDialog();
+      if (!dialog.sourceRefName || !dialog.targetRefName) {
+        return;
+      }
+      vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(
+        dialog.sourceRefName,
+        dialog.targetRefName,
+        field
+      ));
+    }
+
+    function closeFlowPullRequestContextDialog() {
+      const backdrop = document.getElementById('flowPullRequestContextDialog');
+      if (!backdrop) {
+        return;
+      }
+      backdrop.hidden = true;
+      backdrop.__flowPrSourceRefName = '';
+      backdrop.__flowPrTargetRefName = '';
+      document.body.classList.remove('flow-dialog-open');
+    }
+
     function showFlowEqualizationForm(target) {
       closeContextMenu();
       const dialog = ensureFlowEqualizationDialog();

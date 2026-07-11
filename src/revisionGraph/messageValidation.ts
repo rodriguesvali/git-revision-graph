@@ -114,6 +114,17 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
           targetRefName: message.targetRefName
         }
         : undefined;
+    case 'copy-flow-pr-context-field':
+      return isBoundedNonEmptyString(message.sourceRefName)
+        && isBoundedNonEmptyString(message.targetRefName)
+        && (message.field === 'title' || message.field === 'description')
+        ? {
+          type: 'copy-flow-pr-context-field',
+          sourceRefName: message.sourceRefName,
+          targetRefName: message.targetRefName,
+          field: message.field
+        }
+        : undefined;
     case 'compare-selected':
       return isBoundedNonEmptyString(message.baseRevision)
         && isBoundedString(message.baseLabel)

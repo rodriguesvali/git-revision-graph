@@ -50,6 +50,21 @@ export function createRevisionGraphCommitShortStatMessage(
   };
 }
 
+export function createRevisionGraphFlowPullRequestContextMessage(
+  sourceRefName: string,
+  targetRefName: string,
+  title: string,
+  description: string
+): RevisionGraphViewHostMessage {
+  return {
+    type: 'show-flow-pr-context',
+    sourceRefName,
+    targetRefName,
+    title,
+    description
+  };
+}
+
 export function createRevisionGraphLoadingMessage(
   label: string,
   mode?: RevisionGraphLoadingMode

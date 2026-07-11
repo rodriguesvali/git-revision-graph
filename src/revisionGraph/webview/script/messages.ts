@@ -68,6 +68,10 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'copy-flow-pr-context', sourceRefName, targetRefName };
     }
 
+    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, field) {
+      return { type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field };
+    }
+
     function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName) {
       return { type: 'open-flow-pr-url', sourceRefName, targetRefName };
     }

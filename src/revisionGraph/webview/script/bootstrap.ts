@@ -720,6 +720,9 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
         case 'set-commit-short-stat':
           setCommitShortStat(message.commitHash, message.shortStat);
           return;
+        case 'show-flow-pr-context':
+          showFlowPullRequestContextForm(message);
+          return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');
           return;

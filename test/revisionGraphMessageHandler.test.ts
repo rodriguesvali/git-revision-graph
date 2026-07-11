@@ -170,7 +170,10 @@ test('RevisionGraphMessageHandler runs Pull Request handoff through the host bou
   const calls: string[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
     async copyFlowPullRequestContext(sourceRefName, targetRefName) {
-      calls.push(`copy:${sourceRefName}->${targetRefName}`);
+      calls.push(`show:${sourceRefName}->${targetRefName}`);
+    },
+    async copyFlowPullRequestContextField(sourceRefName, targetRefName, field) {
+      calls.push(`copy-${field}:${sourceRefName}->${targetRefName}`);
     },
     async openFlowPullRequestUrl(sourceRefName, targetRefName) {
       calls.push(`open:${sourceRefName}->${targetRefName}`);
@@ -187,10 +190,17 @@ test('RevisionGraphMessageHandler runs Pull Request handoff through the host bou
     sourceRefName: 'release/1.0.0',
     targetRefName: 'main'
   });
+  await handler.handleMessage({
+    type: 'copy-flow-pr-context-field',
+    sourceRefName: 'release/1.0.0',
+    targetRefName: 'main',
+    field: 'title'
+  });
 
   assert.deepEqual(calls, [
-    'copy:release/1.0.0->main',
-    'open:release/1.0.0->main'
+    'show:release/1.0.0->main',
+    'open:release/1.0.0->main',
+    'copy-title:release/1.0.0->main'
   ]);
 });
 
@@ -391,6 +401,7 @@ function createHost(
     async startFlowBranch() {},
     async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},
+    async copyFlowPullRequestContextField() {},
     async openFlowPullRequestUrl() {},
     traceWebviewLoadEvent() {},
     createRemoteTagPublicationRequestContext(): RemoteTagPublicationRequestContext {

@@ -49,6 +49,11 @@ export interface RevisionGraphMessageHandlerHost
   ): Promise<void>;
   prepareFlowEqualization(targetRefName: string, originRefName: string, description: string): Promise<void>;
   copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;
+  copyFlowPullRequestContextField(
+    sourceRefName: string,
+    targetRefName: string,
+    field: 'title' | 'description'
+  ): Promise<void>;
   openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void>;
   clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
@@ -117,6 +122,13 @@ export class RevisionGraphMessageHandler {
         return;
       case 'copy-flow-pr-context':
         await this.host.copyFlowPullRequestContext(message.sourceRefName, message.targetRefName);
+        return;
+      case 'copy-flow-pr-context-field':
+        await this.host.copyFlowPullRequestContextField(
+          message.sourceRefName,
+          message.targetRefName,
+          message.field
+        );
         return;
       case 'open-flow-pr-url':
         await this.host.openFlowPullRequestUrl(message.sourceRefName, message.targetRefName);

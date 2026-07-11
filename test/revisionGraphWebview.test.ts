@@ -127,6 +127,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphValidateReleasePromotionMessage\(target\) \{\s*return \{ type: 'validate-release-promotion', refName: target\.name \};\s*\}/s);
   assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(targetRefName, originRefName, description\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
+  assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextFieldMessage\(sourceRefName, targetRefName, field\) \{\s*return \{ type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field \};\s*\}/s);
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
   assert.match(html, /Start New Release/);
@@ -140,6 +141,17 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /Prepare Production Equalization/);
   assert.match(html, /Copy Promotion PR Context/);
   assert.match(html, /Open Promotion PR URL/);
+  assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
+  assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
+  assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
+  assert.match(html, /flowLabel\.textContent = 'Flow';/);
+  assert.match(html, /createFlowPullRequestContextField\('Title', 'flowPullRequestTitleInput', false\)/);
+  assert.match(html, /createFlowPullRequestContextField\('Description', 'flowPullRequestDescriptionInput', true\)/);
+  assert.match(html, /input\.readOnly = true;/);
+  assert.match(html, /copyButton\.setAttribute\('aria-label', 'Copy ' \+ labelText\);/);
+  assert.match(html, /copyButton\.innerHTML = renderCopyHashIcon\(\);/);
+  assert.match(html, /\.flow-pr-context-copy \{[\s\S]*?padding: 0;[\s\S]*?\.flow-pr-context-copy svg \{\s*position: static;\s*width: 17px;\s*height: 17px;\s*fill: currentColor;/s);
+  assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*dialog\.sourceRefName,\s*dialog\.targetRefName,\s*field\s*\)/s);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
