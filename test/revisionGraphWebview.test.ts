@@ -485,6 +485,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?if \(productionBranchName\)[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, productionBranchName\)/);
   assert.match(html, /targetText\.textContent = 'Target release';/);
+  assert.match(html, /candidate\.status === 'production-not-ancestor'[\s\S]*?Production promotion aborted:[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
+  assert.match(html, /candidate\.status === 'production-out-of-sync'[\s\S]*?local production branch is not synchronized[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /candidate\.status === 'not-ahead'[\s\S]*?has no commits ahead of[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);

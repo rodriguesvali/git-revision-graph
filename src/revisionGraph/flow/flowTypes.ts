@@ -86,7 +86,14 @@ export interface FlowGovernanceViewState {
 export interface FlowPullRequestTargetInfo {
   readonly sourceRefName: string;
   readonly targetRefName: string;
-  readonly status: 'ahead' | 'not-ahead' | 'unknown';
+  readonly status:
+    | 'ahead'
+    | 'not-ahead'
+    | 'production-not-ancestor'
+    | 'production-out-of-sync'
+    | 'unknown';
+  readonly targetLocalAhead?: number;
+  readonly targetRemoteAhead?: number;
   readonly detail?: string;
 }
 

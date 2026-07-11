@@ -10,6 +10,7 @@ import {
   applyFlowGovernanceOptionsUpdate,
   buildGitHubPullRequestUrl,
   buildGitHubPullRequestUrlFromRemoteUrl,
+  checkFlowPullRequestTarget,
   checkFlowPullRequestSourcePublication,
   classifyFlowPullRequestSourcePublication,
   createDefaultFlowConfigFile,
@@ -196,20 +197,30 @@ test('Flow Governance resolves Pull Request targets and ahead status for release
     { refName: 'feature/payment', kind: 'feature' as const, isEphemeral: false, diagnostics: [] }
   ];
   const ranges: string[] = [];
+  const ancestryChecks: string[] = [];
 
   const targets = await loadFlowPullRequestTargets('/workspace/repo', references, undefined, async (_path, args) => {
+    if (args[0] === 'merge-base') {
+      ancestryChecks.push(`${args.at(-2)}..${args.at(-1)}`);
+      return { stdout: '', stderr: '' };
+    }
     const range = args.at(-1) ?? '';
     ranges.push(range);
     return { stdout: range === 'release/2.0.0..feature/payment' ? '0\n' : '1\n', stderr: '' };
   });
 
-  assert.deepEqual(ranges, [
+  assert.deepEqual([...ancestryChecks].sort(), [
+    'main..hotfix/INC-482-login',
+    'main..release/2.0.0',
+    'main..release/2.1.0'
+  ].sort());
+  assert.deepEqual([...ranges].sort(), [
     'main..release/2.0.0',
     'main..release/2.1.0',
     'main..hotfix/INC-482-login',
     'release/2.0.0..feature/payment',
     'release/2.1.0..feature/payment'
-  ]);
+  ].sort());
   assert.deepEqual(targets.map((target) => [target.sourceRefName, target.targetRefName, target.status]), [
     ['release/2.0.0', 'main', 'ahead'],
     ['release/2.1.0', 'main', 'ahead'],
@@ -217,6 +228,64 @@ test('Flow Governance resolves Pull Request targets and ahead status for release
     ['feature/payment', 'release/2.0.0', 'not-ahead'],
     ['feature/payment', 'release/2.1.0', 'ahead']
   ]);
+});
+
+test('Flow Governance blocks release and hotfix promotion when production is not an ancestor', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
+    { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
+    { refName: 'hotfix/INC-482-login', kind: 'hotfix', isEphemeral: false, diagnostics: [] }
+  ], undefined, async (_path, args) => {
+    if (args[0] === 'merge-base') {
+      throw Object.assign(new Error('not an ancestor'), { code: 1 });
+    }
+    return { stdout: '1\n', stderr: '' };
+  });
+
+  assert.equal(targets.find((target) => target.sourceRefName === 'release/2.0.0')?.status, 'production-not-ancestor');
+  assert.equal(targets.find((target) => target.sourceRefName === 'hotfix/INC-482-login')?.status, 'production-not-ancestor');
+});
+
+test('Flow Governance blocks production promotion when local main is behind remote main', async () => {
+  const calls: readonly string[][] = [];
+  const result = await checkFlowPullRequestTarget(
+    '/workspace/repo',
+    'hotfix/INC-482-login',
+    'main',
+    {
+      requireTargetAncestor: true,
+      requireTargetSynchronized: true,
+      targetCommitish: '0123456789abcdef'
+    },
+    undefined,
+    async (_path, args) => {
+      (calls as string[][]).push([...args]);
+      return { stdout: '0\t3\n', stderr: '' };
+    }
+  );
+
+  assert.equal(result.status, 'production-out-of-sync');
+  assert.equal(result.targetLocalAhead, 0);
+  assert.equal(result.targetRemoteAhead, 3);
+  assert.deepEqual(calls, [[
+    'rev-list',
+    '--left-right',
+    '--count',
+    '--end-of-options',
+    'main...0123456789abcdef'
+  ]]);
+});
+
+test('Flow Governance fails closed when release promotion ancestry is inconclusive', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
+    { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] }
+  ], undefined, async () => {
+    throw Object.assign(new Error('ambiguous revision'), { code: 128 });
+  });
+
+  assert.equal(targets[0]?.status, 'unknown');
+  assert.match(targets[0]?.detail ?? '', /ambiguous revision/);
 });
 
 test('Flow Governance marks Pull Request ahead checks as unknown when Git fails', async () => {

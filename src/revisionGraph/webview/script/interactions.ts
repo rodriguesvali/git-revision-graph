@@ -1102,6 +1102,22 @@ export function renderRevisionGraphScriptInteractions(): string {
         setFlowPullRequestContextActionsEnabled(false);
         return;
       }
+      if (candidate.status === 'production-not-ancestor') {
+        setFlowPullRequestContextWarning(
+          'Production promotion aborted: production contains commits missing from this source branch. ' +
+          'Synchronize or equalize and validate the source before opening the Pull Request.'
+        );
+        setFlowPullRequestContextActionsEnabled(false);
+        return;
+      }
+      if (candidate.status === 'production-out-of-sync') {
+        setFlowPullRequestContextWarning(
+          'Production promotion aborted: the local production branch is not synchronized with its remote. ' +
+          'Synchronize production, refresh the graph, and retry.'
+        );
+        setFlowPullRequestContextActionsEnabled(false);
+        return;
+      }
       if (candidate.status === 'not-ahead') {
         setFlowPullRequestContextWarning(
           dialog.sourceRefName + ' has no commits ahead of ' + dialog.targetRefName + '. Choose another release.'
@@ -1110,7 +1126,7 @@ export function renderRevisionGraphScriptInteractions(): string {
         return;
       }
       if (candidate.status === 'unknown') {
-        setFlowPullRequestContextWarning('Could not verify whether this branch has commits ahead of the selected release.');
+        setFlowPullRequestContextWarning('Could not verify whether this branch is eligible for the selected Pull Request target.');
         setFlowPullRequestContextActionsEnabled(false);
         return;
       }

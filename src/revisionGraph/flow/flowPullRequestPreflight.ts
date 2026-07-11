@@ -25,6 +25,35 @@ export type FlowPullRequestPreflightGitExecutor = (
   options?: GitExecOptions
 ) => Promise<GitExecResult>;
 
+export type FlowPullRequestRemoteBranchCommit =
+  | { readonly status: 'found'; readonly commit: string }
+  | { readonly status: 'missing' }
+  | { readonly status: 'unknown'; readonly detail: string };
+
+export async function loadFlowPullRequestRemoteBranchCommit(
+  repository: Repository,
+  remoteName: string,
+  branchName: string,
+  execGit: FlowPullRequestPreflightGitExecutor = execGitWithResult
+): Promise<FlowPullRequestRemoteBranchCommit> {
+  try {
+    const remoteResult = await execGit(
+      repository.rootUri.fsPath,
+      ['ls-remote', '--heads', '--refs', remoteName, `refs/heads/${branchName}`],
+      GIT_EXEC_REMOTE_PROFILE
+    );
+    const remoteCommit = remoteResult.stdout.trim().split(/\s+/, 1)[0];
+    if (!remoteCommit) {
+      return { status: 'missing' };
+    }
+
+    await repository.fetch({ remote: remoteName, ref: branchName });
+    return { status: 'found', commit: remoteCommit };
+  } catch (error) {
+    return { status: 'unknown', detail: toErrorDetail(error) };
+  }
+}
+
 export async function checkFlowPullRequestSourcePublication(
   repository: Repository,
   remoteName: string,
@@ -32,18 +61,19 @@ export async function checkFlowPullRequestSourcePublication(
   execGit: FlowPullRequestPreflightGitExecutor = execGitWithResult
 ): Promise<FlowPullRequestSourcePublication> {
   try {
-    const remoteRef = `refs/heads/${sourceRefName}`;
-    const remoteResult = await execGit(
-      repository.rootUri.fsPath,
-      ['ls-remote', '--heads', '--refs', remoteName, remoteRef],
-      GIT_EXEC_REMOTE_PROFILE
+    const remoteBranch = await loadFlowPullRequestRemoteBranchCommit(
+      repository,
+      remoteName,
+      sourceRefName,
+      execGit
     );
-    const remoteCommit = remoteResult.stdout.trim().split(/\s+/, 1)[0];
-    if (!remoteCommit) {
+    if (remoteBranch.status === 'missing') {
       return { status: 'unpublished', remoteName, sourceRefName };
     }
+    if (remoteBranch.status === 'unknown') {
+      return { status: 'unknown', remoteName, sourceRefName, detail: remoteBranch.detail };
+    }
 
-    await repository.fetch({ remote: remoteName, ref: sourceRefName });
     const comparison = await execGit(
       repository.rootUri.fsPath,
       [
@@ -51,7 +81,7 @@ export async function checkFlowPullRequestSourcePublication(
         '--left-right',
         '--count',
         '--end-of-options',
-        `${sourceRefName}...${remoteCommit}`
+        `${sourceRefName}...${remoteBranch.commit}`
       ],
       GIT_EXEC_REMOTE_PROFILE
     );

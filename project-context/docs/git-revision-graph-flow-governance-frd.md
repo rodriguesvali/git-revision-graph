@@ -333,11 +333,16 @@ in the repository-versioned flow configuration.
 
 ---
 
-## 9. Release Promotion Rule
+## 9. Production Promotion Rule
 
-Before opening or recommending a PR from `release/*` to `main` or `master`, the
-extension must validate whether the production branch is an ancestor of the
-release branch.
+Before opening or recommending a PR from `release/*` or `hotfix/*` to `main` or
+`master`, the extension must validate whether the production branch is an
+ancestor of the source branch.
+
+Before that ancestry decision, the local production ref must match the current
+production tip fetched from the handoff remote. A local production ref that is
+behind, ahead, or divergent must abort the handoff and require synchronization;
+ancestry against stale local governance state is insufficient.
 
 Conceptually:
 
@@ -353,14 +358,14 @@ git merge-base --is-ancestor master release/x.y.z
 
 Expected interpretation:
 
-- exit code `0`: production is contained in the release; the release is
+- exit code `0`: production is contained in the source; the source is
   promotion-ready from an ancestry perspective.
-- exit code `1`: production is not contained in the release; promotion is
-  blocked because production contains commits missing from the release.
+- exit code `1`: production is not contained in the source; promotion is
+  blocked because production contains commits missing from the source.
 - any other error: validation is inconclusive and must be reported as such.
 
 For the first promotion-readiness implementation, promotion readiness means the
-configured production branch ref is an ancestor of the release branch ref
+configured production branch ref is an ancestor of the release or hotfix source
 available to the extension. This is a production-ancestry validation, not a
 guarantee that the remote provider will accept or perform a linear,
 fast-forward, rebase, squash, or merge-commit PR. Provider-side branch
@@ -371,16 +376,17 @@ If the production ref is missing, stale, or not known to match the protected
 remote production branch, the result must be reported as inconclusive or locally
 validated only.
 
-If production is not an ancestor of the release, the extension should diagnose:
+If production is not an ancestor of the source, the extension should diagnose:
 
 ```text
-Release promotion blocked: production contains commits that are not present in
-this release. Equalize production into the release before opening the promotion
-PR.
+Production promotion blocked: production contains commits that are not present
+in this source. Synchronize or equalize the source with production before
+opening the promotion PR.
 ```
 
-This commonly means a `hotfix/*` or `bug/*` branch was promoted to production
-after the release branch was cut.
+For a release, this commonly means a `hotfix/*` or `bug/*` branch was promoted
+after the release was cut. For a hotfix, it commonly means the hotfix was
+created from an outdated production tip.
 
 ---
 

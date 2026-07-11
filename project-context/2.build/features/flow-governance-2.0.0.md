@@ -321,6 +321,21 @@ from an active release.
   hotfix actions remain visible, but a source with no commits ahead produces a
   modal warning and aborts the context workflow. Inconclusive checks also warn
   and fail closed.
+- `release -> main` and `hotfix -> main` Promotion PR Context now perform the production ancestry
+  check as part of the handoff itself. The action resolves the handoff remote,
+  fetches its current production tip, and checks that exact commit against the
+  source. When production is not an ancestor, the context and provider URL are
+  blocked with guidance explaining that production may contain a missing or
+  incompatible hotfix. The guard is re-run immediately before opening GitHub.
+- Production promotion also requires the local production ref to equal the
+  freshly fetched remote production tip. A local `main` that is behind, ahead,
+  or divergent aborts the handoff with explicit synchronization guidance before
+  ancestry is evaluated.
+- `npm run build`, `npm test` (610 tests), and `git diff --check` passed on
+  2026-07-11 after adding the local/remote production synchronization gate.
+- `npm run build`, `npm test` (609 tests), and `git diff --check` passed on
+  2026-07-11 after integrating the production-promotion ancestry guard into the PR
+  handoff.
 - Feature references always expose `Promotion PR Context`. The form lists all
   classified release branches as targets and warns when the feature has no
   commits ahead of the selected release or the check is inconclusive. Copy and
@@ -368,6 +383,16 @@ from an active release.
   Governance submenu still exposes `Promotion PR Context`; activating it must
   show a modal warning and leave the context form closed. Add a source-only
   commit and verify the same action opens the form targeting production.
+- Create a release before a production hotfix, then run `Promotion PR Context`
+  on that release. Repeat with a hotfix branch created from an outdated `main`.
+  Verify both workflows abort because current remote `main` is not an ancestor,
+  explain the incompatibility risk, and neither opens context nor GitHub.
+  Synchronize/equalize the source with `main` and verify the handoff becomes
+  eligible.
+- Leave local `main` behind `origin/main` as shown by separate graph refs and
+  run `Promotion PR Context` for a release or hotfix. Verify the handoff reports
+  the behind count, aborts before ancestry/context generation, and succeeds only
+  after local `main` is synchronized and the graph is refreshed.
 - With an unpublished hotfix, verify `Promotion PR Context` offers
   `Publish and Continue`, sets upstream tracking, revalidates the remote tip,
   and opens the form only after success. Repeat with an already-published but

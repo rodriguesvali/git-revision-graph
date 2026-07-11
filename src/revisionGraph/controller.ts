@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { API, Repository } from '../git';
+import { API, Remote, Repository } from '../git';
 import { toErrorDetail, toOperationError } from '../errorDetail';
 import { handleWebviewMessageSafely } from '../webviewMessageBoundary';
 import { shouldPromptForGraphRepositoryOnOpen } from '../repositorySelection';
@@ -76,6 +76,7 @@ import {
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
   FlowGovernanceOptionsUpdate,
+  loadFlowPullRequestRemoteBranchCommit,
   prepareFlowEqualizationBranch,
   resolveGitHubPullRequestRemote,
   resolveFlowConfigForRepository,
@@ -654,16 +655,7 @@ export class RevisionGraphController implements vscode.Disposable {
     if (!repository) {
       return;
     }
-    const eligibility = await checkFlowPullRequestTarget(
-      repository.rootUri.fsPath,
-      sourceRefName,
-      targetRefName
-    );
-    if (eligibility.status !== 'ahead') {
-      const message = eligibility.status === 'not-ahead'
-        ? `${sourceRefName} has no commits ahead of ${targetRefName}. Pull Request context was not opened.`
-        : `Could not verify whether ${sourceRefName} has commits ahead of ${targetRefName}. Pull Request context was not opened.`;
-      await this.actionServices.ui.showWarningMessage(message, { modal: true });
+    if (!await this.ensureFlowPullRequestTargetEligible(repository, sourceRefName, targetRefName)) {
       return;
     }
     if (!await this.ensureFlowPullRequestSourceReady(repository, sourceRefName)) {
@@ -697,6 +689,9 @@ export class RevisionGraphController implements vscode.Disposable {
       this.actionServices.ui.showInformationMessage('No GitHub remote is configured for this repository.');
       return;
     }
+    if (!await this.ensureFlowPullRequestTargetEligible(repository, sourceRefName, targetRefName)) {
+      return;
+    }
     if (!await this.ensureFlowPullRequestSourceReady(repository, sourceRefName)) {
       return;
     }
@@ -709,13 +704,103 @@ export class RevisionGraphController implements vscode.Disposable {
     await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 
+  private async ensureFlowPullRequestTargetEligible(
+    repository: Repository,
+    sourceRefName: string,
+    targetRefName: string
+  ): Promise<boolean> {
+    const flowReferences = this.currentState.flowGovernance?.references ?? [];
+    const requiresProductionAncestry =
+      flowReferences.some((reference) => (
+        reference.refName === sourceRefName
+        && (reference.kind === 'release' || reference.kind === 'hotfix')
+      ))
+      && flowReferences.some((reference) => reference.refName === targetRefName && reference.kind === 'main');
+    let targetCommitish: string | undefined;
+    let productionRemoteName: string | undefined;
+    if (requiresProductionAncestry) {
+      const remote = this.resolveFlowPullRequestRemote(repository);
+      if (!remote) {
+        await this.actionServices.ui.showWarningMessage(
+          `Production promotion aborted: no remote is available to verify the current ${targetRefName} branch.`,
+          { modal: true }
+        );
+        return false;
+      }
+      productionRemoteName = remote.name;
+
+      const remoteTargetOutcome = await runGuardedRepositoryMutation(
+        this.mutationCoordinator,
+        repository,
+        this.actionServices,
+        (guardedRepository) => loadFlowPullRequestRemoteBranchCommit(
+          guardedRepository,
+          remote.name,
+          targetRefName
+        )
+      );
+      if (remoteTargetOutcome.status === 'rejected') {
+        this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
+        return false;
+      }
+      const remoteTarget = remoteTargetOutcome.value;
+      if (remoteTarget.status !== 'found') {
+        const detail = remoteTarget.status === 'missing'
+          ? `${remote.name}/${targetRefName} does not exist.`
+          : remoteTarget.detail;
+        await this.actionServices.ui.showWarningMessage(
+          `Production promotion aborted: the current production branch could not be verified on ${remote.name}. ${detail}`,
+          { modal: true }
+        );
+        return false;
+      }
+      targetCommitish = remoteTarget.commit;
+    }
+    const eligibility = await checkFlowPullRequestTarget(
+      repository.rootUri.fsPath,
+      sourceRefName,
+      targetRefName,
+      {
+        requireTargetAncestor: requiresProductionAncestry,
+        requireTargetSynchronized: requiresProductionAncestry,
+        ...(targetCommitish ? { targetCommitish } : {})
+      }
+    );
+    if (eligibility.status === 'ahead') {
+      return true;
+    }
+
+    let message: string;
+    if (eligibility.status === 'production-out-of-sync') {
+      const remoteLabel = `${productionRemoteName ?? 'remote'}/${targetRefName}`;
+      const localAhead = eligibility.targetLocalAhead ?? 0;
+      const remoteAhead = eligibility.targetRemoteAhead ?? 0;
+      const relationship = remoteAhead > 0 && localAhead === 0
+        ? `${targetRefName} is behind ${remoteLabel} by ${remoteAhead} commit(s)`
+        : localAhead > 0 && remoteAhead === 0
+          ? `${targetRefName} is ahead of ${remoteLabel} by ${localAhead} commit(s)`
+          : `${targetRefName} has diverged from ${remoteLabel}`;
+      message = `Production promotion aborted: ${relationship}. ` +
+        `Synchronize the local ${targetRefName} branch with ${remoteLabel}, refresh the graph, and retry.`;
+    } else if (eligibility.status === 'production-not-ancestor') {
+      message = `Production promotion aborted: ${sourceRefName} does not contain every commit from ${targetRefName}. ` +
+        'The source may have been created from outdated production and can be incompatible with current production. ' +
+        'Synchronize or equalize the source with production, validate it, and then retry the promotion Pull Request.';
+    } else if (eligibility.status === 'not-ahead') {
+      message = `${sourceRefName} has no commits ahead of ${targetRefName}. Pull Request context was not opened.`;
+    } else {
+      message = `Could not verify whether ${sourceRefName} is eligible for promotion into ${targetRefName}. ` +
+        'Pull Request context was not opened.';
+    }
+    await this.actionServices.ui.showWarningMessage(message, { modal: true });
+    return false;
+  }
+
   private async ensureFlowPullRequestSourceReady(
     repository: Repository,
     sourceRefName: string
   ): Promise<boolean> {
-    const remote = resolveGitHubPullRequestRemote(repository)
-      ?? repository.state.remotes.find((candidate) => candidate.name === 'origin')
-      ?? repository.state.remotes[0];
+    const remote = this.resolveFlowPullRequestRemote(repository);
     if (!remote) {
       await this.actionServices.ui.showInformationMessage(
         'No Git remote is configured for this repository. Pull Request context was not opened.'
@@ -812,6 +897,12 @@ export class RevisionGraphController implements vscode.Disposable {
       );
       return false;
     }
+  }
+
+  private resolveFlowPullRequestRemote(repository: Repository): Remote | undefined {
+    return resolveGitHubPullRequestRemote(repository)
+      ?? repository.state.remotes.find((candidate) => candidate.name === 'origin')
+      ?? repository.state.remotes[0];
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

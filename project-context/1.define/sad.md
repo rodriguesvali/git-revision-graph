@@ -204,6 +204,7 @@ GitHub API PR creation, cleanup candidates, additional provider APIs, and persis
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
 - Flow Governance Phase 1 is a metadata overlay over the loaded graph. It must not hide branch refs or change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
 - Flow Governance 2.0.0 is not releasable as badges alone; it should add PR-required diagnostics, release readiness, PR handoff, and safe equalization guidance before publication.
+- Promotion PR handoff from a release or hotfix to the configured production branch must fail closed unless the local production ref exactly matches the current remote production tip and that tip is an ancestor of the source. These guards are rechecked before opening the provider URL so stale local governance state or incompatible promotion sources cannot bypass current production.
 - Governed branch creation may offer immediate publication only after the local branch and its metadata are successfully created. Publication requires explicit confirmation, uses a normal Git API push with upstream tracking, and must leave the local branch intact when declined, canceled, unavailable, or failed.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
