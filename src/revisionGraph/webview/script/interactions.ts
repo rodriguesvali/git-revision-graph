@@ -481,7 +481,6 @@ export function renderRevisionGraphScriptInteractions(): string {
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
-        entries.push({ label: 'Validate Release Promotion', onClick: () => postValidateReleasePromotion(target) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
         if (productionBranchName) {
           entries.push(
@@ -1503,15 +1502,6 @@ export function renderRevisionGraphScriptInteractions(): string {
         return;
       }
       vscode.postMessage(createRevisionGraphFlowGovernanceOptionsMessage(options));
-    }
-
-    function postValidateReleasePromotion(target) {
-      postMessageWithLoading(
-        createRevisionGraphValidateReleasePromotionMessage(target),
-        'Validating release promotion...',
-        null,
-        'subtle'
-      );
     }
 
     function postPrepareFlowEqualization(targetRefName, originRefName, description) {

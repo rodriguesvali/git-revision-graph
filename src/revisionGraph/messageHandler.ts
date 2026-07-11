@@ -40,7 +40,6 @@ export interface RevisionGraphMessageHandlerHost
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
-  validateFlowReleasePromotion(refName: string): Promise<void>;
   startFlowBranch(
     branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string,
@@ -106,9 +105,6 @@ export class RevisionGraphMessageHandler {
         return;
       case 'set-flow-governance-options':
         this.host.updateFlowGovernanceOptions(message.options);
-        return;
-      case 'validate-release-promotion':
-        await this.host.validateFlowReleasePromotion(message.refName);
         return;
       case 'start-flow-branch':
         await this.host.startFlowBranch(message.branchKind, message.sourceRefName, message.name, message.description);

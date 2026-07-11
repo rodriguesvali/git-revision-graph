@@ -10,18 +10,18 @@ import {
   applyFlowGovernanceOptionsUpdate,
   buildGitHubPullRequestUrl,
   buildGitHubPullRequestUrlFromRemoteUrl,
-  checkFlowPromotionReadiness,
+  checkFlowPullRequestSourcePublication,
+  classifyFlowPullRequestSourcePublication,
   createDefaultFlowConfigFile,
   createFlowPullRequestContext,
-  createFlowPromotionReadinessDiagnostic,
   createFlowTransitionDiagnostics,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
   evaluateFlowTransition,
-  interpretFlowPromotionAncestorExitCode,
   loadFlowPullRequestTargets,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
+  resolveGitHubPullRequestRemote,
   suggestFlowEqualizationBranchName,
   isFlowGovernedTransition,
   updateRepositoryFlowConfigOptions
@@ -231,6 +231,78 @@ test('Flow Governance marks Pull Request ahead checks as unknown when Git fails'
   assert.match(targets[0]?.detail ?? '', /missing ref/);
 });
 
+test('Flow Governance classifies Pull Request source synchronization states', () => {
+  assert.equal(classifyFlowPullRequestSourcePublication(0, 0), 'ready');
+  assert.equal(classifyFlowPullRequestSourcePublication(2, 0), 'unpushed');
+  assert.equal(classifyFlowPullRequestSourcePublication(0, 3), 'remote-ahead');
+  assert.equal(classifyFlowPullRequestSourcePublication(1, 1), 'diverged');
+});
+
+test('Flow Governance detects unpublished Pull Request sources without fetching', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const result = await checkFlowPullRequestSourcePublication(
+    repository,
+    'origin',
+    'hotfix/INC-482-login',
+    async (_path, args) => {
+      assert.deepEqual(args, [
+        'ls-remote',
+        '--heads',
+        '--refs',
+        'origin',
+        'refs/heads/hotfix/INC-482-login'
+      ]);
+      return { stdout: '', stderr: '' };
+    }
+  );
+
+  assert.equal(result.status, 'unpublished');
+  assert.deepEqual(repository.calls.fetch, []);
+});
+
+test('Flow Governance fetches and compares a published Pull Request source', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const calls: readonly string[][] = [];
+  const result = await checkFlowPullRequestSourcePublication(
+    repository,
+    'origin',
+    'hotfix/INC-482-login',
+    async (_path, args) => {
+      (calls as string[][]).push([...args]);
+      return calls.length === 1
+        ? { stdout: '0123456789abcdef\trefs/heads/hotfix/INC-482-login\n', stderr: '' }
+        : { stdout: '2\t0\n', stderr: '' };
+    }
+  );
+
+  assert.equal(result.status, 'unpushed');
+  assert.equal(result.localAhead, 2);
+  assert.equal(result.remoteAhead, 0);
+  assert.deepEqual(repository.calls.fetch, [{ remote: 'origin', ref: 'hotfix/INC-482-login' }]);
+  assert.deepEqual(calls[1], [
+    'rev-list',
+    '--left-right',
+    '--count',
+    '--end-of-options',
+    'hotfix/INC-482-login...0123456789abcdef'
+  ]);
+});
+
+test('Flow Governance fails closed when Pull Request source verification fails', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const result = await checkFlowPullRequestSourcePublication(
+    repository,
+    'origin',
+    'release/2.0.0',
+    async () => {
+      throw new Error('authentication failed');
+    }
+  );
+
+  assert.equal(result.status, 'unknown');
+  assert.match(result.detail ?? '', /authentication failed/);
+});
+
 test('Flow Governance transition policy leaves non-governed integrations unblocked', () => {
   const result = evaluateFlowTransition('feature', 'main');
 
@@ -254,74 +326,6 @@ test('Flow Governance direct merge policy supports off, warn, and block', () => 
   assert.equal(evaluateFlowTransition('release', 'main', {
     directMergePolicy: 'block'
   }).directMergeAction, 'block');
-});
-
-test('Flow Governance promotion readiness interprets ancestry exit codes', () => {
-  assert.equal(
-    interpretFlowPromotionAncestorExitCode(0, 'main', 'release/1.0.0').status,
-    'ready'
-  );
-  assert.equal(
-    interpretFlowPromotionAncestorExitCode(1, 'main', 'release/1.0.0').status,
-    'blocked'
-  );
-  assert.equal(
-    interpretFlowPromotionAncestorExitCode(128, 'main', 'release/1.0.0').status,
-    'inconclusive'
-  );
-});
-
-test('Flow Governance promotion readiness runs merge-base ancestry checks', async () => {
-  const calls: string[][] = [];
-  const ready = await checkFlowPromotionReadiness({
-    repositoryPath: '/repo',
-    productionBranch: 'main',
-    releaseBranch: 'release/1.0.0',
-    async execGit(_repositoryPath, args) {
-      (calls as string[][]).push([...args]);
-      return { stdout: '', stderr: '' };
-    }
-  });
-
-  assert.equal(ready.status, 'ready');
-  assert.match(ready.message, /promotion-ready/);
-  assert.deepEqual(calls[0], [
-    'merge-base',
-    '--is-ancestor',
-    '--end-of-options',
-    'main',
-    'release/1.0.0'
-  ]);
-});
-
-test('Flow Governance promotion readiness reports blocked and inconclusive states', async () => {
-  const blocked = await checkFlowPromotionReadiness({
-    repositoryPath: '/repo',
-    productionBranch: 'main',
-    releaseBranch: 'release/1.0.0',
-    async execGit() {
-      throw Object.assign(new Error('not ancestor'), {
-        code: 1,
-        stderr: ''
-      });
-    }
-  });
-  const inconclusive = await checkFlowPromotionReadiness({
-    repositoryPath: '/repo',
-    productionBranch: 'main',
-    releaseBranch: 'release/1.0.0',
-    async execGit() {
-      throw Object.assign(new Error('fatal: ambiguous argument'), {
-        code: 128,
-        stderr: 'fatal: ambiguous argument'
-      });
-    }
-  });
-
-  assert.equal(blocked.status, 'blocked');
-  assert.match(blocked.message, /Equalize production/);
-  assert.equal(inconclusive.status, 'inconclusive');
-  assert.match(inconclusive.detail ?? '', /ambiguous argument/);
 });
 
 test('Flow Governance creates PR-required transition diagnostics', () => {
@@ -350,27 +354,6 @@ test('Flow Governance creates PR-required transition diagnostics', () => {
   assert.equal(ignoredDiagnostics.length, 0);
 });
 
-test('Flow Governance creates release promotion readiness diagnostics', () => {
-  const ready = createFlowPromotionReadinessDiagnostic(
-    interpretFlowPromotionAncestorExitCode(0, 'main', 'release/1.0.0')
-  );
-  const blocked = createFlowPromotionReadinessDiagnostic(
-    interpretFlowPromotionAncestorExitCode(1, 'main', 'release/1.0.0')
-  );
-  const inconclusive = createFlowPromotionReadinessDiagnostic({
-    ...interpretFlowPromotionAncestorExitCode(128, 'main', 'release/1.0.0'),
-    detail: 'fatal: ambiguous argument'
-  });
-
-  assert.equal(ready.code, 'release-promotion-ready');
-  assert.equal(ready.severity, 'info');
-  assert.equal(blocked.code, 'release-promotion-blocked');
-  assert.equal(blocked.severity, 'warning');
-  assert.match(blocked.message, /Equalize production/);
-  assert.equal(inconclusive.code, 'release-promotion-inconclusive');
-  assert.match(inconclusive.message, /ambiguous argument/);
-});
-
 test('Flow Governance creates Pull Request context and GitHub compare URLs', () => {
   const context = createFlowPullRequestContext('release/1.0.0', 'main');
   const repository = createRepository({
@@ -386,6 +369,12 @@ test('Flow Governance creates Pull Request context and GitHub compare URLs', () 
     buildGitHubPullRequestUrl(repository, 'release/1.0.0', 'main'),
     'https://github.com/owner/project/compare/main...release%2F1.0.0?quick_pull=1&title=Merge+release%2F1.0.0+into+main&body=Source%3A+release%2F1.0.0%0ATarget%3A+main%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
+  assert.deepEqual(resolveGitHubPullRequestRemote(repository), {
+    name: 'origin',
+    owner: 'owner',
+    repositoryName: 'project',
+    isReadOnly: false
+  });
   assert.equal(
     buildGitHubPullRequestUrlFromRemoteUrl('git@github.com:owner/project.git', 'sync/release-from-main', 'release/1.0.0'),
     'https://github.com/owner/project/compare/release%2F1.0.0...sync%2Frelease-from-main?quick_pull=1&title=Merge+sync%2Frelease-from-main+into+release%2F1.0.0&body=Source%3A+sync%2Frelease-from-main%0ATarget%3A+release%2F1.0.0%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'

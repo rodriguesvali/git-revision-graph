@@ -168,6 +168,7 @@ Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and
 - `flowPromotionChecks.ts`: release promotion ancestry validation with `ready`, `blocked`, and `inconclusive` results.
 - `flowDiagnostics.ts`: expanded governance diagnostics built from host-side classification, transition policy, and readiness results.
 - `flowPullRequestContext.ts`: provider-neutral PR title/body/context and recognized GitHub compare/PR URL generation without requiring authentication.
+- `flowPullRequestPreflight.ts`: provider-aligned remote-source existence and exact-tip verification before PR handoff, with fail-closed publication states.
 - `flowSyncPlan.ts`: production-to-release equalization planning, sync branch naming, precondition checks, and no-push handoff metadata.
 
 GitHub API PR creation, cleanup candidates, additional provider APIs, and persistent diagnostics panels remain outside the initial 2.0.0 architecture unless the focused feature artifact is explicitly expanded.
@@ -178,6 +179,7 @@ GitHub API PR creation, cleanup candidates, additional provider APIs, and persis
 - The webview may display diagnostics and dispatch explicit user intents, but it must not evaluate branch policy, read configuration, call provider APIs, or perform Git operations.
 - Release readiness may use targeted Git ancestry checks where the public Git API is insufficient, and must report missing refs or command errors as inconclusive rather than ready or blocked.
 - PR handoff should work without provider authentication first by copying PR context or opening recognized compare/PR URLs.
+- PR handoff must verify that the selected source exists at the same commit on the handoff remote. Missing or locally-ahead sources may be published/pushed only after explicit confirmation; remote-ahead and divergent sources fail closed, and force push is never offered.
 - Equalization may create a local `sync/*` branch and merge production only after explicit confirmation and only when existing clean-worktree/conflict guards pass. It must never push automatically and must never perform the final governed merge into `release/*`.
 
 ## Architectural Constraints

@@ -173,7 +173,7 @@ from an active release.
 - Contextual governance diagnostics were expanded on 2026-07-02 in
   `src/revisionGraph/flow/flowDiagnostics.ts`.
 - Focused Flow Governance diagnostics tests cover PR-required, direct-merge
-  blocked, non-governed transitions, and release promotion readiness diagnostics.
+  blocked, and non-governed transitions.
 - `npm run build` passed on 2026-07-02 after the diagnostics slice.
 - `npm test -- --test-name-pattern "Flow Governance"` passed on 2026-07-02 with
   568 compiled tests after the diagnostics slice.
@@ -261,6 +261,12 @@ from an active release.
   inconclusive results use modal warnings.
 - `npm run build` and `npm test` passed with 598 tests on 2026-07-10 after the
   release-promotion result presentation correction.
+- `Validate Release Promotion` was removed on 2026-07-11 after the ahead-aware
+  `Promotion PR Context` workflow made the separate readiness action redundant.
+  Its message contract, controller path, readiness helpers, diagnostics, and
+  focused tests were removed with the menu item.
+- `npm run build` and `npm test` passed with 598 tests on 2026-07-11 after the
+  obsolete release-promotion validation workflow was removed.
 - Equalization was generalized on 2026-07-10. `Prepare Production Equalization`
   is now `Prepare Equalization`, with a single form for required Origin branch
   and Description. Eligible origins are `main` and other visible releases; the
@@ -321,6 +327,16 @@ from an active release.
   `body` query parameters. The title and description come from the same trusted
   Flow Governance context shown in the form, so GitHub opens with both fields
   pre-populated instead of deriving the title from commits.
+- Pull Request handoff now runs a trusted remote-source preflight for every
+  governed source kind. It resolves the handoff remote, checks remote branch
+  existence, fetches the exact source, and compares local and remote tips.
+- Missing and locally-ahead sources offer `Publish and Continue` or
+  `Push and Continue` only after explicit confirmation. Remote-ahead,
+  divergent, read-only, and inconclusive states fail closed; force push is
+  never offered. A successful push is revalidated before the context or GitHub
+  URL is released.
+- `npm run build`, `npm test` (602 tests), and `git diff --check` passed on
+  2026-07-11 after the Pull Request remote-source preflight was added.
 - `npm run build` and `npm test` passed with 583 tests on 2026-07-04 after the
   Start New Task workflow.
 - The generated webview numeric validation for Dev Task was corrected on
@@ -345,6 +361,12 @@ from an active release.
   Governance submenu still exposes `Promotion PR Context`; activating it must
   show a modal warning and leave the context form closed. Add a source-only
   commit and verify the same action opens the form targeting production.
+- With an unpublished hotfix, verify `Promotion PR Context` offers
+  `Publish and Continue`, sets upstream tracking, revalidates the remote tip,
+  and opens the form only after success. Repeat with an already-published but
+  locally-ahead source and verify `Push and Continue` performs a normal push.
+- Verify remote-ahead and divergent sources remain blocked with actionable
+  guidance and that no force-push option is presented.
 - Run `Promotion PR Context` and verify the form displays
   `<source> -> <target>` without a copy action, plus populated Title and
   Description fields with independent copy icons on the right.
@@ -357,9 +379,6 @@ from an active release.
 - Verify `Start New Bug` appears for both release and feature references,
   requires Bug ID, short name, and description, and creates and checks out
   `bug/<bug-id>-<short-name>` from the selected source without publishing it.
-- On a release reference, run `Validate Release Promotion` and verify that
-  `Validating release promotion...` disappears before the modal result dialog
-  opens. Repeat for ready, blocked, and inconclusive outcomes.
 - On release and feature references, open `Prepare Equalization` and verify that
   Origin branch lists `main` plus active releases but not the target when it is
   itself a release. Verify Description is required, submission prepares the

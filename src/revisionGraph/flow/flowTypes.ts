@@ -59,10 +59,7 @@ export interface FlowDiagnostic {
     | 'unknown-branch'
     | 'invalid-config'
     | 'pr-required'
-    | 'direct-merge-blocked'
-    | 'release-promotion-ready'
-    | 'release-promotion-blocked'
-    | 'release-promotion-inconclusive';
+    | 'direct-merge-blocked';
   readonly severity: FlowDiagnosticSeverity;
   readonly message: string;
   readonly refName?: string;
@@ -124,14 +121,4 @@ export interface FlowTransitionEvaluation {
   readonly directMergePolicy: FlowDirectMergePolicy;
   readonly directMergeAction: FlowDirectMergeAction;
   readonly message?: string;
-}
-
-export type FlowPromotionReadinessStatus = 'ready' | 'blocked' | 'inconclusive';
-
-export interface FlowPromotionReadiness {
-  readonly status: FlowPromotionReadinessStatus;
-  readonly productionBranch: string;
-  readonly releaseBranch: string;
-  readonly message: string;
-  readonly detail?: string;
 }

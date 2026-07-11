@@ -49,10 +49,6 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
-    validateRevisionGraphMessage({ type: 'validate-release-promotion', refName: '' }),
-    undefined
-  );
-  assert.equal(
     validateRevisionGraphMessage({ type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '' }),
     undefined
   );
@@ -413,16 +409,6 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       options: {
         enabled: true
       }
-    }
-  );
-  assert.deepEqual(
-    validateRevisionGraphMessage({
-      type: 'validate-release-promotion',
-      refName: 'release/1.0.0'
-    }),
-    {
-      type: 'validate-release-promotion',
-      refName: 'release/1.0.0'
     }
   );
   assert.deepEqual(
@@ -812,47 +798,6 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       }
     ),
     true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'validate-release-promotion', refName: 'release/1.0.0' },
-      {
-        ...state,
-        references: [
-          ...state.references,
-          { id: 'release1::branch::release/1.0.0', hash: 'release1', name: 'release/1.0.0', kind: 'branch', title: 'release/1.0.0' }
-        ],
-        flowGovernance: {
-          enabled: true,
-          configSource: 'workspace',
-          diagnostics: [],
-          branchKinds: ['main', 'release', 'sync', 'unknown'],
-          references: [
-            { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
-            { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] }
-          ]
-        }
-      }
-    ),
-    true
-  );
-  assert.equal(
-    isRevisionGraphMessageAllowedForState(
-      { type: 'validate-release-promotion', refName: 'main' },
-      {
-        ...state,
-        flowGovernance: {
-          enabled: true,
-          configSource: 'workspace',
-          diagnostics: [],
-          branchKinds: ['main', 'release', 'sync', 'unknown'],
-          references: [
-            { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] }
-          ]
-        }
-      }
-    ),
-    false
   );
   const governedFlowState: RevisionGraphViewState = {
     ...state,

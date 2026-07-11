@@ -63,10 +63,6 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       const options = validateFlowGovernanceOptions(message.options);
       return options ? { type: 'set-flow-governance-options', options } : undefined;
     }
-    case 'validate-release-promotion':
-      return isBoundedNonEmptyString(message.refName)
-        ? { type: 'validate-release-promotion', refName: message.refName }
-        : undefined;
     case 'start-flow-branch':
       return isBoundedNonEmptyString(message.sourceRefName)
         && (message.branchKind === 'release'

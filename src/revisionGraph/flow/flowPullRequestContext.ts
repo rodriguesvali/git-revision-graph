@@ -8,9 +8,11 @@ export interface FlowPullRequestContext {
   readonly text: string;
 }
 
-interface GitHubRepositoryRemote {
+export interface GitHubPullRequestRemote {
+  readonly name: string;
   readonly owner: string;
   readonly repositoryName: string;
+  readonly isReadOnly: boolean;
 }
 
 export function createFlowPullRequestContext(sourceRefName: string, targetRefName: string): FlowPullRequestContext {
@@ -40,13 +42,17 @@ export function buildGitHubPullRequestUrl(
   sourceRefName: string,
   targetRefName: string
 ): string | undefined {
-  const remote = findGitHubRepositoryRemote(repository.state.remotes);
+  const remote = resolveGitHubPullRequestRemote(repository);
   if (!remote) {
     return undefined;
   }
 
   const compare = `${encodeURIComponent(targetRefName)}...${encodeURIComponent(sourceRefName)}`;
   return buildGitHubPullRequestCreationUrl(remote, compare, sourceRefName, targetRefName);
+}
+
+export function resolveGitHubPullRequestRemote(repository: Repository): GitHubPullRequestRemote | undefined {
+  return findGitHubRepositoryRemote(repository.state.remotes);
 }
 
 export function buildGitHubPullRequestUrlFromRemoteUrl(
@@ -64,7 +70,7 @@ export function buildGitHubPullRequestUrlFromRemoteUrl(
 }
 
 function buildGitHubPullRequestCreationUrl(
-  remote: GitHubRepositoryRemote,
+  remote: Pick<GitHubPullRequestRemote, 'owner' | 'repositoryName'>,
   compare: string,
   sourceRefName: string,
   targetRefName: string
@@ -78,7 +84,7 @@ function buildGitHubPullRequestCreationUrl(
   return `https://github.com/${encodeURIComponent(remote.owner)}/${encodeURIComponent(remote.repositoryName)}/compare/${compare}?${query.toString()}`;
 }
 
-function findGitHubRepositoryRemote(remotes: readonly Remote[]): GitHubRepositoryRemote | undefined {
+function findGitHubRepositoryRemote(remotes: readonly Remote[]): GitHubPullRequestRemote | undefined {
   const orderedRemotes = [
     ...remotes.filter((remote) => remote.name === 'origin'),
     ...remotes.filter((remote) => remote.name !== 'origin')
@@ -87,7 +93,7 @@ function findGitHubRepositoryRemote(remotes: readonly Remote[]): GitHubRepositor
     for (const remoteUrl of [remote.fetchUrl, remote.pushUrl]) {
       const parsed = parseGitHubRepositoryRemote(remoteUrl);
       if (parsed) {
-        return parsed;
+        return { ...parsed, name: remote.name, isReadOnly: remote.isReadOnly };
       }
     }
   }
@@ -95,7 +101,9 @@ function findGitHubRepositoryRemote(remotes: readonly Remote[]): GitHubRepositor
   return undefined;
 }
 
-function parseGitHubRepositoryRemote(remoteUrl: string | undefined): GitHubRepositoryRemote | undefined {
+function parseGitHubRepositoryRemote(
+  remoteUrl: string | undefined
+): Omit<GitHubPullRequestRemote, 'name' | 'isReadOnly'> | undefined {
   const trimmedUrl = remoteUrl?.trim();
   if (!trimmedUrl) {
     return undefined;
@@ -126,7 +134,10 @@ function parseGitHubRepositoryRemote(remoteUrl: string | undefined): GitHubRepos
   }
 }
 
-function normalizeGitHubRepositoryRemote(owner: string, repositoryName: string): GitHubRepositoryRemote | undefined {
+function normalizeGitHubRepositoryRemote(
+  owner: string,
+  repositoryName: string
+): Omit<GitHubPullRequestRemote, 'name' | 'isReadOnly'> | undefined {
   const normalizedOwner = owner.trim();
   const normalizedRepositoryName = repositoryName.trim().replace(/\.git$/i, '');
   return normalizedOwner && normalizedRepositoryName

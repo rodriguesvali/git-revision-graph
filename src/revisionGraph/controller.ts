@@ -43,7 +43,6 @@ import {
 import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
-import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 import { loadCommitShortStat } from './repository/commitShortStat';
 import { openShowLogCommitOnGitHub } from '../showLog/remoteCommitAction';
 import {
@@ -73,12 +72,12 @@ import type { FlowConfigSource, FlowGovernanceSettings, FlowStartBranchKind } fr
 import {
   applyFlowGovernanceOptionsUpdate,
   buildGitHubPullRequestUrl,
-  checkFlowPromotionReadiness,
+  checkFlowPullRequestSourcePublication,
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
-  createFlowPromotionReadinessDiagnostic,
   FlowGovernanceOptionsUpdate,
   prepareFlowEqualizationBranch,
+  resolveGitHubPullRequestRemote,
   resolveFlowConfigForRepository,
   startFlowBranch,
   updateRepositoryFlowConfigOptions
@@ -282,9 +281,6 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       updateFlowGovernanceOptions: (options) => {
         void this.updateFlowGovernanceOptions(options);
-      },
-      validateFlowReleasePromotion: async (refName) => {
-        await this.validateFlowReleasePromotion(refName);
       },
       startFlowBranch: async (branchKind, sourceRefName, name, description) => {
         await this.startFlowBranch(branchKind, sourceRefName, name, description);
@@ -589,45 +585,6 @@ export class RevisionGraphController implements vscode.Disposable {
     }
   }
 
-  private async validateFlowReleasePromotion(releaseBranch: string): Promise<void> {
-    const repository = this.currentRepository;
-    const flowGovernance = this.currentState.flowGovernance;
-    if (!repository || this.currentState.viewMode !== 'ready' || !flowGovernance?.enabled) {
-      return;
-    }
-
-    const actionServices = withCurrentStateBeforeBlockingMessage(
-      this.actionServices,
-      () => this.postCurrentState()
-    );
-
-    const productionBranch = this.resolveFlowProductionBranch();
-    if (!productionBranch) {
-      await actionServices.ui.showWarningMessage(
-        `Release promotion readiness is inconclusive for ${releaseBranch}: no production branch is visible in the current graph.`,
-        { modal: true }
-      );
-      return;
-    }
-
-    const readiness = await checkFlowPromotionReadiness({
-      repositoryPath: repository.rootUri.fsPath,
-      productionBranch,
-      releaseBranch
-    });
-    const diagnostic = createFlowPromotionReadinessDiagnostic(readiness);
-    if (diagnostic.severity === 'info') {
-      await actionServices.ui.showInformationMessage(diagnostic.message, { modal: true });
-      return;
-    }
-
-    await actionServices.ui.showWarningMessage(diagnostic.message, { modal: true });
-  }
-
-  private resolveFlowProductionBranch(): string | undefined {
-    return this.currentState.flowGovernance?.references.find((ref) => ref.kind === 'main')?.refName;
-  }
-
   private async startFlowBranch(
     branchKind: FlowStartBranchKind,
     sourceRefName: string,
@@ -709,6 +666,9 @@ export class RevisionGraphController implements vscode.Disposable {
       await this.actionServices.ui.showWarningMessage(message, { modal: true });
       return;
     }
+    if (!await this.ensureFlowPullRequestSourceReady(repository, sourceRefName)) {
+      return;
+    }
     const context = createFlowPullRequestContext(sourceRefName, targetRefName);
     this.postHostMessage(createRevisionGraphFlowPullRequestContextMessage(
       context.sourceRefName,
@@ -733,13 +693,125 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
+    if (!resolveGitHubPullRequestRemote(repository)) {
+      this.actionServices.ui.showInformationMessage('No GitHub remote is configured for this repository.');
+      return;
+    }
+    if (!await this.ensureFlowPullRequestSourceReady(repository, sourceRefName)) {
+      return;
+    }
+
     const url = buildGitHubPullRequestUrl(repository, sourceRefName, targetRefName);
     if (!url) {
-      this.actionServices.ui.showInformationMessage('No GitHub remote is configured for this repository.');
       return;
     }
 
     await vscode.env.openExternal(vscode.Uri.parse(url));
+  }
+
+  private async ensureFlowPullRequestSourceReady(
+    repository: Repository,
+    sourceRefName: string
+  ): Promise<boolean> {
+    const remote = resolveGitHubPullRequestRemote(repository)
+      ?? repository.state.remotes.find((candidate) => candidate.name === 'origin')
+      ?? repository.state.remotes[0];
+    if (!remote) {
+      await this.actionServices.ui.showInformationMessage(
+        'No Git remote is configured for this repository. Pull Request context was not opened.'
+      );
+      return false;
+    }
+
+    try {
+      const outcome = await runGuardedRepositoryMutation(
+        this.mutationCoordinator,
+        repository,
+        this.actionServices,
+        async (guardedRepository, services) => {
+          let publication = await checkFlowPullRequestSourcePublication(
+            guardedRepository,
+            remote.name,
+            sourceRefName
+          );
+          if (publication.status === 'ready') {
+            return true;
+          }
+
+          if (publication.status === 'remote-ahead') {
+            await services.ui.showWarningMessage(
+              `${remote.name}/${sourceRefName} contains commits that are not present locally. ` +
+              'Synchronize and review the branch before creating the Pull Request.',
+              { modal: true }
+            );
+            return false;
+          }
+          if (publication.status === 'diverged') {
+            await services.ui.showWarningMessage(
+              `${sourceRefName} has diverged from ${remote.name}/${sourceRefName}. ` +
+              'Resolve the divergence before creating the Pull Request. Flow Governance will not force push.',
+              { modal: true }
+            );
+            return false;
+          }
+          if (publication.status === 'unknown') {
+            await services.ui.showWarningMessage(
+              `Could not verify ${sourceRefName} on ${remote.name}. Pull Request context was not opened. ` +
+              (publication.detail ?? ''),
+              { modal: true }
+            );
+            return false;
+          }
+          if (remote.isReadOnly) {
+            await services.ui.showWarningMessage(
+              `${remote.name} is read-only and ${sourceRefName} cannot be synchronized for this Pull Request.`,
+              { modal: true }
+            );
+            return false;
+          }
+
+          const isPublish = publication.status === 'unpublished';
+          const confirmed = await services.ui.confirm({
+            message: isPublish
+              ? `${sourceRefName} is not available on ${remote.name}. Publish it before creating the Pull Request?`
+              : `${sourceRefName} has commits that are not available on ${remote.name}. Push them before creating the Pull Request?`,
+            confirmLabel: isPublish ? 'Publish and Continue' : 'Push and Continue'
+          });
+          if (!confirmed) {
+            return false;
+          }
+
+          await guardedRepository.push(remote.name, sourceRefName, isPublish);
+          publication = await checkFlowPullRequestSourcePublication(
+            guardedRepository,
+            remote.name,
+            sourceRefName
+          );
+          if (publication.status !== 'ready') {
+            await services.ui.showWarningMessage(
+              `The branch was pushed, but ${sourceRefName} could not be confirmed as synchronized with ` +
+              `${remote.name}/${sourceRefName}. Pull Request context was not opened.`,
+              { modal: true }
+            );
+            return false;
+          }
+
+          services.refreshController.refresh();
+          return true;
+        }
+      );
+      if (outcome.status === 'rejected') {
+        this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
+        return false;
+      }
+      return outcome.value;
+    } catch (error) {
+      await this.actionServices.ui.showErrorMessage(
+        toOperationError(`Could not synchronize ${sourceRefName} before creating the Pull Request.`, error),
+        { modal: true }
+      );
+      return false;
+    }
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {

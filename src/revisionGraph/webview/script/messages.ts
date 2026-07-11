@@ -43,10 +43,6 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
       return { type: 'set-flow-governance-options', options };
     }
 
-    function createRevisionGraphValidateReleasePromotionMessage(target) {
-      return { type: 'validate-release-promotion', refName: target.name };
-    }
-
     function createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description) {
       const message = {
         type: 'start-flow-branch',

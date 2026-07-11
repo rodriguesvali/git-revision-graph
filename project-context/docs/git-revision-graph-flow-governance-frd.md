@@ -1127,7 +1127,6 @@ If no Flow Governance action is applicable, do not show the submenu.
 | Show Flow Details | The selected reference has Flow Governance metadata, including `unknown`. |
 | Create Governed Branch | The selected reference can be used as the base for a configured governed branch flow and a `branchCreation` template exists for the target branch kind. |
 | Show Related Branches | The selected reference has inferred or configured relationships, such as `task -> feature`, `package -> feature`, or `sync -> release`. |
-| Validate Release Promotion | The selected reference is classified as `release`. |
 | Prepare Production Equalization | The selected reference is a release and promotion validation shows that production is not an ancestor of the release. |
 | Create GitHub Pull Request | A governed source/target pair is resolved, the remote is GitHub, the source branch exists on the remote, and GitHub authentication is available or can be requested. |
 | Copy PR Context | A governed source/target pair is resolved, regardless of whether GitHub API creation is available. |
@@ -1147,7 +1146,6 @@ Examples:
 - Show disabled `Start Sync Sandbox` with a tooltip such as `Resolve the current
   merge or working tree state before starting equalization` when the action is
   conceptually relevant but the repository is unsafe.
-- Hide `Validate Release Promotion` for non-release references.
 - Hide `Run Cleanup Dry-Run` for protected branches and the current branch.
 
 ### 14.3 Governed Branch Creation Form

@@ -31,7 +31,6 @@ export type RevisionGraphMessage =
   | { readonly type: 'abort-merge' }
   | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
   | { readonly type: 'set-flow-governance-options'; readonly options: FlowGovernanceOptionsUpdate }
-  | { readonly type: 'validate-release-promotion'; readonly refName: string }
   | {
     readonly type: 'start-flow-branch';
     readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';

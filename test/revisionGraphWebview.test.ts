@@ -124,7 +124,6 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /webview\.apply\.viewport-frame/);
   assert.match(html, /function createRevisionGraphLoadTraceMessage\(phase, durationMs, detail, requestId\)/);
   assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
-  assert.match(html, /function createRevisionGraphValidateReleasePromotionMessage\(target\) \{\s*return \{ type: 'validate-release-promotion', refName: target\.name \};\s*\}/s);
   assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(targetRefName, originRefName, description\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextFieldMessage\(sourceRefName, targetRefName, field\) \{\s*return \{ type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field \};\s*\}/s);
@@ -136,7 +135,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Start New Hot Fix/);
   assert.match(html, /Start New Bug/);
   assert.match(html, /id="referenceTooltip" role="dialog" aria-label="Reference details" hidden/);
-  assert.match(html, /Validate Release Promotion/);
+  assert.doesNotMatch(html, /Validate Release Promotion/);
   assert.match(html, /Prepare Equalization/);
   assert.doesNotMatch(html, /Prepare Production Equalization/);
   assert.match(html, /Promotion PR Context/);
