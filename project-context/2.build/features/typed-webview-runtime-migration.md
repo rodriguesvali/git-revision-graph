@@ -54,6 +54,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.viewport-drag.json` strictly checks viewport drag calculation. Drag start state, scroll deltas and the node-click suppression threshold no longer depend on implicit runtime globals.
 - `tsconfig.webview.viewport-position.json` strictly checks viewport centering and restoration. Scroll positions and retained scene centers no longer duplicate arithmetic across zoom, recenter and hydration paths.
 - `tsconfig.webview.node-drag.json` strictly checks node-drag geometry. Node offsets and canvas bounds no longer calculate through implicit runtime globals.
+- `tsconfig.webview.remote-toolbar-ui.json` strictly checks remote toolbar rendering. Pull, push and sync availability plus accessible labels no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary

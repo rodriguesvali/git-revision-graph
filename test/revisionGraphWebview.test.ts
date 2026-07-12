@@ -311,7 +311,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
   assert.match(html, /reloadMenuButton\.disabled = toolbarBusy;/);
-  assert.match(html, /pushMenuButton\.disabled = toolbarBusy \|\| !remoteActionState\.canUseCurrentHeadRemote;/);
+  assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarUi\(/);
   assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
@@ -1733,6 +1733,37 @@ test('calculates revision graph node drag bounds through the typed module', () =
     runtime.context.calculateRevisionGraphWebviewNodeDragOffset(10, 10, 800, 1, 100, 80, 300),
     120
   );
+});
+
+test('synchronizes revision graph remote toolbar through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const pullButton = runtime.elements.get('pullButton');
+  const pushButton = runtime.elements.get('pushButton');
+  const pushMenuButton = runtime.elements.get('pushMenuButton');
+  const syncButton = runtime.elements.get('syncButton');
+  assert.ok(pullButton && pushButton && pushMenuButton && syncButton);
+
+  runtime.context.syncRevisionGraphWebviewRemoteToolbarUi(
+    { pullButton, pushButton, pushMenuButton, syncButton },
+    false,
+    true,
+    'origin/main'
+  );
+  assert.equal(pullButton.disabled, false);
+  assert.equal(pushButton.title, 'Push to origin/main');
+  assert.equal(pushMenuButton.getAttribute('aria-label'), 'More push options for origin/main');
+  assert.equal(syncButton.title, 'Sync with origin/main');
+
+  runtime.context.syncRevisionGraphWebviewRemoteToolbarUi(
+    { pullButton, pushButton, pushMenuButton, syncButton },
+    true,
+    true,
+    'origin/main'
+  );
+  assert.equal(pullButton.disabled, true);
+  assert.equal(pushButton.disabled, true);
+  assert.equal(pushMenuButton.disabled, true);
+  assert.equal(syncButton.disabled, true);
 });
 
 test('renders revision graph minimap SVG content through the typed module', () => {

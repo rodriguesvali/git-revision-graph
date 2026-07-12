@@ -1678,26 +1678,12 @@
       if (fetchAllButton) {
         fetchAllButton.disabled = toolbarBusy || !hasRepository;
       }
-      if (pullButton) {
-        pullButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
-        pullButton.title = 'Pull from ' + remoteActionState.upstreamLabel;
-        pullButton.setAttribute('aria-label', pullButton.title);
-      }
-      if (pushButton) {
-        pushButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
-        pushButton.title = 'Push to ' + remoteActionState.upstreamLabel;
-        pushButton.setAttribute('aria-label', pushButton.title);
-      }
-      if (pushMenuButton) {
-        pushMenuButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
-        pushMenuButton.title = 'More push options for ' + remoteActionState.upstreamLabel;
-        pushMenuButton.setAttribute('aria-label', pushMenuButton.title);
-      }
-      if (syncButton) {
-        syncButton.disabled = toolbarBusy || !remoteActionState.canUseCurrentHeadRemote;
-        syncButton.title = 'Sync with ' + remoteActionState.upstreamLabel;
-        syncButton.setAttribute('aria-label', syncButton.title);
-      }
+      syncRevisionGraphWebviewRemoteToolbarUi(
+        { pullButton, pushButton, pushMenuButton, syncButton },
+        toolbarBusy,
+        remoteActionState.canUseCurrentHeadRemote,
+        remoteActionState.upstreamLabel
+      );
       if (showTagsToggle) {
         showTagsToggle.disabled = toolbarBusy;
       }
