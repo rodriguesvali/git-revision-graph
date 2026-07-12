@@ -45,6 +45,7 @@
     "src/revisionGraph/webview/runtime/virtualSceneScheduler.ts",
     "src/revisionGraph/webview/runtime/sceneRenderLifecycle.ts",
     "src/revisionGraph/webview/runtime/sceneGeometryUi.ts",
+    "src/revisionGraph/webview/runtime/scenePlacement.ts",
     "src/revisionGraph/webview/runtime/canvasSizing.ts",
     "src/revisionGraph/webview/runtime/edgeMarkup.ts",
     "src/revisionGraph/webview/runtime/nodePresentation.ts",

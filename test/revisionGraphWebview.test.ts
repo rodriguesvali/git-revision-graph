@@ -2108,6 +2108,23 @@ test('calculates revision graph responsive canvas size through the typed module'
   assert.equal(canvas.style.height, '1500px');
 });
 
+test('calculates revision graph scene placement through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const placement = runtime.context.calculateRevisionGraphWebviewScenePlacement({
+    bounds: { minX: 100, maxX: 300, minY: 50, maxY: 250 },
+    headAnchor: { centerX: 250, centerY: 200 },
+    canvasWidth: 1_200,
+    canvasHeight: 800,
+    baseCanvasWidth: 900,
+    baseCanvasHeight: 500
+  });
+  assert.deepEqual({ ...placement }, { offsetX: 300, offsetY: 200 });
+  const sceneLayer = runtime.elements.get('sceneLayer');
+  assert.ok(sceneLayer);
+  runtime.context.applyRevisionGraphWebviewScenePlacement(sceneLayer, placement);
+  assert.equal(sceneLayer.style.transform, 'translate(300px, 200px)');
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

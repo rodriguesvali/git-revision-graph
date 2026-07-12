@@ -126,13 +126,17 @@ const REF_LINE_HEIGHT = 25;
         const canvasWidth = getCanvasWidth();
         const canvasHeight = getCanvasHeight();
         const headAnchor = useLayoutSource ? getHeadLayoutAnchorBounds() : getHeadAnchorBounds();
-        const preferredCenterX = headAnchor ? headAnchor.centerX : (bounds.minX + bounds.maxX) / 2;
-        const preferredCenterY = headAnchor ? headAnchor.centerY : (bounds.minY + bounds.maxY) / 2;
-        const maxOffsetX = Math.max(0, canvasWidth - baseCanvasWidth);
-        const maxOffsetY = Math.max(0, canvasHeight - baseCanvasHeight);
-        layoutOffsetX = clamp(preferredCenterX ? canvasWidth / 2 - preferredCenterX : 0, 0, maxOffsetX);
-        layoutOffsetY = clamp(preferredCenterY ? canvasHeight / 2 - preferredCenterY : 0, 0, maxOffsetY);
-        sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
+        const placement = calculateRevisionGraphWebviewScenePlacement({
+          bounds,
+          headAnchor,
+          canvasWidth,
+          canvasHeight,
+          baseCanvasWidth,
+          baseCanvasHeight
+        });
+        layoutOffsetX = placement.offsetX;
+        layoutOffsetY = placement.offsetY;
+        applyRevisionGraphWebviewScenePlacement(sceneLayer, placement);
       });
     }
 
