@@ -2083,6 +2083,31 @@ test('applies revision graph scene geometry through the typed DOM adapter', () =
   assert.equal(graphSvg.getAttribute('viewBox'), '0 0 900 500');
 });
 
+test('calculates revision graph responsive canvas size through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const size = runtime.context.calculateRevisionGraphWebviewCanvasSize({
+    baseWidth: 900,
+    baseHeight: 500,
+    visibleWidth: 1_200,
+    visibleHeight: 600,
+    zoom: 2
+  });
+  assert.deepEqual({ ...size }, { width: 900, height: 500 });
+  const expandedSize = runtime.context.calculateRevisionGraphWebviewCanvasSize({
+    baseWidth: 900,
+    baseHeight: 500,
+    visibleWidth: 2_400,
+    visibleHeight: 1_500,
+    zoom: 1
+  });
+  assert.deepEqual({ ...expandedSize }, { width: 2_400, height: 1_500 });
+  const canvas = runtime.elements.get('canvas');
+  assert.ok(canvas);
+  runtime.context.applyRevisionGraphWebviewCanvasSize(canvas, expandedSize);
+  assert.equal(canvas.style.width, '2400px');
+  assert.equal(canvas.style.height, '1500px');
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

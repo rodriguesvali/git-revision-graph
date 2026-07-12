@@ -108,10 +108,14 @@ const REF_LINE_HEIGHT = 25;
     function syncCanvasSize() {
       traceWebviewPhase('webview.canvas-layout.sync-size', () => {
         const visibleSize = getVisibleViewportSize();
-        const availableWidth = Math.max(baseCanvasWidth, visibleSize.width / currentZoom);
-        const availableHeight = Math.max(baseCanvasHeight, visibleSize.height / currentZoom);
-        canvas.style.width = availableWidth + 'px';
-        canvas.style.height = availableHeight + 'px';
+        const canvasSize = calculateRevisionGraphWebviewCanvasSize({
+          baseWidth: baseCanvasWidth,
+          baseHeight: baseCanvasHeight,
+          visibleWidth: visibleSize.width,
+          visibleHeight: visibleSize.height,
+          zoom: currentZoom
+        });
+        applyRevisionGraphWebviewCanvasSize(canvas, canvasSize);
       });
     }
 
