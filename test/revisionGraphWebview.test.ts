@@ -1846,6 +1846,26 @@ test('selects the revision graph virtual scene through the typed module', () => 
   assert.deepEqual(selection.visibleEdges.map((edge: { id: string }) => edge.id), ['visible-edge']);
 });
 
+test('renders revision graph edge markup through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const layouts = new Map([
+    ['parent', { defaultLeft: 0, defaultTop: 0, width: 20, height: 20 }],
+    ['child', { defaultLeft: 0, defaultTop: 100, width: 20, height: 20 }]
+  ]);
+  assert.equal(
+    runtime.context.renderRevisionGraphWebviewEdgeMarkup({ from: 'child', to: 'parent' }, layouts, 6),
+    '<path class="graph-edge" data-edge-from="child" data-edge-to="parent" d="M 10 14 L 10 106" fill="none" stroke="var(--edge)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)"></path>'
+  );
+  assert.equal(
+    runtime.context.renderRevisionGraphWebviewEdgeMarkup({ from: 'missing', to: 'parent' }, layouts, 6),
+    ''
+  );
+  assert.equal(
+    runtime.context.describeRevisionGraphWebviewFallbackEdgePath(0, 0, 100, 100),
+    'M 0 0 L 100 62 L 100 100'
+  );
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 
