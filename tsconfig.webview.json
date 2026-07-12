@@ -20,6 +20,7 @@
     "src/revisionGraph/webview/runtime/state.ts",
     "src/revisionGraph/webview/runtime/display.ts",
     "src/revisionGraph/webview/runtime/dom.ts",
+    "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",

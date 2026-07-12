@@ -31,6 +31,44 @@ interface RevisionGraphWebviewFlowGovernanceOptions {
   readonly enabled?: boolean;
 }
 
+interface RevisionGraphWebviewHostReference extends Record<string, unknown> {
+  readonly id: string;
+  readonly hash: string;
+  readonly name: string;
+  readonly kind: RevisionGraphWebviewRefKind;
+}
+
+interface RevisionGraphWebviewHostScene extends Record<string, unknown> {
+  readonly nodes: readonly Record<string, unknown>[];
+  readonly edges: readonly Record<string, unknown>[];
+}
+
+interface RevisionGraphWebviewHostState extends Record<string, unknown> {
+  readonly viewMode: 'ready' | 'empty';
+  readonly hasRepositories: boolean;
+  readonly repositoryPath?: string;
+  readonly currentHeadName?: string;
+  readonly currentHeadUpstreamName?: string;
+  readonly publishedLocalBranchNames: readonly string[];
+  readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
+  readonly projectionOptions: RevisionGraphWebviewProjectionOptions;
+  readonly mergeBlockedTargets: readonly string[];
+  readonly primaryAncestorNextByHash: Readonly<Record<string, string>>;
+  readonly scene: RevisionGraphWebviewHostScene;
+  readonly nodeLayouts: readonly Record<string, unknown>[];
+  readonly references: readonly RevisionGraphWebviewHostReference[];
+  readonly flowGovernance?: Record<string, unknown>;
+  readonly sceneLayoutKey: string;
+  readonly baseCanvasWidth: number;
+  readonly baseCanvasHeight: number;
+  readonly emptyMessage?: string;
+  readonly loading: boolean;
+  readonly loadingLabel?: string;
+  readonly errorMessage?: string;
+}
+
 type RevisionGraphWebviewMessage =
   | { readonly type: 'webview-ready' }
   | { readonly type: 'load-trace'; readonly phase: string; readonly durationMs: number; readonly detail?: string; readonly requestId?: number }
@@ -78,7 +116,7 @@ type RevisionGraphWebviewMessageOf<
 > = Message extends { readonly type: Type } ? Message : never;
 
 type RevisionGraphWebviewHostMessage =
-  | { readonly type: 'init-state' | 'update-state'; readonly state: Record<string, unknown>; readonly trace?: Record<string, unknown> }
+  | { readonly type: 'init-state' | 'update-state'; readonly state: RevisionGraphWebviewHostState; readonly trace?: Record<string, unknown> }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: string }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: Record<string, unknown> | null }
   | { readonly type: 'show-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string; readonly title: string; readonly description: string }

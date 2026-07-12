@@ -1,16 +1,18 @@
 function isRevisionGraphWebviewHostMessage(value: unknown): value is RevisionGraphWebviewHostMessage {
-  if (!isWebviewRecord(value) || typeof value.type !== 'string') {
+  if (!isRevisionGraphWebviewRecord(value) || typeof value.type !== 'string') {
     return false;
   }
 
   switch (value.type) {
     case 'init-state':
     case 'update-state':
-      return isWebviewRecord(value.state) && (value.trace === undefined || isWebviewRecord(value.trace));
+      return isRevisionGraphWebviewHostState(value.state)
+        && (value.trace === undefined || isRevisionGraphWebviewRecord(value.trace));
     case 'set-remote-tag-state':
       return typeof value.tagName === 'string' && typeof value.state === 'string';
     case 'set-commit-short-stat':
-      return typeof value.commitHash === 'string' && (value.shortStat === null || isWebviewRecord(value.shortStat));
+      return typeof value.commitHash === 'string'
+        && (value.shortStat === null || isRevisionGraphWebviewRecord(value.shortStat));
     case 'show-flow-pr-context':
       return typeof value.sourceRefName === 'string'
         && typeof value.targetRefName === 'string'
@@ -24,8 +26,4 @@ function isRevisionGraphWebviewHostMessage(value: unknown): value is RevisionGra
     default:
       return false;
   }
-}
-
-function isWebviewRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -145,6 +145,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /id="minimapNodeLayer"/);
   assert.match(html, /id="minimapViewport"/);
   assert.match(html, /window\.addEventListener\('message'/);
+  assert.match(html, /isRevisionGraphWebviewHostState\(value\.state\)/);
   assert.match(html, /function createRevisionGraphWebviewReadyMessage\(\) \{\s*return \{ type: 'webview-ready' \};\s*\}/s);
   assert.match(html, /vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/);
   assert.match(html, /case 'init-state'/);
@@ -1192,6 +1193,23 @@ test('lists main and other active releases as equalization origins', () => {
   assert.deepEqual(
     Array.from(runtime.context.getFlowEqualizationOrigins('feature/payment')),
     ['main', 'release/1.9.0', 'release/2.0.0']
+  );
+});
+
+test('rejects malformed host state before applying it to the webview runtime', () => {
+  const runtime = createWebviewRuntime();
+  const validMessage = {
+    type: 'update-state',
+    state: createReadyGraphState()
+  };
+
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(validMessage), true);
+  assert.equal(
+    runtime.context.isRevisionGraphWebviewHostMessage({
+      ...validMessage,
+      state: createReadyGraphState({ baseCanvasWidth: '900' })
+    }),
+    false
   );
 });
 

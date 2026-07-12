@@ -37,6 +37,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.dom.json` strictly checks the required-element lookup helper; bootstrap binds every shell element through that helper with a concrete element type.
 - `tsconfig.webview.api.json` strictly checks the narrow VS Code webview adapter, including persisted state and the discriminated outbound-message contract.
 - `tsconfig.webview.state.json` strictly checks persisted webview state. Minimap preference and manual node offsets now pass through a validated state boundary instead of directly reading and writing the VS Code API.
+- `tsconfig.webview.host-state.json` strictly checks the host-state boundary. The webview now rejects malformed init/update state before the legacy hydration path can mutate runtime state.
 
 ### Compatibility Boundary
 
