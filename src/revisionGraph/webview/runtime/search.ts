@@ -36,6 +36,40 @@ function getRevisionGraphWebviewSearchResultHashes(
     .map((node) => node.hash);
 }
 
+function getRevisionGraphWebviewSearchActiveResultIndex(
+  resultHashes: readonly string[],
+  previousActiveHash: string | null
+): number {
+  if (resultHashes.length === 0) {
+    return -1;
+  }
+
+  if (!previousActiveHash) {
+    return 0;
+  }
+
+  const preservedIndex = resultHashes.indexOf(previousActiveHash);
+  return preservedIndex >= 0 ? preservedIndex : 0;
+}
+
+function normalizeRevisionGraphWebviewSearchResultIndex(
+  resultHashes: readonly string[],
+  nextIndex: number
+): number {
+  if (resultHashes.length === 0) {
+    return -1;
+  }
+
+  return ((nextIndex % resultHashes.length) + resultHashes.length) % resultHashes.length;
+}
+
+function getRevisionGraphWebviewActiveSearchResultHash(
+  resultHashes: readonly string[],
+  activeIndex: number
+): string | null {
+  return activeIndex >= 0 ? resultHashes[activeIndex] ?? null : null;
+}
+
 function revisionGraphWebviewNodeMatchesSearchQuery(
   node: RevisionGraphWebviewSearchNode,
   normalizedQuery: string,

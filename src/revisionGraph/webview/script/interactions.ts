@@ -113,14 +113,10 @@
         })
       );
 
-      if (searchResultHashes.length === 0) {
-        activeSearchResultIndex = -1;
-      } else if (previousActiveHash) {
-        const preservedIndex = searchResultHashes.indexOf(previousActiveHash);
-        activeSearchResultIndex = preservedIndex >= 0 ? preservedIndex : 0;
-      } else {
-        activeSearchResultIndex = 0;
-      }
+      activeSearchResultIndex = getRevisionGraphWebviewSearchActiveResultIndex(
+        searchResultHashes,
+        previousActiveHash
+      );
 
       syncSearchUi();
       syncSearchHighlights();
@@ -190,15 +186,16 @@
     }
 
     function setActiveSearchResultIndex(nextIndex, focusActive) {
-      if (searchResultHashes.length === 0) {
-        activeSearchResultIndex = -1;
+      activeSearchResultIndex = normalizeRevisionGraphWebviewSearchResultIndex(
+        searchResultHashes,
+        nextIndex
+      );
+      if (activeSearchResultIndex < 0) {
         syncSearchUi();
         syncSearchHighlights();
         return;
       }
 
-      const normalizedIndex = ((nextIndex % searchResultHashes.length) + searchResultHashes.length) % searchResultHashes.length;
-      activeSearchResultIndex = normalizedIndex;
       syncSearchUi();
       syncSearchHighlights();
       if (focusActive) {
@@ -215,7 +212,7 @@
     }
 
     function getActiveSearchResultHash() {
-      return activeSearchResultIndex >= 0 ? searchResultHashes[activeSearchResultIndex] || null : null;
+      return getRevisionGraphWebviewActiveSearchResultHash(searchResultHashes, activeSearchResultIndex);
     }
 
     function getNormalizedSearchQuery() {

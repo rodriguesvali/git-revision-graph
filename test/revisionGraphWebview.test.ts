@@ -1360,6 +1360,28 @@ test('finds visible revision graph search results through the typed query module
     Array.from(runtime.context.getRevisionGraphWebviewSearchResultHashes(nodes, '', () => true)),
     []
   );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewSearchActiveResultIndex(
+      ['first', 'second', 'third'],
+      'second'
+    ),
+    1
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewSearchActiveResultIndex(['first'], 'missing'),
+    0
+  );
+  assert.equal(runtime.context.getRevisionGraphWebviewSearchActiveResultIndex([], 'first'), -1);
+  assert.equal(
+    runtime.context.normalizeRevisionGraphWebviewSearchResultIndex(['first', 'second', 'third'], -1),
+    2
+  );
+  assert.equal(runtime.context.normalizeRevisionGraphWebviewSearchResultIndex([], 4), -1);
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewActiveSearchResultHash(['first', 'second'], 1),
+    'second'
+  );
+  assert.equal(runtime.context.getRevisionGraphWebviewActiveSearchResultHash(['first'], 2), null);
 });
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
