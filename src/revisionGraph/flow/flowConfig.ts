@@ -1,5 +1,4 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import * as path from 'node:path';
 
 import {
   createDefaultFlowConfig,
@@ -16,6 +15,7 @@ import {
   FlowPatternBranchKind,
   NormalizedFlowConfig
 } from './flowTypes';
+import { inspectRepositoryConfigPath } from './flowConfigPathSafety';
 
 const PHASE_1_CONFIG_KEYS = new Set([
   'schemaVersion',
@@ -89,13 +89,13 @@ export async function resolveFlowConfigForRepository(
   settings?: FlowGovernanceSettings
 ): Promise<FlowConfigResolution> {
   const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
-  const resolvedConfigPath = resolveRepositoryConfigPath(repositoryRootPath, configPath);
-  if (!resolvedConfigPath.ok) {
-    return invalid([resolvedConfigPath.issue]);
+  const inspectedConfigPath = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
+  if (!inspectedConfigPath.ok) {
+    return invalid([{ path: 'configPath', message: inspectedConfigPath.message }]);
   }
 
-  const rawConfig = await readRepositoryFlowConfig(resolvedConfigPath.path);
-  if (rawConfig.exists) {
+  if (inspectedConfigPath.exists) {
+    const rawConfig = await readRepositoryFlowConfig(inspectedConfigPath.path);
     return rawConfig.value === undefined
       ? invalid(rawConfig.issues)
       : normalizeFlowConfig(rawConfig.value, 'repository');
@@ -113,14 +113,20 @@ export async function updateRepositoryFlowConfigOptions(
   | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
 > {
   const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
-  const resolvedConfigPath = resolveRepositoryConfigPath(repositoryRootPath, configPath);
-  if (!resolvedConfigPath.ok) {
-    return { ok: false, issue: resolvedConfigPath.issue };
+  const inspectedConfigPath = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
+  if (!inspectedConfigPath.ok) {
+    return { ok: false, issue: { path: 'configPath', message: inspectedConfigPath.message } };
+  }
+  if (!inspectedConfigPath.exists) {
+    return {
+      ok: false,
+      issue: { path: '$', message: 'Could not read Flow Governance config: configuration file does not exist.' }
+    };
   }
 
   let rawConfig: unknown;
   try {
-    rawConfig = JSON.parse(await readFile(resolvedConfigPath.path, 'utf8'));
+    rawConfig = JSON.parse(await readFile(inspectedConfigPath.path, 'utf8'));
   } catch (error) {
     return {
       ok: false,
@@ -144,7 +150,19 @@ export async function updateRepositoryFlowConfigOptions(
   }
 
   try {
-    await writeFile(resolvedConfigPath.path, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
+    const reinspection = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
+    if (!reinspection.ok || !reinspection.exists || reinspection.path !== inspectedConfigPath.path) {
+      return {
+        ok: false,
+        issue: {
+          path: 'configPath',
+          message: reinspection.ok
+            ? 'Flow Governance config file is no longer available for safe update.'
+            : reinspection.message
+        }
+      };
+    }
+    await writeFile(reinspection.path, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
   } catch (error) {
     return {
       ok: false,
@@ -152,7 +170,7 @@ export async function updateRepositoryFlowConfigOptions(
     };
   }
 
-  return { ok: true, path: resolvedConfigPath.path };
+  return { ok: true, path: inspectedConfigPath.path };
 }
 
 function readOptionalBoolean(
@@ -240,37 +258,6 @@ function invalid(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function resolveRepositoryConfigPath(
-  repositoryRootPath: string,
-  configPath: string
-): { readonly ok: true; readonly path: string } | { readonly ok: false; readonly issue: FlowConfigValidationIssue } {
-  if (typeof configPath !== 'string' || configPath.trim().length === 0) {
-    return {
-      ok: false,
-      issue: { path: 'configPath', message: 'configPath must be a non-empty repository-relative path.' }
-    };
-  }
-
-  if (path.isAbsolute(configPath)) {
-    return {
-      ok: false,
-      issue: { path: 'configPath', message: 'configPath must be relative to the repository root.' }
-    };
-  }
-
-  const root = path.resolve(repositoryRootPath);
-  const resolved = path.resolve(root, configPath);
-  const relative = path.relative(root, resolved);
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return {
-      ok: false,
-      issue: { path: 'configPath', message: 'configPath must stay inside the repository root.' }
-    };
-  }
-
-  return { ok: true, path: resolved };
 }
 
 async function readRepositoryFlowConfig(

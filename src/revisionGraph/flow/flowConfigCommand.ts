@@ -1,9 +1,11 @@
-import * as path from 'node:path';
-
 import { API, Repository } from '../../git';
 import { buildRepositoryPickItems, RepositoryPickItem } from '../../refCommands';
 import { createDefaultFlowConfigFile } from './flowDefaults';
 import { DEFAULT_FLOW_CONFIG_PATH } from './flowConfig';
+import {
+  RepositoryConfigPathInspection,
+  resolveRepositoryConfigPath
+} from './flowConfigPathSafety';
 
 export interface FlowConfigCommandUi {
   pickRepository(items: readonly RepositoryPickItem[], placeHolder: string): Promise<Repository | undefined>;
@@ -17,8 +19,8 @@ export interface FlowConfigCommandServices {
   readonly formatPath: (fsPath: string) => string;
   readonly getConfigPath: (repository: Repository) => string;
   readonly fileSystem: {
-    exists(filePath: string): Promise<boolean>;
-    writeFile(filePath: string, content: string): Promise<void>;
+    inspectConfigPath(repositoryRootPath: string, configPath: string): Promise<RepositoryConfigPathInspection>;
+    createFile(filePath: string, content: string): Promise<void>;
     openTextDocument(filePath: string): Promise<void>;
   };
 }
@@ -32,13 +34,16 @@ export async function createFlowGovernanceConfig(
     return;
   }
 
-  const configPath = resolveFlowConfigWritePath(repository.rootUri.fsPath, services.getConfigPath(repository));
+  const configPath = await services.fileSystem.inspectConfigPath(
+    repository.rootUri.fsPath,
+    services.getConfigPath(repository)
+  );
   if (!configPath.ok) {
     services.ui.showWarningMessage(configPath.message);
     return;
   }
 
-  if (await services.fileSystem.exists(configPath.path)) {
+  if (configPath.exists) {
     services.ui.showInformationMessage(`Flow Governance config already exists at ${configPath.relativePath}.`);
     await services.fileSystem.openTextDocument(configPath.path);
     return;
@@ -52,7 +57,30 @@ export async function createFlowGovernanceConfig(
     return;
   }
 
-  await services.fileSystem.writeFile(configPath.path, createDefaultFlowConfigFile());
+  const currentConfigPath = await services.fileSystem.inspectConfigPath(
+    repository.rootUri.fsPath,
+    services.getConfigPath(repository)
+  );
+  if (!currentConfigPath.ok) {
+    services.ui.showWarningMessage(currentConfigPath.message);
+    return;
+  }
+  if (currentConfigPath.exists) {
+    services.ui.showInformationMessage(`Flow Governance config already exists at ${currentConfigPath.relativePath}.`);
+    await services.fileSystem.openTextDocument(currentConfigPath.path);
+    return;
+  }
+  if (currentConfigPath.path !== configPath.path) {
+    services.ui.showWarningMessage('Flow Governance config path changed before creation. Try again.');
+    return;
+  }
+
+  try {
+    await services.fileSystem.createFile(configPath.path, createDefaultFlowConfigFile());
+  } catch (error) {
+    services.ui.showWarningMessage(`Could not create Flow Governance config: ${getErrorMessage(error)}`);
+    return;
+  }
   services.ui.showInformationMessage(`Flow Governance config created at ${configPath.relativePath}.`);
   await services.fileSystem.openTextDocument(configPath.path);
 }
@@ -75,26 +103,14 @@ export function resolveFlowConfigWritePath(
 ):
   | { readonly ok: true; readonly path: string; readonly relativePath: string }
   | { readonly ok: false; readonly message: string } {
-  if (typeof configPath !== 'string' || configPath.trim().length === 0) {
-    return { ok: false, message: 'Flow Governance config path must be a non-empty repository-relative path.' };
-  }
+  const result = resolveRepositoryConfigPath(repositoryRootPath, configPath);
+  return result.ok
+    ? { ok: true, path: result.value.path, relativePath: result.value.relativePath }
+    : result;
+}
 
-  if (path.isAbsolute(configPath)) {
-    return { ok: false, message: 'Flow Governance config path must be relative to the repository root.' };
-  }
-
-  const root = path.resolve(repositoryRootPath);
-  const resolved = path.resolve(root, configPath);
-  const relativePath = path.relative(root, resolved);
-  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    return { ok: false, message: 'Flow Governance config path must stay inside the repository root.' };
-  }
-
-  return {
-    ok: true,
-    path: resolved,
-    relativePath: relativePath.split(path.sep).join('/')
-  };
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function resolveRepository(

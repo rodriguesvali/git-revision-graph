@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 import { CompareResultsViewProvider } from './compareResultsView';
 import { RefCommandServices } from './refCommands';
@@ -11,6 +12,7 @@ import { RefNode } from './refNodes';
 import { createRevisionGraphBackend } from './revisionGraph/backend';
 import { createFlowGovernanceConfig, createFlowConfigCommandServices } from './revisionGraph/flow/flowConfigCommand';
 import { DEFAULT_FLOW_CONFIG_PATH } from './revisionGraph/flow/flowConfig';
+import { inspectRepositoryConfigPath } from './revisionGraph/flow/flowConfigPathSafety';
 import {
   onProjectedGraphLayoutCacheDidChange
 } from './revisionGraph/layout/layeredLayout';
@@ -140,18 +142,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           return typeof value === 'string' ? value : DEFAULT_FLOW_CONFIG_PATH;
         },
         fileSystem: {
-          async exists(filePath) {
-            try {
-              await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
-              return true;
-            } catch {
-              return false;
-            }
-          },
-          async writeFile(filePath, content) {
-            const uri = vscode.Uri.file(filePath);
-            await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.dirname(filePath)));
-            await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(content));
+          inspectConfigPath: inspectRepositoryConfigPath,
+          async createFile(filePath, content) {
+            await mkdir(path.dirname(filePath), { recursive: true });
+            await writeFile(filePath, content, { encoding: 'utf8', flag: 'wx' });
           },
           async openTextDocument(filePath) {
             const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));

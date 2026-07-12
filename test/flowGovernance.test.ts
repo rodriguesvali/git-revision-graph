@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -525,6 +525,65 @@ test('Flow Governance rejects repository option persistence outside the reposito
 
   assert.equal(result.ok, false);
   assert.equal(result.issue.path, 'configPath');
+});
+
+test('Flow Governance rejects symbolic-link configuration files without modifying their targets', async (context) => {
+  if (process.platform === 'win32') {
+    context.skip('Symlink creation requires platform-specific privileges on Windows.');
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+  const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-outside-'));
+  const outsidePath = path.join(outsideRoot, 'config.json');
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const outsideContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'outside' });
+  await writeFile(outsidePath, outsideContent);
+  await symlink(outsidePath, configPath);
+
+  try {
+    const resolved = await resolveFlowConfigForRepository(root);
+    const updated = await updateRepositoryFlowConfigOptions(root, undefined, { enabled: false });
+
+    assert.equal(resolved.ok, false);
+    assert.equal(resolved.source, 'invalid');
+    assert.match(resolved.issues[0]?.message ?? '', /symbolic link or junction/i);
+    assert.equal(updated.ok, false);
+    assert.match(updated.issue.message, /symbolic link or junction/i);
+    assert.equal(await readFile(outsidePath, 'utf8'), outsideContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outsideRoot, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance rejects symbolic-link configuration ancestors without modifying their targets', async (context) => {
+  if (process.platform === 'win32') {
+    context.skip('Symlink creation requires platform-specific privileges on Windows.');
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
+  const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-outside-'));
+  const outsidePath = path.join(outsideRoot, 'config.json');
+  const outsideContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'outside' });
+  await writeFile(outsidePath, outsideContent);
+  await symlink(outsideRoot, path.join(root, 'config'));
+
+  try {
+    const settings = { configPath: 'config/config.json' };
+    const resolved = await resolveFlowConfigForRepository(root, settings);
+    const updated = await updateRepositoryFlowConfigOptions(root, settings, { enabled: false });
+
+    assert.equal(resolved.ok, false);
+    assert.match(resolved.issues[0]?.message ?? '', /symbolic-link or junction ancestor/i);
+    assert.equal(updated.ok, false);
+    assert.match(updated.issue.message, /symbolic-link or junction ancestor/i);
+    assert.equal(await readFile(outsidePath, 'utf8'), outsideContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outsideRoot, { recursive: true, force: true });
+  }
 });
 
 test('Flow Governance uses fallback settings when repository file is missing', async () => {

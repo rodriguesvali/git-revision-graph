@@ -6,12 +6,15 @@ import {
   createFlowGovernanceConfig,
   resolveFlowConfigWritePath
 } from '../src/revisionGraph/flow/flowConfigCommand';
+import { RepositoryConfigPathInspection } from '../src/revisionGraph/flow/flowConfigPathSafety';
 import { createDefaultFlowConfigFile } from '../src/revisionGraph/flow/flowDefaults';
 import { createApi, createRepository } from './fakes';
 
 function createHarness(options: {
   readonly configPath?: string;
   readonly existingFiles?: readonly string[];
+  readonly pathInspection?: RepositoryConfigPathInspection;
+  readonly pathInspectionAfterConfirmation?: RepositoryConfigPathInspection;
   readonly confirm?: boolean;
   readonly pickRepositoryIndex?: number;
 } = {}) {
@@ -21,6 +24,7 @@ function createHarness(options: {
   const writtenFiles: Array<{ readonly filePath: string; readonly content: string }> = [];
   const openedFiles: string[] = [];
   const existingFiles = new Set(options.existingFiles ?? []);
+  let inspectionCount = 0;
 
   return {
     infoMessages,
@@ -49,10 +53,26 @@ function createHarness(options: {
         return fsPath;
       },
       fileSystem: {
-        async exists(filePath) {
-          return existingFiles.has(filePath);
+        async inspectConfigPath(repositoryRootPath, configPath) {
+          inspectionCount += 1;
+          if (inspectionCount > 1 && options.pathInspectionAfterConfirmation) {
+            return options.pathInspectionAfterConfirmation;
+          }
+          if (options.pathInspection) {
+            return options.pathInspection;
+          }
+          const resolved = resolveFlowConfigWritePath(repositoryRootPath, configPath);
+          if (!resolved.ok) {
+            return resolved;
+          }
+          return {
+            ok: true,
+            path: resolved.path,
+            relativePath: resolved.relativePath,
+            exists: existingFiles.has(resolved.path)
+          };
         },
-        async writeFile(filePath, content) {
+        async createFile(filePath, content) {
           writtenFiles.push({ filePath, content });
         },
         async openTextDocument(filePath) {
@@ -149,6 +169,44 @@ test('createFlowGovernanceConfig rejects config paths outside the repository', a
   ]);
   assert.deepEqual(harness.writtenFiles, []);
   assert.deepEqual(harness.openedFiles, []);
+});
+
+test('createFlowGovernanceConfig rejects unsafe configuration paths before opening or writing', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createHarness({
+    pathInspection: {
+      ok: false,
+      message: 'Flow Governance config file must not be a symbolic link or junction.'
+    }
+  });
+
+  await createFlowGovernanceConfig(createApi([repository]), harness.services);
+
+  assert.deepEqual(harness.warningMessages, [
+    'Flow Governance config file must not be a symbolic link or junction.'
+  ]);
+  assert.deepEqual(harness.openedFiles, []);
+  assert.deepEqual(harness.writtenFiles, []);
+});
+
+test('createFlowGovernanceConfig does not overwrite a config created after confirmation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const harness = createHarness({
+    pathInspectionAfterConfirmation: {
+      ok: true,
+      path: '/workspace/repo/.git-revision-graph-flow.json',
+      relativePath: '.git-revision-graph-flow.json',
+      exists: true
+    }
+  });
+
+  await createFlowGovernanceConfig(createApi([repository]), harness.services);
+
+  assert.deepEqual(harness.writtenFiles, []);
+  assert.deepEqual(harness.openedFiles, ['/workspace/repo/.git-revision-graph-flow.json']);
+  assert.deepEqual(harness.infoMessages, [
+    'Flow Governance config already exists at .git-revision-graph-flow.json.'
+  ]);
 });
 
 test('resolveFlowConfigWritePath normalizes repository-relative nested paths', () => {
