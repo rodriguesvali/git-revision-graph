@@ -484,7 +484,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function createRevisionGraphCreateBranchMessage\(target\)/);
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCreateTagMessage\(target\)\);/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
-  assert.match(html, /publishedLocalBranchNames = new Set\(nextState\.publishedLocalBranchNames \|\| \[\]\);/);
+  assert.match(html, /const stateModel = createRevisionGraphWebviewRuntimeStateModel\(nextState, currentProjectionOptions\);/);
+  assert.match(html, /publishedLocalBranchNames = new Set\(stateModel\.publishedLocalBranchNames\);/);
   assert.doesNotMatch(html, /appendMenuSubmenu\('Remote'/);
   assert.match(html, /function getCurrentHeadRemoteActionState\(\)/);
   assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
@@ -501,7 +502,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace and Remove Untracked Files'/);
   assert.match(html, /let hasMergeConflicts = false;/);
-  assert.match(html, /hasMergeConflicts = !!nextState\.hasMergeConflicts;/);
+  assert.match(html, /hasMergeConflicts = stateModel\.hasMergeConflicts;/);
   assert.match(html, /const canStashCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasMergeConflicts;/s);
   assert.match(html, /if \(canStashCurrentWorkspace\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Save', \(\) => postStashSave\(\)\);/s);
   assert.match(html, /if \(target\.kind === 'stash'\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Apply', \(\) => postStashApply\(target\)\);\s*appendMenuItem\('Stash Pop', \(\) => postStashPop\(target\)\);\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Remove Stash', \(\) => postStashDrop\(target\), \{ destructive: true \}\);/s);
@@ -534,7 +535,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, message\.state\);/);
   assert.match(html, /remoteTagPublicationState\.set\(tagName, normalizedState\);/);
   assert.match(html, /case 'update-state':\s*applyTracedHostMessage\(message, 'webview\.apply\.update-state', \(\) => \{\s*applyState\(message\.state, false, \{ invalidateRemoteTagState: true \}\);/s);
-  assert.match(html, /syncRemoteTagStateCache\(nextState, previousRepositoryPath, !!options\.invalidateRemoteTagState\);/);
+  assert.match(html, /syncRemoteTagStateCache\(stateModel\.state, previousRepositoryPath, !!options\.invalidateRemoteTagState\);/);
   assert.match(html, /if \(previousRepositoryPath !== nextRepositoryPath \|\| invalidateRemoteTagState\) \{\s*remoteTagPublicationState\.clear\(\);\s*pendingRemoteTagStateRequests\.clear\(\);\s*return;/s);
   assert.match(html, /const currentTagNames = new Set\(\(\(nextState && nextState\.references\) \|\| \[\]\)\s*\.filter\(\(ref\) => ref\.kind === 'tag'\)\s*\.map\(\(ref\) => ref\.name\)\);/s);
   assert.match(html, /const remoteTagState = remoteTagPublicationState\.get\(target\.name\);/);
@@ -1211,6 +1212,28 @@ test('rejects malformed host state before applying it to the webview runtime', (
     }),
     false
   );
+});
+
+test('normalizes validated host state into the runtime model', () => {
+  const runtime = createWebviewRuntime();
+  const state = createReadyGraphState({
+    currentHeadName: undefined,
+    currentHeadUpstreamName: undefined,
+    baseCanvasWidth: 0,
+    baseCanvasHeight: 0
+  });
+  const model = runtime.context.createRevisionGraphWebviewRuntimeStateModel(
+    state,
+    state.projectionOptions
+  );
+
+  assert.equal(model.state, state);
+  assert.equal(model.currentHeadName, null);
+  assert.equal(model.currentHeadUpstreamName, null);
+  assert.equal(model.baseCanvasWidth, 880);
+  assert.equal(model.baseCanvasHeight, 480);
+  assert.deepEqual(Array.from(model.graphEdges), state.scene.edges);
+  assert.deepEqual(Array.from(model.references), state.references);
 });
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {

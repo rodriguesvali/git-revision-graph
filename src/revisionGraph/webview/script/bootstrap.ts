@@ -800,7 +800,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return Date.now();
     }
 
-    function applyState(nextState, isInit, options = {}) {
+    function applyState(nextState: RevisionGraphWebviewHostState, isInit: boolean, options = {}) {
       if (!nextState) {
         return;
       }
@@ -815,26 +815,27 @@ const VIEWPORT_PADDING_LEFT = 18;
         hideReferenceTooltip();
       }
       traceWebviewPhase('webview.apply.state-model', () => {
-        currentState = nextState;
-        currentHeadName = nextState.currentHeadName || null;
-        currentHeadUpstreamName = nextState.currentHeadUpstreamName || null;
-        publishedLocalBranchNames = new Set(nextState.publishedLocalBranchNames || []);
-        isWorkspaceDirty = !!nextState.isWorkspaceDirty;
-        hasMergeConflicts = !!nextState.hasMergeConflicts;
-        hasConflictedMerge = !!nextState.hasConflictedMerge;
-        currentProjectionOptions = nextState.projectionOptions || currentProjectionOptions;
-        currentFlowGovernance = nextState.flowGovernance || null;
+        const stateModel = createRevisionGraphWebviewRuntimeStateModel(nextState, currentProjectionOptions);
+        currentState = stateModel.state;
+        currentHeadName = stateModel.currentHeadName;
+        currentHeadUpstreamName = stateModel.currentHeadUpstreamName;
+        publishedLocalBranchNames = new Set(stateModel.publishedLocalBranchNames);
+        isWorkspaceDirty = stateModel.isWorkspaceDirty;
+        hasMergeConflicts = stateModel.hasMergeConflicts;
+        hasConflictedMerge = stateModel.hasConflictedMerge;
+        currentProjectionOptions = stateModel.projectionOptions;
+        currentFlowGovernance = stateModel.flowGovernance;
         flowReferenceByName = buildFlowReferenceMap(currentFlowGovernance);
-        mergeBlockedTargets = new Set(nextState.mergeBlockedTargets || []);
-        references = nextState.references || [];
-        syncRemoteTagStateCache(nextState, previousRepositoryPath, !!options.invalidateRemoteTagState);
-        graphNodes = nextState.nodeLayouts || [];
-        graphEdges = (nextState.scene && nextState.scene.edges) || [];
+        mergeBlockedTargets = new Set(stateModel.mergeBlockedTargets);
+        references = stateModel.references;
+        syncRemoteTagStateCache(stateModel.state, previousRepositoryPath, !!options.invalidateRemoteTagState);
+        graphNodes = stateModel.graphNodes;
+        graphEdges = stateModel.graphEdges;
         graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
-        primaryAncestorNextByHash = nextState.primaryAncestorNextByHash || {};
-        sceneLayoutKey = nextState.sceneLayoutKey || 'empty';
-        baseCanvasWidth = nextState.baseCanvasWidth || 880;
-        baseCanvasHeight = nextState.baseCanvasHeight || 480;
+        primaryAncestorNextByHash = stateModel.primaryAncestorNextByHash;
+        sceneLayoutKey = stateModel.sceneLayoutKey;
+        baseCanvasWidth = stateModel.baseCanvasWidth;
+        baseCanvasHeight = stateModel.baseCanvasHeight;
       });
 
       if (previousSceneLayoutKey !== sceneLayoutKey) {
