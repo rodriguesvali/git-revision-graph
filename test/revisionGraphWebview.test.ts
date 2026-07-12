@@ -1824,6 +1824,28 @@ test('calculates revision graph virtual scene bounds and keys through the typed 
   );
 });
 
+test('selects the revision graph virtual scene through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const selection = runtime.context.selectRevisionGraphWebviewVirtualScene({
+    nodeCandidates: [
+      { hash: 'visible' },
+      { hash: 'hidden' },
+      { hash: 'missing-from-scene' }
+    ],
+    containsSceneNode: (hash: string) => hash !== 'missing-from-scene',
+    isLayoutVisible: (layout: { hash: string }) => layout.hash !== 'hidden',
+    edgeCandidates: [
+      { id: 'visible-edge', from: 'visible' },
+      { id: 'hidden-edge', from: 'hidden' }
+    ],
+    isEdgeVisible: (edge: { id: string; from: string }, visibleHashes: ReadonlySet<string>) =>
+      edge.id === 'visible-edge' && visibleHashes.has(edge.from)
+  });
+  assert.deepEqual(selection.visibleLayouts.map((layout: { hash: string }) => layout.hash), ['visible']);
+  assert.deepEqual([...selection.visibleHashes], ['visible']);
+  assert.deepEqual(selection.visibleEdges.map((edge: { id: string }) => edge.id), ['visible-edge']);
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

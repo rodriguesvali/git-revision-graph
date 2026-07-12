@@ -1283,13 +1283,13 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
 
       const viewportBounds = getVirtualViewportBounds();
-      const visibleLayouts = collectVirtualNodeCandidates(viewportBounds).filter((layout) =>
-        sceneNodeByHash.has(layout.hash) && isLayoutVisible(layout, viewportBounds)
-      );
-      const visibleHashes = new Set(visibleLayouts.map((layout) => layout.hash));
-      const visibleEdges = collectVirtualEdgeCandidates(viewportBounds).filter((edge) =>
-        isEdgeVisible(edge, viewportBounds, visibleHashes)
-      );
+      const { visibleLayouts, visibleHashes, visibleEdges } = selectRevisionGraphWebviewVirtualScene({
+        nodeCandidates: collectVirtualNodeCandidates(viewportBounds),
+        containsSceneNode: (hash) => sceneNodeByHash.has(hash),
+        isLayoutVisible: (layout) => isLayoutVisible(layout, viewportBounds),
+        edgeCandidates: collectVirtualEdgeCandidates(viewportBounds),
+        isEdgeVisible: (edge, hashes) => isEdgeVisible(edge, viewportBounds, hashes)
+      });
       const nextVirtualSceneKey = buildVirtualSceneKey(visibleHashes, visibleEdges);
 
       if (!options.force && nextVirtualSceneKey === lastVirtualSceneKey) {
