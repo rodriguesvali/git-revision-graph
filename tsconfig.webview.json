@@ -17,6 +17,7 @@
     "src/revisionGraph/webview/runtime/contracts.d.ts",
     "src/revisionGraph/webview/runtime/environment.d.ts",
     "src/revisionGraph/webview/runtime/api.ts",
+    "src/revisionGraph/webview/runtime/state.ts",
     "src/revisionGraph/webview/runtime/display.ts",
     "src/revisionGraph/webview/runtime/dom.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",

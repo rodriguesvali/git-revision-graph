@@ -1542,11 +1542,7 @@
     }
 
     function persistWebviewUiState() {
-      const existingState = vscode.getState() || {};
-      vscode.setState({
-        ...existingState,
-        showMinimap: minimapEnabled
-      });
+      persistRevisionGraphMinimapPreference(vscode, minimapEnabled);
     }
 
     function postCompareSelected(base, compare) {

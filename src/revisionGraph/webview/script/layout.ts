@@ -27,8 +27,7 @@ const REF_LINE_HEIGHT = 25;
           normalizedOffsets[layout.hash] = offset;
         }
       }
-      const existingState = vscode.getState() || {};
-      vscode.setState({ ...existingState, sceneLayoutKey, nodeOffsets: normalizedOffsets });
+      persistRevisionGraphNodeOffsets(vscode, sceneLayoutKey, normalizedOffsets);
     }
 
     function updateEdges(elements) {

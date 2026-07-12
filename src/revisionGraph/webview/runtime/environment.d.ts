@@ -14,7 +14,8 @@ interface RevisionGraphWebviewApi<
 
 interface RevisionGraphWebviewPersistentState extends Record<string, unknown> {
   readonly showMinimap?: boolean;
-  readonly nodeOffsets?: Record<string, { readonly x: number; readonly y: number }>;
+  readonly sceneLayoutKey?: string;
+  readonly nodeOffsets?: Record<string, number>;
 }
 
 type RevisionGraphRuntimeVsCodeApi = RevisionGraphWebviewApi<

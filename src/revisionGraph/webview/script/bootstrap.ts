@@ -98,7 +98,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let baseCanvasHeight = 480;
     let currentZoom = 1;
     const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4, 5, 6.5, 8, 10, 12.5, 15, 18, 22, 26, 30];
-    const initialWebviewState = vscode.getState() || {};
+    const initialWebviewState = readRevisionGraphWebviewPersistentState(vscode);
     let minimapZoom = 1;
     let minimapEnabled = initialWebviewState.showMinimap === true;
     let layoutOffsetX = 0;
@@ -837,11 +837,8 @@ const VIEWPORT_PADDING_LEFT = 18;
         baseCanvasHeight = nextState.baseCanvasHeight || 480;
       });
 
-      const storedState = vscode.getState() || {};
       if (previousSceneLayoutKey !== sceneLayoutKey) {
-        nodeOffsets = storedState.sceneLayoutKey === sceneLayoutKey
-          ? Object.assign({}, storedState.nodeOffsets || {})
-          : {};
+        nodeOffsets = restoreRevisionGraphNodeOffsets(vscode, sceneLayoutKey);
       }
 
       if (options.preserveSelection) {

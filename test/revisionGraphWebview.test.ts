@@ -667,9 +667,9 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function setMinimapEnabled\(enabled\)/);
   assert.match(html, /showMinimapToggle\.addEventListener\('change'/);
   assert.match(html, /showMinimapToggle\.checked = minimapEnabled;/);
-  assert.match(html, /showMinimap: minimapEnabled/);
+  assert.match(html, /persistRevisionGraphMinimapPreference\(vscode, minimapEnabled\);/);
   assert.match(html, /!minimapEnabled/);
-  assert.match(html, /vscode\.setState\(\{ \.\.\.existingState, sceneLayoutKey, nodeOffsets: normalizedOffsets \}\);/);
+  assert.match(html, /persistRevisionGraphNodeOffsets\(vscode, sceneLayoutKey, normalizedOffsets\);/);
   assert.match(html, /function zoomInMinimap\(\)/);
   assert.match(html, /function zoomOutMinimap\(\)/);
   assert.match(html, /function resetMinimapZoom\(\) \{\s*setMinimapZoom\(1\);\s*\}/s);
