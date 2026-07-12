@@ -1560,12 +1560,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
       const nodeRenderKey = renderKey || getNodeRenderKey(node, layout);
       const y = layout.defaultTop;
-      const visibleRefs = node.refs.filter((ref) => isReferenceVisible({
-        id: createReferenceId(node.hash, ref.kind, ref.name),
-        hash: node.hash,
-        name: ref.name,
-        kind: ref.kind
-      }));
+      const visibleRefs = getRevisionGraphWebviewVisibleNodeReferences(node, isReferenceVisible);
       const summary = visibleRefs.length === 0
         ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
         : '';
@@ -1597,24 +1592,13 @@ const VIEWPORT_PADDING_LEFT = 18;
         return '';
       }
 
-      const visibleRefs = node.refs.filter((ref) => isReferenceVisible({
-        id: createReferenceId(node.hash, ref.kind, ref.name),
-        hash: node.hash,
-        name: ref.name,
-        kind: ref.kind
-      }));
-      return JSON.stringify({
-        hash: node.hash,
-        className: getNodeClass(node, visibleRefs),
-        width: layout.width,
-        height: layout.height,
-        defaultLeft: layout.defaultLeft,
-        defaultTop: layout.defaultTop,
-        refs: visibleRefs.map((ref) => [ref.kind, ref.name]),
-        flowGovernance: currentFlowGovernance ? { enabled: currentFlowGovernance.enabled } : null,
-        title: formatNodeTitle(node, visibleRefs),
-        summary: visibleRefs.length === 0 ? formatNodeSummary(node) : ''
-      });
+      const visibleRefs = getRevisionGraphWebviewVisibleNodeReferences(node, isReferenceVisible);
+      return createRevisionGraphWebviewNodeRenderKey(
+        node,
+        layout,
+        visibleRefs,
+        currentFlowGovernance ? { enabled: currentFlowGovernance.enabled } : null
+      );
     }
 
     function renderEdgeMarkup(edge, layoutByHash) {
@@ -1622,41 +1606,15 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function getNodeClass(node, refs = node.refs) {
-      if (refs.length === 0) {
-        return 'node-structural';
-      }
-
-      const kinds = new Set(refs.map((ref) => ref.kind));
-      if (kinds.size === 1 && kinds.has('head')) {
-        return 'node-head';
-      }
-      if (kinds.size === 1 && kinds.has('tag')) {
-        return 'node-tag';
-      }
-	      if (kinds.size === 1 && kinds.has('remote')) {
-	        return 'node-remote';
-	      }
-	      if (kinds.size === 1 && kinds.has('stash')) {
-	        return 'node-stash';
-	      }
-	      if (kinds.size === 1 && kinds.has('branch')) {
-	        return 'node-branch';
-	      }
-      return 'node-mixed';
+      return getRevisionGraphWebviewNodePresentationClass(refs);
     }
 
-	    function formatNodeSummary(node) {
-	      return formatShortCommitHash(node.hash);
-	    }
+    function formatNodeSummary(node) {
+      return formatRevisionGraphWebviewNodeSummary(node);
+    }
 
     function formatNodeTitle(node, refs = node.refs) {
-      const refBlock = refs.length > 0
-        ? 'Refs:\\n' + refs.map((ref) => ref.name).join('\\n') + '\\n\\n'
-        : '';
-      const author = node.author || 'Unknown author';
-      const date = node.date || 'Unknown date';
-      const subject = node.subject || 'Structural commit';
-      return refBlock + node.hash + '\\n' + subject + '\\n' + author + ' on ' + date;
+      return formatRevisionGraphWebviewNodeTitle(node, refs);
     }
 
     function escapeHtml(value) {

@@ -41,6 +41,7 @@
     "src/revisionGraph/webview/runtime/virtualScene.ts",
     "src/revisionGraph/webview/runtime/virtualSceneSelection.ts",
     "src/revisionGraph/webview/runtime/edgeMarkup.ts",
+    "src/revisionGraph/webview/runtime/nodePresentation.ts",
     "src/revisionGraph/webview/runtime/nodeDrag.ts",
     "src/revisionGraph/webview/runtime/remoteToolbarUi.ts",
     "src/revisionGraph/webview/runtime/zoomToolbarUi.ts",

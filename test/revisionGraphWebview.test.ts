@@ -1866,6 +1866,51 @@ test('renders revision graph edge markup through the typed module', () => {
   );
 });
 
+test('builds revision graph node presentation through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const node = {
+    hash: 'abcdef0123456789',
+    refs: [
+      { kind: 'branch', name: 'main' },
+      { kind: 'remote', name: 'origin/main' }
+    ],
+    author: 'Ada',
+    date: '2026-07-12',
+    subject: 'Typed webview runtime'
+  };
+  const visibleReferences = runtime.context.getRevisionGraphWebviewVisibleNodeReferences(
+    node,
+    (reference: { id: string }) => reference.id === 'abcdef0123456789::branch::main'
+  );
+  assert.deepEqual(visibleReferences, [{ kind: 'branch', name: 'main' }]);
+  assert.equal(runtime.context.getRevisionGraphWebviewNodePresentationClass(visibleReferences), 'node-branch');
+  assert.equal(runtime.context.formatRevisionGraphWebviewNodeSummary(node), 'abcdef01');
+  assert.equal(
+    runtime.context.formatRevisionGraphWebviewNodeTitle(node, visibleReferences),
+    'Refs:\nmain\n\nabcdef0123456789\nTyped webview runtime\nAda on 2026-07-12'
+  );
+  assert.deepEqual(
+    JSON.parse(runtime.context.createRevisionGraphWebviewNodeRenderKey(
+      node,
+      { width: 100, height: 40, defaultLeft: 10, defaultTop: 20 },
+      visibleReferences,
+      { enabled: true }
+    )),
+    {
+      hash: 'abcdef0123456789',
+      className: 'node-branch',
+      width: 100,
+      height: 40,
+      defaultLeft: 10,
+      defaultTop: 20,
+      refs: [['branch', 'main']],
+      flowGovernance: { enabled: true },
+      title: 'Refs:\nmain\n\nabcdef0123456789\nTyped webview runtime\nAda on 2026-07-12',
+      summary: ''
+    }
+  );
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

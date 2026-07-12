@@ -58,6 +58,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.virtual-scene.json` strictly checks virtual edge vertical bounds and render-scene keys. Cache identity and edge-index inputs now delegate to the typed runtime.
 - `tsconfig.webview.virtual-scene-selection.json` strictly checks virtual-scene candidate selection. Node-presence filtering, visible-hash derivation and edge selection now execute outside the legacy bootstrap.
 - `tsconfig.webview.edge-markup.json` strictly checks virtual edge markup and route interpolation. SVG edge geometry and markup no longer originate in the legacy bootstrap.
+- `tsconfig.webview.node-presentation.json` strictly checks node reference visibility, presentation, titles and render-cache keys. These node-display decisions no longer originate in the legacy bootstrap.
 - `tsconfig.webview.node-drag.json` strictly checks node-drag geometry. Node offsets and canvas bounds no longer calculate through implicit runtime globals.
 - `tsconfig.webview.remote-toolbar-ui.json` strictly checks remote toolbar rendering. Pull, push and sync availability plus accessible labels no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.zoom-toolbar-ui.json` strictly checks zoom toolbar rendering. Main and minimap zoom-button availability no longer mutates directly from the legacy interaction implementation.
