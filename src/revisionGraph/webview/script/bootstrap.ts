@@ -1021,10 +1021,17 @@ const VIEWPORT_PADDING_LEFT = 18;
       const viewportSize = getViewportLayoutSize();
       const visibleWidth = Math.max(0, viewportSize.width - VIEWPORT_PADDING_LEFT - VIEWPORT_PADDING_RIGHT);
       const visibleHeight = Math.max(0, viewportSize.height - VIEWPORT_PADDING_TOP - VIEWPORT_PADDING_BOTTOM);
-      return {
-        sceneCenterX: ((viewport.scrollLeft - VIEWPORT_PADDING_LEFT + visibleWidth / 2) / currentZoom) - layoutOffsetX,
-        sceneCenterY: ((viewport.scrollTop - VIEWPORT_PADDING_TOP + visibleHeight / 2) / currentZoom) - layoutOffsetY
-      };
+      return captureRevisionGraphWebviewViewportSceneCenter({
+        scrollLeft: viewport.scrollLeft,
+        scrollTop: viewport.scrollTop,
+        zoom: currentZoom,
+        visibleWidth,
+        visibleHeight,
+        paddingLeft: VIEWPORT_PADDING_LEFT,
+        paddingTop: VIEWPORT_PADDING_TOP,
+        layoutOffsetX,
+        layoutOffsetY
+      });
     }
 
     function captureScenePlacementSnapshot() {
@@ -1056,16 +1063,17 @@ const VIEWPORT_PADDING_LEFT = 18;
       const viewportSize = getViewportLayoutSize();
       const visibleWidth = Math.max(0, viewportSize.width - VIEWPORT_PADDING_LEFT - VIEWPORT_PADDING_RIGHT);
       const visibleHeight = Math.max(0, viewportSize.height - VIEWPORT_PADDING_TOP - VIEWPORT_PADDING_BOTTOM);
-      const nextScrollLeft = Math.max(
-        0,
-        VIEWPORT_PADDING_LEFT + (snapshot.sceneCenterX + layoutOffsetX) * currentZoom - visibleWidth / 2
-      );
-      const nextScrollTop = Math.max(
-        0,
-        VIEWPORT_PADDING_TOP + (snapshot.sceneCenterY + layoutOffsetY) * currentZoom - visibleHeight / 2
-      );
-      viewport.scrollLeft = nextScrollLeft;
-      viewport.scrollTop = nextScrollTop;
+      const nextPosition = calculateRevisionGraphWebviewViewportScrollPosition({
+        centerX: snapshot.sceneCenterX + layoutOffsetX,
+        centerY: snapshot.sceneCenterY + layoutOffsetY,
+        zoom: currentZoom,
+        visibleWidth,
+        visibleHeight,
+        paddingLeft: VIEWPORT_PADDING_LEFT,
+        paddingTop: VIEWPORT_PADDING_TOP
+      });
+      viewport.scrollLeft = nextPosition.scrollLeft;
+      viewport.scrollTop = nextPosition.scrollTop;
       syncMinimap('viewport');
     }
 

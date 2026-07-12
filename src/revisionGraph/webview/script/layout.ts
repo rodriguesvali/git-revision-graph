@@ -156,14 +156,17 @@ const REF_LINE_HEIGHT = 25;
       const visibleSize = getVisibleViewportSize();
       const visibleWidth = visibleSize.width;
       const visibleHeight = visibleSize.height;
-      const nextScrollLeft = Math.max(
-        0,
-        VIEWPORT_PADDING_LEFT + targetCenterX * currentZoom - visibleWidth / 2
-      );
-      const nextScrollTop = Math.max(
-        0,
-        VIEWPORT_PADDING_TOP + targetCenterY * currentZoom - visibleHeight / 2
-      );
+      const nextPosition = calculateRevisionGraphWebviewViewportScrollPosition({
+        centerX: targetCenterX,
+        centerY: targetCenterY,
+        zoom: currentZoom,
+        visibleWidth,
+        visibleHeight,
+        paddingLeft: VIEWPORT_PADDING_LEFT,
+        paddingTop: VIEWPORT_PADDING_TOP
+      });
+      const nextScrollLeft = nextPosition.scrollLeft;
+      const nextScrollTop = nextPosition.scrollTop;
       const shouldScroll =
         Math.abs(viewport.scrollLeft - nextScrollLeft) > 0.5 ||
         Math.abs(viewport.scrollTop - nextScrollTop) > 0.5;

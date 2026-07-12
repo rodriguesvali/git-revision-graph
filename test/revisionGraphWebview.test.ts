@@ -328,6 +328,8 @@ test('preserves the current viewport when zooming or resetting from toolbar butt
     html,
     /function setZoom\(zoom, options = \{\}\) \{\s*const shouldPreserveViewport = options\.preserveViewport !== false;\s*const scenePlacementSnapshot = shouldPreserveViewport \? captureScenePlacementSnapshot\(\) : null;\s*const viewportSnapshot = shouldPreserveViewport \? captureViewportSnapshot\(\) : null;[\s\S]*?restoreViewportSnapshot\(viewportSnapshot\);/s
   );
+  assert.match(html, /function calculateRevisionGraphWebviewViewportScrollPosition\(/);
+  assert.match(html, /function captureRevisionGraphWebviewViewportSceneCenter\(/);
   assert.match(
     html,
     /zoomOutButton\.addEventListener\('click', \(\) => \{\s*zoomOut\(\);\s*\}\);/s
@@ -1682,6 +1684,33 @@ test('calculates revision graph viewport dragging through the typed module', () 
     ) },
     { scrollLeft: 94, scrollTop: 202, moved: true, shouldSuppressNodeClick: false }
   );
+});
+
+test('calculates revision graph viewport positions through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const position = runtime.context.calculateRevisionGraphWebviewViewportScrollPosition({
+    centerX: 50,
+    centerY: 60,
+    zoom: 2,
+    visibleWidth: 100,
+    visibleHeight: 80,
+    paddingLeft: 18,
+    paddingTop: 18
+  });
+  assert.deepEqual({ ...position }, { scrollLeft: 68, scrollTop: 98 });
+
+  const sceneCenter = runtime.context.captureRevisionGraphWebviewViewportSceneCenter({
+    scrollLeft: position.scrollLeft,
+    scrollTop: position.scrollTop,
+    zoom: 2,
+    visibleWidth: 100,
+    visibleHeight: 80,
+    paddingLeft: 18,
+    paddingTop: 18,
+    layoutOffsetX: 5,
+    layoutOffsetY: 7
+  });
+  assert.deepEqual({ ...sceneCenter }, { sceneCenterX: 45, sceneCenterY: 53 });
 });
 
 test('renders revision graph minimap SVG content through the typed module', () => {

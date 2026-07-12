@@ -52,6 +52,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.minimap-content.json` strictly checks minimap SVG generation. Edge and node markup, including head-node decoration and missing-node edge filtering, no longer originates in the legacy layout implementation.
 - `tsconfig.webview.minimap-preference-ui.json` strictly checks minimap preference rendering. The preference checkbox and hidden minimap state no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.viewport-drag.json` strictly checks viewport drag calculation. Drag start state, scroll deltas and the node-click suppression threshold no longer depend on implicit runtime globals.
+- `tsconfig.webview.viewport-position.json` strictly checks viewport centering and restoration. Scroll positions and retained scene centers no longer duplicate arithmetic across zoom, recenter and hydration paths.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary
