@@ -1945,6 +1945,29 @@ test('renders revision graph node markup through the typed module', () => {
   assert.match(structuralMarkup, /title="abcdef0123456789\nA &lt; B &amp; &quot;C&quot;/);
 });
 
+test('commits revision graph virtual scene markup through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const markup = runtime.context.createRevisionGraphWebviewVirtualSceneMarkup({
+    visibleLayouts: ['first', 'second'],
+    visibleEdges: ['edge'],
+    renderNodeMarkup: (layout: string) => `<node>${layout}</node>`,
+    renderEdgeMarkup: (edge: string) => `<edge>${edge}</edge>`
+  });
+  assert.deepEqual({ ...markup }, {
+    nodeMarkup: '<node>first</node><node>second</node>',
+    edgeMarkup: '<edge>edge</edge>'
+  });
+
+  const nodeLayer = { innerHTML: 'stale nodes' };
+  const edgeLayer = { innerHTML: 'stale edges' };
+  runtime.context.commitRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer }, markup);
+  assert.equal(nodeLayer.innerHTML, '<node>first</node><node>second</node>');
+  assert.equal(edgeLayer.innerHTML, '<edge>edge</edge>');
+  runtime.context.clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
+  assert.equal(nodeLayer.innerHTML, '');
+  assert.equal(edgeLayer.innerHTML, '');
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

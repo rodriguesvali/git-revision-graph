@@ -1275,8 +1275,7 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function renderVirtualScene(options = {}) {
       if (!currentState || currentState.viewMode !== 'ready') {
-        edgeLayer.innerHTML = '';
-        nodeLayer.innerHTML = '';
+        clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
         lastVirtualSceneKey = '';
         refreshGraphCaches();
         return;
@@ -1297,12 +1296,13 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
 
       const layoutByHash = graphNodeByHash;
-      nodeLayer.innerHTML = visibleLayouts
-        .map((layout) => renderNodeMarkup(sceneNodeByHash.get(layout.hash), layout))
-        .join('');
-      edgeLayer.innerHTML = visibleEdges
-        .map((edge) => renderEdgeMarkup(edge, layoutByHash))
-        .join('');
+      const markup = createRevisionGraphWebviewVirtualSceneMarkup({
+        visibleLayouts,
+        visibleEdges,
+        renderNodeMarkup: (layout) => renderNodeMarkup(sceneNodeByHash.get(layout.hash), layout),
+        renderEdgeMarkup: (edge) => renderEdgeMarkup(edge, layoutByHash)
+      });
+      commitRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer }, markup);
       lastVirtualSceneKey = nextVirtualSceneKey;
       refreshGraphCaches();
       applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false });
