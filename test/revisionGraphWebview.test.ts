@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import * as vm from 'node:vm';
 
@@ -22,23 +21,7 @@ function readRevisionGraphRuntimeSource(): string {
 }
 
 function readRevisionGraphRuntimeSourceForContractAssertions(): string {
-  const sourceFiles = [
-    'src/webviewDisplayHelpers.ts',
-    'src/revisionGraph/webview/script/messages.ts',
-    'src/revisionGraph/webview/script/referenceTooltip.ts',
-    'src/revisionGraph/webview/script/bootstrap.ts',
-    'src/revisionGraph/webview/script/interactions.ts',
-    'src/revisionGraph/webview/script/graph.ts',
-    'src/revisionGraph/webview/script/layout.ts'
-  ];
-  return sourceFiles.map(readLegacyTemplateBody).join('\n')
-    .replaceAll('${NODE_MIN_WIDTH}', '128')
-    .replaceAll('${REF_LINE_HEIGHT}', '25')
-    .replaceAll('${EDGE_VERTICAL_INSET}', '6')
-    .replaceAll('${VIEWPORT_PADDING_TOP}', '18')
-    .replaceAll('${VIEWPORT_PADDING_RIGHT}', '0')
-    .replaceAll('${VIEWPORT_PADDING_BOTTOM}', '18')
-    .replaceAll('${VIEWPORT_PADDING_LEFT}', '18')
+  return readRevisionGraphRuntimeSource()
     .replaceAll('NODE_MIN_WIDTH', '128')
     .replaceAll('REF_LINE_HEIGHT', '25')
     .replaceAll('EDGE_VERTICAL_INSET', '6')
@@ -46,15 +29,6 @@ function readRevisionGraphRuntimeSourceForContractAssertions(): string {
     .replaceAll('VIEWPORT_PADDING_RIGHT', '0')
     .replaceAll('VIEWPORT_PADDING_BOTTOM', '18')
     .replaceAll('VIEWPORT_PADDING_LEFT', '18');
-}
-
-function readLegacyTemplateBody(file: string): string {
-  const source = execFileSync('git', ['show', `HEAD:${file}`], { encoding: 'utf8' });
-  const start = source.indexOf('return `');
-  const end = source.lastIndexOf('`;');
-  assert.notEqual(start, -1, `expected legacy template in ${file}`);
-  assert.notEqual(end, -1, `expected legacy template terminator in ${file}`);
-  return source.slice(start + 'return `'.length, end);
 }
 
 test('renders the revision graph runtime as a nonce-protected external asset', () => {
@@ -243,7 +217,7 @@ test('rehydrates the webview after the shell is recreated', () => {
 
   assert.match(
     html,
-    /window\.addEventListener\('message', \(event\) => \{\s*handleHostMessage\(event\.data\);\s*\}\);\s*vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/s
+    /window\.addEventListener\('message', \(event\) => \{\s*if \(isRevisionGraphWebviewHostMessage\(event\.data\)\) \{\s*handleHostMessage\(event\.data\);\s*\}\s*\}\);\s*vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/s
   );
 });
 
@@ -260,7 +234,7 @@ test('keeps loading and error primitives in the shell runtime', () => {
   assert.match(html, /function showError\(message\)/);
   assert.match(
     html,
-    /if \(nextState\.loading\) \{\s*hideStatus\(\);\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.', null, 'blocking'\);\s*\} else \{\s*hideLoading\(\);\s*\}/s
+    /if \(nextState\.loading\) \{\s*hideStatus\(\);\s*showLoading\(nextState\.loadingLabel \|\| 'Loading revision graph\.\.\.', null, 'blocking'\);\s*\}\s*else \{\s*hideLoading\(\);\s*\}/s
   );
   assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
@@ -296,7 +270,7 @@ test('reloads the graph from the webview toolbar', () => {
   );
   assert.match(
     html,
-    /reloadMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(reloadCacheMenu && !reloadCacheMenu\.hidden\) \{\s*closeReloadCacheMenu\(\);\s*\} else \{\s*showReloadCacheMenu\(\);\s*\}\s*\}\);/s
+    /reloadMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(reloadCacheMenu && !reloadCacheMenu\.hidden\) \{\s*closeReloadCacheMenu\(\);\s*\}\s*else \{\s*showReloadCacheMenu\(\);\s*\}\s*\}\);/s
   );
   assert.match(
     html,
@@ -322,7 +296,7 @@ test('reloads the graph from the webview toolbar', () => {
   );
   assert.match(
     html,
-    /pushMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(pushModeMenu && !pushModeMenu\.hidden\) \{\s*closePushModeMenu\(\);\s*\} else \{\s*showPushModeMenu\(\);\s*\}\s*\}\);/s
+    /pushMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(pushModeMenu && !pushModeMenu\.hidden\) \{\s*closePushModeMenu\(\);\s*\}\s*else \{\s*showPushModeMenu\(\);\s*\}\s*\}\);/s
   );
   assert.match(html, /pushModeMenu\.id = 'pushModeMenu';/);
   assert.match(html, /\{ label: 'Push with Force With Lease', mode: 'force-with-lease' \}/);
@@ -539,7 +513,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
-  assert.match(html, /\} else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
+  assert.match(html, /\}\s*else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
   assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
@@ -564,9 +538,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /const currentTagNames = new Set\(\(\(nextState && nextState\.references\) \|\| \[\]\)\s*\.filter\(\(ref\) => ref\.kind === 'tag'\)\s*\.map\(\(ref\) => ref\.name\)\);/s);
   assert.match(html, /const remoteTagState = remoteTagPublicationState\.get\(target\.name\);/);
   assert.match(html, /if \(remoteTagState === 'published'\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
-  assert.match(html, /} else if \(remoteTagState === 'unpublished'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
-  assert.match(html, /} else if \(remoteTagState === 'unknown'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Retry Remote Tag Check', \(\) => retryRemoteTagState\(target\)\);/s);
-  assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) => \{\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
+  assert.match(html, /}\s*else if \(remoteTagState === 'unpublished'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
+  assert.match(html, /}\s*else if \(remoteTagState === 'unknown'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Retry Remote Tag Check', \(\) => retryRemoteTagState\(target\)\);/s);
+  assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) =>\s*\{\s*\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function retryRemoteTagState\(target\) \{\s*if \(!target \|\| target\.kind !== 'tag'\) \{\s*return;\s*\}\s*remoteTagPublicationState\.delete\(target\.name\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function requestRemoteTagState\(target\) \{\s*if \(\s*!target \|\|\s*target\.kind !== 'tag' \|\|\s*remoteTagPublicationState\.has\(target\.name\) \|\|\s*pendingRemoteTagStateRequests\.has\(target\.name\)/s);
   assert.match(html, /function createRevisionGraphResolveRemoteTagStateMessage\(target\)/);

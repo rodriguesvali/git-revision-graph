@@ -1,9 +1,14 @@
-    function createRevisionGraphWebviewReadyMessage() {
+    function createRevisionGraphWebviewReadyMessage(): RevisionGraphWebviewMessageOf<'webview-ready'> {
       return { type: 'webview-ready' };
     }
 
-    function createRevisionGraphLoadTraceMessage(phase, durationMs, detail, requestId) {
-      const message = { type: 'load-trace', phase, durationMs };
+    function createRevisionGraphLoadTraceMessage(
+      phase: string,
+      durationMs: number,
+      detail: string | undefined,
+      requestId: number | undefined
+    ): RevisionGraphWebviewMessageOf<'load-trace'> {
+      const message: { type: 'load-trace'; phase: string; durationMs: number; detail?: string; requestId?: number } = { type: 'load-trace', phase, durationMs };
       if (detail !== undefined) {
         message.detail = detail;
       }
@@ -13,36 +18,45 @@
       return message;
     }
 
-    function createRevisionGraphRefreshMessage() {
+    function createRevisionGraphRefreshMessage(): RevisionGraphWebviewMessageOf<'refresh'> {
       return { type: 'refresh' };
     }
 
-    function createRevisionGraphRefreshWithEmptyCacheMessage() {
+    function createRevisionGraphRefreshWithEmptyCacheMessage(): RevisionGraphWebviewMessageOf<'refresh-with-empty-cache'> {
       return { type: 'refresh-with-empty-cache' };
     }
 
-    function createRevisionGraphFetchCurrentRepositoryMessage() {
+    function createRevisionGraphFetchCurrentRepositoryMessage(): RevisionGraphWebviewMessageOf<'fetch-current-repository'> {
       return { type: 'fetch-current-repository' };
     }
 
-    function createRevisionGraphChooseRepositoryMessage() {
+    function createRevisionGraphChooseRepositoryMessage(): RevisionGraphWebviewMessageOf<'choose-repository'> {
       return { type: 'choose-repository' };
     }
 
-    function createRevisionGraphAbortMergeMessage() {
+    function createRevisionGraphAbortMergeMessage(): RevisionGraphWebviewMessageOf<'abort-merge'> {
       return { type: 'abort-merge' };
     }
 
-    function createRevisionGraphProjectionOptionsMessage(options) {
+    function createRevisionGraphProjectionOptionsMessage(
+      options: RevisionGraphWebviewProjectionOptions
+    ): RevisionGraphWebviewMessageOf<'set-projection-options'> {
       return { type: 'set-projection-options', options };
     }
 
-    function createRevisionGraphFlowGovernanceOptionsMessage(options) {
+    function createRevisionGraphFlowGovernanceOptionsMessage(
+      options: RevisionGraphWebviewFlowGovernanceOptions
+    ): RevisionGraphWebviewMessageOf<'set-flow-governance-options'> {
       return { type: 'set-flow-governance-options', options };
     }
 
-    function createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description) {
-      const message = {
+    function createRevisionGraphStartFlowBranchMessage(
+      target: RevisionGraphWebviewTarget,
+      branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+      name: string,
+      description: string | undefined
+    ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
+      const message: { type: 'start-flow-branch'; branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'; sourceRefName: string; name: string; description?: string } = {
         type: 'start-flow-branch',
         branchKind: branchKind,
         sourceRefName: target.name,
@@ -54,23 +68,27 @@
       return message;
     }
 
-    function createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description) {
+    function createRevisionGraphPrepareFlowEqualizationMessage(
+      targetRefName: string,
+      originRefName: string,
+      description: string
+    ): RevisionGraphWebviewMessageOf<'prepare-flow-equalization'> {
       return { type: 'prepare-flow-equalization', targetRefName, originRefName, description };
     }
 
-    function createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName) {
+    function createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName: string, targetRefName: string): RevisionGraphWebviewMessageOf<'copy-flow-pr-context'> {
       return { type: 'copy-flow-pr-context', sourceRefName, targetRefName };
     }
 
-    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, field) {
+    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName: string, targetRefName: string, field: 'title' | 'description'): RevisionGraphWebviewMessageOf<'copy-flow-pr-context-field'> {
       return { type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field };
     }
 
-    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName) {
+    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName: string, targetRefName: string): RevisionGraphWebviewMessageOf<'open-flow-pr-url'> {
       return { type: 'open-flow-pr-url', sourceRefName, targetRefName };
     }
 
-    function createRevisionGraphCompareSelectedMessage(base, compare) {
+    function createRevisionGraphCompareSelectedMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'compare-selected'> {
       return {
         type: 'compare-selected',
         baseRevision: base.revision,
@@ -80,7 +98,7 @@
       };
     }
 
-    function createRevisionGraphShowLogRangeMessage(base, compare) {
+    function createRevisionGraphShowLogRangeMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'show-log'> {
       return {
         type: 'show-log',
         source: {
@@ -93,7 +111,7 @@
       };
     }
 
-    function createRevisionGraphUnifiedDiffMessage(base, compare) {
+    function createRevisionGraphUnifiedDiffMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'open-unified-diff'> {
       return {
         type: 'open-unified-diff',
         baseRevision: base.revision,
@@ -101,7 +119,7 @@
       };
     }
 
-    function createRevisionGraphFocusRangeMessage(base, compare) {
+    function createRevisionGraphFocusRangeMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'set-projection-options'> {
       return createRevisionGraphProjectionOptionsMessage({
         descendantFocus: null,
         revisionRange: {
@@ -113,7 +131,7 @@
       });
     }
 
-    function createRevisionGraphFocusDescendantsMessage(target) {
+    function createRevisionGraphFocusDescendantsMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'set-projection-options'> {
       return createRevisionGraphProjectionOptionsMessage({
         revisionRange: null,
         descendantFocus: {
@@ -123,7 +141,7 @@
       });
     }
 
-    function createRevisionGraphShowLogTargetMessage(target) {
+    function createRevisionGraphShowLogTargetMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'show-log'> {
       return {
         type: 'show-log',
         source: {
@@ -134,32 +152,32 @@
       };
     }
 
-    function createRevisionGraphCompareWithWorktreeMessage(target) {
+    function createRevisionGraphCompareWithWorktreeMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'compare-with-worktree'> {
       return { type: 'compare-with-worktree', revision: target.revision, label: target.label };
     }
 
-    function createRevisionGraphCopyCommitHashMessage(commitHash) {
+    function createRevisionGraphCopyCommitHashMessage(commitHash: string): RevisionGraphWebviewMessageOf<'copy-commit-hash'> {
       return { type: 'copy-commit-hash', commitHash };
     }
 
-    function createRevisionGraphLoadCommitShortStatMessage(commitHash) {
+    function createRevisionGraphLoadCommitShortStatMessage(commitHash: string): RevisionGraphWebviewMessageOf<'load-commit-short-stat'> {
       return { type: 'load-commit-short-stat', commitHash };
     }
 
-    function createRevisionGraphOpenCommitOnGitHubMessage(commitHash) {
+    function createRevisionGraphOpenCommitOnGitHubMessage(commitHash: string): RevisionGraphWebviewMessageOf<'open-commit-on-github'> {
       return { type: 'open-commit-on-github', commitHash };
     }
 
-    function createRevisionGraphCopyRefNameMessage(target) {
+    function createRevisionGraphCopyRefNameMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'copy-ref-name'> {
       return { type: 'copy-ref-name', refName: target.name, refKind: target.kind };
     }
 
-    function createRevisionGraphCheckoutMessage(target) {
+    function createRevisionGraphCheckoutMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'checkout'> {
       return { type: 'checkout', refName: target.name, refKind: target.kind };
     }
 
-    function createRevisionGraphResetToCommitMessage(target) {
-      const message = {
+    function createRevisionGraphResetToCommitMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'reset-to-commit'> {
+      const message: { type: 'reset-to-commit'; commitHash: string; label: string; targetKind: RevisionGraphWebviewTargetKind; targetName?: string } = {
         type: 'reset-to-commit',
         commitHash: target.hash,
         label: target.label,
@@ -171,35 +189,35 @@
       return message;
     }
 
-    function createRevisionGraphSyncCurrentHeadMessage() {
+    function createRevisionGraphSyncCurrentHeadMessage(): RevisionGraphWebviewMessageOf<'sync-current-head'> {
       return { type: 'sync-current-head' };
     }
 
-    function createRevisionGraphPullCurrentHeadMessage() {
+    function createRevisionGraphPullCurrentHeadMessage(): RevisionGraphWebviewMessageOf<'pull-current-head'> {
       return { type: 'pull-current-head' };
     }
 
-    function createRevisionGraphPushCurrentHeadMessage(mode) {
+    function createRevisionGraphPushCurrentHeadMessage(mode: 'normal' | 'force-with-lease' | 'force'): RevisionGraphWebviewMessageOf<'push-current-head'> {
       return { type: 'push-current-head', mode: mode };
     }
 
-    function createRevisionGraphStashSaveMessage() {
+    function createRevisionGraphStashSaveMessage(): RevisionGraphWebviewMessageOf<'stash-save'> {
       return { type: 'stash-save' };
     }
 
-    function createRevisionGraphStashApplyMessage(target) {
+    function createRevisionGraphStashApplyMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'stash-apply'> {
       return { type: 'stash-apply', refName: target.name };
     }
 
-    function createRevisionGraphStashPopMessage(target) {
+    function createRevisionGraphStashPopMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'stash-pop'> {
       return { type: 'stash-pop', refName: target.name };
     }
 
-    function createRevisionGraphStashDropMessage(target) {
+    function createRevisionGraphStashDropMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'stash-drop'> {
       return { type: 'stash-drop', refName: target.name };
     }
 
-    function createRevisionGraphPublishBranchMessage(target) {
+    function createRevisionGraphPublishBranchMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'publish-branch'> {
       return {
         type: 'publish-branch',
         refName: target.name,
@@ -208,7 +226,7 @@
       };
     }
 
-    function createRevisionGraphCreateBranchMessage(target) {
+    function createRevisionGraphCreateBranchMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'create-branch'> {
       return {
         type: 'create-branch',
         revision: target.revision,
@@ -217,7 +235,7 @@
       };
     }
 
-    function createRevisionGraphCreateTagMessage(target) {
+    function createRevisionGraphCreateTagMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'create-tag'> {
       return {
         type: 'create-tag',
         revision: target.revision,
@@ -226,14 +244,14 @@
       };
     }
 
-    function createRevisionGraphResolveRemoteTagStateMessage(target) {
+    function createRevisionGraphResolveRemoteTagStateMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'resolve-remote-tag-state'> {
       return {
         type: 'resolve-remote-tag-state',
         refName: target.name
       };
     }
 
-    function createRevisionGraphPushTagMessage(target) {
+    function createRevisionGraphPushTagMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'push-tag'> {
       return {
         type: 'push-tag',
         refName: target.name,
@@ -242,7 +260,7 @@
       };
     }
 
-    function createRevisionGraphDeleteRemoteTagMessage(target) {
+    function createRevisionGraphDeleteRemoteTagMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'delete-remote-tag'> {
       return {
         type: 'delete-remote-tag',
         refName: target.name,
@@ -251,10 +269,10 @@
       };
     }
 
-    function createRevisionGraphDeleteMessage(target) {
+    function createRevisionGraphDeleteMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'delete'> {
       return { type: 'delete', refName: target.name, refKind: target.kind };
     }
 
-    function createRevisionGraphMergeMessage(target) {
+    function createRevisionGraphMergeMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'merge'> {
       return { type: 'merge', refName: target.name };
     }

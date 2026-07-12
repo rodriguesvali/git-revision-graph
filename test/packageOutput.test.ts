@@ -18,7 +18,10 @@ test('production build cleans compiled output before TypeScript runs', () => {
   );
   assert.equal(manifest.scripts?.prebuild, 'npm run clean:out');
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
-  assert.equal(manifest.scripts?.['build:webview'], 'tsc -p ./tsconfig.webview.json');
+  assert.equal(
+    manifest.scripts?.['build:webview'],
+    'tsc -p ./tsconfig.webview.messages.json && tsc -p ./tsconfig.webview.json'
+  );
 });
 
 test('compiled JavaScript output has a matching TypeScript source', () => {

@@ -16,6 +16,7 @@
   "files": [
     "src/revisionGraph/webview/runtime/environment.d.ts",
     "src/revisionGraph/webview/runtime/display.ts",
+    "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",
     "src/revisionGraph/webview/script/bootstrap.ts",

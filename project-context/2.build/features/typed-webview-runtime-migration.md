@@ -32,6 +32,8 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - The revision graph CSP now permits only its generated webview resource origin and nonce-bearing script. Other webviews retain their existing inline nonce-only policy.
 - The retained-panel watch command recompiles both targets without adding a dependency.
 - Existing behavioral tests execute the compiled runtime asset rather than extracting an executable string from generated HTML.
+- `tsconfig.webview.messages.json` strictly checks every outbound message builder against an explicit discriminated protocol before the compatibility runtime is emitted.
+- Incoming host messages now pass through a typed structural guard before the legacy state handler can apply them.
 
 ### Compatibility Boundary
 

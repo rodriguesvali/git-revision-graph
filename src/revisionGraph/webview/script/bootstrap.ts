@@ -153,7 +153,9 @@ const VIEWPORT_PADDING_LEFT = 18;
     };
 
     window.addEventListener('message', (event) => {
-      handleHostMessage(event.data);
+      if (isRevisionGraphWebviewHostMessage(event.data)) {
+        handleHostMessage(event.data);
+      }
     });
     vscode.postMessage(createRevisionGraphWebviewReadyMessage());
 
@@ -693,10 +695,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return true;
     }
 
-    function handleHostMessage(message) {
-      if (!message || typeof message.type !== 'string') {
-        return;
-      }
+    function handleHostMessage(message: RevisionGraphWebviewHostMessage) {
 
       switch (message.type) {
         case 'init-state':
