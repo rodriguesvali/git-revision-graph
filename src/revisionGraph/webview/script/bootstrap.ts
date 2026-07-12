@@ -1455,9 +1455,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
       headNodeHash = getCurrentHeadNodeHash();
       graphEdgeByKey = new Map(graphEdges.map((edge) => [getVirtualEdgeKey(edge), edge]));
-      parentMap = buildDirectionalMap(graphEdges, 'from', 'to');
-      childMap = buildDirectionalMap(graphEdges, 'to', 'from');
-      headDistanceByHash = headNodeHash ? buildDistanceMap(headNodeHash, parentMap) : new Map();
+      parentMap = buildRevisionGraphWebviewDirectionalMap(graphNodes, graphEdges, 'from', 'to');
+      childMap = buildRevisionGraphWebviewDirectionalMap(graphNodes, graphEdges, 'to', 'from');
+      headDistanceByHash = headNodeHash
+        ? buildRevisionGraphWebviewDistanceMap(headNodeHash, parentMap)
+        : new Map();
     }
 
     function bindSceneEventHandlers() {

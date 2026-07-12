@@ -731,7 +731,8 @@ test('uses principal path highlight for single selection and compare-only highli
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-related', 'descendant-related'\);/);
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-path', 'descendant-path', 'muted'\);/);
   assert.match(html, /const ancestorPath = baseHash && !compareHash \? getPrimaryAncestorPath\(baseHash\) : \[\];/);
-  assert.match(html, /function buildPrimaryAncestorPathFromNextMap\(startHash\)/);
+  assert.match(html, /function getRevisionGraphWebviewPrimaryAncestorPath\(startHash, context\)/);
+  assert.match(html, /function buildRevisionGraphWebviewPrimaryAncestorPath\(startHash, primaryAncestorNextByHash\)/);
   assert.match(html, /const nextHash = primaryAncestorNextByHash\[currentHash\];/);
   assert.match(html, /let queueIndex = 0;\s*while \(queueIndex < queue\.length\) \{\s*const hash = queue\[queueIndex\];\s*queueIndex \+= 1;/s);
   assert.match(html, /element\.classList\.toggle\('selected', highlights\.anchorHash === hash\);/);
@@ -1476,6 +1477,47 @@ test('calculates revision graph relationship highlights through the typed module
   assert.equal(comparisonSelection.selectedHashes.has('base'), true);
   assert.equal(comparisonSelection.selectedHashes.has('compare'), true);
   assert.equal(comparisonSelection.relatedHashes.size, 0);
+});
+
+test('traces revision graph primary paths through the typed graph module', () => {
+  const runtime = createWebviewRuntime();
+  const nodes = [
+    { hash: 'head', lane: 0, row: 0, defaultLeft: 0 },
+    { hash: 'parent', lane: 0, row: 1, defaultLeft: 0 },
+    { hash: 'grandparent', lane: 0, row: 2, defaultLeft: 0 },
+    { hash: 'alternate', lane: 2, row: 1, defaultLeft: 100 }
+  ];
+  const edges = [
+    { from: 'head', to: 'parent' },
+    { from: 'parent', to: 'grandparent' },
+    { from: 'head', to: 'alternate' }
+  ];
+  const parentMap = runtime.context.buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'from', 'to');
+  const childMap = runtime.context.buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'to', 'from');
+  const headDistanceByHash = runtime.context.buildRevisionGraphWebviewDistanceMap('head', parentMap);
+  const context = {
+    primaryAncestorNextByHash: {},
+    parentMap,
+    childMap,
+    headDistanceByHash,
+    nodesByHash: new Map(nodes.map((node) => [node.hash, node]))
+  };
+
+  assert.deepEqual(
+    Array.from(runtime.context.getRevisionGraphWebviewPrimaryAncestorPath('head', context)),
+    ['head', 'parent', 'grandparent']
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.traceRevisionGraphWebviewPrimaryPath('grandparent', 'descendant', context)),
+    ['grandparent', 'parent', 'head']
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.getRevisionGraphWebviewPrimaryAncestorPath('head', {
+      ...context,
+      primaryAncestorNextByHash: { head: 'alternate' }
+    })),
+    ['head', 'alternate']
+  );
 });
 
 function createClassList(classes: Set<string>) {
