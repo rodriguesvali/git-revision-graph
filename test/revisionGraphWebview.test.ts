@@ -688,8 +688,8 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function renderMinimap\(mode = 'full'\)/);
   assert.match(html, /const shouldRenderContent = mode === 'full' \|\| minimapNodeLayer\.innerHTML\.length === 0;/);
   assert.match(html, /viewport\.addEventListener\('scroll', \(\) => \{\s*scheduleVirtualSceneRender\('scroll'\);\s*syncMinimap\('viewport'\);\s*\}\);/);
-  assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
-  assert.match(html, /function renderMinimapNode\(hash, transform\)/);
+  assert.match(html, /function renderRevisionGraphWebviewMinimapContent\(/);
+  assert.match(html, /renderRevisionGraphWebviewMinimapContent\(\s*graphEdges,/s);
   assert.match(html, /function syncMinimapViewport\(transform\)/);
   assert.match(html, /function syncRevisionGraphWebviewMinimapViewportUi\(/);
   assert.match(html, /function ensureRevisionGraphWebviewMinimapViewportVisibleUi\(/);
@@ -703,7 +703,7 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.doesNotMatch(html, /transform\.scaleX/);
   assert.doesNotMatch(html, /const baseScale = Math\.max\(/);
   assert.match(html, /class="minimap-edge"/);
-  assert.match(html, /class="' \+ nodeClass \+ '"/);
+  assert.match(html, /const nodeClass = hash === headNodeHash \? 'minimap-node head' : 'minimap-node';/);
 });
 
 test('uses a default cursor on the empty graph viewport', () => {
@@ -1637,6 +1637,51 @@ test('synchronizes revision graph minimap viewport through the typed DOM adapter
 
   assert.equal(graphMinimap.scrollLeft, 130);
   assert.equal(graphMinimap.scrollTop, 230);
+});
+
+test('renders revision graph minimap SVG content through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const geometry = {
+    getNodeCenterX(hash: string): number {
+      return hash === 'head' ? 10 : 30;
+    },
+    getNodeTop(hash: string): number {
+      return hash === 'head' ? 20 : 40;
+    },
+    getNodeLeft(hash: string): number {
+      return hash === 'head' ? 5 : 25;
+    },
+    getNodeWidth(): number {
+      return 12;
+    },
+    getNodeHeight(hash: string): number {
+      return hash === 'head' ? 8 : 10;
+    },
+    offsetX: 1,
+    offsetY: 2
+  };
+  const content = runtime.context.renderRevisionGraphWebviewMinimapContent(
+    [
+      { from: 'head', to: 'child' },
+      { from: 'head', to: 'missing' }
+    ],
+    ['head', 'child'],
+    new Set(['head', 'child']),
+    'head',
+    {
+      scale: 0.1,
+      mapX: (value: number) => value * 2,
+      mapY: (value: number) => value * 2
+    },
+    geometry
+  );
+
+  assert.equal(
+    content.edgeMarkup,
+    '<line class="minimap-edge" x1="22" y1="52" x2="62" y2="94"></line>'
+  );
+  assert.match(content.nodeMarkup, /<rect class="minimap-node head" x="12" y="44" width="2" height="2" rx="1\.5"><\/rect>/);
+  assert.match(content.nodeMarkup, /<rect class="minimap-node" x="52" y="84" width="2" height="2" rx="1\.5"><\/rect>/);
 });
 
 test('traces revision graph primary paths through the typed graph module', () => {

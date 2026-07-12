@@ -402,40 +402,29 @@ const REF_LINE_HEIGHT = 25;
         minimapSvg.setAttribute('viewBox', '0 0 ' + transform.width + ' ' + transform.height);
         minimapSvg.style.width = transform.width + 'px';
         minimapSvg.style.height = transform.height + 'px';
-        minimapEdgeLayer.innerHTML = graphEdges
-          .map((edge) => renderMinimapEdge(edge, transform))
-          .join('');
-        minimapNodeLayer.innerHTML = graphNodes
-          .map((layout) => renderMinimapNode(layout.hash, transform))
-          .join('');
+        const minimapContent = renderRevisionGraphWebviewMinimapContent(
+          graphEdges,
+          graphNodes.map((layout) => layout.hash),
+          new Set(graphNodeByHash.keys()),
+          headNodeHash,
+          transform,
+          {
+            getNodeCenterX,
+            getNodeTop,
+            getNodeLeft,
+            getNodeWidth,
+            getNodeHeight,
+            offsetX: layoutOffsetX,
+            offsetY: layoutOffsetY
+          }
+        );
+        minimapEdgeLayer.innerHTML = minimapContent.edgeMarkup;
+        minimapNodeLayer.innerHTML = minimapContent.nodeMarkup;
       }
       syncMinimapViewport(transform);
       if (!minimapDragState) {
         ensureMinimapViewportVisible(transform);
       }
-    }
-
-    function renderMinimapEdge(edge, transform) {
-      if (!graphNodeByHash.has(edge.from) || !graphNodeByHash.has(edge.to)) {
-        return '';
-      }
-
-      const sourceX = transform.mapX(getNodeCenterX(edge.from) + layoutOffsetX);
-      const sourceY = transform.mapY(getNodeTop(edge.from) + getNodeHeight(edge.from) / 2 + layoutOffsetY);
-      const targetX = transform.mapX(getNodeCenterX(edge.to) + layoutOffsetX);
-      const targetY = transform.mapY(getNodeTop(edge.to) + getNodeHeight(edge.to) / 2 + layoutOffsetY);
-      return '<line class="minimap-edge" x1="' + sourceX + '" y1="' + sourceY + '" x2="' + targetX + '" y2="' + targetY + '"></line>';
-    }
-
-    function renderMinimapNode(hash, transform) {
-      const left = getNodeLeft(hash) + layoutOffsetX;
-      const top = getNodeTop(hash) + layoutOffsetY;
-      const width = Math.max(2, getNodeWidth(hash) * transform.scale);
-      const height = Math.max(2, getNodeHeight(hash) * transform.scale);
-      const x = transform.mapX(left);
-      const y = transform.mapY(top);
-      const nodeClass = hash === headNodeHash ? 'minimap-node head' : 'minimap-node';
-      return '<rect class="' + nodeClass + '" x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" rx="1.5"></rect>';
     }
 
     function syncMinimapViewport(transform) {
