@@ -43,6 +43,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.loading.json` strictly checks the loading DOM adapter. Overlay mode, progress text and accessibility attributes no longer mutate DOM elements directly from the legacy interaction wrapper.
 - `tsconfig.webview.toolbar-busy.json` strictly checks the toolbar pending-state adapter. The legacy interaction wrapper still decides when controls are busy, but only the selected control now receives pending and accessibility attributes through the typed DOM boundary.
 - `tsconfig.webview.search.json` strictly checks the pure search query module. Query normalization, visible-reference filtering, result ordering, active-result preservation and circular navigation no longer depend on the legacy interaction implementation.
+- `tsconfig.webview.search-ui.json` strictly checks the search DOM adapter. Input value, result counter and disabled-state rendering no longer mutate controls directly from the legacy interaction implementation.
 
 ### Compatibility Boundary
 

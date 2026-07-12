@@ -129,27 +129,22 @@
 
     function syncSearchUi() {
       const normalizedQuery = getNormalizedSearchQuery();
-      if (searchInput && searchInput.value !== searchQuery) {
-        searchInput.value = searchQuery;
-      }
-      if (searchResultBadge) {
-        searchResultBadge.textContent =
-          searchResultHashes.length > 0 && activeSearchResultIndex >= 0
-            ? (activeSearchResultIndex + 1) + '/' + searchResultHashes.length
-            : '0 results';
-      }
-      if (searchPrevButton) {
-        searchPrevButton.disabled = toolbarBusy || normalizedQuery.length === 0 || searchResultHashes.length < 2;
-      }
-      if (searchNextButton) {
-        searchNextButton.disabled = toolbarBusy || normalizedQuery.length === 0 || searchResultHashes.length < 2;
-      }
-      if (searchClearButton) {
-        searchClearButton.disabled = toolbarBusy || normalizedQuery.length === 0;
-      }
-      if (searchInput) {
-        searchInput.disabled = toolbarBusy;
-      }
+      syncRevisionGraphWebviewSearchUi(
+        {
+          input: searchInput,
+          resultBadge: searchResultBadge,
+          previousButton: searchPrevButton,
+          nextButton: searchNextButton,
+          clearButton: searchClearButton
+        },
+        {
+          query: searchQuery,
+          isQueryActive: normalizedQuery.length > 0,
+          resultCount: searchResultHashes.length,
+          activeResultIndex: activeSearchResultIndex,
+          isToolbarBusy: toolbarBusy
+        }
+      );
     }
 
     function syncSearchHighlights() {

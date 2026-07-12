@@ -20,7 +20,7 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
   assert.equal(
     manifest.scripts?.['build:webview'],
-    'tsc -p ./tsconfig.webview.api.json && tsc -p ./tsconfig.webview.dom.json && tsc -p ./tsconfig.webview.status.json && tsc -p ./tsconfig.webview.loading.json && tsc -p ./tsconfig.webview.toolbar-busy.json && tsc -p ./tsconfig.webview.search.json && tsc -p ./tsconfig.webview.messages.json && tsc -p ./tsconfig.webview.state.json && tsc -p ./tsconfig.webview.host-state.json && tsc -p ./tsconfig.webview.state-model.json && tsc -p ./tsconfig.webview.json'
+    'tsc -p ./tsconfig.webview.api.json && tsc -p ./tsconfig.webview.dom.json && tsc -p ./tsconfig.webview.status.json && tsc -p ./tsconfig.webview.loading.json && tsc -p ./tsconfig.webview.toolbar-busy.json && tsc -p ./tsconfig.webview.search.json && tsc -p ./tsconfig.webview.search-ui.json && tsc -p ./tsconfig.webview.messages.json && tsc -p ./tsconfig.webview.state.json && tsc -p ./tsconfig.webview.host-state.json && tsc -p ./tsconfig.webview.state-model.json && tsc -p ./tsconfig.webview.json'
   );
 });
 

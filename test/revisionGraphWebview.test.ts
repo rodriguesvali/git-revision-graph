@@ -1384,6 +1384,49 @@ test('finds visible revision graph search results through the typed query module
   assert.equal(runtime.context.getRevisionGraphWebviewActiveSearchResultHash(['first'], 2), null);
 });
 
+test('synchronizes revision graph search controls through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const input = runtime.elements.get('searchInput');
+  const resultBadge = runtime.elements.get('searchResultBadge');
+  const previousButton = runtime.elements.get('searchPrevButton');
+  const nextButton = runtime.elements.get('searchNextButton');
+  const clearButton = runtime.elements.get('searchClearButton');
+  assert.ok(input && resultBadge && previousButton && nextButton && clearButton);
+
+  runtime.context.syncRevisionGraphWebviewSearchUi(
+    { input, resultBadge, previousButton, nextButton, clearButton },
+    {
+      query: 'release',
+      isQueryActive: true,
+      resultCount: 2,
+      activeResultIndex: 1,
+      isToolbarBusy: false
+    }
+  );
+  assert.equal(input.value, 'release');
+  assert.equal(resultBadge.textContent, '2/2');
+  assert.equal(previousButton.disabled, false);
+  assert.equal(nextButton.disabled, false);
+  assert.equal(clearButton.disabled, false);
+  assert.equal(input.disabled, false);
+
+  runtime.context.syncRevisionGraphWebviewSearchUi(
+    { input, resultBadge, previousButton, nextButton, clearButton },
+    {
+      query: '',
+      isQueryActive: false,
+      resultCount: 0,
+      activeResultIndex: -1,
+      isToolbarBusy: true
+    }
+  );
+  assert.equal(resultBadge.textContent, '0 results');
+  assert.equal(previousButton.disabled, true);
+  assert.equal(nextButton.disabled, true);
+  assert.equal(clearButton.disabled, true);
+  assert.equal(input.disabled, true);
+});
+
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
     viewMode: 'ready',
@@ -1480,6 +1523,7 @@ function createWebviewRuntime() {
     hidden = false;
     disabled = false;
     checked = false;
+    value = '';
     textContent = '';
     title = '';
     offsetWidth = 120;

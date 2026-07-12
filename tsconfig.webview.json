@@ -25,6 +25,7 @@
     "src/revisionGraph/webview/runtime/loading.ts",
     "src/revisionGraph/webview/runtime/toolbarBusy.ts",
     "src/revisionGraph/webview/runtime/search.ts",
+    "src/revisionGraph/webview/runtime/searchUi.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",
