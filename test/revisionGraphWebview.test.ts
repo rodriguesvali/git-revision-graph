@@ -2030,6 +2030,41 @@ test('schedules revision graph virtual scene renders through the typed module', 
   assert.deepEqual(events.slice(-1), ['blocked-key:']);
 });
 
+test('coordinates revision graph scene rendering through the typed lifecycle', () => {
+  const runtime = createWebviewRuntime();
+  const readyEvents: string[] = [];
+  runtime.context.runRevisionGraphWebviewSceneRenderLifecycle({
+    isReady: true,
+    shouldPrecenterViewport: true,
+    prepareGeometry: () => readyEvents.push('geometry'),
+    clearScene: () => readyEvents.push('clear'),
+    refreshGraphCaches: () => readyEvents.push('caches'),
+    syncCanvasAndPlacement: () => readyEvents.push('canvas'),
+    prepareIndexes: () => readyEvents.push('indexes'),
+    precenterViewport: () => readyEvents.push('precenter'),
+    renderVirtualScene: () => readyEvents.push('render'),
+    bindSceneEventHandlers: () => readyEvents.push('bind')
+  });
+  assert.deepEqual(readyEvents, [
+    'geometry', 'indexes', 'precenter', 'render', 'caches', 'bind', 'canvas'
+  ]);
+
+  const emptyEvents: string[] = [];
+  runtime.context.runRevisionGraphWebviewSceneRenderLifecycle({
+    isReady: false,
+    shouldPrecenterViewport: true,
+    prepareGeometry: () => emptyEvents.push('geometry'),
+    clearScene: () => emptyEvents.push('clear'),
+    refreshGraphCaches: () => emptyEvents.push('caches'),
+    syncCanvasAndPlacement: () => emptyEvents.push('canvas'),
+    prepareIndexes: () => emptyEvents.push('indexes'),
+    precenterViewport: () => emptyEvents.push('precenter'),
+    renderVirtualScene: () => emptyEvents.push('render'),
+    bindSceneEventHandlers: () => emptyEvents.push('bind')
+  });
+  assert.deepEqual(emptyEvents, ['geometry', 'clear', 'caches', 'canvas']);
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

@@ -1210,50 +1210,45 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function renderScene(state, options = {}) {
-      traceWebviewPhase('webview.render-scene.geometry', () => {
-        canvas.style.width = baseCanvasWidth + 'px';
-        canvas.style.height = baseCanvasHeight + 'px';
-        sceneLayer.style.width = baseCanvasWidth + 'px';
-        sceneLayer.style.height = baseCanvasHeight + 'px';
-        graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
-      });
-
-      if (state.viewMode !== 'ready') {
-        traceWebviewPhase('webview.render-scene.clear', () => {
-          edgeLayer.innerHTML = '';
-          nodeLayer.innerHTML = '';
+      runRevisionGraphWebviewSceneRenderLifecycle({
+        isReady: state.viewMode === 'ready',
+        shouldPrecenterViewport: !!options.precenterViewport,
+        prepareGeometry: () => traceWebviewPhase('webview.render-scene.geometry', () => {
+          canvas.style.width = baseCanvasWidth + 'px';
+          canvas.style.height = baseCanvasHeight + 'px';
+          sceneLayer.style.width = baseCanvasWidth + 'px';
+          sceneLayer.style.height = baseCanvasHeight + 'px';
+          graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
+        }),
+        clearScene: () => traceWebviewPhase('webview.render-scene.clear', () => {
+          clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
           sceneNodeByHash = new Map();
           resetVirtualSceneIndexes();
-        });
-        traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
-        traceWebviewPhase('webview.render-scene.canvas-layout', () => {
+        }),
+        refreshGraphCaches: () => traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches()),
+        syncCanvasAndPlacement: () => traceWebviewPhase('webview.render-scene.canvas-layout', () => {
           syncCanvasSize();
           updateScenePlacement();
-        });
-        return;
-      }
-
-      const sceneNodes = (state.scene && state.scene.nodes) || [];
-      traceWebviewPhase('webview.render-scene.indexes', () => {
-        sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
-        rebuildVirtualSceneIndexes();
-      }, 'nodes=' + graphNodes.length + '; edges=' + graphEdges.length);
-      if (options.precenterViewport) {
-        traceWebviewPhase('webview.render-scene.viewport-precenter', () => {
+        }),
+        prepareIndexes: () => {
+          const sceneNodes = (state.scene && state.scene.nodes) || [];
+          traceWebviewPhase('webview.render-scene.indexes', () => {
+            sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
+            rebuildVirtualSceneIndexes();
+          }, 'nodes=' + graphNodes.length + '; edges=' + graphEdges.length);
+        },
+        precenterViewport: () => traceWebviewPhase('webview.render-scene.viewport-precenter', () => {
           syncCanvasSize();
           updateScenePlacement({ source: 'layout' });
           centerGraphInViewport({ source: 'layout', syncMinimap: false });
-        }, 'action=recenter');
-      }
-      traceWebviewPhase('webview.render-scene.virtual-html', () => {
-        renderVirtualScene({ force: true });
-      }, 'nodes=' + sceneNodes.length + '; edges=' + graphEdges.length);
-
-      traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches());
-      traceWebviewPhase('webview.render-scene.bind-handlers', () => bindSceneEventHandlers());
-      traceWebviewPhase('webview.render-scene.canvas-layout', () => {
-        syncCanvasSize();
-        updateScenePlacement();
+        }, 'action=recenter'),
+        renderVirtualScene: () => {
+          const sceneNodes = (state.scene && state.scene.nodes) || [];
+          traceWebviewPhase('webview.render-scene.virtual-html', () => {
+            renderVirtualScene({ force: true });
+          }, 'nodes=' + sceneNodes.length + '; edges=' + graphEdges.length);
+        },
+        bindSceneEventHandlers: () => traceWebviewPhase('webview.render-scene.bind-handlers', () => bindSceneEventHandlers())
       });
     }
 

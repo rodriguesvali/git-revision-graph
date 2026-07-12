@@ -63,6 +63,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.virtual-scene-dom.json` strictly checks virtual-scene markup composition and DOM commit. Node and edge layers now update through a typed adapter.
 - `tsconfig.webview.virtual-scene-lifecycle.json` strictly checks virtual-scene cache decisions and post-commit effect ordering. The render lifecycle now exposes its cache and synchronization boundary explicitly.
 - `tsconfig.webview.virtual-scene-scheduler.json` strictly checks virtual-scene animation-frame scheduling. Forced invalidation and duplicate-frame suppression no longer depend on implicit bootstrap control flow.
+- `tsconfig.webview.scene-render-lifecycle.json` strictly checks scene-render preparation and effect ordering. Ready, empty and pre-centered scenes now follow an explicit typed lifecycle.
 - `tsconfig.webview.node-drag.json` strictly checks node-drag geometry. Node offsets and canvas bounds no longer calculate through implicit runtime globals.
 - `tsconfig.webview.remote-toolbar-ui.json` strictly checks remote toolbar rendering. Pull, push and sync availability plus accessible labels no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.zoom-toolbar-ui.json` strictly checks zoom toolbar rendering. Main and minimap zoom-button availability no longer mutates directly from the legacy interaction implementation.
