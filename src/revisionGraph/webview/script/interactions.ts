@@ -1674,30 +1674,11 @@
         remoteActionState.canUseCurrentHeadRemote,
         remoteActionState.upstreamLabel
       );
-      if (showTagsToggle) {
-        showTagsToggle.disabled = toolbarBusy;
-      }
-      if (showRemoteBranchesToggle) {
-        showRemoteBranchesToggle.disabled = toolbarBusy;
-      }
-      if (showStashesToggle) {
-        showStashesToggle.disabled = toolbarBusy;
-      }
-      if (showMergeCommitsToggle) {
-        showMergeCommitsToggle.disabled = toolbarBusy;
-      }
-      if (showMinimapToggle) {
-        showMinimapToggle.disabled = toolbarBusy;
-      }
-      if (flowGovernanceEnabledToggle) {
-        flowGovernanceEnabledToggle.disabled = toolbarBusy || !hasFlowGovernanceState();
-      }
-      if (rangeFilterClearButton) {
-        rangeFilterClearButton.disabled = toolbarBusy;
-      }
-      if (descendantFilterClearButton) {
-        descendantFilterClearButton.disabled = toolbarBusy;
-      }
+      syncRevisionGraphWebviewViewOptionsToolbarUi(
+        { showTagsToggle, showRemoteBranchesToggle, showStashesToggle, showMergeCommitsToggle, showMinimapToggle, flowGovernanceEnabledToggle, rangeFilterClearButton, descendantFilterClearButton },
+        toolbarBusy,
+        hasFlowGovernanceState()
+      );
       if (centerHeadButton) {
         centerHeadButton.disabled = toolbarBusy;
       }

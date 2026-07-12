@@ -57,6 +57,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.remote-toolbar-ui.json` strictly checks remote toolbar rendering. Pull, push and sync availability plus accessible labels no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.zoom-toolbar-ui.json` strictly checks zoom toolbar rendering. Main and minimap zoom-button availability no longer mutates directly from the legacy interaction implementation.
 - `tsconfig.webview.basic-toolbar-ui.json` strictly checks scope, view-option, reload and fetch toolbar rendering. Their disabled state no longer mutates directly from the legacy interaction implementation.
+- `tsconfig.webview.view-options-toolbar-ui.json` strictly checks view toggles, Flow Governance and focus-filter toolbar rendering.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary
