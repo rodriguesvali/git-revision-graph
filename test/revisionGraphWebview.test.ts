@@ -725,18 +725,18 @@ test('clears graph drag state when mouse release is missed', () => {
 test('uses principal path highlight for single selection and compare-only highlight for two selections', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /if \(baseTarget && compareTarget\) \{/);
-  assert.match(html, /const selectedHashes = new Set\(/);
-  assert.match(html, /element\.classList\.toggle\('selected', selectedHashes\.has\(hash\)\);/);
+  assert.match(html, /createRevisionGraphWebviewRelationshipHighlights\(/);
+  assert.match(html, /if \(highlights\.isComparison\) \{/);
+  assert.match(html, /element\.classList\.toggle\('selected', highlights\.selectedHashes\.has\(hash\)\);/);
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-related', 'descendant-related'\);/);
   assert.match(html, /element\.classList\.remove\('related', 'ancestor-path', 'descendant-path', 'muted'\);/);
-  assert.match(html, /const ancestorPath = anchorHash \? getPrimaryAncestorPath\(anchorHash\) : \[\];/);
+  assert.match(html, /const ancestorPath = baseHash && !compareHash \? getPrimaryAncestorPath\(baseHash\) : \[\];/);
   assert.match(html, /function buildPrimaryAncestorPathFromNextMap\(startHash\)/);
   assert.match(html, /const nextHash = primaryAncestorNextByHash\[currentHash\];/);
   assert.match(html, /let queueIndex = 0;\s*while \(queueIndex < queue\.length\) \{\s*const hash = queue\[queueIndex\];\s*queueIndex \+= 1;/s);
-  assert.match(html, /element\.classList\.toggle\('selected', anchorHash === hash\);/);
-  assert.match(html, /element\.classList\.toggle\('related', !!anchorHash && anchorHash !== hash && relatedHashes\.has\(hash\)\);/);
-  assert.match(html, /element\.classList\.toggle\('muted', !!anchorHash && !isRelated\);/);
+  assert.match(html, /element\.classList\.toggle\('selected', highlights\.anchorHash === hash\);/);
+  assert.match(html, /element\.classList\.toggle\('related', !!highlights\.anchorHash && highlights\.anchorHash !== hash && highlights\.relatedHashes\.has\(hash\)\);/);
+  assert.match(html, /element\.classList\.toggle\('muted', !!highlights\.anchorHash && !isRelated\);/);
 });
 
 test('renders single-bend edges and compact structural node styling in the shell runtime', () => {
@@ -1447,6 +1447,35 @@ test('synchronizes revision graph search highlights through the typed DOM adapte
   assert.equal(firstClasses.has('search-active'), false);
   assert.equal(secondClasses.has('search-match'), true);
   assert.equal(secondClasses.has('search-active'), false);
+});
+
+test('calculates revision graph relationship highlights through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const singleSelection = runtime.context.createRevisionGraphWebviewRelationshipHighlights(
+    'selected',
+    null,
+    ['selected', 'parent'],
+    ['selected', 'child']
+  );
+  assert.equal(singleSelection.isComparison, false);
+  assert.equal(singleSelection.anchorHash, 'selected');
+  assert.equal(singleSelection.selectedHashes.has('selected'), true);
+  assert.equal(singleSelection.relatedHashes.has('parent'), true);
+  assert.equal(singleSelection.relatedHashes.has('child'), true);
+  assert.equal(singleSelection.ancestorEdgeKeys.has('selected->parent'), true);
+  assert.equal(singleSelection.descendantEdgeKeys.has('child->selected'), true);
+
+  const comparisonSelection = runtime.context.createRevisionGraphWebviewRelationshipHighlights(
+    'base',
+    'compare',
+    [],
+    []
+  );
+  assert.equal(comparisonSelection.isComparison, true);
+  assert.equal(comparisonSelection.anchorHash, null);
+  assert.equal(comparisonSelection.selectedHashes.has('base'), true);
+  assert.equal(comparisonSelection.selectedHashes.has('compare'), true);
+  assert.equal(comparisonSelection.relatedHashes.size, 0);
 });
 
 function createClassList(classes: Set<string>) {

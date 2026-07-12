@@ -133,16 +133,3 @@
 
       return laneDelta * 100 + rowDistance * 10 + horizontalDistance;
     }
-
-    function buildPathEdgeKeys(path, direction) {
-      const keys = new Set();
-      for (let index = 0; index < path.length - 1; index += 1) {
-        const currentHash = path[index];
-        const nextHash = path[index + 1];
-        const edgeKey = direction === 'ancestor'
-          ? currentHash + '->' + nextHash
-          : nextHash + '->' + currentHash;
-        keys.add(edgeKey);
-      }
-      return keys;
-    }

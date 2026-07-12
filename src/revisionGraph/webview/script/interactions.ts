@@ -216,14 +216,20 @@
     function syncRelationshipHighlights() {
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : undefined;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : undefined;
+      const baseHash = baseTarget && typeof baseTarget.hash === 'string' ? baseTarget.hash : null;
+      const compareHash = compareTarget && typeof compareTarget.hash === 'string' ? compareTarget.hash : null;
+      const ancestorPath = baseHash && !compareHash ? getPrimaryAncestorPath(baseHash) : [];
+      const descendantPath = baseHash && !compareHash ? tracePrimaryPath(baseHash, 'descendant') : [];
+      const highlights = createRevisionGraphWebviewRelationshipHighlights(
+        baseHash,
+        compareHash,
+        ancestorPath,
+        descendantPath
+      );
 
-      if (baseTarget && compareTarget) {
-        const selectedHashes = new Set(
-          [baseTarget.hash, compareTarget.hash].filter((hash) => typeof hash === 'string' && hash.length > 0)
-        );
-
+      if (highlights.isComparison) {
         for (const [hash, element] of nodeElements.entries()) {
-          element.classList.toggle('selected', selectedHashes.has(hash));
+          element.classList.toggle('selected', highlights.selectedHashes.has(hash));
           element.classList.remove('related', 'ancestor-related', 'descendant-related');
         }
 
@@ -233,20 +239,11 @@
         return;
       }
 
-      const anchorHash = baseTarget ? baseTarget.hash : null;
-      const ancestorPath = anchorHash ? getPrimaryAncestorPath(anchorHash) : [];
-      const descendantPath = anchorHash ? tracePrimaryPath(anchorHash, 'descendant') : [];
-      const ancestorHashes = new Set(ancestorPath);
-      const descendantHashes = new Set(descendantPath);
-      const relatedHashes = new Set([...ancestorHashes, ...descendantHashes]);
-      const ancestorEdgeKeys = buildPathEdgeKeys(ancestorPath, 'ancestor');
-      const descendantEdgeKeys = buildPathEdgeKeys(descendantPath, 'descendant');
-
       for (const [hash, element] of nodeElements.entries()) {
-        const isAncestorRelated = !!anchorHash && anchorHash !== hash && ancestorHashes.has(hash);
-        const isDescendantRelated = !!anchorHash && anchorHash !== hash && descendantHashes.has(hash);
-        element.classList.toggle('selected', anchorHash === hash);
-        element.classList.toggle('related', !!anchorHash && anchorHash !== hash && relatedHashes.has(hash));
+        const isAncestorRelated = !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.ancestorHashes.has(hash);
+        const isDescendantRelated = !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.descendantHashes.has(hash);
+        element.classList.toggle('selected', highlights.anchorHash === hash);
+        element.classList.toggle('related', !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.relatedHashes.has(hash));
         element.classList.toggle('ancestor-related', isAncestorRelated);
         element.classList.toggle('descendant-related', isDescendantRelated);
       }
@@ -255,14 +252,14 @@
         const fromHash = element.getAttribute('data-edge-from');
         const toHash = element.getAttribute('data-edge-to');
         const edgeKey = fromHash && toHash ? fromHash + '->' + toHash : '';
-        const isAncestorPath = !!anchorHash && ancestorEdgeKeys.has(edgeKey);
-        const isDescendantPath = !!anchorHash && descendantEdgeKeys.has(edgeKey);
+        const isAncestorPath = !!highlights.anchorHash && highlights.ancestorEdgeKeys.has(edgeKey);
+        const isDescendantPath = !!highlights.anchorHash && highlights.descendantEdgeKeys.has(edgeKey);
         const isRelated = isAncestorPath || isDescendantPath;
 
         element.classList.toggle('related', isRelated);
         element.classList.toggle('ancestor-path', isAncestorPath);
         element.classList.toggle('descendant-path', isDescendantPath);
-        element.classList.toggle('muted', !!anchorHash && !isRelated);
+        element.classList.toggle('muted', !!highlights.anchorHash && !isRelated);
       }
     }
 
