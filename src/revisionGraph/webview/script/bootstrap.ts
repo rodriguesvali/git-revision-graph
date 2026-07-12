@@ -1276,7 +1276,9 @@ const VIEWPORT_PADDING_LEFT = 18;
     function renderVirtualScene(options = {}) {
       if (!currentState || currentState.viewMode !== 'ready') {
         clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
-        lastVirtualSceneKey = '';
+        resetRevisionGraphWebviewVirtualSceneKey((sceneKey) => {
+          lastVirtualSceneKey = sceneKey;
+        });
         refreshGraphCaches();
         return;
       }
@@ -1290,8 +1292,13 @@ const VIEWPORT_PADDING_LEFT = 18;
         isEdgeVisible: (edge, hashes) => isEdgeVisible(edge, viewportBounds, hashes)
       });
       const nextVirtualSceneKey = buildVirtualSceneKey(visibleHashes, visibleEdges);
+      const decision = createRevisionGraphWebviewVirtualSceneRenderDecision(
+        !!options.force,
+        lastVirtualSceneKey,
+        nextVirtualSceneKey
+      );
 
-      if (!options.force && nextVirtualSceneKey === lastVirtualSceneKey) {
+      if (!decision.shouldCommit) {
         return;
       }
 
@@ -1303,11 +1310,16 @@ const VIEWPORT_PADDING_LEFT = 18;
         renderEdgeMarkup: (edge) => renderEdgeMarkup(edge, layoutByHash)
       });
       commitRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer }, markup);
-      lastVirtualSceneKey = nextVirtualSceneKey;
-      refreshGraphCaches();
-      applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false });
-      syncSelection();
-      syncSearchHighlights();
+      completeRevisionGraphWebviewVirtualSceneCommit({
+        sceneKey: decision.nextSceneKey,
+        setSceneKey: (sceneKey) => {
+          lastVirtualSceneKey = sceneKey;
+        },
+        refreshGraphCaches,
+        applyNodeLayout: () => applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false }),
+        syncSelection,
+        syncSearchHighlights
+      });
     }
 
     function getVirtualViewportBounds() {

@@ -1968,6 +1968,33 @@ test('commits revision graph virtual scene markup through the typed module', () 
   assert.equal(edgeLayer.innerHTML, '');
 });
 
+test('coordinates revision graph virtual scene lifecycle through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  assert.deepEqual(
+    { ...runtime.context.createRevisionGraphWebviewVirtualSceneRenderDecision(false, 'same', 'same') },
+    { shouldCommit: false, nextSceneKey: 'same' }
+  );
+  assert.deepEqual(
+    { ...runtime.context.createRevisionGraphWebviewVirtualSceneRenderDecision(true, 'same', 'same') },
+    { shouldCommit: true, nextSceneKey: 'same' }
+  );
+
+  const effects: string[] = [];
+  runtime.context.completeRevisionGraphWebviewVirtualSceneCommit({
+    sceneKey: 'next',
+    setSceneKey: (sceneKey: string) => effects.push(`key:${sceneKey}`),
+    refreshGraphCaches: () => effects.push('caches'),
+    applyNodeLayout: () => effects.push('layout'),
+    syncSelection: () => effects.push('selection'),
+    syncSearchHighlights: () => effects.push('search')
+  });
+  assert.deepEqual(effects, ['key:next', 'caches', 'layout', 'selection', 'search']);
+  runtime.context.resetRevisionGraphWebviewVirtualSceneKey(
+    (sceneKey: string) => effects.push(`reset:${sceneKey}`)
+  );
+  assert.equal(effects.at(-1), 'reset:');
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

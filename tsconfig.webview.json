@@ -41,6 +41,7 @@
     "src/revisionGraph/webview/runtime/virtualScene.ts",
     "src/revisionGraph/webview/runtime/virtualSceneSelection.ts",
     "src/revisionGraph/webview/runtime/virtualSceneDom.ts",
+    "src/revisionGraph/webview/runtime/virtualSceneLifecycle.ts",
     "src/revisionGraph/webview/runtime/edgeMarkup.ts",
     "src/revisionGraph/webview/runtime/nodePresentation.ts",
     "src/revisionGraph/webview/runtime/nodeMarkup.ts",
