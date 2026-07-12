@@ -1300,6 +1300,31 @@ test('updates loading accessibility through the typed loading adapter', () => {
   assert.equal(overlay.getAttribute('data-mode'), null);
 });
 
+test('marks only the pending toolbar control through the typed adapter', () => {
+  const runtime = createWebviewRuntime();
+  const pendingControl = runtime.elements.get('reloadButton');
+  const otherControl = runtime.elements.get('pushButton');
+  assert.ok(pendingControl && otherControl);
+
+  runtime.context.applyRevisionGraphWebviewToolbarBusyState(
+    [pendingControl, otherControl],
+    true,
+    pendingControl
+  );
+  assert.equal(pendingControl.getAttribute('data-pending'), 'true');
+  assert.equal(pendingControl.getAttribute('aria-busy'), 'true');
+  assert.equal(otherControl.getAttribute('data-pending'), null);
+  assert.equal(otherControl.getAttribute('aria-busy'), null);
+
+  runtime.context.applyRevisionGraphWebviewToolbarBusyState(
+    [pendingControl, otherControl],
+    false,
+    null
+  );
+  assert.equal(pendingControl.getAttribute('data-pending'), null);
+  assert.equal(pendingControl.getAttribute('aria-busy'), null);
+});
+
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
     viewMode: 'ready',

@@ -1816,7 +1816,7 @@
 
     function setToolbarBusy(isBusy, pendingControl = null) {
       toolbarBusy = isBusy;
-      const controls = [
+      applyRevisionGraphWebviewToolbarBusyState([
         scopeSelect,
         viewOptionsButton,
         showTagsToggle,
@@ -1845,22 +1845,7 @@
         minimapZoomResetButton,
         minimapZoomInButton,
         statusActionButton
-      ];
-      for (const control of controls) {
-        if (!control) {
-          continue;
-        }
-        if (!isBusy) {
-          control.removeAttribute('data-pending');
-          control.removeAttribute('aria-busy');
-        } else if (pendingControl === control) {
-          control.setAttribute('data-pending', 'true');
-          control.setAttribute('aria-busy', 'true');
-        } else {
-          control.removeAttribute('data-pending');
-          control.removeAttribute('aria-busy');
-        }
-      }
+      ], isBusy, pendingControl);
       syncToolbarActions();
       syncSearchUi();
     }
