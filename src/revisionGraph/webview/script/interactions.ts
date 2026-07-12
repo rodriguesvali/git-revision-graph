@@ -1663,21 +1663,11 @@
       const canResetMinimapZoom = minimapZoom !== 1;
       const remoteActionState = getCurrentHeadRemoteActionState();
       const hasRepository = !!currentState?.repositoryPath && !currentState?.loading;
-      if (scopeSelect) {
-        scopeSelect.disabled = toolbarBusy;
-      }
-      if (viewOptionsButton) {
-        viewOptionsButton.disabled = toolbarBusy;
-      }
-      if (reloadButton) {
-        reloadButton.disabled = toolbarBusy;
-      }
-      if (reloadMenuButton) {
-        reloadMenuButton.disabled = toolbarBusy;
-      }
-      if (fetchAllButton) {
-        fetchAllButton.disabled = toolbarBusy || !hasRepository;
-      }
+      syncRevisionGraphWebviewBasicToolbarUi(
+        { scopeSelect, viewOptionsButton, reloadButton, reloadMenuButton, fetchAllButton },
+        toolbarBusy,
+        hasRepository
+      );
       syncRevisionGraphWebviewRemoteToolbarUi(
         { pullButton, pushButton, pushMenuButton, syncButton },
         toolbarBusy,

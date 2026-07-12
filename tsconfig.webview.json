@@ -39,6 +39,7 @@
     "src/revisionGraph/webview/runtime/nodeDrag.ts",
     "src/revisionGraph/webview/runtime/remoteToolbarUi.ts",
     "src/revisionGraph/webview/runtime/zoomToolbarUi.ts",
+    "src/revisionGraph/webview/runtime/basicToolbarUi.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",
