@@ -148,12 +148,11 @@
     }
 
     function syncSearchHighlights() {
-      const matchHashes = new Set(searchResultHashes);
-      const activeHash = getActiveSearchResultHash();
-      for (const [hash, element] of nodeElements.entries()) {
-        element.classList.toggle('search-match', matchHashes.has(hash));
-        element.classList.toggle('search-active', hash === activeHash);
-      }
+      syncRevisionGraphWebviewSearchHighlights(
+        nodeElements,
+        searchResultHashes,
+        getActiveSearchResultHash()
+      );
     }
 
     function focusSearchInput(selectText = false) {

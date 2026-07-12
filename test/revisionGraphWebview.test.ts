@@ -1427,6 +1427,40 @@ test('synchronizes revision graph search controls through the typed DOM adapter'
   assert.equal(input.disabled, true);
 });
 
+test('synchronizes revision graph search highlights through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const firstClasses = new Set<string>();
+  const secondClasses = new Set<string>();
+  const nodeElements = new Map([
+    ['first', { classList: createClassList(firstClasses) }],
+    ['second', { classList: createClassList(secondClasses) }]
+  ]);
+
+  runtime.context.syncRevisionGraphWebviewSearchHighlights(nodeElements, ['first'], 'first');
+  assert.equal(firstClasses.has('search-match'), true);
+  assert.equal(firstClasses.has('search-active'), true);
+  assert.equal(secondClasses.has('search-match'), false);
+  assert.equal(secondClasses.has('search-active'), false);
+
+  runtime.context.syncRevisionGraphWebviewSearchHighlights(nodeElements, ['second'], null);
+  assert.equal(firstClasses.has('search-match'), false);
+  assert.equal(firstClasses.has('search-active'), false);
+  assert.equal(secondClasses.has('search-match'), true);
+  assert.equal(secondClasses.has('search-active'), false);
+});
+
+function createClassList(classes: Set<string>) {
+  return {
+    toggle(name: string, enabled: boolean): void {
+      if (enabled) {
+        classes.add(name);
+        return;
+      }
+      classes.delete(name);
+    }
+  };
+}
+
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
     viewMode: 'ready',
