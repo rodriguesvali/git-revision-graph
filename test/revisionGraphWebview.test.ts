@@ -239,8 +239,9 @@ test('keeps loading and error primitives in the shell runtime', () => {
   );
   assert.match(html, /data-pending="true"/);
   assert.match(html, /class="loading-overlay"/);
-  assert.match(html, /body\.classList\.remove\('loading', 'loading-subtle'\);/);
-  assert.match(html, /loadingOverlay\.setAttribute\('data-mode', mode\);/);
+  assert.match(html, /showRevisionGraphWebviewLoading\(\s*\{\s*body: document\.body,\s*overlay: loadingOverlay,\s*message: loadingMessage\s*\},\s*label,\s*mode\s*\);/s);
+  assert.match(html, /elements\.body\.classList\.remove\('loading', 'loading-subtle'\);/);
+  assert.match(html, /elements\.overlay\.setAttribute\('data-mode', mode\);/);
   assert.match(html, /body\.loading-subtle \.loading-overlay/);
 });
 
@@ -1262,6 +1263,41 @@ test('updates and clears the webview status surface through the typed adapter', 
   assert.equal(actionButton.hidden, true);
   assert.equal(actionButton.textContent, '');
   assert.equal(actionButton.dataset.action, undefined);
+});
+
+test('updates loading accessibility through the typed loading adapter', () => {
+  const runtime = createWebviewRuntime();
+  const overlay = runtime.elements.get('loadingOverlay');
+  const message = runtime.elements.get('loadingMessage');
+  assert.ok(overlay && message);
+  const bodyAttributes = new Map<string, string>();
+  const body = {
+    classList: {
+      add: () => {},
+      remove: () => {}
+    },
+    setAttribute(name: string, value: string) {
+      bodyAttributes.set(name, value);
+    },
+    removeAttribute(name: string) {
+      bodyAttributes.delete(name);
+    }
+  };
+  const elements = { body, overlay, message };
+
+  runtime.context.showRevisionGraphWebviewLoading(elements, 'Reloading revision graph...', 'blocking');
+  assert.equal(message.textContent, 'Reloading revision graph...');
+  assert.equal(overlay.getAttribute('aria-hidden'), 'false');
+  assert.equal(overlay.getAttribute('data-mode'), 'blocking');
+  assert.equal(bodyAttributes.get('aria-busy'), 'true');
+
+  runtime.context.showRevisionGraphWebviewLoading(elements, undefined, 'subtle');
+  assert.equal(overlay.getAttribute('data-mode'), 'subtle');
+  assert.equal(bodyAttributes.get('aria-busy'), undefined);
+
+  runtime.context.hideRevisionGraphWebviewLoading(elements);
+  assert.equal(overlay.getAttribute('aria-hidden'), 'true');
+  assert.equal(overlay.getAttribute('data-mode'), null);
 });
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {

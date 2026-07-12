@@ -1898,32 +1898,25 @@
 	    }
 
 	    function showLoading(label, pendingControl = null, mode = 'blocking') {
-	      if (typeof label === 'string' && loadingMessage) {
-	        loadingMessage.textContent = label;
-	      }
-      if (loadingOverlay) {
-        loadingOverlay.setAttribute('aria-hidden', 'false');
-        loadingOverlay.setAttribute('data-mode', mode);
-      }
+      showRevisionGraphWebviewLoading(
+        {
+          body: document.body,
+          overlay: loadingOverlay,
+          message: loadingMessage
+        },
+        label,
+        mode
+      );
       setToolbarBusy(true, pendingControl);
       closeViewOptionsMenu();
-      document.body.classList.remove('loading', 'loading-subtle');
-      if (mode === 'subtle') {
-        document.body.classList.add('loading-subtle');
-        document.body.removeAttribute('aria-busy');
-      } else {
-        document.body.classList.add('loading');
-        document.body.setAttribute('aria-busy', 'true');
-      }
       closeContextMenu();
     }
 
     function hideLoading() {
-      if (loadingOverlay) {
-        loadingOverlay.setAttribute('aria-hidden', 'true');
-        loadingOverlay.removeAttribute('data-mode');
-      }
+      hideRevisionGraphWebviewLoading({
+        body: document.body,
+        overlay: loadingOverlay,
+        message: loadingMessage
+      });
       setToolbarBusy(false);
-      document.body.classList.remove('loading', 'loading-subtle');
-      document.body.removeAttribute('aria-busy');
     }

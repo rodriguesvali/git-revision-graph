@@ -40,6 +40,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.host-state.json` strictly checks the host-state boundary. The webview now rejects malformed init/update state before the legacy hydration path can mutate runtime state.
 - `tsconfig.webview.state-model.json` strictly checks the pure projection from validated host state into the browser runtime model. The legacy bootstrap now consumes that model rather than mapping host fields ad hoc.
 - `tsconfig.webview.status.json` strictly checks the status-card DOM adapter. Empty-state actions and error/status presentation no longer mutate DOM elements directly from the bootstrap.
+- `tsconfig.webview.loading.json` strictly checks the loading DOM adapter. Overlay mode, progress text and accessibility attributes no longer mutate DOM elements directly from the legacy interaction wrapper.
 
 ### Compatibility Boundary
 
