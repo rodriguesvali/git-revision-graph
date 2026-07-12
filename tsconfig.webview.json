@@ -34,6 +34,7 @@
     "src/revisionGraph/webview/runtime/minimapContent.ts",
     "src/revisionGraph/webview/runtime/minimapViewportUi.ts",
     "src/revisionGraph/webview/runtime/minimapPreferenceUi.ts",
+    "src/revisionGraph/webview/runtime/viewportDrag.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",

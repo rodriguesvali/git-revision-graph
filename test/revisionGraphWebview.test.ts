@@ -724,6 +724,8 @@ test('clears graph drag state when mouse release is missed', () => {
   assert.match(html, /window\.addEventListener\('dragstart', endPointerDrivenInteractions\);/);
   assert.match(html, /if \(typeof document\.addEventListener === 'function'\) \{\s*document\.addEventListener\('mouseleave', endPointerDrivenInteractions\);\s*\}/s);
   assert.match(html, /if \(event\.buttons !== undefined && \(event\.buttons & 1\) === 0\) \{\s*endViewportDrag\(\);\s*return;\s*\}/s);
+  assert.match(html, /function createRevisionGraphWebviewViewportDragState\(/);
+  assert.match(html, /function calculateRevisionGraphWebviewViewportDrag\(/);
   assert.match(html, /function endViewportDrag\(\) \{[\s\S]*?viewport\.classList\.remove\('dragging'\);[\s\S]*?dragState = null;[\s\S]*?return true;\s*\}/s);
 });
 
@@ -1658,6 +1660,28 @@ test('synchronizes revision graph minimap preference through the typed DOM adapt
   );
   assert.equal(minimapToggle.checked, false);
   assert.equal(graphMinimap.hidden, true);
+});
+
+test('calculates revision graph viewport dragging through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const initialState = runtime.context.createRevisionGraphWebviewViewportDragState(10, 20, 100, 200);
+
+  assert.deepEqual(
+    { ...runtime.context.calculateRevisionGraphWebviewViewportDrag(initialState, 12, 23) },
+    { scrollLeft: 98, scrollTop: 197, moved: false, shouldSuppressNodeClick: false }
+  );
+  assert.deepEqual(
+    { ...runtime.context.calculateRevisionGraphWebviewViewportDrag(initialState, 15, 18) },
+    { scrollLeft: 95, scrollTop: 202, moved: true, shouldSuppressNodeClick: true }
+  );
+  assert.deepEqual(
+    { ...runtime.context.calculateRevisionGraphWebviewViewportDrag(
+      { ...initialState, moved: true },
+      16,
+      18
+    ) },
+    { scrollLeft: 94, scrollTop: 202, moved: true, shouldSuppressNodeClick: false }
+  );
 });
 
 test('renders revision graph minimap SVG content through the typed module', () => {

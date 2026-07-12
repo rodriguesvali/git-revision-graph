@@ -359,13 +359,12 @@ const VIEWPORT_PADDING_LEFT = 18;
       if (event.button !== 0) {
         return;
       }
-      dragState = {
-        startX: event.clientX,
-        startY: event.clientY,
-        scrollLeft: viewport.scrollLeft,
-        scrollTop: viewport.scrollTop,
-        moved: false
-      };
+      dragState = createRevisionGraphWebviewViewportDragState(
+        event.clientX,
+        event.clientY,
+        viewport.scrollLeft,
+        viewport.scrollTop
+      );
       viewport.classList.add('dragging');
       closeContextMenu();
       event.preventDefault();
@@ -412,14 +411,17 @@ const VIEWPORT_PADDING_LEFT = 18;
         endViewportDrag();
         return;
       }
-      const dx = event.clientX - dragState.startX;
-      const dy = event.clientY - dragState.startY;
-      if (!dragState.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
-        dragState.moved = true;
+      const dragUpdate = calculateRevisionGraphWebviewViewportDrag(
+        dragState,
+        event.clientX,
+        event.clientY
+      );
+      if (dragUpdate.shouldSuppressNodeClick) {
         suppressNodeClick = true;
       }
-      viewport.scrollLeft = dragState.scrollLeft - dx;
-      viewport.scrollTop = dragState.scrollTop - dy;
+      dragState.moved = dragUpdate.moved;
+      viewport.scrollLeft = dragUpdate.scrollLeft;
+      viewport.scrollTop = dragUpdate.scrollTop;
       syncMinimap('viewport');
     });
     window.addEventListener('mouseup', () => {
