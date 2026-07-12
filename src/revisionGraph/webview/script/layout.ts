@@ -1,6 +1,6 @@
 const NODE_MIN_WIDTH = 128;
 const REF_LINE_HEIGHT = 25;
-    function applyNodeLayout(persist = true, options = {}) {
+    function applyNodeLayout(persist = true, options: { updateScenePlacement?: boolean; syncMinimap?: boolean } = {}) {
       for (const [hash, element] of nodeElements.entries()) {
         const defaultLeft = getDefaultNodeLeft(hash);
         const left = clampNodeLeft(hash, defaultLeft + Number(nodeOffsets[hash] || 0));
@@ -54,7 +54,12 @@ const REF_LINE_HEIGHT = 25;
           !hasNodeHorizontalOffset(sourceHash) &&
           !hasNodeHorizontalOffset(targetHash)
         ) {
-          const routedPath = describeRoutedEdgePath(edge, sourceNode, targetNode);
+          const routedPath = describeRevisionGraphWebviewRoutedEdgePath(
+            edge,
+            sourceNode,
+            targetNode,
+            EDGE_VERTICAL_INSET
+          );
           if (routedPath) {
             return routedPath;
           }
@@ -73,7 +78,7 @@ const REF_LINE_HEIGHT = 25;
 	      const targetY = connectsDownward
         ? targetTop + EDGE_VERTICAL_INSET
         : targetTop + targetHeight - EDGE_VERTICAL_INSET;
-	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
+	      return describeRevisionGraphWebviewFallbackEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
     function hasNodeHorizontalOffset(hash) {
@@ -119,7 +124,7 @@ const REF_LINE_HEIGHT = 25;
       });
     }
 
-    function updateScenePlacement(options = {}) {
+    function updateScenePlacement(options: { source?: 'layout' } = {}) {
       traceWebviewPhase('webview.canvas-layout.scene-placement', () => {
         const useLayoutSource = options.source === 'layout';
         const bounds = useLayoutSource ? getGraphLayoutBounds() : getGraphBounds();
@@ -140,7 +145,7 @@ const REF_LINE_HEIGHT = 25;
       });
     }
 
-    function centerGraphInViewport(options = {}) {
+    function centerGraphInViewport(options: { source?: 'layout'; syncMinimap?: boolean } = {}) {
       const useLayoutSource = options.source === 'layout';
       const bounds = useLayoutSource ? getDisplayedGraphLayoutBounds() : getDisplayedGraphBounds();
       const displayedHeadAnchor = useLayoutSource ? getDisplayedHeadLayoutAnchorBounds() : getDisplayedHeadAnchorBounds();
@@ -160,7 +165,7 @@ const REF_LINE_HEIGHT = 25;
       );
     }
 
-    function centerViewportOnPoint(targetCenterX, targetCenterY, options = {}) {
+    function centerViewportOnPoint(targetCenterX, targetCenterY, options: { syncMinimap?: boolean } = {}) {
       const visibleSize = getVisibleViewportSize();
       const visibleWidth = visibleSize.width;
       const visibleHeight = visibleSize.height;
