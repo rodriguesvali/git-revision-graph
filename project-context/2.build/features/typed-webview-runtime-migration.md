@@ -20,7 +20,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 
 - Keep the extension host on its existing CommonJS `tsconfig.json` output.
 - Add `tsconfig.webview.json` with `ES2022` browser output and no Node or VS Code ambient types. It will become fully strict as the compatibility surface is removed.
-- Load one module entrypoint from the webview HTML through a URI produced by `webview.asWebviewUri`.
+- Load one classic browser script from the webview HTML through a URI produced by `webview.asWebviewUri`. The legacy runtime currently relies on shared globals, so module emission is deferred until that ownership is removed.
 - Limit `localResourceRoots` to the compiled webview asset directory.
 - Extend the CSP helper only enough to allow the generated webview resource origin while retaining nonce protection and `default-src 'none'`.
 - Keep `RevisionGraphMessage` and `RevisionGraphViewHostMessage` as the shared host/webview protocol source; split protocol-only types into a browser-safe module if compilation reveals value-level host dependencies.
@@ -34,6 +34,8 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - Existing behavioral tests execute the compiled runtime asset rather than extracting an executable string from generated HTML.
 - `tsconfig.webview.messages.json` strictly checks every outbound message builder against an explicit discriminated protocol before the compatibility runtime is emitted.
 - Incoming host messages now pass through a typed structural guard before the legacy state handler can apply them.
+- `tsconfig.webview.dom.json` strictly checks the required-element lookup helper; bootstrap binds every shell element through that helper with a concrete element type.
+- `tsconfig.webview.api.json` strictly checks the narrow VS Code webview adapter, including persisted state and the discriminated outbound-message contract.
 
 ### Compatibility Boundary
 
@@ -60,7 +62,7 @@ Module boundaries may be refined during extraction, but shared mutable state mus
 
 ### 1. Establish the browser compilation boundary
 
-- Add `tsconfig.webview.json` and build scripts for strict type checking plus ES-module emission into `out/webview/`.
+- Add `tsconfig.webview.json` and build scripts for strict type checking plus browser-script emission into `out/webview/`.
 - Update `clean`, `build`, `watch`, and test compilation so host and browser targets are deterministic from a clean checkout.
 - Exclude the browser entrypoint from the host CommonJS compilation while allowing tests to compile browser modules for Node.
 - Add a manifest/package test proving the compiled entrypoint is included in a VSIX-shaped file set; do not run packaging without maintainer approval.
@@ -72,7 +74,7 @@ Exit criteria: a minimal typed entrypoint compiles and is present after `npm run
 - Pass the extension URI or resolved runtime URI into the revision-graph controller instead of letting HTML rendering assume inline code.
 - Resolve the compiled entrypoint with `webview.asWebviewUri`.
 - Change `createScriptOnlyWebviewOptions` to accept the narrow compiled asset root and preserve `retainContextWhenHidden` for the editor panel.
-- Change `renderRevisionGraphShellHtml` to receive the runtime URI and render a nonce-bearing `<script type="module" src="...">` tag.
+- Change `renderRevisionGraphShellHtml` to receive the runtime URI and render a nonce-bearing `<script src="...">` tag.
 - Extend CSP generation for the revision graph without weakening Compare Results or Show Log, which may continue using inline nonce scripts in this scope.
 
 Exit criteria: the panel loads the minimal external module under the intended CSP, and HTML contains no inline revision-graph executable code.

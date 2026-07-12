@@ -3,13 +3,26 @@
  * The runtime progressively replaces these compatibility surfaces with narrow
  * DOM adapters; no Node.js or VS Code extension API types leak into this build.
  */
-interface RevisionGraphWebviewApi {
-  getState(): Record<string, unknown> | undefined;
-  setState(state: Record<string, unknown>): void;
-  postMessage(message: unknown): void;
+interface RevisionGraphWebviewApi<
+  State extends Record<string, unknown> = Record<string, unknown>,
+  OutboundMessage = RevisionGraphWebviewMessage
+> {
+  getState(): State | undefined;
+  setState(state: State): void;
+  postMessage(message: OutboundMessage): boolean;
 }
 
-declare function acquireVsCodeApi(): RevisionGraphWebviewApi;
+interface RevisionGraphWebviewPersistentState extends Record<string, unknown> {
+  readonly showMinimap?: boolean;
+  readonly nodeOffsets?: Record<string, { readonly x: number; readonly y: number }>;
+}
+
+type RevisionGraphRuntimeVsCodeApi = RevisionGraphWebviewApi<
+  RevisionGraphWebviewPersistentState,
+  RevisionGraphWebviewMessage
+>;
+
+declare function acquireVsCodeApi(): RevisionGraphRuntimeVsCodeApi;
 declare const window: any;
 declare const document: any;
 declare const console: any;

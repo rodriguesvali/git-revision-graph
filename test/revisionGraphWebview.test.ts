@@ -257,13 +257,13 @@ test('shows loading feedback while centering the graph on HEAD', () => {
 test('reloads the graph from the webview toolbar', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /const reloadButton = document\.getElementById\('reloadButton'\);/);
-  assert.match(html, /const reloadMenuButton = document\.getElementById\('reloadMenuButton'\);/);
-  assert.match(html, /const fetchAllButton = document\.getElementById\('fetchAllButton'\);/);
-  assert.match(html, /const pullButton = document\.getElementById\('pullButton'\);/);
-  assert.match(html, /const pushButton = document\.getElementById\('pushButton'\);/);
-  assert.match(html, /const pushMenuButton = document\.getElementById\('pushMenuButton'\);/);
-  assert.match(html, /const syncButton = document\.getElementById\('syncButton'\);/);
+  assert.match(html, /const reloadButton = requireRevisionGraphElement\('reloadButton'\);/);
+  assert.match(html, /const reloadMenuButton = requireRevisionGraphElement\('reloadMenuButton'\);/);
+  assert.match(html, /const fetchAllButton = requireRevisionGraphElement\('fetchAllButton'\);/);
+  assert.match(html, /const pullButton = requireRevisionGraphElement\('pullButton'\);/);
+  assert.match(html, /const pushButton = requireRevisionGraphElement\('pushButton'\);/);
+  assert.match(html, /const pushMenuButton = requireRevisionGraphElement\('pushMenuButton'\);/);
+  assert.match(html, /const syncButton = requireRevisionGraphElement\('syncButton'\);/);
   assert.match(
     html,
     /reloadButton\.addEventListener\('click', \(\) => \{\s*reloadRevisionGraph\(\);\s*\}\);/s
@@ -1360,6 +1360,7 @@ function createWebviewRuntime() {
     'statusMessage',
     'statusActionButton',
     'contextMenu',
+    'referenceTooltip',
     'graphMinimap',
     'minimapSvg',
     'minimapEdgeLayer',

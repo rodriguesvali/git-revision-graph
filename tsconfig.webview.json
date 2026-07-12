@@ -14,8 +14,11 @@
     "types": []
   },
   "files": [
+    "src/revisionGraph/webview/runtime/contracts.d.ts",
     "src/revisionGraph/webview/runtime/environment.d.ts",
+    "src/revisionGraph/webview/runtime/api.ts",
     "src/revisionGraph/webview/runtime/display.ts",
+    "src/revisionGraph/webview/runtime/dom.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/script/messages.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",
