@@ -48,6 +48,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.selection-highlights-ui.json` strictly checks primary selection CSS state. Reference and graph-node base/compare classes no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.relationship-highlights.json` strictly checks selection relationship calculations. Ancestor/descendant sets, edge-path keys and comparison-selection state are now explicit data instead of ad hoc interaction logic.
 - `tsconfig.webview.primary-path.json` strictly checks primary-path traversal. Directional maps, HEAD distances, compact ancestor paths and candidate scoring are no longer implemented through runtime globals.
+- `tsconfig.webview.minimap-viewport-ui.json` strictly checks minimap viewport state. The visible-region rectangle and its minimap auto-scroll no longer mutate DOM elements directly from the legacy layout implementation.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary

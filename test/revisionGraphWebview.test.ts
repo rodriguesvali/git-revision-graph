@@ -691,6 +691,8 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /function renderMinimapEdge\(edge, transform\)/);
   assert.match(html, /function renderMinimapNode\(hash, transform\)/);
   assert.match(html, /function syncMinimapViewport\(transform\)/);
+  assert.match(html, /function syncRevisionGraphWebviewMinimapViewportUi\(/);
+  assert.match(html, /function ensureRevisionGraphWebviewMinimapViewportVisibleUi\(/);
   assert.match(html, /function centerViewportFromMinimapEvent\(event\)/);
   assert.match(html, /function getMinimapTransform\(\)/);
   assert.match(html, /const height = 240;/);
@@ -1588,6 +1590,53 @@ test('synchronizes primary revision graph selection classes through the typed DO
   assert.equal(compareReferenceClasses.has('compare'), false);
   assert.equal(baseNodeClasses.has('has-compare'), false);
   assert.equal(compareNodeClasses.has('compare-target'), false);
+});
+
+test('synchronizes revision graph minimap viewport through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const attributes = new Map<string, string>();
+  const minimapViewport = {
+    setAttribute(name: string, value: string): void {
+      attributes.set(name, value);
+    },
+    getAttribute(name: string): string | null {
+      return attributes.get(name) ?? null;
+    }
+  };
+  const transform = {
+    bounds: { minX: 0, minY: 0, maxX: 100, maxY: 100 },
+    scale: 2,
+    mapX: (value: number) => value * 2,
+    mapY: (value: number) => value * 2
+  };
+
+  runtime.context.syncRevisionGraphWebviewMinimapViewportUi(minimapViewport, transform, {
+    visibleWidth: 80,
+    visibleHeight: 60,
+    visibleLeft: 40,
+    visibleTop: 50
+  });
+
+  assert.equal(attributes.get('x'), '80');
+  assert.equal(attributes.get('y'), '100');
+  assert.equal(attributes.get('width'), '120');
+  assert.equal(attributes.get('height'), '100');
+
+  attributes.set('x', '200');
+  attributes.set('y', '300');
+  attributes.set('width', '20');
+  attributes.set('height', '20');
+  const graphMinimap = {
+    scrollLeft: 0,
+    scrollTop: 0,
+    clientWidth: 100,
+    clientHeight: 100
+  };
+
+  runtime.context.ensureRevisionGraphWebviewMinimapViewportVisibleUi(graphMinimap, minimapViewport);
+
+  assert.equal(graphMinimap.scrollLeft, 130);
+  assert.equal(graphMinimap.scrollTop, 230);
 });
 
 test('traces revision graph primary paths through the typed graph module', () => {

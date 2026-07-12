@@ -440,21 +440,12 @@ const REF_LINE_HEIGHT = 25;
 
     function syncMinimapViewport(transform) {
       const visibleSize = getVisibleViewportSize();
-      const visibleWidth = visibleSize.width / currentZoom;
-      const visibleHeight = visibleSize.height / currentZoom;
-      const visibleLeft = Math.max(0, (viewport.scrollLeft - VIEWPORT_PADDING_LEFT) / currentZoom);
-      const visibleTop = Math.max(0, (viewport.scrollTop - VIEWPORT_PADDING_TOP) / currentZoom);
-      const visibleRight = visibleLeft + visibleWidth;
-      const visibleBottom = visibleTop + visibleHeight;
-      const clippedLeft = clamp(visibleLeft, transform.bounds.minX, transform.bounds.maxX);
-      const clippedTop = clamp(visibleTop, transform.bounds.minY, transform.bounds.maxY);
-      const clippedRight = clamp(visibleRight, transform.bounds.minX, transform.bounds.maxX);
-      const clippedBottom = clamp(visibleBottom, transform.bounds.minY, transform.bounds.maxY);
-
-      minimapViewport.setAttribute('x', String(transform.mapX(clippedLeft)));
-      minimapViewport.setAttribute('y', String(transform.mapY(clippedTop)));
-      minimapViewport.setAttribute('width', String(Math.max(3, (clippedRight - clippedLeft) * transform.scale)));
-      minimapViewport.setAttribute('height', String(Math.max(3, (clippedBottom - clippedTop) * transform.scale)));
+      syncRevisionGraphWebviewMinimapViewportUi(minimapViewport, transform, {
+        visibleWidth: visibleSize.width / currentZoom,
+        visibleHeight: visibleSize.height / currentZoom,
+        visibleLeft: Math.max(0, (viewport.scrollLeft - VIEWPORT_PADDING_LEFT) / currentZoom),
+        visibleTop: Math.max(0, (viewport.scrollTop - VIEWPORT_PADDING_TOP) / currentZoom)
+      });
     }
 
     function ensureMinimapViewportVisible(transform) {
@@ -462,22 +453,7 @@ const REF_LINE_HEIGHT = 25;
         return;
       }
 
-      const x = Number(minimapViewport.getAttribute('x') || 0);
-      const y = Number(minimapViewport.getAttribute('y') || 0);
-      const width = Number(minimapViewport.getAttribute('width') || 0);
-      const height = Number(minimapViewport.getAttribute('height') || 0);
-      const margin = 10;
-      if (y < graphMinimap.scrollTop + margin) {
-        graphMinimap.scrollTop = Math.max(0, y - margin);
-      } else if (y + height > graphMinimap.scrollTop + graphMinimap.clientHeight - margin) {
-        graphMinimap.scrollTop = Math.max(0, y + height - graphMinimap.clientHeight + margin);
-      }
-
-      if (x < graphMinimap.scrollLeft + margin) {
-        graphMinimap.scrollLeft = Math.max(0, x - margin);
-      } else if (x + width > graphMinimap.scrollLeft + graphMinimap.clientWidth - margin) {
-        graphMinimap.scrollLeft = Math.max(0, x + width - graphMinimap.clientWidth + margin);
-      }
+      ensureRevisionGraphWebviewMinimapViewportVisibleUi(graphMinimap, minimapViewport);
     }
 
     function centerViewportFromMinimapEvent(event) {
