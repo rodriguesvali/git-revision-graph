@@ -491,10 +491,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /publishedLocalBranchNames = new Set\(stateModel\.publishedLocalBranchNames\);/);
   assert.doesNotMatch(html, /appendMenuSubmenu\('Remote'/);
   assert.match(html, /function getCurrentHeadRemoteActionState\(\)/);
-  assert.match(html, /pullButton\.title = 'Pull from ' \+ remoteActionState\.upstreamLabel;/);
-  assert.match(html, /pushButton\.title = 'Push to ' \+ remoteActionState\.upstreamLabel;/);
-  assert.match(html, /pushMenuButton\.title = 'More push options for ' \+ remoteActionState\.upstreamLabel;/);
-  assert.match(html, /syncButton\.title = 'Sync with ' \+ remoteActionState\.upstreamLabel;/);
+  assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarButton\(/);
+  assert.match(html, /`Pull from \$\{upstreamLabel\}`/);
+  assert.match(html, /`More push options for \$\{upstreamLabel\}`/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function createRevisionGraphPushCurrentHeadMessage\(mode\) \{\s*return \{ type: 'push-current-head', mode: mode \};/s);
   assert.match(html, /const canResetToTarget =\s*target\.kind !== 'head' &&\s*target\.kind !== 'stash' &&\s*!\(target\.kind === 'branch' && !!currentHeadName && target\.name === currentHeadName\);/s);
