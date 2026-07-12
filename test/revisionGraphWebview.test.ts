@@ -1797,6 +1797,33 @@ test('builds and queries the revision graph virtual candidate index through the 
   );
 });
 
+test('calculates revision graph virtual scene bounds and keys through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const layouts = new Map([
+    ['from', { defaultTop: 100, height: 30 }],
+    ['to', { defaultTop: 40, height: 20 }]
+  ]);
+  assert.deepEqual(
+    { ...runtime.context.getRevisionGraphWebviewVirtualEdgeVerticalBounds({ from: 'from', to: 'to' }, layouts) },
+    { top: 40, bottom: 130 }
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewVirtualEdgeVerticalBounds({ from: 'missing', to: 'to' }, layouts),
+    null
+  );
+  assert.equal(
+    runtime.context.createRevisionGraphWebviewVirtualEdgeKey({ from: 'from', to: 'to' }),
+    'from->to'
+  );
+  assert.equal(
+    runtime.context.createRevisionGraphWebviewVirtualSceneKey(
+      new Set(['second', 'first']),
+      [{ from: 'second', to: 'first' }, { from: 'first', to: 'third' }]
+    ),
+    'first,second|first->third,second->first'
+  );
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

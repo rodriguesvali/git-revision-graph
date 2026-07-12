@@ -55,6 +55,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.viewport-position.json` strictly checks viewport centering and restoration. Scroll positions and retained scene centers no longer duplicate arithmetic across zoom, recenter and hydration paths.
 - `tsconfig.webview.virtual-viewport.json` strictly checks virtual viewport bounds plus node and edge visibility. Virtual rendering now delegates its geometry and intersection calculations to the typed runtime.
 - `tsconfig.webview.virtual-index.json` strictly checks virtual scene bucket indexing and candidate collection. Vertical partitioning, invalid-bound rejection and candidate de-duplication no longer depend on the legacy bootstrap.
+- `tsconfig.webview.virtual-scene.json` strictly checks virtual edge vertical bounds and render-scene keys. Cache identity and edge-index inputs now delegate to the typed runtime.
 - `tsconfig.webview.node-drag.json` strictly checks node-drag geometry. Node offsets and canvas bounds no longer calculate through implicit runtime globals.
 - `tsconfig.webview.remote-toolbar-ui.json` strictly checks remote toolbar rendering. Pull, push and sync availability plus accessible labels no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.zoom-toolbar-ui.json` strictly checks zoom toolbar rendering. Main and minimap zoom-button availability no longer mutates directly from the legacy interaction implementation.

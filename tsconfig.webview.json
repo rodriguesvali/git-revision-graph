@@ -38,6 +38,7 @@
     "src/revisionGraph/webview/runtime/viewportPosition.ts",
     "src/revisionGraph/webview/runtime/virtualViewport.ts",
     "src/revisionGraph/webview/runtime/virtualIndex.ts",
+    "src/revisionGraph/webview/runtime/virtualScene.ts",
     "src/revisionGraph/webview/runtime/nodeDrag.ts",
     "src/revisionGraph/webview/runtime/remoteToolbarUi.ts",
     "src/revisionGraph/webview/runtime/zoomToolbarUi.ts",

@@ -1374,16 +1374,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function getEdgeVerticalBounds(edge) {
-      const fromLayout = graphNodeByHash.get(edge.from);
-      const toLayout = graphNodeByHash.get(edge.to);
-      if (!fromLayout || !toLayout) {
-        return null;
-      }
-
-      return {
-        top: Math.min(fromLayout.defaultTop, toLayout.defaultTop),
-        bottom: Math.max(fromLayout.defaultTop + fromLayout.height, toLayout.defaultTop + toLayout.height)
-      };
+      return getRevisionGraphWebviewVirtualEdgeVerticalBounds(edge, graphNodeByHash);
     }
 
     function collectVirtualNodeCandidates(bounds) {
@@ -1405,14 +1396,11 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function getVirtualEdgeKey(edge) {
-      return edge.from + '->' + edge.to;
+      return createRevisionGraphWebviewVirtualEdgeKey(edge);
     }
 
     function buildVirtualSceneKey(visibleHashes, visibleEdges) {
-      return [
-        [...visibleHashes].sort().join(','),
-        visibleEdges.map(getVirtualEdgeKey).sort().join(',')
-      ].join('|');
+      return createRevisionGraphWebviewVirtualSceneKey(visibleHashes, visibleEdges);
     }
 
     function refreshGraphCaches() {
