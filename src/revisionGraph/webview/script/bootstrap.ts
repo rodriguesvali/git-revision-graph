@@ -115,8 +115,13 @@ const VIEWPORT_PADDING_LEFT = 18;
     let minimapEnabled = initialWebviewState.showMinimap === true;
     let layoutOffsetX = 0;
     let layoutOffsetY = 0;
-    let dragState = null;
-    let nodeDragState = null;
+    let dragState: RevisionGraphWebviewViewportDragState | null = null;
+    let nodeDragState: {
+      readonly hash: string;
+      readonly element: HTMLElement;
+      readonly startX: number;
+      readonly startOffset: number;
+    } | null = null;
     let suppressNodeClick = false;
     let nodeOffsets = {};
     let searchQuery = '';
@@ -139,8 +144,8 @@ const VIEWPORT_PADDING_LEFT = 18;
     let lastVirtualSceneKey = '';
     let virtualNodeIndex = new Map();
     let virtualEdgeIndex = new Map();
-    let reloadCacheMenu = null;
-    let pushModeMenu = null;
+    let reloadCacheMenu: HTMLDivElement | null = null;
+    let pushModeMenu: HTMLDivElement | null = null;
     const flowKindLabels = {
       main: 'Main',
       release: 'Release',
@@ -821,7 +826,15 @@ const VIEWPORT_PADDING_LEFT = 18;
       return Date.now();
     }
 
-    function applyState(nextState: RevisionGraphWebviewHostState, isInit: boolean, options = {}) {
+    function applyState(
+      nextState: RevisionGraphWebviewHostState,
+      isInit: boolean,
+      options: {
+        readonly preserveSelection?: boolean;
+        readonly preserveViewport?: boolean;
+        readonly invalidateRemoteTagState?: boolean;
+      } = {}
+    ) {
       if (!nextState) {
         return;
       }
@@ -848,10 +861,10 @@ const VIEWPORT_PADDING_LEFT = 18;
         currentFlowGovernance = stateModel.flowGovernance;
         flowReferenceByName = buildFlowReferenceMap(currentFlowGovernance);
         mergeBlockedTargets = new Set(stateModel.mergeBlockedTargets);
-        references = stateModel.references;
+        references = [...stateModel.references];
         syncRemoteTagStateCache(stateModel.state, previousRepositoryPath, !!options.invalidateRemoteTagState);
-        graphNodes = stateModel.graphNodes;
-        graphEdges = stateModel.graphEdges;
+        graphNodes = stateModel.graphNodes as RevisionGraphWebviewLegacyNodeLayout[];
+        graphEdges = stateModel.graphEdges as RevisionGraphWebviewLegacyEdge[];
         graphNodeByHash = new Map(graphNodes.map((node) => [node.hash, node]));
         primaryAncestorNextByHash = stateModel.primaryAncestorNextByHash;
         sceneLayoutKey = stateModel.sceneLayoutKey;
