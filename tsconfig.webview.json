@@ -27,6 +27,7 @@
     "src/revisionGraph/webview/runtime/search.ts",
     "src/revisionGraph/webview/runtime/searchUi.ts",
     "src/revisionGraph/webview/runtime/searchHighlights.ts",
+    "src/revisionGraph/webview/runtime/selectionHighlightsUi.ts",
     "src/revisionGraph/webview/runtime/relationshipHighlights.ts",
     "src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts",
     "src/revisionGraph/webview/runtime/primaryPath.ts",

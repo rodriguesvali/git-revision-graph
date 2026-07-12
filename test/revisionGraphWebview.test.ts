@@ -549,7 +549,9 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function createRevisionGraphResolveRemoteTagStateMessage\(target\)/);
   assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphDeleteRemoteTagMessage\(target\)\);/s);
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
-  assert.match(html, /element\.classList\.toggle\('base-target', !!baseTarget && baseTarget\.hash === hash\);/);
+  assert.match(html, /function syncRevisionGraphWebviewSelectionHighlightsUi\(/);
+  assert.match(html, /element\.classList\.toggle\('base-target', baseHash === hash\);/);
+  assert.match(html, /syncRevisionGraphWebviewSelectionHighlightsUi\(\s*document\.querySelectorAll\('\[data-ref-id\]'\),\s*nodeElements,/s);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
   assert.match(html, /\.node\.base-target\.has-compare \.node-base-badge/);
   assert.match(html, /right: -10px;/);
@@ -1534,6 +1536,60 @@ test('synchronizes revision graph relationship classes through the typed DOM ada
   assert.equal(descendantEdgeClasses.has('related'), false);
 });
 
+test('synchronizes primary revision graph selection classes through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const baseReferenceClasses = new Set<string>();
+  const compareReferenceClasses = new Set<string>();
+  const otherReferenceClasses = new Set<string>();
+  const baseNodeClasses = new Set<string>();
+  const compareNodeClasses = new Set<string>();
+  const otherNodeClasses = new Set<string>();
+  const referenceElements = [
+    createSelectionElement('base-ref', baseReferenceClasses),
+    createSelectionElement('compare-ref', compareReferenceClasses),
+    createSelectionElement('other-ref', otherReferenceClasses)
+  ];
+  const nodeElements = new Map([
+    ['base-hash', { classList: createClassList(baseNodeClasses) }],
+    ['compare-hash', { classList: createClassList(compareNodeClasses) }],
+    ['other-hash', { classList: createClassList(otherNodeClasses) }]
+  ]);
+
+  runtime.context.syncRevisionGraphWebviewSelectionHighlightsUi(
+    referenceElements,
+    nodeElements,
+    'base-ref',
+    'compare-ref',
+    'base-hash',
+    'compare-hash',
+    true
+  );
+
+  assert.equal(baseReferenceClasses.has('base'), true);
+  assert.equal(baseReferenceClasses.has('has-compare'), true);
+  assert.equal(compareReferenceClasses.has('compare'), true);
+  assert.equal(otherReferenceClasses.has('base'), false);
+  assert.equal(baseNodeClasses.has('base-target'), true);
+  assert.equal(baseNodeClasses.has('has-compare'), true);
+  assert.equal(compareNodeClasses.has('compare-target'), true);
+  assert.equal(otherNodeClasses.has('base-target'), false);
+
+  runtime.context.syncRevisionGraphWebviewSelectionHighlightsUi(
+    referenceElements,
+    nodeElements,
+    'base-ref',
+    null,
+    'base-hash',
+    null,
+    false
+  );
+
+  assert.equal(baseReferenceClasses.has('has-compare'), false);
+  assert.equal(compareReferenceClasses.has('compare'), false);
+  assert.equal(baseNodeClasses.has('has-compare'), false);
+  assert.equal(compareNodeClasses.has('compare-target'), false);
+});
+
 test('traces revision graph primary paths through the typed graph module', () => {
   const runtime = createWebviewRuntime();
   const nodes = [
@@ -1603,6 +1659,15 @@ function createRelationshipEdge(fromHash: string, toHash: string, classes: Set<s
         return toHash;
       }
       return null;
+    }
+  };
+}
+
+function createSelectionElement(referenceId: string, classes: Set<string>) {
+  return {
+    classList: createClassList(classes),
+    getAttribute(name: string): string | null {
+      return name === 'data-ref-id' ? referenceId : null;
     }
   };
 }

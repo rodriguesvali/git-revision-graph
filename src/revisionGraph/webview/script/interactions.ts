@@ -62,17 +62,15 @@
     function syncSelection() {
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
-      for (const element of document.querySelectorAll('[data-ref-id]')) {
-        const refId = element.getAttribute('data-ref-id');
-        element.classList.toggle('base', refId === selected[0]);
-        element.classList.toggle('compare', refId === selected[1]);
-        element.classList.toggle('has-compare', selected.length === 2 && refId === selected[0]);
-      }
-      for (const [hash, element] of nodeElements.entries()) {
-        element.classList.toggle('base-target', !!baseTarget && baseTarget.hash === hash);
-        element.classList.toggle('has-compare', selected.length === 2 && !!baseTarget && baseTarget.hash === hash);
-        element.classList.toggle('compare-target', !!compareTarget && compareTarget.hash === hash);
-      }
+      syncRevisionGraphWebviewSelectionHighlightsUi(
+        document.querySelectorAll('[data-ref-id]'),
+        nodeElements,
+        selected[0] || null,
+        selected[1] || null,
+        baseTarget && typeof baseTarget.hash === 'string' ? baseTarget.hash : null,
+        compareTarget && typeof compareTarget.hash === 'string' ? compareTarget.hash : null,
+        selected.length === 2
+      );
       syncRelationshipHighlights();
       syncSearchHighlights();
       syncMinimap();
