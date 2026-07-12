@@ -1,5 +1,3 @@
-export function renderRevisionGraphScriptReferenceTooltip(): string {
-  return `
     let referenceTooltipHideTimer = 0;
     let activeReferenceTooltipHash = '';
     let commitShortStatByHash = new Map();
@@ -222,5 +220,3 @@ export function renderRevisionGraphScriptReferenceTooltip(): string {
       const labels = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
       return labels[kind] || kind;
     }
-  `;
-}

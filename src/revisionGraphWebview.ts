@@ -1,4 +1,3 @@
-import { renderRevisionGraphScript } from './revisionGraph/webview/script';
 import { renderRevisionGraphStyles } from './revisionGraph/webview/styles';
 import {
   createWebviewContentSecurityPolicy,
@@ -106,14 +105,24 @@ function renderToolbarIcon(iconName: ToolbarIconName): string {
   }
 }
 
-export function renderRevisionGraphShellHtml(): string {
+export interface RevisionGraphWebviewAssets {
+  readonly runtimeUri: string;
+  readonly scriptSource: string;
+}
+
+const testAssets: RevisionGraphWebviewAssets = {
+  runtimeUri: 'revisionGraph.js',
+  scriptSource: 'vscode-webview-resource:'
+};
+
+export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets = testAssets): string {
   const nonce = createWebviewNonce();
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="${createWebviewContentSecurityPolicy(nonce)}" />
+  <meta http-equiv="Content-Security-Policy" content="${createWebviewContentSecurityPolicy(nonce, assets.scriptSource)}" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Git Revision Graph</title>
   ${renderRevisionGraphStyles()}
@@ -407,7 +416,7 @@ export function renderRevisionGraphShellHtml(): string {
       <div class="loading-message" id="loadingMessage">Opening revision graph...</div>
     </div>
   </div>
-  ${renderRevisionGraphScript({ nonce })}
+  <script nonce="${nonce}" src="${assets.runtimeUri}"></script>
 </body>
 </html>`;
 }

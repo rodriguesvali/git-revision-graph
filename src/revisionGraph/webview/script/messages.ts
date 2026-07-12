@@ -1,5 +1,3 @@
-export function renderRevisionGraphScriptMessageBuilders(): string {
-  return `
     function createRevisionGraphWebviewReadyMessage() {
       return { type: 'webview-ready' };
     }
@@ -260,5 +258,3 @@ export function renderRevisionGraphScriptMessageBuilders(): string {
     function createRevisionGraphMergeMessage(target) {
       return { type: 'merge', refName: target.name };
     }
-  `;
-}

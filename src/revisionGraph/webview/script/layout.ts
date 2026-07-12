@@ -1,15 +1,5 @@
-import {
-  EDGE_VERTICAL_INSET,
-  NODE_MIN_WIDTH,
-  REF_LINE_HEIGHT,
-  VIEWPORT_PADDING_BOTTOM,
-  VIEWPORT_PADDING_LEFT,
-  VIEWPORT_PADDING_RIGHT,
-  VIEWPORT_PADDING_TOP
-} from '../shared';
-
-export function renderRevisionGraphScriptLayout(): string {
-  return `
+const NODE_MIN_WIDTH = 128;
+const REF_LINE_HEIGHT = 25;
     function applyNodeLayout(persist = true, options = {}) {
       for (const [hash, element] of nodeElements.entries()) {
         const defaultLeft = getDefaultNodeLeft(hash);
@@ -79,11 +69,11 @@ export function renderRevisionGraphScriptLayout(): string {
 	      const targetHeight = getNodeHeight(targetHash);
 	      const connectsDownward = sourceTop + sourceHeight / 2 <= targetTop + targetHeight / 2;
 	      const sourceY = connectsDownward
-	        ? sourceTop + sourceHeight - ${EDGE_VERTICAL_INSET}
-	        : sourceTop + ${EDGE_VERTICAL_INSET};
+        ? sourceTop + sourceHeight - EDGE_VERTICAL_INSET
+        : sourceTop + EDGE_VERTICAL_INSET;
 	      const targetY = connectsDownward
-	        ? targetTop + ${EDGE_VERTICAL_INSET}
-	        : targetTop + targetHeight - ${EDGE_VERTICAL_INSET};
+        ? targetTop + EDGE_VERTICAL_INSET
+        : targetTop + targetHeight - EDGE_VERTICAL_INSET;
 	      return describeEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
@@ -111,8 +101,8 @@ export function renderRevisionGraphScriptLayout(): string {
     function getVisibleViewportSize() {
       const viewportSize = getViewportLayoutSize();
       return {
-        width: Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT}),
-        height: Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM})
+        width: Math.max(0, viewportSize.width - VIEWPORT_PADDING_LEFT - VIEWPORT_PADDING_RIGHT),
+        height: Math.max(0, viewportSize.height - VIEWPORT_PADDING_TOP - VIEWPORT_PADDING_BOTTOM)
       };
     }
 
@@ -169,11 +159,11 @@ export function renderRevisionGraphScriptLayout(): string {
       const visibleHeight = visibleSize.height;
       const nextScrollLeft = Math.max(
         0,
-        ${VIEWPORT_PADDING_LEFT} + targetCenterX * currentZoom - visibleWidth / 2
+        VIEWPORT_PADDING_LEFT + targetCenterX * currentZoom - visibleWidth / 2
       );
       const nextScrollTop = Math.max(
         0,
-        ${VIEWPORT_PADDING_TOP} + targetCenterY * currentZoom - visibleHeight / 2
+        VIEWPORT_PADDING_TOP + targetCenterY * currentZoom - visibleHeight / 2
       );
       const shouldScroll =
         Math.abs(viewport.scrollLeft - nextScrollLeft) > 0.5 ||
@@ -325,19 +315,19 @@ export function renderRevisionGraphScriptLayout(): string {
     function getNodeWidth(hash) {
       const element = nodeElements.get(hash);
       if (element) {
-        return Number(element.dataset.nodeWidth || 0) || element.offsetWidth || ${NODE_MIN_WIDTH};
+        return Number(element.dataset.nodeWidth || 0) || element.offsetWidth || NODE_MIN_WIDTH;
       }
       const node = graphNodeByHash.get(hash);
-      return node ? node.width : ${NODE_MIN_WIDTH};
+      return node ? node.width : NODE_MIN_WIDTH;
     }
 
     function getNodeHeight(hash) {
       const element = nodeElements.get(hash);
       if (element) {
-        return Number(element.dataset.nodeHeight || 0) || element.offsetHeight || ${REF_LINE_HEIGHT};
+        return Number(element.dataset.nodeHeight || 0) || element.offsetHeight || REF_LINE_HEIGHT;
       }
       const node = graphNodeByHash.get(hash);
-      return node ? node.height : ${REF_LINE_HEIGHT};
+      return node ? node.height : REF_LINE_HEIGHT;
     }
 
     function clampNodeOffset(hash, defaultLeft, offset) {
@@ -453,8 +443,8 @@ export function renderRevisionGraphScriptLayout(): string {
       const visibleSize = getVisibleViewportSize();
       const visibleWidth = visibleSize.width / currentZoom;
       const visibleHeight = visibleSize.height / currentZoom;
-      const visibleLeft = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / currentZoom);
-      const visibleTop = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / currentZoom);
+      const visibleLeft = Math.max(0, (viewport.scrollLeft - VIEWPORT_PADDING_LEFT) / currentZoom);
+      const visibleTop = Math.max(0, (viewport.scrollTop - VIEWPORT_PADDING_TOP) / currentZoom);
       const visibleRight = visibleLeft + visibleWidth;
       const visibleBottom = visibleTop + visibleHeight;
       const clippedLeft = clamp(visibleLeft, transform.bounds.minX, transform.bounds.maxX);
@@ -536,5 +526,3 @@ export function renderRevisionGraphScriptLayout(): string {
         unmapY: (value) => bounds.minY + (value - offsetY) / scale
       };
     }
-  `;
-}

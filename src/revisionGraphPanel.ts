@@ -25,6 +25,7 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     mutationCoordinator?: RepositoryMutationCoordinator
   ) {
     this.controller = new RevisionGraphController(
+      extensionUri,
       git,
       backend,
       compareResultsPresenter,

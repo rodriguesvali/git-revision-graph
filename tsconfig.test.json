@@ -11,5 +11,9 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts"
+  ],
+  "exclude": [
+    "src/revisionGraph/webview/script/**/*.ts",
+    "src/revisionGraph/webview/runtime/**/*.ts"
   ]
 }

@@ -1,14 +1,9 @@
-import {
-  EDGE_VERTICAL_INSET,
-  VIEWPORT_PADDING_BOTTOM,
-  VIEWPORT_PADDING_LEFT,
-  VIEWPORT_PADDING_RIGHT,
-  VIEWPORT_PADDING_TOP
-} from '../shared';
-import { RenderRevisionGraphScriptOptions } from './types';
+const EDGE_VERTICAL_INSET = 6;
+const VIEWPORT_PADDING_TOP = 18;
+const VIEWPORT_PADDING_RIGHT = 0;
+const VIEWPORT_PADDING_BOTTOM = 18;
+const VIEWPORT_PADDING_LEFT = 18;
 
-export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraphScriptOptions): string {
-  return `
     const vscode = acquireVsCodeApi();
     const zoomLevels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5];
     const viewport = document.getElementById('viewport');
@@ -1025,11 +1020,11 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function captureViewportSnapshot() {
       const viewportSize = getViewportLayoutSize();
-      const visibleWidth = Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
-      const visibleHeight = Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const visibleWidth = Math.max(0, viewportSize.width - VIEWPORT_PADDING_LEFT - VIEWPORT_PADDING_RIGHT);
+      const visibleHeight = Math.max(0, viewportSize.height - VIEWPORT_PADDING_TOP - VIEWPORT_PADDING_BOTTOM);
       return {
-        sceneCenterX: ((viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT} + visibleWidth / 2) / currentZoom) - layoutOffsetX,
-        sceneCenterY: ((viewport.scrollTop - ${VIEWPORT_PADDING_TOP} + visibleHeight / 2) / currentZoom) - layoutOffsetY
+        sceneCenterX: ((viewport.scrollLeft - VIEWPORT_PADDING_LEFT + visibleWidth / 2) / currentZoom) - layoutOffsetX,
+        sceneCenterY: ((viewport.scrollTop - VIEWPORT_PADDING_TOP + visibleHeight / 2) / currentZoom) - layoutOffsetY
       };
     }
 
@@ -1060,15 +1055,15 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       }
 
       const viewportSize = getViewportLayoutSize();
-      const visibleWidth = Math.max(0, viewportSize.width - ${VIEWPORT_PADDING_LEFT} - ${VIEWPORT_PADDING_RIGHT});
-      const visibleHeight = Math.max(0, viewportSize.height - ${VIEWPORT_PADDING_TOP} - ${VIEWPORT_PADDING_BOTTOM});
+      const visibleWidth = Math.max(0, viewportSize.width - VIEWPORT_PADDING_LEFT - VIEWPORT_PADDING_RIGHT);
+      const visibleHeight = Math.max(0, viewportSize.height - VIEWPORT_PADDING_TOP - VIEWPORT_PADDING_BOTTOM);
       const nextScrollLeft = Math.max(
         0,
-        ${VIEWPORT_PADDING_LEFT} + (snapshot.sceneCenterX + layoutOffsetX) * currentZoom - visibleWidth / 2
+        VIEWPORT_PADDING_LEFT + (snapshot.sceneCenterX + layoutOffsetX) * currentZoom - visibleWidth / 2
       );
       const nextScrollTop = Math.max(
         0,
-        ${VIEWPORT_PADDING_TOP} + (snapshot.sceneCenterY + layoutOffsetY) * currentZoom - visibleHeight / 2
+        VIEWPORT_PADDING_TOP + (snapshot.sceneCenterY + layoutOffsetY) * currentZoom - visibleHeight / 2
       );
       viewport.scrollLeft = nextScrollLeft;
       viewport.scrollTop = nextScrollTop;
@@ -1303,8 +1298,8 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
 
     function getVirtualViewportBounds() {
       const visibleSize = getVisibleViewportSize();
-      const visibleLeft = Math.max(0, (viewport.scrollLeft - ${VIEWPORT_PADDING_LEFT}) / currentZoom - layoutOffsetX);
-      const visibleTop = Math.max(0, (viewport.scrollTop - ${VIEWPORT_PADDING_TOP}) / currentZoom - layoutOffsetY);
+      const visibleLeft = Math.max(0, (viewport.scrollLeft - VIEWPORT_PADDING_LEFT) / currentZoom - layoutOffsetX);
+      const visibleTop = Math.max(0, (viewport.scrollTop - VIEWPORT_PADDING_TOP) / currentZoom - layoutOffsetY);
       const visibleWidth = visibleSize.width / currentZoom;
       const visibleHeight = visibleSize.height / currentZoom;
       const overscan = VIRTUAL_RENDER_OVERSCAN_PX / Math.max(currentZoom, 0.1);
@@ -1694,12 +1689,12 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       return {
         sourceX: sourceNode.defaultLeft + sourceNode.width / 2,
         sourceY: connectsDownward
-          ? sourceNode.defaultTop + sourceNode.height - ${EDGE_VERTICAL_INSET}
-          : sourceNode.defaultTop + ${EDGE_VERTICAL_INSET},
+          ? sourceNode.defaultTop + sourceNode.height - EDGE_VERTICAL_INSET
+          : sourceNode.defaultTop + EDGE_VERTICAL_INSET,
         targetX: targetNode.defaultLeft + targetNode.width / 2,
         targetY: connectsDownward
-          ? targetNode.defaultTop + ${EDGE_VERTICAL_INSET}
-          : targetNode.defaultTop + targetNode.height - ${EDGE_VERTICAL_INSET}
+          ? targetNode.defaultTop + EDGE_VERTICAL_INSET
+          : targetNode.defaultTop + targetNode.height - EDGE_VERTICAL_INSET
       };
     }
 
@@ -1974,5 +1969,3 @@ export function renderRevisionGraphScriptBootstrap(_options: RenderRevisionGraph
       refreshGraphCaches();
       showStatus(message, true);
     }
-  `;
-}

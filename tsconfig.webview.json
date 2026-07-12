@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "none",
+    "lib": ["ES2022"],
+    "outFile": "out/webview/revisionGraph.js",
+    "strict": true,
+    "noCheck": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "types": []
+  },
+  "files": [
+    "src/revisionGraph/webview/runtime/environment.d.ts",
+    "src/revisionGraph/webview/runtime/display.ts",
+    "src/revisionGraph/webview/script/messages.ts",
+    "src/revisionGraph/webview/script/referenceTooltip.ts",
+    "src/revisionGraph/webview/script/bootstrap.ts",
+    "src/revisionGraph/webview/script/interactions.ts",
+    "src/revisionGraph/webview/script/graph.ts",
+    "src/revisionGraph/webview/script/layout.ts"
+  ]
+}

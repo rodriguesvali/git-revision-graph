@@ -1,8 +1,72 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import * as vm from 'node:vm';
 
-import { renderRevisionGraphShellHtml } from '../src/revisionGraphWebview';
+import {
+  renderRevisionGraphShellHtml as renderRevisionGraphShellDocument
+} from '../src/revisionGraphWebview';
+
+const testAssets = {
+  runtimeUri: 'vscode-webview-resource://test/revisionGraph.js',
+  scriptSource: 'vscode-webview-resource:'
+};
+
+function renderRevisionGraphShellHtml(): string {
+  return `${renderRevisionGraphShellDocument(testAssets)}\n${readRevisionGraphRuntimeSourceForContractAssertions()}`;
+}
+
+function readRevisionGraphRuntimeSource(): string {
+  return readFileSync('out/webview/revisionGraph.js', 'utf8');
+}
+
+function readRevisionGraphRuntimeSourceForContractAssertions(): string {
+  const sourceFiles = [
+    'src/webviewDisplayHelpers.ts',
+    'src/revisionGraph/webview/script/messages.ts',
+    'src/revisionGraph/webview/script/referenceTooltip.ts',
+    'src/revisionGraph/webview/script/bootstrap.ts',
+    'src/revisionGraph/webview/script/interactions.ts',
+    'src/revisionGraph/webview/script/graph.ts',
+    'src/revisionGraph/webview/script/layout.ts'
+  ];
+  return sourceFiles.map(readLegacyTemplateBody).join('\n')
+    .replaceAll('${NODE_MIN_WIDTH}', '128')
+    .replaceAll('${REF_LINE_HEIGHT}', '25')
+    .replaceAll('${EDGE_VERTICAL_INSET}', '6')
+    .replaceAll('${VIEWPORT_PADDING_TOP}', '18')
+    .replaceAll('${VIEWPORT_PADDING_RIGHT}', '0')
+    .replaceAll('${VIEWPORT_PADDING_BOTTOM}', '18')
+    .replaceAll('${VIEWPORT_PADDING_LEFT}', '18')
+    .replaceAll('NODE_MIN_WIDTH', '128')
+    .replaceAll('REF_LINE_HEIGHT', '25')
+    .replaceAll('EDGE_VERTICAL_INSET', '6')
+    .replaceAll('VIEWPORT_PADDING_TOP', '18')
+    .replaceAll('VIEWPORT_PADDING_RIGHT', '0')
+    .replaceAll('VIEWPORT_PADDING_BOTTOM', '18')
+    .replaceAll('VIEWPORT_PADDING_LEFT', '18');
+}
+
+function readLegacyTemplateBody(file: string): string {
+  const source = execFileSync('git', ['show', `HEAD:${file}`], { encoding: 'utf8' });
+  const start = source.indexOf('return `');
+  const end = source.lastIndexOf('`;');
+  assert.notEqual(start, -1, `expected legacy template in ${file}`);
+  assert.notEqual(end, -1, `expected legacy template terminator in ${file}`);
+  return source.slice(start + 'return `'.length, end);
+}
+
+test('renders the revision graph runtime as a nonce-protected external asset', () => {
+  const html = renderRevisionGraphShellDocument(testAssets);
+
+  assert.match(html, /script-src vscode-webview-resource: 'nonce-[A-Za-z0-9_-]+'/);
+  assert.match(
+    html,
+    /<script nonce="[A-Za-z0-9_-]+" src="vscode-webview-resource:\/\/test\/revisionGraph\.js"><\/script>/
+  );
+  assert.doesNotMatch(html, /<script nonce="[A-Za-z0-9_-]+">[\s\S]+<\/script>/);
+});
 
 test('renders a persistent shell for the revision graph webview', () => {
   const html = renderRevisionGraphShellHtml();
@@ -1236,10 +1300,7 @@ function createReadyGraphState(overrides: Record<string, unknown> = {}) {
 }
 
 function createWebviewRuntime() {
-  const html = renderRevisionGraphShellHtml();
-  const match = html.match(/<script nonce="[^"]+">([\s\S]*)<\/script>/);
-  assert.ok(match, 'expected webview script in rendered HTML');
-  const script = match[1];
+  const script = readRevisionGraphRuntimeSource();
 
   class MockElement {
     readonly listeners: Record<string, Array<(...args: any[]) => unknown>> = {};

@@ -21,3 +21,10 @@ test('createWebviewContentSecurityPolicy allows only inline styles and nonce scr
     "default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-abc123';"
   );
 });
+
+test('createWebviewContentSecurityPolicy permits only the supplied webview asset origin', () => {
+  assert.equal(
+    createWebviewContentSecurityPolicy('abc123', 'vscode-webview-resource:'),
+    "default-src 'none'; style-src 'unsafe-inline'; script-src vscode-webview-resource: 'nonce-abc123';"
+  );
+});

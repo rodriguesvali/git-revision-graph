@@ -1,5 +1,3 @@
-export function renderRevisionGraphScriptGraphLogic(): string {
-  return `
     function buildDirectionalMap(edges, sourceKey, targetKey) {
       const map = new Map();
       for (const node of graphNodes) {
@@ -148,5 +146,3 @@ export function renderRevisionGraphScriptGraphLogic(): string {
       }
       return keys;
     }
-  `;
-}

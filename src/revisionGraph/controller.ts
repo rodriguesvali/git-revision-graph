@@ -200,6 +200,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly flowConfigPersistence = new FlowConfigPersistenceCoordinator();
 
   constructor(
+    private readonly extensionUri: vscode.Uri,
     private readonly git: API,
     private readonly backend: RevisionGraphBackend,
     compareResultsPresenter: CompareResultsPresenter,
@@ -395,8 +396,13 @@ export class RevisionGraphController implements vscode.Disposable {
         );
       })
     );
-    view.webview.options = createScriptOnlyWebviewOptions();
-    view.webview.html = renderRevisionGraphShellHtml();
+    const runtimeRoot = vscode.Uri.joinPath(this.extensionUri, 'out', 'webview');
+    const runtimeUri = view.webview.asWebviewUri(vscode.Uri.joinPath(runtimeRoot, 'revisionGraph.js'));
+    view.webview.options = createScriptOnlyWebviewOptions([runtimeRoot]);
+    view.webview.html = renderRevisionGraphShellHtml({
+      runtimeUri: runtimeUri.toString(),
+      scriptSource: view.webview.cspSource
+    });
 
     this.repositoryLifecycle.reconcileCurrentRepository();
     if (!this.currentRepository) {

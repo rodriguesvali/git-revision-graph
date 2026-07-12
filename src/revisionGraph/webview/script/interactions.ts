@@ -1,5 +1,3 @@
-export function renderRevisionGraphScriptInteractions(): string {
-  return `
     function setZoom(zoom, options = {}) {
       const shouldPreserveViewport = options.preserveViewport !== false;
       const scenePlacementSnapshot = shouldPreserveViewport ? captureScenePlacementSnapshot() : null;
@@ -1933,5 +1931,3 @@ export function renderRevisionGraphScriptInteractions(): string {
       document.body.classList.remove('loading', 'loading-subtle');
       document.body.removeAttribute('aria-busy');
     }
-  `;
-}

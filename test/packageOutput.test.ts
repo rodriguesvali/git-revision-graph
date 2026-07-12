@@ -17,14 +17,17 @@ test('production build cleans compiled output before TypeScript runs', () => {
     'node -e "require(\'fs\').rmSync(\'out\', { recursive: true, force: true })"'
   );
   assert.equal(manifest.scripts?.prebuild, 'npm run clean:out');
-  assert.equal(manifest.scripts?.build, 'tsc -p ./');
+  assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
+  assert.equal(manifest.scripts?.['build:webview'], 'tsc -p ./tsconfig.webview.json');
 });
 
 test('compiled JavaScript output has a matching TypeScript source', () => {
   const sourceRoot = path.join(process.cwd(), 'src');
   const outputRoot = path.join(process.cwd(), 'out');
   const sourceFiles = new Set(collectRelativeFiles(sourceRoot, '.ts'));
-  const orphanedOutputs = collectRelativeFiles(outputRoot, '.js')
+  const outputFiles = collectRelativeFiles(outputRoot, '.js');
+  const orphanedOutputs = outputFiles
+    .filter((outputPath) => outputPath !== 'webview/revisionGraph.js')
     .filter((outputPath) => !sourceFiles.has(outputPath.replace(/\.js$/, '.ts')));
 
   assert.deepEqual(
@@ -32,6 +35,7 @@ test('compiled JavaScript output has a matching TypeScript source', () => {
     [],
     `compiled JavaScript without matching TypeScript source:\n${orphanedOutputs.join('\n')}`
   );
+  assert.equal(outputFiles.includes('webview/revisionGraph.js'), true);
 });
 
 function collectRelativeFiles(root: string, extension: string): string[] {
