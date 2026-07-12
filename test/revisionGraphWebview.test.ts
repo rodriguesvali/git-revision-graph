@@ -1713,6 +1713,62 @@ test('calculates revision graph viewport positions through the typed module', ()
   assert.deepEqual({ ...sceneCenter }, { sceneCenterX: 45, sceneCenterY: 53 });
 });
 
+test('calculates revision graph virtual viewport visibility through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const bounds = runtime.context.createRevisionGraphWebviewVirtualViewportBounds({
+    scrollLeft: 118,
+    scrollTop: 18,
+    zoom: 1,
+    visibleWidth: 100,
+    visibleHeight: 80,
+    paddingLeft: 18,
+    paddingTop: 18,
+    layoutOffsetX: 0,
+    layoutOffsetY: 0,
+    overscanPx: 20
+  });
+  assert.deepEqual({ ...bounds }, { left: 80, top: 0, right: 220, bottom: 100 });
+
+  const visibleLayout = { hash: 'visible', defaultLeft: 205, defaultTop: 50, width: 20, height: 10 };
+  assert.equal(
+    runtime.context.isRevisionGraphWebviewVirtualLayoutVisible(visibleLayout, -10, bounds),
+    true
+  );
+  assert.equal(
+    runtime.context.isRevisionGraphWebviewVirtualLayoutVisible(
+      { hash: 'hidden', defaultLeft: 230, defaultTop: 50, width: 20, height: 10 },
+      0,
+      bounds
+    ),
+    false
+  );
+
+  const layouts = new Map([
+    ['from', { hash: 'from', defaultLeft: 0, defaultTop: 50, width: 10, height: 10 }],
+    ['to', { hash: 'to', defaultLeft: 300, defaultTop: 50, width: 10, height: 10 }]
+  ]);
+  assert.equal(
+    runtime.context.isRevisionGraphWebviewVirtualEdgeVisible(
+      { from: 'from', to: 'to' },
+      bounds,
+      new Set(),
+      layouts,
+      {}
+    ),
+    true
+  );
+  assert.equal(
+    runtime.context.isRevisionGraphWebviewVirtualEdgeVisible(
+      { from: 'missing', to: 'to' },
+      bounds,
+      new Set(),
+      layouts,
+      {}
+    ),
+    false
+  );
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

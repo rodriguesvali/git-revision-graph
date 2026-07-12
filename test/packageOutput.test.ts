@@ -20,6 +20,7 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
   assert.match(manifest.scripts?.['build:webview'] ?? '', /^tsc -p \.\/tsconfig\.webview\.api\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.zoom-toolbar-ui\.json/);
+  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-viewport\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.json$/);
 });
 

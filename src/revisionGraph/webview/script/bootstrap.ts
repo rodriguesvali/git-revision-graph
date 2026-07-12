@@ -1312,47 +1312,36 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function getVirtualViewportBounds() {
       const visibleSize = getVisibleViewportSize();
-      const visibleLeft = Math.max(0, (viewport.scrollLeft - VIEWPORT_PADDING_LEFT) / currentZoom - layoutOffsetX);
-      const visibleTop = Math.max(0, (viewport.scrollTop - VIEWPORT_PADDING_TOP) / currentZoom - layoutOffsetY);
-      const visibleWidth = visibleSize.width / currentZoom;
-      const visibleHeight = visibleSize.height / currentZoom;
-      const overscan = VIRTUAL_RENDER_OVERSCAN_PX / Math.max(currentZoom, 0.1);
-
-      return {
-        left: Math.max(0, visibleLeft - overscan),
-        top: Math.max(0, visibleTop - overscan),
-        right: visibleLeft + visibleWidth + overscan,
-        bottom: visibleTop + visibleHeight + overscan
-      };
+      return createRevisionGraphWebviewVirtualViewportBounds({
+        scrollLeft: viewport.scrollLeft,
+        scrollTop: viewport.scrollTop,
+        zoom: currentZoom,
+        visibleWidth: visibleSize.width,
+        visibleHeight: visibleSize.height,
+        paddingLeft: VIEWPORT_PADDING_LEFT,
+        paddingTop: VIEWPORT_PADDING_TOP,
+        layoutOffsetX,
+        layoutOffsetY,
+        overscanPx: VIRTUAL_RENDER_OVERSCAN_PX
+      });
     }
 
     function isLayoutVisible(layout, bounds) {
-      const left = layout.defaultLeft + Number(nodeOffsets[layout.hash] || 0);
-      const right = left + layout.width;
-      const top = layout.defaultTop;
-      const bottom = top + layout.height;
-      return right >= bounds.left && left <= bounds.right && bottom >= bounds.top && top <= bounds.bottom;
+      return isRevisionGraphWebviewVirtualLayoutVisible(
+        layout,
+        Number(nodeOffsets[layout.hash] || 0),
+        bounds
+      );
     }
 
     function isEdgeVisible(edge, bounds, visibleHashes) {
-      if (visibleHashes.has(edge.from) || visibleHashes.has(edge.to)) {
-        return true;
-      }
-
-      const fromLayout = graphNodeByHash.get(edge.from);
-      const toLayout = graphNodeByHash.get(edge.to);
-      if (!fromLayout || !toLayout) {
-        return false;
-      }
-
-      const fromX = fromLayout.defaultLeft + Number(nodeOffsets[fromLayout.hash] || 0) + fromLayout.width / 2;
-      const fromY = fromLayout.defaultTop + fromLayout.height / 2;
-      const toX = toLayout.defaultLeft + Number(nodeOffsets[toLayout.hash] || 0) + toLayout.width / 2;
-      const toY = toLayout.defaultTop + toLayout.height / 2;
-      return Math.max(fromX, toX) >= bounds.left &&
-        Math.min(fromX, toX) <= bounds.right &&
-        Math.max(fromY, toY) >= bounds.top &&
-        Math.min(fromY, toY) <= bounds.bottom;
+      return isRevisionGraphWebviewVirtualEdgeVisible(
+        edge,
+        bounds,
+        visibleHashes,
+        graphNodeByHash,
+        nodeOffsets
+      );
     }
 
     function rebuildVirtualSceneIndexes() {
