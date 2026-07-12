@@ -1236,6 +1236,34 @@ test('normalizes validated host state into the runtime model', () => {
   assert.deepEqual(Array.from(model.references), state.references);
 });
 
+test('updates and clears the webview status surface through the typed adapter', () => {
+  const runtime = createWebviewRuntime();
+  const card = runtime.elements.get('statusCard');
+  const message = runtime.elements.get('statusMessage');
+  const actionButton = runtime.elements.get('statusActionButton');
+  assert.ok(card && message && actionButton);
+
+  runtime.context.showRevisionGraphWebviewStatus(
+    { card, message, actionButton },
+    'No repository selected.',
+    false,
+    { action: 'choose-repository', label: 'Choose Repository' }
+  );
+
+  assert.equal(card.hidden, false);
+  assert.equal(message.textContent, 'No repository selected.');
+  assert.equal(actionButton.hidden, false);
+  assert.equal(actionButton.textContent, 'Choose Repository');
+  assert.equal(actionButton.dataset.action, 'choose-repository');
+
+  runtime.context.hideRevisionGraphWebviewStatus({ card, message, actionButton });
+  assert.equal(card.hidden, true);
+  assert.equal(message.textContent, '');
+  assert.equal(actionButton.hidden, true);
+  assert.equal(actionButton.textContent, '');
+  assert.equal(actionButton.dataset.action, undefined);
+});
+
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
     viewMode: 'ready',

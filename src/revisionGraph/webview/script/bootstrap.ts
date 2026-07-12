@@ -1921,41 +1921,24 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function showStatus(message, isError, action = null) {
-      if (!statusCard) {
-        return;
-      }
-      if (statusMessage) {
-        statusMessage.textContent = message;
-      }
-      statusCard.hidden = false;
-      statusCard.classList.toggle('error', !!isError);
-      if (statusActionButton) {
-        if (action) {
-          statusActionButton.hidden = false;
-          statusActionButton.textContent = action.label;
-          statusActionButton.dataset.action = action.action;
-        } else {
-          statusActionButton.hidden = true;
-          statusActionButton.textContent = '';
-          delete statusActionButton.dataset.action;
-        }
-      }
+      showRevisionGraphWebviewStatus(
+        {
+          card: statusCard,
+          message: statusMessage,
+          actionButton: statusActionButton
+        },
+        message,
+        !!isError,
+        action
+      );
     }
 
     function hideStatus() {
-      if (!statusCard) {
-        return;
-      }
-      statusCard.hidden = true;
-      statusCard.classList.remove('error');
-      if (statusMessage) {
-        statusMessage.textContent = '';
-      }
-      if (statusActionButton) {
-        statusActionButton.hidden = true;
-        statusActionButton.textContent = '';
-        delete statusActionButton.dataset.action;
-      }
+      hideRevisionGraphWebviewStatus({
+        card: statusCard,
+        message: statusMessage,
+        actionButton: statusActionButton
+      });
     }
 
     function showError(message) {

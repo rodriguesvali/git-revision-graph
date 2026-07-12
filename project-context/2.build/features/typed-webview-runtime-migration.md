@@ -39,6 +39,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.state.json` strictly checks persisted webview state. Minimap preference and manual node offsets now pass through a validated state boundary instead of directly reading and writing the VS Code API.
 - `tsconfig.webview.host-state.json` strictly checks the host-state boundary. The webview now rejects malformed init/update state before the legacy hydration path can mutate runtime state.
 - `tsconfig.webview.state-model.json` strictly checks the pure projection from validated host state into the browser runtime model. The legacy bootstrap now consumes that model rather than mapping host fields ad hoc.
+- `tsconfig.webview.status.json` strictly checks the status-card DOM adapter. Empty-state actions and error/status presentation no longer mutate DOM elements directly from the bootstrap.
 
 ### Compatibility Boundary
 
