@@ -333,13 +333,16 @@ const REF_LINE_HEIGHT = 25;
     }
 
     function clampNodeOffset(hash, defaultLeft, offset) {
-      const clampedLeft = clampNodeLeft(hash, defaultLeft + offset);
-      return clampedLeft - defaultLeft;
+      return calculateRevisionGraphWebviewNodeOffset(
+        defaultLeft,
+        offset,
+        getNodeWidth(hash),
+        getCanvasWidth()
+      );
     }
 
     function clampNodeLeft(hash, left) {
-      const nodeWidth = getNodeWidth(hash);
-      return Math.max(0, Math.min(getCanvasWidth() - nodeWidth, left));
+      return calculateRevisionGraphWebviewNodeLeft(0, left, getNodeWidth(hash), getCanvasWidth());
     }
 
     function clamp(value, min, max) {

@@ -728,6 +728,7 @@ test('clears graph drag state when mouse release is missed', () => {
   assert.match(html, /if \(event\.buttons !== undefined && \(event\.buttons & 1\) === 0\) \{\s*endViewportDrag\(\);\s*return;\s*\}/s);
   assert.match(html, /function createRevisionGraphWebviewViewportDragState\(/);
   assert.match(html, /function calculateRevisionGraphWebviewViewportDrag\(/);
+  assert.match(html, /function calculateRevisionGraphWebviewNodeDragOffset\(/);
   assert.match(html, /function endViewportDrag\(\) \{[\s\S]*?viewport\.classList\.remove\('dragging'\);[\s\S]*?dragState = null;[\s\S]*?return true;\s*\}/s);
 });
 
@@ -1711,6 +1712,27 @@ test('calculates revision graph viewport positions through the typed module', ()
     layoutOffsetY: 7
   });
   assert.deepEqual({ ...sceneCenter }, { sceneCenterX: 45, sceneCenterY: 53 });
+});
+
+test('calculates revision graph node drag bounds through the typed module', () => {
+  const runtime = createWebviewRuntime();
+
+  assert.equal(
+    runtime.context.calculateRevisionGraphWebviewNodeLeft(100, 50, 80, 300),
+    150
+  );
+  assert.equal(
+    runtime.context.calculateRevisionGraphWebviewNodeOffset(100, -200, 80, 300),
+    -100
+  );
+  assert.equal(
+    runtime.context.calculateRevisionGraphWebviewNodeDragOffset(10, 10, 30, 2, 100, 80, 300),
+    20
+  );
+  assert.equal(
+    runtime.context.calculateRevisionGraphWebviewNodeDragOffset(10, 10, 800, 1, 100, 80, 300),
+    120
+  );
 });
 
 test('renders revision graph minimap SVG content through the typed module', () => {

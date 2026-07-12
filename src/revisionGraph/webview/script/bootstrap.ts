@@ -399,8 +399,15 @@ const VIEWPORT_PADDING_LEFT = 18;
           return;
         }
         const defaultLeft = getDefaultNodeLeft(nodeDragState.hash);
-        const rawOffset = nodeDragState.startOffset + (event.clientX - nodeDragState.startX) / currentZoom;
-        nodeOffsets[nodeDragState.hash] = clampNodeOffset(nodeDragState.hash, defaultLeft, rawOffset);
+        nodeOffsets[nodeDragState.hash] = calculateRevisionGraphWebviewNodeDragOffset(
+          nodeDragState.startOffset,
+          nodeDragState.startX,
+          event.clientX,
+          currentZoom,
+          defaultLeft,
+          getNodeWidth(nodeDragState.hash),
+          getCanvasWidth()
+        );
         applyNodeLayout(false);
         return;
       }
