@@ -1,4 +1,23 @@
-    function setZoom(zoom, options = {}) {
+    type RevisionGraphWebviewFlowBranchKind = 'release' | 'feature' | 'hotfix' | 'task' | 'bug';
+    type RevisionGraphWebviewFlowBranchBackdrop = HTMLElement & {
+      __flowBranchTarget?: RevisionGraphWebviewTarget | null;
+      __flowBranchKind?: RevisionGraphWebviewFlowBranchKind | null;
+    };
+    type RevisionGraphWebviewFlowPullRequestBackdrop = HTMLElement & {
+      __flowPrSourceRefName?: string;
+      __flowPrTargetRefName?: string;
+    };
+    type RevisionGraphWebviewFlowEqualizationBackdrop = HTMLElement & {
+      __flowEqualizationTarget?: RevisionGraphWebviewTarget | null;
+    };
+    type RevisionGraphWebviewMenuEntry = { readonly label: string; readonly onClick: () => void };
+    type RevisionGraphWebviewMenuItemOptions = {
+      readonly primary?: boolean;
+      readonly destructive?: boolean;
+      readonly disabled?: boolean;
+    };
+
+    function setZoom(zoom: number, options: { readonly preserveViewport?: boolean } = {}) {
       const shouldPreserveViewport = options.preserveViewport !== false;
       const scenePlacementSnapshot = shouldPreserveViewport ? captureScenePlacementSnapshot() : null;
       const viewportSnapshot = shouldPreserveViewport ? captureViewportSnapshot() : null;
@@ -63,7 +82,7 @@
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
       syncRevisionGraphWebviewSelectionHighlightsUi(
-        document.querySelectorAll('[data-ref-id]'),
+        Array.from(document.querySelectorAll('[data-ref-id]')),
         nodeElements,
         selected[0] || null,
         selected[1] || null,
@@ -89,7 +108,7 @@
       }
     }
 
-    function syncSearchResults(options = {}) {
+    function syncSearchResults(options: { readonly preserveActiveHash?: boolean; readonly focusActive?: boolean } = {}) {
       const normalizedQuery = getNormalizedSearchQuery();
       const previousActiveHash = options.preserveActiveHash ? getActiveSearchResultHash() : null;
       if (!currentState || currentState.viewMode !== 'ready' || normalizedQuery.length === 0) {
@@ -100,8 +119,8 @@
         return;
       }
 
-      searchResultHashes = getRevisionGraphWebviewSearchResultHashes(
-        currentState.scene.nodes,
+      searchResultHashes = [...getRevisionGraphWebviewSearchResultHashes(
+        currentState.scene.nodes as unknown as readonly RevisionGraphWebviewSearchNode[],
         normalizedQuery,
         (hash, reference) => isReferenceVisible({
           id: createReferenceId(hash, reference.kind, reference.name),
@@ -109,7 +128,7 @@
           name: reference.name,
           kind: reference.kind
         })
-      );
+      )];
 
       activeSearchResultIndex = getRevisionGraphWebviewSearchActiveResultIndex(
         searchResultHashes,
@@ -397,7 +416,7 @@
         return;
       }
 
-      const entries = [];
+      const entries: RevisionGraphWebviewMenuEntry[] = [];
       if (flowBranch.kind === 'main') {
         entries.push(
           { label: 'Start New Release', onClick: () => showFlowBranchForm(target, 'release') },
@@ -500,7 +519,7 @@
       group.addEventListener('mouseleave', () => closeContextSubmenu(group));
       group.addEventListener('focusin', () => openContextSubmenu(group));
       group.addEventListener('focusout', (event) => {
-        if (!group.contains(event.relatedTarget)) {
+        if (!group.contains(event.relatedTarget instanceof Node ? event.relatedTarget : null)) {
           closeContextSubmenu(group);
         }
       });
@@ -508,7 +527,7 @@
         if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           openContextSubmenu(group);
-          submenu.querySelector('.context-menu-item')?.focus();
+          submenu.querySelector<HTMLElement>('.context-menu-item')?.focus();
         } else if (event.key === 'Escape') {
           event.preventDefault();
           closeContextMenu();
@@ -534,7 +553,7 @@
     }
 
     function closeContextSubmenus(exceptGroup = null) {
-      for (const group of contextMenu.querySelectorAll('.context-menu-submenu.open')) {
+      for (const group of Array.from(contextMenu.querySelectorAll<HTMLElement>('.context-menu-submenu.open'))) {
         if (group === exceptGroup) {
           continue;
         }
@@ -579,7 +598,7 @@
       submenu.style.top = top + 'px';
     }
 
-    function appendMenuItem(label, onClick, options = {}) {
+    function appendMenuItem(label: string, onClick: () => void, options: RevisionGraphWebviewMenuItemOptions = {}) {
       const button = document.createElement('button');
       button.className = 'context-menu-item';
       button.type = 'button';
@@ -635,9 +654,9 @@
     }
 
     function ensureFlowBranchDialog() {
-      let backdrop = document.getElementById('flowBranchDialog');
+      let backdrop = document.getElementById('flowBranchDialog') as RevisionGraphWebviewFlowBranchBackdrop | null;
       if (!backdrop) {
-        backdrop = document.createElement('div');
+        backdrop = document.createElement('div') as RevisionGraphWebviewFlowBranchBackdrop;
         backdrop.id = 'flowBranchDialog';
         backdrop.className = 'flow-dialog-backdrop';
         backdrop.hidden = true;
@@ -815,19 +834,19 @@
 
       return {
         backdrop,
-        form: backdrop.querySelector('.flow-dialog'),
-        title: backdrop.querySelector('#flowBranchDialogTitle'),
-        submitButton: backdrop.querySelector('.flow-dialog-button.primary'),
-        nameLabel: backdrop.querySelector('#flowBranchNameLabel'),
-        nameInput: backdrop.querySelector('#flowBranchNameInput'),
-        taskDevLabel: backdrop.querySelector('#flowBranchTaskDevLabel'),
-        taskDevText: backdrop.querySelector('#flowBranchTaskDevLabel .flow-form-label'),
-        taskDevInput: backdrop.querySelector('#flowBranchTaskDevInput'),
-        shortNameLabel: backdrop.querySelector('#flowBranchShortNameLabel'),
-        shortNameInput: backdrop.querySelector('#flowBranchShortNameInput'),
-        descriptionText: backdrop.querySelector('[for="flowBranchDescriptionInput"] .flow-form-label'),
-        descriptionInput: backdrop.querySelector('#flowBranchDescriptionInput'),
-        error: backdrop.querySelector('.flow-form-error'),
+        form: backdrop.querySelector<HTMLFormElement>('.flow-dialog')!,
+        title: backdrop.querySelector<HTMLElement>('#flowBranchDialogTitle')!,
+        submitButton: backdrop.querySelector<HTMLButtonElement>('.flow-dialog-button.primary')!,
+        nameLabel: backdrop.querySelector<HTMLLabelElement>('#flowBranchNameLabel')!,
+        nameInput: backdrop.querySelector<HTMLInputElement>('#flowBranchNameInput')!,
+        taskDevLabel: backdrop.querySelector<HTMLLabelElement>('#flowBranchTaskDevLabel')!,
+        taskDevText: backdrop.querySelector<HTMLElement>('#flowBranchTaskDevLabel .flow-form-label')!,
+        taskDevInput: backdrop.querySelector<HTMLInputElement>('#flowBranchTaskDevInput')!,
+        shortNameLabel: backdrop.querySelector<HTMLLabelElement>('#flowBranchShortNameLabel')!,
+        shortNameInput: backdrop.querySelector<HTMLInputElement>('#flowBranchShortNameInput')!,
+        descriptionText: backdrop.querySelector<HTMLElement>('[for="flowBranchDescriptionInput"] .flow-form-label')!,
+        descriptionInput: backdrop.querySelector<HTMLTextAreaElement>('#flowBranchDescriptionInput')!,
+        error: backdrop.querySelector<HTMLElement>('.flow-form-error')!,
         get target() {
           return backdrop.__flowBranchTarget || null;
         },
@@ -844,7 +863,7 @@
     }
 
     function closeFlowBranchDialog() {
-      const backdrop = document.getElementById('flowBranchDialog');
+      const backdrop = document.getElementById('flowBranchDialog') as RevisionGraphWebviewFlowBranchBackdrop | null;
       if (!backdrop) {
         return;
       }
@@ -899,9 +918,9 @@
     }
 
     function ensureFlowPullRequestContextDialog() {
-      let backdrop = document.getElementById('flowPullRequestContextDialog');
+      let backdrop = document.getElementById('flowPullRequestContextDialog') as RevisionGraphWebviewFlowPullRequestBackdrop | null;
       if (!backdrop) {
-        backdrop = document.createElement('div');
+        backdrop = document.createElement('div') as RevisionGraphWebviewFlowPullRequestBackdrop;
         backdrop.id = 'flowPullRequestContextDialog';
         backdrop.className = 'flow-dialog-backdrop';
         backdrop.hidden = true;
@@ -1000,16 +1019,16 @@
 
       return {
         backdrop,
-        flow: backdrop.querySelector('.flow-pr-context-flow'),
-        targetLabel: backdrop.querySelector('[for="flowPullRequestTargetSelect"]'),
-        targetSelect: backdrop.querySelector('#flowPullRequestTargetSelect'),
-        titleInput: backdrop.querySelector('#flowPullRequestTitleInput'),
-        descriptionInput: backdrop.querySelector('#flowPullRequestDescriptionInput'),
-        titleCopyButton: backdrop.querySelector('[aria-label="Copy Title"]'),
-        descriptionCopyButton: backdrop.querySelector('[aria-label="Copy Description"]'),
-        warning: backdrop.querySelector('.flow-pr-context-warning'),
-        closeButton: backdrop.querySelector('.flow-dialog-button:not(.primary)'),
-        openButton: backdrop.querySelector('.flow-dialog-button.primary'),
+        flow: backdrop.querySelector<HTMLElement>('.flow-pr-context-flow')!,
+        targetLabel: backdrop.querySelector<HTMLLabelElement>('[for="flowPullRequestTargetSelect"]')!,
+        targetSelect: backdrop.querySelector<HTMLSelectElement>('#flowPullRequestTargetSelect')!,
+        titleInput: backdrop.querySelector<HTMLInputElement>('#flowPullRequestTitleInput')!,
+        descriptionInput: backdrop.querySelector<HTMLTextAreaElement>('#flowPullRequestDescriptionInput')!,
+        titleCopyButton: backdrop.querySelector<HTMLButtonElement>('[aria-label="Copy Title"]')!,
+        descriptionCopyButton: backdrop.querySelector<HTMLButtonElement>('[aria-label="Copy Description"]')!,
+        warning: backdrop.querySelector<HTMLElement>('.flow-pr-context-warning')!,
+        closeButton: backdrop.querySelector<HTMLButtonElement>('.flow-dialog-button:not(.primary)')!,
+        openButton: backdrop.querySelector<HTMLButtonElement>('.flow-dialog-button.primary')!,
         get sourceRefName() { return backdrop.__flowPrSourceRefName || ''; },
         set sourceRefName(value) { backdrop.__flowPrSourceRefName = value; },
         get targetRefName() { return backdrop.__flowPrTargetRefName || ''; },
@@ -1100,11 +1119,13 @@
       label.textContent = labelText;
       const row = document.createElement('div');
       row.className = 'flow-pr-context-copy-row';
-      const input = document.createElement(multiline ? 'textarea' : 'input');
+      const input: HTMLInputElement | HTMLTextAreaElement = multiline
+        ? document.createElement('textarea')
+        : document.createElement('input');
       input.id = inputId;
       input.className = 'flow-form-input' + (multiline ? ' flow-form-textarea' : '');
       input.readOnly = true;
-      if (!multiline) {
+      if (input instanceof HTMLInputElement) {
         input.type = 'text';
       }
       const copyButton = document.createElement('button');
@@ -1133,7 +1154,7 @@
     }
 
     function closeFlowPullRequestContextDialog() {
-      const backdrop = document.getElementById('flowPullRequestContextDialog');
+      const backdrop = document.getElementById('flowPullRequestContextDialog') as RevisionGraphWebviewFlowPullRequestBackdrop | null;
       if (!backdrop) {
         return;
       }
@@ -1172,9 +1193,9 @@
     }
 
     function ensureFlowEqualizationDialog() {
-      let backdrop = document.getElementById('flowEqualizationDialog');
+      let backdrop = document.getElementById('flowEqualizationDialog') as RevisionGraphWebviewFlowEqualizationBackdrop | null;
       if (!backdrop) {
-        backdrop = document.createElement('div');
+        backdrop = document.createElement('div') as RevisionGraphWebviewFlowEqualizationBackdrop;
         backdrop.id = 'flowEqualizationDialog';
         backdrop.className = 'flow-dialog-backdrop';
         backdrop.hidden = true;
@@ -1284,9 +1305,9 @@
 
       return {
         backdrop,
-        originSelect: backdrop.querySelector('#flowEqualizationOriginInput'),
-        descriptionInput: backdrop.querySelector('#flowEqualizationDescriptionInput'),
-        error: backdrop.querySelector('.flow-form-error'),
+        originSelect: backdrop.querySelector<HTMLSelectElement>('#flowEqualizationOriginInput')!,
+        descriptionInput: backdrop.querySelector<HTMLTextAreaElement>('#flowEqualizationDescriptionInput')!,
+        error: backdrop.querySelector<HTMLElement>('.flow-form-error')!,
         get target() {
           return backdrop.__flowEqualizationTarget || null;
         },
@@ -1297,7 +1318,7 @@
     }
 
     function closeFlowEqualizationDialog() {
-      const backdrop = document.getElementById('flowEqualizationDialog');
+      const backdrop = document.getElementById('flowEqualizationDialog') as RevisionGraphWebviewFlowEqualizationBackdrop | null;
       if (!backdrop) {
         return;
       }
@@ -1579,10 +1600,6 @@
       };
     }
 
-    function postResetCurrentWorkspace(includeUntracked) {
-      vscode.postMessage(createRevisionGraphResetCurrentWorkspaceMessage(includeUntracked));
-    }
-
     function postStashSave() {
       postMessageWithLoading(createRevisionGraphStashSaveMessage(), 'Saving workspace changes to stash...');
     }
@@ -1687,7 +1704,7 @@
       );
     }
 
-    function setToolbarBusy(isBusy, pendingControl = null) {
+    function setToolbarBusy(isBusy: boolean, pendingControl: HTMLElement | null = null) {
       toolbarBusy = isBusy;
       applyRevisionGraphWebviewToolbarBusyState([
         scopeSelect,
@@ -1738,15 +1755,20 @@
 	      });
 	    }
 
-	    function waitForNextFrame() {
-	      return new Promise((resolve) => {
+	    function waitForNextFrame(): Promise<void> {
+	      return new Promise<void>((resolve) => {
 	        requestAnimationFrame(() => {
 	          resolve();
 	        });
 	      });
 	    }
 
-	    async function runWithLoading(label, work, pendingControl = null, mode = 'blocking') {
+	    async function runWithLoading(
+	      label: string,
+	      work: () => void | Promise<void>,
+	      pendingControl: HTMLElement | null = null,
+	      mode: RevisionGraphWebviewLoadingMode = 'blocking'
+	    ) {
 	      if (toolbarBusy) {
 	        return;
 	      }
@@ -1760,10 +1782,14 @@
 	      }
 	    }
 
-	    function showLoading(label, pendingControl = null, mode = 'blocking') {
+	    function showLoading(
+	      label: string,
+	      pendingControl: HTMLElement | null = null,
+	      mode: RevisionGraphWebviewLoadingMode = 'blocking'
+	    ) {
       showRevisionGraphWebviewLoading(
         {
-          body: document.body,
+	          body: document.body as HTMLBodyElement,
           overlay: loadingOverlay,
           message: loadingMessage
         },
@@ -1777,7 +1803,7 @@
 
     function hideLoading() {
       hideRevisionGraphWebviewLoading({
-        body: document.body,
+	        body: document.body as HTMLBodyElement,
         overlay: loadingOverlay,
         message: loadingMessage
       });

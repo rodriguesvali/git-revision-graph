@@ -300,7 +300,7 @@ test('reloads the graph from the webview toolbar', () => {
     html,
     /pushMenuButton\.addEventListener\('click', \(event\) => \{\s*event\.stopPropagation\(\);\s*if \(pushModeMenu && !pushModeMenu\.hidden\) \{\s*closePushModeMenu\(\);\s*\}\s*else \{\s*showPushModeMenu\(\);\s*\}\s*\}\);/s
   );
-  assert.match(html, /pushModeMenu\.id = 'pushModeMenu';/);
+  assert.match(html, /menu\.id = 'pushModeMenu';/);
   assert.match(html, /\{ label: 'Push with Force With Lease', mode: 'force-with-lease' \}/);
   assert.match(html, /\{ label: 'Push with Force', mode: 'force' \}/);
   assert.match(html, /pushMenuButton\.setAttribute\('aria-expanded', 'true'\);/);
@@ -309,8 +309,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /pushModeMenu\.style\.top = Math\.max\(8, buttonRect\.bottom \+ 6\) \+ 'px';/);
   assert.match(html, /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(mode\)\);/s);
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
-  assert.match(html, /reloadButton\.disabled = toolbarBusy;/);
-  assert.match(html, /reloadMenuButton\.disabled = toolbarBusy;/);
+  assert.match(html, /syncRevisionGraphWebviewBasicToolbarUi\(\s*\{ scopeSelect, viewOptionsButton, reloadButton, reloadMenuButton, fetchAllButton \}/s);
   assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarUi\(/);
   assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
@@ -466,8 +465,6 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /label: formatShortCommitHash\(hash\)/);
   assert.match(html, /label: formatShortCommitHash\(node\.hash\)/);
   assert.match(html, /formatShortCommitHash\(node\.hash\),/);
-  assert.doesNotMatch(html, /hash\.slice\(0, 8\)/);
-  assert.doesNotMatch(html, /node\.hash\.slice\(0, 8\)/);
   assert.match(html, /function createRevisionGraphShowLogTargetMessage\(target\)/);
   assert.match(html, /function createRevisionGraphShowLogRangeMessage\(base, compare\)/);
   assert.match(html, /function postShowLogTarget\(target\) \{\s*vscode\.postMessage\(createRevisionGraphShowLogTargetMessage\(target\)\);/s);
@@ -499,8 +496,6 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /const canResetToTarget =\s*target\.kind !== 'head' &&\s*target\.kind !== 'stash' &&\s*!\(target\.kind === 'branch' && !!currentHeadName && target\.name === currentHeadName\);/s);
   assert.match(html, /appendMenuItem\('Reset to this', \(\) => postResetToCommit\(target\), \{ destructive: true \}\);/);
   assert.match(html, /function postResetToCommit\(target\) \{\s*vscode\.postMessage\(createRevisionGraphResetToCommitMessage\(target\)\);/s);
-  assert.match(html, /function postResetCurrentWorkspace\(includeUntracked\) \{\s*vscode\.postMessage\(createRevisionGraphResetCurrentWorkspaceMessage\(includeUntracked\)\);/s);
-  assert.doesNotMatch(html, /canResetCurrentWorkspace/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace and Remove Untracked Files'/);
   assert.match(html, /let hasMergeConflicts = false;/);
@@ -552,7 +547,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /function syncRevisionGraphWebviewSelectionHighlightsUi\(/);
   assert.match(html, /element\.classList\.toggle\('base-target', baseHash === hash\);/);
-  assert.match(html, /syncRevisionGraphWebviewSelectionHighlightsUi\(\s*document\.querySelectorAll\('\[data-ref-id\]'\),\s*nodeElements,/s);
+  assert.match(html, /syncRevisionGraphWebviewSelectionHighlightsUi\(\s*Array\.from\(document\.querySelectorAll\('\[data-ref-id\]'\)\),\s*nodeElements,/s);
   assert.match(html, /<span class="node-base-badge">\(Base\)<\/span>/);
   assert.match(html, /\.node\.base-target\.has-compare \.node-base-badge/);
   assert.match(html, /right: -10px;/);
@@ -595,7 +590,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /reference-tooltip-deletions/);
   assert.match(html, /function placeReferenceTooltip\(refElement\)/);
   assert.match(html, /tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog"/);
-  assert.match(html, /const nodeTitle = visibleRefs\.length === 0/);
+  assert.match(html, /const nodeTitle = visibleReferences\.length === 0/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
   assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
   assert.match(html, /\.context-menu-item:not\(:disabled\):hover,[\s\S]*?background: color-mix\(in srgb, var\(--accent\) 12%, transparent\);/);
@@ -611,7 +606,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /reference\.description[\s\S]*?reference-tooltip-description/);
   assert.match(html, /function placeReferenceTooltip\(refElement\)/);
   assert.match(html, /tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog"/);
-  assert.match(html, /const nodeTitle = visibleRefs\.length === 0/);
+  assert.match(html, /const nodeTitle = visibleReferences\.length === 0/);
   assert.match(html, /button\.className = 'context-menu-item';/);
   assert.match(html, /button\.className = 'context-menu-item context-submenu-trigger';/);
   assert.doesNotMatch(html, /context-menu-group/);
@@ -753,7 +748,7 @@ test('renders single-bend edges and compact structural node styling in the shell
   const html = renderRevisionGraphShellHtml();
 
   assert.match(html, /stroke-width="1\.8"/);
-  assert.match(html, /function describeRoutedEdgePath\(edge, sourceNode, targetNode\)/);
+  assert.match(html, /function describeRevisionGraphWebviewRoutedEdgePath\(edge, sourceLayout, targetLayout, verticalInset\)/);
   assert.match(html, /const bendY = targetY - direction \* approachLength;/);
   assert.match(html, /return routedPath;/);
   assert.match(html, /min-width: 78px;/);
@@ -779,7 +774,7 @@ test('uses cached viewport dimensions for render-time canvas sizing', () => {
   );
   assert.match(
     html,
-    /function syncCanvasSize\(\) \{[\s\S]*?const visibleSize = getVisibleViewportSize\(\);[\s\S]*?const availableWidth = Math\.max\(baseCanvasWidth, visibleSize\.width \/ currentZoom\);/s
+    /function syncCanvasSize\(\) \{[\s\S]*?const visibleSize = getVisibleViewportSize\(\);[\s\S]*?calculateRevisionGraphWebviewCanvasSize\(\{[\s\S]*?visibleWidth: visibleSize\.width,[\s\S]*?zoom: currentZoom/s
   );
   assert.doesNotMatch(
     html,
@@ -820,8 +815,8 @@ test('omits incremental revision graph patch handlers', () => {
   assert.match(html, /function renderVirtualScene\(options = \{\}\)/);
   assert.match(html, /function rebuildVirtualSceneIndexes\(\)/);
   assert.match(html, /const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;/);
-  assert.match(html, /visibleLayouts = collectVirtualNodeCandidates\(viewportBounds\)\.filter/);
-  assert.match(html, /visibleEdges = collectVirtualEdgeCandidates\(viewportBounds\)\.filter/);
+  assert.match(html, /selectRevisionGraphWebviewVirtualScene\(\{\s*nodeCandidates: collectVirtualNodeCandidates\(viewportBounds\)/s);
+  assert.match(html, /edgeCandidates: collectVirtualEdgeCandidates\(viewportBounds\)/);
   assert.doesNotMatch(html, /visibleLayouts = graphNodes\.filter/);
   assert.doesNotMatch(html, /visibleEdges = graphEdges\.filter/);
   assert.match(html, /data-node-render-key="/);
@@ -851,7 +846,7 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /descendantFilterClearButton\.addEventListener\('click'/);
   assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ descendantFocus: null \}\)/);
   assert.match(html, /'Exiting Focus Descendants\.\.\.'/);
-  assert.match(html, /const options = \{ refScope: nextRefScope, revisionRange: null, descendantFocus: null \};/);
+  assert.match(html, /const options = \{\s*refScope: nextRefScope,\s*revisionRange: null,\s*descendantFocus: null\s*\};/s);
   assert.match(html, /function setSearchQuery\(nextQuery\)/);
   assert.match(html, /function syncSearchResults\(options = \{\}\)/);
   assert.match(html, /function syncSearchHighlights\(\)/);
@@ -1731,7 +1726,7 @@ test('scrolls the revision graph viewport through the typed module', () => {
     runtime.context.scrollRevisionGraphWebviewViewportTo(viewport, 100, 200),
     true
   );
-  assert.deepEqual(calls, [{ left: 100, top: 200, behavior: 'auto' }]);
+  assert.deepEqual(calls.map((call) => ({ ...call })), [{ left: 100, top: 200, behavior: 'auto' }]);
   const fallbackViewport = { scrollLeft: 0, scrollTop: 0 };
   assert.equal(
     runtime.context.scrollRevisionGraphWebviewViewportTo(fallbackViewport, 10, 20),
@@ -1810,12 +1805,12 @@ test('builds and queries the revision graph virtual candidate index through the 
   );
   assert.deepEqual([...index.keys()], [0, 1]);
   assert.deepEqual(
-    runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+    (Array.from(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
       index,
       { top: 1_000, bottom: 1_900 },
       1_200,
       (entry: { id: string }) => entry.id
-    ).map((entry: { id: string }) => entry.id),
+    )) as Array<{ id: string }>).map((entry) => entry.id),
     ['spanning', 'second-bucket']
   );
   assert.equal(

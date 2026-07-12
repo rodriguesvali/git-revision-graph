@@ -15,6 +15,7 @@ interface RevisionGraphWebviewProjectionOptions {
   readonly showRemoteBranches?: boolean;
   readonly showStashes?: boolean;
   readonly showMergeCommits?: boolean;
+  readonly showCurrentBranchDescendants?: boolean;
   readonly revisionRange?: {
     readonly baseRevision: string;
     readonly baseLabel: string;

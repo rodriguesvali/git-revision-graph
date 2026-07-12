@@ -71,15 +71,32 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly to: string;
       readonly route?: readonly unknown[];
     };
+    type RevisionGraphWebviewLegacySceneNode = Record<string, unknown> & {
+      readonly hash: string;
+      readonly refs: readonly RevisionGraphWebviewNodePresentationReference[];
+      readonly subject?: string;
+      readonly author?: string;
+      readonly date?: string;
+    };
+    type RevisionGraphWebviewLegacyFlowReference = Record<string, unknown> & {
+      readonly refName: string;
+      readonly kind?: string;
+    };
+    type RevisionGraphWebviewLegacyFlowGovernance = Record<string, unknown> & {
+      readonly enabled?: boolean;
+      readonly configSource?: string;
+      readonly branchKinds?: readonly unknown[];
+      readonly references?: readonly RevisionGraphWebviewLegacyFlowReference[];
+    };
     let currentState: RevisionGraphWebviewHostState | null = null;
     let references: RevisionGraphWebviewHostReference[] = [];
-    let currentHeadName = null;
-    let currentHeadUpstreamName = null;
-    let publishedLocalBranchNames = new Set();
+    let currentHeadName: string | null = null;
+    let currentHeadUpstreamName: string | null = null;
+    let publishedLocalBranchNames = new Set<string>();
     let isWorkspaceDirty = false;
     let hasMergeConflicts = false;
     let hasConflictedMerge = false;
-    let currentProjectionOptions = {
+    let currentProjectionOptions: RevisionGraphWebviewProjectionOptions = {
       refScope: 'all',
       showTags: true,
       showRemoteBranches: true,
@@ -89,22 +106,22 @@ const VIEWPORT_PADDING_LEFT = 18;
       revisionRange: undefined,
       descendantFocus: undefined
     };
-    let currentFlowGovernance = null;
-    let flowReferenceByName = new Map();
-    let mergeBlockedTargets = new Set();
+    let currentFlowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = null;
+    let flowReferenceByName = new Map<string, RevisionGraphWebviewLegacyFlowReference>();
+    let mergeBlockedTargets = new Set<string>();
     let graphNodes: RevisionGraphWebviewLegacyNodeLayout[] = [];
     let graphEdges: RevisionGraphWebviewLegacyEdge[] = [];
-    let selected = [];
-    let headNodeHash = null;
+    let selected: string[] = [];
+    let headNodeHash: string | null = null;
     let nodeElements = new Map<string, HTMLElement>();
-    let sceneNodeByHash = new Map<string, Record<string, unknown>>();
+    let sceneNodeByHash = new Map<string, RevisionGraphWebviewLegacySceneNode>();
     let edgeElements: Element[] = [];
     let graphNodeByHash = new Map<string, RevisionGraphWebviewLegacyNodeLayout>();
     let graphEdgeByKey = new Map<string, RevisionGraphWebviewLegacyEdge>();
-    let parentMap = new Map();
-    let childMap = new Map();
-    let headDistanceByHash = new Map();
-    let primaryAncestorNextByHash = {};
+    let parentMap = new Map<string, string[]>();
+    let childMap = new Map<string, string[]>();
+    let headDistanceByHash = new Map<string, number>();
+    let primaryAncestorNextByHash: Readonly<Record<string, string>> = {};
     let sceneLayoutKey = 'empty';
     let baseCanvasWidth = 880;
     let baseCanvasHeight = 480;
@@ -123,27 +140,31 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly startOffset: number;
     } | null = null;
     let suppressNodeClick = false;
-    let nodeOffsets = {};
+    let nodeOffsets: Record<string, number> = {};
     let searchQuery = '';
-    let searchResultHashes = [];
+    let searchResultHashes: string[] = [];
     let activeSearchResultIndex = -1;
     let toolbarBusy = false;
-    let remoteTagPublicationState = new Map();
-    let pendingRemoteTagStateRequests = new Set();
-    let activeContextMenuRequest = null;
-    let minimapDragState = null;
+    let remoteTagPublicationState = new Map<string, string>();
+    let pendingRemoteTagStateRequests = new Set<string>();
+    let activeContextMenuRequest: {
+      readonly clientX: number;
+      readonly clientY: number;
+      readonly target: RevisionGraphWebviewTarget;
+    } | null = null;
+    let minimapDragState: { active: boolean } | null = null;
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
     let sceneEventHandlersBound = false;
-    let activeWebviewTraceMessage = null;
+    let activeWebviewTraceMessage: RevisionGraphWebviewHostMessage | null = null;
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
     const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;
     let pendingVirtualSceneRenderFrame = 0;
     let lastVirtualSceneKey = '';
-    let virtualNodeIndex = new Map();
-    let virtualEdgeIndex = new Map();
+    let virtualNodeIndex = new Map<number, RevisionGraphWebviewLegacyNodeLayout[]>();
+    let virtualEdgeIndex = new Map<number, RevisionGraphWebviewLegacyEdge[]>();
     let reloadCacheMenu: HTMLDivElement | null = null;
     let pushModeMenu: HTMLDivElement | null = null;
     const flowKindLabels = {
@@ -342,7 +363,9 @@ const VIEWPORT_PADDING_LEFT = 18;
         if (event.button !== 0) {
           return;
         }
-        if (!minimapEnabled || (event.target && typeof event.target.closest === 'function' && event.target.closest('.minimap-zoom-button'))) {
+        const target = event.target;
+        const isMinimapZoomButton = target instanceof Element && !!target.closest('.minimap-zoom-button');
+        if (!minimapEnabled || isMinimapZoomButton) {
           return;
         }
         minimapDragState = { active: true };
@@ -447,7 +470,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       if (dragUpdate.shouldSuppressNodeClick) {
         suppressNodeClick = true;
       }
-      dragState.moved = dragUpdate.moved;
+      dragState = { ...dragState, moved: dragUpdate.moved };
       viewport.scrollLeft = dragUpdate.scrollLeft;
       viewport.scrollTop = dragUpdate.scrollTop;
       syncMinimap('viewport');
@@ -462,32 +485,33 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
     bindReferenceTooltipEvents();
     window.addEventListener('click', (event) => {
-      if (!contextMenu.contains(event.target)) {
+      const target = event.target instanceof Node ? event.target : null;
+      if (!contextMenu.contains(target)) {
         closeContextMenu();
       }
       if (
         viewOptionsMenu &&
         !viewOptionsMenu.hidden &&
-        !viewOptionsMenu.contains(event.target) &&
-        !(viewOptionsButton && viewOptionsButton.contains(event.target))
+        !viewOptionsMenu.contains(target) &&
+        !(viewOptionsButton && viewOptionsButton.contains(target))
       ) {
         closeViewOptionsMenu();
       }
       if (
         reloadCacheMenu &&
         !reloadCacheMenu.hidden &&
-        !reloadCacheMenu.contains(event.target) &&
-        !(reloadButton && reloadButton.contains(event.target)) &&
-        !(reloadMenuButton && reloadMenuButton.contains(event.target))
+        !reloadCacheMenu.contains(target) &&
+        !(reloadButton && reloadButton.contains(target)) &&
+        !(reloadMenuButton && reloadMenuButton.contains(target))
       ) {
         closeReloadCacheMenu();
       }
       if (
         pushModeMenu &&
         !pushModeMenu.hidden &&
-        !pushModeMenu.contains(event.target) &&
-        !(pushButton && pushButton.contains(event.target)) &&
-        !(pushMenuButton && pushMenuButton.contains(event.target))
+        !pushModeMenu.contains(target) &&
+        !(pushButton && pushButton.contains(target)) &&
+        !(pushMenuButton && pushMenuButton.contains(target))
       ) {
         closePushModeMenu();
       }
@@ -637,11 +661,12 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
       closeReloadCacheMenu();
       if (!pushModeMenu) {
-        pushModeMenu = document.createElement('div');
-        pushModeMenu.id = 'pushModeMenu';
-        pushModeMenu.className = 'reload-cache-menu push-mode-menu';
-        pushModeMenu.hidden = true;
-        pushModeMenu.setAttribute('role', 'menu');
+        const menu = document.createElement('div');
+        pushModeMenu = menu;
+        menu.id = 'pushModeMenu';
+        menu.className = 'reload-cache-menu push-mode-menu';
+        menu.hidden = true;
+        menu.setAttribute('role', 'menu');
         const pushModes = [
           { label: 'Push with Force With Lease', mode: 'force-with-lease' },
           { label: 'Push with Force', mode: 'force' }
@@ -656,9 +681,9 @@ const VIEWPORT_PADDING_LEFT = 18;
             event.stopPropagation();
             pushCurrentHead(pushMode.mode);
           });
-          pushModeMenu.appendChild(modeButton);
+          menu.appendChild(modeButton);
         });
-        document.body.appendChild(pushModeMenu);
+        document.body.appendChild(menu);
       }
 
       pushModeMenu.hidden = false;
@@ -785,7 +810,12 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function postWebviewLoadTrace(message, phase, startedAt, options = {}) {
+    function postWebviewLoadTrace(
+      message,
+      phase,
+      startedAt,
+      options: { readonly includeDelivery?: boolean; readonly detail?: string } = {}
+    ) {
       if (!hasWebviewTraceContext(message)) {
         return;
       }
@@ -1004,8 +1034,8 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function restoreSelectionSnapshot(snapshot) {
-      const nextSelected = [];
-      const usedReferenceIds = new Set();
+      const nextSelected: string[] = [];
+      const usedReferenceIds = new Set<string>();
       for (const entry of snapshot || []) {
         const match = findSelectionMatch(entry, usedReferenceIds);
         if (!match) {
@@ -1152,15 +1182,21 @@ const VIEWPORT_PADDING_LEFT = 18;
       return nextMap;
     }
 
-    function hasFlowGovernanceState(flowGovernance = currentFlowGovernance) {
+    function hasFlowGovernanceState(
+      flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
+    ): flowGovernance is RevisionGraphWebviewLegacyFlowGovernance & { readonly branchKinds: readonly unknown[] } {
       return !!flowGovernance && Array.isArray(flowGovernance.branchKinds);
     }
 
-    function isFlowGovernanceActive(flowGovernance = currentFlowGovernance) {
+    function isFlowGovernanceActive(
+      flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
+    ) {
       return hasFlowGovernanceState(flowGovernance) && flowGovernance.enabled === true;
     }
 
-    function syncFlowGovernanceControls(flowGovernance = currentFlowGovernance) {
+    function syncFlowGovernanceControls(
+      flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
+    ) {
       const isActive = isFlowGovernanceActive(flowGovernance);
       const canShowControls = hasFlowGovernanceState(flowGovernance) && flowGovernance.configSource !== 'invalid';
       if (flowGovernanceOptions) {
@@ -1238,7 +1274,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function renderScene(state, options = {}) {
+    function renderScene(
+      state: RevisionGraphWebviewHostState,
+      options: { readonly precenterViewport?: boolean } = {}
+    ) {
       runRevisionGraphWebviewSceneRenderLifecycle({
         isReady: state.viewMode === 'ready',
         shouldPrecenterViewport: !!options.precenterViewport,
@@ -1260,7 +1299,7 @@ const VIEWPORT_PADDING_LEFT = 18;
           updateScenePlacement();
         }),
         prepareIndexes: () => {
-          const sceneNodes = (state.scene && state.scene.nodes) || [];
+          const sceneNodes = ((state.scene && state.scene.nodes) || []) as RevisionGraphWebviewLegacySceneNode[];
           traceWebviewPhase('webview.render-scene.indexes', () => {
             sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
             rebuildVirtualSceneIndexes();
@@ -1272,7 +1311,7 @@ const VIEWPORT_PADDING_LEFT = 18;
           centerGraphInViewport({ source: 'layout', syncMinimap: false });
         }, 'action=recenter'),
         renderVirtualScene: () => {
-          const sceneNodes = (state.scene && state.scene.nodes) || [];
+          const sceneNodes = ((state.scene && state.scene.nodes) || []) as RevisionGraphWebviewLegacySceneNode[];
           traceWebviewPhase('webview.render-scene.virtual-html', () => {
             renderVirtualScene({ force: true });
           }, 'nodes=' + sceneNodes.length + '; edges=' + graphEdges.length);
@@ -1300,7 +1339,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
     }
 
-    function renderVirtualScene(options = {}) {
+    function renderVirtualScene(options: { readonly force?: boolean; readonly reason?: string } = {}) {
       if (!currentState || currentState.viewMode !== 'ready') {
         clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
         resetRevisionGraphWebviewVirtualSceneKey((sceneKey) => {
@@ -1393,7 +1432,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       virtualEdgeIndex = new Map();
     }
 
-    function buildVirtualNodeIndex(layouts) {
+    function buildVirtualNodeIndex(layouts: readonly RevisionGraphWebviewLegacyNodeLayout[]) {
       return buildRevisionGraphWebviewVirtualIndex(
         layouts,
         VIRTUAL_RENDER_BUCKET_SIZE_PX,
@@ -1404,7 +1443,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function buildVirtualEdgeIndex(edges) {
+    function buildVirtualEdgeIndex(edges: readonly RevisionGraphWebviewLegacyEdge[]) {
       return buildRevisionGraphWebviewVirtualIndex(
         edges,
         VIRTUAL_RENDER_BUCKET_SIZE_PX,
@@ -1416,7 +1455,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return getRevisionGraphWebviewVirtualEdgeVerticalBounds(edge, graphNodeByHash);
     }
 
-    function collectVirtualNodeCandidates(bounds) {
+    function collectVirtualNodeCandidates(bounds: RevisionGraphWebviewVirtualViewportBounds) {
       return collectRevisionGraphWebviewVirtualIndexCandidates(
         virtualNodeIndex,
         bounds,
@@ -1425,7 +1464,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function collectVirtualEdgeCandidates(bounds) {
+    function collectVirtualEdgeCandidates(bounds: RevisionGraphWebviewVirtualViewportBounds) {
       return collectRevisionGraphWebviewVirtualIndexCandidates(
         virtualEdgeIndex,
         bounds,
@@ -1444,7 +1483,9 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function refreshGraphCaches() {
       nodeElements = new Map(
-        Array.from(document.querySelectorAll('[data-node-hash]')).map((element) => [element.getAttribute('data-node-hash'), element])
+        Array.from(document.querySelectorAll<HTMLElement>('[data-node-hash]'))
+          .map((element) => [element.getAttribute('data-node-hash'), element] as const)
+          .filter((entry): entry is readonly [string, HTMLElement] => entry[0] !== null)
       );
       edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
       headNodeHash = getCurrentHeadNodeHash();
@@ -1606,7 +1647,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         visibleReferences: visibleRefs,
         getFlowKind: (referenceName) => {
           const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(referenceName) : null;
-          return flowBranch ? flowBranch.kind : null;
+          return flowBranch?.kind ?? null;
         },
         flowKindBadges
       });
@@ -1628,14 +1669,6 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function renderEdgeMarkup(edge, layoutByHash) {
       return renderRevisionGraphWebviewEdgeMarkup(edge, layoutByHash, EDGE_VERTICAL_INSET);
-    }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
     }
 
     function createReferenceId(hash, kind, name) {
@@ -1733,7 +1766,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       return !!(target && typeof target.closest === 'function' && target.closest('[data-node-grip]'));
     }
 
-    function showStatus(message, isError, action = null) {
+    function showStatus(
+      message: string,
+      isError: boolean,
+      action: RevisionGraphWebviewStatusAction | null = null
+    ) {
       showRevisionGraphWebviewStatus(
         {
           card: statusCard,
