@@ -2065,6 +2065,24 @@ test('coordinates revision graph scene rendering through the typed lifecycle', (
   assert.deepEqual(emptyEvents, ['geometry', 'clear', 'caches', 'canvas']);
 });
 
+test('applies revision graph scene geometry through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const canvas = runtime.elements.get('canvas');
+  const sceneLayer = runtime.elements.get('sceneLayer');
+  const graphSvg = runtime.elements.get('graphSvg');
+  assert.ok(canvas && sceneLayer && graphSvg);
+  runtime.context.applyRevisionGraphWebviewSceneGeometry(
+    { canvas, sceneLayer, graphSvg },
+    900,
+    500
+  );
+  assert.equal(canvas.style.width, '900px');
+  assert.equal(canvas.style.height, '500px');
+  assert.equal(sceneLayer.style.width, '900px');
+  assert.equal(sceneLayer.style.height, '500px');
+  assert.equal(graphSvg.getAttribute('viewBox'), '0 0 900 500');
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

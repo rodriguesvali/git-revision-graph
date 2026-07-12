@@ -32,6 +32,7 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-lifecycle\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-scheduler\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-render-lifecycle\.json/);
+  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-geometry-ui\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.json$/);
 });
 

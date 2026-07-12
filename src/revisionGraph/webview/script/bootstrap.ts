@@ -1214,11 +1214,11 @@ const VIEWPORT_PADDING_LEFT = 18;
         isReady: state.viewMode === 'ready',
         shouldPrecenterViewport: !!options.precenterViewport,
         prepareGeometry: () => traceWebviewPhase('webview.render-scene.geometry', () => {
-          canvas.style.width = baseCanvasWidth + 'px';
-          canvas.style.height = baseCanvasHeight + 'px';
-          sceneLayer.style.width = baseCanvasWidth + 'px';
-          sceneLayer.style.height = baseCanvasHeight + 'px';
-          graphSvg.setAttribute('viewBox', '0 0 ' + baseCanvasWidth + ' ' + baseCanvasHeight);
+          applyRevisionGraphWebviewSceneGeometry(
+            { canvas, sceneLayer, graphSvg },
+            baseCanvasWidth,
+            baseCanvasHeight
+          );
         }),
         clearScene: () => traceWebviewPhase('webview.render-scene.clear', () => {
           clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
