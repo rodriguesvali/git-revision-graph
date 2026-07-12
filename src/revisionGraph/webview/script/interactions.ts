@@ -1679,9 +1679,7 @@
         toolbarBusy,
         hasFlowGovernanceState()
       );
-      if (centerHeadButton) {
-        centerHeadButton.disabled = toolbarBusy;
-      }
+      syncRevisionGraphWebviewCenterHeadToolbarUi(centerHeadButton, toolbarBusy);
       syncRevisionGraphWebviewZoomToolbarUi(
         { zoomInButton, zoomOutButton, zoomResetButton, minimapZoomInButton, minimapZoomOutButton, minimapZoomResetButton },
         toolbarBusy, minimapEnabled, canZoomIn, canZoomOut, canResetZoom,
