@@ -175,18 +175,9 @@ const REF_LINE_HEIGHT = 25;
       });
       const nextScrollLeft = nextPosition.scrollLeft;
       const nextScrollTop = nextPosition.scrollTop;
-      const shouldScroll =
-        Math.abs(viewport.scrollLeft - nextScrollLeft) > 0.5 ||
-        Math.abs(viewport.scrollTop - nextScrollTop) > 0.5;
+      const shouldScroll = shouldScrollRevisionGraphWebviewViewport(viewport, nextScrollLeft, nextScrollTop);
       traceWebviewPhase('webview.viewport-frame.scroll', () => {
-        if (shouldScroll) {
-          if (typeof viewport.scrollTo === 'function') {
-            viewport.scrollTo({ left: nextScrollLeft, top: nextScrollTop, behavior: 'auto' });
-          } else {
-            viewport.scrollLeft = nextScrollLeft;
-            viewport.scrollTop = nextScrollTop;
-          }
-        }
+        scrollRevisionGraphWebviewViewportTo(viewport, nextScrollLeft, nextScrollTop);
       }, shouldScroll ? 'action=scroll' : 'action=skip');
       if (options.syncMinimap !== false) {
         syncMinimap('viewport');

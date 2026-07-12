@@ -11,6 +11,7 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/viewportPosition.ts"
+    "src/revisionGraph/webview/runtime/viewportPosition.ts",
+    "src/revisionGraph/webview/runtime/viewportScrollUi.ts"
   ]
 }

@@ -1713,6 +1713,33 @@ test('calculates revision graph viewport positions through the typed module', ()
   assert.deepEqual({ ...sceneCenter }, { sceneCenterX: 45, sceneCenterY: 53 });
 });
 
+test('scrolls the revision graph viewport through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const calls: Array<{ left: number; top: number; behavior: string }> = [];
+  const viewport = {
+    scrollLeft: 10,
+    scrollTop: 20,
+    scrollTo(options: { left: number; top: number; behavior: 'auto' }): void {
+      calls.push(options);
+    }
+  };
+  assert.equal(
+    runtime.context.shouldScrollRevisionGraphWebviewViewport(viewport, 10.4, 20.4),
+    false
+  );
+  assert.equal(
+    runtime.context.scrollRevisionGraphWebviewViewportTo(viewport, 100, 200),
+    true
+  );
+  assert.deepEqual(calls, [{ left: 100, top: 200, behavior: 'auto' }]);
+  const fallbackViewport = { scrollLeft: 0, scrollTop: 0 };
+  assert.equal(
+    runtime.context.scrollRevisionGraphWebviewViewportTo(fallbackViewport, 10, 20),
+    true
+  );
+  assert.deepEqual(fallbackViewport, { scrollLeft: 10, scrollTop: 20 });
+});
+
 test('calculates revision graph virtual viewport visibility through the typed module', () => {
   const runtime = createWebviewRuntime();
   const bounds = runtime.context.createRevisionGraphWebviewVirtualViewportBounds({

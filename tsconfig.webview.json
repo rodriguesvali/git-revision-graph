@@ -36,6 +36,7 @@
     "src/revisionGraph/webview/runtime/minimapPreferenceUi.ts",
     "src/revisionGraph/webview/runtime/viewportDrag.ts",
     "src/revisionGraph/webview/runtime/viewportPosition.ts",
+    "src/revisionGraph/webview/runtime/viewportScrollUi.ts",
     "src/revisionGraph/webview/runtime/virtualViewport.ts",
     "src/revisionGraph/webview/runtime/virtualIndex.ts",
     "src/revisionGraph/webview/runtime/virtualScene.ts",
