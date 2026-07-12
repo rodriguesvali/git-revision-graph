@@ -75,13 +75,13 @@ import {
   checkFlowPullRequestSourcePublication,
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
+  FlowConfigPersistenceCoordinator,
   FlowGovernanceOptionsUpdate,
   loadFlowPullRequestRemoteBranchCommit,
   prepareFlowEqualizationBranch,
   resolveGitHubPullRequestRemote,
   resolveFlowConfigForRepository,
-  startFlowBranch,
-  updateRepositoryFlowConfigOptions
+  startFlowBranch
 } from './flow';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
@@ -197,6 +197,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private commitShortStatAbortController = new AbortController();
   private readonly mutationCoordinator: RepositoryMutationCoordinator;
   private readonly ownsMutationCoordinator: boolean;
+  private readonly flowConfigPersistence = new FlowConfigPersistenceCoordinator();
 
   constructor(
     private readonly git: API,
@@ -280,8 +281,8 @@ export class RevisionGraphController implements vscode.Disposable {
       postCurrentState: () => {
         this.postCurrentState();
       },
-      updateFlowGovernanceOptions: (options) => {
-        void this.updateFlowGovernanceOptions(options);
+      updateFlowGovernanceOptions: async (options) => {
+        await this.updateFlowGovernanceOptions(options);
       },
       startFlowBranch: async (branchKind, sourceRefName, name, description) => {
         await this.startFlowBranch(branchKind, sourceRefName, name, description);
@@ -574,7 +575,7 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    const result = await updateRepositoryFlowConfigOptions(
+    const result = await this.flowConfigPersistence.enqueue(
       repository.rootUri.fsPath,
       settings,
       options

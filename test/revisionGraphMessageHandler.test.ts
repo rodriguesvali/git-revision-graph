@@ -51,7 +51,7 @@ test('RevisionGraphMessageHandler applies projection options and schedules a pro
 test('RevisionGraphMessageHandler applies Flow Governance option updates through the host boundary', async () => {
   const updates: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
-    updateFlowGovernanceOptions(options) {
+    async updateFlowGovernanceOptions(options) {
       updates.push(options);
     }
   }));
@@ -66,6 +66,32 @@ test('RevisionGraphMessageHandler applies Flow Governance option updates through
   assert.deepEqual(updates, [{
     enabled: true
   }]);
+});
+
+test('RevisionGraphMessageHandler waits for Flow Governance option persistence', async () => {
+  let resolveUpdate: (() => void) | undefined;
+  const persisted = new Promise<void>((resolve) => {
+    resolveUpdate = resolve;
+  });
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async updateFlowGovernanceOptions() {
+      await persisted;
+    }
+  }));
+  let completed = false;
+  const handling = handler.handleMessage({
+    type: 'set-flow-governance-options',
+    options: { enabled: true }
+  }).then(() => {
+    completed = true;
+  });
+
+  await Promise.resolve();
+  assert.equal(completed, false);
+
+  resolveUpdate?.();
+  await handling;
+  assert.equal(completed, true);
 });
 
 test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
@@ -380,7 +406,7 @@ function createHost(
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},
-    updateFlowGovernanceOptions() {},
+    async updateFlowGovernanceOptions() {},
     async startFlowBranch() {},
     async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},

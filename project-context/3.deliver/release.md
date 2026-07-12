@@ -76,6 +76,11 @@ Planned verification:
 
 Recorded verification:
 
+- Flow Governance repository-config persistence is serialized per repository as of 2026-07-12. The
+  webview message boundary now awaits persistence; failed writes do not block later queued writes,
+  and separate repositories retain independent queues. `npm run build`, `npm test` (619 tests),
+  `npm run benchmark:ci`, and `git diff --check` passed. No additional Extension Development Host
+  smoke is needed because the change is covered by deterministic persistence and boundary tests.
 - Flow Governance configuration path hardening was implemented on 2026-07-12. Repository configuration reads, updates, and command creation now reject symbolic-link/junction files and ancestors; command creation revalidates after confirmation and uses exclusive creation. `npm run build`, `npm test` (614 tests), `npm run benchmark:ci`, and `git diff --check` passed. Extension Development Host validation remains pending.
 - `npm run build` passed on 2026-07-01 during Flow Governance implementation.
 - Focused Flow Governance config, state, manifest, message validation, dispatcher, handler,

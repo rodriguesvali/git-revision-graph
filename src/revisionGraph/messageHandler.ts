@@ -39,7 +39,7 @@ export interface RevisionGraphMessageHandlerHost
   openCommitOnGitHub(repository: Repository, commitHash: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
-  updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): void;
+  updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void>;
   startFlowBranch(
     branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string,
@@ -104,7 +104,7 @@ export class RevisionGraphMessageHandler {
         await this.viewStateWorkflow.setProjectionOptions(message.options);
         return;
       case 'set-flow-governance-options':
-        this.host.updateFlowGovernanceOptions(message.options);
+        await this.host.updateFlowGovernanceOptions(message.options);
         return;
       case 'start-flow-branch':
         await this.host.startFlowBranch(message.branchKind, message.sourceRefName, message.name, message.description);

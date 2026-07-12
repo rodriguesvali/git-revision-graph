@@ -1,6 +1,7 @@
 export * from './flowBranchClassifier';
 export * from './flowBranchDescription';
 export * from './flowConfig';
+export * from './flowConfigPersistenceCoordinator';
 export * from './flowDecorations';
 export * from './flowDefaults';
 export * from './flowDiagnostics';
