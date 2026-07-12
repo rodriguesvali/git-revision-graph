@@ -736,8 +736,8 @@ test('uses principal path highlight for single selection and compare-only highli
   assert.match(html, /const nextHash = primaryAncestorNextByHash\[currentHash\];/);
   assert.match(html, /let queueIndex = 0;\s*while \(queueIndex < queue\.length\) \{\s*const hash = queue\[queueIndex\];\s*queueIndex \+= 1;/s);
   assert.match(html, /element\.classList\.toggle\('selected', highlights\.anchorHash === hash\);/);
-  assert.match(html, /element\.classList\.toggle\('related', !!highlights\.anchorHash && highlights\.anchorHash !== hash && highlights\.relatedHashes\.has\(hash\)\);/);
-  assert.match(html, /element\.classList\.toggle\('muted', !!highlights\.anchorHash && !isRelated\);/);
+  assert.match(html, /element\.classList\.toggle\(\s*'related',\s*highlights\.anchorHash !== null\s*&& highlights\.anchorHash !== hash\s*&& highlights\.relatedHashes\.has\(hash\)\s*\);/s);
+  assert.match(html, /element\.classList\.toggle\('muted', highlights\.anchorHash !== null && !isRelated\);/);
 });
 
 test('renders single-bend edges and compact structural node styling in the shell runtime', () => {
@@ -1479,6 +1479,61 @@ test('calculates revision graph relationship highlights through the typed module
   assert.equal(comparisonSelection.relatedHashes.size, 0);
 });
 
+test('synchronizes revision graph relationship classes through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const selectedClasses = new Set<string>();
+  const parentClasses = new Set<string>();
+  const childClasses = new Set<string>();
+  const ancestorEdgeClasses = new Set<string>();
+  const descendantEdgeClasses = new Set<string>();
+  const nodeElements = new Map([
+    ['selected', { classList: createClassList(selectedClasses) }],
+    ['parent', { classList: createClassList(parentClasses) }],
+    ['child', { classList: createClassList(childClasses) }]
+  ]);
+  const edgeElements = [
+    createRelationshipEdge('selected', 'parent', ancestorEdgeClasses),
+    createRelationshipEdge('child', 'selected', descendantEdgeClasses)
+  ];
+  const singleSelection = runtime.context.createRevisionGraphWebviewRelationshipHighlights(
+    'selected',
+    null,
+    ['selected', 'parent'],
+    ['selected', 'child']
+  );
+
+  runtime.context.syncRevisionGraphWebviewRelationshipHighlightsUi(
+    nodeElements,
+    edgeElements,
+    singleSelection
+  );
+  assert.equal(selectedClasses.has('selected'), true);
+  assert.equal(parentClasses.has('related'), true);
+  assert.equal(parentClasses.has('ancestor-related'), true);
+  assert.equal(childClasses.has('related'), true);
+  assert.equal(childClasses.has('descendant-related'), true);
+  assert.equal(ancestorEdgeClasses.has('ancestor-path'), true);
+  assert.equal(descendantEdgeClasses.has('descendant-path'), true);
+
+  const comparisonSelection = runtime.context.createRevisionGraphWebviewRelationshipHighlights(
+    'selected',
+    'parent',
+    [],
+    []
+  );
+  runtime.context.syncRevisionGraphWebviewRelationshipHighlightsUi(
+    nodeElements,
+    edgeElements,
+    comparisonSelection
+  );
+  assert.equal(selectedClasses.has('selected'), true);
+  assert.equal(parentClasses.has('selected'), true);
+  assert.equal(parentClasses.has('related'), false);
+  assert.equal(childClasses.has('related'), false);
+  assert.equal(ancestorEdgeClasses.has('related'), false);
+  assert.equal(descendantEdgeClasses.has('related'), false);
+});
+
 test('traces revision graph primary paths through the typed graph module', () => {
   const runtime = createWebviewRuntime();
   const nodes = [
@@ -1528,6 +1583,26 @@ function createClassList(classes: Set<string>) {
         return;
       }
       classes.delete(name);
+    },
+    remove(...names: string[]): void {
+      for (const name of names) {
+        classes.delete(name);
+      }
+    }
+  };
+}
+
+function createRelationshipEdge(fromHash: string, toHash: string, classes: Set<string>) {
+  return {
+    classList: createClassList(classes),
+    getAttribute(name: string): string | null {
+      if (name === 'data-edge-from') {
+        return fromHash;
+      }
+      if (name === 'data-edge-to') {
+        return toHash;
+      }
+      return null;
     }
   };
 }

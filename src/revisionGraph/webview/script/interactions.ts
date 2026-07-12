@@ -226,41 +226,7 @@
         ancestorPath,
         descendantPath
       );
-
-      if (highlights.isComparison) {
-        for (const [hash, element] of nodeElements.entries()) {
-          element.classList.toggle('selected', highlights.selectedHashes.has(hash));
-          element.classList.remove('related', 'ancestor-related', 'descendant-related');
-        }
-
-        for (const element of edgeElements) {
-          element.classList.remove('related', 'ancestor-path', 'descendant-path', 'muted');
-        }
-        return;
-      }
-
-      for (const [hash, element] of nodeElements.entries()) {
-        const isAncestorRelated = !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.ancestorHashes.has(hash);
-        const isDescendantRelated = !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.descendantHashes.has(hash);
-        element.classList.toggle('selected', highlights.anchorHash === hash);
-        element.classList.toggle('related', !!highlights.anchorHash && highlights.anchorHash !== hash && highlights.relatedHashes.has(hash));
-        element.classList.toggle('ancestor-related', isAncestorRelated);
-        element.classList.toggle('descendant-related', isDescendantRelated);
-      }
-
-      for (const element of edgeElements) {
-        const fromHash = element.getAttribute('data-edge-from');
-        const toHash = element.getAttribute('data-edge-to');
-        const edgeKey = fromHash && toHash ? fromHash + '->' + toHash : '';
-        const isAncestorPath = !!highlights.anchorHash && highlights.ancestorEdgeKeys.has(edgeKey);
-        const isDescendantPath = !!highlights.anchorHash && highlights.descendantEdgeKeys.has(edgeKey);
-        const isRelated = isAncestorPath || isDescendantPath;
-
-        element.classList.toggle('related', isRelated);
-        element.classList.toggle('ancestor-path', isAncestorPath);
-        element.classList.toggle('descendant-path', isDescendantPath);
-        element.classList.toggle('muted', !!highlights.anchorHash && !isRelated);
-      }
+      syncRevisionGraphWebviewRelationshipHighlightsUi(nodeElements, edgeElements, highlights);
     }
 
     function openContextMenu(clientX, clientY, target) {

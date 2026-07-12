@@ -47,6 +47,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.search-highlights.json` strictly checks search-result highlighting. The CSS state of rendered nodes no longer mutates directly from the legacy interaction implementation.
 - `tsconfig.webview.relationship-highlights.json` strictly checks selection relationship calculations. Ancestor/descendant sets, edge-path keys and comparison-selection state are now explicit data instead of ad hoc interaction logic.
 - `tsconfig.webview.primary-path.json` strictly checks primary-path traversal. Directional maps, HEAD distances, compact ancestor paths and candidate scoring are no longer implemented through runtime globals.
+- `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary
 
