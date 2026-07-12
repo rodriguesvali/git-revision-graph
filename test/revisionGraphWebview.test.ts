@@ -1911,6 +1911,40 @@ test('builds revision graph node presentation through the typed module', () => {
   );
 });
 
+test('renders revision graph node markup through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const branchNode = {
+    hash: 'abcdef0123456789',
+    refs: [{ kind: 'branch', name: 'release/<next>' }],
+    author: 'Ada',
+    date: '2026-07-12',
+    subject: 'Typed webview runtime'
+  };
+  const branchMarkup = runtime.context.renderRevisionGraphWebviewNodeMarkup({
+    node: branchNode,
+    layout: { width: 100, height: 40, defaultLeft: 10, defaultTop: 20 },
+    nodeRenderKey: 'key<one>',
+    visibleReferences: branchNode.refs,
+    getFlowKind: () => 'release',
+    flowKindBadges: { release: 'rel' }
+  });
+  assert.match(branchMarkup, /data-node-render-key="key&lt;one&gt;"/);
+  assert.match(branchMarkup, /flow-badge flow-kind-release">rel<\/span>/);
+  assert.match(branchMarkup, /data-ref-name="release\/&lt;next&gt;"/);
+
+  const structuralMarkup = runtime.context.renderRevisionGraphWebviewNodeMarkup({
+    node: { hash: 'abcdef0123456789', refs: [], subject: 'A < B & "C"' },
+    layout: { width: 60, height: 24, defaultLeft: 0, defaultTop: 0 },
+    nodeRenderKey: 'structural',
+    visibleReferences: [],
+    getFlowKind: () => null,
+    flowKindBadges: {}
+  });
+  assert.match(structuralMarkup, /class="node node-structural"/);
+  assert.match(structuralMarkup, /node-summary">abcdef01<\/div>/);
+  assert.match(structuralMarkup, /title="abcdef0123456789\nA &lt; B &amp; &quot;C&quot;/);
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 

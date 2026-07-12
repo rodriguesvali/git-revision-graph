@@ -1559,32 +1559,18 @@ const VIEWPORT_PADDING_LEFT = 18;
         return '';
       }
       const nodeRenderKey = renderKey || getNodeRenderKey(node, layout);
-      const y = layout.defaultTop;
       const visibleRefs = getRevisionGraphWebviewVisibleNodeReferences(node, isReferenceVisible);
-      const summary = visibleRefs.length === 0
-        ? '<div class="node-summary">' + escapeHtml(formatNodeSummary(node)) + '</div>'
-        : '';
-      const baseBadge = '<span class="node-base-badge">(Base)</span>';
-      const refLines = visibleRefs
-        .map((ref) => {
-          const refId = createReferenceId(node.hash, ref.kind, ref.name);
-          const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(ref.name) : null;
-          const flowKind = flowBranch ? flowBranch.kind : null;
-          const flowBadge = flowKind
-            ? '<span class="flow-badge flow-kind-' + escapeHtml(flowKind) + '">' + escapeHtml(flowKindBadges[flowKind] || flowKind) + '</span>'
-            : '';
-          const flowClass = flowKind ? ' flow-branch flow-kind-' + escapeHtml(flowKind) : '';
-          return '<div class="ref-line kind-' + escapeHtml(ref.kind) + flowClass + '" data-ref-id="' + escapeHtml(refId) + '" data-ref-name="' + escapeHtml(ref.name) + '" data-ref-kind="' + escapeHtml(ref.kind) + '" tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog">' + flowBadge + '<span class="ref-name">' + escapeHtml(ref.name) + '</span></div>';
-        })
-        .join('');
-
-      const nodeTitle = visibleRefs.length === 0 ? ' title="' + escapeHtml(formatNodeTitle(node, visibleRefs)) + '"' : '';
-      return '<div class="node ' + getNodeClass(node, visibleRefs) + '" data-node-hash="' + escapeHtml(node.hash) + '" data-node-render-key="' + escapeHtml(nodeRenderKey) + '" data-node-width="' + layout.width + '" data-node-height="' + layout.height + '" data-default-left="' + layout.defaultLeft + '" data-default-top="' + y + '" style="left:' + layout.defaultLeft + 'px; top:' + y + 'px; width:' + layout.width + 'px"' + nodeTitle + '>' +
-        '<button class="node-grip" type="button" data-node-grip="true" aria-label="Drag to rearrange horizontally" title="Drag to rearrange horizontally"></button>' +
-        refLines +
-        summary +
-        baseBadge +
-      '</div>';
+      return renderRevisionGraphWebviewNodeMarkup({
+        node,
+        layout,
+        nodeRenderKey,
+        visibleReferences: visibleRefs,
+        getFlowKind: (referenceName) => {
+          const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(referenceName) : null;
+          return flowBranch ? flowBranch.kind : null;
+        },
+        flowKindBadges
+      });
     }
 
     function getNodeRenderKey(node, layout) {
@@ -1603,18 +1589,6 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function renderEdgeMarkup(edge, layoutByHash) {
       return renderRevisionGraphWebviewEdgeMarkup(edge, layoutByHash, EDGE_VERTICAL_INSET);
-    }
-
-    function getNodeClass(node, refs = node.refs) {
-      return getRevisionGraphWebviewNodePresentationClass(refs);
-    }
-
-    function formatNodeSummary(node) {
-      return formatRevisionGraphWebviewNodeSummary(node);
-    }
-
-    function formatNodeTitle(node, refs = node.refs) {
-      return formatRevisionGraphWebviewNodeTitle(node, refs);
     }
 
     function escapeHtml(value) {
