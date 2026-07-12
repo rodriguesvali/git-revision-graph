@@ -1723,7 +1723,12 @@
       syncSearchUi();
     }
 
-	    function postMessageWithLoading(message, label, pendingControl = null, mode = 'blocking') {
+	    function postMessageWithLoading(
+	      message: RevisionGraphWebviewMessage,
+	      label: string,
+	      pendingControl: HTMLElement | null = null,
+	      mode: RevisionGraphWebviewLoadingMode = 'blocking'
+	    ) {
 	      if (toolbarBusy) {
 	        return;
 	      }

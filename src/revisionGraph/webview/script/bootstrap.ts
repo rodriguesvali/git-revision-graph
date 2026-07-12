@@ -223,8 +223,12 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
     if (scopeSelect) {
       scopeSelect.addEventListener('change', () => {
-        const nextRefScope = scopeSelect.value;
-        const options = { refScope: nextRefScope, revisionRange: null, descendantFocus: null };
+        const nextRefScope = scopeSelect.value as NonNullable<RevisionGraphWebviewProjectionOptions['refScope']>;
+        const options: RevisionGraphWebviewProjectionOptions = {
+          refScope: nextRefScope,
+          revisionRange: null,
+          descendantFocus: null
+        };
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage(options), 'Updating graph scope...', scopeSelect);
       });
     }
