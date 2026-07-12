@@ -1258,18 +1258,21 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function scheduleVirtualSceneRender(reason = 'viewport', force = false) {
-      if (force) {
-        lastVirtualSceneKey = '';
-      }
-      if (pendingVirtualSceneRenderFrame) {
-        return;
-      }
-
-      pendingVirtualSceneRenderFrame = requestAnimationFrame(() => {
-        pendingVirtualSceneRenderFrame = 0;
-        traceWebviewPhase('webview.render-scene.virtual-frame', () => {
-          renderVirtualScene({ reason, force });
-        }, 'reason=' + reason);
+      scheduleRevisionGraphWebviewVirtualSceneRender({
+        force,
+        pendingFrame: pendingVirtualSceneRenderFrame,
+        setSceneKey: (sceneKey) => {
+          lastVirtualSceneKey = sceneKey;
+        },
+        setPendingFrame: (frame) => {
+          pendingVirtualSceneRenderFrame = frame;
+        },
+        requestFrame: (callback) => requestAnimationFrame(callback),
+        render: () => {
+          traceWebviewPhase('webview.render-scene.virtual-frame', () => {
+            renderVirtualScene({ reason, force });
+          }, 'reason=' + reason);
+        }
       });
     }
 

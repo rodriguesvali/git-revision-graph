@@ -1995,6 +1995,41 @@ test('coordinates revision graph virtual scene lifecycle through the typed modul
   assert.equal(effects.at(-1), 'reset:');
 });
 
+test('schedules revision graph virtual scene renders through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const events: string[] = [];
+  let frameCallback: (() => void) | undefined;
+  const scheduled = runtime.context.scheduleRevisionGraphWebviewVirtualSceneRender({
+    force: true,
+    pendingFrame: 0,
+    setSceneKey: (sceneKey: string) => events.push(`key:${sceneKey}`),
+    setPendingFrame: (frame: number) => events.push(`pending:${frame}`),
+    requestFrame: (callback: () => void) => {
+      frameCallback = callback;
+      return 42;
+    },
+    render: () => events.push('render')
+  });
+  assert.equal(scheduled, true);
+  assert.deepEqual(events, ['key:', 'pending:42']);
+  assert.ok(frameCallback);
+  frameCallback();
+  assert.deepEqual(events, ['key:', 'pending:42', 'pending:0', 'render']);
+
+  assert.equal(
+    runtime.context.scheduleRevisionGraphWebviewVirtualSceneRender({
+      force: true,
+      pendingFrame: 42,
+      setSceneKey: (sceneKey: string) => events.push(`blocked-key:${sceneKey}`),
+      setPendingFrame: (frame: number) => events.push(`blocked-pending:${frame}`),
+      requestFrame: () => 99,
+      render: () => events.push('blocked-render')
+    }),
+    false
+  );
+  assert.deepEqual(events.slice(-1), ['blocked-key:']);
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 
