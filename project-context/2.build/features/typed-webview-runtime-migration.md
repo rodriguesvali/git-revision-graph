@@ -78,6 +78,8 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 
 The migrated browser source currently uses TypeScript's compatibility emission (`noCheck`) because the extracted legacy runtime exposes hundreds of real strict-mode issues across implicit DOM assumptions, mutable globals, and untyped message/state data. This is intentionally recorded as incomplete: externalization removes the template-string execution path, but it does not yet satisfy the goal of strict TypeScript protection for every runtime function.
 
+Strict-mode audit (2026-07-12): the primary browser target now includes the DOM library, but compiling it with `--noCheck false` still reports 307 errors in legacy globals: 160 in `interactions.ts`, 125 in `bootstrap.ts`, 20 in `layout.ts`, and 2 in `referenceTooltip.ts`. `noCheck` remains until those modules are replaced or typed; removing it now would break the production build.
+
 Item 3 remains open until `noCheck` is removed, the browser target uses the DOM library with strict checks, and the legacy global scripts are replaced by typed runtime modules.
 
 ## Planned Modules

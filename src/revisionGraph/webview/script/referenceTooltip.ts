@@ -83,8 +83,18 @@
         return;
       }
       const refId = refElement.getAttribute('data-ref-id');
-      const reference = refId ? getReference(refId) : null;
-      const node = reference ? sceneNodeByHash.get(reference.hash) : null;
+      const reference = (refId ? getReference(refId) : null) as {
+        readonly hash: string;
+        readonly name: string;
+        readonly kind: string;
+        readonly description?: string;
+      } | null;
+      const node = (reference ? sceneNodeByHash.get(reference.hash) : null) as {
+        readonly hash: string;
+        readonly subject?: string;
+        readonly author?: string;
+        readonly date?: string;
+      } | null;
       if (!reference || !node) {
         hideReferenceTooltip();
         return;
@@ -170,7 +180,7 @@
       if (activeReferenceTooltipHash !== commitHash || !referenceTooltip || referenceTooltip.hidden) {
         return;
       }
-      const statsElement = referenceTooltip.querySelector('[data-reference-tooltip-stats]');
+      const statsElement = referenceTooltip.querySelector<HTMLElement>('[data-reference-tooltip-stats]');
       if (statsElement) {
         statsElement.innerHTML = renderReferenceTooltipStats(shortStat, true);
         statsElement.hidden = !shortStat;

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "none",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "outFile": "out/webview/revisionGraph.js",
     "strict": true,
     "noCheck": true,
