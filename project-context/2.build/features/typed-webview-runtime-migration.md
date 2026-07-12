@@ -50,6 +50,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.primary-path.json` strictly checks primary-path traversal. Directional maps, HEAD distances, compact ancestor paths and candidate scoring are no longer implemented through runtime globals.
 - `tsconfig.webview.minimap-viewport-ui.json` strictly checks minimap viewport state. The visible-region rectangle and its minimap auto-scroll no longer mutate DOM elements directly from the legacy layout implementation.
 - `tsconfig.webview.minimap-content.json` strictly checks minimap SVG generation. Edge and node markup, including head-node decoration and missing-node edge filtering, no longer originates in the legacy layout implementation.
+- `tsconfig.webview.minimap-preference-ui.json` strictly checks minimap preference rendering. The preference checkbox and hidden minimap state no longer mutate directly from the legacy interaction implementation.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 
 ### Compatibility Boundary

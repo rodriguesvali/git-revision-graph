@@ -669,9 +669,10 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\];/);
   assert.match(html, /let minimapEnabled = initialWebviewState\.showMinimap === true;/);
   assert.match(html, /function syncMinimapPreference\(\)/);
+  assert.match(html, /function syncRevisionGraphWebviewMinimapPreferenceUi\(/);
   assert.match(html, /function setMinimapEnabled\(enabled\)/);
   assert.match(html, /showMinimapToggle\.addEventListener\('change'/);
-  assert.match(html, /showMinimapToggle\.checked = minimapEnabled;/);
+  assert.match(html, /minimapToggle\.checked = enabled;/);
   assert.match(html, /persistRevisionGraphMinimapPreference\(vscode, minimapEnabled\);/);
   assert.match(html, /!minimapEnabled/);
   assert.match(html, /persistRevisionGraphNodeOffsets\(vscode, sceneLayoutKey, normalizedOffsets\);/);
@@ -1637,6 +1638,26 @@ test('synchronizes revision graph minimap viewport through the typed DOM adapter
 
   assert.equal(graphMinimap.scrollLeft, 130);
   assert.equal(graphMinimap.scrollTop, 230);
+});
+
+test('synchronizes revision graph minimap preference through the typed DOM adapter', () => {
+  const runtime = createWebviewRuntime();
+  const minimapToggle = { checked: false };
+  const graphMinimap = { hidden: false };
+
+  assert.equal(
+    runtime.context.syncRevisionGraphWebviewMinimapPreferenceUi(minimapToggle, graphMinimap, true),
+    false
+  );
+  assert.equal(minimapToggle.checked, true);
+  assert.equal(graphMinimap.hidden, false);
+
+  assert.equal(
+    runtime.context.syncRevisionGraphWebviewMinimapPreferenceUi(minimapToggle, graphMinimap, false),
+    true
+  );
+  assert.equal(minimapToggle.checked, false);
+  assert.equal(graphMinimap.hidden, true);
 });
 
 test('renders revision graph minimap SVG content through the typed module', () => {

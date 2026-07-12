@@ -1426,12 +1426,8 @@
     }
 
     function syncMinimapPreference() {
-      if (showMinimapToggle) {
-        showMinimapToggle.checked = minimapEnabled;
-      }
-      if (!minimapEnabled && graphMinimap) {
+      if (syncRevisionGraphWebviewMinimapPreferenceUi(showMinimapToggle, graphMinimap, minimapEnabled)) {
         minimapDragState = null;
-        graphMinimap.hidden = true;
       }
       syncViewOptionsButton();
     }
