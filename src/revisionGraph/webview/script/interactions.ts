@@ -1711,24 +1711,11 @@
       if (centerHeadButton) {
         centerHeadButton.disabled = toolbarBusy;
       }
-      if (zoomInButton) {
-        zoomInButton.disabled = toolbarBusy || !canZoomIn;
-      }
-      if (zoomOutButton) {
-        zoomOutButton.disabled = toolbarBusy || !canZoomOut;
-      }
-      if (zoomResetButton) {
-        zoomResetButton.disabled = toolbarBusy || !canResetZoom;
-      }
-      if (minimapZoomInButton) {
-        minimapZoomInButton.disabled = toolbarBusy || !minimapEnabled || !canZoomInMinimap;
-      }
-      if (minimapZoomOutButton) {
-        minimapZoomOutButton.disabled = toolbarBusy || !minimapEnabled || !canZoomOutMinimap;
-      }
-      if (minimapZoomResetButton) {
-        minimapZoomResetButton.disabled = toolbarBusy || !minimapEnabled || !canResetMinimapZoom;
-      }
+      syncRevisionGraphWebviewZoomToolbarUi(
+        { zoomInButton, zoomOutButton, zoomResetButton, minimapZoomInButton, minimapZoomOutButton, minimapZoomResetButton },
+        toolbarBusy, minimapEnabled, canZoomIn, canZoomOut, canResetZoom,
+        canZoomInMinimap, canZoomOutMinimap, canResetMinimapZoom
+      );
     }
 
     function setToolbarBusy(isBusy, pendingControl = null) {
