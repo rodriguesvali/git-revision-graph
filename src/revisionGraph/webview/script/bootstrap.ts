@@ -1355,23 +1355,22 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function buildVirtualNodeIndex(layouts) {
-      const index = new Map();
-      for (const layout of layouts) {
-        addVirtualIndexEntry(index, layout.defaultTop, layout.defaultTop + layout.height, layout);
-      }
-      return index;
+      return buildRevisionGraphWebviewVirtualIndex(
+        layouts,
+        VIRTUAL_RENDER_BUCKET_SIZE_PX,
+        (layout) => ({
+          top: layout.defaultTop,
+          bottom: layout.defaultTop + layout.height
+        })
+      );
     }
 
     function buildVirtualEdgeIndex(edges) {
-      const index = new Map();
-      for (const edge of edges) {
-        const bounds = getEdgeVerticalBounds(edge);
-        if (!bounds) {
-          continue;
-        }
-        addVirtualIndexEntry(index, bounds.top, bounds.bottom, edge);
-      }
-      return index;
+      return buildRevisionGraphWebviewVirtualIndex(
+        edges,
+        VIRTUAL_RENDER_BUCKET_SIZE_PX,
+        getEdgeVerticalBounds
+      );
     }
 
     function getEdgeVerticalBounds(edge) {
@@ -1387,60 +1386,22 @@ const VIEWPORT_PADDING_LEFT = 18;
       };
     }
 
-    function addVirtualIndexEntry(index, top, bottom, value) {
-      const bucketRange = getVirtualBucketRange(top, bottom);
-      if (!bucketRange) {
-        return;
-      }
-
-      for (let bucket = bucketRange.first; bucket <= bucketRange.last; bucket += 1) {
-        const entries = index.get(bucket);
-        if (entries) {
-          entries.push(value);
-        } else {
-          index.set(bucket, [value]);
-        }
-      }
-    }
-
-    function getVirtualBucketRange(top, bottom) {
-      if (!Number.isFinite(top) || !Number.isFinite(bottom)) {
-        return null;
-      }
-
-      const first = Math.floor(Math.max(0, Math.min(top, bottom)) / VIRTUAL_RENDER_BUCKET_SIZE_PX);
-      const last = Math.floor(Math.max(0, Math.max(top, bottom)) / VIRTUAL_RENDER_BUCKET_SIZE_PX);
-      return { first, last };
-    }
-
     function collectVirtualNodeCandidates(bounds) {
-      return collectVirtualIndexCandidates(virtualNodeIndex, bounds, (layout) => layout.hash);
+      return collectRevisionGraphWebviewVirtualIndexCandidates(
+        virtualNodeIndex,
+        bounds,
+        VIRTUAL_RENDER_BUCKET_SIZE_PX,
+        (layout) => layout.hash
+      );
     }
 
     function collectVirtualEdgeCandidates(bounds) {
-      return collectVirtualIndexCandidates(virtualEdgeIndex, bounds, getVirtualEdgeKey);
-    }
-
-    function collectVirtualIndexCandidates(index, bounds, getKey) {
-      const bucketRange = getVirtualBucketRange(bounds.top, bounds.bottom);
-      if (!bucketRange) {
-        return [];
-      }
-
-      const candidates = [];
-      const seen = new Set();
-      for (let bucket = bucketRange.first; bucket <= bucketRange.last; bucket += 1) {
-        const entries = index.get(bucket) || [];
-        for (const entry of entries) {
-          const key = getKey(entry);
-          if (!key || seen.has(key)) {
-            continue;
-          }
-          seen.add(key);
-          candidates.push(entry);
-        }
-      }
-      return candidates;
+      return collectRevisionGraphWebviewVirtualIndexCandidates(
+        virtualEdgeIndex,
+        bounds,
+        VIRTUAL_RENDER_BUCKET_SIZE_PX,
+        getVirtualEdgeKey
+      );
     }
 
     function getVirtualEdgeKey(edge) {

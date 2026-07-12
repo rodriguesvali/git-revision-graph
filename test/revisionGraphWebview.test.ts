@@ -1769,6 +1769,34 @@ test('calculates revision graph virtual viewport visibility through the typed mo
   );
 });
 
+test('builds and queries the revision graph virtual candidate index through the typed module', () => {
+  const runtime = createWebviewRuntime();
+  const entries = [
+    { id: 'spanning', top: 0, bottom: 1_200 },
+    { id: 'second-bucket', top: 1_800, bottom: 1_810 },
+    { id: 'invalid', top: Number.NaN, bottom: 10 }
+  ];
+  const index = runtime.context.buildRevisionGraphWebviewVirtualIndex(
+    entries,
+    1_200,
+    (entry: { top: number; bottom: number }) => ({ top: entry.top, bottom: entry.bottom })
+  );
+  assert.deepEqual([...index.keys()], [0, 1]);
+  assert.deepEqual(
+    runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+      index,
+      { top: 1_000, bottom: 1_900 },
+      1_200,
+      (entry: { id: string }) => entry.id
+    ).map((entry: { id: string }) => entry.id),
+    ['spanning', 'second-bucket']
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewVirtualBucketRange(Number.NaN, 10, 1_200),
+    null
+  );
+});
+
 test('calculates revision graph node drag bounds through the typed module', () => {
   const runtime = createWebviewRuntime();
 
