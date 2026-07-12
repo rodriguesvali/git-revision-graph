@@ -102,11 +102,16 @@
         return;
       }
 
-      searchResultHashes = currentState.scene.nodes
-        .slice()
-        .sort((left, right) => left.row - right.row)
-        .filter((node) => nodeMatchesSearchQuery(node, normalizedQuery))
-        .map((node) => node.hash);
+      searchResultHashes = getRevisionGraphWebviewSearchResultHashes(
+        currentState.scene.nodes,
+        normalizedQuery,
+        (hash, reference) => isReferenceVisible({
+          id: createReferenceId(hash, reference.kind, reference.name),
+          hash,
+          name: reference.name,
+          kind: reference.kind
+        })
+      );
 
       if (searchResultHashes.length === 0) {
         activeSearchResultIndex = -1;
@@ -214,29 +219,7 @@
     }
 
     function getNormalizedSearchQuery() {
-      return String(searchQuery || '').trim().toLowerCase();
-    }
-
-    function nodeMatchesSearchQuery(node, normalizedQuery) {
-      if (!normalizedQuery) {
-        return false;
-      }
-
-      const candidateValues = [
-        node.hash,
-        formatShortCommitHash(node.hash),
-        node.subject || '',
-        node.author || '',
-        ...node.refs
-          .filter((ref) => isReferenceVisible({
-            id: createReferenceId(node.hash, ref.kind, ref.name),
-            hash: node.hash,
-            name: ref.name,
-            kind: ref.kind
-          }))
-          .map((ref) => ref.name)
-      ];
-      return candidateValues.some((value) => String(value).toLowerCase().includes(normalizedQuery));
+      return normalizeRevisionGraphWebviewSearchQuery(searchQuery);
     }
 
     function syncRelationshipHighlights() {

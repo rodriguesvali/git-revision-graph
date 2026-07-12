@@ -1325,6 +1325,43 @@ test('marks only the pending toolbar control through the typed adapter', () => {
   assert.equal(pendingControl.getAttribute('aria-busy'), null);
 });
 
+test('finds visible revision graph search results through the typed query module', () => {
+  const runtime = createWebviewRuntime();
+  const nodes = [
+    {
+      hash: 'ff00112233445566',
+      row: 2,
+      subject: 'Release candidate',
+      author: 'Ada Lovelace',
+      refs: [{ name: 'release/2.0', kind: 'branch' }]
+    },
+    {
+      hash: 'aa00112233445566',
+      row: 1,
+      subject: 'Prepare migration',
+      author: 'Grace Hopper',
+      refs: [{ name: 'hidden/legacy', kind: 'branch' }]
+    }
+  ];
+
+  assert.equal(runtime.context.normalizeRevisionGraphWebviewSearchQuery('  RELEASE  '), 'release');
+  assert.deepEqual(Array.from(runtime.context.getRevisionGraphWebviewSearchResultHashes(
+    nodes,
+    'release',
+    (_hash: string, reference: { name: string }) => reference.name !== 'hidden/legacy'
+  )),
+    ['ff00112233445566']
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.getRevisionGraphWebviewSearchResultHashes(nodes, 'grace', () => true)),
+    ['aa00112233445566']
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.getRevisionGraphWebviewSearchResultHashes(nodes, '', () => true)),
+    []
+  );
+});
+
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
     viewMode: 'ready',

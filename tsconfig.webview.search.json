@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "none",
+    "lib": ["ES2022"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "types": [],
+    "noEmit": true
+  },
+  "files": [
+    "src/revisionGraph/webview/runtime/contracts.d.ts",
+    "src/revisionGraph/webview/runtime/search.ts"
+  ]
+}
