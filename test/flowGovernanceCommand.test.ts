@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as path from 'node:path';
 
 import {
   createFlowConfigCommandServices,
@@ -9,6 +10,9 @@ import {
 import { RepositoryConfigPathInspection } from '../src/revisionGraph/flow/flowConfigPathSafety';
 import { createDefaultFlowConfigFile } from '../src/revisionGraph/flow/flowDefaults';
 import { createApi, createRepository } from './fakes';
+
+const repositoryRoot = '/workspace/repo';
+const defaultConfigPath = path.resolve(repositoryRoot, '.git-revision-graph-flow.json');
 
 function createHarness(options: {
   readonly configPath?: string;
@@ -84,7 +88,7 @@ function createHarness(options: {
 }
 
 test('createFlowGovernanceConfig writes and opens the default repository flow file after confirmation', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness();
 
   await createFlowGovernanceConfig(createApi([repository]), harness.services);
@@ -97,34 +101,34 @@ test('createFlowGovernanceConfig writes and opens the default repository flow fi
   ]);
   assert.deepEqual(harness.writtenFiles, [
     {
-      filePath: '/workspace/repo/.git-revision-graph-flow.json',
+      filePath: defaultConfigPath,
       content: createDefaultFlowConfigFile()
     }
   ]);
-  assert.deepEqual(harness.openedFiles, ['/workspace/repo/.git-revision-graph-flow.json']);
+  assert.deepEqual(harness.openedFiles, [defaultConfigPath]);
   assert.deepEqual(harness.infoMessages, [
     'Flow Governance config created at .git-revision-graph-flow.json.'
   ]);
 });
 
 test('createFlowGovernanceConfig opens an existing config without overwriting it', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness({
-    existingFiles: ['/workspace/repo/.git-revision-graph-flow.json']
+    existingFiles: [defaultConfigPath]
   });
 
   await createFlowGovernanceConfig(createApi([repository]), harness.services);
 
   assert.deepEqual(harness.confirmations, []);
   assert.deepEqual(harness.writtenFiles, []);
-  assert.deepEqual(harness.openedFiles, ['/workspace/repo/.git-revision-graph-flow.json']);
+  assert.deepEqual(harness.openedFiles, [defaultConfigPath]);
   assert.deepEqual(harness.infoMessages, [
     'Flow Governance config already exists at .git-revision-graph-flow.json.'
   ]);
 });
 
 test('createFlowGovernanceConfig cancels before writing when confirmation is dismissed', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness({ confirm: false });
 
   await createFlowGovernanceConfig(createApi([repository]), harness.services);
@@ -152,14 +156,14 @@ test('createFlowGovernanceConfig lets the user choose a repository in multi-root
 
   assert.deepEqual(harness.writtenFiles, [
     {
-      filePath: '/workspace/b/.git-revision-graph-flow.json',
+      filePath: path.resolve('/workspace/b', '.git-revision-graph-flow.json'),
       content: createDefaultFlowConfigFile()
     }
   ]);
 });
 
 test('createFlowGovernanceConfig rejects config paths outside the repository', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness({ configPath: '../flow.json' });
 
   await createFlowGovernanceConfig(createApi([repository]), harness.services);
@@ -172,7 +176,7 @@ test('createFlowGovernanceConfig rejects config paths outside the repository', a
 });
 
 test('createFlowGovernanceConfig rejects unsafe configuration paths before opening or writing', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness({
     pathInspection: {
       ok: false,
@@ -190,11 +194,11 @@ test('createFlowGovernanceConfig rejects unsafe configuration paths before openi
 });
 
 test('createFlowGovernanceConfig does not overwrite a config created after confirmation', async () => {
-  const repository = createRepository({ root: '/workspace/repo' });
+  const repository = createRepository({ root: repositoryRoot });
   const harness = createHarness({
     pathInspectionAfterConfirmation: {
       ok: true,
-      path: '/workspace/repo/.git-revision-graph-flow.json',
+      path: defaultConfigPath,
       relativePath: '.git-revision-graph-flow.json',
       exists: true
     }
@@ -203,7 +207,7 @@ test('createFlowGovernanceConfig does not overwrite a config created after confi
   await createFlowGovernanceConfig(createApi([repository]), harness.services);
 
   assert.deepEqual(harness.writtenFiles, []);
-  assert.deepEqual(harness.openedFiles, ['/workspace/repo/.git-revision-graph-flow.json']);
+  assert.deepEqual(harness.openedFiles, [defaultConfigPath]);
   assert.deepEqual(harness.infoMessages, [
     'Flow Governance config already exists at .git-revision-graph-flow.json.'
   ]);
@@ -214,7 +218,7 @@ test('resolveFlowConfigWritePath normalizes repository-relative nested paths', (
     resolveFlowConfigWritePath('/workspace/repo', 'config/flow.json'),
     {
       ok: true,
-      path: '/workspace/repo/config/flow.json',
+      path: path.resolve(repositoryRoot, 'config/flow.json'),
       relativePath: 'config/flow.json'
     }
   );

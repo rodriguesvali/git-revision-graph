@@ -27,3 +27,10 @@ whether the branch kind is release, feature, task, bug, or hotfix.
 - Passed: `npm test` (681 tests)
 - Passed: `npm run quality:check` (203 files and 1,969 functions checked)
 - Passed: `git diff --check`
+
+## CI Follow-up
+
+- The Windows verification job exposed pre-existing POSIX-only path expectations in
+  `flowGovernanceCommand.test.ts`.
+- The fixtures now derive expected absolute paths with `node:path`, preserving native Windows,
+  Linux, and macOS semantics without changing the production path-safety implementation.
