@@ -20,6 +20,19 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(validateRevisionGraphMessage({}), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'open-source-control' }), undefined);
   assert.equal(validateRevisionGraphMessage({ type: 'checkout', refName: 'main', refKind: 'evil' }), undefined);
+  assert.equal(validateRevisionGraphMessage({ type: 'checkout', refName: 'v1.0.0', refKind: 'tag' }), undefined);
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'push-tag', refName: 'v1.0.0', label: 'v1.0.0', refKind: 'branch' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'publish-branch', refName: 'v1.0.0', label: 'v1.0.0', refKind: 'tag' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'delete', refName: 'stash', refKind: 'stash' }),
+    undefined
+  );
   assert.equal(validateRevisionGraphMessage({ type: 'set-projection-options', options: { showTags: 'yes' } }), undefined);
   assert.equal(
     validateRevisionGraphMessage({
@@ -782,10 +795,10 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'push-tag', refName: 'main', label: 'main', refKind: 'head' },
+      { type: 'push-tag', refName: 'v1.0.0', label: 'v1.0.0', refKind: 'tag' },
       state
     ),
-    false
+    true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState({ type: 'abort-merge' }, state),

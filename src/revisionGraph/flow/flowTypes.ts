@@ -97,9 +97,7 @@ export interface FlowPullRequestTargetInfo {
   readonly detail?: string;
 }
 
-export interface FlowGovernanceOptionsUpdate {
-  readonly enabled?: boolean;
-}
+export type FlowGovernanceOptionsUpdate = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;
 
 export type FlowDirectMergePolicy = 'off' | 'warn' | 'block';
 

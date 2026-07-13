@@ -113,6 +113,9 @@ export function isRevisionGraphMessageAllowedForState(
     case 'merge':
       return isMergeTargetAllowed(state, message);
   }
+
+  const unhandledMessage: never = message;
+  return unhandledMessage;
 }
 
 function isMergeTargetAllowed(
@@ -200,6 +203,9 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'merge':
       return true;
   }
+
+  const unhandledMessage: never = message;
+  return unhandledMessage;
 }
 
 function isKnownFlowKind(

@@ -166,10 +166,12 @@
     }
 
     function createRevisionGraphCopyRefNameMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'copy-ref-name'> {
+      assertRevisionGraphWebviewRefKind(target.kind, 'copy a reference name');
       return { type: 'copy-ref-name', refName: target.name, refKind: target.kind };
     }
 
     function createRevisionGraphCheckoutMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'checkout'> {
+      assertRevisionGraphWebviewCheckoutRefKind(target.kind);
       return { type: 'checkout', refName: target.name, refKind: target.kind };
     }
 
@@ -215,6 +217,7 @@
     }
 
     function createRevisionGraphPublishBranchMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'publish-branch'> {
+      assertRevisionGraphWebviewPublishBranchRefKind(target.kind);
       return {
         type: 'publish-branch',
         refName: target.name,
@@ -249,6 +252,7 @@
     }
 
     function createRevisionGraphPushTagMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'push-tag'> {
+      assertRevisionGraphWebviewTagRefKind(target.kind, 'push a tag');
       return {
         type: 'push-tag',
         refName: target.name,
@@ -258,6 +262,7 @@
     }
 
     function createRevisionGraphDeleteRemoteTagMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'delete-remote-tag'> {
+      assertRevisionGraphWebviewTagRefKind(target.kind, 'delete a remote tag');
       return {
         type: 'delete-remote-tag',
         refName: target.name,
@@ -267,6 +272,7 @@
     }
 
     function createRevisionGraphDeleteMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'delete'> {
+      assertRevisionGraphWebviewDeletableRefKind(target.kind);
       return { type: 'delete', refName: target.name, refKind: target.kind };
     }
 
@@ -286,4 +292,46 @@
       kind: RevisionGraphWebviewTargetKind
     ): kind is RevisionGraphWebviewMergeRefKind {
       return kind === 'branch' || kind === 'remote' || kind === 'tag';
+    }
+
+    function assertRevisionGraphWebviewRefKind(
+      kind: RevisionGraphWebviewTargetKind,
+      action: string
+    ): asserts kind is RevisionGraphWebviewRefKind {
+      if (kind === 'commit') {
+        throw new Error(`Cannot ${action} for revision graph target kind: ${kind}`);
+      }
+    }
+
+    function assertRevisionGraphWebviewCheckoutRefKind(
+      kind: RevisionGraphWebviewTargetKind
+    ): asserts kind is RevisionGraphProtocol.CheckoutRefKind {
+      if (kind !== 'head' && kind !== 'branch' && kind !== 'remote') {
+        throw new Error(`Cannot checkout revision graph target kind: ${kind}`);
+      }
+    }
+
+    function assertRevisionGraphWebviewPublishBranchRefKind(
+      kind: RevisionGraphWebviewTargetKind
+    ): asserts kind is RevisionGraphProtocol.PublishBranchRefKind {
+      if (kind !== 'head' && kind !== 'branch') {
+        throw new Error(`Cannot publish revision graph target kind: ${kind}`);
+      }
+    }
+
+    function assertRevisionGraphWebviewTagRefKind(
+      kind: RevisionGraphWebviewTargetKind,
+      action: string
+    ): asserts kind is 'tag' {
+      if (kind !== 'tag') {
+        throw new Error(`Cannot ${action} for revision graph target kind: ${kind}`);
+      }
+    }
+
+    function assertRevisionGraphWebviewDeletableRefKind(
+      kind: RevisionGraphWebviewTargetKind
+    ): asserts kind is RevisionGraphProtocol.DeletableRefKind {
+      if (kind !== 'branch' && kind !== 'remote' && kind !== 'tag') {
+        throw new Error(`Cannot delete revision graph target kind: ${kind}`);
+      }
     }

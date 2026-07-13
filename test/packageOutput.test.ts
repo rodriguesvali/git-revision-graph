@@ -51,6 +51,32 @@ test('webview build discovers every isolated config and keeps the bundle last', 
   );
 });
 
+test('revision graph outbound messages use one shared browser-safe protocol', () => {
+  const sharedProtocol = readFileSync(
+    path.join(process.cwd(), 'src/revisionGraph/protocol.d.ts'),
+    'utf8'
+  );
+  const hostTypes = readFileSync(
+    path.join(process.cwd(), 'src/revisionGraphTypes.ts'),
+    'utf8'
+  );
+  const browserContracts = readFileSync(
+    path.join(process.cwd(), 'src/revisionGraph/webview/runtime/contracts.d.ts'),
+    'utf8'
+  );
+  const messageHandler = readFileSync(
+    path.join(process.cwd(), 'src/revisionGraph/messageHandler.ts'),
+    'utf8'
+  );
+
+  assert.match(sharedProtocol, /declare namespace RevisionGraphProtocol/);
+  assert.match(sharedProtocol, /type Message\s*=/);
+  assert.match(hostTypes, /export type RevisionGraphMessage = RevisionGraphProtocol\.Message;/);
+  assert.match(browserContracts, /type RevisionGraphWebviewMessage = RevisionGraphProtocol\.Message;/);
+  assert.doesNotMatch(browserContracts, /type RevisionGraphWebviewMessage\s*=\s*\|/);
+  assert.doesNotMatch(messageHandler, /as RefActionKind/);
+});
+
 test('compiled JavaScript output has a matching TypeScript source', () => {
   const sourceRoot = path.join(process.cwd(), 'src');
   const outputRoot = path.join(process.cwd(), 'out');

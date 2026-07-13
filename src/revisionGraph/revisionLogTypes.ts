@@ -1,18 +1,6 @@
 import type { RevisionGraphRef } from './model/commitGraphTypes';
 
-export type RevisionLogSource =
-  | {
-    readonly kind: 'target';
-    readonly revision: string;
-    readonly label: string;
-  }
-  | {
-    readonly kind: 'range';
-    readonly baseRevision: string;
-    readonly baseLabel: string;
-    readonly compareRevision: string;
-    readonly compareLabel: string;
-  };
+export type RevisionLogSource = RevisionGraphProtocol.RevisionLogSource;
 
 export interface RevisionLogEntry {
   readonly hash: string;

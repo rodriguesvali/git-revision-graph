@@ -1,6 +1,5 @@
 import { Repository } from '../git';
 import { isAbortError } from '../errors';
-import { RefActionKind } from '../refActions';
 import { RevisionGraphCommitShortStat, RevisionGraphMessage } from '../revisionGraphTypes';
 import type { FlowGovernanceOptionsUpdate } from './flow';
 import { formatShortCommitHash } from '../commitHash';
@@ -182,7 +181,7 @@ export class RevisionGraphMessageHandler {
         this.host.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
         return;
       case 'checkout':
-        await this.refActionWorkflow.checkout(message.refName, message.refKind as RefActionKind);
+        await this.refActionWorkflow.checkout(message.refName, message.refKind);
         return;
       case 'reset-to-commit':
         await this.refActionWorkflow.resetToCommit(message.commitHash, message.label);
@@ -191,30 +190,30 @@ export class RevisionGraphMessageHandler {
         await this.refActionWorkflow.createBranch(
           message.revision,
           message.label,
-          message.refKind as RefActionKind
+          message.refKind
         );
         return;
       case 'create-tag':
         await this.refActionWorkflow.createTag(
           message.revision,
           message.label,
-          message.refKind as RefActionKind
+          message.refKind
         );
         return;
       case 'resolve-remote-tag-state':
         await this.remoteTagWorkflow.resolveRemoteTagState(message.refName);
         return;
       case 'push-tag':
-        await this.remoteTagWorkflow.pushTag(message.refName, message.label, message.refKind as RefActionKind);
+        await this.remoteTagWorkflow.pushTag(message.refName, message.label, message.refKind);
         return;
       case 'delete-remote-tag':
-        await this.remoteTagWorkflow.deleteRemoteTag(message.refName, message.label, message.refKind as RefActionKind);
+        await this.remoteTagWorkflow.deleteRemoteTag(message.refName, message.label, message.refKind);
         return;
       case 'publish-branch':
         await this.refActionWorkflow.publishBranch(
           message.refName,
           message.label,
-          message.refKind as RefActionKind
+          message.refKind
         );
         return;
       case 'sync-current-head':
@@ -247,12 +246,15 @@ export class RevisionGraphMessageHandler {
         }
         return;
       case 'delete':
-        await this.refActionWorkflow.deleteReference(message.refName, message.refKind as RefActionKind);
+        await this.refActionWorkflow.deleteReference(message.refName, message.refKind);
         return;
       case 'merge':
         await this.refActionWorkflow.merge(message.refName, message.refKind);
         return;
     }
+
+    const unhandledMessage: never = message;
+    return unhandledMessage;
   }
 
   private async runWithCurrentRepository(

@@ -6,106 +6,17 @@ import type {
   RevisionGraphNodeLayout,
   RevisionGraphScene
 } from './revisionGraph/model/sceneTypes';
-import type { RevisionLogSource } from './revisionGraph/revisionLogTypes';
-import type { FlowGovernanceOptionsUpdate, FlowGovernanceViewState } from './revisionGraph/flow/flowTypes';
+import type { FlowGovernanceViewState } from './revisionGraph/flow/flowTypes';
 
 export type { RevisionLogEntry, RevisionLogSource } from './revisionGraph/revisionLogTypes';
 
-export type RevisionGraphMergeRefKind = Extract<RevisionGraphRef['kind'], 'branch' | 'remote' | 'tag'>;
+export type RevisionGraphMessage = RevisionGraphProtocol.Message;
+export type RevisionGraphMergeRefKind = RevisionGraphProtocol.MergeRefKind;
+export type RevisionGraphProjectionOptionsUpdate = RevisionGraphProtocol.ProjectionOptionsUpdate;
 
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 export const REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE = 'gitRefs.revisionGraphEditorPanel';
 export const SHOW_LOG_VIEW_ID = 'gitRefs.showLogView';
-
-export type RevisionGraphMessage =
-  | { readonly type: 'webview-ready' }
-  | {
-    readonly type: 'load-trace';
-    readonly phase: string;
-    readonly durationMs: number;
-    readonly detail?: string;
-    readonly requestId?: number;
-  }
-  | { readonly type: 'refresh' }
-  | { readonly type: 'refresh-with-empty-cache' }
-  | { readonly type: 'fetch-current-repository' }
-  | { readonly type: 'choose-repository' }
-  | { readonly type: 'abort-merge' }
-  | { readonly type: 'set-projection-options'; readonly options: Partial<RevisionGraphProjectionOptions> }
-  | { readonly type: 'set-flow-governance-options'; readonly options: FlowGovernanceOptionsUpdate }
-  | {
-    readonly type: 'start-flow-branch';
-    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
-    readonly sourceRefName: string;
-    readonly name: string;
-    readonly description: string;
-  }
-  | {
-    readonly type: 'prepare-flow-equalization';
-    readonly targetRefName: string;
-    readonly originRefName: string;
-    readonly description: string;
-  }
-  | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
-  | {
-    readonly type: 'copy-flow-pr-context-field';
-    readonly sourceRefName: string;
-    readonly targetRefName: string;
-    readonly field: 'title' | 'description';
-  }
-  | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }
-  | {
-    readonly type: 'compare-selected';
-    readonly baseRevision: string;
-    readonly baseLabel: string;
-    readonly compareRevision: string;
-    readonly compareLabel: string;
-  }
-  | { readonly type: 'show-log'; readonly source: RevisionLogSource }
-  | { readonly type: 'open-unified-diff'; readonly baseRevision: string; readonly compareRevision: string }
-  | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
-  | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
-  | { readonly type: 'load-commit-short-stat'; readonly commitHash: string }
-  | { readonly type: 'open-commit-on-github'; readonly commitHash: string }
-  | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
-  | { readonly type: 'checkout'; readonly refName: string; readonly refKind: string }
-  | {
-    readonly type: 'reset-to-commit';
-    readonly commitHash: string;
-    readonly label: string;
-    readonly targetKind: RevisionGraphRef['kind'] | 'commit';
-    readonly targetName?: string;
-  }
-  | {
-    readonly type: 'create-branch';
-    readonly revision: string;
-    readonly label: string;
-    readonly refKind: RevisionGraphRef['kind'] | 'commit';
-  }
-  | {
-    readonly type: 'create-tag';
-    readonly revision: string;
-    readonly label: string;
-    readonly refKind: RevisionGraphRef['kind'] | 'commit';
-  }
-  | { readonly type: 'resolve-remote-tag-state'; readonly refName: string }
-  | { readonly type: 'push-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
-  | { readonly type: 'delete-remote-tag'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
-  | { readonly type: 'publish-branch'; readonly refName: string; readonly label: string; readonly refKind: RevisionGraphRef['kind'] }
-  | { readonly type: 'sync-current-head' }
-  | { readonly type: 'pull-current-head' }
-  | { readonly type: 'push-current-head'; readonly mode: 'normal' | 'force-with-lease' | 'force' }
-  | { readonly type: 'stash-save' }
-  | { readonly type: 'stash-apply'; readonly refName: string }
-  | { readonly type: 'stash-pop'; readonly refName: string }
-  | { readonly type: 'stash-drop'; readonly refName: string }
-  | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
-  | {
-    readonly type: 'merge';
-    readonly refName: string;
-    readonly refKind: RevisionGraphMergeRefKind;
-    readonly commitHash: string;
-  };
 
 export interface RevisionGraphViewReference {
   readonly id: string;

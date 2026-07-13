@@ -4,7 +4,6 @@ import {
   RevisionLogSource
 } from '../revisionGraphTypes';
 import type {
-  RevisionGraphProjectionOptions,
   RevisionGraphRef
 } from './model/commitGraphTypes';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
@@ -15,6 +14,9 @@ export {
 } from './messageAuthorization';
 
 const REVISION_GRAPH_REF_KINDS = new Set<RevisionGraphRef['kind']>(['head', 'branch', 'remote', 'tag', 'stash']);
+const REVISION_GRAPH_CHECKOUT_REF_KINDS = new Set<RevisionGraphProtocol.CheckoutRefKind>(['head', 'branch', 'remote']);
+const REVISION_GRAPH_PUBLISH_BRANCH_REF_KINDS = new Set<RevisionGraphProtocol.PublishBranchRefKind>(['head', 'branch']);
+const REVISION_GRAPH_DELETABLE_REF_KINDS = new Set<RevisionGraphProtocol.DeletableRefKind>(['branch', 'remote', 'tag']);
 const REVISION_GRAPH_MERGE_REF_KINDS = new Set<RevisionGraphMergeRefKind>(['branch', 'remote', 'tag']);
 const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>([
   'head',
@@ -24,12 +26,59 @@ const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>
   'stash',
   'commit'
 ]);
+const REVISION_GRAPH_MESSAGE_TYPES = {
+  'webview-ready': true,
+  'load-trace': true,
+  'refresh': true,
+  'refresh-with-empty-cache': true,
+  'fetch-current-repository': true,
+  'choose-repository': true,
+  'abort-merge': true,
+  'set-projection-options': true,
+  'set-flow-governance-options': true,
+  'start-flow-branch': true,
+  'prepare-flow-equalization': true,
+  'copy-flow-pr-context': true,
+  'copy-flow-pr-context-field': true,
+  'open-flow-pr-url': true,
+  'compare-selected': true,
+  'show-log': true,
+  'open-unified-diff': true,
+  'compare-with-worktree': true,
+  'copy-commit-hash': true,
+  'load-commit-short-stat': true,
+  'open-commit-on-github': true,
+  'copy-ref-name': true,
+  checkout: true,
+  'reset-to-commit': true,
+  'create-branch': true,
+  'create-tag': true,
+  'resolve-remote-tag-state': true,
+  'push-tag': true,
+  'delete-remote-tag': true,
+  'publish-branch': true,
+  'sync-current-head': true,
+  'pull-current-head': true,
+  'push-current-head': true,
+  'stash-save': true,
+  'stash-apply': true,
+  'stash-pop': true,
+  'stash-drop': true,
+  delete: true,
+  merge: true
+} as const satisfies Readonly<Record<RevisionGraphProtocol.MessageType, true>>;
+
 export function validateRevisionGraphMessage(message: unknown): RevisionGraphMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {
     return undefined;
   }
 
-  switch (message.type) {
+  if (!isRevisionGraphMessageType(message.type)) {
+    return undefined;
+  }
+  const messageType = message.type;
+
+  switch (messageType) {
     case 'webview-ready':
     case 'refresh':
     case 'refresh-with-empty-cache':
@@ -39,7 +88,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'sync-current-head':
     case 'pull-current-head':
     case 'stash-save':
-      return { type: message.type };
+      return { type: messageType };
     case 'push-current-head':
       return message.mode === 'normal' || message.mode === 'force-with-lease' || message.mode === 'force'
         ? { type: 'push-current-head', mode: message.mode }
@@ -99,7 +148,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.sourceRefName)
         && isBoundedNonEmptyString(message.targetRefName)
         ? {
-          type: message.type,
+          type: messageType,
           sourceRefName: message.sourceRefName,
           targetRefName: message.targetRefName
         }
@@ -147,16 +196,14 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
     case 'load-commit-short-stat':
     case 'open-commit-on-github':
       return isBoundedNonEmptyString(message.commitHash)
-        ? { type: message.type, commitHash: message.commitHash }
+        ? { type: messageType, commitHash: message.commitHash }
         : undefined;
     case 'copy-ref-name':
       return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
         ? { type: 'copy-ref-name', refName: message.refName, refKind: message.refKind }
         : undefined;
     case 'checkout':
-      return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
-        ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
-        : undefined;
+      return validateCheckoutMessage(message);
     case 'reset-to-commit': {
       if (
         !isBoundedNonEmptyString(message.commitHash) ||
@@ -193,7 +240,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return isBoundedNonEmptyString(message.revision)
         && isBoundedString(message.label)
         && isRevisionGraphTargetKind(message.refKind)
-        ? { type: message.type, revision: message.revision, label: message.label, refKind: message.refKind }
+        ? { type: messageType, revision: message.revision, label: message.label, refKind: message.refKind }
         : undefined;
     case 'resolve-remote-tag-state':
       return isBoundedNonEmptyString(message.refName)
@@ -201,21 +248,22 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         : undefined;
     case 'push-tag':
     case 'delete-remote-tag':
-    case 'publish-branch':
       return isBoundedNonEmptyString(message.refName)
         && isBoundedString(message.label)
-        && isRevisionGraphRefKind(message.refKind)
-        ? { type: message.type, refName: message.refName, label: message.label, refKind: message.refKind }
+        && message.refKind === 'tag'
+        ? { type: messageType, refName: message.refName, label: message.label, refKind: message.refKind }
         : undefined;
+    case 'publish-branch':
+      return validatePublishBranchMessage(message);
     case 'delete':
-      return isBoundedNonEmptyString(message.refName) && isRevisionGraphRefKind(message.refKind)
+      return isBoundedNonEmptyString(message.refName) && isRevisionGraphDeletableRefKind(message.refKind)
         ? { type: 'delete', refName: message.refName, refKind: message.refKind }
         : undefined;
     case 'stash-apply':
     case 'stash-pop':
     case 'stash-drop':
       return isBoundedNonEmptyString(message.refName)
-        ? { type: message.type, refName: message.refName }
+        ? { type: messageType, refName: message.refName }
         : undefined;
     case 'merge':
       return isBoundedNonEmptyString(message.refName)
@@ -230,7 +278,35 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         : undefined;
   }
 
-  return undefined;
+  const unhandledMessageType: never = messageType;
+  return unhandledMessageType;
+}
+
+function isRevisionGraphMessageType(value: string): value is RevisionGraphProtocol.MessageType {
+  return Object.prototype.hasOwnProperty.call(REVISION_GRAPH_MESSAGE_TYPES, value);
+}
+
+function validateCheckoutMessage(
+  message: Readonly<Record<string, unknown>>
+): RevisionGraphProtocol.MessageOf<'checkout'> | undefined {
+  return isBoundedNonEmptyString(message.refName) && isRevisionGraphCheckoutRefKind(message.refKind)
+    ? { type: 'checkout', refName: message.refName, refKind: message.refKind }
+    : undefined;
+}
+
+function validatePublishBranchMessage(
+  message: Readonly<Record<string, unknown>>
+): RevisionGraphProtocol.MessageOf<'publish-branch'> | undefined {
+  return isBoundedNonEmptyString(message.refName)
+    && isBoundedString(message.label)
+    && isRevisionGraphPublishBranchRefKind(message.refKind)
+    ? {
+      type: 'publish-branch',
+      refName: message.refName,
+      label: message.label,
+      refKind: message.refKind
+    }
+    : undefined;
 }
 
 function validateFlowGovernanceOptions(value: unknown): FlowGovernanceOptionsUpdate | undefined {
@@ -260,14 +336,14 @@ type MutableFlowGovernanceOptionsUpdate = {
 };
 
 type MutableProjectionOptions = {
-  -readonly [Key in keyof RevisionGraphProjectionOptions]?: RevisionGraphProjectionOptions[Key];
+  -readonly [Key in keyof RevisionGraphProtocol.ProjectionOptionsUpdate]?: RevisionGraphProtocol.ProjectionOptionsUpdate[Key];
 };
 
 function isNonNegativeFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
-function validateProjectionOptions(value: unknown): Partial<RevisionGraphProjectionOptions> | undefined {
+function validateProjectionOptions(value: unknown): RevisionGraphProtocol.ProjectionOptionsUpdate | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -325,7 +401,7 @@ function validateProjectionOptions(value: unknown): Partial<RevisionGraphProject
   return options;
 }
 
-function validateRevisionRange(value: unknown): RevisionGraphProjectionOptions['revisionRange'] {
+function validateRevisionRange(value: unknown): RevisionGraphProtocol.RevisionRange | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -343,7 +419,7 @@ function validateRevisionRange(value: unknown): RevisionGraphProjectionOptions['
     : undefined;
 }
 
-function validateDescendantFocus(value: unknown): RevisionGraphProjectionOptions['descendantFocus'] {
+function validateDescendantFocus(value: unknown): RevisionGraphProtocol.DescendantFocus | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -388,6 +464,23 @@ function validateRevisionLogSource(value: unknown): RevisionLogSource | undefine
 
 function isRevisionGraphRefKind(value: unknown): value is RevisionGraphRef['kind'] {
   return isString(value) && REVISION_GRAPH_REF_KINDS.has(value as RevisionGraphRef['kind']);
+}
+
+function isRevisionGraphCheckoutRefKind(value: unknown): value is RevisionGraphProtocol.CheckoutRefKind {
+  return isString(value)
+    && REVISION_GRAPH_CHECKOUT_REF_KINDS.has(value as RevisionGraphProtocol.CheckoutRefKind);
+}
+
+function isRevisionGraphPublishBranchRefKind(
+  value: unknown
+): value is RevisionGraphProtocol.PublishBranchRefKind {
+  return isString(value)
+    && REVISION_GRAPH_PUBLISH_BRANCH_REF_KINDS.has(value as RevisionGraphProtocol.PublishBranchRefKind);
+}
+
+function isRevisionGraphDeletableRefKind(value: unknown): value is RevisionGraphProtocol.DeletableRefKind {
+  return isString(value)
+    && REVISION_GRAPH_DELETABLE_REF_KINDS.has(value as RevisionGraphProtocol.DeletableRefKind);
 }
 
 function isRevisionGraphMergeRefKind(value: unknown): value is RevisionGraphMergeRefKind {

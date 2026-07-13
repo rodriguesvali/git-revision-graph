@@ -1,6 +1,7 @@
 import { Repository } from '../git';
 import {
   normalizeRevisionGraphProjectionOptionsForScope,
+  RevisionGraphProjectionOptionsUpdate,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -32,9 +33,10 @@ export class RevisionGraphViewStateWorkflow {
   }
 
   async setProjectionOptions(
-    options: Partial<RevisionGraphViewState['projectionOptions']>
+    options: RevisionGraphProjectionOptionsUpdate
   ): Promise<void> {
-    const requestedDescendantFocus = options.descendantFocus;
+    const normalizedOptions = normalizeProjectionOptionsUpdate(options);
+    const requestedDescendantFocus = normalizedOptions.descendantFocus;
     if (
       requestedDescendantFocus &&
       !this.host.getCurrentState().scene.nodes.some((node) => node.hash === requestedDescendantFocus.anchorRevision)
@@ -44,15 +46,16 @@ export class RevisionGraphViewStateWorkflow {
     }
 
     const currentProjectionOptions = this.host.getProjectionOptions();
-    const isScopeChange = options.refScope !== undefined && options.refScope !== currentProjectionOptions.refScope;
+    const isScopeChange = normalizedOptions.refScope !== undefined
+      && normalizedOptions.refScope !== currentProjectionOptions.refScope;
     const nextProjectionOptions = normalizeRevisionGraphProjectionOptionsForScope({
       ...currentProjectionOptions,
-      ...options,
+      ...normalizedOptions,
       ...(isScopeChange
         ? { revisionRange: undefined, descendantFocus: undefined }
-        : hasOwnProjectionOption(options, 'revisionRange') && options.revisionRange
+        : hasOwnProjectionOption(normalizedOptions, 'revisionRange') && normalizedOptions.revisionRange
           ? { descendantFocus: undefined }
-          : hasOwnProjectionOption(options, 'descendantFocus') && options.descendantFocus
+          : hasOwnProjectionOption(normalizedOptions, 'descendantFocus') && normalizedOptions.descendantFocus
             ? { revisionRange: undefined }
             : {})
     });
@@ -61,9 +64,24 @@ export class RevisionGraphViewStateWorkflow {
   }
 }
 
+function normalizeProjectionOptionsUpdate(
+  options: RevisionGraphProjectionOptionsUpdate
+): Partial<RevisionGraphViewState['projectionOptions']> {
+  const { revisionRange, descendantFocus, ...scalarOptions } = options;
+  return {
+    ...scalarOptions,
+    ...(hasOwnProjectionOption(options, 'revisionRange')
+      ? { revisionRange: revisionRange ?? undefined }
+      : {}),
+    ...(hasOwnProjectionOption(options, 'descendantFocus')
+      ? { descendantFocus: descendantFocus ?? undefined }
+      : {})
+  };
+}
+
 function hasOwnProjectionOption(
-  options: Partial<RevisionGraphViewState['projectionOptions']>,
-  key: keyof RevisionGraphViewState['projectionOptions']
+  options: RevisionGraphProjectionOptionsUpdate | Partial<RevisionGraphViewState['projectionOptions']>,
+  key: keyof RevisionGraphProjectionOptionsUpdate
 ): boolean {
   return Object.prototype.hasOwnProperty.call(options, key);
 }
