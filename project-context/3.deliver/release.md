@@ -25,7 +25,8 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check`, `npm run build`, `npm test` (680 tests), and `git diff --check`. |
+| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (203 production files and 2,000 functions), `npm run build`, `npm test` (686 tests), and `git diff --check`. |
+| Automated Extension Host baseline | Implemented; CI evidence pending | `npm run test:e2e` now covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. The local 2026-07-13 attempt compiled successfully but the container lacked Electron library `libatk-1.0.so.0`; the Ubuntu CI job runs the gate with `xvfb`. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
 | Marketplace publication | Not authorized | Publish only after explicit maintainer approval and after all preceding gates pass. Record publication timestamp and installed-version evidence if authorized. |
@@ -35,6 +36,7 @@ Focused build artifact:
 
 - `project-context/2.build/features/flow-governance-phase-1.md`
 - `project-context/2.build/features/flow-governance-2.0.0.md`
+- `project-context/2.build/features/extension-host-e2e-baseline.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Candidate scope:
@@ -91,8 +93,13 @@ Planned verification:
 
 Recorded verification:
 
+- The automated Extension Host baseline was implemented on 2026-07-13 with isolated empty and
+  single-repository fixtures, real `vscode.git` discovery, activation, and graph-panel singleton
+  assertions. Its TypeScript suite and runner syntax passed locally. The first full local execution
+  downloaded VS Code `1.128.0` but could not start Electron because the container lacks
+  `libatk-1.0.so.0`; CI evidence from the new Ubuntu `xvfb` job remains pending.
 - Current automated source verification passed on 2026-07-13 with `npm run quality:check`
-  (203 production files and 1,969 functions), `npm run build`, `npm test` (680 tests), and
+  (203 production files and 2,000 functions), `npm run build`, `npm test` (686 tests), and
   `git diff --check`. This closes the automated source gate only; final Extension Development Host
   smoke and approved package inspection remain pending.
 - Typed revision-graph webview runtime migration completed on 2026-07-13. The external runtime is strictly checked without `noCheck` or a `noImplicitAny` override, its generated asset is enclosed by the named `initializeRevisionGraphWebviewRuntime` ownership boundary, and the revision-graph integration harness no longer uses `node:vm`. `npm run build`, `npm test` (657 tests), `npm run benchmark:ci`, and `git diff --check` passed; Extension Development Host smoke and approved package inspection remain release-delivery gates.

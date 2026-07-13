@@ -89,7 +89,9 @@ The current implementation uses a dedicated webview surface for graph navigation
 ## Known Gaps
 
 - Automated tests cover pure helpers, repository selection, ref actions, graph state shaping, render coordination, and the persistent webview shell.
-- Manual Extension Development Host validation is still needed for end-to-end integration with the real `vscode.git` extension and workbench UX.
+- The automated Extension Host baseline covers activation, real `vscode.git` discovery for zero and
+  one repository, and singleton graph-panel launch. Manual Extension Development Host validation is
+  still needed for multi-repository, visual, prompt, diff, and mutation workflows.
 - Graph behavior is spread across `src/revisionGraph/controller.ts`, `src/revisionGraph/backend.ts`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/webview/script/*`, so larger changes should preserve those boundaries unless simplification is part of the task.
 - Compare results and Show Log persist in dedicated editor panels, but the review workflow is still intentionally lightweight.
 - UX around merge conflicts and detached/tag workflows is intentionally minimal.
@@ -99,6 +101,7 @@ The current implementation uses a dedicated webview surface for graph navigation
 
 - Minimum validation: `npm run build`
 - For command, graph, or UX changes, run `npm test`.
+- Run `npm run test:e2e` for the isolated activation, Git discovery, and graph-panel baseline.
 - For command or UX changes, manually test in an Extension Development Host.
 - If compare flows changed, verify the `Compare Results` editor panel updates and opens diffs correctly.
 - If changing manifest contributions, verify the command IDs and view IDs still match code registrations exactly.

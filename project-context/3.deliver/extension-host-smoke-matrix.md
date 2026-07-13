@@ -12,6 +12,7 @@ risking user work.
 - `npm run build` has passed.
 - `npm run quality:check` has passed.
 - `npm test` has passed for behavior-affecting changes.
+- `npm run test:e2e` has passed locally or in CI for the current candidate.
 - The Extension Development Host is launched from the current workspace.
 - At least one disposable Git repository is available with:
   - a current branch with an upstream;
@@ -22,6 +23,20 @@ risking user work.
 - For multi-repository checks, open a workspace with two Git repositories.
 - For Flow Governance checks, use a disposable repository where creating or editing
   `.git-revision-graph-flow.json` is acceptable.
+
+## Automated Extension Host Baseline
+
+`npm run test:e2e` launches two isolated VS Code instances and verifies the non-destructive release
+baseline before the manual matrix:
+
+| Scenario | Automated evidence |
+| --- | --- |
+| Zero repository | The extension activates with the real built-in `vscode.git` API reporting no repositories, and the revision graph editor opens. |
+| Single repository | A disposable repository with one commit is discovered by the real built-in `vscode.git` API, and the revision graph editor opens. |
+| Singleton panel | Running `View Git Revision Graph` twice leaves exactly one editor webview tab with the expected view type and title. |
+
+This baseline does not replace the manual checks for rendered webview content, multi-repository
+selection, native prompts and editors, remote/authentication behavior, themes, or Git mutations.
 
 ## Core Graph
 

@@ -1,6 +1,8 @@
 node_modules/
 out/
 out-test/
+out-e2e/
+.vscode-test/
 *.vsix
 .venv/
 .env

@@ -121,7 +121,9 @@
     "quality:check": "node scripts/check-code-quality.mjs",
     "watch": "node scripts/watch.mjs",
     "clean:test": "node -e \"require('fs').rmSync('out-test', { recursive: true, force: true })\"",
+    "clean:test:e2e": "node -e \"require('fs').rmSync('out-e2e', { recursive: true, force: true })\"",
     "test": "npm run clean:test && npm run build && node scripts/build-webview-test-runtime.mjs && tsc -p ./tsconfig.test.json && node scripts/run-compiled-tests.mjs",
+    "test:e2e": "npm run build && npm run clean:test:e2e && tsc -p ./tsconfig.e2e.json && node scripts/run-extension-host-tests.mjs",
     "test:platform": "node --test out-test/test/compareResultRestoreExecutor.test.js out-test/test/gitExec.test.js out-test/test/gitFixture.test.js out-test/test/refContentLoader.test.js out-test/test/repositoryMutationCoordinator.test.js out-test/test/revisionGraphLayoutWorkerHost.test.js",
     "benchmark:ci": "npm run build && node scripts/graph-benchmark.mjs --tier ci",
     "benchmark:rc": "npm run build && node scripts/graph-benchmark.mjs --tier rc",
@@ -134,6 +136,7 @@
   "devDependencies": {
     "@types/node": "^20.19.43",
     "@types/vscode": "1.90.0",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.2",
     "typescript": "^5.6.2"
   },

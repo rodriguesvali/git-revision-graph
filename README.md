@@ -223,6 +223,16 @@ Run the automated test suite:
 npm test
 ```
 
+Run the Extension Host E2E baseline against an isolated VS Code installation:
+
+```bash
+npm run test:e2e
+```
+
+The E2E command downloads the current stable VS Code release by default and reuses it from
+`.vscode-test`. Set `VSCODE_E2E_VERSION` to test another release. Linux environments require the
+desktop Electron libraries and an active display; CI runs the command through `xvfb`.
+
 Run the production code-quality budget check:
 
 ```bash
@@ -300,7 +310,9 @@ Closing the editor graph panel also closes these secondary review panels.
 - Binary files or unusual encodings may not render nicely in content-based diffs.
 - The UX for tags and detached HEAD workflows is intentionally minimal in the MVP.
 - The revision graph currently renders a bounded set of recent commits instead of the entire repository history.
-- Manual verification in the Extension Development Host is still recommended for end-to-end validation against the real `vscode.git` extension.
+- The automated Extension Host baseline covers activation, zero/single-repository discovery through
+  the real `vscode.git` extension, and singleton graph-panel launch. Manual verification remains
+  recommended for visual behavior, multi-repository selection, native prompts, diffs, and mutations.
 
 ## Next Steps
 
@@ -320,12 +332,13 @@ Potential improvements after the MVP:
 Use both automated and manual checks when changing command behavior:
 
 1. Run `npm test`.
-2. Press `F5` to launch the Extension Development Host.
-3. Open:
+2. Run `npm run test:e2e` for the isolated Extension Host baseline.
+3. Press `F5` to launch the Extension Development Host.
+4. Open:
    - a workspace without a Git repository
    - a workspace with one repository
    - a workspace with multiple repositories
-4. Exercise:
+5. Exercise:
    - compare between two references
    - compare a reference with the worktree
    - create a new local branch from a local branch, tag, and remote branch

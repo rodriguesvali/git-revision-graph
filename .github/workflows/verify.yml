@@ -34,3 +34,18 @@ jobs:
       - run: git diff --check
       - run: npm audit --omit=dev
       - run: npm audit
+
+  extension-host-e2e:
+    name: Extension Host E2E / Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: xvfb-run -a npm run test:e2e
