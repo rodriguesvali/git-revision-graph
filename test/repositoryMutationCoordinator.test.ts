@@ -94,3 +94,36 @@ test('repository mutation coordinator releases leases after cancellation', async
     { status: 'completed', value: 'next' }
   );
 });
+
+test('repository mutation coordinator aborts the active lease signal on invalidation', async () => {
+  const coordinator = new RepositoryMutationCoordinator();
+  let observedSignal: AbortSignal | undefined;
+  let releaseOperation: (() => void) | undefined;
+  const operation = coordinator.run('/repo', async (lease) => {
+    observedSignal = lease.signal;
+    await new Promise<void>((resolve) => { releaseOperation = resolve; });
+    lease.assertCurrent();
+  });
+
+  assert.equal(observedSignal?.aborted, false);
+  coordinator.invalidate('/repo');
+  assert.equal(observedSignal?.aborted, true);
+  releaseOperation?.();
+  await assert.rejects(operation, { name: 'AbortError' });
+});
+
+test('repository mutation coordinator aborts active lease signals when disposed', async () => {
+  const coordinator = new RepositoryMutationCoordinator();
+  let observedSignal: AbortSignal | undefined;
+  let releaseOperation: (() => void) | undefined;
+  const operation = coordinator.run('/repo', async (lease) => {
+    observedSignal = lease.signal;
+    await new Promise<void>((resolve) => { releaseOperation = resolve; });
+    lease.assertCurrent();
+  });
+
+  coordinator.dispose();
+  assert.equal(observedSignal?.aborted, true);
+  releaseOperation?.();
+  await assert.rejects(operation, { name: 'AbortError' });
+});

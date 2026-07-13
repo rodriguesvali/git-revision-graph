@@ -950,7 +950,7 @@ export class RevisionGraphController implements vscode.Disposable {
     const outcome = await this.mutationCoordinator.run(repository.rootUri.fsPath, (lease) =>
       runRevisionGraphFetchWorkflow(
         createMutationGuardedRepository(repository, lease),
-        this.createFetchWorkflowHost(() => lease.assertCurrent())
+        this.createFetchWorkflowHost(() => lease.assertCurrent(), lease.signal)
       )
     );
     if (outcome.status === 'rejected') {
@@ -959,7 +959,8 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private createFetchWorkflowHost(
-    assertMutationCurrent?: () => void
+    assertMutationCurrent?: () => void,
+    signal?: AbortSignal
   ): RevisionGraphFetchWorkflowHost {
     return {
       ui: this.actionServices.ui,
@@ -974,7 +975,8 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       createCurrentRepositoryRefreshRequest: () => this.createCurrentRepositoryRefreshRequest('full-rebuild'),
       getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel(),
-      assertMutationCurrent
+      assertMutationCurrent,
+      signal
     };
   }
 

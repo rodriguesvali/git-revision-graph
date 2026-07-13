@@ -26,6 +26,7 @@ export interface RevisionGraphFetchWorkflowHost {
   createCurrentRepositoryRefreshRequest(): RevisionGraphRefreshRequestLike;
   getCurrentRepositoryLabel(): string;
   assertMutationCurrent?(): void;
+  readonly signal?: AbortSignal;
 }
 
 export async function runRevisionGraphFetchWorkflow(
@@ -55,7 +56,8 @@ export async function runRevisionGraphFetchWorkflow(
         buildRevisionGraphFetchArgs(selectedOptions),
         {
           maxOutputBytes: FETCH_WITH_TAGS_MAX_OUTPUT_BYTES,
-          timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS
+          timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS,
+          signal: host.signal
         }
       );
     } else {

@@ -6,6 +6,7 @@ import type { RefActionServices } from './refActions';
 
 export interface RepositoryMutationLease {
   readonly repositoryPath: string;
+  readonly signal: AbortSignal;
   isCurrent(): boolean;
   assertCurrent(): void;
 }
@@ -22,7 +23,10 @@ export interface RepositoryMutationRunner {
 }
 
 export class RepositoryMutationCoordinator {
-  private readonly activeTokens = new Map<string, symbol>();
+  private readonly activeOperations = new Map<string, {
+    readonly token: symbol;
+    readonly abortController: AbortController;
+  }>();
   private readonly generations = new Map<string, number>();
   private disposed = false;
 
@@ -31,19 +35,22 @@ export class RepositoryMutationCoordinator {
     action: (lease: RepositoryMutationLease) => Promise<T> | T
   ): Promise<RepositoryMutationOutcome<T>> {
     const key = normalizeRepositoryMutationKey(repositoryPath);
-    if (this.disposed || this.activeTokens.has(key)) {
+    if (this.disposed || this.activeOperations.has(key)) {
       return { status: 'rejected' };
     }
 
     const token = Symbol(key);
+    const abortController = new AbortController();
     const generation = this.generations.get(key) ?? 0;
-    this.activeTokens.set(key, token);
+    this.activeOperations.set(key, { token, abortController });
     const lease: RepositoryMutationLease = {
       repositoryPath,
+      signal: abortController.signal,
       isCurrent: () => (
         !this.disposed
+        && !abortController.signal.aborted
         && (this.generations.get(key) ?? 0) === generation
-        && this.activeTokens.get(key) === token
+        && this.activeOperations.get(key)?.token === token
       ),
       assertCurrent() {
         if (!this.isCurrent()) {
@@ -56,8 +63,8 @@ export class RepositoryMutationCoordinator {
       lease.assertCurrent();
       return { status: 'completed', value: await action(lease) };
     } finally {
-      if (this.activeTokens.get(key) === token) {
-        this.activeTokens.delete(key);
+      if (this.activeOperations.get(key)?.token === token) {
+        this.activeOperations.delete(key);
       }
     }
   }
@@ -65,11 +72,15 @@ export class RepositoryMutationCoordinator {
   invalidate(repositoryPath: string): void {
     const key = normalizeRepositoryMutationKey(repositoryPath);
     this.generations.set(key, (this.generations.get(key) ?? 0) + 1);
+    this.activeOperations.get(key)?.abortController.abort();
   }
 
   dispose(): void {
     this.disposed = true;
-    this.activeTokens.clear();
+    for (const operation of this.activeOperations.values()) {
+      operation.abortController.abort();
+    }
+    this.activeOperations.clear();
     this.generations.clear();
   }
 }
