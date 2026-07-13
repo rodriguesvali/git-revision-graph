@@ -41,6 +41,29 @@ test('renders the revision graph runtime as a nonce-protected external asset', (
   assert.doesNotMatch(html, /<script nonce="[A-Za-z0-9_-]+">[\s\S]+<\/script>/);
 });
 
+test('encapsulates the revision graph runtime in a named ownership boundary', () => {
+  const runtimeSource = readRevisionGraphRuntimeSource();
+  const sourceMap = JSON.parse(
+    readFileSync('out/webview/revisionGraph.js.map', 'utf8')
+  ) as { readonly mappings?: string; readonly x_revisionGraphRuntimeWrapped?: boolean };
+
+  assert.match(runtimeSource, /^\(function initializeRevisionGraphWebviewRuntime\(\) \{/);
+  assert.match(runtimeSource, /\n\}\)\(\);\n\/\/# sourceMappingURL=revisionGraph\.js\.map\s*$/);
+  assert.equal(sourceMap.x_revisionGraphRuntimeWrapped, true);
+  assert.match(sourceMap.mappings ?? '', /^;/);
+});
+
+test('does not publish revision graph runtime internals on the global object', () => {
+  createWebviewRuntime();
+  const runtimeModulePath = require.resolve('../../out/webview/revisionGraph.js');
+  delete require.cache[runtimeModulePath];
+  require(runtimeModulePath);
+
+  assert.equal(Object.prototype.hasOwnProperty.call(globalThis, 'handleHostMessage'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(globalThis, 'currentState'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(globalThis, 'renderVirtualScene'), false);
+});
+
 test('renders a persistent shell for the revision graph webview', () => {
   const html = renderRevisionGraphShellHtml();
 

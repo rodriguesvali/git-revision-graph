@@ -1,24 +1,24 @@
 # Typed Webview Runtime Migration
 
-Status: In progress - runtime strictly checked and VM harness removed; module ownership pending
-Last updated: 2026-07-12
+Status: Complete - strict external runtime with explicit bundle ownership
+Last updated: 2026-07-13
 Release target: `2.0.0`
 
 ## Goal
 
 Move the revision-graph browser runtime out of JavaScript template strings and into strict TypeScript modules compiled as webview assets, while preserving the current panel lifecycle, CSP posture, message authorization, graph behavior, and Marketplace packaging.
 
-## Current Structural Risk
+## Structural Resolution
 
-The revision-graph runtime is emitted as a dedicated browser asset from TypeScript sources under `src/revisionGraph/webview/runtime/` and `src/revisionGraph/webview/script/`. The extracted compatibility scripts still share mutable globals and some tests still execute the compiled asset through `node:vm`, so ownership and direct-test isolation remain structurally weaker than the target module architecture.
+The revision-graph runtime is emitted as a dedicated browser asset from strict TypeScript sources under `src/revisionGraph/webview/runtime/` and `src/revisionGraph/webview/script/`. The final asset is enclosed by the named `initializeRevisionGraphWebviewRuntime` ownership boundary, so its functions and mutable coordination state do not leak into the webview global object. Behavioral tests load a disposable CommonJS derivation of that same asset through an explicit test bridge; they no longer evaluate template strings or create a `node:vm` context.
 
 ## Architectural Decision
 
 Use a separate TypeScript compilation target that emits one browser asset under `out/webview/`. Do not add a bundler or runtime dependency for this migration.
 
 - Keep the extension host on its existing CommonJS `tsconfig.json` output.
-- Add `tsconfig.webview.json` with `ES2022` browser output and no Node or VS Code ambient types. It will become fully strict as the compatibility surface is removed.
-- Load one classic browser script from the webview HTML through a URI produced by `webview.asWebviewUri`. The legacy runtime currently relies on shared globals, so module emission is deferred until that ownership is removed.
+- Add `tsconfig.webview.json` with strict `ES2022` browser output and no Node or VS Code ambient types.
+- Load one classic browser script from the webview HTML through a URI produced by `webview.asWebviewUri`. Keep the no-bundler `outFile` compilation unit, then encapsulate the emitted unit in a named IIFE so cross-file coordination remains private to one runtime owner.
 - Limit `localResourceRoots` to the compiled webview asset directory.
 - Extend the CSP helper only enough to allow the generated webview resource origin while retaining nonce protection and `default-src 'none'`.
 - Keep `RevisionGraphMessage` and `RevisionGraphViewHostMessage` as the shared host/webview protocol source; split protocol-only types into a browser-safe module if compilation reveals value-level host dependencies.
@@ -76,12 +76,17 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - Dynamic Flow Governance dialogs now expose typed DOM controls and explicit backdrop state instead of nullable generic `Element` values and unchecked custom properties.
 - The unused `postResetCurrentWorkspace` path was removed because no corresponding typed outbound message or host handler exists.
 - `test/revisionGraphWebview.test.ts` no longer imports or invokes `node:vm`. `scripts/build-webview-test-runtime.mjs` derives a disposable CommonJS test runtime from the production bundle after each clean build and exposes only the functions consumed by the integration tests.
+- `scripts/wrap-webview-runtime.mjs` encloses the emitted asset in `initializeRevisionGraphWebviewRuntime` and adjusts its source map. `scripts/watch-webview.mjs` applies the same ownership boundary after incremental compiler emissions.
 
-### Compatibility Boundary
+### Completion Evidence
 
 Strict-check milestone (2026-07-12): the primary browser target includes the DOM library and compiles the complete emitted runtime with `noCheck` and the `noImplicitAny` override removed. The previous audit baseline of 307 general diagnostics plus 200 implicit-any diagnostics is now zero under the production configuration.
 
-The remaining compatibility boundary is architectural rather than unchecked emission: `bootstrap.ts`, `interactions.ts`, `layout.ts`, and the other compatibility sources still coordinate through classic-script globals. Item 3 remains open until those globals are owned by typed runtime modules.
+Ownership milestone (2026-07-13): the no-bundler compilation unit is now enclosed by a named runtime boundary. `bootstrap.ts`, `interactions.ts`, `layout.ts`, and the supporting runtime sources can coordinate inside that boundary without publishing functions or mutable state on `window`. Build and watch paths produce the same enclosed asset, and a focused test verifies the wrapper and source-map footer.
+
+Final automated verification (2026-07-13): `npm run build`, `npm test` (657 tests), `npm run benchmark:ci`, and `git diff --check` passed. The wrapper was also applied twice with identical JavaScript and source-map checksums, proving the postprocessor is idempotent.
+
+Item 3 is complete. Remaining work is release delivery rather than implementation: Extension Development Host smoke and approved package inspection remain governed by `project-context/3.deliver/release.md`.
 
 ## Planned Modules
 
@@ -189,14 +194,14 @@ Exit criteria: automated verification passes, manual smoke records no runtime or
 - The webview loads only the compiled asset root under CSP; no broad local resource access is introduced.
 - The editor panel still restores retained state and handles zero-, single-, and multi-repository workspaces.
 - Existing graph behavior and action payloads remain compatible.
-- Tests exercise imported TypeScript modules rather than evaluating generated JavaScript strings.
+- Tests exercise the compiled TypeScript runtime through a generated CommonJS test bridge rather than evaluating generated JavaScript strings in `node:vm`.
 - Compiled webview assets are present in the release artifact before publication.
 
 ## Risks and Mitigations
 
 - CSP or URI regression prevents the panel from booting: land the minimal external entrypoint and Extension Development Host smoke before migrating behavior.
-- Shared-global extraction changes call order: introduce one explicit runtime/state owner and migrate by bounded behavioral slices.
-- ES-module path errors appear only after packaging: verify emitted imports and the packaged file list from a clean build.
+- Shared-global extraction changes call order: retain one explicit named runtime owner and migrate behavior through bounded, strictly checked source slices.
+- Asset wrapping diverges between clean and watch builds: run the same idempotent wrapper after production compilation and incremental webview emissions.
 - DOM typing becomes superficially permissive through casts: centralize lookup/narrowing and forbid `any` in the browser target.
 - Protocol typing creates false confidence at runtime: retain validation at both `postMessage` boundaries.
 - A large rewrite obscures regressions: require parity tests and removal of each legacy slice in the same change that replaces it.

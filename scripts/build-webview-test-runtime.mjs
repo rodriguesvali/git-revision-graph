@@ -84,5 +84,13 @@ const exportedNames = [
 
 const runtimeSource = readFileSync(runtimeSourcePath, 'utf8');
 const exportBridge = `\nmodule.exports = {\n${exportedNames.map((name) => `  ${name}`).join(',\n')}\n};\n`;
+const wrapperEnd = '\n})();';
+const wrapperEndIndex = runtimeSource.lastIndexOf(wrapperEnd);
+if (wrapperEndIndex < 0) {
+  throw new Error(`Expected wrapped revision graph runtime at ${runtimeSourcePath}.`);
+}
+const testRuntimeSource = runtimeSource.slice(0, wrapperEndIndex)
+  + exportBridge
+  + runtimeSource.slice(wrapperEndIndex);
 mkdirSync(`${projectRoot}/out-test`, { recursive: true });
-writeFileSync(testRuntimePath, runtimeSource + exportBridge, 'utf8');
+writeFileSync(testRuntimePath, testRuntimeSource, 'utf8');

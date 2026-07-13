@@ -34,7 +34,10 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-render-lifecycle\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-geometry-ui\.json/);
   assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.canvas-sizing\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.json$/);
+  assert.match(
+    manifest.scripts?.['build:webview'] ?? '',
+    /tsc -p \.\/tsconfig\.webview\.json && node scripts\/wrap-webview-runtime\.mjs$/
+  );
 });
 
 test('compiled JavaScript output has a matching TypeScript source', () => {

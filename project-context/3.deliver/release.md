@@ -5,7 +5,7 @@ Last consolidated: 2026-07-09
 
 ## Current State
 
-- Current package version: `1.5.9` in `package.json`.
+- Current package version: `2.0.0` in `package.json`.
 - Latest recorded published release: `1.5.9`.
 - Release cycle status: `1.5.9` was published by maintainer confirmation on 2026-07-09. Flow
   Governance Phase 1 and operational Flow Governance work remain staged for the next release target,
@@ -76,6 +76,7 @@ Planned verification:
 
 Recorded verification:
 
+- Typed revision-graph webview runtime migration completed on 2026-07-13. The external runtime is strictly checked without `noCheck` or a `noImplicitAny` override, its generated asset is enclosed by the named `initializeRevisionGraphWebviewRuntime` ownership boundary, and the revision-graph integration harness no longer uses `node:vm`. `npm run build`, `npm test` (657 tests), `npm run benchmark:ci`, and `git diff --check` passed; Extension Development Host smoke and approved package inspection remain release-delivery gates.
 - Flow Governance repository-config persistence is serialized per repository as of 2026-07-12. The
   webview message boundary now awaits persistence; failed writes do not block later queued writes,
   and separate repositories retain independent queues. `npm run build`, `npm test` (619 tests),
