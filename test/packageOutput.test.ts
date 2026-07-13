@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import * as path from 'node:path';
 
 type PackageScripts = {
@@ -18,25 +19,24 @@ test('production build cleans compiled output before TypeScript runs', () => {
   );
   assert.equal(manifest.scripts?.prebuild, 'npm run clean:out');
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /^tsc -p \.\/tsconfig\.webview\.api\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.zoom-toolbar-ui\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-viewport\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-index\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-selection\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.edge-markup\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.node-presentation\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.node-markup\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-dom\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.center-head-toolbar-ui\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-lifecycle\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.virtual-scene-scheduler\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-render-lifecycle\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.scene-geometry-ui\.json/);
-  assert.match(manifest.scripts?.['build:webview'] ?? '', /tsc -p \.\/tsconfig\.webview\.canvas-sizing\.json/);
-  assert.match(
-    manifest.scripts?.['build:webview'] ?? '',
-    /tsc -p \.\/tsconfig\.webview\.json && node scripts\/wrap-webview-runtime\.mjs$/
+  assert.equal(manifest.scripts?.['build:webview'], 'node scripts/build-webview.mjs');
+});
+
+test('webview build discovers every isolated config and keeps the bundle last', () => {
+  const projectRoot = process.cwd();
+  const expectedIsolatedConfigs = readdirSync(projectRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^tsconfig\.webview\..+\.json$/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+  const result = spawnSync(process.execPath, ['scripts/build-webview.mjs', '--list'], {
+    cwd: projectRoot,
+    encoding: 'utf8'
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(
+    result.stdout.trim().split(/\r?\n/),
+    [...expectedIsolatedConfigs, 'tsconfig.webview.json']
   );
 });
 
