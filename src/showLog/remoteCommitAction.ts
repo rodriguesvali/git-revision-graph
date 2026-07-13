@@ -1,4 +1,5 @@
 import type { Repository } from '../git';
+import { resolveHostedGitRemote } from '../hostedGitRemote';
 import { buildRemoteCommitUrl } from './remoteCommitUrl';
 
 export interface ShowLogRemoteCommitServices {
@@ -14,7 +15,11 @@ export async function openShowLogCommitOnRemote(
   const remoteServices = services ?? await getDefaultShowLogRemoteCommitServices();
   const url = buildRemoteCommitUrl(repository, commitHash);
   if (!url) {
-    await remoteServices.showInformationMessage('No supported Git hosting remote is configured for this repository.');
+    const remote = resolveHostedGitRemote(repository);
+    const message = remote
+      ? `${remote.providerLabel} does not expose a verified commit link for this remote.`
+      : 'No supported Git hosting remote is configured for this repository.';
+    await remoteServices.showInformationMessage(message);
     return false;
   }
 

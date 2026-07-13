@@ -83,6 +83,32 @@ test('openShowLogCommitOnRemote reports when no supported remote is configured',
   assert.deepEqual(messages, ['No supported Git hosting remote is configured for this repository.']);
 });
 
+test('openShowLogCommitOnRemote reports a supported provider without a verified commit route', async () => {
+  const messages: string[] = [];
+  const opened = await openShowLogCommitOnRemote(
+    createRepository({
+      root: '/workspace/repo',
+      remotes: [{
+        name: 'origin',
+        fetchUrl: 'https://example-123456789012-git.us-central1.sourcemanager.dev/project/repo.git',
+        pushUrl: undefined,
+        isReadOnly: false
+      }]
+    }),
+    'abc123',
+    createServices({
+      async showInformationMessage(message) {
+        messages.push(message);
+      }
+    })
+  );
+
+  assert.equal(opened, false);
+  assert.deepEqual(messages, [
+    'Google Secure Source Manager does not expose a verified commit link for this remote.'
+  ]);
+});
+
 function createServices(
   overrides: Partial<ShowLogRemoteCommitServices> = {}
 ): ShowLogRemoteCommitServices {

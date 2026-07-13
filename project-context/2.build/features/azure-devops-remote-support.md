@@ -249,4 +249,7 @@ rebuilt the code graph with 4,190 nodes, 8,274 edges, and 324 communities.
 
 Increment 1 remains intentionally URL-only and requires no new dependency or user configuration.
 The release candidate still needs live Azure DevOps Services smoke for commit and Pull Request
-portal routes. Packaging, version changes, and Marketplace publication remain unauthorized.
+portal routes. The shared resolver was subsequently generalized through
+`project-context/2.build/features/hosted-git-provider-adapters.md`; Azure DevOps now participates as
+one adapter without changing its approved URL behavior. Packaging, version changes, and Marketplace
+publication remain unauthorized.

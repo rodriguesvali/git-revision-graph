@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (204 production files and 2,019 functions), `npm run build`, `npm test` (695 tests), and `git diff --check`. |
+| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (212 production files and 2,041 functions), `npm run build`, `npm test` (703 tests), and `git diff --check`. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -38,6 +38,7 @@ Focused build artifact:
 - `project-context/2.build/features/flow-governance-2.0.0.md`
 - `project-context/2.build/features/extension-host-e2e-baseline.md`
 - `project-context/2.build/features/azure-devops-remote-support.md`
+- `project-context/2.build/features/hosted-git-provider-adapters.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Candidate scope:
@@ -56,9 +57,10 @@ Candidate scope:
   Phase 1 template content.
 - Add PR-required transition diagnostics for governed source/target pairs.
 - Add release promotion readiness checks with `ready`, `blocked`, and `inconclusive` outcomes.
-- Add PR handoff through copyable context or recognized GitHub and Azure DevOps creation URLs.
-- Open commits from Revision Graph and Show Log on supported GitHub and Azure DevOps remotes through
-  provider-neutral actions.
+- Add PR handoff through copyable context or recognized GitHub, Azure DevOps, GitLab.com,
+  AWS CodeCommit, and Google Secure Source Manager destinations.
+- Open commits from Revision Graph and Show Log on supported GitHub, Azure DevOps, GitLab.com, and
+  AWS CodeCommit remotes through provider-neutral actions.
 - Add production-to-release equalization guidance using local `sync/*` helper branches without
   automatic push.
 - Update README and CHANGELOG notes for the shipped 2.0.0 behavior.
@@ -96,6 +98,15 @@ Planned verification:
 
 Recorded verification:
 
+- Hosted Git provider adapters and URL-only support for GitLab.com, AWS CodeCommit, and Google
+  Secure Source Manager were implemented on 2026-07-13. GitLab.com supports exact commit and
+  branch-aware Merge Request URLs; CodeCommit supports exact regional commit URLs and opens its
+  Pull Requests area; Secure Source Manager maps default HTTPS/SSH clone hosts to the documented
+  HTML repository and keeps exact commit links deferred. No provider authentication, API client,
+  dependency, setting, command, or contribution point was added. `npm run quality:check` (212
+  production files and 2,041 functions), `npm run build`, `npm test` (703 tests), and
+  `git diff --check` passed. `graphify update .` rebuilt 4,228 nodes, 8,396 edges, and 317
+  communities; live provider smoke remains pending.
 - Azure DevOps Services URL handoff was implemented on 2026-07-13 without provider authentication,
   new dependencies, settings, commands, or contribution points. The shared resolver preserves
   GitHub HTTPS/SSH behavior, recognizes Azure DevOps current and legacy hosted URLs, strips remote
@@ -127,7 +138,7 @@ Recorded verification:
   downloaded VS Code `1.128.0` but could not start Electron because the container lacks
   `libatk-1.0.so.0`; CI evidence from the new Ubuntu `xvfb` job remains pending.
 - Current automated source verification passed on 2026-07-13 with `npm run quality:check`
-  (203 production files and 2,000 functions), `npm run build`, `npm test` (686 tests), and
+  (212 production files and 2,041 functions), `npm run build`, `npm test` (703 tests), and
   `git diff --check`. This closes the automated source gate only; final Extension Development Host
   smoke and approved package inspection remain pending.
 - Typed revision-graph webview runtime migration completed on 2026-07-13. The external runtime is strictly checked without `noCheck` or a `noImplicitAny` override, its generated asset is enclosed by the named `initializeRevisionGraphWebviewRuntime` ownership boundary, and the revision-graph integration harness no longer uses `node:vm`. `npm run build`, `npm test` (657 tests), `npm run benchmark:ci`, and `git diff --check` passed; Extension Development Host smoke and approved package inspection remain release-delivery gates.
@@ -218,8 +229,9 @@ Marketplace impact:
   Flow Governance controls inside the existing revision graph webview when Flow Governance metadata
   is present.
 - Marketplace copy should describe 2.0.0 as branch classification, PR-required diagnostics,
-  GitHub/Azure DevOps URL handoff, release readiness, and safe equalization guidance. It must not
-  claim branch hiding or authenticated provider API integration.
+  URL-only handoff for supported hosted Git providers, release readiness, and safe equalization
+  guidance. It must not claim branch hiding, authenticated provider APIs, or branch-prefilled
+  CodeCommit/Secure Source Manager creation pages.
 - No Marketplace packaging metadata has been captured yet: VSIX filename, checksum, size,
   publication timestamp, and clean-profile installed-version evidence remain pending approval.
 

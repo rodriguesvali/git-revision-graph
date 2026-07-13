@@ -23,8 +23,9 @@ risking user work.
 - For multi-repository checks, open a workspace with two Git repositories.
 - For Flow Governance checks, use a disposable repository where creating or editing
   `.git-revision-graph-flow.json` is acceptable.
-- For remote-host checks, use accessible GitHub and Azure DevOps Services repositories with a
-  disposable source branch suitable for Pull Request handoff.
+- For remote-host checks, use accessible GitHub, Azure DevOps Services, GitLab.com, AWS CodeCommit,
+  and Google Secure Source Manager repositories where available, with a disposable source branch
+  suitable for Pull Request handoff.
 
 ## Automated Extension Host Baseline
 
@@ -68,6 +69,9 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Zero repository | Run `Create Flow Governance Config` from an empty non-Git workspace. | A concise no-repository information message appears and no file is written. |
 | GitHub PR handoff | Use a governed source/target pair on a supported GitHub remote and select `Open Pull Request`. | Existing source publication/preflight guards run and the GitHub creation page opens for the selected branches. |
 | Azure DevOps PR handoff | Use a governed source/target pair on a supported Azure DevOps Services remote and select `Open Pull Request`. | Existing source publication/preflight guards run and the Azure DevOps creation page opens with the selected source and target refs. |
+| GitLab.com Merge Request handoff | Use a governed source/target pair on a supported GitLab.com remote and select `Open Pull Request`. | Existing guards run and GitLab opens a Merge Request form with source, target, title, and description. |
+| AWS CodeCommit PR handoff | Use a governed source/target pair on a regional CodeCommit remote and select `Open Pull Request`. | Existing guards run and the repository Pull Requests area opens in the matching AWS region; branch selection remains manual. |
+| Secure Source Manager PR handoff | Use a governed source/target pair on a default `sourcemanager.dev` HTTPS or SSH remote and select `Open Pull Request`. | Existing guards run and the documented HTML repository page opens; navigate through Pull Requests and select branches manually. |
 
 ## Review Workflows
 
@@ -77,7 +81,7 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Compare with worktree | Select a ref and compare with worktree. | Worktree changes appear; empty comparisons show a concise information message. |
 | File diff | Open a file diff from Compare Results and Show Log. | `vscode.diff` opens with the expected left/right sides and readable title. |
 | Show Log | Open Show Log for a ref, range, and loaded commit where available. | Log panel loads entries, commit details, file expansion, and copy actions remain usable. |
-| Hosted commit links | Select `Open on Remote` from Revision Graph and Show Log for GitHub and Azure DevOps repositories. | Each commit opens on the matching provider; unsupported remotes show concise native feedback without opening a URL. |
+| Hosted commit links | Select `Open on Remote` from Revision Graph and Show Log for GitHub, Azure DevOps, GitLab.com, and CodeCommit repositories. Repeat on Secure Source Manager. | Exact commits open on the first four providers. Secure Source Manager reports that no verified commit link is available; unsupported remotes show concise native feedback without opening a URL. |
 
 ## Git Workflow Safety
 

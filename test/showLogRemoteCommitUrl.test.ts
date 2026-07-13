@@ -53,6 +53,77 @@ test('buildRemoteCommitUrlFromRemoteUrl supports hosted Azure DevOps legacy and 
   );
 });
 
+test('buildRemoteCommitUrlFromRemoteUrl supports GitLab.com nested namespaces', () => {
+  const expected = 'https://gitlab.com/platform/payments/service/-/commit/abc123';
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://user:token@gitlab.com/platform/payments/service.git?ignored=1#ignored',
+      'abc123'
+    ),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl('git@gitlab.com:platform/payments/service.git', 'abc123'),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl('ssh://git@gitlab.com/platform/payments/service.git', 'abc123'),
+    expected
+  );
+});
+
+test('buildRemoteCommitUrlFromRemoteUrl supports regional AWS CodeCommit remotes', () => {
+  const expected = 'https://us-east-2.console.aws.amazon.com/codesuite/codecommit/repositories/MyRepo/' +
+    'commit/abc123?region=us-east-2';
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://user:secret@git-codecommit.us-east-2.amazonaws.com/v1/repos/MyRepo?ignored=1#ignored',
+      'abc123'
+    ),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'ssh://key@git-codecommit.us-east-2.amazonaws.com/v1/repos/MyRepo',
+      'abc123'
+    ),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://git-codecommit-fips.us-east-2.amazonaws.com/v1/repos/MyRepo',
+      'abc123'
+    ),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://git-codecommit.cn-north-1.amazonaws.com.cn/v1/repos/MyRepo',
+      'abc123'
+    ),
+    'https://cn-north-1.console.amazonaws.cn/codesuite/codecommit/repositories/MyRepo/' +
+      'commit/abc123?region=cn-north-1'
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://git-codecommit.us-east-2.amazonaws.com/v1/repos/MyRepo.git',
+      'abc123'
+    ),
+    'https://us-east-2.console.aws.amazon.com/codesuite/codecommit/repositories/MyRepo.git/' +
+      'commit/abc123?region=us-east-2'
+  );
+});
+
+test('buildRemoteCommitUrlFromRemoteUrl does not invent Secure Source Manager commit routes', () => {
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://example-123456789012-git.us-central1.sourcemanager.dev/my-project/my-repo.git',
+      'abc123'
+    ),
+    undefined
+  );
+});
+
 test('buildRemoteCommitUrl prefers origin across supported hosting providers', () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -76,5 +147,8 @@ test('buildRemoteCommitUrlFromRemoteUrl rejects unsupported or unsafe remote URL
   assert.equal(buildRemoteCommitUrlFromRemoteUrl('https://dev.azure.com/org/project/_git/a%2Frepo', 'abc123'), undefined);
   assert.equal(buildRemoteCommitUrlFromRemoteUrl('ftp://dev.azure.com/org/project/_git/repo', 'abc123'), undefined);
   assert.equal(buildRemoteCommitUrlFromRemoteUrl('https://ssh.dev.azure.com/v3/org/project/repo', 'abc123'), undefined);
+  assert.equal(buildRemoteCommitUrlFromRemoteUrl('https://gitlab.example.com/group/repo.git', 'abc123'), undefined);
+  assert.equal(buildRemoteCommitUrlFromRemoteUrl('ssh://git-codecommit-fips.us-east-2.amazonaws.com/v1/repos/repo', 'abc123'), undefined);
+  assert.equal(buildRemoteCommitUrlFromRemoteUrl('codecommit://MyRepo', 'abc123'), undefined);
   assert.equal(buildRemoteCommitUrlFromRemoteUrl('https://dev.azure.com/org/project/_git/repo', '   '), undefined);
 });

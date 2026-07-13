@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
   pages from current HTTPS and SSH remotes, including recognized legacy `visualstudio.com` URLs.
 - Consolidated GitHub and Azure DevOps remote parsing behind a credential-free shared resolver and
   changed commit and Pull Request webview actions to provider-neutral labels.
+- Replaced provider conditionals with an ordered hosted-Git adapter registry and added GitLab.com,
+  AWS CodeCommit, and Google Secure Source Manager remote recognition without adding credentials,
+  provider APIs, settings, or runtime dependencies.
+- Added exact GitLab.com and CodeCommit commit destinations, prefilled GitLab Merge Request handoff,
+  and conservative CodeCommit/Secure Source Manager Pull Request navigation where official portal
+  documentation does not expose stable branch-prefill routes.
 - Preserved the existing GitHub URL handoff and Flow Governance publication, divergence,
   synchronization, and ancestry guards without adding provider authentication or API dependencies.
 

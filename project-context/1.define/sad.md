@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-07-02
+Last consolidated: 2026-07-13
 
 ## Context
 
@@ -23,6 +23,10 @@ Last consolidated: 2026-07-02
 - `src/refActions.ts` contains testable Git workflows.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
+- `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
+  capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
+  construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
+  Manager without provider authentication.
 
 ## Product Surfaces
 
@@ -167,15 +171,15 @@ Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and
 - `flowTransitionPolicy.ts`: pure governed source/target transition matching and direct-merge policy outcomes.
 - `flowPromotionChecks.ts`: release promotion ancestry validation with `ready`, `blocked`, and `inconclusive` results.
 - `flowDiagnostics.ts`: expanded governance diagnostics built from host-side classification, transition policy, and readiness results.
-- `flowPullRequestContext.ts`: provider-neutral PR title/body/context and recognized GitHub/Azure
-  DevOps Pull Request URL generation without requiring authentication, backed by the shared
-  `hostedGitRemote.ts` parser and URL builder.
+- `flowPullRequestContext.ts`: provider-neutral PR title/body/context and recognized hosted-provider
+  URL generation without requiring authentication, backed by `hostedGitRemote.ts` and the focused
+  provider adapter registry.
 - `flowPullRequestPreflight.ts`: provider-aligned remote-source existence and exact-tip verification before PR handoff, with fail-closed publication states.
 - `flowSyncPlan.ts`: production-to-release equalization planning, sync branch naming, precondition checks, and no-push handoff metadata.
 
-GitHub or Azure DevOps API PR creation, cleanup candidates, authenticated provider APIs, and
-persistent diagnostics panels remain outside the initial 2.0.0 architecture unless the focused
-feature artifact is explicitly expanded.
+Provider API PR creation, cleanup candidates, provider authentication, and persistent diagnostics
+panels remain outside the initial 2.0.0 architecture unless a focused feature artifact explicitly
+expands them.
 
 ### 2.0.0 Integration Boundaries
 

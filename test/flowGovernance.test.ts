@@ -476,6 +476,50 @@ test('Flow Governance builds Azure DevOps Pull Request deep links', () => {
   );
 });
 
+test('Flow Governance builds GitLab.com Merge Request deep links', () => {
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'git@gitlab.com:platform/payments/service.git',
+      'feature/payment summary',
+      'release/2.0.0'
+    ),
+    'https://gitlab.com/platform/payments/service/-/merge_requests/new?' +
+      'merge_request%5Bsource_branch%5D=feature%2Fpayment+summary&' +
+      'merge_request%5Btarget_branch%5D=release%2F2.0.0&' +
+      'merge_request%5Btitle%5D=Merge+feature%2Fpayment+summary+into+release%2F2.0.0&' +
+      'merge_request%5Bdescription%5D=Source%3A+feature%2Fpayment+summary%0A' +
+      'Target%3A+release%2F2.0.0%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
+  );
+});
+
+test('Flow Governance uses conservative AWS and Google Pull Request handoffs', () => {
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'ssh://key@git-codecommit.eu-west-1.amazonaws.com/v1/repos/Payments',
+      'feature/demo',
+      'main'
+    ),
+    'https://eu-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/Payments/' +
+      'pull-requests?region=eu-west-1'
+  );
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'https://instance-123456789012-git.us-central1.sourcemanager.dev/project/repo.git',
+      'feature/demo',
+      'main'
+    ),
+    'https://instance-123456789012.us-central1.sourcemanager.dev/project/repo'
+  );
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'git@instance-123456789012-ssh.us-central1.sourcemanager.dev:project/repo.git',
+      'feature/demo',
+      'main'
+    ),
+    'https://instance-123456789012.us-central1.sourcemanager.dev/project/repo'
+  );
+});
+
 test('Flow Governance rejects Pull Request handoff when fetch and push repositories differ', () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -507,6 +551,37 @@ test('Flow Governance accepts equivalent legacy fetch and current SSH push URLs'
     'https://fabrikam.visualstudio.com/Project/_git/Repo/pullrequestcreate?' +
       'sourceRef=refs%2Fheads%2Ffeature%2Fdemo&targetRef=refs%2Fheads%2Fmain'
   );
+});
+
+test('Flow Governance accepts equivalent Secure Source Manager HTTPS and SSH remotes', () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://instance-123456789012-git.us-central1.sourcemanager.dev/project/repo.git',
+      pushUrl: 'ssh://git@instance-123456789012-ssh.us-central1.sourcemanager.dev/project/repo.git',
+      isReadOnly: false
+    }]
+  });
+
+  assert.equal(
+    buildFlowPullRequestUrl(repository, 'feature/demo', 'main'),
+    'https://instance-123456789012.us-central1.sourcemanager.dev/project/repo'
+  );
+});
+
+test('Flow Governance rejects CodeCommit fetch and push remotes from different regions', () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://git-codecommit.us-east-1.amazonaws.com/v1/repos/Repo',
+      pushUrl: 'ssh://key@git-codecommit.us-west-2.amazonaws.com/v1/repos/Repo',
+      isReadOnly: false
+    }]
+  });
+
+  assert.equal(resolveFlowPullRequestRemote(repository), undefined);
 });
 
 test('Flow Governance default file contains only Phase 1 fields', () => {
