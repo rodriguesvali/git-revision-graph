@@ -281,13 +281,15 @@ test('shows loading feedback while centering the graph on HEAD', () => {
 test('reloads the graph from the webview toolbar', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /const reloadButton = requireRevisionGraphElement\('reloadButton'\);/);
-  assert.match(html, /const reloadMenuButton = requireRevisionGraphElement\('reloadMenuButton'\);/);
-  assert.match(html, /const fetchAllButton = requireRevisionGraphElement\('fetchAllButton'\);/);
-  assert.match(html, /const pullButton = requireRevisionGraphElement\('pullButton'\);/);
-  assert.match(html, /const pushButton = requireRevisionGraphElement\('pushButton'\);/);
-  assert.match(html, /const pushMenuButton = requireRevisionGraphElement\('pushMenuButton'\);/);
-  assert.match(html, /const syncButton = requireRevisionGraphElement\('syncButton'\);/);
+  assert.match(html, /function createRevisionGraphWebviewDom\(\) \{/);
+  assert.match(html, /reloadButton: requireRevisionGraphElement\('reloadButton'\)/);
+  assert.match(html, /reloadMenuButton: requireRevisionGraphElement\('reloadMenuButton'\)/);
+  assert.match(html, /fetchAllButton: requireRevisionGraphElement\('fetchAllButton'\)/);
+  assert.match(html, /pullButton: requireRevisionGraphElement\('pullButton'\)/);
+  assert.match(html, /pushButton: requireRevisionGraphElement\('pushButton'\)/);
+  assert.match(html, /pushMenuButton: requireRevisionGraphElement\('pushMenuButton'\)/);
+  assert.match(html, /syncButton: requireRevisionGraphElement\('syncButton'\)/);
+  assert.match(html, /\} = createRevisionGraphWebviewDom\(\);/);
   assert.match(
     html,
     /reloadButton\.addEventListener\('click', \(\) => \{\s*reloadRevisionGraph\(\);\s*\}\);/s
@@ -344,7 +346,10 @@ test('reloads the graph from the webview toolbar', () => {
 test('preserves the current viewport when zooming or resetting from toolbar buttons', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /const zoomLevels = \[0\.1, 0\.2, 0\.3, 0\.4, 0\.5, 0\.6, 0\.8, 1, 1\.25, 1\.5\];/);
+  assert.match(html, /const REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS = \[0\.1, 0\.2, 0\.3, 0\.4, 0\.5, 0\.6, 0\.8, 1, 1\.25, 1\.5\];/);
+  assert.match(html, /const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;/);
+  assert.match(html, /function getNextRevisionGraphWebviewZoomLevel\(levels, currentZoom\)/);
+  assert.match(html, /function getPreviousRevisionGraphWebviewZoomLevel\(levels, currentZoom\)/);
   assert.match(
     html,
     /function setZoom\(zoom, options = \{\}\) \{\s*const shouldPreserveViewport = options\.preserveViewport !== false;\s*const scenePlacementSnapshot = shouldPreserveViewport \? captureScenePlacementSnapshot\(\) : null;\s*const viewportSnapshot = shouldPreserveViewport \? captureViewportSnapshot\(\) : null;[\s\S]*?restoreViewportSnapshot\(viewportSnapshot\);/s
@@ -684,7 +689,8 @@ test('renders a graph minimap overview with viewport navigation handlers', () =>
   assert.match(html, /class="graph-minimap"/);
   assert.match(html, /viewBox="0 0 180 240"/);
   assert.match(html, /class="minimap-controls"/);
-  assert.match(html, /const minimapZoomLevels = \[0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\];/);
+  assert.match(html, /const REVISION_GRAPH_WEBVIEW_MINIMAP_ZOOM_LEVELS = \[\s*0\.75, 1, 1\.35, 1\.75, 2\.25, 3, 4, 5, 6\.5, 8, 10, 12\.5, 15, 18, 22, 26, 30\s*\];/s);
+  assert.match(html, /const minimapZoomLevels = REVISION_GRAPH_WEBVIEW_MINIMAP_ZOOM_LEVELS;/);
   assert.match(html, /let minimapEnabled = initialWebviewState\.showMinimap === true;/);
   assert.match(html, /function syncMinimapPreference\(\)/);
   assert.match(html, /function syncRevisionGraphWebviewMinimapPreferenceUi\(/);

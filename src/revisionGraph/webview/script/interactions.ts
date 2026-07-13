@@ -35,16 +35,15 @@
     }
 
     function zoomIn() {
-      const nextZoom = zoomLevels.find((value) => value > currentZoom);
-      if (nextZoom) {
+      const nextZoom = getNextRevisionGraphWebviewZoomLevel(zoomLevels, currentZoom);
+      if (nextZoom !== undefined) {
         setZoom(nextZoom);
       }
     }
 
     function zoomOut() {
-      const previousLevels = zoomLevels.filter((value) => value < currentZoom);
-      const nextZoom = previousLevels.length > 0 ? previousLevels[previousLevels.length - 1] : undefined;
-      if (nextZoom) {
+      const nextZoom = getPreviousRevisionGraphWebviewZoomLevel(zoomLevels, currentZoom);
+      if (nextZoom !== undefined) {
         setZoom(nextZoom);
       }
     }
@@ -60,8 +59,8 @@
     }
 
     function zoomInMinimap() {
-      const nextZoom = minimapZoomLevels.find((value) => value > minimapZoom);
-      if (nextZoom) {
+      const nextZoom = getNextRevisionGraphWebviewZoomLevel(minimapZoomLevels, minimapZoom);
+      if (nextZoom !== undefined) {
         setMinimapZoom(nextZoom);
       }
     }
@@ -71,9 +70,8 @@
     }
 
     function zoomOutMinimap() {
-      const previousLevels = minimapZoomLevels.filter((value) => value < minimapZoom);
-      const nextZoom = previousLevels.length > 0 ? previousLevels[previousLevels.length - 1] : undefined;
-      if (nextZoom) {
+      const nextZoom = getPreviousRevisionGraphWebviewZoomLevel(minimapZoomLevels, minimapZoom);
+      if (nextZoom !== undefined) {
         setMinimapZoom(nextZoom);
       }
     }
@@ -1684,12 +1682,15 @@
     }
 
     function syncToolbarActions() {
-      const canZoomIn = zoomLevels.some((value) => value > currentZoom);
-      const canZoomOut = zoomLevels.some((value) => value < currentZoom);
-      const canResetZoom = currentZoom !== 1;
-      const canZoomInMinimap = minimapZoomLevels.some((value) => value > minimapZoom);
-      const canZoomOutMinimap = minimapZoomLevels.some((value) => value < minimapZoom);
-      const canResetMinimapZoom = minimapZoom !== 1;
+      const { canZoomIn, canZoomOut, canResetZoom } = getRevisionGraphWebviewZoomCapabilities(
+        zoomLevels,
+        currentZoom
+      );
+      const {
+        canZoomIn: canZoomInMinimap,
+        canZoomOut: canZoomOutMinimap,
+        canResetZoom: canResetMinimapZoom
+      } = getRevisionGraphWebviewZoomCapabilities(minimapZoomLevels, minimapZoom);
       const remoteActionState = getCurrentHeadRemoteActionState();
       const hasRepository = !!currentState?.repositoryPath && !currentState?.loading;
       syncRevisionGraphWebviewBasicToolbarUi(

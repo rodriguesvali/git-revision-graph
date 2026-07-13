@@ -5,60 +5,21 @@ const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
 
     const vscode = acquireRevisionGraphWebviewApi();
-    const zoomLevels = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5];
-    const viewport = requireRevisionGraphElement<HTMLDivElement>('viewport');
-    const canvas = requireRevisionGraphElement<HTMLDivElement>('canvas');
-    const sceneLayer = requireRevisionGraphElement<HTMLDivElement>('sceneLayer');
-    const graphSvg = requireRevisionGraphElement<SVGSVGElement>('graphSvg');
-    const edgeLayer = requireRevisionGraphElement<SVGGElement>('edgeLayer');
-    const nodeLayer = requireRevisionGraphElement<HTMLDivElement>('nodeLayer');
-    const statusCard = requireRevisionGraphElement<HTMLDivElement>('statusCard');
-    const statusMessage = requireRevisionGraphElement<HTMLDivElement>('statusMessage');
-    const statusActionButton = requireRevisionGraphElement<HTMLButtonElement>('statusActionButton');
-    const contextMenu = requireRevisionGraphElement<HTMLDivElement>('contextMenu');
-    const referenceTooltip = requireRevisionGraphElement<HTMLDivElement>('referenceTooltip');
-    const graphMinimap = requireRevisionGraphElement<HTMLDivElement>('graphMinimap');
-    const minimapSvg = requireRevisionGraphElement<SVGSVGElement>('minimapSvg');
-    const minimapEdgeLayer = requireRevisionGraphElement<SVGGElement>('minimapEdgeLayer');
-    const minimapNodeLayer = requireRevisionGraphElement<SVGGElement>('minimapNodeLayer');
-    const minimapViewport = requireRevisionGraphElement<SVGRectElement>('minimapViewport');
-    const minimapZoomOutButton = requireRevisionGraphElement<HTMLButtonElement>('minimapZoomOutButton');
-    const minimapZoomResetButton = requireRevisionGraphElement<HTMLButtonElement>('minimapZoomResetButton');
-    const minimapZoomInButton = requireRevisionGraphElement<HTMLButtonElement>('minimapZoomInButton');
-    const loadingOverlay = requireRevisionGraphElement<HTMLDivElement>('loadingOverlay');
-    const loadingMessage = requireRevisionGraphElement<HTMLDivElement>('loadingMessage');
-    const reloadButton = requireRevisionGraphElement<HTMLButtonElement>('reloadButton');
-    const reloadMenuButton = requireRevisionGraphElement<HTMLButtonElement>('reloadMenuButton');
-    const fetchAllButton = requireRevisionGraphElement<HTMLButtonElement>('fetchAllButton');
-    const pullButton = requireRevisionGraphElement<HTMLButtonElement>('pullButton');
-    const pushButton = requireRevisionGraphElement<HTMLButtonElement>('pushButton');
-    const pushMenuButton = requireRevisionGraphElement<HTMLButtonElement>('pushMenuButton');
-    const syncButton = requireRevisionGraphElement<HTMLButtonElement>('syncButton');
-    const scopeSelect = requireRevisionGraphElement<HTMLSelectElement>('scopeSelect');
-    const viewOptionsButton = requireRevisionGraphElement<HTMLButtonElement>('viewOptionsButton');
-    const viewOptionsMenu = requireRevisionGraphElement<HTMLDivElement>('viewOptionsMenu');
-    const showTagsToggle = requireRevisionGraphElement<HTMLInputElement>('showTagsToggle');
-    const showRemoteBranchesToggle = requireRevisionGraphElement<HTMLInputElement>('showRemoteBranchesToggle');
-    const showStashesToggle = requireRevisionGraphElement<HTMLInputElement>('showStashesToggle');
-    const showMergeCommitsToggle = requireRevisionGraphElement<HTMLInputElement>('showMergeCommitsToggle');
-    const showMinimapToggle = requireRevisionGraphElement<HTMLInputElement>('showMinimapToggle');
-    const flowGovernanceOptions = requireRevisionGraphElement<HTMLDivElement>('flowGovernanceOptions');
-    const flowGovernanceEnabledToggle = requireRevisionGraphElement<HTMLInputElement>('flowGovernanceEnabledToggle');
-    const searchInput = requireRevisionGraphElement<HTMLInputElement>('searchInput');
-    const searchResultBadge = requireRevisionGraphElement<HTMLSpanElement>('searchResultBadge');
-    const searchPrevButton = requireRevisionGraphElement<HTMLButtonElement>('searchPrevButton');
-    const searchNextButton = requireRevisionGraphElement<HTMLButtonElement>('searchNextButton');
-    const searchClearButton = requireRevisionGraphElement<HTMLButtonElement>('searchClearButton');
-    const rangeFilter = requireRevisionGraphElement<HTMLDivElement>('rangeFilter');
-    const rangeFilterLabel = requireRevisionGraphElement<HTMLSpanElement>('rangeFilterLabel');
-    const rangeFilterClearButton = requireRevisionGraphElement<HTMLButtonElement>('rangeFilterClearButton');
-    const descendantFilter = requireRevisionGraphElement<HTMLDivElement>('descendantFilter');
-    const descendantFilterLabel = requireRevisionGraphElement<HTMLSpanElement>('descendantFilterLabel');
-    const descendantFilterClearButton = requireRevisionGraphElement<HTMLButtonElement>('descendantFilterClearButton');
-    const centerHeadButton = requireRevisionGraphElement<HTMLButtonElement>('centerHeadButton');
-    const zoomOutButton = requireRevisionGraphElement<HTMLButtonElement>('zoomOutButton');
-    const zoomResetButton = requireRevisionGraphElement<HTMLButtonElement>('zoomResetButton');
-    const zoomInButton = requireRevisionGraphElement<HTMLButtonElement>('zoomInButton');
+    const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
+    const {
+      viewport, canvas, sceneLayer, graphSvg, edgeLayer, nodeLayer,
+      statusCard, statusMessage, statusActionButton, contextMenu, referenceTooltip,
+      graphMinimap, minimapSvg, minimapEdgeLayer, minimapNodeLayer, minimapViewport,
+      minimapZoomOutButton, minimapZoomResetButton, minimapZoomInButton,
+      loadingOverlay, loadingMessage, reloadButton, reloadMenuButton, fetchAllButton,
+      pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, viewOptionsButton,
+      viewOptionsMenu, showTagsToggle, showRemoteBranchesToggle, showStashesToggle,
+      showMergeCommitsToggle, showMinimapToggle, flowGovernanceOptions,
+      flowGovernanceEnabledToggle, searchInput, searchResultBadge, searchPrevButton,
+      searchNextButton, searchClearButton, rangeFilter, rangeFilterLabel,
+      rangeFilterClearButton, descendantFilter, descendantFilterLabel,
+      descendantFilterClearButton, centerHeadButton, zoomOutButton, zoomResetButton, zoomInButton
+    } = createRevisionGraphWebviewDom();
     type RevisionGraphWebviewLegacyNodeLayout = Record<string, unknown> & {
       readonly hash: string;
       readonly defaultLeft: number;
@@ -144,7 +105,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let baseCanvasWidth = 880;
     let baseCanvasHeight = 480;
     let currentZoom = 1;
-    const minimapZoomLevels = [0.75, 1, 1.35, 1.75, 2.25, 3, 4, 5, 6.5, 8, 10, 12.5, 15, 18, 22, 26, 30];
+    const minimapZoomLevels = REVISION_GRAPH_WEBVIEW_MINIMAP_ZOOM_LEVELS;
     const initialWebviewState = readRevisionGraphWebviewPersistentState(vscode);
     let minimapZoom = 1;
     let minimapEnabled = initialWebviewState.showMinimap === true;
