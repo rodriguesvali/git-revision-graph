@@ -36,6 +36,7 @@ const defaultServices: ProjectedGraphLayoutCachePersistenceServices = {
 export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
   private saveTimer: unknown;
   private lastPersistedCacheJson: string | undefined;
+  private persistenceTail: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly state: ProjectedGraphLayoutCacheState,
@@ -61,7 +62,7 @@ export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
       this.services.warn('Failed to restore the persisted revision graph layout cache.', error);
       this.services.restoreCache(undefined);
       this.lastPersistedCacheJson = undefined;
-      void this.state.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
+      void this.clearPersistedCache();
     }
   }
 
@@ -86,21 +87,23 @@ export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
       return;
     }
 
-    const serializedCacheJson = serializeCacheForComparison(serializedCache);
-    if (!force && serializedCacheJson === this.lastPersistedCacheJson) {
-      return;
-    }
+    await this.enqueuePersistence(async () => {
+      const serializedCacheJson = serializeCacheForComparison(serializedCache);
+      if (!force && serializedCacheJson === this.lastPersistedCacheJson) {
+        return;
+      }
 
-    try {
-      await this.state.update(
-        PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
-        serializedCache.length > 0 ? serializedCache : undefined
-      );
-      this.lastPersistedCacheJson = serializedCacheJson;
-    } catch (error) {
-      this.services.warn('Failed to persist the revision graph layout cache.', error);
-      await this.clearPersistedCache();
-    }
+      try {
+        await this.state.update(
+          PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY,
+          serializedCache.length > 0 ? serializedCache : undefined
+        );
+        this.lastPersistedCacheJson = serializedCacheJson;
+      } catch (error) {
+        this.services.warn('Failed to persist the revision graph layout cache.', error);
+        await this.clearPersistedCacheNow();
+      }
+    });
   }
 
   async clear(): Promise<void> {
@@ -134,13 +137,31 @@ export class ProjectedGraphLayoutCachePersistence implements vscode.Disposable {
     void this.persist();
   }
 
+  async flush(): Promise<void> {
+    await this.persist();
+    await this.persistenceTail;
+  }
+
   private async clearPersistedCache(): Promise<void> {
+    await this.enqueuePersistence(() => this.clearPersistedCacheNow());
+  }
+
+  private async clearPersistedCacheNow(): Promise<void> {
     try {
       await this.state.update(PROJECTED_GRAPH_LAYOUT_CACHE_STATE_KEY, undefined);
       this.lastPersistedCacheJson = serializeCacheForComparison([]);
     } catch (error) {
       this.services.warn('Failed to clear the persisted revision graph layout cache.', error);
     }
+  }
+
+  private enqueuePersistence(operation: () => Promise<void>): Promise<void> {
+    const queued = this.persistenceTail.then(operation, operation);
+    this.persistenceTail = queued.then(
+      () => undefined,
+      () => undefined
+    );
+    return queued;
   }
 }
 

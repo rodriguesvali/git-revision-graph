@@ -162,6 +162,168 @@ test('ProjectedGraphLayoutCachePersistence debounces scheduled writes and flushe
   ]);
 });
 
+test('ProjectedGraphLayoutCachePersistence serializes writes without letting stale state win', async () => {
+  const firstCache = [createCacheEntry('first')];
+  const secondCache = [createCacheEntry('second')];
+  const firstUpdate = createDeferred<void>();
+  const startedUpdates: Array<SerializedProjectedGraphLayoutCacheEntry[] | undefined> = [];
+  let currentCache = firstCache;
+  const state: ProjectedGraphLayoutCacheState = {
+    get(_key, defaultValue) {
+      return defaultValue;
+    },
+    async update(_key, value) {
+      startedUpdates.push(value);
+      if (startedUpdates.length === 1) {
+        await firstUpdate.promise;
+      }
+    }
+  };
+  const persistence = new ProjectedGraphLayoutCachePersistence(
+    state,
+    createServices({
+      serializeCache() {
+        return currentCache;
+      }
+    })
+  );
+
+  const firstPersist = persistence.persist();
+  await Promise.resolve();
+  currentCache = secondCache;
+  const secondPersist = persistence.persist();
+  await Promise.resolve();
+
+  assert.deepEqual(startedUpdates, [firstCache]);
+
+  firstUpdate.resolve(undefined);
+  await Promise.all([firstPersist, secondPersist]);
+
+  assert.deepEqual(startedUpdates, [firstCache, secondCache]);
+});
+
+test('ProjectedGraphLayoutCachePersistence orders clear after an active write', async () => {
+  const nextCache = [createCacheEntry('next')];
+  const firstUpdate = createDeferred<void>();
+  const startedUpdates: Array<SerializedProjectedGraphLayoutCacheEntry[] | undefined> = [];
+  const state: ProjectedGraphLayoutCacheState = {
+    get(_key, defaultValue) {
+      return defaultValue;
+    },
+    async update(_key, value) {
+      startedUpdates.push(value);
+      if (startedUpdates.length === 1) {
+        await firstUpdate.promise;
+      }
+    }
+  };
+  const persistence = new ProjectedGraphLayoutCachePersistence(
+    state,
+    createServices({
+      serializeCache() {
+        return nextCache;
+      }
+    })
+  );
+
+  const persist = persistence.persist();
+  await Promise.resolve();
+  const clear = persistence.clear();
+  await Promise.resolve();
+
+  assert.deepEqual(startedUpdates, [nextCache]);
+
+  firstUpdate.resolve(undefined);
+  await Promise.all([persist, clear]);
+
+  assert.deepEqual(startedUpdates, [nextCache, undefined]);
+});
+
+test('ProjectedGraphLayoutCachePersistence continues queued writes after an update failure', async () => {
+  const firstCache = [createCacheEntry('first')];
+  const secondCache = [createCacheEntry('second')];
+  const updates: Array<SerializedProjectedGraphLayoutCacheEntry[] | undefined> = [];
+  const warnings: string[] = [];
+  let currentCache = firstCache;
+  let failNextUpdate = true;
+  const state: ProjectedGraphLayoutCacheState = {
+    get(_key, defaultValue) {
+      return defaultValue;
+    },
+    async update(_key, value) {
+      updates.push(value);
+      if (failNextUpdate) {
+        failNextUpdate = false;
+        throw new Error('Workspace state is temporarily unavailable.');
+      }
+    }
+  };
+  const persistence = new ProjectedGraphLayoutCachePersistence(
+    state,
+    createServices({
+      serializeCache() {
+        return currentCache;
+      },
+      warn(message) {
+        warnings.push(message);
+      }
+    })
+  );
+
+  await persistence.persist();
+  currentCache = secondCache;
+  await persistence.persist();
+
+  assert.deepEqual(updates, [firstCache, undefined, secondCache]);
+  assert.deepEqual(warnings, ['Failed to persist the revision graph layout cache.']);
+});
+
+test('ProjectedGraphLayoutCachePersistence flush waits for active writes and persists the latest snapshot', async () => {
+  const firstCache = [createCacheEntry('first')];
+  const latestCache = [createCacheEntry('latest')];
+  const firstUpdate = createDeferred<void>();
+  const updates: Array<SerializedProjectedGraphLayoutCacheEntry[] | undefined> = [];
+  let currentCache = firstCache;
+  const state: ProjectedGraphLayoutCacheState = {
+    get(_key, defaultValue) {
+      return defaultValue;
+    },
+    async update(_key, value) {
+      updates.push(value);
+      if (updates.length === 1) {
+        await firstUpdate.promise;
+      }
+    }
+  };
+  const persistence = new ProjectedGraphLayoutCachePersistence(
+    state,
+    createServices({
+      serializeCache() {
+        return currentCache;
+      }
+    })
+  );
+
+  const firstPersist = persistence.persist();
+  await Promise.resolve();
+  currentCache = latestCache;
+  const flush = persistence.flush();
+  let flushed = false;
+  void flush.then(() => {
+    flushed = true;
+  });
+  await Promise.resolve();
+
+  assert.equal(flushed, false);
+  assert.deepEqual(updates, [firstCache]);
+
+  firstUpdate.resolve(undefined);
+  await Promise.all([firstPersist, flush]);
+
+  assert.equal(flushed, true);
+  assert.deepEqual(updates, [firstCache, latestCache]);
+});
+
 function createCacheEntry(key: string): SerializedProjectedGraphLayoutCacheEntry {
   return {
     key,
@@ -207,4 +369,15 @@ function createServices(
     warn() {},
     ...overrides
   };
+}
+
+function createDeferred<T>(): {
+  readonly promise: Promise<T>;
+  resolve(value: T): void;
+} {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
 }

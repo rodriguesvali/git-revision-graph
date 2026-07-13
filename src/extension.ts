@@ -29,6 +29,7 @@ import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWar
 
 const GIT_EXTENSION_CONFIG_SECTION = 'git';
 const GIT_PATH_CONFIG_KEY = 'path';
+let activeLayoutCachePersistence: ProjectedGraphLayoutCachePersistence | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   syncConfiguredGitExecutablePath();
@@ -42,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 
   const layoutCachePersistence = new ProjectedGraphLayoutCachePersistence(context.workspaceState);
+  activeLayoutCachePersistence = layoutCachePersistence;
   layoutCachePersistence.restore();
 
   const backend = createRevisionGraphBackend();
@@ -163,7 +165,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 }
 
-export function deactivate(): void {}
+export async function deactivate(): Promise<void> {
+  const layoutCachePersistence = activeLayoutCachePersistence;
+  activeLayoutCachePersistence = undefined;
+  await layoutCachePersistence?.flush();
+}
 
 function syncConfiguredGitExecutablePath(): void {
   const gitPath = vscode.workspace
