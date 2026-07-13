@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-const PROJECT_ROOT = path.resolve(__dirname, '..');
+const PROJECT_ROOT = path.resolve(process.cwd());
 const SOURCE_ROOT = path.join(PROJECT_ROOT, 'src');
 const CRITICAL_REVISION_GRAPH_BOUNDARIES = [
   'src/revisionGraph/source/graphGit.ts',
@@ -11,6 +11,10 @@ const CRITICAL_REVISION_GRAPH_BOUNDARIES = [
   'src/revisionGraphData.ts',
   'src/revisionGraph/webview/shared.ts'
 ];
+const WEBVIEW_ENVIRONMENT_PATH = path.join(
+  PROJECT_ROOT,
+  'src/revisionGraph/webview/runtime/environment.d.ts'
+);
 
 test('revision graph type boundary modules do not form import cycles', () => {
   const graph = buildSourceImportGraph();
@@ -23,6 +27,30 @@ test('revision graph type boundary modules do not form import cycles', () => {
       `Expected no import cycle from ${boundary}, found ${cycle?.join(' -> ')}`
     );
   }
+});
+
+test('revision graph webview environment does not weaken standard browser globals', () => {
+  const source = readFileSync(WEBVIEW_ENVIRONMENT_PATH, 'utf8');
+  const browserGlobals = [
+    'window',
+    'document',
+    'console',
+    'performance',
+    'requestAnimationFrame',
+    'cancelAnimationFrame',
+    'setTimeout',
+    'clearTimeout'
+  ];
+
+  for (const globalName of browserGlobals) {
+    assert.doesNotMatch(
+      source,
+      new RegExp(`declare\\s+(?:const|let|var)\\s+${globalName}\\b`),
+      `${globalName} must use the standard DOM library type.`
+    );
+  }
+  assert.match(source, /declare function acquireVsCodeApi\(\): RevisionGraphRuntimeVsCodeApi;/);
+  assert.doesNotMatch(source, /:\s*any\b/);
 });
 
 function buildSourceImportGraph(): Map<string, readonly string[]> {

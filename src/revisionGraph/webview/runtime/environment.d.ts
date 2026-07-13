@@ -1,7 +1,7 @@
 /**
- * Browser globals are deliberately isolated from the extension-host target.
- * The runtime progressively replaces these compatibility surfaces with narrow
- * DOM adapters; no Node.js or VS Code extension API types leak into this build.
+ * The VS Code bridge is the only browser global not supplied by the standard
+ * DOM library. Keeping it here prevents VS Code extension-host types from
+ * leaking into the webview runtime.
  */
 interface RevisionGraphWebviewApi<
   State extends Record<string, unknown> = Record<string, unknown>,
@@ -24,11 +24,3 @@ type RevisionGraphRuntimeVsCodeApi = RevisionGraphWebviewApi<
 >;
 
 declare function acquireVsCodeApi(): RevisionGraphRuntimeVsCodeApi;
-declare const window: any;
-declare const document: any;
-declare const console: any;
-declare const performance: any;
-declare const requestAnimationFrame: any;
-declare const cancelAnimationFrame: any;
-declare const setTimeout: any;
-declare const clearTimeout: any;
