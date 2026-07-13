@@ -24,7 +24,6 @@ import type { RevisionGraphSnapshot } from './source/graphSnapshot';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
 import {
   createDefaultRevisionGraphProjectionOptions,
-  RemoteTagPublicationState,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -33,10 +32,6 @@ import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
 import { ShowLogPresenter } from '../showLogView';
-import {
-  RemoteTagPublicationRequestContext,
-  isRemoteTagPublicationStateResponseCurrent
-} from './remoteTagState';
 import {
   RevisionGraphFetchWorkflowHost,
   runRevisionGraphFetchWorkflow
@@ -50,7 +45,6 @@ import {
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
   createRevisionGraphLoadingMessage,
-  createRevisionGraphRemoteTagStateMessage,
   createRevisionGraphUpdateStateMessage
 } from './hostMessages';
 import {
@@ -68,16 +62,8 @@ import {
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
-import type { FlowConfigSource, FlowGovernanceSettings, FlowStartBranchKind } from './flow';
-import {
-  applyFlowGovernanceOptionsUpdate,
-  FlowConfigPersistenceCoordinator,
-  FlowGovernanceOptionsUpdate,
-  prepareFlowEqualizationBranch,
-  resolveFlowConfigForRepository,
-  startFlowBranch
-} from './flow';
-import { RevisionGraphFlowPullRequestWorkflow } from './flow/pullRequestWorkflow';
+import { RevisionGraphFlowGovernanceWorkflow } from './flow/governanceWorkflow';
+import { RevisionGraphRemoteTagStatePublisher } from './remoteTagStatePublisher';
 
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -192,8 +178,8 @@ export class RevisionGraphController implements vscode.Disposable {
   private commitShortStatAbortController = new AbortController();
   private readonly mutationCoordinator: RepositoryMutationCoordinator;
   private readonly ownsMutationCoordinator: boolean;
-  private readonly flowConfigPersistence = new FlowConfigPersistenceCoordinator();
-  private readonly flowPullRequestWorkflow: RevisionGraphFlowPullRequestWorkflow;
+  private readonly flowGovernanceWorkflow: RevisionGraphFlowGovernanceWorkflow;
+  private readonly remoteTagStatePublisher: RevisionGraphRemoteTagStatePublisher;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -249,9 +235,18 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       compareResultsPresenter
     );
-    this.flowPullRequestWorkflow = new RevisionGraphFlowPullRequestWorkflow({
+    this.flowGovernanceWorkflow = new RevisionGraphFlowGovernanceWorkflow({
       actionServices: this.actionServices,
       mutationCoordinator: this.mutationCoordinator,
+      getCurrentRepository: () => this.currentRepository,
+      getCurrentState: () => this.currentState,
+      setCurrentState: (state) => {
+        this.currentState = state;
+      },
+      postCurrentState: () => this.postCurrentState(),
+      postHostMessage: (message) => this.postHostMessage(message)
+    });
+    this.remoteTagStatePublisher = new RevisionGraphRemoteTagStatePublisher({
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
       postHostMessage: (message) => this.postHostMessage(message)
@@ -292,22 +287,22 @@ export class RevisionGraphController implements vscode.Disposable {
         this.postCurrentState();
       },
       updateFlowGovernanceOptions: async (options) => {
-        await this.updateFlowGovernanceOptions(options);
+        await this.flowGovernanceWorkflow.updateOptions(options);
       },
       startFlowBranch: async (branchKind, sourceRefName, name, description) => {
-        await this.startFlowBranch(branchKind, sourceRefName, name, description);
+        await this.flowGovernanceWorkflow.startBranch(branchKind, sourceRefName, name, description);
       },
       prepareFlowEqualization: async (targetRefName, originRefName, description) => {
-        await this.prepareFlowEqualization(targetRefName, originRefName, description);
+        await this.flowGovernanceWorkflow.prepareEqualization(targetRefName, originRefName, description);
       },
       copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
-        await this.flowPullRequestWorkflow.copyContext(sourceRefName, targetRefName);
+        await this.flowGovernanceWorkflow.copyPullRequestContext(sourceRefName, targetRefName);
       },
       copyFlowPullRequestContextField: async (sourceRefName, targetRefName, field) => {
-        await this.flowPullRequestWorkflow.copyContextField(sourceRefName, targetRefName, field);
+        await this.flowGovernanceWorkflow.copyPullRequestContextField(sourceRefName, targetRefName, field);
       },
       openFlowPullRequestUrl: async (sourceRefName, targetRefName) => {
-        await this.flowPullRequestWorkflow.openUrl(sourceRefName, targetRefName);
+        await this.flowGovernanceWorkflow.openPullRequestUrl(sourceRefName, targetRefName);
       },
       clearLayoutCache: () => {
         return this.clearLayoutCache();
@@ -316,9 +311,9 @@ export class RevisionGraphController implements vscode.Disposable {
         this.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
       },
       createRemoteTagPublicationRequestContext: (repository) =>
-        this.createRemoteTagPublicationRequestContext(repository),
+        this.remoteTagStatePublisher.createRequestContext(repository),
       postRemoteTagStateIfCurrent: (requestContext, tagName, state) => {
-        this.postRemoteTagStateIfCurrent(requestContext, tagName, state);
+        this.remoteTagStatePublisher.postIfCurrent(requestContext, tagName, state);
       },
       runRepositoryMutation: async (repository, action) => {
         const outcome = await runGuardedRepositoryMutation(
@@ -489,7 +484,7 @@ export class RevisionGraphController implements vscode.Disposable {
     const repositoryPath = this.currentRepository.rootUri.fsPath;
     const trace = this.loadTrace.createSink(repositoryPath, renderRequest.intent, renderRequest.requestId);
     const reusableSnapshot = this.resolveReusableGraphSnapshot(repositoryPath, renderRequest.intent);
-    const flowGovernanceSettings = this.resolveFlowGovernanceSettings(this.currentRepository);
+    const flowGovernanceSettings = this.flowGovernanceWorkflow.resolveSettings(this.currentRepository);
     trace?.({
       phase: 'state.snapshotReuse',
       durationMs: 0,
@@ -555,118 +550,6 @@ export class RevisionGraphController implements vscode.Disposable {
     return this.resolveReusableGraphSnapshot(this.currentRepository.rootUri.fsPath, intent)
       ? 'projection-only'
       : 'full-rebuild';
-  }
-
-  private resolveFlowGovernanceSettings(repository: Repository): FlowGovernanceSettings {
-    const config = vscode.workspace.getConfiguration('gitRevisionGraph.flowGovernance', repository.rootUri);
-    return {
-      enabled: config.get<boolean>('enabled'),
-      configPath: config.get<string>('configPath')
-    };
-  }
-
-  private async updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void> {
-    const flowGovernance = this.currentState.flowGovernance;
-    if (this.currentState.viewMode !== 'ready' || !flowGovernance) {
-      return;
-    }
-
-    const repository = this.currentRepository;
-    const configSource = flowGovernance.configSource;
-    const settings = repository ? this.resolveFlowGovernanceSettings(repository) : undefined;
-    this.currentState = {
-      ...this.currentState,
-      flowGovernance: applyFlowGovernanceOptionsUpdate(flowGovernance, options)
-    };
-    this.postCurrentState();
-
-    await this.persistFlowGovernanceOptions(repository, settings, configSource, options);
-  }
-
-  private async persistFlowGovernanceOptions(
-    repository: Repository | undefined,
-    settings: FlowGovernanceSettings | undefined,
-    configSource: FlowConfigSource,
-    options: FlowGovernanceOptionsUpdate
-  ): Promise<void> {
-    if (!repository || configSource !== 'repository' || !hasPersistableFlowGovernanceOptions(options)) {
-      return;
-    }
-
-    const result = await this.flowConfigPersistence.enqueue(
-      repository.rootUri.fsPath,
-      settings,
-      options
-    );
-    if (!result.ok) {
-      void vscode.window.showWarningMessage(
-        `Could not update Flow Governance config: ${result.issue.message}`
-      );
-    }
-  }
-
-  private async startFlowBranch(
-    branchKind: FlowStartBranchKind,
-    sourceRefName: string,
-    name: string,
-    description: string | undefined
-  ): Promise<void> {
-    const repository = this.currentRepository;
-    if (!repository) {
-      return;
-    }
-
-    const settings = this.resolveFlowGovernanceSettings(repository);
-    const flowConfig = await resolveFlowConfigForRepository(repository.rootUri.fsPath, settings);
-    if (!flowConfig.ok || !flowConfig.config.enabled) {
-      this.actionServices.ui.showWarningMessage('Flow Governance is not available for this repository.');
-      return;
-    }
-
-    const outcome = await runGuardedRepositoryMutation(
-      this.mutationCoordinator,
-      repository,
-      this.actionServices,
-      (guardedRepository, services) => startFlowBranch(
-        guardedRepository,
-        {
-          kind: branchKind,
-          sourceBranch: sourceRefName,
-          name,
-          config: flowConfig.config,
-          ...(description !== undefined ? { description } : {})
-        },
-        services
-      )
-    );
-    if (outcome.status === 'rejected') {
-      this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
-    }
-  }
-
-  private async prepareFlowEqualization(
-    targetRefName: string,
-    originRefName: string,
-    description: string
-  ): Promise<void> {
-    const repository = this.currentRepository;
-    if (!repository) {
-      return;
-    }
-
-    const outcome = await runGuardedRepositoryMutation(
-      this.mutationCoordinator,
-      repository,
-      this.actionServices,
-      (guardedRepository, services) => prepareFlowEqualizationBranch(
-          guardedRepository,
-          { targetBranch: targetRefName, originBranch: originRefName, description },
-          services
-        )
-    );
-    if (outcome.status === 'rejected') {
-      this.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
-    }
   }
 
   private isRenderRequestCurrent(renderRequest: RevisionGraphRenderRequestContext): boolean {
@@ -810,31 +693,6 @@ export class RevisionGraphController implements vscode.Disposable {
     return this.repositoryLifecycle.createCurrentRepositoryRefreshRequest(intent);
   }
 
-  private createRemoteTagPublicationRequestContext(
-    repository: Repository
-  ): RemoteTagPublicationRequestContext {
-    return {
-      repositoryPath: repository.rootUri.fsPath,
-      state: this.currentState
-    };
-  }
-
-  private postRemoteTagStateIfCurrent(
-    requestContext: RemoteTagPublicationRequestContext,
-    tagName: string,
-    state: RemoteTagPublicationState
-  ): void {
-    if (!isRemoteTagPublicationStateResponseCurrent(
-      requestContext,
-      this.currentRepository?.rootUri.fsPath,
-      this.currentState
-    )) {
-      return;
-    }
-
-    this.postHostMessage(createRevisionGraphRemoteTagStateMessage(tagName, state));
-  }
-
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
     void this.view?.webview.postMessage(this.loadTrace.withHostTraceContext(message));
   }
@@ -905,8 +763,4 @@ export class RevisionGraphController implements vscode.Disposable {
   ): void {
     this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
   }
-}
-
-function hasPersistableFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): boolean {
-  return options.enabled !== undefined;
 }
