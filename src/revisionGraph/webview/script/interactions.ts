@@ -627,7 +627,6 @@
       dialog.title.textContent = copy.title;
       dialog.submitButton.textContent = copy.submitLabel;
       const usesStructuredName = branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
-      const requiresDescription = branchKind === 'bug' || branchKind === 'hotfix';
       dialog.nameLabel.hidden = usesStructuredName;
       dialog.nameInput.required = !usesStructuredName;
       dialog.nameInput.setAttribute('aria-required', String(!usesStructuredName));
@@ -641,9 +640,7 @@
       dialog.shortNameLabel.hidden = !usesStructuredName;
       dialog.shortNameInput.required = usesStructuredName;
       dialog.shortNameInput.setAttribute('aria-required', String(usesStructuredName));
-      dialog.descriptionText.textContent = requiresDescription ? 'Description *' : 'Description';
-      dialog.descriptionInput.required = requiresDescription;
-      dialog.descriptionInput.setAttribute('aria-required', String(requiresDescription));
+      dialog.descriptionText.textContent = 'Description *';
       dialog.nameInput.value = '';
       dialog.taskDevInput.value = '';
       dialog.shortNameInput.value = '';
@@ -736,10 +733,12 @@
         descriptionLabel.setAttribute('for', 'flowBranchDescriptionInput');
         const descriptionText = document.createElement('span');
         descriptionText.className = 'flow-form-label';
-        descriptionText.textContent = 'Description';
+        descriptionText.textContent = 'Description *';
         const descriptionInput = document.createElement('textarea');
         descriptionInput.id = 'flowBranchDescriptionInput';
         descriptionInput.className = 'flow-form-input flow-form-textarea';
+        descriptionInput.required = true;
+        descriptionInput.setAttribute('aria-required', 'true');
         descriptionInput.maxLength = 2048;
         descriptionLabel.appendChild(descriptionText);
         descriptionLabel.appendChild(descriptionInput);
@@ -816,7 +815,7 @@
             dialog.nameInput.focus();
             return;
           }
-          if ((branchKind === 'bug' || branchKind === 'hotfix') && !description) {
+          if (!description) {
             setFlowBranchDialogError(dialog, 'Description is required.');
             dialog.descriptionInput.focus();
             return;

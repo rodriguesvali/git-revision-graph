@@ -36,7 +36,7 @@ export type RevisionGraphMessage =
     readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
-    readonly description?: string;
+    readonly description: string;
   }
   | {
     readonly type: 'prepare-flow-equalization';

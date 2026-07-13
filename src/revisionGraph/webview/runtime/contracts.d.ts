@@ -81,7 +81,7 @@ type RevisionGraphWebviewMessage =
   | { readonly type: 'abort-merge' }
   | { readonly type: 'set-projection-options'; readonly options: RevisionGraphWebviewProjectionOptions }
   | { readonly type: 'set-flow-governance-options'; readonly options: RevisionGraphWebviewFlowGovernanceOptions }
-  | { readonly type: 'start-flow-branch'; readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'; readonly sourceRefName: string; readonly name: string; readonly description?: string }
+  | { readonly type: 'start-flow-branch'; readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'; readonly sourceRefName: string; readonly name: string; readonly description: string }
   | { readonly type: 'prepare-flow-equalization'; readonly targetRefName: string; readonly originRefName: string; readonly description: string }
   | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
   | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }

@@ -99,7 +99,7 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
-    readonly description: string | undefined;
+    readonly description: string;
   }> = [];
   const handler = new RevisionGraphMessageHandler(createHost({
     async startFlowBranch(branchKind, sourceRefName, name, description) {
@@ -118,7 +118,8 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     type: 'start-flow-branch',
     branchKind: 'feature',
     sourceRefName: 'main',
-    name: 'checkout-redesign'
+    name: 'checkout-redesign',
+    description: 'Redesign the checkout experience'
   });
   await handler.handleMessage({
     type: 'start-flow-branch',
@@ -153,7 +154,7 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
       branchKind: 'feature',
       sourceRefName: 'main',
       name: 'checkout-redesign',
-      description: undefined
+      description: 'Redesign the checkout experience'
     },
     {
       branchKind: 'task',

@@ -86,7 +86,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
     branchKind: FlowStartBranchKind,
     sourceRefName: string,
     name: string,
-    description: string | undefined
+    description: string
   ): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository) {
@@ -113,7 +113,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
           sourceBranch: sourceRefName,
           name,
           config: flowConfig.config,
-          ...(description !== undefined ? { description } : {})
+          description
         },
         services
       )

@@ -71,23 +71,15 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
           || message.branchKind === 'bug'
           || message.branchKind === 'hotfix')
         && isBoundedNonEmptyString(message.name, 240)
-        && (message.branchKind === 'bug' || message.branchKind === 'hotfix'
-          ? isBoundedNonEmptyString(message.description, 2048)
-          : message.description === undefined || isBoundedString(message.description, 2048))
-        ? message.description === undefined
-          ? {
-            type: 'start-flow-branch',
-            branchKind: message.branchKind,
-            sourceRefName: message.sourceRefName,
-            name: message.name
-          }
-          : {
-            type: 'start-flow-branch',
-            branchKind: message.branchKind,
-            sourceRefName: message.sourceRefName,
-            name: message.name,
-            description: message.description as string
-          }
+        && isBoundedNonEmptyString(message.description, 2048)
+        && message.description.trim().length > 0
+        ? {
+          type: 'start-flow-branch',
+          branchKind: message.branchKind,
+          sourceRefName: message.sourceRefName,
+          name: message.name,
+          description: message.description
+        }
         : undefined;
     case 'prepare-flow-equalization':
       return isBoundedNonEmptyString(message.targetRefName)

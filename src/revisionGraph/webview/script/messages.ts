@@ -54,18 +54,15 @@
       target: RevisionGraphWebviewTarget,
       branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
       name: string,
-      description: string | undefined
+      description: string
     ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
-      const message: { type: 'start-flow-branch'; branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'; sourceRefName: string; name: string; description?: string } = {
+      return {
         type: 'start-flow-branch',
         branchKind: branchKind,
         sourceRefName: target.name,
-        name: name
+        name: name,
+        description: description
       };
-      if (description) {
-        message.description = description;
-      }
-      return message;
     }
 
     function createRevisionGraphPrepareFlowEqualizationMessage(

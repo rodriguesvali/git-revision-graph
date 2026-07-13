@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 - Added a first-position `Flow Governance` submenu on classified refs. `Start New Release` and
   `Start New Feature` now share a name/description form and create local branches from `main`
   using the configured release or feature pattern.
+- Made `Description` mandatory when starting release, feature, task, bug, or hotfix branches,
+  with matching validation in the webview and extension host.
 - Expanded reference cards using their branch-name length plus reserved badge space, keeping
   longer governed branch names visible while retaining ellipsis for exceptional names.
 - Added `Start New Task` to the Flow Governance submenu for feature branches. Its shared form

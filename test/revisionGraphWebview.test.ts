@@ -647,14 +647,15 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /taskDevText\.textContent = 'Dev Task \*';/);
   assert.match(html, /shortNameText\.textContent = 'Short name \*';/);
   assert.match(html, /branchKind === 'bug'[\s\S]*?'Bug ID \*'[\s\S]*?branchKind === 'hotfix' \? 'Hotfix ID \*' : 'Dev Task \*'/);
-  assert.match(html, /const requiresDescription = branchKind === 'bug' \|\| branchKind === 'hotfix'/);
-  assert.match(html, /\(branchKind === 'bug' \|\| branchKind === 'hotfix'\) && !description/);
+  assert.match(html, /if \(!description\)/);
   assert.match(html, /taskDev \+ '-' \+ shortName/);
   assert.match(html, /!\/\^\[0-9\]\+\$\/\.test\(taskDev\)/);
   assert.match(html, /function getFlowBranchDialogCopy\(branchKind\)/);
   assert.match(html, /nameText\.textContent = 'Name \*';/);
   assert.match(html, /nameInput\.setAttribute\('aria-required', 'true'\);/);
-  assert.match(html, /descriptionText\.textContent = 'Description';/);
+  assert.match(html, /descriptionText\.textContent = 'Description \*';/);
+  assert.match(html, /descriptionInput\.required = true;/);
+  assert.match(html, /descriptionInput\.setAttribute\('aria-required', 'true'\);/);
   assert.match(html, /vscode\.postMessage\(createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)\);/);
   assert.match(html, /function showFlowEqualizationForm\(target\)/);
   assert.match(html, /originText\.textContent = 'Origin branch \*';/);

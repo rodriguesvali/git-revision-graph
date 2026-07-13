@@ -94,6 +94,7 @@ test('Flow Governance starts a local release branch from main', async () => {
   await startFlowReleaseBranch(repository, {
     sourceBranch: 'main',
     name: '2.0.0',
+    description: 'Prepare the 2.0.0 release train',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -118,6 +119,7 @@ test('Flow Governance starts a local feature branch from main', async () => {
     kind: 'feature',
     sourceBranch: 'main',
     name: 'checkout-redesign',
+    description: 'Redesign the checkout experience',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -129,6 +131,22 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.deepEqual(upstreamClears, ['feature/checkout-redesign']);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
+});
+
+test('Flow Governance refuses any flow branch without a description before mutation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = createReleaseServices({ errors });
+
+  await startFlowReleaseBranch(repository, {
+    sourceBranch: 'main',
+    name: '2.0.0',
+    description: '   ',
+    config: DEFAULT_FLOW_CONFIG
+  }, services);
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.match(errors[0] ?? '', /Description is required/);
 });
 
 test('Flow Governance offers to publish a newly created branch and sets upstream', async () => {
@@ -146,6 +164,7 @@ test('Flow Governance offers to publish a newly created branch and sets upstream
     kind: 'feature',
     sourceBranch: 'main',
     name: 'checkout-redesign',
+    description: 'Redesign the checkout experience',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -172,6 +191,7 @@ test('Flow Governance lets the user choose the publication remote', async () => 
   await startFlowReleaseBranch(repository, {
     sourceBranch: 'main',
     name: '2.0.0',
+    description: 'Prepare the 2.0.0 release train',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -191,6 +211,7 @@ test('Flow Governance keeps a newly created branch local when publication is dec
     kind: 'task',
     sourceBranch: 'feature/checkout-redesign',
     name: '4312-adjust-timeout',
+    description: 'Keep checkout requests bounded',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -211,6 +232,7 @@ test('Flow Governance keeps a newly created branch local when no remote is confi
     kind: 'feature',
     sourceBranch: 'main',
     name: 'checkout-redesign',
+    description: 'Redesign the checkout experience',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -236,6 +258,7 @@ test('Flow Governance preserves the local branch when publication fails', async 
     kind: 'feature',
     sourceBranch: 'main',
     name: 'checkout-redesign',
+    description: 'Redesign the checkout experience',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 
@@ -366,6 +389,7 @@ test('Flow Governance refuses an existing release branch before mutation', async
   await startFlowReleaseBranch(repository, {
     sourceBranch: 'main',
     name: '2.0.0',
+    description: 'Prepare the 2.0.0 release train',
     config: DEFAULT_FLOW_CONFIG
   }, services);
 

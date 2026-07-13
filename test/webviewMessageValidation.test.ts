@@ -61,6 +61,20 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
+      branchKind: 'feature',
+      sourceRefName: 'main',
+      name: 'checkout-redesign',
+      description: '   '
+    }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({
       type: 'start-flow-branch',
       branchKind: 'hotfix',
@@ -432,13 +446,15 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       type: 'start-flow-branch',
       branchKind: 'feature',
       sourceRefName: 'main',
-      name: 'checkout-redesign'
+      name: 'checkout-redesign',
+      description: 'Redesign the checkout experience'
     }),
     {
       type: 'start-flow-branch',
       branchKind: 'feature',
       sourceRefName: 'main',
-      name: 'checkout-redesign'
+      name: 'checkout-redesign',
+      description: 'Redesign the checkout experience'
     }
   );
   assert.deepEqual(
@@ -852,21 +868,21 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0' },
+      { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0', description: 'Release train' },
       governedFlowState
     ),
     true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'start-flow-branch', branchKind: 'feature', sourceRefName: 'main', name: 'checkout-redesign' },
+      { type: 'start-flow-branch', branchKind: 'feature', sourceRefName: 'main', name: 'checkout-redesign', description: 'Redesign checkout' },
       governedFlowState
     ),
     true
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'feature/demo', name: '4312-adjust-timeout' },
+      { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'feature/demo', name: '4312-adjust-timeout', description: 'Adjust request timeout' },
       governedFlowState
     ),
     true
@@ -956,14 +972,14 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   }
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'main', name: '4312-adjust-timeout' },
+      { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'main', name: '4312-adjust-timeout', description: 'Adjust request timeout' },
       governedFlowState
     ),
     false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'release/1.0.0', name: '2.0.0' },
+      { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'release/1.0.0', name: '2.0.0', description: 'Release train' },
       governedFlowState
     ),
     false

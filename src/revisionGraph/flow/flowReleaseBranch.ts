@@ -20,7 +20,7 @@ export interface StartFlowBranchOptions {
   readonly kind: FlowStartBranchKind;
   readonly sourceBranch: string;
   readonly name: string;
-  readonly description?: string;
+  readonly description: string;
   readonly config: NormalizedFlowConfig;
 }
 
@@ -82,7 +82,7 @@ export async function startFlowBranch(
     return;
   }
 
-  if ((options.kind === 'bug' || options.kind === 'hotfix') && !options.description?.trim()) {
+  if (!options.description.trim()) {
     await services.ui.showErrorMessage(`Could not start the ${options.kind}. Description is required.`);
     return;
   }
@@ -99,15 +99,13 @@ export async function startFlowBranch(
     await repository.createBranch(branchName, true, options.sourceBranch);
     branchCreated = true;
     await services.referenceManager.unsetBranchUpstream(repository, branchName);
-    const description = options.description?.trim();
-    if (description) {
-      try {
-        await setFlowBranchDescription(repository.rootUri.fsPath, branchName, description);
-      } catch (error) {
-        await services.ui.showWarningMessage(
-          toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error)
-        );
-      }
+    const description = options.description.trim();
+    try {
+      await setFlowBranchDescription(repository.rootUri.fsPath, branchName, description);
+    } catch (error) {
+      await services.ui.showWarningMessage(
+        toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error)
+      );
     }
 
     await offerFlowBranchPublication(repository, branchName, branchKindLabel, options.sourceBranch, services);

@@ -44,7 +44,7 @@ export interface RevisionGraphMessageHandlerHost
     branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string,
     name: string,
-    description: string | undefined
+    description: string
   ): Promise<void>;
   prepareFlowEqualization(targetRefName: string, originRefName: string, description: string): Promise<void>;
   copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;

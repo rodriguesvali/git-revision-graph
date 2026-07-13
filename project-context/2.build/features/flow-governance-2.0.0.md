@@ -21,12 +21,12 @@ from an active release.
    or focusing that item reveals `Start New Release`, `Start New Feature`, and
    `Start New Hot Fix`.
 5. The user chooses `Start New Release` or `Start New Feature`, fills the
-   required name and optional description, and confirms.
+   required name and description, and confirms.
 6. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
-   saves the description as Git branch metadata when provided.
+   saves the description as Git branch metadata.
 7. From a feature branch, the user can choose `Flow Governance > Start New Task`,
-   enter the required Dev Task number and short name plus an optional description,
+   enter the required Dev Task number, short name, and description,
    and create a task branch named from `<task-dev>-<short-name>` through
    `patterns.task`.
 8. From a release or feature branch, the user can choose
@@ -103,7 +103,7 @@ from an active release.
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
 - `Start New Release` and `Start New Feature` share a required-name and
-  optional-description form, validate the resulting branch against
+  required-description form, validate the resulting branch against
   `patterns.release` or `patterns.feature`, create a local branch from `main`,
   and never push automatically.
 - `Start New Hot Fix` is available from a branch classified as `main`. Its form
@@ -112,8 +112,8 @@ from an active release.
   `patterns.hotfix`, creates and checks out the local branch from `main`, stores
   its description, and never pushes automatically.
 - A branch classified as `feature` shows `Flow Governance > Start New Task`.
-  Its form requires a numeric Dev Task and a short name, accepts an optional
-  description, combines the values as `<task-dev>-<short-name>`, validates the
+  Its form requires a numeric Dev Task, a short name, and a description,
+  combines the values as `<task-dev>-<short-name>`, validates the
   result through `patterns.task`, and creates the local branch from that feature.
 - Branches classified as `release` or `feature` show
   `Flow Governance > Start New Bug`. Its form requires a Bug ID, short name, and
@@ -375,7 +375,7 @@ from an active release.
 - Enable Flow Governance with a repository config file.
 - Verify `Start New Release` and `Start New Feature` from the `main` Flow
   Governance submenu create local branches through the shared required-name and
-  optional-description form.
+  required-description form.
 - Verify `Start New Hot Fix` from the `main` Flow Governance submenu requires
   Hotfix ID, short name, and description, then creates and checks out
   `hotfix/<hotfix-id>-<short-name>` and offers to publish it.
@@ -418,9 +418,9 @@ from an active release.
   and performs no push.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
-- On a feature branch, verify `Start New Task` requires a numeric Dev Task and
-  ShortName, creates `task/<task-dev>-<short-name>` from that feature under the
-  default configuration, and stores an optional description.
+- On a feature branch, verify `Start New Task` requires a numeric Dev Task,
+  ShortName, and description; creates `task/<task-dev>-<short-name>` from that
+  feature under the default configuration; and stores the description.
 - Hover and keyboard-focus refs with and without descriptions, including refs
   near viewport edges, and verify the tooltip remains legible without covering
   the selected reference.
