@@ -1,7 +1,7 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-07-02
+Last updated: 2026-07-13
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
@@ -10,6 +10,7 @@ risking user work.
 ## Preconditions
 
 - `npm run build` has passed.
+- `npm run quality:check` has passed.
 - `npm test` has passed for behavior-affecting changes.
 - The Extension Development Host is launched from the current workspace.
 - At least one disposable Git repository is available with:

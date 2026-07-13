@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-07-09
+Last consolidated: 2026-07-13
 
 ## Current State
 
@@ -14,10 +14,22 @@ Last consolidated: 2026-07-09
 
 ## Open Release Candidate: Flow Governance 2.0.0
 
-Status: Build complete; 1.5.9 integration verification and manual operational smoke pending
+Status: Automated source verification current; final candidate smoke and approved package inspection pending
 Opened: 2026-07-01
-Baseline package version: `1.5.9`
+Published baseline version: `1.5.9`
 Target version: `2.0.0`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
+| Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
+| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check`, `npm run build`, `npm test` (680 tests), and `git diff --check`. |
+| Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
+| VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
+| Marketplace publication | Not authorized | Publish only after explicit maintainer approval and after all preceding gates pass. Record publication timestamp and installed-version evidence if authorized. |
+| Rollback readiness | Documented | Candidate-specific and standard rollback notes are recorded below; no rollback action is currently required. |
 
 Focused build artifact:
 
@@ -50,7 +62,9 @@ Explicitly out of scope:
 
 - Provider-authenticated PR creation, cleanup actions, bulk branch deletion, full release
   automation, and additional provider APIs.
-- Git mutations other than explicit creation of the repository flow config after confirmation.
+- Background or unconfirmed Git mutations. Flow branch creation, optional publication, PR-source
+  synchronization, and equalization remain explicit user actions protected by existing
+  confirmations, clean-workspace/conflict guards, and per-repository mutation coordination.
 - Automatic push, final governed direct merges, or automatic conflict resolution.
 - New views, menus, activation events, runtime dependencies, packaging, publication, or version bump.
 
@@ -68,6 +82,7 @@ Release constraints:
 
 Planned verification:
 
+- `npm run quality:check`
 - `npm run build`
 - `npm test`
 - `git diff --check`
@@ -76,6 +91,10 @@ Planned verification:
 
 Recorded verification:
 
+- Current automated source verification passed on 2026-07-13 with `npm run quality:check`
+  (203 production files and 1,969 functions), `npm run build`, `npm test` (680 tests), and
+  `git diff --check`. This closes the automated source gate only; final Extension Development Host
+  smoke and approved package inspection remain pending.
 - Typed revision-graph webview runtime migration completed on 2026-07-13. The external runtime is strictly checked without `noCheck` or a `noImplicitAny` override, its generated asset is enclosed by the named `initializeRevisionGraphWebviewRuntime` ownership boundary, and the revision-graph integration harness no longer uses `node:vm`. `npm run build`, `npm test` (657 tests), `npm run benchmark:ci`, and `git diff --check` passed; Extension Development Host smoke and approved package inspection remain release-delivery gates.
 - Flow Governance repository-config persistence is serialized per repository as of 2026-07-12. The
   webview message boundary now awaits persistence; failed writes do not block later queued writes,
