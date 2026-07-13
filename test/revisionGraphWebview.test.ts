@@ -631,6 +631,76 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.doesNotMatch(html, /base-suffix/);
 });
 
+test('builds context menu policies for branches, stashes, and remote tags', () => {
+  const runtime = createWebviewRuntime();
+  const branch = createContextMenuTarget('branch', 'feature/demo');
+  const branchPlan = createContextMenuPlan(runtime, branch);
+  const protectedBranchPlan = createContextMenuPlan(runtime, branch, {
+    publishedLocalBranchNames: new Set(['feature/demo']),
+    mergeBlockedTargets: new Set(['branch::feature/demo'])
+  });
+  const stashPlan = createContextMenuPlan(
+    runtime,
+    createContextMenuTarget('stash', 'stash@{0}')
+  );
+  const dirtyHeadPlan = createContextMenuPlan(
+    runtime,
+    createContextMenuTarget('head', 'main'),
+    { isWorkspaceDirty: true }
+  );
+  const conflictedHeadPlan = createContextMenuPlan(
+    runtime,
+    createContextMenuTarget('head', 'main'),
+    { isWorkspaceDirty: true, hasMergeConflicts: true }
+  );
+  const tag = createContextMenuTarget('tag', 'v2.0.0');
+  const loadingTagPlan = createContextMenuPlan(runtime, tag);
+  const publishedTagPlan = createContextMenuPlan(runtime, tag, {
+    remoteTagState: 'published'
+  });
+  const unpublishedTagPlan = createContextMenuPlan(runtime, tag, {
+    remoteTagState: 'unpublished'
+  });
+  const unknownTagPlan = createContextMenuPlan(runtime, tag, {
+    remoteTagState: 'unknown'
+  });
+
+  assert.deepEqual(
+    ['checkout', 'publish-branch', 'delete-ref', 'merge'].map((action) =>
+      branchPlan.items.some((item: any) => item.action === action)
+    ),
+    [true, true, true, true]
+  );
+  assert.equal(
+    protectedBranchPlan.items.some((item: any) => item.action === 'publish-branch'),
+    false
+  );
+  assert.equal(protectedBranchPlan.items.some((item: any) => item.action === 'merge'), false);
+  assert.deepEqual(
+    stashPlan.items
+      .filter((item: any) => item.action.startsWith('stash-'))
+      .map((item: any) => item.action),
+    ['stash-apply', 'stash-pop', 'stash-drop']
+  );
+  assert.equal(stashPlan.items.some((item: any) => item.action === 'create-branch'), false);
+  assert.equal(dirtyHeadPlan.items.some((item: any) => item.action === 'stash-save'), true);
+  assert.equal(conflictedHeadPlan.items.some((item: any) => item.action === 'stash-save'), false);
+  assert.equal(loadingTagPlan.shouldRequestRemoteTagState, true);
+  assert.equal(
+    loadingTagPlan.items.find((item: any) => item.action === 'remote-tag-loading')?.disabled,
+    true
+  );
+  assert.equal(
+    publishedTagPlan.items.some((item: any) => item.action === 'delete-remote-tag'),
+    true
+  );
+  assert.equal(unpublishedTagPlan.items.some((item: any) => item.action === 'push-tag'), true);
+  assert.equal(
+    unknownTagPlan.items.some((item: any) => item.action === 'retry-remote-tag-state'),
+    true
+  );
+});
+
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
   const runtime = createWebviewRuntime();
@@ -1090,10 +1160,29 @@ test('builds mutually exclusive range and descendant focus messages', () => {
 
 test('renders merge abort as a HEAD context menu action only for conflicted merge state', () => {
   const html = renderRevisionGraphShellHtml();
+  const runtime = createWebviewRuntime();
+  const head = createContextMenuTarget('head', 'main');
+  const branch = createContextMenuTarget('branch', 'feature/demo');
+  const conflictedHeadPlan = createContextMenuPlan(runtime, head, {
+    hasConflictedMerge: true
+  });
+  const cleanHeadPlan = createContextMenuPlan(runtime, head);
+  const conflictedBranchPlan = createContextMenuPlan(runtime, branch, {
+    hasConflictedMerge: true
+  });
 
   assert.doesNotMatch(html, /abortMergeButton/);
-  assert.match(html, /const canAbortConflictedMerge =\s*target\.kind === 'head' &&\s*hasConflictedMerge;/s);
-  assert.match(html, /if \(canAbortConflictedMerge\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Abort Merge', \(\) => postAbortMerge\(\), \{ destructive: true \}\);/s);
+  assert.deepEqual(
+    conflictedHeadPlan.items.find((item: any) => item.action === 'abort-merge'),
+    {
+      section: 'Destructive',
+      label: 'Abort Merge',
+      action: 'abort-merge',
+      destructive: true
+    }
+  );
+  assert.equal(cleanHeadPlan.items.some((item: any) => item.action === 'abort-merge'), false);
+  assert.equal(conflictedBranchPlan.items.some((item: any) => item.action === 'abort-merge'), false);
   assert.match(html, /function postAbortMerge\(\) \{\s*postMessageWithLoading\(createRevisionGraphAbortMergeMessage\(\), 'Aborting merge\.\.\.'\);/s);
   assert.doesNotMatch(html, /\.view-controls \.toolbar-button\.destructive/);
   assert.doesNotMatch(html, /open-source-control/);
