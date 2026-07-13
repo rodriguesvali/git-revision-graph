@@ -16,6 +16,10 @@
       readonly destructive?: boolean;
       readonly disabled?: boolean;
     };
+    type RevisionGraphWebviewFlowBranchValidationError = {
+      readonly message: string;
+      readonly input: 'taskDevInput' | 'shortNameInput' | 'nameInput' | 'descriptionInput';
+    };
 
     function setZoom(zoom: number, options: { readonly preserveViewport?: boolean } = {}) {
       const shouldPreserveViewport = options.preserveViewport !== false;
@@ -246,167 +250,87 @@
 
     function openContextMenu(clientX: number, clientY: number, target: RevisionGraphWebviewTarget) {
       activeContextMenuRequest = { clientX, clientY, target };
-      const base = selected[0] ? getSelectionTarget(selected[0]) : undefined;
-      const compare = selected[1] ? getSelectionTarget(selected[1]) : undefined;
-      const targetLabel = target.label || target.name;
-      const isCurrentHead = target.kind === 'head' || (
-        target.kind === 'branch'
-        && !!currentHeadName
-        && target.name === currentHeadName
+      const selectedTargets = selected
+        .map((selectionId) => getSelectionTarget(selectionId))
+        .filter((candidate): candidate is RevisionGraphWebviewSelectionTarget => candidate !== null);
+      const comparisonTargets = getRevisionGraphWebviewContextMenuComparisonTargets(
+        selectedTargets,
+        target
       );
-      const canPublishBranch =
-        (target.kind === 'head' || target.kind === 'branch') &&
-        !publishedLocalBranchNames.has(target.name);
-      const canAbortConflictedMerge =
-        target.kind === 'head' &&
-        hasConflictedMerge;
-      const canStashCurrentWorkspace =
-        target.kind === 'head' &&
-        isWorkspaceDirty &&
-        !hasMergeConflicts;
-      const canResetToTarget =
-        target.kind !== 'head' &&
-        target.kind !== 'stash' &&
-        !(target.kind === 'branch' && !!currentHeadName && target.name === currentHeadName);
-      const hasComparisonSelection =
-        selected.length === 2 &&
-        base &&
-        compare &&
-        (
-          base.id === target.id
-          || compare.id === target.id
-          || base.hash === target.hash
-          || compare.hash === target.hash
-        );
-      const focusRangeActionLabel = hasComparisonSelection
-        ? getFocusRangeActionLabel(base, compare)
-        : null;
-      const focusDescendantsActionLabel = !hasComparisonSelection
-        ? getFocusDescendantsActionLabel(target)
-        : null;
-      const flowBranch = isFlowGovernanceActive() && target.kind !== 'commit'
-        ? getFlowBranchInfo(target.name)
-        : null;
+      const plan = createRevisionGraphWebviewContextMenuPlan({
+        target,
+        comparisonTargets,
+        currentHeadName,
+        publishedLocalBranchNames,
+        isWorkspaceDirty,
+        hasMergeConflicts,
+        hasConflictedMerge,
+        mergeBlockedTargets,
+        remoteTagState: remoteTagPublicationState.get(target.name),
+        focusRangeActionLabel: comparisonTargets
+          ? getFocusRangeActionLabel(comparisonTargets.base, comparisonTargets.compare)
+          : null,
+        focusDescendantsActionLabel: comparisonTargets
+          ? null
+          : getFocusDescendantsActionLabel(target),
+        hasSelection: selected.length > 0
+      });
+      const actionHandlers = createContextMenuActionHandlers(target, comparisonTargets);
 
       contextMenu.innerHTML = '';
-      if (hasComparisonSelection) {
-        appendMenuSection('Compare');
-        appendMenuItem('Compare', () => postCompareSelected(base, compare), { primary: true });
-        appendMenuItem('Show Log', () => postShowLogRange(base, compare));
-        appendMenuItem('Unified Diff', () => postUnifiedDiff(base, compare));
-        if (focusRangeActionLabel) {
-          appendMenuItem(focusRangeActionLabel, () => postFocusRange(base, compare));
-        }
-        appendMenuSection('Inspect');
-        appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
-        if (target.kind !== 'commit') {
-          appendMenuItem('Copy Ref Name', () => postCopyRefName(target));
-        }
-        if (canAbortConflictedMerge) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
-        }
-        if (canResetToTarget) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
-        }
-        if (canStashCurrentWorkspace) {
-          appendMenuSection('Stash');
-          appendMenuItem('Stash Save', () => postStashSave());
-        }
-        appendMenuSection('Selection');
-        appendMenuItem('Clear Selection', () => {
-          selected.splice(0, selected.length);
-          syncSelection();
-        });
-      } else {
-        appendFlowGovernanceActions(flowBranch, target);
-        appendMenuSection('Inspect');
-        appendMenuItem('Show Log', () => postShowLogTarget(target));
-        appendMenuItem('Copy Hash', () => postCopyCommitHash(target.hash));
-        if (target.kind !== 'commit') {
-          appendMenuItem('Copy Ref Name', () => postCopyRefName(target));
-        }
-        appendMenuSection('Compare');
-        appendMenuItem('Compare With Worktree', () => postCompareWithWorktree(target));
-        if (focusDescendantsActionLabel) {
-          appendMenuSection('Navigate');
-          appendMenuItem(focusDescendantsActionLabel, () => postFocusDescendants(target));
-        }
-        if (target.kind !== 'commit' && target.kind !== 'tag' && target.kind !== 'stash' && !isCurrentHead) {
-          appendMenuSection('Branch Operations');
-          appendMenuItem('Checkout to: ' + targetLabel, () => postCheckout(target));
-        }
-        if (canAbortConflictedMerge) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Abort Merge', () => postAbortMerge(), { destructive: true });
-        }
-        if (canResetToTarget) {
-          appendMenuSection('Destructive');
-          appendMenuItem('Reset to this', () => postResetToCommit(target), { destructive: true });
-        }
-        if (canStashCurrentWorkspace) {
-          appendMenuSection('Stash');
-          appendMenuItem('Stash Save', () => postStashSave());
-        }
-        if (target.kind === 'stash') {
-          appendMenuSection('Stash');
-          appendMenuItem('Stash Apply', () => postStashApply(target));
-          appendMenuItem('Stash Pop', () => postStashPop(target));
-          appendMenuSection('Destructive');
-          appendMenuItem('Remove Stash', () => postStashDrop(target), { destructive: true });
-        }
-        if (canPublishBranch) {
-          appendMenuSection('Create And Publish');
-          appendMenuItem('Publish Branch to Remote', () => postPublishBranch(target));
-        }
-        if (target.kind !== 'stash') {
-          appendMenuSection('Create And Publish');
-          appendMenuItem('Create New Branch', () => postCreateBranch(target));
-          appendMenuItem('Create Tag', () => postCreateTag(target));
-        }
-        if (target.kind === 'tag') {
-          const remoteTagState = remoteTagPublicationState.get(target.name);
-          if (remoteTagState === 'published') {
-            appendMenuSection('Destructive');
-            appendMenuItem('Delete Remote Tag', () => postDeleteRemoteTag(target), { destructive: true });
-          } else if (remoteTagState === 'unpublished') {
-            appendMenuSection('Create And Publish');
-            appendMenuItem('Push Tag to Remote', () => postPushTag(target));
-          } else if (remoteTagState === 'unknown') {
-            appendMenuSection('Create And Publish');
-            appendMenuItem('Retry Remote Tag Check', () => retryRemoteTagState(target));
-          } else {
-            appendMenuSection('Create And Publish');
-            appendMenuItem('Checking Remote Tag...', () => {}, { disabled: true });
-            requestRemoteTagState(target);
-          }
-        }
-        if (target.kind !== 'commit' && !isCurrentHead && target.kind !== 'stash') {
-          if (!(target.kind === 'remote' && target.name.endsWith('/HEAD'))) {
-            const deleteLabel = target.kind === 'tag'
-              ? 'Delete Tag: ' + targetLabel
-              : target.kind === 'remote'
-                ? 'Delete Remote Branch: ' + targetLabel
-                : 'Delete Branch: ' + targetLabel;
-            appendMenuSection('Destructive');
-            appendMenuItem(deleteLabel, () => postDelete(target), { destructive: true });
-          }
-          if (!mergeBlockedTargets.has(target.kind + '::' + target.name)) {
-            appendMenuSection('Branch Operations');
-            appendMenuItem('Merge Into ' + (currentHeadName || 'Current HEAD'), () => postMerge(target));
-          }
-        }
-        if (selected.length > 0) {
-          appendMenuSection('Selection');
-          appendMenuItem('Clear Selection', () => {
-            selected.splice(0, selected.length);
-            syncSelection();
-          });
-        }
+      if (!comparisonTargets && isFlowGovernanceActive() && target.kind !== 'commit') {
+        appendFlowGovernanceActions(getFlowBranchInfo(target.name), target);
+      }
+      for (const item of plan.items) {
+        appendMenuSection(item.section);
+        appendMenuItem(item.label, actionHandlers[item.action], item);
+      }
+      if (plan.shouldRequestRemoteTagState) {
+        requestRemoteTagState(target);
       }
       contextMenu.classList.add('open');
       placeContextMenu(clientX, clientY);
+    }
+
+    function createContextMenuActionHandlers(
+      target: RevisionGraphWebviewTarget,
+      comparisonTargets: RevisionGraphWebviewContextMenuComparisonTargets | null
+    ): Readonly<Record<RevisionGraphWebviewContextMenuAction, () => void>> {
+      const base = comparisonTargets?.base || target;
+      const compare = comparisonTargets?.compare || target;
+      return {
+        'abort-merge': () => postAbortMerge(),
+        checkout: () => postCheckout(target),
+        'clear-selection': () => clearContextMenuSelection(),
+        'compare-selected': () => postCompareSelected(base, compare),
+        'compare-with-worktree': () => postCompareWithWorktree(target),
+        'copy-hash': () => postCopyCommitHash(target.hash),
+        'copy-ref-name': () => postCopyRefName(target),
+        'create-branch': () => postCreateBranch(target),
+        'create-tag': () => postCreateTag(target),
+        'delete-ref': () => postDelete(target),
+        'delete-remote-tag': () => postDeleteRemoteTag(target),
+        'focus-descendants': () => postFocusDescendants(target),
+        'focus-range': () => postFocusRange(base, compare),
+        merge: () => postMerge(target),
+        'publish-branch': () => postPublishBranch(target),
+        'push-tag': () => postPushTag(target),
+        'remote-tag-loading': () => {},
+        'reset-to-commit': () => postResetToCommit(target),
+        'retry-remote-tag-state': () => retryRemoteTagState(target),
+        'show-log-range': () => postShowLogRange(base, compare),
+        'show-log-target': () => postShowLogTarget(target),
+        'stash-apply': () => postStashApply(target),
+        'stash-drop': () => postStashDrop(target),
+        'stash-pop': () => postStashPop(target),
+        'stash-save': () => postStashSave(),
+        'unified-diff': () => postUnifiedDiff(base, compare)
+      };
+    }
+
+    function clearContextMenuSelection() {
+      selected.splice(0, selected.length);
+      syncSelection();
     }
 
     function appendFlowGovernanceActions(
@@ -779,57 +703,7 @@
             closeFlowBranchDialog();
           }
         });
-        form.addEventListener('submit', (event) => {
-          event.preventDefault();
-          const dialog = ensureFlowBranchDialog();
-          const branchKind = dialog.branchKind;
-          const taskDev = dialog.taskDevInput.value.trim();
-          const shortName = dialog.shortNameInput.value.trim();
-          const usesStructuredName = branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
-          const name = usesStructuredName
-            ? taskDev + '-' + shortName
-            : dialog.nameInput.value.trim();
-          const description = dialog.descriptionInput.value.trim();
-          if (branchKind === 'task' && !/^[0-9]+$/.test(taskDev)) {
-            setFlowBranchDialogError(dialog, 'Dev Task must be a number.');
-            dialog.taskDevInput.focus();
-            return;
-          }
-          if (branchKind === 'hotfix' && !taskDev) {
-            setFlowBranchDialogError(dialog, 'Hotfix ID is required.');
-            dialog.taskDevInput.focus();
-            return;
-          }
-          if (branchKind === 'bug' && !taskDev) {
-            setFlowBranchDialogError(dialog, 'Bug ID is required.');
-            dialog.taskDevInput.focus();
-            return;
-          }
-          if (usesStructuredName && !shortName) {
-            setFlowBranchDialogError(dialog, 'Short name is required.');
-            dialog.shortNameInput.focus();
-            return;
-          }
-          if (!usesStructuredName && !name) {
-            setFlowBranchDialogError(dialog, 'Name is required.');
-            dialog.nameInput.focus();
-            return;
-          }
-          if (!description) {
-            setFlowBranchDialogError(dialog, 'Description is required.');
-            dialog.descriptionInput.focus();
-            return;
-          }
-
-          const target = dialog.target;
-          if (!target || !branchKind) {
-            closeFlowBranchDialog();
-            return;
-          }
-
-          vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
-          closeFlowBranchDialog();
-        });
+        form.addEventListener('submit', submitFlowBranchDialog);
       }
 
       return {
@@ -860,6 +734,64 @@
           backdrop.__flowBranchKind = value;
         }
       };
+    }
+
+    function submitFlowBranchDialog(event: SubmitEvent) {
+      event.preventDefault();
+      const dialog = ensureFlowBranchDialog();
+      const branchKind = dialog.branchKind;
+      const taskDev = dialog.taskDevInput.value.trim();
+      const shortName = dialog.shortNameInput.value.trim();
+      const usesStructuredName = branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
+      const name = usesStructuredName ? taskDev + '-' + shortName : dialog.nameInput.value.trim();
+      const description = dialog.descriptionInput.value.trim();
+      const validationError = getFlowBranchValidationError(
+        branchKind,
+        usesStructuredName,
+        taskDev,
+        shortName,
+        name,
+        description
+      );
+      if (validationError) {
+        setFlowBranchDialogError(dialog, validationError.message);
+        dialog[validationError.input].focus();
+        return;
+      }
+      const target = dialog.target;
+      if (!target || !branchKind) {
+        closeFlowBranchDialog();
+        return;
+      }
+      vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
+      closeFlowBranchDialog();
+    }
+
+    function getFlowBranchValidationError(
+      branchKind: RevisionGraphWebviewFlowBranchKind | null,
+      usesStructuredName: boolean,
+      taskDev: string,
+      shortName: string,
+      name: string,
+      description: string
+    ): RevisionGraphWebviewFlowBranchValidationError | null {
+      if (branchKind === 'task' && !/^[0-9]+$/.test(taskDev)) {
+        return { message: 'Dev Task must be a number.', input: 'taskDevInput' };
+      }
+      if ((branchKind === 'hotfix' || branchKind === 'bug') && !taskDev) {
+        const label = branchKind === 'hotfix' ? 'Hotfix ID' : 'Bug ID';
+        return { message: label + ' is required.', input: 'taskDevInput' };
+      }
+      if (usesStructuredName && !shortName) {
+        return { message: 'Short name is required.', input: 'shortNameInput' };
+      }
+      if (!usesStructuredName && !name) {
+        return { message: 'Name is required.', input: 'nameInput' };
+      }
+      if (!description) {
+        return { message: 'Description is required.', input: 'descriptionInput' };
+      }
+      return null;
     }
 
     function closeFlowBranchDialog() {

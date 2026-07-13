@@ -30,6 +30,39 @@ function readRevisionGraphRuntimeSourceForContractAssertions(): string {
     .replaceAll('VIEWPORT_PADDING_LEFT', '18');
 }
 
+function createContextMenuTarget(kind: string, name: string, label = name): Record<string, string> {
+  return {
+    id: `${kind}:${name}`,
+    hash: `${name}-hash`,
+    revision: `${name}-revision`,
+    label,
+    name,
+    kind
+  };
+}
+
+function createContextMenuPlan(
+  runtime: ReturnType<typeof createWebviewRuntime>,
+  target: Record<string, string>,
+  overrides: Record<string, unknown> = {}
+): any {
+  return runtime.context.createRevisionGraphWebviewContextMenuPlan({
+    target,
+    comparisonTargets: null,
+    currentHeadName: 'main',
+    publishedLocalBranchNames: new Set<string>(),
+    isWorkspaceDirty: false,
+    hasMergeConflicts: false,
+    hasConflictedMerge: false,
+    mergeBlockedTargets: new Set<string>(),
+    remoteTagState: undefined,
+    focusRangeActionLabel: null,
+    focusDescendantsActionLabel: 'Focus Descendants',
+    hasSelection: false,
+    ...overrides
+  });
+}
+
 test('renders the revision graph runtime as a nonce-protected external asset', () => {
   const html = renderRevisionGraphShellDocument(testAssets);
 
@@ -474,17 +507,44 @@ test('center HEAD button does not crash when refs are grouped by families', asyn
 });
 
 test('renders checkout menu actions with the destination branch name', () => {
-  const html = renderRevisionGraphShellHtml();
+  const runtime = createWebviewRuntime();
+  const target = createContextMenuTarget('branch', 'feature/demo', 'Feature Demo');
+  const plan = createContextMenuPlan(runtime, target, { currentHeadName: 'main' });
+  const currentHeadPlan = createContextMenuPlan(runtime, target, {
+    currentHeadName: 'feature/demo'
+  });
 
-  assert.match(
-    html,
-    /const isCurrentHead = target\.kind === 'head' \|\| \(\s*target\.kind === 'branch'\s*&& !!currentHeadName\s*&& target\.name === currentHeadName\s*\);/s
+  assert.deepEqual(
+    plan.items.find((item: any) => item.action === 'checkout'),
+    {
+      section: 'Branch Operations',
+      label: 'Checkout to: Feature Demo',
+      action: 'checkout'
+    }
   );
-  assert.match(html, /if \(target\.kind !== 'commit' && target\.kind !== 'tag' && target\.kind !== 'stash' && !isCurrentHead\) \{\s*appendMenuSection\('Branch Operations'\);\s*appendMenuItem\('Checkout to: ' \+ targetLabel, \(\) => postCheckout\(target\)\);/s);
+  assert.equal(currentHeadPlan.items.some((item: any) => item.action === 'checkout'), false);
 });
 
 test('renders structural commit actions for compare and branch creation', () => {
   const html = renderRevisionGraphShellHtml();
+  const runtime = createWebviewRuntime();
+  const plan = createContextMenuPlan(
+    runtime,
+    createContextMenuTarget('commit', 'abc12345', 'abc12345')
+  );
+
+  assert.deepEqual(
+    plan.items.map((item: any) => item.action),
+    [
+      'show-log-target',
+      'copy-hash',
+      'compare-with-worktree',
+      'focus-descendants',
+      'reset-to-commit',
+      'create-branch',
+      'create-tag'
+    ]
+  );
 
   assert.match(html, /function createCommitSelectionId\(hash\) \{/);
   assert.match(html, /function formatShortCommitHash\(hash\) \{\s*return String\(hash \|\| ''\)\.slice\(0, 8\);\s*\}/s);
@@ -500,10 +560,8 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /compare\.hash === target\.hash/);
   assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCompareWithWorktreeMessage\(target\)\);/s);
   assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(createRevisionGraphCopyCommitHashMessage\(commitHash\)\);/s);
-  assert.match(html, /appendMenuItem\('Copy Hash', \(\) => postCopyCommitHash\(target\.hash\)\);/);
   assert.doesNotMatch(html, /Copy Commit Hash/);
   assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCopyRefNameMessage\(target\)\);/s);
-  assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*appendMenuItem\('Copy Ref Name', \(\) => postCopyRefName\(target\)\);/s);
   assert.doesNotMatch(html, /Copy ref name to clipboard/);
   assert.match(html, /function createRevisionGraphResetToCommitMessage\(target\)/);
   assert.match(html, /type: 'reset-to-commit',\s*commitHash: target\.hash,\s*label: target\.label,\s*targetKind: target\.kind/s);
@@ -524,16 +582,11 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /`More push options for \$\{upstreamLabel\}`/);
   assert.match(html, /function postPullCurrentHead\(\) \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s);
   assert.match(html, /function createRevisionGraphPushCurrentHeadMessage\(mode\) \{\s*return \{ type: 'push-current-head', mode: mode \};/s);
-  assert.match(html, /const canResetToTarget =\s*target\.kind !== 'head' &&\s*target\.kind !== 'stash' &&\s*!\(target\.kind === 'branch' && !!currentHeadName && target\.name === currentHeadName\);/s);
-  assert.match(html, /appendMenuItem\('Reset to this', \(\) => postResetToCommit\(target\), \{ destructive: true \}\);/);
   assert.match(html, /function postResetToCommit\(target\) \{\s*vscode\.postMessage\(createRevisionGraphResetToCommitMessage\(target\)\);/s);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace to HEAD'/);
   assert.doesNotMatch(html, /appendMenuItem\('Reset Workspace and Remove Untracked Files'/);
   assert.match(html, /let hasMergeConflicts = false;/);
   assert.match(html, /hasMergeConflicts = stateModel\.hasMergeConflicts;/);
-  assert.match(html, /const canStashCurrentWorkspace =\s*target\.kind === 'head' &&\s*isWorkspaceDirty &&\s*!hasMergeConflicts;/s);
-  assert.match(html, /if \(canStashCurrentWorkspace\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Save', \(\) => postStashSave\(\)\);/s);
-  assert.match(html, /if \(target\.kind === 'stash'\) \{\s*appendMenuSection\('Stash'\);\s*appendMenuItem\('Stash Apply', \(\) => postStashApply\(target\)\);\s*appendMenuItem\('Stash Pop', \(\) => postStashPop\(target\)\);\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Remove Stash', \(\) => postStashDrop\(target\), \{ destructive: true \}\);/s);
   assert.match(html, /function createRevisionGraphStashSaveMessage\(\) \{\s*return \{ type: 'stash-save' \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStashApplyMessage\(target\) \{\s*return \{ type: 'stash-apply', refName: target\.name \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStashPopMessage\(target\) \{\s*return \{ type: 'stash-pop', refName: target\.name \};\s*\}/s);
@@ -542,8 +595,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashApply\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashApplyMessage\(target\)\);/s);
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
-  assert.match(html, /const canPublishBranch =\s*\(target\.kind === 'head' \|\| target\.kind === 'branch'\) &&\s*!publishedLocalBranchNames\.has\(target\.name\);/s);
-  assert.match(html, /\}\s*else \{\s*appendFlowGovernanceActions\(flowBranch, target\);\s*appendMenuSection\('Inspect'\);/s);
+  assert.match(html, /appendFlowGovernanceActions\(getFlowBranchInfo\(target\.name\), target\);/);
   assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
@@ -557,7 +609,6 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /candidate\.status === 'production-out-of-sync'[\s\S]*?local production branch is not synchronized[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /candidate\.status === 'not-ahead'[\s\S]*?has no commits ahead of[\s\S]*?setFlowPullRequestContextActionsEnabled\(false\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
-  assert.match(html, /if \(canPublishBranch\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Publish Branch to Remote', \(\) => postPublishBranch\(target\)\);/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, message\.state\);/);
@@ -566,16 +617,10 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /syncRemoteTagStateCache\(stateModel\.state, previousRepositoryPath, !!options\.invalidateRemoteTagState\);/);
   assert.match(html, /if \(previousRepositoryPath !== nextRepositoryPath \|\| invalidateRemoteTagState\) \{\s*remoteTagPublicationState\.clear\(\);\s*pendingRemoteTagStateRequests\.clear\(\);\s*return;/s);
   assert.match(html, /const currentTagNames = new Set\(\(\(nextState && nextState\.references\) \|\| \[\]\)\s*\.filter\(\(ref\) => ref\.kind === 'tag'\)\s*\.map\(\(ref\) => ref\.name\)\);/s);
-  assert.match(html, /const remoteTagState = remoteTagPublicationState\.get\(target\.name\);/);
-  assert.match(html, /if \(remoteTagState === 'published'\) \{\s*appendMenuSection\('Destructive'\);\s*appendMenuItem\('Delete Remote Tag', \(\) => postDeleteRemoteTag\(target\), \{ destructive: true \}\);/s);
-  assert.match(html, /}\s*else if \(remoteTagState === 'unpublished'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Push Tag to Remote', \(\) => postPushTag\(target\)\);/s);
-  assert.match(html, /}\s*else if \(remoteTagState === 'unknown'\) \{\s*appendMenuSection\('Create And Publish'\);\s*appendMenuItem\('Retry Remote Tag Check', \(\) => retryRemoteTagState\(target\)\);/s);
-  assert.match(html, /appendMenuItem\('Checking Remote Tag\.\.\.', \(\) =>\s*\{\s*\}, \{ disabled: true \}\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function retryRemoteTagState\(target\) \{\s*if \(!target \|\| target\.kind !== 'tag'\) \{\s*return;\s*\}\s*remoteTagPublicationState\.delete\(target\.name\);\s*requestRemoteTagState\(target\);/s);
   assert.match(html, /function requestRemoteTagState\(target\) \{\s*if \(\s*!target \|\|\s*target\.kind !== 'tag' \|\|\s*remoteTagPublicationState\.has\(target\.name\) \|\|\s*pendingRemoteTagStateRequests\.has\(target\.name\)/s);
   assert.match(html, /function createRevisionGraphResolveRemoteTagStateMessage\(target\)/);
   assert.match(html, /function postDeleteRemoteTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphDeleteRemoteTagMessage\(target\)\);/s);
-  assert.match(html, /target\.kind !== 'commit' && !isCurrentHead && target\.kind !== 'stash'/);
   assert.match(html, /function syncRevisionGraphWebviewSelectionHighlightsUi\(/);
   assert.match(html, /element\.classList\.toggle\('base-target', baseHash === hash\);/);
   assert.match(html, /syncRevisionGraphWebviewSelectionHighlightsUi\(\s*Array\.from\(document\.querySelectorAll\('\[data-ref-id\]'\)\),\s*nodeElements,/s);
@@ -588,6 +633,33 @@ test('renders structural commit actions for compare and branch creation', () => 
 
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
+  const runtime = createWebviewRuntime();
+  const base = createContextMenuTarget('branch', 'main');
+  const compare = createContextMenuTarget('branch', 'feature/demo');
+  const comparisonTargets = runtime.context.getRevisionGraphWebviewContextMenuComparisonTargets(
+    [base, compare],
+    compare
+  );
+  const comparisonPlan = createContextMenuPlan(runtime, compare, {
+    comparisonTargets,
+    focusRangeActionLabel: 'Focus Range',
+    focusDescendantsActionLabel: null,
+    hasSelection: true
+  });
+
+  assert.deepEqual(
+    comparisonPlan.items.map((item: any) => item.action),
+    [
+      'compare-selected',
+      'show-log-range',
+      'unified-diff',
+      'focus-range',
+      'copy-hash',
+      'copy-ref-name',
+      'reset-to-commit',
+      'clear-selection'
+    ]
+  );
 
   assert.match(html, /function appendMenuSubmenu\(label, entries\)/);
   assert.match(html, /\.reference-tooltip \{[\s\S]*?position: fixed;[\s\S]*?width: min\(360px, calc\(100vw - 24px\)\);/s);
@@ -673,15 +745,10 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\) \{[\s\S]*?descendantFocus: null,[\s\S]*?revisionRange:/s);
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\) \{[\s\S]*?revisionRange: null,[\s\S]*?descendantFocus:/s);
-  assert.match(html, /const focusRangeActionLabel = hasComparisonSelection[\s\S]*?getFocusRangeActionLabel\(base, compare\)/);
-  assert.match(html, /if \(focusRangeActionLabel\) \{\s*appendMenuItem\(focusRangeActionLabel, \(\) => postFocusRange\(base, compare\)\);\s*\}/);
   assert.match(html, /function getFocusRangeActionLabel\(base, compare, activeRange = currentProjectionOptions\.revisionRange\)/);
   assert.match(html, /function postFocusRange\(base, compare\)/);
   assert.match(html, /function getFocusDescendantsActionLabel\(target, activeFocus = currentProjectionOptions\.descendantFocus\)/);
-  assert.match(html, /appendMenuItem\(focusDescendantsActionLabel, \(\) => postFocusDescendants\(target\)\);/);
   assert.match(html, /function postFocusDescendants\(target\)/);
-  assert.match(html, /appendMenuSection\('Destructive'\);/);
-  assert.match(html, /appendMenuItem\(deleteLabel, \(\) => postDelete\(target\), \{ destructive: true \}\);/);
   assert.match(html, /placeContextMenu\(clientX, clientY\);/);
   assert.doesNotMatch(html, /contextMenu\.querySelector\('\\.context-menu-item'\)\?\.focus\(\);/);
   assert.doesNotMatch(html, /selectionActionBar/);

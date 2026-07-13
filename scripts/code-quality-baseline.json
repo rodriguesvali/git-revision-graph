@@ -33,8 +33,6 @@
     "src/revisionGraph/webview/script/bootstrap.ts::<callback>#39": 22,
     "src/revisionGraph/webview/script/bootstrap.ts::<callback>#40": 24,
     "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 19,
-    "src/revisionGraph/webview/script/interactions.ts::openContextMenu#1": 58,
-    "src/revisionGraph/webview/script/interactions.ts::<callback>#46": 19,
     "src/revisionGraph/webview/shared.ts::buildDynamicVerticalGapByRow#1": 25,
     "src/showLog/messageHandler.ts::dispatchShowLogWebviewMessage#1": 20,
     "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 34
