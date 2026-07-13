@@ -25,8 +25,8 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (203 production files and 2,000 functions), `npm run build`, `npm test` (686 tests), and `git diff --check`. |
-| Automated Extension Host baseline | Implemented; CI rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. The first Ubuntu run exposed a false-negative tab assertion caused by VS Code's internal webview type prefix; the assertion now uses the public webview tab kind and title, with observed-tab diagnostics on timeout. A successful CI rerun remains required. |
+| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (203 production files and 2,000 functions), `npm run build`, `npm test` (689 tests), and `git diff --check`. |
+| Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
 | Marketplace publication | Not authorized | Publish only after explicit maintainer approval and after all preceding gates pass. Record publication timestamp and installed-version evidence if authorized. |
@@ -96,14 +96,17 @@ Recorded verification:
 - The first Ubuntu Extension Host E2E run on 2026-07-13 activated the extension, discovered the
   empty-workspace Git state, and opened the revision-graph panel, but the test filtered it out
   because VS Code exposed an internal `mainThreadWebview-` prefix through
-  `TabInputWebview.viewType`. The E2E assertion now identifies the isolated singleton through
-  `TabInputWebview` and the `Git Revision Graph` title and includes observed-tab diagnostics on
-  timeout. After the fix, dedicated E2E TypeScript compilation, `npm run quality:check` (203
-  production files and 2,000 functions), `npm test` (686 tests), `git diff --check`, and
-  `graphify update .` (4,142 nodes, 8,176 edges, and 329 communities) passed. A local
-  `xvfb-run -a npm run test:e2e` attempt rebuilt successfully but stopped before Extension Host
-  launch because the container lacks `libatk-bridge-2.0.so.0`; a successful Ubuntu CI rerun remains
-  pending.
+  `TabInputWebview.viewType`. A follow-up assertion based on the presumed-stable
+  `Git Revision Graph` title also produced a false negative: the production controller correctly
+  changed the empty-workspace title to `No Repository`. The E2E assertion now identifies the
+  isolated singleton through `TabInputWebview` and the extension view type, accepting the exact
+  value or a host-prefixed value, and includes observed-tab diagnostics on timeout. Regression
+  tests for exact, host-prefixed, and unrelated view types, E2E TypeScript compilation,
+  `npm run quality:check` (203 production files and 2,000 functions), `npm run build`, `npm test`
+  (689 tests), `git diff --check`, and `graphify update .` (4,146 nodes, 8,184 edges, and 337
+  communities rebuilt) passed. A local `xvfb-run -a npm run test:e2e` attempt rebuilt successfully
+  but could not start VS Code because the container lacks
+  `libatk-bridge-2.0.so.0`; a successful Ubuntu CI rerun remains pending.
 - The devcontainer and both GitHub Actions jobs moved to the supported Node.js 24 baseline on
   2026-07-13. Local verification on Node.js `24.14.1` passed `npm run build`, `npm test` (686
   tests), configuration syntax checks, and `git diff --check`; rebuilding the updated container

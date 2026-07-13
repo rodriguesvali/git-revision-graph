@@ -1,0 +1,83 @@
+Run xvfb-run -a npm run test:e2e
+
+> git-revision-graph@2.0.0 test:e2e
+> npm run build && npm run clean:test:e2e && tsc -p ./tsconfig.e2e.json && node scripts/run-extension-host-tests.mjs
+
+
+> git-revision-graph@2.0.0 prebuild
+> npm run clean:out
+
+
+> git-revision-graph@2.0.0 clean:out
+> node -e "require('fs').rmSync('out', { recursive: true, force: true })"
+
+
+> git-revision-graph@2.0.0 build
+> tsc -p ./ && npm run build:webview
+
+
+> git-revision-graph@2.0.0 build:webview
+> node scripts/build-webview.mjs
+
+
+> git-revision-graph@2.0.0 clean:test:e2e
+> node -e "require('fs').rmSync('out-e2e', { recursive: true, force: true })"
+
+- Resolving version...
+✔ Validated version: 1.128.0
+- Found at https://update.code.visualstudio.com/1.128.0/linux-x64/stable?released=true
+✔ Found at https://update.code.visualstudio.com/1.128.0/linux-x64/stable?released=true
+- Downloading (287.45 MB)
+✔ Downloaded VS Code into /home/runner/work/git-revision-graph/git-revision-graph/.vscode-test/vscode-linux-x64-1.128.0
+[e2e:empty] launching VS Code stable
+[2875:0713/174002.363171:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2875:0713/174002.376067:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2875:0713/174002.376177:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2875:0713/174002.379250:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[main 2026-07-13T17:40:02.513Z] StorageMainService: creating application shared storage
+[2875:0713/174002.601776:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[main 2026-07-13T17:40:02.602Z] [shared storage] Creating shared storage database at ':memory:' (wasCreated: true)
+[main 2026-07-13T17:40:02.602Z] [shared storage] Initializing fallback application storage (path: in-memory)
+[main 2026-07-13T17:40:02.687Z] [shared storage] Fallback application storage initialized with 3 items
+[main 2026-07-13T17:40:02.688Z] update#setState disabled
+[main 2026-07-13T17:40:02.688Z] update#ctor - updates are disabled by the environment
+[2875:0713/174002.699379:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+workbench#open()
+Started local extension host with pid 3118.
+IExtensionHostStarter.start() took 23 ms.
+Started initializing default profile extensions in extensions installation folder. file:///tmp/git-revision-graph-e2e-ddgqlr/extensions-empty
+[AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false
+Completed initializing default profile extensions in extensions installation folder. file:///tmp/git-revision-graph-e2e-ddgqlr/extensions-empty
+Loading development extension at /home/runner/work/git-revision-graph/git-revision-graph
+filterEnabledExtensions: extension 'GitHub.copilot-chat' is disabled
+NativeExtensionHostFactory._createLocalProcessExtensionHostDataProvider.scannedExtensions: TypeScriptTeam.jsts-chat-features,vscode.bat,vscode.clojure,vscode.coffeescript,vscode.configuration-editing,GitHub.copilot-chat,vscode.cpp,vscode.csharp,vscode.css,vscode.css-language-features,vscode.dart,vscode.debug-auto-launch,vscode.debug-server-ready,vscode.diff,vscode.docker,vscode.dotenv,vscode.emmet,vscode.extension-editing,vscode.fsharp,vscode.git,vscode.git-base,vscode.github,vscode.github-authentication,vscode.go,vscode.groovy,vscode.grunt,vscode.gulp,vscode.handlebars,vscode.hlsl,vscode.html,vscode.html-language-features,vscode.ini,vscode.ipynb,vscode.jake,vscode.java,vscode.javascript,vscode.json,vscode.json-language-features,vscode.julia,vscode.latex,vscode.less,vscode.log,vscode.lua,vscode.make,vscode.markdown,vscode.markdown-language-features,vscode.markdown-math,vscode.media-preview,vscode.merge-conflict,vscode.mermaid-markdown-features,vscode.microsoft-authentication,ms-vscode.js-debug,ms-vscode.js-debug-companion,ms-vscode.vscode-js-profile-table,vscode.builtin-notebook-renderers,vscode.npm,vscode.objective-c,vscode.perl,vscode.php,vscode.php-language-features,vscode.powershell,vscode.prompt,vscode.pug,vscode.python,vscode.r,vscode.razor,vscode.references-view,vscode.restructuredtext,vscode.ruby,vscode.rust,vscode.scss,vscode.search-result,vscode.shaderlab,vscode.shellscript,vscode.simple-browser,vscode.sql,vscode.swift,vscode.terminal-suggest,vscode.theme-abyss,vscode.theme-defaults,vscode.theme-kimbie-dark,vscode.theme-monokai,vscode.theme-monokai-dimmed,vscode.theme-quietlight,vscode.theme-red,vscode.vscode-theme-seti,vscode.theme-solarized-dark,vscode.theme-solarized-light,vscode.theme-tomorrow-night-blue,vscode.tunnel-forwarding,vscode.typescript,vscode.typescript-language-features,vscode.vb,vscode.xml,vscode.yaml,rodriguesvali.git-revision-graph
+filterEnabledExtensions: extension 'GitHub.copilot-chat' is disabled
+NativeExtensionHostFactory._createLocalProcessExtensionHostDataProvider.localExtensions: rodriguesvali.git-revision-graph,TypeScriptTeam.jsts-chat-features,vscode.bat,vscode.clojure,vscode.coffeescript,vscode.configuration-editing,vscode.cpp,vscode.csharp,vscode.css,vscode.css-language-features,vscode.dart,vscode.debug-auto-launch,vscode.debug-server-ready,vscode.diff,vscode.docker,vscode.dotenv,vscode.emmet,vscode.extension-editing,vscode.fsharp,vscode.git,vscode.git-base,vscode.github,vscode.github-authentication,vscode.go,vscode.groovy,vscode.grunt,vscode.gulp,vscode.handlebars,vscode.hlsl,vscode.html,vscode.html-language-features,vscode.ini,vscode.ipynb,vscode.jake,vscode.java,vscode.javascript,vscode.json,vscode.json-language-features,vscode.julia,vscode.latex,vscode.less,vscode.log,vscode.lua,vscode.make,vscode.markdown,vscode.markdown-language-features,vscode.markdown-math,vscode.media-preview,vscode.merge-conflict,vscode.mermaid-markdown-features,vscode.microsoft-authentication,ms-vscode.js-debug,ms-vscode.js-debug-companion,ms-vscode.vscode-js-profile-table,vscode.builtin-notebook-renderers,vscode.npm,vscode.objective-c,vscode.perl,vscode.php,vscode.php-language-features,vscode.powershell,vscode.prompt,vscode.pug,vscode.python,vscode.r,vscode.razor,vscode.references-view,vscode.restructuredtext,vscode.ruby,vscode.rust,vscode.scss,vscode.search-result,vscode.shaderlab,vscode.shellscript,vscode.simple-browser,vscode.sql,vscode.swift,vscode.terminal-suggest,vscode.theme-abyss,vscode.theme-defaults,vscode.theme-kimbie-dark,vscode.theme-monokai,vscode.theme-monokai-dimmed,vscode.theme-quietlight,vscode.theme-red,vscode.vscode-theme-seti,vscode.theme-solarized-dark,vscode.theme-solarized-light,vscode.theme-tomorrow-night-blue,vscode.tunnel-forwarding,vscode.typescript,vscode.typescript-language-features,vscode.vb,vscode.xml,vscode.yaml
+NativeExtensionHostFactory._createLocalProcessExtensionHostDataProvider.myExtensions: rodriguesvali.git-revision-graph,TypeScriptTeam.jsts-chat-features,vscode.bat,vscode.clojure,vscode.coffeescript,vscode.configuration-editing,vscode.cpp,vscode.csharp,vscode.css,vscode.css-language-features,vscode.dart,vscode.debug-auto-launch,vscode.debug-server-ready,vscode.diff,vscode.docker,vscode.dotenv,vscode.emmet,vscode.extension-editing,vscode.fsharp,vscode.git,vscode.git-base,vscode.github,vscode.github-authentication,vscode.go,vscode.groovy,vscode.grunt,vscode.gulp,vscode.handlebars,vscode.hlsl,vscode.html,vscode.html-language-features,vscode.ini,vscode.ipynb,vscode.jake,vscode.java,vscode.javascript,vscode.json,vscode.json-language-features,vscode.julia,vscode.latex,vscode.less,vscode.log,vscode.lua,vscode.make,vscode.markdown,vscode.markdown-language-features,vscode.markdown-math,vscode.media-preview,vscode.merge-conflict,vscode.mermaid-markdown-features,vscode.microsoft-authentication,ms-vscode.js-debug,ms-vscode.js-debug-companion,ms-vscode.vscode-js-profile-table,vscode.builtin-notebook-renderers,vscode.npm,vscode.objective-c,vscode.perl,vscode.php,vscode.php-language-features,vscode.powershell,vscode.prompt,vscode.pug,vscode.python,vscode.r,vscode.razor,vscode.references-view,vscode.restructuredtext,vscode.ruby,vscode.rust,vscode.scss,vscode.search-result,vscode.shaderlab,vscode.shellscript,vscode.simple-browser,vscode.sql,vscode.swift,vscode.terminal-suggest,vscode.theme-abyss,vscode.theme-defaults,vscode.theme-kimbie-dark,vscode.theme-monokai,vscode.theme-monokai-dimmed,vscode.theme-quietlight,vscode.theme-red,vscode.vscode-theme-seti,vscode.theme-solarized-dark,vscode.theme-solarized-light,vscode.theme-tomorrow-night-blue,vscode.tunnel-forwarding,vscode.typescript,vscode.typescript-language-features,vscode.vb,vscode.xml,vscode.yaml
+Settings Sync: Account status changed from uninitialized to unavailable
+[AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false
+Error: Timed out waiting for the revision graph editor tab to open. Observed state: "No Repository" (webview:mainThreadWebview-gitRefs.revisionGraphEditorPanel).
+	at waitFor (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:131:19)
+	at async waitForGraphTab (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:103:5)
+	at async Object.run (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:61:27)
+Extension host test runner error Error: Timed out waiting for the revision graph editor tab to open. Observed state: "No Repository" (webview:mainThreadWebview-gitRefs.revisionGraphEditorPanel).
+	at waitFor (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:131:19)
+	at async waitForGraphTab (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:103:5)
+	at async Object.run (/home/runner/work/git-revision-graph/git-revision-graph/out-e2e/test/e2e/index.js:61:27)
+Asking native host service to exit with code 1.
+[main 2026-07-13T17:40:29.046Z] Extension host with pid 3118 exited with code: 0, signal: unknown.
+Exit code:   1
+/home/runner/work/git-revision-graph/git-revision-graph/node_modules/@vscode/test-electron/out/runTest.js:110
+                reject(new TestRunFailedError(code ?? undefined, signal ?? undefined));
+                       ^
+
+TestRunFailedError: Test run failed with code 1
+    at ChildProcess.onProcessClosed (/home/runner/work/git-revision-graph/git-revision-graph/node_modules/@vscode/test-electron/out/runTest.js:110:24)
+    at ChildProcess.emit (node:events:509:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:295:12) {
+  code: 1,
+  signal: undefined
+}
+
+Node.js v24.18.0
+Error: Process completed with exit code 1.

@@ -3,10 +3,11 @@ import { realpathSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
+import { matchesRevisionGraphPanelViewType } from './revisionGraphTab';
+
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
 const GIT_EXTENSION_ID = 'vscode.git';
 const OPEN_GRAPH_COMMAND = 'gitRefs.openRevisionGraphEditor';
-const GRAPH_TITLE = 'Git Revision Graph';
 const WAIT_TIMEOUT_MS = 20_000;
 
 interface GitApiLike {
@@ -40,8 +41,7 @@ export async function run(): Promise<void> {
   assert.equal(extension.isActive, true, 'The extension must activate successfully.');
 
   await vscode.commands.executeCommand(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
-  const firstGraphTab = await waitForGraphTab();
-  assert.equal(firstGraphTab.label, GRAPH_TITLE);
+  await waitForGraphTab();
 
   await vscode.commands.executeCommand(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
   const graphTabs = getGraphTabs();
@@ -107,7 +107,16 @@ async function waitForGraphTab(): Promise<vscode.Tab> {
 function getGraphTabs(): vscode.Tab[] {
   return vscode.window.tabGroups.all
     .flatMap(group => group.tabs)
-    .filter(tab => tab.input instanceof vscode.TabInputWebview && tab.label === GRAPH_TITLE);
+    .filter(isRevisionGraphTab);
+}
+
+function isRevisionGraphTab(tab: vscode.Tab): boolean {
+  if (!(tab.input instanceof vscode.TabInputWebview)) {
+    return false;
+  }
+
+  const viewType = tab.input.viewType;
+  return matchesRevisionGraphPanelViewType(viewType);
 }
 
 function describeOpenTabs(): string {

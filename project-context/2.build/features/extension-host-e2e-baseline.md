@@ -20,7 +20,8 @@ without replacing the existing manual smoke matrix.
 - The empty scenario observes zero repositories and opens the graph without an activation failure.
 - The repository scenario creates one disposable commit, observes exactly that repository through
   `vscode.git`, and opens the graph.
-- Running the graph command twice leaves one `TabInputWebview` tab titled `Git Revision Graph`.
+- Running the graph command twice leaves one `TabInputWebview` whose view type resolves to
+  `gitRefs.revisionGraphEditorPanel`.
 - The runner uses isolated user-data and extension directories for each scenario.
 - CI runs the baseline on Ubuntu with Node 24 and `xvfb`.
 
@@ -35,11 +36,13 @@ The baseline intentionally stops at host integration boundaries. It does not aut
 webview pixels, native pickers and confirmations, remote authentication, multi-repository choices,
 or Git mutations; those remain in the manual release matrix.
 
-The tab assertion uses the public tab input kind and title instead of requiring an exact
-`TabInputWebview.viewType`. VS Code currently exposes an internal `mainThreadWebview-` prefix for
-extension-created panels in that tab property even though `WebviewPanel.viewType` retains the
-extension-owned value. Timeout errors include all observed tab labels and webview types so future
-host/API changes are visible directly in CI output.
+The tab assertion uses the public `TabInputWebview` kind and accepts either the extension-owned
+view type or the same value with a host-added prefix. VS Code 1.128.0 exposed
+`mainThreadWebview-gitRefs.revisionGraphEditorPanel` through `TabInputWebview.viewType`, while
+`WebviewPanel.viewType` retained the extension-owned value. The assertion does not use the panel
+title because production intentionally changes it to `No Repository` or
+`<repository>: Branch: <branch>`. Timeout errors include all observed tab labels and webview types
+so future host/API changes are visible directly in CI output.
 
 ## Verification
 
@@ -47,9 +50,9 @@ host/API changes are visible directly in CI output.
 - Passed: Node syntax validation for `scripts/run-extension-host-tests.mjs`.
 - Passed: fixture prerequisites (`git` available) and dependency resolution for
   `@vscode/test-electron@2.5.2`.
-- Attempted after the tab-assertion fix: `xvfb-run -a npm run test:e2e`; the extension and E2E
-  TypeScript builds passed, but VS Code `1.128.0` could not start because the development container
-  lacks `libatk-bridge-2.0.so.0`. The corrected host assertion therefore still requires CI evidence.
+- Attempted after the first tab-assertion fix: the Ubuntu CI host started VS Code `1.128.0`, opened
+  the revision-graph panel, and reported its dynamic `No Repository` title. The test still timed out
+  because it incorrectly treated `Git Revision Graph` as a stable title.
 - Pending: successful execution of the new Ubuntu CI job with `xvfb`.
 - Passed: `npm run quality:check` (203 production files and 2,000 functions).
 - Passed: `npm run build` through the full test command.
@@ -58,8 +61,13 @@ host/API changes are visible directly in CI output.
   `24.14.1`; the Extension Host E2E run remains pending a devcontainer rebuild.
 - Passed: `git diff --check`.
 - Passed after the fix: `graphify update .` (4,142 nodes, 8,176 edges, and 329 communities rebuilt).
-- Fixed: the initial Ubuntu CI run opened the revision-graph panel but timed out because the test
-  compared `TabInputWebview.viewType` with the unprefixed extension value. The assertion now uses
-  `TabInputWebview` plus the stable panel title and reports observed tabs on timeout.
-- Passed after the fix: dedicated E2E TypeScript compilation, `npm run quality:check` (203 production
-  files and 2,000 functions), `npm test` (686 tests), and `git diff --check`.
+- Fixed: the initial Ubuntu CI run exposed the host-added webview type prefix, and the follow-up run
+  exposed the dynamic panel title. The assertion now recognizes the extension view type with or
+  without a host prefix and reports observed tabs on timeout.
+- Passed after the view-type matcher correction: dedicated regression tests for exact, host-prefixed,
+  and unrelated view types; E2E TypeScript compilation; `npm run quality:check` (203 production files
+  and 2,000 functions); `npm run build`; `npm test` (689 tests); `git diff --check`; and
+  `graphify update .` (4,146 nodes, 8,184 edges, and 337 communities rebuilt).
+- Attempted after the view-type matcher correction: `xvfb-run -a npm run test:e2e` rebuilt the
+  extension and E2E runner, but the local VS Code executable could not start because the container
+  lacks `libatk-bridge-2.0.so.0`. A successful Ubuntu CI rerun remains required.
