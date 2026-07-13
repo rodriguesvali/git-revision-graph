@@ -271,5 +271,19 @@
     }
 
     function createRevisionGraphMergeMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'merge'> {
-      return { type: 'merge', refName: target.name };
+      if (!isRevisionGraphWebviewMergeRefKind(target.kind)) {
+        throw new Error(`Cannot merge revision graph target kind: ${target.kind}`);
+      }
+      return {
+        type: 'merge',
+        refName: target.name,
+        refKind: target.kind,
+        commitHash: target.hash
+      };
+    }
+
+    function isRevisionGraphWebviewMergeRefKind(
+      kind: RevisionGraphWebviewTargetKind
+    ): kind is RevisionGraphWebviewMergeRefKind {
+      return kind === 'branch' || kind === 'remote' || kind === 'tag';
     }

@@ -1,4 +1,5 @@
 import {
+  RevisionGraphMergeRefKind,
   RevisionGraphMessage,
   RevisionLogSource
 } from '../revisionGraphTypes';
@@ -14,6 +15,7 @@ export {
 } from './messageAuthorization';
 
 const REVISION_GRAPH_REF_KINDS = new Set<RevisionGraphRef['kind']>(['head', 'branch', 'remote', 'tag', 'stash']);
+const REVISION_GRAPH_MERGE_REF_KINDS = new Set<RevisionGraphMergeRefKind>(['branch', 'remote', 'tag']);
 const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>([
   'head',
   'branch',
@@ -217,7 +219,14 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         : undefined;
     case 'merge':
       return isBoundedNonEmptyString(message.refName)
-        ? { type: 'merge', refName: message.refName }
+        && isRevisionGraphMergeRefKind(message.refKind)
+        && isBoundedNonEmptyString(message.commitHash)
+        ? {
+          type: 'merge',
+          refName: message.refName,
+          refKind: message.refKind,
+          commitHash: message.commitHash
+        }
         : undefined;
   }
 
@@ -379,6 +388,10 @@ function validateRevisionLogSource(value: unknown): RevisionLogSource | undefine
 
 function isRevisionGraphRefKind(value: unknown): value is RevisionGraphRef['kind'] {
   return isString(value) && REVISION_GRAPH_REF_KINDS.has(value as RevisionGraphRef['kind']);
+}
+
+function isRevisionGraphMergeRefKind(value: unknown): value is RevisionGraphMergeRefKind {
+  return isString(value) && REVISION_GRAPH_MERGE_REF_KINDS.has(value as RevisionGraphMergeRefKind);
 }
 
 function isRevisionGraphTargetKind(value: unknown): value is RevisionGraphRef['kind'] | 'commit' {

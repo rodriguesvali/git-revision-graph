@@ -11,6 +11,8 @@ import type { FlowGovernanceOptionsUpdate, FlowGovernanceViewState } from './rev
 
 export type { RevisionLogEntry, RevisionLogSource } from './revisionGraph/revisionLogTypes';
 
+export type RevisionGraphMergeRefKind = Extract<RevisionGraphRef['kind'], 'branch' | 'remote' | 'tag'>;
+
 export const REVISION_GRAPH_VIEW_ID = 'gitRefs.revisionGraphView';
 export const REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE = 'gitRefs.revisionGraphEditorPanel';
 export const SHOW_LOG_VIEW_ID = 'gitRefs.showLogView';
@@ -98,7 +100,12 @@ export type RevisionGraphMessage =
   | { readonly type: 'stash-pop'; readonly refName: string }
   | { readonly type: 'stash-drop'; readonly refName: string }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphRef['kind'] }
-  | { readonly type: 'merge'; readonly refName: string };
+  | {
+    readonly type: 'merge';
+    readonly refName: string;
+    readonly refKind: RevisionGraphMergeRefKind;
+    readonly commitHash: string;
+  };
 
 export interface RevisionGraphViewReference {
   readonly id: string;

@@ -7,6 +7,8 @@ export type {
   AncestryInspector,
   CompareResultsRevealOptions,
   CurrentBranchPushMode,
+  MergeRefActionKind,
+  MergeRefSelection,
   RefActionKind,
   RefActionMessageOptions,
   RefActionUi,

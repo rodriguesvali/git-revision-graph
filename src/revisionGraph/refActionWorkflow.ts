@@ -8,6 +8,8 @@ import {
   compareResolvedRefWithWorktree,
   deleteResolvedReference,
   mergeResolvedReference,
+  MergeRefActionKind,
+  MergeRefSelection,
   publishLocalBranchResolvedReference,
   resetCurrentBranchToCommit,
   RefActionKind,
@@ -97,7 +99,7 @@ export interface RevisionGraphRefActionWorkflowDependencies {
   ): Promise<unknown>;
   mergeResolvedReference?(
     repository: Repository,
-    target: RefActionTarget,
+    target: MergeRefSelection,
     services: RefActionServices
   ): Promise<unknown>;
 }
@@ -298,11 +300,11 @@ export class RevisionGraphRefActionWorkflow {
     );
   }
 
-  async merge(refName: string): Promise<void> {
+  async merge(refName: string, refKind: MergeRefActionKind): Promise<void> {
     await this.runMutationWithCurrentRepository((repository, services) =>
       this.mergeResolvedReference(
         repository,
-        { refName, label: refName },
+        { refName, label: refName, kind: refKind },
         services
       )
     );

@@ -1,4 +1,5 @@
 type RevisionGraphWebviewRefKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash';
+type RevisionGraphWebviewMergeRefKind = Extract<RevisionGraphWebviewRefKind, 'branch' | 'remote' | 'tag'>;
 type RevisionGraphWebviewTargetKind = RevisionGraphWebviewRefKind | 'commit';
 
 interface RevisionGraphWebviewTarget {
@@ -110,7 +111,7 @@ type RevisionGraphWebviewMessage =
   | { readonly type: 'create-tag'; readonly revision: string; readonly label: string; readonly refKind: RevisionGraphWebviewTargetKind }
   | { readonly type: 'resolve-remote-tag-state'; readonly refName: string }
   | { readonly type: 'delete'; readonly refName: string; readonly refKind: RevisionGraphWebviewTargetKind }
-  | { readonly type: 'merge'; readonly refName: string };
+  | { readonly type: 'merge'; readonly refName: string; readonly refKind: RevisionGraphWebviewMergeRefKind; readonly commitHash: string };
 
 type RevisionGraphWebviewMessageOf<
   Type extends RevisionGraphWebviewMessage['type'],

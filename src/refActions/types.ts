@@ -3,11 +3,16 @@ import { Repository } from '../git';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash' | 'commit';
+export type MergeRefActionKind = Extract<RefActionKind, 'branch' | 'remote' | 'tag'>;
 export type CurrentBranchPushMode = 'normal' | 'force-with-lease' | 'force';
 
 export interface RefSelection {
   readonly refName: string;
   readonly label: string;
+}
+
+export interface MergeRefSelection extends RefSelection {
+  readonly kind: MergeRefActionKind;
 }
 
 export interface RefActionMessageOptions {

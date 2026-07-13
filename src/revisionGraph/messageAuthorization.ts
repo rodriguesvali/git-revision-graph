@@ -1,4 +1,5 @@
 import type { RevisionGraphRef } from './model/commitGraphTypes';
+import type { RevisionGraphMergeRefKind } from '../revisionGraphTypes';
 import { FlowBranchKind, isFlowGovernedTransition } from './flow';
 import {
   RevisionGraphMessage,
@@ -7,6 +8,7 @@ import {
 } from '../revisionGraphTypes';
 
 const REVISION_GRAPH_REF_KINDS = new Set<RevisionGraphRef['kind']>(['head', 'branch', 'remote', 'tag', 'stash']);
+const REVISION_GRAPH_MERGE_REF_KINDS = new Set<RevisionGraphMergeRefKind>(['branch', 'remote', 'tag']);
 
 export function isRevisionGraphMessageAllowedForState(
   message: RevisionGraphMessage,
@@ -109,8 +111,17 @@ export function isRevisionGraphMessageAllowedForState(
       return (message.refKind === 'head' || message.refKind === 'branch')
         && hasKnownReference(state, message.refName, message.refKind);
     case 'merge':
-      return hasKnownReferenceName(state, message.refName);
+      return isMergeTargetAllowed(state, message);
   }
+}
+
+function isMergeTargetAllowed(
+  state: RevisionGraphViewState,
+  message: Extract<RevisionGraphMessage, { readonly type: 'merge' }>
+): boolean {
+  return REVISION_GRAPH_MERGE_REF_KINDS.has(message.refKind)
+    && message.refName !== state.currentHeadName
+    && hasKnownReferenceAtCommit(state, message.refName, message.refKind, message.commitHash);
 }
 
 function isAllowedFlowStartSourceKind(

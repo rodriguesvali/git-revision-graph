@@ -509,6 +509,10 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /type: 'reset-to-commit',\s*commitHash: target\.hash,\s*label: target\.label,\s*targetKind: target\.kind/s);
   assert.match(html, /if \(target\.kind !== 'commit'\) \{\s*message\.targetName = target\.name;\s*\}/s);
   assert.match(html, /function createRevisionGraphCreateBranchMessage\(target\)/);
+  assert.match(
+    html,
+    /function createRevisionGraphMergeMessage\(target\)[\s\S]*?type: 'merge',[\s\S]*?refName: target\.name,[\s\S]*?refKind: target\.kind,[\s\S]*?commitHash: target\.hash/
+  );
   assert.match(html, /function postCreateTag\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCreateTagMessage\(target\)\);/s);
   assert.match(html, /let publishedLocalBranchNames = new Set\(\);/);
   assert.match(html, /const stateModel = createRevisionGraphWebviewRuntimeStateModel\(nextState, currentProjectionOptions\);/);

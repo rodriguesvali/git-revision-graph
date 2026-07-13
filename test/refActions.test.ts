@@ -2087,12 +2087,28 @@ test('mergeResolvedReference preserves the self-merge guard', async () => {
 
   await mergeResolvedReference(
     repository,
-    { refName: 'main', label: 'main' },
+    { refName: 'main', label: 'main', kind: 'branch' },
     harness.services
   );
 
   assert.deepEqual(repository.calls.merge, []);
   assert.equal(harness.infoMessages[0], 'The current branch cannot be merged into itself.');
+});
+
+test('mergeResolvedReference fully qualifies a branch when a tag can share its short name', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await mergeResolvedReference(
+    repository,
+    { refName: 'collision', label: 'collision', kind: 'branch' },
+    harness.services
+  );
+
+  assert.deepEqual(repository.calls.merge, ['refs/heads/collision']);
 });
 
 test('mergeResolvedReference prevents merges that are already ancestors of HEAD', async () => {
@@ -2105,7 +2121,7 @@ test('mergeResolvedReference prevents merges that are already ancestors of HEAD'
 
   await mergeResolvedReference(
     repository,
-    { refName: 'release/2026', label: 'release/2026' },
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
     harness.services
   );
 
@@ -2131,7 +2147,7 @@ test('mergeResolvedReference shows a modal error and updates graph state when th
 
   await mergeResolvedReference(
     repository,
-    { refName: 'release/2026', label: 'release/2026' },
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
     harness.services
   );
 
@@ -2176,7 +2192,7 @@ test('mergeResolvedReference refreshes conflict state before waiting for the mod
 
   const mergePromise = mergeResolvedReference(
     repository,
-    { refName: 'release/2026', label: 'release/2026' },
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
     harness.services
   );
   const resultBeforeDismissal = await Promise.race([
@@ -2204,7 +2220,7 @@ test('mergeResolvedReference keeps non-conflict merge errors non-modal', async (
 
   await mergeResolvedReference(
     repository,
-    { refName: 'release/2026', label: 'release/2026' },
+    { refName: 'release/2026', label: 'release/2026', kind: 'branch' },
     harness.services
   );
 

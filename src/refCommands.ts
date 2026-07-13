@@ -5,7 +5,7 @@ import {
   compareResolvedRefs,
   compareResolvedRefWithWorktree,
   mergeResolvedReference,
-  RefActionKind,
+  MergeRefActionKind,
   RefActionServices
 } from './refActions';
 import {
@@ -146,7 +146,11 @@ export async function mergeReference(
     return;
   }
 
-  const target = { refName: selected.refName, label: selected.label };
+  const target = {
+    refName: selected.refName,
+    label: selected.label,
+    kind: toActionKind(selected.ref)
+  };
   if (services.runRepositoryMutation) {
     await services.runRepositoryMutation(repository, (guardedRepository, guardedServices) =>
       mergeResolvedReference(guardedRepository, target, guardedServices)
@@ -222,7 +226,7 @@ function toQuickPickItem(repository: Repository, ref: Ref): RefQuickPickItem {
   };
 }
 
-function toActionKind(ref: Ref): RefActionKind {
+function toActionKind(ref: Ref): MergeRefActionKind {
   switch (ref.type) {
     case RefType.RemoteHead:
       return 'remote';

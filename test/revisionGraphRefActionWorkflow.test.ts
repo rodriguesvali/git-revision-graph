@@ -76,6 +76,23 @@ test('RevisionGraphRefActionWorkflow resets the current branch to a graph commit
   }]);
 });
 
+test('RevisionGraphRefActionWorkflow preserves the selected merge reference kind', async () => {
+  const repository = createRepository('/repo');
+  const merges: Array<{ readonly refName: string; readonly kind: string }> = [];
+  const workflow = new RevisionGraphRefActionWorkflow(
+    createHost({ repository }),
+    {
+      async mergeResolvedReference(_currentRepository, target) {
+        merges.push({ refName: target.refName, kind: target.kind });
+      }
+    }
+  );
+
+  await workflow.merge('collision', 'branch');
+
+  assert.deepEqual(merges, [{ refName: 'collision', kind: 'branch' }]);
+});
+
 test('RevisionGraphRefActionWorkflow posts current state before awaiting a modal error', async () => {
   const repository = createRepository('/repo');
   const events: string[] = [];

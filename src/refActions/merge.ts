@@ -6,11 +6,11 @@ import {
   prepareFullRebuildRefresh,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './shared';
-import { RefActionServices, RefSelection } from './types';
+import { MergeRefSelection, RefActionServices } from './types';
 
 export async function mergeResolvedReference(
   repository: Repository,
-  target: RefSelection,
+  target: MergeRefSelection,
   services: RefActionServices
 ): Promise<void> {
   try {
@@ -20,9 +20,11 @@ export async function mergeResolvedReference(
       return;
     }
 
+    const qualifiedRefName = qualifyMergeRefName(target);
+
     if (
       repository.state.HEAD?.name &&
-      await services.ancestryInspector.isRefAncestorOfHead(repository, target.refName, repository.state.HEAD.name)
+      await services.ancestryInspector.isRefAncestorOfHead(repository, qualifiedRefName, repository.state.HEAD.name)
     ) {
       services.ui.showInformationMessage(`${target.label} is already contained in ${currentBranch}.`);
       return;
@@ -42,7 +44,7 @@ export async function mergeResolvedReference(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await repository.merge(target.refName);
+      await repository.merge(qualifiedRefName);
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -69,6 +71,21 @@ export async function mergeResolvedReference(
           }
         : undefined
     );
+  }
+}
+
+function qualifyMergeRefName(target: MergeRefSelection): string {
+  if (target.refName.startsWith('refs/')) {
+    return target.refName;
+  }
+
+  switch (target.kind) {
+    case 'branch':
+      return `refs/heads/${target.refName}`;
+    case 'remote':
+      return `refs/remotes/${target.refName}`;
+    case 'tag':
+      return `refs/tags/${target.refName}`;
   }
 }
 

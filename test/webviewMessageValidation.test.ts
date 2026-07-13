@@ -33,6 +33,14 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'merge', refName: 'collision' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'merge', refName: 'collision', refKind: 'head', commitHash: 'head1' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'reset-to-commit', commitHash: 'tag1', label: 'v1.0.0', targetKind: 'evil', targetName: 'v1.0.0' }),
     undefined
   );
@@ -347,6 +355,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'copy-ref-name', refName: 'main', refKind: 'head' }
   );
   assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'merge',
+      refName: 'collision',
+      refKind: 'branch',
+      commitHash: 'branch-collision'
+    }),
+    {
+      type: 'merge',
+      refName: 'collision',
+      refKind: 'branch',
+      commitHash: 'branch-collision'
+    }
+  );
+  assert.deepEqual(
     validateRevisionGraphMessage({ type: 'load-commit-short-stat', commitHash: 'head1' }),
     { type: 'load-commit-short-stat', commitHash: 'head1' }
   );
@@ -628,6 +650,50 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-ref-name', refName: 'missing', refKind: 'branch' },
       state
+    ),
+    false
+  );
+  const collidingReferenceState: RevisionGraphViewState = {
+    ...state,
+    references: [
+      ...state.references,
+      {
+        id: 'branch-collision::branch::collision',
+        hash: 'branch-collision',
+        name: 'collision',
+        kind: 'branch',
+        title: 'collision'
+      },
+      {
+        id: 'tag-collision::tag::collision',
+        hash: 'tag-collision',
+        name: 'collision',
+        kind: 'tag',
+        title: 'collision'
+      }
+    ]
+  };
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'merge',
+        refName: 'collision',
+        refKind: 'branch',
+        commitHash: 'branch-collision'
+      },
+      collidingReferenceState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      {
+        type: 'merge',
+        refName: 'collision',
+        refKind: 'branch',
+        commitHash: 'tag-collision'
+      },
+      collidingReferenceState
     ),
     false
   );

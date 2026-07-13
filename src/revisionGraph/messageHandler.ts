@@ -250,7 +250,7 @@ export class RevisionGraphMessageHandler {
         await this.refActionWorkflow.deleteReference(message.refName, message.refKind as RefActionKind);
         return;
       case 'merge':
-        await this.refActionWorkflow.merge(message.refName);
+        await this.refActionWorkflow.merge(message.refName, message.refKind);
         return;
     }
   }
