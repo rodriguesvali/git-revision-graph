@@ -79,6 +79,25 @@ test('RevisionGraphController loads empty state and releases Git event subscript
   assert.equal(closeSubscriptionsDisposed, 1);
 });
 
+test('Flow Pull Request workflow owns context clipboard orchestration', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: {} as never,
+    mutationCoordinator: {} as never,
+    getCurrentRepository: () => undefined,
+    getCurrentState: () => ({}) as never,
+    postHostMessage: () => assert.fail('No message should be posted without a repository.')
+  });
+
+  await workflow.copyContextField('feature/demo', 'main', 'title');
+  await workflow.copyContext('feature/demo', 'main');
+
+  assert.deepEqual(harness.clipboardWrites, ['Merge feature/demo into main']);
+});
+
 interface TestPanel {
   readonly webview: Record<string, unknown>;
   readonly postedMessages: unknown[];
@@ -94,6 +113,7 @@ interface TestPanel {
 function installVscodePanelMock(t: test.TestContext): {
   readonly extensionUri: never;
   readonly panels: TestPanel[];
+  readonly clipboardWrites: string[];
   createPanel(): TestPanel;
 } {
   const moduleLoader = require('node:module') as {
@@ -101,6 +121,7 @@ function installVscodePanelMock(t: test.TestContext): {
   };
   const originalLoad = moduleLoader._load;
   const panels: TestPanel[] = [];
+  const clipboardWrites: string[] = [];
   const createPanel = (): TestPanel => {
     const disposeListeners = new Set<() => void>();
     const messageListeners = new Set<(message: unknown) => void>();
@@ -164,7 +185,10 @@ function installVscodePanelMock(t: test.TestContext): {
       getConfiguration: () => ({ get: <T>(_key: string, fallback?: T) => fallback })
     },
     commands: { executeCommand: async () => undefined },
-    env: { clipboard: { writeText: async () => undefined }, openExternal: async () => true }
+    env: {
+      clipboard: { writeText: async (value: string) => { clipboardWrites.push(value); } },
+      openExternal: async () => true
+    }
   };
 
   moduleLoader._load = function loadWithVscodeMock(request, parent, isMain): unknown {
@@ -172,7 +196,7 @@ function installVscodePanelMock(t: test.TestContext): {
     return originalLoad.call(this, request, parent, isMain);
   };
   t.after(() => { moduleLoader._load = originalLoad; });
-  return { extensionUri: extensionUri as never, panels, createPanel };
+  return { extensionUri: extensionUri as never, panels, clipboardWrites, createPanel };
 }
 
 function loadFresh(moduleId: string): unknown {
