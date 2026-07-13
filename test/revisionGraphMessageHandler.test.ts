@@ -273,7 +273,7 @@ test('RevisionGraphMessageHandler handles clipboard copy actions through the hos
   assert.deepEqual(informationMessages, ['Copied commit abcdef12.', 'Copied ref main.']);
 });
 
-test('RevisionGraphMessageHandler loads tooltip stats and opens commits on GitHub', async () => {
+test('RevisionGraphMessageHandler loads tooltip stats and opens commits on the configured remote', async () => {
   const repository = createRepository('/workspace/repo');
   const hostMessages: unknown[] = [];
   const openedCommitHashes: string[] = [];
@@ -283,7 +283,7 @@ test('RevisionGraphMessageHandler loads tooltip stats and opens commits on GitHu
       assert.equal(commitHash, 'head1');
       return { files: 3, insertions: 8, deletions: 2 };
     },
-    async openCommitOnGitHub(_repository, commitHash) {
+    async openCommitOnRemote(_repository, commitHash) {
       openedCommitHashes.push(commitHash);
     },
     postHostMessage(message) {
@@ -292,7 +292,7 @@ test('RevisionGraphMessageHandler loads tooltip stats and opens commits on GitHu
   }));
 
   await handler.handleMessage({ type: 'load-commit-short-stat', commitHash: 'head1' });
-  await handler.handleMessage({ type: 'open-commit-on-github', commitHash: 'head1' });
+  await handler.handleMessage({ type: 'open-commit-on-remote', commitHash: 'head1' });
 
   assert.deepEqual(hostMessages, [{
     type: 'set-commit-short-stat',
@@ -390,7 +390,7 @@ function createHost(
     async loadCommitShortStat() {
       return undefined;
     },
-    async openCommitOnGitHub() {},
+    async openCommitOnRemote() {},
     getCurrentRepository() {
       return undefined;
     },

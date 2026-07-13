@@ -35,7 +35,7 @@ export interface RevisionGraphMessageHandlerHost
     repository: Repository,
     commitHash: string
   ): Promise<RevisionGraphCommitShortStat | undefined>;
-  openCommitOnGitHub(repository: Repository, commitHash: string): Promise<void>;
+  openCommitOnRemote(repository: Repository, commitHash: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void>;
@@ -171,9 +171,9 @@ export class RevisionGraphMessageHandler {
           this.host.postHostMessage(createRevisionGraphCommitShortStatMessage(message.commitHash, shortStat));
         });
         return;
-      case 'open-commit-on-github':
+      case 'open-commit-on-remote':
         await this.runWithCurrentRepository((repository) =>
-          this.host.openCommitOnGitHub(repository, message.commitHash)
+          this.host.openCommitOnRemote(repository, message.commitHash)
         );
         return;
       case 'copy-ref-name':

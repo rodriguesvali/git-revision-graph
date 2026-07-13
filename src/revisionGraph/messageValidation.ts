@@ -47,7 +47,7 @@ const REVISION_GRAPH_MESSAGE_TYPES = {
   'compare-with-worktree': true,
   'copy-commit-hash': true,
   'load-commit-short-stat': true,
-  'open-commit-on-github': true,
+  'open-commit-on-remote': true,
   'copy-ref-name': true,
   checkout: true,
   'reset-to-commit': true,
@@ -194,7 +194,7 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
         ? { type: 'copy-commit-hash', commitHash: message.commitHash }
         : undefined;
     case 'load-commit-short-stat':
-    case 'open-commit-on-github':
+    case 'open-commit-on-remote':
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: messageType, commitHash: message.commitHash }
         : undefined;

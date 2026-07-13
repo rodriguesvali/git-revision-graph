@@ -161,8 +161,8 @@
       return { type: 'load-commit-short-stat', commitHash };
     }
 
-    function createRevisionGraphOpenCommitOnGitHubMessage(commitHash: string): RevisionGraphWebviewMessageOf<'open-commit-on-github'> {
-      return { type: 'open-commit-on-github', commitHash };
+    function createRevisionGraphOpenCommitOnRemoteMessage(commitHash: string): RevisionGraphWebviewMessageOf<'open-commit-on-remote'> {
+      return { type: 'open-commit-on-remote', commitHash };
     }
 
     function createRevisionGraphCopyRefNameMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'copy-ref-name'> {

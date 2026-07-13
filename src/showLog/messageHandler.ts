@@ -15,7 +15,7 @@ export interface ShowLogMessageHandlers {
   readonly copyFullPath: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly copyCommitHash: (commitHash: string) => MaybePromise<void>;
   readonly copyReferenceName: (commitHash: string, refName: string) => MaybePromise<void>;
-  readonly openCommitOnGitHub: (commitHash: string) => MaybePromise<void>;
+  readonly openCommitOnRemote: (commitHash: string) => MaybePromise<void>;
   readonly openCommitDetails: (commitHash: string) => MaybePromise<void>;
   readonly compareCommits: (baseCommitHash: string, compareCommitHash: string) => MaybePromise<void>;
   readonly compareCommitWithWorktree: (commitHash: string) => MaybePromise<void>;
@@ -69,8 +69,8 @@ export async function dispatchShowLogWebviewMessage(
     case 'copyReferenceName':
       await handlers.copyReferenceName(message.commitHash, message.refName);
       return true;
-    case 'openCommitOnGitHub':
-      await handlers.openCommitOnGitHub(message.commitHash);
+    case 'openCommitOnRemote':
+      await handlers.openCommitOnRemote(message.commitHash);
       return true;
     case 'openCommitDetails':
       await handlers.openCommitDetails(message.commitHash);

@@ -386,8 +386,8 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     { type: 'load-commit-short-stat', commitHash: 'head1' }
   );
   assert.deepEqual(
-    validateRevisionGraphMessage({ type: 'open-commit-on-github', commitHash: 'head1' }),
-    { type: 'open-commit-on-github', commitHash: 'head1' }
+    validateRevisionGraphMessage({ type: 'open-commit-on-remote', commitHash: 'head1' }),
+    { type: 'open-commit-on-remote', commitHash: 'head1' }
   );
   assert.deepEqual(
     validateRevisionGraphMessage({
@@ -654,7 +654,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'open-commit-on-github', commitHash: 'missing' },
+      { type: 'open-commit-on-remote', commitHash: 'missing' },
       state
     ),
     false
@@ -1266,7 +1266,7 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   );
   assert.equal(
     validateShowLogWebviewMessage({
-      type: 'openCommitOnGitHub',
+      type: 'openCommitOnRemote',
       commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
     undefined
@@ -1304,8 +1304,8 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
     { type: 'cherryPickCommits', commitHashes: ['abc123', 'def456'] }
   );
   assert.deepEqual(
-    validateShowLogWebviewMessage({ type: 'openCommitOnGitHub', commitHash: 'abc123' }),
-    { type: 'openCommitOnGitHub', commitHash: 'abc123' }
+    validateShowLogWebviewMessage({ type: 'openCommitOnRemote', commitHash: 'abc123' }),
+    { type: 'openCommitOnRemote', commitHash: 'abc123' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'setFilterText', value: 'Ada', sourceToken: '1' }),

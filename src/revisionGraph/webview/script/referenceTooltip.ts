@@ -56,8 +56,8 @@
         vscode.postMessage(createRevisionGraphCopyCommitHashMessage(commitHash));
         return;
       }
-      if (action === 'open-commit-on-github') {
-        vscode.postMessage(createRevisionGraphOpenCommitOnGitHubMessage(commitHash));
+      if (action === 'open-commit-on-remote') {
+        vscode.postMessage(createRevisionGraphOpenCommitOnRemoteMessage(commitHash));
       }
     }
 
@@ -163,7 +163,7 @@
         + '<div class="reference-tooltip-footer">'
         + '  <span class="reference-tooltip-hash">' + escapeHtml(formatShortCommitHash(node.hash)) + '</span>'
         + renderCopyHashIconButton('reference-tooltip-action reference-tooltip-action-icon', 'data-reference-tooltip-action', 'copy-commit-hash', node.hash)
-        + '  <button class="reference-tooltip-action" type="button" data-reference-tooltip-action="open-commit-on-github" data-commit-hash="' + escapeHtml(node.hash) + '">Open on GitHub</button>'
+        + '  <button class="reference-tooltip-action" type="button" data-reference-tooltip-action="open-commit-on-remote" data-commit-hash="' + escapeHtml(node.hash) + '">Open on Remote</button>'
         + '</div>';
     }
 

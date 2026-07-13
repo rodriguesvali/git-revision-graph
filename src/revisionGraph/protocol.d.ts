@@ -96,7 +96,7 @@ declare namespace RevisionGraphProtocol {
     | { readonly type: 'compare-with-worktree'; readonly revision: string; readonly label: string }
     | { readonly type: 'copy-commit-hash'; readonly commitHash: string }
     | { readonly type: 'load-commit-short-stat'; readonly commitHash: string }
-    | { readonly type: 'open-commit-on-github'; readonly commitHash: string }
+    | { readonly type: 'open-commit-on-remote'; readonly commitHash: string }
     | { readonly type: 'copy-ref-name'; readonly refName: string; readonly refKind: RefKind }
     | { readonly type: 'checkout'; readonly refName: string; readonly refKind: CheckoutRefKind }
     | {

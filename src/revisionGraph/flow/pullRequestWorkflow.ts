@@ -11,12 +11,12 @@ import type { RevisionGraphViewState } from '../../revisionGraphTypes';
 import { createRevisionGraphFlowPullRequestContextMessage } from '../hostMessages';
 import type { RevisionGraphViewHostMessage } from '../../revisionGraphTypes';
 import {
-  buildGitHubPullRequestUrl,
+  buildFlowPullRequestUrlForRemote,
   checkFlowPullRequestSourcePublication,
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
   loadFlowPullRequestRemoteBranchCommit,
-  resolveGitHubPullRequestRemote
+  resolveFlowPullRequestRemote
 } from './index';
 
 export interface RevisionGraphFlowPullRequestWorkflowHost {
@@ -57,21 +57,25 @@ export class RevisionGraphFlowPullRequestWorkflow {
   async openUrl(sourceRefName: string, targetRefName: string): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository) return;
-    if (!resolveGitHubPullRequestRemote(repository)) {
-      this.host.actionServices.ui.showInformationMessage('No GitHub remote is configured for this repository.');
+    const remote = resolveFlowPullRequestRemote(repository);
+    if (!remote) {
+      this.host.actionServices.ui.showInformationMessage(
+        'No supported Git hosting remote is configured for this repository.'
+      );
       return;
     }
-    if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName)) return;
-    if (!await this.ensureSourceReady(repository, sourceRefName)) return;
+    if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName, remote)) return;
+    if (!await this.ensureSourceReady(repository, sourceRefName, remote)) return;
 
-    const url = buildGitHubPullRequestUrl(repository, sourceRefName, targetRefName);
+    const url = buildFlowPullRequestUrlForRemote(remote, sourceRefName, targetRefName);
     if (url) await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 
   private async ensureTargetEligible(
     repository: Repository,
     sourceRefName: string,
-    targetRefName: string
+    targetRefName: string,
+    preferredRemote?: Remote
   ): Promise<boolean> {
     const flowReferences = this.host.getCurrentState().flowGovernance?.references ?? [];
     const requiresProductionAncestry = flowReferences.some((reference) => (
@@ -80,7 +84,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
     let targetCommitish: string | undefined;
     let productionRemoteName: string | undefined;
     if (requiresProductionAncestry) {
-      const remote = this.resolveRemote(repository);
+      const remote = this.resolvePreferredRemote(repository, preferredRemote);
       if (!remote) {
         await this.host.actionServices.ui.showWarningMessage(
           `Production promotion aborted: no remote is available to verify the current ${targetRefName} branch.`,
@@ -151,8 +155,12 @@ export class RevisionGraphFlowPullRequestWorkflow {
     return false;
   }
 
-  private async ensureSourceReady(repository: Repository, sourceRefName: string): Promise<boolean> {
-    const remote = this.resolveRemote(repository);
+  private async ensureSourceReady(
+    repository: Repository,
+    sourceRefName: string,
+    preferredRemote?: Remote
+  ): Promise<boolean> {
+    const remote = this.resolvePreferredRemote(repository, preferredRemote);
     if (!remote) {
       await this.host.actionServices.ui.showInformationMessage(
         'No Git remote is configured for this repository. Pull Request context was not opened.'
@@ -238,9 +246,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
   }
 
   private resolveRemote(repository: Repository): Remote | undefined {
-    return resolveGitHubPullRequestRemote(repository)
+    return resolveFlowPullRequestRemote(repository)
       ?? repository.state.remotes.find((candidate) => candidate.name === 'origin')
       ?? repository.state.remotes[0];
+  }
+
+  private resolvePreferredRemote(repository: Repository, preferredRemote: Remote | undefined): Remote | undefined {
+    return preferredRemote ?? this.resolveRemote(repository);
   }
 
   private showConcurrentMutationWarning(): void {

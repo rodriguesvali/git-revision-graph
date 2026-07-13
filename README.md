@@ -30,9 +30,9 @@ The graph opens as a singleton editor panel. `Compare Results` and `Show Log` al
 - `View Git Revision Graph` command and Source Control toolbar button for opening a full-size graph in the editor area
 - Toolbar controls for reload with an empty-cache split option, push with split-button force options, scope (`All Refs`, `Current Branch`, `origin/HEAD`, `Local Branches`), compact view options, and in-graph search
 - Optional Flow Governance metadata overlay with branch-kind badges when enabled by settings or a repository flow file
-- Interactive contextual reference details with a neutral reference kind or Flow Governance badge, full ref name, optional local Git branch description, commit subject, author, date, on-demand change statistics, hash copying, and GitHub commit opening for supported remotes
+- Interactive contextual reference details with a neutral reference kind or Flow Governance badge, full ref name, optional local Git branch description, commit subject, author, date, on-demand change statistics, hash copying, and commit opening for supported GitHub and Azure DevOps remotes
 - Flow Governance context actions for starting release, feature, and hotfix branches from `main`; bugs from a release or feature using a Bug ID, short name, and description; and tasks from a feature using a Dev Task number, short name, and optional description, with optional confirmed publication after creation
-- Flow Governance Pull Request handoff with remote-source preflight, local/remote production synchronization and release/hotfix ancestry blocking, confirmed publish/push assistance, divergence protection, and local `sync/*` equalization of release or feature branches from `main` or an active release without automatic push
+- Flow Governance Pull Request handoff to supported GitHub and Azure DevOps remotes, with remote-source preflight, local/remote production synchronization and release/hotfix ancestry blocking, confirmed publish/push assistance, divergence protection, and local `sync/*` equalization of release or feature branches from `main` or an active release without automatic push
 - `Create Flow Governance Config` command for creating the repository `.git-revision-graph-flow.json` template after confirmation
 - Fetch the active repository directly from the graph toolbar, with optional `Prune` and `Tags` flags per run
 - `d3-dag` Sugiyama graph layout over the major-operations projection, preserving important refs, merges, forks, roots, and tips while keeping descendants above visible parents
@@ -359,7 +359,7 @@ Use both automated and manual checks when changing command behavior:
    - delete a local branch, tag, and remote branch from the graph
    - change scope and visibility options from the graph toolbar
    - hover and keyboard-focus local, remote, tag, and stash references to verify the interactive
-     reference tooltip, copy-hash action, GitHub action, and branch descriptions
+     reference tooltip, copy-hash action, remote-host action, and branch descriptions
    - open `Show Log`, verify reference badge colors/icons, toggle `Show All Branches`, and scroll
      far enough to trigger automatic next-page loading
 

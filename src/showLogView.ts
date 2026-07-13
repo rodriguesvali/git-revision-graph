@@ -32,7 +32,7 @@ import {
 import {
   ShowLogLoadRequests
 } from './showLog/loadRequests';
-import { openShowLogCommitOnGitHub } from './showLog/remoteCommitAction';
+import { openShowLogCommitOnRemote } from './showLog/remoteCommitAction';
 import { resetShowLogCommit } from './showLog/resetAction';
 import {
   findShowLogChange,
@@ -87,7 +87,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     copyFullPath: (commitHash, changeId) => this.copyFullPath(commitHash, changeId),
     copyCommitHash: (commitHash) => this.copyCommitHash(commitHash),
     copyReferenceName: (commitHash, refName) => this.copyReferenceName(commitHash, refName),
-    openCommitOnGitHub: (commitHash) => this.openCommitOnGitHub(commitHash),
+    openCommitOnRemote: (commitHash) => this.openCommitOnRemote(commitHash),
     openCommitDetails: (commitHash) => this.openCommitDetails(commitHash),
     compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
     compareCommitWithWorktree: (commitHash) => this.compareCommitWithWorktree(commitHash),
@@ -559,13 +559,13 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     await copyShowLogReferenceName(this.state, commitHash, refName);
   }
 
-  private async openCommitOnGitHub(commitHash: string): Promise<void> {
+  private async openCommitOnRemote(commitHash: string): Promise<void> {
     const repository = getVisibleShowLogRepository(this.state);
     if (!repository || !isLoadedShowLogCommitHash(this.state, commitHash)) {
       return;
     }
 
-    await openShowLogCommitOnGitHub(repository, commitHash);
+    await openShowLogCommitOnRemote(repository, commitHash);
   }
 
   private async openCommitDetails(commitHash: string): Promise<void> {

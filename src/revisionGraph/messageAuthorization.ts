@@ -88,7 +88,7 @@ export function isRevisionGraphMessageAllowedForState(
       return hasKnownRevision(state, message.revision);
     case 'copy-commit-hash':
     case 'load-commit-short-stat':
-    case 'open-commit-on-github':
+    case 'open-commit-on-remote':
       return hasKnownCommitHash(state, message.commitHash);
     case 'copy-ref-name':
       return hasKnownReference(state, message.refName, message.refKind);
@@ -151,7 +151,7 @@ export function isRevisionGraphMessageAllowedForCurrentRepository(
 
   const canRunWhileLoading = message.type === 'copy-commit-hash'
     || message.type === 'load-commit-short-stat'
-    || message.type === 'open-commit-on-github';
+    || message.type === 'open-commit-on-remote';
   return state.viewMode === 'ready' &&
     (!state.loading || canRunWhileLoading) &&
     !!state.repositoryPath &&
@@ -189,7 +189,7 @@ function isRevisionGraphMessageRepositoryScoped(message: RevisionGraphMessage): 
     case 'compare-with-worktree':
     case 'copy-commit-hash':
     case 'load-commit-short-stat':
-    case 'open-commit-on-github':
+    case 'open-commit-on-remote':
     case 'copy-ref-name':
     case 'checkout':
     case 'reset-to-commit':

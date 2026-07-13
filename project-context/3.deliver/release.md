@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (203 production files and 2,000 functions), `npm run build`, `npm test` (689 tests), and `git diff --check`. |
+| Current automated source verification | Complete | Latest verification on 2026-07-13 passed `npm run quality:check` (204 production files and 2,019 functions), `npm run build`, `npm test` (695 tests), and `git diff --check`. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -37,6 +37,7 @@ Focused build artifact:
 - `project-context/2.build/features/flow-governance-phase-1.md`
 - `project-context/2.build/features/flow-governance-2.0.0.md`
 - `project-context/2.build/features/extension-host-e2e-baseline.md`
+- `project-context/2.build/features/azure-devops-remote-support.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
 Candidate scope:
@@ -55,7 +56,9 @@ Candidate scope:
   Phase 1 template content.
 - Add PR-required transition diagnostics for governed source/target pairs.
 - Add release promotion readiness checks with `ready`, `blocked`, and `inconclusive` outcomes.
-- Add PR handoff through copyable context or recognized GitHub compare/PR URLs.
+- Add PR handoff through copyable context or recognized GitHub and Azure DevOps creation URLs.
+- Open commits from Revision Graph and Show Log on supported GitHub and Azure DevOps remotes through
+  provider-neutral actions.
 - Add production-to-release equalization guidance using local `sync/*` helper branches without
   automatic push.
 - Update README and CHANGELOG notes for the shipped 2.0.0 behavior.
@@ -93,6 +96,13 @@ Planned verification:
 
 Recorded verification:
 
+- Azure DevOps Services URL handoff was implemented on 2026-07-13 without provider authentication,
+  new dependencies, settings, commands, or contribution points. The shared resolver preserves
+  GitHub HTTPS/SSH behavior, recognizes Azure DevOps current and legacy hosted URLs, strips remote
+  credentials, and rejects mismatched fetch/push Pull Request destinations. `npm run quality:check`
+  (204 production files and 2,019 functions), `npm run build`, `npm test` (695 tests), and
+  `git diff --check` passed. `graphify update .` rebuilt 4,190 nodes, 8,274 edges, and 324
+  communities; live Azure portal smoke remains pending.
 - The first Ubuntu Extension Host E2E run on 2026-07-13 activated the extension, discovered the
   empty-workspace Git state, and opened the revision-graph panel, but the test filtered it out
   because VS Code exposed an internal `mainThreadWebview-` prefix through
@@ -208,7 +218,8 @@ Marketplace impact:
   Flow Governance controls inside the existing revision graph webview when Flow Governance metadata
   is present.
 - Marketplace copy should describe 2.0.0 as branch classification, PR-required diagnostics,
-  release readiness, PR handoff, and safe equalization guidance. It must not claim branch hiding.
+  GitHub/Azure DevOps URL handoff, release readiness, and safe equalization guidance. It must not
+  claim branch hiding or authenticated provider API integration.
 - No Marketplace packaging metadata has been captured yet: VSIX filename, checksum, size,
   publication timestamp, and clean-profile installed-version evidence remain pending approval.
 

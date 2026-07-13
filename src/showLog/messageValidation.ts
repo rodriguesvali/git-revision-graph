@@ -17,7 +17,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'copyCommitHash'; readonly commitHash: string }
   | { readonly type: 'copyReferenceName'; readonly commitHash: string; readonly refName: string }
   | { readonly type: 'cherryPickCommits'; readonly commitHashes: readonly string[] }
-  | { readonly type: 'openCommitOnGitHub'; readonly commitHash: string }
+  | { readonly type: 'openCommitOnRemote'; readonly commitHash: string }
   | { readonly type: 'resetToCommit'; readonly commitHash: string };
 
 export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewMessage | undefined {
@@ -41,7 +41,7 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'compareCommitWithWorktree':
     case 'openCommitDetails':
     case 'copyCommitHash':
-    case 'openCommitOnGitHub':
+    case 'openCommitOnRemote':
     case 'resetToCommit':
       return isBoundedNonEmptyString(message.commitHash)
         ? { type: message.type, commitHash: message.commitHash }

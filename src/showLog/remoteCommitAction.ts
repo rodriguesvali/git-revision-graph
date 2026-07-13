@@ -1,20 +1,20 @@
 import type { Repository } from '../git';
-import { buildGitHubCommitUrl } from './remoteCommitUrl';
+import { buildRemoteCommitUrl } from './remoteCommitUrl';
 
 export interface ShowLogRemoteCommitServices {
   openExternal(url: string): Promise<void>;
   showInformationMessage(message: string): Promise<void>;
 }
 
-export async function openShowLogCommitOnGitHub(
+export async function openShowLogCommitOnRemote(
   repository: Repository,
   commitHash: string,
   services?: ShowLogRemoteCommitServices
 ): Promise<boolean> {
   const remoteServices = services ?? await getDefaultShowLogRemoteCommitServices();
-  const url = buildGitHubCommitUrl(repository, commitHash);
+  const url = buildRemoteCommitUrl(repository, commitHash);
   if (!url) {
-    await remoteServices.showInformationMessage('No GitHub remote is configured for this repository.');
+    await remoteServices.showInformationMessage('No supported Git hosting remote is configured for this repository.');
     return false;
   }
 

@@ -920,7 +920,7 @@
         const openButton = document.createElement('button');
         openButton.className = 'flow-dialog-button primary';
         openButton.type = 'button';
-        openButton.textContent = 'Open Pull Request on GitHub';
+        openButton.textContent = 'Open Pull Request';
         actions.appendChild(closeButton);
         actions.appendChild(openButton);
         dialog.appendChild(actions);

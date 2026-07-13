@@ -8,8 +8,8 @@ import {
   classifyFlowBranch,
   classifyFlowBranches,
   applyFlowGovernanceOptionsUpdate,
-  buildGitHubPullRequestUrl,
-  buildGitHubPullRequestUrlFromRemoteUrl,
+  buildFlowPullRequestUrl,
+  buildFlowPullRequestUrlFromRemoteUrl,
   checkFlowPullRequestTarget,
   checkFlowPullRequestSourcePublication,
   classifyFlowPullRequestSourcePublication,
@@ -22,7 +22,7 @@ import {
   loadFlowPullRequestTargets,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
-  resolveGitHubPullRequestRemote,
+  resolveFlowPullRequestRemote,
   suggestFlowEqualizationBranchName,
   isFlowGovernedTransition,
   updateRepositoryFlowConfigOptions
@@ -423,7 +423,7 @@ test('Flow Governance creates PR-required transition diagnostics', () => {
   assert.equal(ignoredDiagnostics.length, 0);
 });
 
-test('Flow Governance creates Pull Request context and GitHub compare URLs', () => {
+test('Flow Governance creates Pull Request context and hosted provider URLs', () => {
   const context = createFlowPullRequestContext('release/1.0.0', 'main');
   const repository = createRepository({
     root: '/workspace/repo',
@@ -435,22 +435,77 @@ test('Flow Governance creates Pull Request context and GitHub compare URLs', () 
   assert.equal(context.title, 'Merge release/1.0.0 into main');
   assert.match(context.text, /Flow Governance requires final integration through a Pull Request/);
   assert.equal(
-    buildGitHubPullRequestUrl(repository, 'release/1.0.0', 'main'),
+    buildFlowPullRequestUrl(repository, 'release/1.0.0', 'main'),
     'https://github.com/owner/project/compare/main...release%2F1.0.0?quick_pull=1&title=Merge+release%2F1.0.0+into+main&body=Source%3A+release%2F1.0.0%0ATarget%3A+main%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
-  assert.deepEqual(resolveGitHubPullRequestRemote(repository), {
+  assert.deepEqual(resolveFlowPullRequestRemote(repository), {
+    provider: 'github',
+    providerLabel: 'GitHub',
     name: 'origin',
-    owner: 'owner',
-    repositoryName: 'project',
-    isReadOnly: false
+    isReadOnly: false,
+    repositoryWebUrl: 'https://github.com/owner/project'
   });
   assert.equal(
-    buildGitHubPullRequestUrlFromRemoteUrl('git@github.com:owner/project.git', 'sync/release-from-main', 'release/1.0.0'),
+    buildFlowPullRequestUrlFromRemoteUrl('git@github.com:owner/project.git', 'sync/release-from-main', 'release/1.0.0'),
     'https://github.com/owner/project/compare/release%2F1.0.0...sync%2Frelease-from-main?quick_pull=1&title=Merge+sync%2Frelease-from-main+into+release%2F1.0.0&body=Source%3A+sync%2Frelease-from-main%0ATarget%3A+release%2F1.0.0%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
   assert.equal(
-    buildGitHubPullRequestUrlFromRemoteUrl('https://example.com/owner/project.git', 'release/1.0.0', 'main'),
+    buildFlowPullRequestUrlFromRemoteUrl('https://example.com/owner/project.git', 'release/1.0.0', 'main'),
     undefined
+  );
+});
+
+test('Flow Governance builds Azure DevOps Pull Request deep links', () => {
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'git@ssh.dev.azure.com:v3/fabrikam/Project%20One/My%20Repo',
+      'feature/payment summary',
+      'release/2.0.0'
+    ),
+    'https://dev.azure.com/fabrikam/Project%20One/_git/My%20Repo/pullrequestcreate?' +
+      'sourceRef=refs%2Fheads%2Ffeature%2Fpayment+summary&targetRef=refs%2Fheads%2Frelease%2F2.0.0'
+  );
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'https://fabrikam.visualstudio.com/Project/_git/Repo',
+      'feature/demo',
+      'main'
+    ),
+    'https://fabrikam.visualstudio.com/Project/_git/Repo/pullrequestcreate?' +
+      'sourceRef=refs%2Fheads%2Ffeature%2Fdemo&targetRef=refs%2Fheads%2Fmain'
+  );
+});
+
+test('Flow Governance rejects Pull Request handoff when fetch and push repositories differ', () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/owner/project.git',
+      pushUrl: 'https://dev.azure.com/owner/project/_git/project',
+      isReadOnly: false
+    }]
+  });
+
+  assert.equal(resolveFlowPullRequestRemote(repository), undefined);
+  assert.equal(buildFlowPullRequestUrl(repository, 'feature/demo', 'main'), undefined);
+});
+
+test('Flow Governance accepts equivalent legacy fetch and current SSH push URLs', () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://fabrikam.visualstudio.com/Project/_git/Repo',
+      pushUrl: 'git@ssh.dev.azure.com:v3/fabrikam/Project/Repo',
+      isReadOnly: false
+    }]
+  });
+
+  assert.equal(
+    buildFlowPullRequestUrl(repository, 'feature/demo', 'main'),
+    'https://fabrikam.visualstudio.com/Project/_git/Repo/pullrequestcreate?' +
+      'sourceRef=refs%2Fheads%2Ffeature%2Fdemo&targetRef=refs%2Fheads%2Fmain'
   );
 });
 

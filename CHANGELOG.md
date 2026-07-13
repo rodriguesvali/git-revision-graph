@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Remote Hosting
+
+- Added Azure DevOps Services support for opening commits and Flow Governance Pull Request creation
+  pages from current HTTPS and SSH remotes, including recognized legacy `visualstudio.com` URLs.
+- Consolidated GitHub and Azure DevOps remote parsing behind a credential-free shared resolver and
+  changed commit and Pull Request webview actions to provider-neutral labels.
+- Preserved the existing GitHub URL handoff and Flow Governance publication, divergence,
+  synchronization, and ancestry guards without adding provider authentication or API dependencies.
+
 ### Flow Governance
 
 - Added an optional Flow Governance metadata overlay for branch classification and branch-kind
@@ -15,7 +24,7 @@ All notable changes to this project will be documented in this file.
   protection.
 - Added tests for Flow Governance config normalization, classification, view-state serialization,
   message validation/authorization, webview rendering, and config-file creation.
-- Added release promotion ancestry validation, Pull Request context/URL handoff, and a confirmed
+- Added release promotion ancestry validation, GitHub/Azure DevOps Pull Request context/URL handoff, and a confirmed
   local `sync/*` equalization assistant that never pushes automatically.
 - Added a first-position `Flow Governance` submenu on classified refs. `Start New Release` and
   `Start New Feature` now share a name/description form and create local branches from `main`
@@ -29,7 +38,7 @@ All notable changes to this project will be documented in this file.
   local task branch from the selected feature without pushing.
 - Extended the interactive reference tooltip with Flow Governance badges while preserving the
   full ref name, optional Git branch description, commit details, on-demand change statistics,
-  hash copying, and supported GitHub commit opening introduced in `1.5.9`.
+  hash copying, and supported GitHub or Azure DevOps commit opening.
 
 ## 1.5.9
 

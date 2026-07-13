@@ -639,7 +639,7 @@ export function renderShowLogWebviewHtml(): string {
         + '<div class="commit-tooltip-footer">'
         + '  <span class="commit-tooltip-hash">' + escapeHtml(commit.shortHash) + '</span>'
         + renderCopyHashIconButton('commit-tooltip-action commit-tooltip-action-icon', 'data-tooltip-action', 'copyCommitHash', commit.hash)
-        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="openCommitOnGitHub" data-commit-hash="' + escapeHtml(commit.hash) + '">Open on GitHub</button>'
+        + '  <button class="commit-tooltip-action" type="button" data-tooltip-action="openCommitOnRemote" data-commit-hash="' + escapeHtml(commit.hash) + '">Open on Remote</button>'
         + '</div>';
     }
 
@@ -1323,8 +1323,8 @@ export function renderShowLogWebviewHtml(): string {
       if (action === 'copyCommitHash') {
         vscode.postMessage({ type: 'copyCommitHash', commitHash });
       }
-      if (action === 'openCommitOnGitHub') {
-        vscode.postMessage({ type: 'openCommitOnGitHub', commitHash });
+      if (action === 'openCommitOnRemote') {
+        vscode.postMessage({ type: 'openCommitOnRemote', commitHash });
       }
     });
 

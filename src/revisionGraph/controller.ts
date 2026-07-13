@@ -40,7 +40,7 @@ import { RevisionGraphLoadTraceService } from './loadTraceService';
 import { RevisionGraphMessageDispatcher } from './messageDispatcher';
 import { RevisionGraphMessageHandler } from './messageHandler';
 import { loadCommitShortStat } from './repository/commitShortStat';
-import { openShowLogCommitOnGitHub } from '../showLog/remoteCommitAction';
+import { openShowLogCommitOnRemote } from '../showLog/remoteCommitAction';
 import {
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
@@ -263,8 +263,8 @@ export class RevisionGraphController implements vscode.Disposable {
         openUnifiedDiffDocument(repository, left, right, this.backend),
       loadCommitShortStat: (repository, commitHash) =>
         loadCommitShortStat(repository.rootUri.fsPath, commitHash, this.commitShortStatAbortController.signal),
-      openCommitOnGitHub: (repository, commitHash) =>
-        openShowLogCommitOnGitHub(repository, commitHash).then(() => undefined),
+      openCommitOnRemote: (repository, commitHash) =>
+        openShowLogCommitOnRemote(repository, commitHash).then(() => undefined),
       getCurrentRepository: () => this.currentRepository,
       setCurrentRepository: (repository) => {
         this.repositoryLifecycle.setCurrentRepository(repository);

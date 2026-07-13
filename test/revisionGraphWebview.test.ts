@@ -235,7 +235,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Promotion PR Context/);
   assert.doesNotMatch(html, /Copy Promotion PR Context/);
   assert.doesNotMatch(html, /Open Promotion PR URL/);
-  assert.match(html, /openButton\.textContent = 'Open Pull Request on GitHub';/);
+  assert.match(html, /openButton\.textContent = 'Open Pull Request';/);
   assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
   assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
   assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
@@ -756,7 +756,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /renderCopyHashIconButton\('reference-tooltip-action reference-tooltip-action-icon', 'data-reference-tooltip-action', 'copy-commit-hash', node\.hash\)/);
   assert.match(html, /\.reference-tooltip-hash \{[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--accent\)\);/s);
   assert.match(html, /\.reference-tooltip-action-icon \{[\s\S]*?width: 22px;[\s\S]*?min-width: 22px;/s);
-  assert.match(html, /data-reference-tooltip-action="open-commit-on-github"/);
+  assert.match(html, /data-reference-tooltip-action="open-commit-on-remote"/);
   assert.match(html, /createRevisionGraphLoadCommitShortStatMessage\(commitHash\)/);
   assert.match(html, /case 'set-commit-short-stat':/);
   assert.match(html, /reference-tooltip-insertions/);
