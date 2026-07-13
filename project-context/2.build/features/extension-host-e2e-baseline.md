@@ -23,14 +23,14 @@ without replacing the existing manual smoke matrix.
 - Running the graph command twice leaves one webview tab with view type
   `gitRefs.revisionGraphEditorPanel` and title `Git Revision Graph`.
 - The runner uses isolated user-data and extension directories for each scenario.
-- CI runs the baseline on Ubuntu with Node 20 and `xvfb`.
+- CI runs the baseline on Ubuntu with Node 24 and `xvfb`.
 
 ## Design Notes
 
-`@vscode/test-electron` is pinned to the compatible `2.x` line because its current `3.x` release
-requires Node 22 while the repository CI baseline is Node 20. The custom runner downloads the
-stable VS Code release once, reuses that executable for both scenarios, and accepts
-`VSCODE_E2E_VERSION` or `VSCODE_E2E_EXECUTABLE_PATH` overrides.
+`@vscode/test-electron` remains on the compatible `2.x` line used by the implemented baseline;
+upgrading that dependency is a separate change from the Node 24 runtime migration. The custom
+runner downloads the stable VS Code release once, reuses that executable for both scenarios, and
+accepts `VSCODE_E2E_VERSION` or `VSCODE_E2E_EXECUTABLE_PATH` overrides.
 
 The baseline intentionally stops at host integration boundaries. It does not automate rendered
 webview pixels, native pickers and confirmations, remote authentication, multi-repository choices,
@@ -48,5 +48,7 @@ or Git mutations; those remain in the manual release matrix.
 - Passed: `npm run quality:check` (203 production files and 2,000 functions).
 - Passed: `npm run build` through the full test command.
 - Passed: `npm test` (686 tests).
+- Passed after the Node 24 migration: `npm run build` and `npm test` (686 tests) on Node.js
+  `24.14.1`; the Extension Host E2E run remains pending a devcontainer rebuild.
 - Passed: `git diff --check`.
 - Passed: `graphify update .` (3,908 nodes, 7,941 edges, and 337 communities rebuilt).

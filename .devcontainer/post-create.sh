@@ -2,7 +2,7 @@
 set -euo pipefail
 
 apt-get update
-apt-get install -y bubblewrap
+apt-get install -y bubblewrap libatk1.0-0 xvfb
 
 if [ -f package.json ]; then
   npm install

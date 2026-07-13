@@ -93,6 +93,10 @@ Planned verification:
 
 Recorded verification:
 
+- The devcontainer and both GitHub Actions jobs moved to the supported Node.js 24 baseline on
+  2026-07-13. Local verification on Node.js `24.14.1` passed `npm run build`, `npm test` (686
+  tests), configuration syntax checks, and `git diff --check`; rebuilding the updated container
+  and rerunning the Extension Host E2E baseline remain pending.
 - The automated Extension Host baseline was implemented on 2026-07-13 with isolated empty and
   single-repository fixtures, real `vscode.git` discovery, activation, and graph-panel singleton
   assertions. Its TypeScript suite and runner syntax passed locally. The first full local execution
