@@ -470,6 +470,58 @@ test('reuses repository refs across snapshot loading and overlay in one ready-st
   );
 });
 
+test('falls back to repository state refs and traces degraded ref loading', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+    refs: [createRef({ type: RefType.Head, name: 'main', commit: 'head1' })]
+  });
+  repository.getRefs = async () => {
+    throw new Error('Git refs unavailable');
+  };
+  const graph = buildCommitGraph([{
+    hash: 'head1',
+    parents: [],
+    author: 'Ada',
+    date: '2026-05-12',
+    subject: 'Bootstrap',
+    refs: []
+  }]);
+  let backendRepositoryRefs: readonly unknown[] = [];
+  const traceEvents: Array<{ readonly phase: string; readonly detail?: string }> = [];
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot(_repository, _options, _limitPolicy, _signal, _trace, context) {
+      backendRepositoryRefs = await Promise.resolve(context?.repositoryRefs ?? []);
+      return { graph, loadedAt: Date.now(), requestedLimit: 6000 };
+    },
+    async getMergeBlockedTargets() {
+      return [];
+    }
+  };
+
+  const state = await buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY,
+    undefined,
+    (event) => traceEvents.push(event)
+  );
+
+  assert.equal(state.viewMode, 'ready');
+  assert.equal(backendRepositoryRefs.length, 1);
+  assert.ok(state.references.some((ref) => ref.name === 'main' && ref.hash === 'head1'));
+  assert.ok(traceEvents.some((event) =>
+    event.phase === 'state.repositoryRefs'
+    && event.detail?.includes('source=state-fallback')
+    && event.detail.includes('Git refs unavailable')
+  ));
+  assert.ok(traceEvents.some((event) =>
+    event.phase === 'state.repositoryOverlay'
+    && event.detail?.includes('source=state-fallback')
+  ));
+});
+
 test('builds projection-only ready state from a reusable snapshot without loading Git history', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

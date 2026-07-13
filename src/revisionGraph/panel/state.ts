@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { toErrorDetail } from '../../errorDetail';
 import { isAbortError, throwIfAborted } from '../../errors';
 import { Ref, RefType, Repository } from '../../git';
 import { RevisionGraphLimitPolicy, RevisionGraphStateBackend } from '../backend';
@@ -56,8 +57,16 @@ export interface RevisionGraphRepositoryOverlay {
 
 export interface RevisionGraphViewStateBuildContext {
   readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
+  readonly repositoryRefsSource?: RevisionGraphRepositoryRefsSource | PromiseLike<RevisionGraphRepositoryRefsSource>;
   readonly flowGovernanceSettings?: FlowGovernanceSettings;
   readonly branchDescriptions?: ReadonlyMap<string, string>;
+}
+
+export type RevisionGraphRepositoryRefsSource = 'request-context' | 'repository' | 'state-fallback';
+
+interface LoadedRevisionGraphRepositoryRefs {
+  readonly refs: readonly Ref[];
+  readonly source: RevisionGraphRepositoryRefsSource;
 }
 
 export async function buildReadyRevisionGraphViewStateBundle(
@@ -70,10 +79,11 @@ export async function buildReadyRevisionGraphViewStateBundle(
   context?: Omit<RevisionGraphViewStateBuildContext, 'repositoryRefs'>
 ): Promise<ReadyRevisionGraphViewStateBundle> {
   throwIfAborted(signal, 'The revision graph load was aborted.');
-  const repositoryRefs = loadRepositoryRefsStrict(repository, signal);
+  const loadedRepositoryRefs = loadRepositoryRefs(repository, signal, undefined, trace);
   const buildContext: RevisionGraphViewStateBuildContext & RevisionGraphSnapshotLoadContext = {
     ...context,
-    repositoryRefs
+    repositoryRefs: loadedRepositoryRefs.then((result) => result.refs),
+    repositoryRefsSource: loadedRepositoryRefs.then((result) => result.source)
   };
   const snapshot = await backend.loadGraphSnapshot(repository, projectionOptions, limitPolicy, signal, trace, buildContext);
   return buildReadyRevisionGraphViewStateBundleFromSnapshot(
@@ -185,14 +195,14 @@ async function buildGraphSnapshotWithRepositoryOverlay(
   context: RevisionGraphViewStateBuildContext | undefined
 ): Promise<RevisionGraphSnapshot> {
   const overlayStartedAt = nowMs();
-  const repositoryRefs = await loadRepositoryRefs(repository, signal, context);
-  const overlay = buildRevisionGraphRepositoryOverlay(repository, repositoryRefs);
+  const loadedRepositoryRefs = await loadRepositoryRefs(repository, signal, context, trace);
+  const overlay = buildRevisionGraphRepositoryOverlay(repository, loadedRepositoryRefs.refs);
   const overlayedGraph = applyRevisionGraphRepositoryOverlay(snapshot.graph, overlay, projectionOptions);
   traceDuration(
     trace,
     'state.repositoryOverlay',
     overlayStartedAt,
-    `refs=${repositoryRefs.length}; changed=${overlayedGraph !== snapshot.graph}; source=${context?.repositoryRefs ? 'request-context' : 'repository'}`
+    `refs=${loadedRepositoryRefs.refs.length}; changed=${overlayedGraph !== snapshot.graph}; source=${loadedRepositoryRefs.source}`
   );
 
   return overlayedGraph === snapshot.graph
@@ -271,15 +281,27 @@ function applyRevisionGraphRepositoryOverlay(
 async function loadRepositoryRefs(
   repository: Repository,
   signal: AbortSignal | undefined,
-  context?: RevisionGraphViewStateBuildContext
-): Promise<readonly Ref[]> {
+  context?: RevisionGraphViewStateBuildContext,
+  trace?: RevisionGraphLoadTraceSink
+): Promise<LoadedRevisionGraphRepositoryRefs> {
+  const startedAt = nowMs();
   try {
-    return await loadRepositoryRefsStrict(repository, signal, context);
+    const refs = await loadRepositoryRefsStrict(repository, signal, context);
+    const source = context?.repositoryRefs
+      ? await Promise.resolve(context.repositoryRefsSource ?? 'request-context')
+      : 'repository';
+    return { refs, source };
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
     }
-    return repository.state.refs;
+    traceDuration(
+      trace,
+      'state.repositoryRefs',
+      startedAt,
+      `source=state-fallback; reason=${toErrorDetail(error)}`
+    );
+    return { refs: repository.state.refs, source: 'state-fallback' };
   }
 }
 
