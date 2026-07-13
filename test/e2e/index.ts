@@ -6,7 +6,6 @@ import * as vscode from 'vscode';
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
 const GIT_EXTENSION_ID = 'vscode.git';
 const OPEN_GRAPH_COMMAND = 'gitRefs.openRevisionGraphEditor';
-const GRAPH_VIEW_TYPE = 'gitRefs.revisionGraphEditorPanel';
 const GRAPH_TITLE = 'Git Revision Graph';
 const WAIT_TIMEOUT_MS = 20_000;
 
@@ -97,21 +96,47 @@ function assertRepositories(
 }
 
 async function waitForGraphTab(): Promise<vscode.Tab> {
-  await waitFor(() => getGraphTabs().length === 1, 'the revision graph editor tab to open');
+  await waitFor(
+    () => getGraphTabs().length === 1,
+    'the revision graph editor tab to open',
+    describeOpenTabs
+  );
   return getGraphTabs()[0];
 }
 
 function getGraphTabs(): vscode.Tab[] {
   return vscode.window.tabGroups.all
     .flatMap(group => group.tabs)
-    .filter(tab => tab.input instanceof vscode.TabInputWebview && tab.input.viewType === GRAPH_VIEW_TYPE);
+    .filter(tab => tab.input instanceof vscode.TabInputWebview && tab.label === GRAPH_TITLE);
 }
 
-async function waitFor(predicate: () => boolean, description: string): Promise<void> {
+function describeOpenTabs(): string {
+  const tabs = vscode.window.tabGroups.all.flatMap(group => group.tabs);
+  if (tabs.length === 0) {
+    return 'no editor tabs are open';
+  }
+
+  return tabs
+    .map(tab => {
+      const inputDescription = tab.input instanceof vscode.TabInputWebview
+        ? `webview:${tab.input.viewType}`
+        : Object.prototype.toString.call(tab.input);
+      return `${JSON.stringify(tab.label)} (${inputDescription})`;
+    })
+    .join(', ');
+}
+
+async function waitFor(
+  predicate: () => boolean,
+  description: string,
+  describeState?: () => string
+): Promise<void> {
   const deadline = Date.now() + WAIT_TIMEOUT_MS;
   while (!predicate()) {
     if (Date.now() >= deadline) {
-      throw new Error(`Timed out waiting for ${description}.`);
+      const state = describeState?.();
+      const stateSuffix = state ? ` Observed state: ${state}.` : '';
+      throw new Error(`Timed out waiting for ${description}.${stateSuffix}`);
     }
     await delay(100);
   }
