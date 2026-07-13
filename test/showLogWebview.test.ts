@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { renderShowLogWebviewHtml } from '../src/showLogWebview';
+import { renderShowLogWebviewStyles } from '../src/showLog/webviewStyles';
+
+test('composes the Show Log shell with its dedicated style module', () => {
+  const styles = renderShowLogWebviewStyles();
+  const html = renderShowLogWebviewHtml();
+
+  assert.ok(styles.length > 20_000);
+  assert.equal(html.includes(`<style>${styles}</style>`), true);
+  assert.equal(html.match(/<style>/g)?.length, 1);
+});
 
 test('renders a table-like show log webview shell with graph column and inline commit details support', () => {
   const html = renderShowLogWebviewHtml();

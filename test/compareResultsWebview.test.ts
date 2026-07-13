@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { renderCompareResultsWebviewHtml } from '../src/compareResultsWebview';
+import { renderCompareResultsWebviewStyles } from '../src/compareResults/webviewStyles';
+
+test('composes the Compare Results shell with its dedicated style module', () => {
+  const styles = renderCompareResultsWebviewStyles();
+  const html = renderCompareResultsWebviewHtml();
+
+  assert.ok(styles.length > 10_000);
+  assert.equal(html.includes(`<style>${styles}</style>`), true);
+  assert.equal(html.match(/<style>/g)?.length, 1);
+});
 
 test('renders compare results webview shell with inline search', () => {
   const html = renderCompareResultsWebviewHtml();
