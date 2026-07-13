@@ -1,0 +1,42 @@
+{
+  "defaults": {
+    "maxFileLines": 500,
+    "maxFunctionComplexity": 15
+  },
+  "files": {
+    "src/compareResultsWebview.ts": 725,
+    "src/revisionGraph/controller.ts": 767,
+    "src/revisionGraph/panel/state.ts": 714,
+    "src/revisionGraph/webview/script/bootstrap.ts": 1832,
+    "src/revisionGraph/webview/script/interactions.ts": 1825,
+    "src/revisionGraph/webview/script/layout.ts": 510,
+    "src/revisionGraph/webview/styles.ts": 1258,
+    "src/showLog/webviewStyles.ts": 904,
+    "src/showLogView.ts": 767,
+    "src/showLogWebview.ts": 1466
+  },
+  "functions": {
+    "src/refActions/branches.ts::createBranchFromResolvedReference#1": 21,
+    "src/refActions/currentBranch.ts::syncCurrentHeadWithUpstream#1": 16,
+    "src/revisionGraph/flow/flowConfigPathSafety.ts::inspectRepositoryConfigPath#1": 17,
+    "src/revisionGraph/flow/flowPullRequestTargets.ts::checkFlowPullRequestTarget#1": 17,
+    "src/revisionGraph/flow/pullRequestWorkflow.ts::ensureTargetEligible#1": 20,
+    "src/revisionGraph/layout/d3DagSugiyamaLayout.ts::estimateMaxLayerNodeCount#1": 16,
+    "src/revisionGraph/messageAuthorization.ts::isRevisionGraphMessageAllowedForState#1": 73,
+    "src/revisionGraph/messageAuthorization.ts::isRevisionGraphMessageRepositoryScoped#1": 40,
+    "src/revisionGraph/messageHandler.ts::handleMessage#1": 44,
+    "src/revisionGraph/messageValidation.ts::validateRevisionGraphMessage#1": 108,
+    "src/revisionGraph/messageValidation.ts::validateProjectionOptions#1": 18,
+    "src/revisionGraph/webview/runtime/hostMessages.ts::isRevisionGraphWebviewHostMessage#1": 21,
+    "src/revisionGraph/webview/runtime/hostState.ts::isRevisionGraphWebviewHostState#1": 28,
+    "src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts::syncRevisionGraphWebviewRelationshipHighlightsUi#1": 18,
+    "src/revisionGraph/webview/script/bootstrap.ts::<callback>#39": 22,
+    "src/revisionGraph/webview/script/bootstrap.ts::<callback>#40": 24,
+    "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 19,
+    "src/revisionGraph/webview/script/interactions.ts::openContextMenu#1": 58,
+    "src/revisionGraph/webview/script/interactions.ts::<callback>#46": 19,
+    "src/revisionGraph/webview/shared.ts::buildDynamicVerticalGapByRow#1": 25,
+    "src/showLog/messageHandler.ts::dispatchShowLogWebviewMessage#1": 20,
+    "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 34
+  }
+}

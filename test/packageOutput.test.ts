@@ -20,6 +20,17 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.equal(manifest.scripts?.prebuild, 'npm run clean:out');
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
   assert.equal(manifest.scripts?.['build:webview'], 'node scripts/build-webview.mjs');
+  assert.equal(manifest.scripts?.['quality:check'], 'node scripts/check-code-quality.mjs');
+});
+
+test('code quality gate accepts the reviewed production baseline', () => {
+  const result = spawnSync(process.execPath, ['scripts/check-code-quality.mjs'], {
+    cwd: process.cwd(),
+    encoding: 'utf8'
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Code quality: \d+ files and \d+ functions checked\./);
 });
 
 test('webview build discovers every isolated config and keeps the bundle last', () => {

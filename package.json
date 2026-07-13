@@ -118,6 +118,7 @@
     "prebuild": "npm run clean:out",
     "build": "tsc -p ./ && npm run build:webview",
     "build:webview": "node scripts/build-webview.mjs",
+    "quality:check": "node scripts/check-code-quality.mjs",
     "watch": "node scripts/watch.mjs",
     "clean:test": "node -e \"require('fs').rmSync('out-test', { recursive: true, force: true })\"",
     "test": "npm run clean:test && npm run build && node scripts/build-webview-test-runtime.mjs && tsc -p ./tsconfig.test.json && node scripts/run-compiled-tests.mjs",

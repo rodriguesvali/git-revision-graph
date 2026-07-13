@@ -223,6 +223,17 @@ Run the automated test suite:
 npm test
 ```
 
+Run the production code-quality budget check:
+
+```bash
+npm run quality:check
+```
+
+The quality gate rejects new production TypeScript files above 500 lines and functions above
+cyclomatic complexity 15. Existing hotspots are recorded in
+`scripts/code-quality-baseline.json`; increasing a reviewed baseline requires an intentional code
+review, while reducing or removing one is always preferred.
+
 Open the project in VS Code and run the extension:
 
 1. Open the repository in VS Code.

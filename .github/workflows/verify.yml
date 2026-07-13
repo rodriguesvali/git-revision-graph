@@ -26,6 +26,7 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: npm run quality:check
       - run: npm run build
       - run: npm test
       - run: npm run test:platform
