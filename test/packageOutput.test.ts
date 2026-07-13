@@ -51,6 +51,23 @@ test('webview build discovers every isolated config and keeps the bundle last', 
   );
 });
 
+test('webview build verifies that every TypeScript source is included in the bundle', () => {
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/build-webview.mjs', '--check-source-coverage'],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Webview source coverage: \d+\/\d+ TypeScript files included in tsconfig\.webview\.json\./
+  );
+});
+
 test('revision graph outbound messages use one shared browser-safe protocol', () => {
   const sharedProtocol = readFileSync(
     path.join(process.cwd(), 'src/revisionGraph/protocol.d.ts'),
