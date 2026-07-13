@@ -88,6 +88,24 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly branchKinds?: readonly unknown[];
       readonly references?: readonly RevisionGraphWebviewLegacyFlowReference[];
     };
+    type RevisionGraphWebviewStateHostMessage = Extract<
+      RevisionGraphWebviewHostMessage,
+      { readonly type: 'init-state' | 'update-state' }
+    >;
+    type RevisionGraphWebviewTraceContext = {
+      readonly trace: { readonly requestId: number; readonly sentAtMs: number };
+    };
+    type RevisionGraphWebviewTracedStateHostMessage = RevisionGraphWebviewStateHostMessage & RevisionGraphWebviewTraceContext;
+    type RevisionGraphWebviewSelectionTarget = RevisionGraphWebviewTarget & { readonly id: string };
+    type RevisionGraphWebviewSelectionSnapshotEntry = Pick<
+      RevisionGraphWebviewSelectionTarget,
+      'id' | 'hash' | 'revision' | 'label' | 'kind'
+    >;
+    type RevisionGraphWebviewSelectionSnapshot = readonly RevisionGraphWebviewSelectionSnapshotEntry[];
+    type RevisionGraphWebviewScenePlacementSnapshot = {
+      readonly layoutOffsetX: number;
+      readonly layoutOffsetY: number;
+    };
     let currentState: RevisionGraphWebviewHostState | null = null;
     let references: RevisionGraphWebviewHostReference[] = [];
     let currentHeadName: string | null = null;
@@ -156,7 +174,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
     let sceneEventHandlersBound = false;
-    let activeWebviewTraceMessage: RevisionGraphWebviewHostMessage | null = null;
+    let activeWebviewTraceMessage: RevisionGraphWebviewStateHostMessage | null = null;
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
@@ -167,7 +185,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let virtualEdgeIndex = new Map<number, RevisionGraphWebviewLegacyEdge[]>();
     let reloadCacheMenu: HTMLDivElement | null = null;
     let pushModeMenu: HTMLDivElement | null = null;
-    const flowKindLabels = {
+    const flowKindLabels: Readonly<Record<string, string>> = {
       main: 'Main',
       release: 'Release',
       sync: 'Sync',
@@ -178,7 +196,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       hotfix: 'Hotfix',
       unknown: 'Unknown'
     };
-    const flowKindBadges = {
+    const flowKindBadges: Readonly<Record<string, string>> = {
       main: 'main',
       release: 'rel',
       sync: 'sync',
@@ -650,7 +668,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function pushCurrentHead(mode) {
+    function pushCurrentHead(mode: 'normal' | 'force-with-lease' | 'force') {
       closePushModeMenu();
       vscode.postMessage(createRevisionGraphPushCurrentHeadMessage(mode));
     }
@@ -667,7 +685,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         menu.className = 'reload-cache-menu push-mode-menu';
         menu.hidden = true;
         menu.setAttribute('role', 'menu');
-        const pushModes = [
+        const pushModes: ReadonlyArray<{ readonly label: string; readonly mode: 'force-with-lease' | 'force' }> = [
           { label: 'Push with Force With Lease', mode: 'force-with-lease' },
           { label: 'Push with Force', mode: 'force' }
         ];
@@ -719,7 +737,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return true;
     }
 
-    function endNodeDrag(shouldPersist) {
+    function endNodeDrag(shouldPersist: boolean) {
       if (!nodeDragState) {
         return false;
       }
@@ -781,7 +799,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function applyTracedHostMessage(message, phase, apply) {
+    function applyTracedHostMessage(
+      message: RevisionGraphWebviewStateHostMessage,
+      phase: string,
+      apply: () => void
+    ) {
       const previousTraceMessage = activeWebviewTraceMessage;
       activeWebviewTraceMessage = hasWebviewTraceContext(message) ? message : null;
       const startedAt = getTraceNow();
@@ -793,11 +815,16 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function traceWebviewPhase(phase, work, detail = '') {
+    function traceWebviewPhase<Result>(phase: string, work: () => Result, detail = ''): Result {
       return traceWebviewPhaseForMessage(activeWebviewTraceMessage, phase, work, detail);
     }
 
-    function traceWebviewPhaseForMessage(traceMessage, phase, work, detail = '') {
+    function traceWebviewPhaseForMessage<Result>(
+      traceMessage: RevisionGraphWebviewStateHostMessage | null,
+      phase: string,
+      work: () => Result,
+      detail = ''
+    ): Result {
       if (!traceMessage) {
         return work();
       }
@@ -811,9 +838,9 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function postWebviewLoadTrace(
-      message,
-      phase,
-      startedAt,
+      message: RevisionGraphWebviewStateHostMessage,
+      phase: string,
+      startedAt: number,
       options: { readonly includeDelivery?: boolean; readonly detail?: string } = {}
     ) {
       if (!hasWebviewTraceContext(message)) {
@@ -831,18 +858,31 @@ const VIEWPORT_PADDING_LEFT = 18;
       ));
     }
 
-    function hasWebviewTraceContext(message) {
-      return !!message && !!message.trace && typeof message.trace.requestId === 'number' && typeof message.trace.sentAtMs === 'number';
+    function hasWebviewTraceContext(
+      message: RevisionGraphWebviewStateHostMessage | null
+    ): message is RevisionGraphWebviewTracedStateHostMessage {
+      if (!message || !('trace' in message)) {
+        return false;
+      }
+      const trace = message.trace;
+      return !!trace
+        && typeof trace === 'object'
+        && typeof (trace as Record<string, unknown>).requestId === 'number'
+        && typeof (trace as Record<string, unknown>).sentAtMs === 'number';
     }
 
-    function buildWebviewLoadTraceDetail(message, deliveryMs, extraDetail) {
+    function buildWebviewLoadTraceDetail(
+      message: RevisionGraphWebviewTracedStateHostMessage,
+      deliveryMs: number | null,
+      extraDetail: string
+    ) {
       const details = [
         'message=' + message.type
       ];
       if (deliveryMs !== null) {
         details.push('deliveryMs=' + Math.round(deliveryMs));
       }
-      const payload = message.state || message.patch;
+      const payload = message.state;
       if (payload && payload.scene) {
         details.push('nodes=' + ((payload.scene.nodes && payload.scene.nodes.length) || 0));
         details.push('edges=' + ((payload.scene.edges && payload.scene.edges.length) || 0));
@@ -970,7 +1010,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
     }
 
-    function syncRemoteTagStateCache(nextState, previousRepositoryPath, invalidateRemoteTagState) {
+    function syncRemoteTagStateCache(
+      nextState: RevisionGraphWebviewHostState,
+      previousRepositoryPath: string | null,
+      invalidateRemoteTagState: boolean
+    ) {
       const nextRepositoryPath = nextState && nextState.repositoryPath ? nextState.repositoryPath : null;
       if (previousRepositoryPath !== nextRepositoryPath || invalidateRemoteTagState) {
         remoteTagPublicationState.clear();
@@ -993,7 +1037,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function setRemoteTagState(tagName, state) {
+    function setRemoteTagState(tagName: string, state: string) {
       if (!tagName) {
         return;
       }
@@ -1033,7 +1077,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         }));
     }
 
-    function restoreSelectionSnapshot(snapshot) {
+    function restoreSelectionSnapshot(snapshot: RevisionGraphWebviewSelectionSnapshot) {
       const nextSelected: string[] = [];
       const usedReferenceIds = new Set<string>();
       for (const entry of snapshot || []) {
@@ -1047,7 +1091,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       selected = nextSelected.slice(0, 2);
     }
 
-    function findSelectionMatch(target, usedReferenceIds) {
+    function findSelectionMatch(
+      target: RevisionGraphWebviewSelectionSnapshotEntry,
+      usedReferenceIds: ReadonlySet<string>
+    ): RevisionGraphWebviewSelectionTarget | null {
       if (!target) {
         return null;
       }
@@ -1065,7 +1112,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         }
       }
 
-      const matchPredicates = [
+      const matchPredicates: ReadonlyArray<(ref: RevisionGraphWebviewSelectionTarget) => boolean> = [
         (ref) => ref.hash === target.hash && ref.revision === target.revision && ref.kind === target.kind,
         (ref) => ref.revision === target.revision && ref.kind === target.kind,
         (ref) => ref.hash === target.hash && ref.revision === target.revision,
@@ -1107,7 +1154,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       };
     }
 
-    function restoreScenePlacementSnapshot(snapshot) {
+    function restoreScenePlacementSnapshot(snapshot: RevisionGraphWebviewScenePlacementSnapshot | null) {
       if (!snapshot) {
         return;
       }
@@ -1121,7 +1168,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       sceneLayer.style.transform = 'translate(' + layoutOffsetX + 'px, ' + layoutOffsetY + 'px)';
     }
 
-    function restoreViewportSnapshot(snapshot) {
+    function restoreViewportSnapshot(snapshot: RevisionGraphWebviewViewportSceneCenter | null) {
       if (!snapshot) {
         return;
       }
@@ -1147,9 +1194,9 @@ const VIEWPORT_PADDING_LEFT = 18;
       return Object.values(nodeOffsets).some((offset) => Math.abs(Number(offset) || 0) > 0.5);
     }
 
-    function updateChrome(state) {
+    function updateChrome(state: RevisionGraphWebviewHostState) {
       if (scopeSelect) {
-        scopeSelect.value = state.projectionOptions.refScope;
+        scopeSelect.value = state.projectionOptions.refScope || 'all';
       }
       if (showTagsToggle) {
         showTagsToggle.checked = !!state.projectionOptions.showTags;
@@ -1169,8 +1216,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       syncViewOptionsButton();
     }
 
-    function buildFlowReferenceMap(flowGovernance) {
-      const nextMap = new Map();
+    function buildFlowReferenceMap(
+      flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null
+    ): Map<string, RevisionGraphWebviewLegacyFlowReference> {
+      const nextMap = new Map<string, RevisionGraphWebviewLegacyFlowReference>();
       if (!flowGovernance || !Array.isArray(flowGovernance.references)) {
         return nextMap;
       }
@@ -1211,11 +1260,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function getFlowBranchInfo(refName) {
+    function getFlowBranchInfo(refName: string): RevisionGraphWebviewLegacyFlowReference | null {
       return flowReferenceByName.get(refName) || null;
     }
 
-    function isReferenceVisible(reference) {
+    function isReferenceVisible(reference: { readonly id: string; readonly hash: string; readonly name: string; readonly kind: string } | null): boolean {
       if (!reference) {
         return false;
       }
@@ -1229,7 +1278,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return references.filter(isReferenceVisible);
     }
 
-    function syncRangeFilter(revisionRange) {
+    function syncRangeFilter(revisionRange: RevisionGraphWebviewProjectionOptions['revisionRange']) {
       if (!rangeFilter || !rangeFilterLabel) {
         return;
       }
@@ -1252,7 +1301,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function syncDescendantFilter(descendantFocus) {
+    function syncDescendantFilter(descendantFocus: RevisionGraphWebviewProjectionOptions['descendantFocus']) {
       if (!descendantFilter || !descendantFilterLabel) {
         return;
       }
@@ -1404,7 +1453,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
     }
 
-    function isLayoutVisible(layout, bounds) {
+    function isLayoutVisible(
+      layout: RevisionGraphWebviewLegacyNodeLayout,
+      bounds: RevisionGraphWebviewVirtualViewportBounds
+    ): boolean {
       return isRevisionGraphWebviewVirtualLayoutVisible(
         layout,
         Number(nodeOffsets[layout.hash] || 0),
@@ -1412,7 +1464,11 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function isEdgeVisible(edge, bounds, visibleHashes) {
+    function isEdgeVisible(
+      edge: RevisionGraphWebviewLegacyEdge,
+      bounds: RevisionGraphWebviewVirtualViewportBounds,
+      visibleHashes: ReadonlySet<string>
+    ): boolean {
       return isRevisionGraphWebviewVirtualEdgeVisible(
         edge,
         bounds,
@@ -1451,7 +1507,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function getEdgeVerticalBounds(edge) {
+    function getEdgeVerticalBounds(edge: RevisionGraphWebviewLegacyEdge) {
       return getRevisionGraphWebviewVirtualEdgeVerticalBounds(edge, graphNodeByHash);
     }
 
@@ -1473,11 +1529,14 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function getVirtualEdgeKey(edge) {
+    function getVirtualEdgeKey(edge: RevisionGraphWebviewLegacyEdge): string {
       return createRevisionGraphWebviewVirtualEdgeKey(edge);
     }
 
-    function buildVirtualSceneKey(visibleHashes, visibleEdges) {
+    function buildVirtualSceneKey(
+      visibleHashes: ReadonlySet<string>,
+      visibleEdges: readonly RevisionGraphWebviewLegacyEdge[]
+    ): string {
       return createRevisionGraphWebviewVirtualSceneKey(visibleHashes, visibleEdges);
     }
 
@@ -1539,13 +1598,13 @@ const VIEWPORT_PADDING_LEFT = 18;
 
       nodeLayer.addEventListener('mouseover', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
-        if (refElement && (!event.relatedTarget || !refElement.contains(event.relatedTarget))) {
+        if (refElement && (!(event.relatedTarget instanceof Node) || !refElement.contains(event.relatedTarget))) {
           showReferenceTooltip(refElement);
         }
       });
       nodeLayer.addEventListener('mouseout', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
-        if (refElement && (!event.relatedTarget || !refElement.contains(event.relatedTarget))) {
+        if (refElement && (!(event.relatedTarget instanceof Node) || !refElement.contains(event.relatedTarget))) {
           scheduleHideReferenceTooltip();
         }
       });
@@ -1604,7 +1663,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         if (!grip) {
           return;
         }
-        const node = grip.closest('[data-node-hash]');
+        const node = grip.closest<HTMLElement>('[data-node-hash]');
         const hash = node ? node.getAttribute('data-node-hash') : undefined;
         if (!node || !hash) {
           return;
@@ -1625,17 +1684,21 @@ const VIEWPORT_PADDING_LEFT = 18;
       sceneEventHandlersBound = true;
     }
 
-    function findEventTargetElement(event, selector) {
+    function findEventTargetElement(event: Event, selector: string): HTMLElement | null {
       const target = event.target;
-      if (!target || typeof target.closest !== 'function') {
+      if (!(target instanceof Element)) {
         return null;
       }
-      const element = target.closest(selector);
-      return element && nodeLayer && nodeLayer.contains(element) ? element : null;
+      const element = target.closest<HTMLElement>(selector);
+      return element && nodeLayer.contains(element) ? element : null;
     }
 
-    function renderNodeMarkup(node, layout, renderKey = undefined) {
-      if (!layout) {
+    function renderNodeMarkup(
+      node: RevisionGraphWebviewLegacySceneNode | undefined,
+      layout: RevisionGraphWebviewLegacyNodeLayout | undefined,
+      renderKey?: string
+    ): string {
+      if (!node || !layout) {
         return '';
       }
       const nodeRenderKey = renderKey || getNodeRenderKey(node, layout);
@@ -1653,7 +1716,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
     }
 
-    function getNodeRenderKey(node, layout) {
+    function getNodeRenderKey(
+      node: RevisionGraphWebviewLegacySceneNode | undefined,
+      layout: RevisionGraphWebviewLegacyNodeLayout | undefined
+    ): string {
       if (!node || !layout) {
         return '';
       }
@@ -1667,23 +1733,26 @@ const VIEWPORT_PADDING_LEFT = 18;
       );
     }
 
-    function renderEdgeMarkup(edge, layoutByHash) {
+    function renderEdgeMarkup(
+      edge: RevisionGraphWebviewLegacyEdge,
+      layoutByHash: ReadonlyMap<string, RevisionGraphWebviewLegacyNodeLayout>
+    ): string {
       return renderRevisionGraphWebviewEdgeMarkup(edge, layoutByHash, EDGE_VERTICAL_INSET);
     }
 
-    function createReferenceId(hash, kind, name) {
+    function createReferenceId(hash: string, kind: string, name: string): string {
       return hash + '::' + kind + '::' + name;
     }
 
-    function createCommitSelectionId(hash) {
+    function createCommitSelectionId(hash: string): string {
       return 'commit::' + hash;
     }
 
-    function formatShortCommitHash(hash) {
+    function formatShortCommitHash(hash: string): string {
       return String(hash || '').slice(0, 8);
     }
 
-    function getSelectionTarget(selectionId) {
+    function getSelectionTarget(selectionId: string): RevisionGraphWebviewSelectionTarget | null {
       if (!selectionId) {
         return null;
       }
@@ -1700,7 +1769,7 @@ const VIEWPORT_PADDING_LEFT = 18;
           name: hash,
           revision: hash,
           label: formatShortCommitHash(hash),
-          kind: 'commit'
+          kind: 'commit' as const
         };
       }
 
@@ -1719,8 +1788,8 @@ const VIEWPORT_PADDING_LEFT = 18;
       };
     }
 
-    function getSelectableTargets() {
-      const refTargets = getVisibleReferences().map((reference) => ({
+    function getSelectableTargets(): RevisionGraphWebviewSelectionTarget[] {
+      const refTargets: RevisionGraphWebviewSelectionTarget[] = getVisibleReferences().map((reference) => ({
         id: reference.id,
         hash: reference.hash,
         name: reference.name,
@@ -1728,7 +1797,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         label: reference.name,
         kind: reference.kind
       }));
-      const commitTargets = Array.from(sceneNodeByHash.values())
+      const commitTargets: RevisionGraphWebviewSelectionTarget[] = Array.from(sceneNodeByHash.values())
         .filter((node) => node.refs.length === 0)
         .map((node) => ({
           id: createCommitSelectionId(node.hash),
@@ -1736,17 +1805,17 @@ const VIEWPORT_PADDING_LEFT = 18;
           name: node.hash,
           revision: node.hash,
           label: formatShortCommitHash(node.hash),
-          kind: 'commit'
+          kind: 'commit' as const
         }));
 
       return [...refTargets, ...commitTargets];
     }
 
-    function getStructuralNodeTarget(hash) {
+    function getStructuralNodeTarget(hash: string): RevisionGraphWebviewSelectionTarget | null {
       return getSelectionTarget(createCommitSelectionId(hash));
     }
 
-    function toggleSelection(selectionId, additive) {
+    function toggleSelection(selectionId: string, additive: boolean) {
       const existingIndex = selected.indexOf(selectionId);
       if (!additive && selected.length === 1 && existingIndex === 0) {
         selected.splice(0, selected.length);
@@ -1761,9 +1830,9 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
     }
 
-    function isNodeGripEvent(event) {
+    function isNodeGripEvent(event: Event): boolean {
       const target = event.target;
-      return !!(target && typeof target.closest === 'function' && target.closest('[data-node-grip]'));
+      return target instanceof Element && !!target.closest('[data-node-grip]');
     }
 
     function showStatus(
@@ -1791,7 +1860,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
     }
 
-    function showError(message) {
+    function showError(message: string) {
       hideLoading();
       edgeLayer.innerHTML = '';
       nodeLayer.innerHTML = '';

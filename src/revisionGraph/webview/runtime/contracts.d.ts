@@ -2,6 +2,7 @@ type RevisionGraphWebviewRefKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash
 type RevisionGraphWebviewTargetKind = RevisionGraphWebviewRefKind | 'commit';
 
 interface RevisionGraphWebviewTarget {
+  readonly id?: string;
   readonly hash: string;
   readonly revision: string;
   readonly label: string;

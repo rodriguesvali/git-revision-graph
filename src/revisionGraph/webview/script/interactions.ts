@@ -53,7 +53,7 @@
       setZoom(1);
     }
 
-    function setMinimapZoom(zoom) {
+    function setMinimapZoom(zoom: number) {
       minimapZoom = zoom;
       syncMinimap();
       syncToolbarActions();
@@ -95,7 +95,7 @@
       syncMinimap();
     }
 
-    function setSearchQuery(nextQuery) {
+    function setSearchQuery(nextQuery: string) {
       searchQuery = typeof nextQuery === 'string' ? nextQuery : '';
       syncSearchResults({ preserveActiveHash: false, focusActive: true });
     }
@@ -196,7 +196,7 @@
       setActiveSearchResultIndex(activeSearchResultIndex - 1, true);
     }
 
-    function setActiveSearchResultIndex(nextIndex, focusActive) {
+    function setActiveSearchResultIndex(nextIndex: number, focusActive: boolean) {
       activeSearchResultIndex = normalizeRevisionGraphWebviewSearchResultIndex(
         searchResultHashes,
         nextIndex
@@ -246,7 +246,7 @@
       syncRevisionGraphWebviewRelationshipHighlightsUi(nodeElements, edgeElements, highlights);
     }
 
-    function openContextMenu(clientX, clientY, target) {
+    function openContextMenu(clientX: number, clientY: number, target: RevisionGraphWebviewTarget) {
       activeContextMenuRequest = { clientX, clientY, target };
       const base = selected[0] ? getSelectionTarget(selected[0]) : undefined;
       const compare = selected[1] ? getSelectionTarget(selected[1]) : undefined;
@@ -411,7 +411,10 @@
       placeContextMenu(clientX, clientY);
     }
 
-    function appendFlowGovernanceActions(flowBranch, target) {
+    function appendFlowGovernanceActions(
+      flowBranch: RevisionGraphWebviewLegacyFlowReference | null,
+      target: RevisionGraphWebviewTarget
+    ) {
       if (!flowBranch) {
         return;
       }
@@ -454,7 +457,7 @@
       }
     }
 
-    function appendMenuSection(label) {
+    function appendMenuSection(label: string) {
       if (!contextMenu || contextMenu.dataset.currentSection === label) {
         return;
       }
@@ -467,7 +470,7 @@
       }
     }
 
-    function appendMenuSubmenu(label, entries) {
+    function appendMenuSubmenu(label: string, entries: readonly RevisionGraphWebviewMenuEntry[]) {
       const group = document.createElement('div');
       group.className = 'context-menu-submenu';
 
@@ -539,11 +542,11 @@
       contextMenu.appendChild(group);
     }
 
-    function openContextSubmenu(group) {
+    function openContextSubmenu(group: HTMLElement) {
       closeContextSubmenus(group);
       group.classList.add('open');
       const trigger = group.querySelector('.context-submenu-trigger');
-      const submenu = group.querySelector('.context-submenu');
+      const submenu = group.querySelector<HTMLElement>('.context-submenu');
       if (trigger) {
         trigger.setAttribute('aria-expanded', 'true');
       }
@@ -552,7 +555,7 @@
       }
     }
 
-    function closeContextSubmenus(exceptGroup = null) {
+    function closeContextSubmenus(exceptGroup: HTMLElement | null = null) {
       for (const group of Array.from(contextMenu.querySelectorAll<HTMLElement>('.context-menu-submenu.open'))) {
         if (group === exceptGroup) {
           continue;
@@ -561,7 +564,7 @@
       }
     }
 
-    function closeContextSubmenu(group) {
+    function closeContextSubmenu(group: HTMLElement) {
       group.classList.remove('open');
       const trigger = group.querySelector('.context-submenu-trigger');
       if (trigger) {
@@ -569,7 +572,7 @@
       }
     }
 
-    function placeContextSubmenu(group, submenu) {
+    function placeContextSubmenu(group: HTMLElement, submenu: HTMLElement) {
       const margin = 8;
       submenu.style.left = '0px';
       submenu.style.top = '0px';
@@ -617,7 +620,7 @@
       contextMenu.appendChild(button);
     }
 
-    function showFlowBranchForm(target, branchKind) {
+    function showFlowBranchForm(target: RevisionGraphWebviewTarget, branchKind: RevisionGraphWebviewFlowBranchKind) {
       closeContextMenu();
       const dialog = ensureFlowBranchDialog();
       const copy = getFlowBranchDialogCopy(branchKind);
@@ -873,7 +876,7 @@
       document.body.classList.remove('flow-dialog-open');
     }
 
-    function openFlowPullRequestContextForm(target) {
+    function openFlowPullRequestContextForm(target: RevisionGraphWebviewTarget) {
       closeContextMenu();
       const dialog = ensureFlowPullRequestContextDialog();
       dialog.sourceRefName = target.name;
@@ -892,7 +895,9 @@
       window.setTimeout(() => (dialog.targetLabel.hidden ? dialog.closeButton : dialog.targetSelect).focus(), 0);
     }
 
-    function showFlowPullRequestContextForm(context) {
+    function showFlowPullRequestContextForm(
+      context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>
+    ) {
       const dialog = ensureFlowPullRequestContextDialog();
       if (!dialog.backdrop.hidden && (
         dialog.sourceRefName !== context.sourceRefName || dialog.targetRefName !== context.targetRefName
@@ -1088,20 +1093,20 @@
       postCopyFlowPullRequestContext(dialog.sourceRefName, dialog.targetRefName);
     }
 
-    function setFlowPullRequestContextWarning(message) {
+    function setFlowPullRequestContextWarning(message: string) {
       const warning = ensureFlowPullRequestContextDialog().warning;
       warning.textContent = message;
       warning.hidden = !message;
     }
 
-    function setFlowPullRequestContextActionsEnabled(enabled) {
+    function setFlowPullRequestContextActionsEnabled(enabled: boolean) {
       const dialog = ensureFlowPullRequestContextDialog();
       dialog.titleCopyButton.disabled = !enabled;
       dialog.descriptionCopyButton.disabled = !enabled;
       dialog.openButton.disabled = !enabled;
     }
 
-    function getFlowPullRequestTargets(sourceRefName) {
+    function getFlowPullRequestTargets(sourceRefName: string) {
       if (!currentFlowGovernance || !Array.isArray(currentFlowGovernance.pullRequestTargets)) {
         return [];
       }
@@ -1110,7 +1115,7 @@
       );
     }
 
-    function createFlowPullRequestContextField(labelText, inputId, multiline) {
+    function createFlowPullRequestContextField(labelText: string, inputId: string, multiline: boolean) {
       const container = document.createElement('div');
       container.className = 'flow-form-field';
       const label = document.createElement('label');
@@ -1141,7 +1146,7 @@
       return { container, input, copyButton };
     }
 
-    function copyFlowPullRequestContextField(field) {
+    function copyFlowPullRequestContextField(field: 'title' | 'description') {
       const dialog = ensureFlowPullRequestContextDialog();
       if (!dialog.sourceRefName || !dialog.targetRefName) {
         return;
@@ -1164,7 +1169,7 @@
       document.body.classList.remove('flow-dialog-open');
     }
 
-    function showFlowEqualizationForm(target) {
+    function showFlowEqualizationForm(target: RevisionGraphWebviewTarget) {
       closeContextMenu();
       const dialog = ensureFlowEqualizationDialog();
       dialog.target = target;
@@ -1327,17 +1332,17 @@
       document.body.classList.remove('flow-dialog-open');
     }
 
-    function setFlowEqualizationDialogError(dialog, message) {
+    function setFlowEqualizationDialogError(dialog: { readonly error: HTMLElement }, message: string) {
       dialog.error.textContent = message;
       dialog.error.hidden = !message;
     }
 
-    function getFlowEqualizationOrigins(targetRefName) {
+    function getFlowEqualizationOrigins(targetRefName: string): string[] {
       if (!isFlowGovernanceActive() || !currentFlowGovernance || !Array.isArray(currentFlowGovernance.references)) {
         return [];
       }
 
-      const originsByName = new Map();
+      const originsByName = new Map<string, string>();
       for (const reference of currentFlowGovernance.references) {
         if (
           reference
@@ -1357,12 +1362,12 @@
         .map(([refName]) => refName);
     }
 
-    function setFlowBranchDialogError(dialog, message) {
+    function setFlowBranchDialogError(dialog: { readonly error: HTMLElement }, message: string) {
       dialog.error.textContent = message;
       dialog.error.hidden = !message;
     }
 
-    function getFlowBranchDialogCopy(branchKind) {
+    function getFlowBranchDialogCopy(branchKind: RevisionGraphWebviewFlowBranchKind) {
       if (branchKind === 'task') {
         return { title: 'Start New Task', submitLabel: 'Create Task' };
       }
@@ -1378,7 +1383,7 @@
       return { title: 'Start New Release', submitLabel: 'Create Release' };
     }
 
-    function escapeHtml(value) {
+    function escapeHtml(value: unknown): string {
       return String(value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -1387,7 +1392,7 @@
         .replace(/'/g, '&#39;');
     }
 
-    function placeContextMenu(clientX, clientY) {
+    function placeContextMenu(clientX: number, clientY: number) {
       const margin = 8;
       contextMenu.style.left = '0px';
       contextMenu.style.top = '0px';
@@ -1453,7 +1458,7 @@
       syncViewOptionsButton();
     }
 
-    function setMinimapEnabled(enabled) {
+    function setMinimapEnabled(enabled: boolean) {
       minimapEnabled = !!enabled;
       persistWebviewUiState();
       syncMinimapPreference();
@@ -1463,25 +1468,25 @@
       syncToolbarActions();
     }
 
-    function updateFlowGovernanceOptions(options) {
+    function updateFlowGovernanceOptions(options: RevisionGraphWebviewFlowGovernanceOptions) {
       if (!hasFlowGovernanceState()) {
         return;
       }
       vscode.postMessage(createRevisionGraphFlowGovernanceOptionsMessage(options));
     }
 
-    function postPrepareFlowEqualization(targetRefName, originRefName, description) {
+    function postPrepareFlowEqualization(targetRefName: string, originRefName: string, description: string) {
       postMessageWithLoading(
         createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description),
         'Preparing equalization...'
       );
     }
 
-    function postCopyFlowPullRequestContext(sourceRefName, targetRefName) {
+    function postCopyFlowPullRequestContext(sourceRefName: string, targetRefName: string) {
       vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName));
     }
 
-    function postOpenFlowPullRequestUrl(sourceRefName, targetRefName) {
+    function postOpenFlowPullRequestUrl(sourceRefName: string, targetRefName: string) {
       vscode.postMessage(createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName));
     }
 
@@ -1497,19 +1502,23 @@
       persistRevisionGraphMinimapPreference(vscode, minimapEnabled);
     }
 
-    function postCompareSelected(base, compare) {
+    function postCompareSelected(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCompareSelectedMessage(base, compare));
     }
 
-    function postShowLogRange(base, compare) {
+    function postShowLogRange(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphShowLogRangeMessage(base, compare));
     }
 
-    function postUnifiedDiff(base, compare) {
+    function postUnifiedDiff(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphUnifiedDiffMessage(base, compare));
     }
 
-    function getFocusRangeActionLabel(base, compare, activeRange = currentProjectionOptions.revisionRange) {
+    function getFocusRangeActionLabel(
+      base: RevisionGraphWebviewTarget,
+      compare: RevisionGraphWebviewTarget,
+      activeRange = currentProjectionOptions.revisionRange
+    ) {
       if (!activeRange) {
         return 'Focus Range';
       }
@@ -1522,7 +1531,7 @@
       return 'Update Focus Range';
     }
 
-    function postFocusRange(base, compare) {
+    function postFocusRange(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget) {
       postMessageWithLoading(
         createRevisionGraphFocusRangeMessage(base, compare),
         currentProjectionOptions.revisionRange
@@ -1533,7 +1542,10 @@
       );
     }
 
-    function getFocusDescendantsActionLabel(target, activeFocus = currentProjectionOptions.descendantFocus) {
+    function getFocusDescendantsActionLabel(
+      target: RevisionGraphWebviewTarget,
+      activeFocus = currentProjectionOptions.descendantFocus
+    ) {
       if (!activeFocus) {
         return 'Focus Descendants';
       }
@@ -1543,7 +1555,7 @@
       return 'Update Focus Descendants';
     }
 
-    function postFocusDescendants(target) {
+    function postFocusDescendants(target: RevisionGraphWebviewTarget) {
       postMessageWithLoading(
         createRevisionGraphFocusDescendantsMessage(target),
         currentProjectionOptions.descendantFocus
@@ -1554,27 +1566,27 @@
       );
     }
 
-    function postShowLogTarget(target) {
+    function postShowLogTarget(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphShowLogTargetMessage(target));
     }
 
-    function postCompareWithWorktree(target) {
+    function postCompareWithWorktree(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCompareWithWorktreeMessage(target));
     }
 
-    function postCopyCommitHash(commitHash) {
+    function postCopyCommitHash(commitHash: string) {
       vscode.postMessage(createRevisionGraphCopyCommitHashMessage(commitHash));
     }
 
-    function postCopyRefName(target) {
+    function postCopyRefName(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCopyRefNameMessage(target));
     }
 
-    function postCheckout(target) {
+    function postCheckout(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCheckoutMessage(target));
     }
 
-    function postResetToCommit(target) {
+    function postResetToCommit(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphResetToCommitMessage(target));
     }
 
@@ -1604,31 +1616,31 @@
       postMessageWithLoading(createRevisionGraphStashSaveMessage(), 'Saving workspace changes to stash...');
     }
 
-    function postStashApply(target) {
+    function postStashApply(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphStashApplyMessage(target));
     }
 
-    function postStashPop(target) {
+    function postStashPop(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphStashPopMessage(target));
     }
 
-    function postStashDrop(target) {
+    function postStashDrop(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphStashDropMessage(target));
     }
 
-    function postPublishBranch(target) {
+    function postPublishBranch(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphPublishBranchMessage(target));
     }
 
-    function postCreateBranch(target) {
+    function postCreateBranch(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCreateBranchMessage(target));
     }
 
-    function postCreateTag(target) {
+    function postCreateTag(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCreateTagMessage(target));
     }
 
-    function retryRemoteTagState(target) {
+    function retryRemoteTagState(target: RevisionGraphWebviewTarget) {
       if (!target || target.kind !== 'tag') {
         return;
       }
@@ -1637,7 +1649,7 @@
       requestRemoteTagState(target);
     }
 
-    function requestRemoteTagState(target) {
+    function requestRemoteTagState(target: RevisionGraphWebviewTarget) {
       if (
         !target ||
         target.kind !== 'tag' ||
@@ -1651,19 +1663,19 @@
       vscode.postMessage(createRevisionGraphResolveRemoteTagStateMessage(target));
     }
 
-    function postPushTag(target) {
+    function postPushTag(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphPushTagMessage(target));
     }
 
-    function postDeleteRemoteTag(target) {
+    function postDeleteRemoteTag(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphDeleteRemoteTagMessage(target));
     }
 
-    function postDelete(target) {
+    function postDelete(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphDeleteMessage(target));
     }
 
-    function postMerge(target) {
+    function postMerge(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphMergeMessage(target));
     }
 

@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import * as vm from 'node:vm';
 
 import {
   renderRevisionGraphShellHtml as renderRevisionGraphShellDocument
@@ -1179,8 +1178,10 @@ test('posts Flow Governance option updates from the webview runtime', () => {
 
 test('lists main and other active releases as equalization origins', () => {
   const runtime = createWebviewRuntime();
-  vm.runInContext(`
-    currentFlowGovernance = {
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      flowGovernance: {
       enabled: true,
       branchKinds: ['main', 'release', 'feature'],
       references: [
@@ -1190,8 +1191,9 @@ test('lists main and other active releases as equalization origins', () => {
         { refName: 'release/1.9.0', kind: 'release' },
         { refName: 'feature/payment', kind: 'feature' }
       ]
-    };
-  `, runtime.context);
+      }
+    })
+  });
 
   assert.deepEqual(
     Array.from(runtime.context.getFlowEqualizationOrigins('release/2.0.0')),
@@ -2405,7 +2407,6 @@ function createReadyGraphState(overrides: Record<string, unknown> = {}) {
 }
 
 function createWebviewRuntime() {
-  const script = readRevisionGraphRuntimeSource();
 
   class MockElement {
     readonly listeners: Record<string, Array<(...args: any[]) => unknown>> = {};
@@ -2587,11 +2588,13 @@ function createWebviewRuntime() {
     Set
   } as Record<string, unknown>;
 
-  vm.createContext(context);
-  vm.runInContext(script, context);
+  Object.assign(globalThis, context);
+  const runtimeModulePath = require.resolve('../revisionGraphRuntime.cjs');
+  delete require.cache[runtimeModulePath];
+  const runtimeApi = require(runtimeModulePath) as Record<string, any>;
 
   return {
-    context: context as Record<string, any>,
+    context: runtimeApi,
     elements,
     postedMessages
   };

@@ -1,6 +1,6 @@
 # Typed Webview Runtime Migration
 
-Status: In progress - global runtime scripts type-checked; module ownership and test-harness cleanup pending
+Status: In progress - runtime strictly checked and VM harness removed; module ownership pending
 Last updated: 2026-07-12
 Release target: `2.0.0`
 
@@ -29,7 +29,7 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - The revision graph loads that asset through `webview.asWebviewUri`; `localResourceRoots` is restricted to `out/webview`.
 - The revision graph CSP now permits only its generated webview resource origin and nonce-bearing script. Other webviews retain their existing inline nonce-only policy.
 - The retained-panel watch command recompiles both targets without adding a dependency.
-- Existing behavioral tests execute the compiled runtime asset rather than extracting an executable string from generated HTML.
+- Existing behavioral tests execute a generated CommonJS copy of the compiled runtime asset through a narrow test export bridge rather than extracting an executable string or creating a `node:vm` context.
 - `tsconfig.webview.messages.json` strictly checks every outbound message builder against an explicit discriminated protocol before the compatibility runtime is emitted.
 - Incoming host messages now pass through a typed structural guard before the legacy state handler can apply them.
 - `tsconfig.webview.dom.json` strictly checks the required-element lookup helper; bootstrap binds every shell element through that helper with a concrete element type.
@@ -72,14 +72,16 @@ Use a separate TypeScript compilation target that emits one browser asset under 
 - `tsconfig.webview.center-head-toolbar-ui.json` strictly checks the Center on HEAD control's toolbar state.
 - `tsconfig.webview.relationship-highlights-ui.json` strictly checks relationship highlighting in the DOM. Selection, ancestor/descendant and edge-path CSS classes no longer mutate from the legacy interaction implementation.
 - The primary `tsconfig.webview.json` target now checks the complete emitted browser asset. `noCheck` was removed after resolving all reported diagnostics across `bootstrap.ts`, `interactions.ts`, `layout.ts`, and `referenceTooltip.ts`.
+- The primary target no longer disables `noImplicitAny`; 200 remaining implicit parameters and index operations were replaced by concrete message, state, DOM, selection, layout, virtual-scene, tooltip, and Flow Governance contracts.
 - Dynamic Flow Governance dialogs now expose typed DOM controls and explicit backdrop state instead of nullable generic `Element` values and unchecked custom properties.
 - The unused `postResetCurrentWorkspace` path was removed because no corresponding typed outbound message or host handler exists.
+- `test/revisionGraphWebview.test.ts` no longer imports or invokes `node:vm`. `scripts/build-webview-test-runtime.mjs` derives a disposable CommonJS test runtime from the production bundle after each clean build and exposes only the functions consumed by the integration tests.
 
 ### Compatibility Boundary
 
-Strict-check milestone (2026-07-12): the primary browser target includes the DOM library and compiles the complete emitted runtime with `noCheck` removed. The previous audit baseline of 307 diagnostics is now zero under the production configuration.
+Strict-check milestone (2026-07-12): the primary browser target includes the DOM library and compiles the complete emitted runtime with `noCheck` and the `noImplicitAny` override removed. The previous audit baseline of 307 general diagnostics plus 200 implicit-any diagnostics is now zero under the production configuration.
 
-The remaining compatibility boundary is architectural rather than unchecked emission: `bootstrap.ts`, `interactions.ts`, `layout.ts`, and the other compatibility sources still coordinate through classic-script globals, and the broad runtime integration harness still uses `node:vm`. Item 3 remains open until those globals are owned by typed runtime modules and the harness is replaced by direct module or browser-level tests.
+The remaining compatibility boundary is architectural rather than unchecked emission: `bootstrap.ts`, `interactions.ts`, `layout.ts`, and the other compatibility sources still coordinate through classic-script globals. Item 3 remains open until those globals are owned by typed runtime modules.
 
 ## Planned Modules
 

@@ -1,5 +1,12 @@
 const NODE_MIN_WIDTH = 128;
 const REF_LINE_HEIGHT = 25;
+type RevisionGraphWebviewMinimapSyncMode = 'none' | 'viewport' | 'full';
+type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTransform & {
+  readonly width: number;
+  readonly height: number;
+  readonly unmapX: (value: number) => number;
+  readonly unmapY: (value: number) => number;
+};
     function applyNodeLayout(persist = true, options: { updateScenePlacement?: boolean; syncMinimap?: boolean } = {}) {
       for (const [hash, element] of nodeElements.entries()) {
         const defaultLeft = getDefaultNodeLeft(hash);
@@ -20,7 +27,7 @@ const REF_LINE_HEIGHT = 25;
     }
 
     function persistNodeLayout() {
-      const normalizedOffsets = {};
+      const normalizedOffsets: Record<string, number> = {};
       for (const layout of graphNodes) {
         const offset = Number(nodeOffsets[layout.hash] || 0);
         if (Math.abs(offset) > 0.5) {
@@ -30,7 +37,7 @@ const REF_LINE_HEIGHT = 25;
       persistRevisionGraphNodeOffsets(vscode, sceneLayoutKey, normalizedOffsets);
     }
 
-    function updateEdges(elements) {
+    function updateEdges(elements: readonly Element[]) {
       for (const element of elements) {
         const fromHash = element.getAttribute('data-edge-from');
         const toHash = element.getAttribute('data-edge-to');
@@ -41,7 +48,7 @@ const REF_LINE_HEIGHT = 25;
       }
     }
 
-	    function buildEdgePath(fromHash, toHash) {
+	    function buildEdgePath(fromHash: string, toHash: string): string {
 	      const sourceHash = toHash;
 	      const targetHash = fromHash;
         const edge = graphEdgeByKey.get(fromHash + '->' + toHash);
@@ -81,7 +88,7 @@ const REF_LINE_HEIGHT = 25;
 	      return describeRevisionGraphWebviewFallbackEdgePath(sourceX, sourceY, targetX, targetY);
 	    }
 
-    function hasNodeHorizontalOffset(hash) {
+    function hasNodeHorizontalOffset(hash: string): boolean {
       return Math.abs(Number(nodeOffsets[hash] || 0)) > 0.5;
     }
 
@@ -154,7 +161,7 @@ const REF_LINE_HEIGHT = 25;
       centerViewportOnPoint(targetCenterX, targetCenterY, options);
     }
 
-    function centerNodeInViewport(hash) {
+    function centerNodeInViewport(hash: string) {
       if (!hash || !graphNodeByHash.has(hash)) {
         return;
       }
@@ -165,7 +172,7 @@ const REF_LINE_HEIGHT = 25;
       );
     }
 
-    function centerViewportOnPoint(targetCenterX, targetCenterY, options: { syncMinimap?: boolean } = {}) {
+    function centerViewportOnPoint(targetCenterX: number, targetCenterY: number, options: { syncMinimap?: boolean } = {}) {
       const visibleSize = getVisibleViewportSize();
       const visibleWidth = visibleSize.width;
       const visibleHeight = visibleSize.height;
@@ -287,11 +294,11 @@ const REF_LINE_HEIGHT = 25;
       };
     }
 
-    function getNodeCenterX(hash) {
+    function getNodeCenterX(hash: string): number {
       return getNodeLeft(hash) + getNodeWidth(hash) / 2;
     }
 
-    function getNodeLeft(hash) {
+    function getNodeLeft(hash: string): number {
       const element = nodeElements.get(hash);
       if (!element) {
         const layout = graphNodeByHash.get(hash);
@@ -300,7 +307,7 @@ const REF_LINE_HEIGHT = 25;
       return Number(element.style.left.replace('px', '')) || getDefaultNodeLeft(hash);
     }
 
-    function getNodeTop(hash) {
+    function getNodeTop(hash: string): number {
       const element = nodeElements.get(hash);
       if (!element) {
         const layout = graphNodeByHash.get(hash);
@@ -309,7 +316,7 @@ const REF_LINE_HEIGHT = 25;
       return Number(element.dataset.defaultTop || 0);
     }
 
-    function getDefaultNodeLeft(hash) {
+    function getDefaultNodeLeft(hash: string): number {
       const element = nodeElements.get(hash);
       if (!element) {
         const layout = graphNodeByHash.get(hash);
@@ -318,7 +325,7 @@ const REF_LINE_HEIGHT = 25;
       return Number(element.dataset.defaultLeft || 0);
     }
 
-    function getNodeWidth(hash) {
+    function getNodeWidth(hash: string): number {
       const element = nodeElements.get(hash);
       if (element) {
         return Number(element.dataset.nodeWidth || 0) || element.offsetWidth || NODE_MIN_WIDTH;
@@ -327,7 +334,7 @@ const REF_LINE_HEIGHT = 25;
       return node ? node.width : NODE_MIN_WIDTH;
     }
 
-    function getNodeHeight(hash) {
+    function getNodeHeight(hash: string): number {
       const element = nodeElements.get(hash);
       if (element) {
         return Number(element.dataset.nodeHeight || 0) || element.offsetHeight || REF_LINE_HEIGHT;
@@ -336,7 +343,7 @@ const REF_LINE_HEIGHT = 25;
       return node ? node.height : REF_LINE_HEIGHT;
     }
 
-    function clampNodeOffset(hash, defaultLeft, offset) {
+    function clampNodeOffset(hash: string, defaultLeft: number, offset: number): number {
       return calculateRevisionGraphWebviewNodeOffset(
         defaultLeft,
         offset,
@@ -345,11 +352,11 @@ const REF_LINE_HEIGHT = 25;
       );
     }
 
-    function clampNodeLeft(hash, left) {
+    function clampNodeLeft(hash: string, left: number): number {
       return calculateRevisionGraphWebviewNodeLeft(0, left, getNodeWidth(hash), getCanvasWidth());
     }
 
-    function clamp(value, min, max) {
+    function clamp(value: number, min: number, max: number): number {
       return Math.max(min, Math.min(max, value));
     }
 
@@ -361,11 +368,11 @@ const REF_LINE_HEIGHT = 25;
       return Number(canvas.style.height.replace('px', '')) || baseCanvasHeight;
     }
 
-    function getReference(refId) {
+    function getReference(refId: string): RevisionGraphWebviewHostReference | undefined {
       return references.find((ref) => ref.id === refId && isReferenceVisible(ref));
     }
 
-    function syncMinimap(mode = 'full') {
+    function syncMinimap(mode: Exclude<RevisionGraphWebviewMinimapSyncMode, 'none'> = 'full') {
       pendingMinimapSyncMode =
         pendingMinimapSyncMode === 'full' || mode === 'full'
           ? 'full'
@@ -382,7 +389,7 @@ const REF_LINE_HEIGHT = 25;
       });
     }
 
-    function renderMinimap(mode = 'full') {
+    function renderMinimap(mode: Exclude<RevisionGraphWebviewMinimapSyncMode, 'none'> = 'full') {
       if (
         !graphMinimap ||
         !minimapSvg ||
@@ -437,7 +444,7 @@ const REF_LINE_HEIGHT = 25;
       }
     }
 
-    function syncMinimapViewport(transform) {
+    function syncMinimapViewport(transform: RevisionGraphWebviewLegacyMinimapTransform) {
       const visibleSize = getVisibleViewportSize();
       syncRevisionGraphWebviewMinimapViewportUi(minimapViewport, transform, {
         visibleWidth: visibleSize.width / currentZoom,
@@ -447,7 +454,7 @@ const REF_LINE_HEIGHT = 25;
       });
     }
 
-    function ensureMinimapViewportVisible(transform) {
+    function ensureMinimapViewportVisible(_transform: RevisionGraphWebviewLegacyMinimapTransform) {
       if (!graphMinimap || !minimapViewport) {
         return;
       }
@@ -455,7 +462,7 @@ const REF_LINE_HEIGHT = 25;
       ensureRevisionGraphWebviewMinimapViewportVisibleUi(graphMinimap, minimapViewport);
     }
 
-    function centerViewportFromMinimapEvent(event) {
+    function centerViewportFromMinimapEvent(event: MouseEvent) {
       const transform = getMinimapTransform();
       if (!transform || !graphMinimap || typeof graphMinimap.getBoundingClientRect !== 'function') {
         return;
@@ -469,7 +476,7 @@ const REF_LINE_HEIGHT = 25;
       centerViewportOnPoint(targetX, targetY);
     }
 
-    function getMinimapTransform() {
+    function getMinimapTransform(): RevisionGraphWebviewLegacyMinimapTransform | null {
       const bounds = getDisplayedGraphBounds();
       const graphWidth = Math.max(1, bounds.maxX - bounds.minX);
       const graphHeight = Math.max(1, bounds.maxY - bounds.minY);
@@ -494,9 +501,9 @@ const REF_LINE_HEIGHT = 25;
         width: contentWidth,
         height: contentHeight,
         scale,
-        mapX: (value) => offsetX + (value - bounds.minX) * scale,
-        mapY: (value) => offsetY + (value - bounds.minY) * scale,
-        unmapX: (value) => bounds.minX + (value - offsetX) / scale,
-        unmapY: (value) => bounds.minY + (value - offsetY) / scale
+        mapX: (value: number) => offsetX + (value - bounds.minX) * scale,
+        mapY: (value: number) => offsetY + (value - bounds.minY) * scale,
+        unmapX: (value: number) => bounds.minX + (value - offsetX) / scale,
+        unmapY: (value: number) => bounds.minY + (value - offsetY) / scale
       };
     }

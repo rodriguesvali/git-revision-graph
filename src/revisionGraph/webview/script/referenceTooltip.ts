@@ -1,7 +1,27 @@
     let referenceTooltipHideTimer = 0;
     let activeReferenceTooltipHash = '';
-    let commitShortStatByHash = new Map();
-    let pendingCommitShortStatHashes = new Set();
+    interface RevisionGraphWebviewCommitShortStat {
+      readonly files: number;
+      readonly insertions: number;
+      readonly deletions: number;
+    }
+
+    interface RevisionGraphWebviewTooltipReference {
+      readonly hash: string;
+      readonly name: string;
+      readonly kind: string;
+      readonly description?: string;
+    }
+
+    interface RevisionGraphWebviewTooltipNode {
+      readonly hash: string;
+      readonly subject?: string;
+      readonly author?: string;
+      readonly date?: string;
+    }
+
+    let commitShortStatByHash = new Map<string, RevisionGraphWebviewCommitShortStat | null>();
+    let pendingCommitShortStatHashes = new Set<string>();
 
     function bindReferenceTooltipEvents() {
       if (!referenceTooltip) {
@@ -20,9 +40,10 @@
       referenceTooltip.addEventListener('click', handleReferenceTooltipActionClick);
     }
 
-    function handleReferenceTooltipActionClick(event) {
-      const actionElement = event.target && typeof event.target.closest === 'function'
-        ? event.target.closest('[data-reference-tooltip-action]')
+    function handleReferenceTooltipActionClick(event: MouseEvent) {
+      const eventTarget = event.target instanceof Element ? event.target : null;
+      const actionElement = eventTarget
+        ? eventTarget.closest<HTMLElement>('[data-reference-tooltip-action]')
         : null;
       const action = actionElement ? actionElement.getAttribute('data-reference-tooltip-action') : '';
       const commitHash = actionElement ? actionElement.getAttribute('data-commit-hash') : '';
@@ -40,15 +61,15 @@
       }
     }
 
-    function handleReferenceTooltipReferenceFocusOut(event) {
+    function handleReferenceTooltipReferenceFocusOut(event: FocusEvent) {
       scheduleHideReferenceTooltipUnlessFocusRemainsInteractive(event);
     }
 
-    function handleReferenceTooltipFocusOut(event) {
+    function handleReferenceTooltipFocusOut(event: FocusEvent) {
       scheduleHideReferenceTooltipUnlessFocusRemainsInteractive(event);
     }
 
-    function scheduleHideReferenceTooltipUnlessFocusRemainsInteractive(event) {
+    function scheduleHideReferenceTooltipUnlessFocusRemainsInteractive(event: FocusEvent) {
       if (isReferenceTooltipFocusTarget(event && event.relatedTarget)) {
         return;
       }
@@ -56,12 +77,12 @@
       scheduleHideReferenceTooltip();
     }
 
-    function isReferenceTooltipFocusTarget(target) {
+    function isReferenceTooltipFocusTarget(target: EventTarget | null): boolean {
       return isElementInside(referenceTooltip, target) || isNodeLayerReferenceTarget(target);
     }
 
-    function isNodeLayerReferenceTarget(target) {
-      if (!target || !nodeLayer || typeof target.closest !== 'function') {
+    function isNodeLayerReferenceTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof Element) || !nodeLayer) {
         return false;
       }
 
@@ -69,8 +90,8 @@
       return !!refElement && nodeLayer.contains(refElement);
     }
 
-    function isElementInside(container, target) {
-      return !!container && !!target && typeof container.contains === 'function' && container.contains(target);
+    function isElementInside(container: Node | null, target: EventTarget | null): boolean {
+      return !!container && target instanceof Node && container.contains(target);
     }
 
     function clearReferenceTooltipCommitStats() {
@@ -78,7 +99,7 @@
       pendingCommitShortStatHashes.clear();
     }
 
-    function showReferenceTooltip(refElement) {
+    function showReferenceTooltip(refElement: HTMLElement) {
       if (!referenceTooltip || !refElement) {
         return;
       }
@@ -109,7 +130,10 @@
       requestCommitShortStat(node.hash);
     }
 
-    function renderReferenceTooltip(reference, node) {
+    function renderReferenceTooltip(
+      reference: RevisionGraphWebviewTooltipReference,
+      node: RevisionGraphWebviewTooltipNode
+    ): string {
       const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(reference.name) : null;
       const flowKind = flowBranch ? flowBranch.kind : null;
       const kindLabel = flowKind
@@ -163,7 +187,7 @@
       }
     }
 
-    function requestCommitShortStat(commitHash) {
+    function requestCommitShortStat(commitHash: string) {
       if (!commitHash || commitShortStatByHash.has(commitHash) || pendingCommitShortStatHashes.has(commitHash)) {
         return;
       }
@@ -171,23 +195,27 @@
       vscode.postMessage(createRevisionGraphLoadCommitShortStatMessage(commitHash));
     }
 
-    function setCommitShortStat(commitHash, shortStat) {
+    function setCommitShortStat(commitHash: string, shortStat: Record<string, unknown> | null) {
       if (!commitHash) {
         return;
       }
       pendingCommitShortStatHashes.delete(commitHash);
-      commitShortStatByHash.set(commitHash, shortStat || null);
+      const normalizedShortStat = shortStat as RevisionGraphWebviewCommitShortStat | null;
+      commitShortStatByHash.set(commitHash, normalizedShortStat);
       if (activeReferenceTooltipHash !== commitHash || !referenceTooltip || referenceTooltip.hidden) {
         return;
       }
       const statsElement = referenceTooltip.querySelector<HTMLElement>('[data-reference-tooltip-stats]');
       if (statsElement) {
-        statsElement.innerHTML = renderReferenceTooltipStats(shortStat, true);
-        statsElement.hidden = !shortStat;
+        statsElement.innerHTML = renderReferenceTooltipStats(normalizedShortStat, true);
+        statsElement.hidden = !normalizedShortStat;
       }
     }
 
-    function renderReferenceTooltipStats(shortStat, isLoaded) {
+    function renderReferenceTooltipStats(
+      shortStat: RevisionGraphWebviewCommitShortStat | null | undefined,
+      isLoaded: boolean
+    ): string {
       if (!isLoaded) {
         return '<span class="reference-tooltip-muted">Loading changes...</span>';
       }
@@ -205,14 +233,18 @@
       return parts.join(', ');
     }
 
-    function renderReferenceTooltipStatsBlock(commitHash, shortStat, isLoaded) {
+    function renderReferenceTooltipStatsBlock(
+      commitHash: string,
+      shortStat: RevisionGraphWebviewCommitShortStat | null | undefined,
+      isLoaded: boolean
+    ): string {
       const hidden = isLoaded && !shortStat ? ' hidden' : '';
       return '<div class="reference-tooltip-stats" data-reference-tooltip-stats="' + escapeHtml(commitHash) + '"' + hidden + '>' +
         renderReferenceTooltipStats(shortStat, isLoaded) +
       '</div>';
     }
 
-    function placeReferenceTooltip(refElement) {
+    function placeReferenceTooltip(refElement: HTMLElement) {
       const margin = 12;
       const gap = 10;
       const anchor = refElement.getBoundingClientRect();
@@ -226,7 +258,7 @@
       referenceTooltip.style.top = top + 'px';
     }
 
-    function getReferenceKindLabel(kind) {
-      const labels = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
+    function getReferenceKindLabel(kind: string): string {
+      const labels: Readonly<Record<string, string>> = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
       return labels[kind] || kind;
     }

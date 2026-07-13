@@ -1,8 +1,8 @@
-    function getPrimaryAncestorPath(startHash) {
+    function getPrimaryAncestorPath(startHash: string) {
       return getRevisionGraphWebviewPrimaryAncestorPath(startHash, getPrimaryPathContext());
     }
 
-    function tracePrimaryPath(startHash, direction) {
+    function tracePrimaryPath(startHash: string, direction: 'ancestor' | 'descendant') {
       return traceRevisionGraphWebviewPrimaryPath(startHash, direction, getPrimaryPathContext());
     }
 

@@ -285,7 +285,7 @@ test('test script uses the cross-platform compiled test runner', () => {
 
   assert.equal(
     testScript,
-    'npm run clean:test && npm run build && tsc -p ./tsconfig.test.json && node scripts/run-compiled-tests.mjs'
+    'npm run clean:test && npm run build && node scripts/build-webview-test-runtime.mjs && tsc -p ./tsconfig.test.json && node scripts/run-compiled-tests.mjs'
   );
   assert.equal(testScript?.includes('*.test.js'), false);
   assert.equal(existsSync(path.join(process.cwd(), 'scripts', 'run-compiled-tests.mjs')), true);
