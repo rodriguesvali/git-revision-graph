@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { handleAsyncTaskSafely } from '../asyncTaskBoundary';
 import { API, Remote, Repository } from '../git';
 import { toErrorDetail, toOperationError } from '../errorDetail';
 import { handleWebviewMessageSafely } from '../webviewMessageBoundary';
@@ -235,12 +236,18 @@ export class RevisionGraphController implements vscode.Disposable {
         this.handleRepositorySetChanged();
       },
       onRepositoryStateChange: (repository, intent, eventKind) => {
-        void this.handleRepositoryStateChange(repository, intent, eventKind);
+        this.runControllerTask(
+          () => this.handleRepositoryStateChange(repository, intent, eventKind),
+          'Could not refresh the revision graph after the repository changed.'
+        );
       }
     });
     this.actionServices = createWorkbenchRefActionServices(
       (request) => {
-        void this.refresh(request);
+        this.runControllerTask(
+          () => this.refresh(request),
+          'Could not refresh the revision graph after the Git operation.'
+        );
       },
       (request) => {
         return this.prepareRefresh(request);
@@ -409,7 +416,10 @@ export class RevisionGraphController implements vscode.Disposable {
       this.repositoryLifecycle.setCurrentRepository(await pickRevisionGraphRepository(this.git, false));
     }
 
-    void this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
+    this.runControllerTask(
+      () => this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild')),
+      'Could not load the revision graph.'
+    );
   }
 
   async open(): Promise<void> {
@@ -981,7 +991,33 @@ export class RevisionGraphController implements vscode.Disposable {
       return;
     }
 
-    void this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild'));
+    this.runControllerTask(
+      () => this.refresh(this.createCurrentRepositoryRefreshRequest('full-rebuild')),
+      'Could not refresh the revision graph after the repository list changed.'
+    );
+  }
+
+  private runControllerTask(task: () => PromiseLike<void> | void, failureMessage: string): void {
+    void handleAsyncTaskSafely(task, {
+      onUnexpectedError: async (error) => {
+        const detail = toOperationError(failureMessage, error);
+        console.error(detail);
+        this.currentLoadingLabel = undefined;
+        this.currentLoadingMode = undefined;
+        this.currentErrorMessage = detail;
+        this.currentState = {
+          ...this.currentState,
+          loading: false,
+          loadingLabel: undefined,
+          errorMessage: detail
+        };
+        this.postHostMessage(createRevisionGraphErrorMessage(detail));
+        await vscode.window.showErrorMessage(detail);
+      },
+      reportBoundaryFailure: (error) => {
+        console.error('Revision graph task error reporting failed.', error);
+      }
+    });
   }
 
   private async handleRepositoryStateChange(
