@@ -60,6 +60,80 @@ interface RevisionGraphWebviewContextMenuPlan {
   readonly shouldRequestRemoteTagState: boolean;
 }
 
+interface RevisionGraphWebviewContextSubmenuPlacementInput {
+  readonly anchorLeft: number;
+  readonly anchorRight: number;
+  readonly anchorTop: number;
+  readonly submenuWidth: number;
+  readonly submenuHeight: number;
+  readonly viewportWidth: number;
+  readonly viewportHeight: number;
+  readonly margin?: number;
+  readonly overlap?: number;
+}
+
+interface RevisionGraphWebviewContextSubmenuPlacement {
+  readonly left: number;
+  readonly top: number;
+}
+
+interface RevisionGraphWebviewContextSubmenuCloseScheduler {
+  schedule(group: HTMLElement, close: () => void): void;
+  cancel(group?: HTMLElement | null): void;
+}
+
+function calculateRevisionGraphWebviewContextSubmenuPlacement(
+  input: RevisionGraphWebviewContextSubmenuPlacementInput
+): RevisionGraphWebviewContextSubmenuPlacement {
+  const margin = input.margin ?? 8;
+  const overlap = input.overlap ?? 1;
+  let left = input.anchorRight - overlap;
+  if (left + input.submenuWidth > input.viewportWidth - margin) {
+    left = input.anchorLeft - input.submenuWidth + overlap;
+  }
+  let top = input.anchorTop - 6;
+  if (top + input.submenuHeight > input.viewportHeight - margin) {
+    top = input.viewportHeight - input.submenuHeight - margin;
+  }
+  if (top < margin) {
+    top = margin;
+  }
+  return {
+    left: Math.max(margin, left),
+    top
+  };
+}
+
+function createRevisionGraphWebviewContextSubmenuCloseScheduler(
+  timer: Pick<Window, 'setTimeout' | 'clearTimeout'> = window,
+  delayMs = 120
+): RevisionGraphWebviewContextSubmenuCloseScheduler {
+  let closeTimer = 0;
+  let pendingGroup: HTMLElement | null = null;
+  const cancel = (group: HTMLElement | null = null) => {
+    if (group && pendingGroup !== group) {
+      return;
+    }
+    if (closeTimer) {
+      timer.clearTimeout(closeTimer);
+      closeTimer = 0;
+    }
+    pendingGroup = null;
+  };
+  return {
+    schedule(group, close) {
+      cancel();
+      pendingGroup = group;
+      closeTimer = timer.setTimeout(() => {
+        closeTimer = 0;
+        pendingGroup = null;
+        close();
+      }, delayMs);
+    },
+    cancel
+  };
+}
+
 function getRevisionGraphWebviewContextMenuComparisonTargets(
   selectedTargets: readonly RevisionGraphWebviewTarget[],
   target: RevisionGraphWebviewTarget

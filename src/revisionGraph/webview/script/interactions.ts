@@ -19,6 +19,7 @@
       readonly message: string;
       readonly input: 'taskDevInput' | 'shortNameInput' | 'nameInput' | 'descriptionInput';
     };
+    const contextSubmenuCloseScheduler = createRevisionGraphWebviewContextSubmenuCloseScheduler();
 
     function setZoom(zoom: number, options: { readonly preserveViewport?: boolean } = {}) {
       const shouldPreserveViewport = options.preserveViewport !== false;
@@ -439,9 +440,14 @@
         submenu.appendChild(submenuButton);
       }
 
-      group.addEventListener('mouseenter', () => openContextSubmenu(group));
-      group.addEventListener('mouseleave', () => closeContextSubmenu(group));
-      group.addEventListener('focusin', () => openContextSubmenu(group));
+      const keepSubmenuOpen = () => {
+        contextSubmenuCloseScheduler.cancel(group);
+        openContextSubmenu(group);
+      };
+      group.addEventListener('mouseenter', keepSubmenuOpen);
+      submenu.addEventListener('mouseenter', keepSubmenuOpen);
+      group.addEventListener('mouseleave', () => contextSubmenuCloseScheduler.schedule(group, () => closeContextSubmenu(group)));
+      group.addEventListener('focusin', keepSubmenuOpen);
       group.addEventListener('focusout', (event) => {
         if (!group.contains(event.relatedTarget instanceof Node ? event.relatedTarget : null)) {
           closeContextSubmenu(group);
@@ -464,6 +470,7 @@
     }
 
     function openContextSubmenu(group: HTMLElement) {
+      contextSubmenuCloseScheduler.cancel(group);
       closeContextSubmenus(group);
       group.classList.add('open');
       const trigger = group.querySelector('.context-submenu-trigger');
@@ -486,6 +493,7 @@
     }
 
     function closeContextSubmenu(group: HTMLElement) {
+      contextSubmenuCloseScheduler.cancel(group);
       group.classList.remove('open');
       const trigger = group.querySelector('.context-submenu-trigger');
       if (trigger) {
@@ -494,7 +502,6 @@
     }
 
     function placeContextSubmenu(group: HTMLElement, submenu: HTMLElement) {
-      const margin = 8;
       submenu.style.left = '0px';
       submenu.style.top = '0px';
       const anchorRect = typeof group.getBoundingClientRect === 'function'
@@ -505,21 +512,14 @@
         : { width: 220, height: 120 };
       const width = submenuRect.width || 220;
       const height = submenuRect.height || 120;
-      const windowWidth = window.innerWidth || 1024;
-      const windowHeight = window.innerHeight || 768;
-      let left = anchorRect.right + 6;
-      if (left + width > windowWidth - margin) {
-        left = anchorRect.left - width - 6;
-      }
-      let top = anchorRect.top - 6;
-      if (top + height > windowHeight - margin) {
-        top = windowHeight - height - margin;
-      }
-      if (top < margin) {
-        top = margin;
-      }
-      submenu.style.left = Math.max(margin, left) + 'px';
-      submenu.style.top = top + 'px';
+      const placement = calculateRevisionGraphWebviewContextSubmenuPlacement({
+        anchorLeft: anchorRect.left, anchorRight: anchorRect.right, anchorTop: anchorRect.top,
+        submenuWidth: width, submenuHeight: height,
+        viewportWidth: window.innerWidth || 1024,
+        viewportHeight: window.innerHeight || 768
+      });
+      submenu.style.left = placement.left + 'px';
+      submenu.style.top = placement.top + 'px';
     }
 
     function appendMenuItem(label: string, onClick: () => void, options: RevisionGraphWebviewMenuItemOptions = {}) {
@@ -1338,6 +1338,7 @@
     }
 
     function closeContextMenu() {
+      contextSubmenuCloseScheduler.cancel();
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';
       activeContextMenuRequest = null;

@@ -12,6 +12,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 - `flow-governance-2.0.0.md`: operational Flow Governance release scope.
 - `2.0.0-modal-error-and-warning-policy.md`: modal presentation policy for errors and warnings
   whose workflows continue.
+- `2.0.0-flow-governance-submenu-hover.md`: stable pointer access to Flow Governance context-menu
+  subitems.
 
 ## Published Baseline Retained For Integration
 

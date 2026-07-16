@@ -703,6 +703,62 @@ test('builds context menu policies for branches, stashes, and remote tags', () =
   );
 });
 
+test('places context submenus with an overlap on either side of the parent menu', () => {
+  const runtime = createWebviewRuntime();
+  const place = runtime.context.calculateRevisionGraphWebviewContextSubmenuPlacement;
+
+  assert.deepEqual(place({
+    anchorLeft: 100,
+    anchorRight: 350,
+    anchorTop: 100,
+    submenuWidth: 220,
+    submenuHeight: 120,
+    viewportWidth: 1000,
+    viewportHeight: 800
+  }), { left: 349, top: 94 });
+  assert.deepEqual(place({
+    anchorLeft: 300,
+    anchorRight: 550,
+    anchorTop: 100,
+    submenuWidth: 220,
+    submenuHeight: 120,
+    viewportWidth: 600,
+    viewportHeight: 800
+  }), { left: 81, top: 94 });
+});
+
+test('delays context submenu closure and cancels it on re-entry', () => {
+  const runtime = createWebviewRuntime();
+  let scheduled: (() => void) | undefined;
+  let scheduledDelay = 0;
+  const clearedTimers: number[] = [];
+  const timer = {
+    setTimeout(callback: () => void, delay: number) {
+      scheduled = callback;
+      scheduledDelay = delay;
+      return 17;
+    },
+    clearTimeout(timerId: number) {
+      clearedTimers.push(timerId);
+    }
+  };
+  const scheduler = runtime.context.createRevisionGraphWebviewContextSubmenuCloseScheduler(timer);
+  const group = {} as any;
+  const anotherGroup = {} as any;
+  let closeCount = 0;
+
+  scheduler.schedule(group, () => { closeCount += 1; });
+  scheduler.cancel(anotherGroup);
+  assert.deepEqual(clearedTimers, []);
+  scheduler.cancel(group);
+  assert.deepEqual(clearedTimers, [17]);
+  assert.equal(scheduledDelay, 120);
+
+  scheduler.schedule(group, () => { closeCount += 1; });
+  scheduled?.();
+  assert.equal(closeCount, 1);
+});
+
 test('renders grouped graph context menus', () => {
   const html = renderRevisionGraphShellHtml();
   const runtime = createWebviewRuntime();
@@ -791,6 +847,11 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /appendMenuSection\('Flow Governance'\);\s*appendMenuSubmenu\('Flow Governance', entries\);/s);
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
+  assert.match(html, /group\.addEventListener\('mouseleave', \(\) => contextSubmenuCloseScheduler\.schedule\(group, \(\) => closeContextSubmenu\(group\)\)\);/);
+  assert.match(html, /submenu\.addEventListener\('mouseenter', keepSubmenuOpen\);/);
+  assert.match(html, /createRevisionGraphWebviewContextSubmenuCloseScheduler\(\)/);
+  assert.match(html, /contextSubmenuCloseScheduler\.cancel\(group\);\s*openContextSubmenu\(group\);/s);
+  assert.doesNotMatch(html, /anchorRect\.right \+ 6|anchorRect\.left - width - 6/);
   assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
   assert.match(html, /function showRevisionGraphWebviewFlowBranchForm\(message, targets, showForm\)/);
   assert.match(html, /taskDevText\.textContent = 'Dev Task \*';/);

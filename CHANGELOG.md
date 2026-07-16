@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
   Results, and Show Log failures that previously used transient toasts.
 - Present description-persistence warnings modally before equalization or governed branch creation
   continues.
+- Keep Flow Governance submenu actions open while the pointer crosses from the parent context menu,
+  including left-opening menus near the viewport edge.
 
 ### Remote Hosting
 
