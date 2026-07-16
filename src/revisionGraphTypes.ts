@@ -78,6 +78,11 @@ export type RevisionGraphViewHostMessage =
     readonly title: string;
     readonly description: string;
   }
+  | {
+    readonly type: 'show-flow-branch-form';
+    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+    readonly sourceRefName: string;
+  }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
 

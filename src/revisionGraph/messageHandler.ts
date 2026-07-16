@@ -39,6 +39,10 @@ export interface RevisionGraphMessageHandlerHost
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void>;
+  prepareFlowBranchStart(
+    branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+    sourceRefName: string
+  ): Promise<void>;
   startFlowBranch(
     branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string,
@@ -106,7 +110,7 @@ export class RevisionGraphMessageHandler {
         await this.host.updateFlowGovernanceOptions(message.options);
         return;
       case 'start-flow-branch':
-        await this.host.startFlowBranch(message.branchKind, message.sourceRefName, message.name, message.description);
+        await handleFlowBranchStartMessage(this.host, message);
         return;
       case 'prepare-flow-equalization':
         await this.host.prepareFlowEqualization(
@@ -267,4 +271,15 @@ export class RevisionGraphMessageHandler {
 
     await action(repository);
   }
+}
+
+async function handleFlowBranchStartMessage(
+  host: RevisionGraphMessageHandlerHost,
+  message: Extract<RevisionGraphMessage, { readonly type: 'start-flow-branch' }>
+): Promise<void> {
+  if ('phase' in message) {
+    await host.prepareFlowBranchStart(message.branchKind, message.sourceRefName);
+    return;
+  }
+  await host.startFlowBranch(message.branchKind, message.sourceRefName, message.name, message.description);
 }

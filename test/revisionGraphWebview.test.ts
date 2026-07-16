@@ -223,6 +223,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextFieldMessage\(sourceRefName, targetRefName, field\) \{\s*return \{ type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field \};\s*\}/s);
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
+  assert.match(html, /function createRevisionGraphPrepareStartFlowBranchMessage\(target, branchKind\)/);
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
   assert.match(html, /Start New Task/);
@@ -237,6 +238,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /Open Promotion PR URL/);
   assert.match(html, /openButton\.textContent = 'Open Pull Request';/);
   assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
+  assert.match(html, /case 'show-flow-branch-form':\s*showRevisionGraphWebviewFlowBranchForm\(message, getSelectableTargets\(\), showFlowBranchForm\);\s*return;/s);
   assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
   assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
   assert.match(html, /flowLabel\.textContent = 'Flow';/);
@@ -596,7 +598,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /appendFlowGovernanceActions\(getFlowBranchInfo\(target\.name\), target\);/);
-  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => showFlowBranchForm\(target, 'release'\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
@@ -790,6 +792,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);
   assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
+  assert.match(html, /function showRevisionGraphWebviewFlowBranchForm\(message, targets, showForm\)/);
   assert.match(html, /taskDevText\.textContent = 'Dev Task \*';/);
   assert.match(html, /shortNameText\.textContent = 'Short name \*';/);
   assert.match(html, /branchKind === 'bug'[\s\S]*?'Bug ID \*'[\s\S]*?branchKind === 'hotfix' \? 'Hotfix ID \*' : 'Dev Task \*'/);
@@ -1410,6 +1413,16 @@ test('rejects malformed host state before applying it to the webview runtime', (
     }),
     false
   );
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'show-flow-branch-form',
+    branchKind: 'release',
+    sourceRefName: 'main'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'show-flow-branch-form',
+    branchKind: 'invalid',
+    sourceRefName: 'main'
+  }), false);
 });
 
 test('normalizes validated host state into the runtime model', () => {

@@ -65,6 +65,18 @@
       };
     }
 
+    function createRevisionGraphPrepareStartFlowBranchMessage(
+      target: RevisionGraphWebviewTarget,
+      branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'
+    ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
+      return {
+        type: 'start-flow-branch',
+        phase: 'prepare',
+        branchKind,
+        sourceRefName: target.name
+      };
+    }
+
     function createRevisionGraphPrepareFlowEqualizationMessage(
       targetRefName: string,
       originRefName: string,

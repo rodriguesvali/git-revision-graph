@@ -65,6 +65,17 @@ export function createRevisionGraphFlowPullRequestContextMessage(
   };
 }
 
+export function createRevisionGraphShowFlowBranchFormMessage(
+  branchKind: Extract<RevisionGraphViewHostMessage, { readonly type: 'show-flow-branch-form' }>['branchKind'],
+  sourceRefName: string
+): RevisionGraphViewHostMessage {
+  return {
+    type: 'show-flow-branch-form',
+    branchKind,
+    sourceRefName
+  };
+}
+
 export function createRevisionGraphLoadingMessage(
   label: string,
   mode?: RevisionGraphLoadingMode

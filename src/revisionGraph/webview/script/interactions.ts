@@ -1,4 +1,3 @@
-    type RevisionGraphWebviewFlowBranchKind = 'release' | 'feature' | 'hotfix' | 'task' | 'bug';
     type RevisionGraphWebviewFlowBranchBackdrop = HTMLElement & {
       __flowBranchTarget?: RevisionGraphWebviewTarget | null;
       __flowBranchKind?: RevisionGraphWebviewFlowBranchKind | null;
@@ -344,7 +343,7 @@
       const entries: RevisionGraphWebviewMenuEntry[] = [];
       if (flowBranch.kind === 'main') {
         entries.push(
-          { label: 'Start New Release', onClick: () => showFlowBranchForm(target, 'release') },
+          { label: 'Start New Release', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'release')) },
           { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') },
           { label: 'Start New Hot Fix', onClick: () => showFlowBranchForm(target, 'hotfix') }
         );

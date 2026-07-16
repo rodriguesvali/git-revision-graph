@@ -7,6 +7,7 @@ import {
   createRevisionGraphInitStateMessage,
   createRevisionGraphLoadingMessage,
   createRevisionGraphRemoteTagStateMessage,
+  createRevisionGraphShowFlowBranchFormMessage,
   createRevisionGraphUpdateStateMessage
 } from '../src/revisionGraph/hostMessages';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
@@ -33,6 +34,14 @@ test('builds revision graph host status messages with stable payloads', () => {
   assert.deepEqual(createRevisionGraphErrorMessage('Could not load the revision graph.'), {
     type: 'set-error',
     message: 'Could not load the revision graph.'
+  });
+});
+
+test('builds the host request that opens a prepared Flow Governance branch form', () => {
+  assert.deepEqual(createRevisionGraphShowFlowBranchFormMessage('release', 'main'), {
+    type: 'show-flow-branch-form',
+    branchKind: 'release',
+    sourceRefName: 'main'
   });
 });
 

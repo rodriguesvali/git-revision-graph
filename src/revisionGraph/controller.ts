@@ -289,9 +289,9 @@ export class RevisionGraphController implements vscode.Disposable {
       updateFlowGovernanceOptions: async (options) => {
         await this.flowGovernanceWorkflow.updateOptions(options);
       },
-      startFlowBranch: async (branchKind, sourceRefName, name, description) => {
-        await this.flowGovernanceWorkflow.startBranch(branchKind, sourceRefName, name, description);
-      },
+      prepareFlowBranchStart: (branchKind, sourceRefName) => this.flowGovernanceWorkflow.prepareStartBranch(branchKind, sourceRefName),
+      startFlowBranch: (branchKind, sourceRefName, name, description) =>
+        this.flowGovernanceWorkflow.startBranch(branchKind, sourceRefName, name, description),
       prepareFlowEqualization: async (targetRefName, originRefName, description) => {
         await this.flowGovernanceWorkflow.prepareEqualization(targetRefName, originRefName, description);
       },

@@ -4,13 +4,14 @@ import assert from 'node:assert/strict';
 import { RefActionServices } from '../src/refActions';
 import {
   DEFAULT_FLOW_CONFIG,
+  prepareFlowBranchStart,
   resolveFlowBranchName,
   resolveFlowReleaseBranchName,
   startFlowBranch,
   startFlowReleaseBranch
 } from '../src/revisionGraph/flow';
 import { RefType } from '../src/git';
-import { createBranch, createRepository } from './fakes';
+import { createBranch, createHead, createRepository } from './fakes';
 
 test('Flow Governance release branch names follow the configured release pattern', () => {
   assert.deepEqual(
@@ -34,6 +35,166 @@ test('Flow Governance release branch names follow the configured release pattern
     resolveFlowReleaseBranchName('bad release name', DEFAULT_FLOW_CONFIG).ok,
     false
   );
+});
+
+test('Flow Governance opens the release form preflight immediately when main is synchronized', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0, { remote: 'origin', name: 'main' })
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmations }));
+
+  assert.equal(ready, true);
+  assert.deepEqual(confirmations, []);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance synchronizes a behind main after confirmation before opening the release form', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 2, { remote: 'origin', name: 'main' })
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const refreshes: unknown[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmations, confirmResult: true, refreshes }));
+
+  assert.equal(ready, true);
+  assert.match(confirmations[0]?.message ?? '', /main is not synchronized with origin\/main \(2 behind\)/);
+  assert.equal(confirmations[0]?.confirmLabel, 'Synchronize and Continue');
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(refreshes.length, 1);
+});
+
+test('Flow Governance keeps the release form closed when synchronization is declined', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' })
+  });
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmResult: false }));
+
+  assert.equal(ready, false);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance keeps the release form closed when synchronization fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 1, { remote: 'origin', name: 'main' })
+  });
+  repository.pull = async () => {
+    throw new Error('remote unavailable');
+  };
+  const errors: string[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmResult: true, errors }));
+
+  assert.equal(ready, false);
+  assert.match(errors[0] ?? '', /Could not synchronize the current branch.*remote unavailable/);
+});
+
+test('Flow Governance fast-forwards a behind non-current release base without switching branches', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/active'),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'main',
+        behind: 1,
+        upstream: { remote: 'origin', name: 'main' }
+      })
+    ]
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const refreshes: unknown[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmations, confirmResult: true, refreshes }));
+
+  assert.equal(ready, true);
+  assert.equal(confirmations[0]?.confirmLabel, 'Synchronize and Continue');
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.fetch, [{
+    remote: 'origin',
+    ref: 'refs/heads/main:refs/heads/main'
+  }]);
+  assert.equal(refreshes.length, 1);
+});
+
+test('Flow Governance blocks divergent non-current release bases after confirmation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/active'),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'main',
+        ahead: 1,
+        behind: 1,
+        upstream: { remote: 'origin', name: 'main' }
+      })
+    ]
+  });
+  const warnings: string[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmResult: true, warnings }));
+
+  assert.equal(ready, false);
+  assert.match(warnings[0] ?? '', /cannot be synchronized safely while another branch is checked out/);
+  assert.deepEqual(repository.calls.fetch, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance keeps the release form closed when non-current fast-forward fails', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/active'),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'main',
+        behind: 1,
+        upstream: { remote: 'origin', name: 'main' }
+      })
+    ]
+  });
+  repository.fetch = async () => {
+    throw new Error('fetch failed');
+  };
+  const errors: string[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'release',
+    sourceBranch: 'main'
+  }, createReleaseServices({ confirmResult: true, errors }));
+
+  assert.equal(ready, false);
+  assert.match(errors[0] ?? '', /Could not synchronize main with origin\/main.*fetch failed/);
 });
 
 test('Flow Governance feature branch names follow the configured feature pattern', () => {
@@ -403,6 +564,7 @@ function createReleaseServices(options: {
   readonly upstreamClears?: string[];
   readonly refreshes?: unknown[];
   readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;
+  readonly warnings?: string[];
   readonly confirmResult?: boolean;
   readonly remoteNames?: readonly string[];
   readonly pickedRemoteName?: string;
@@ -424,7 +586,7 @@ function createReleaseServices(options: {
         return options.confirmResult ?? false;
       },
       showInformationMessage(message) { options.informationMessages?.push(message); },
-      showWarningMessage() {},
+      showWarningMessage(message) { options.warnings?.push(message); },
       async showErrorMessage(message) { options.errors?.push(message); },
       async showSourceControl() {}
     },

@@ -99,6 +99,14 @@ export interface FlowPullRequestTargetInfo {
 
 export type FlowGovernanceOptionsUpdate = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;
 
+export function isFlowStartBranchKind(value: unknown): value is Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task' | 'bug' | 'hotfix'> {
+  return value === 'release'
+    || value === 'feature'
+    || value === 'task'
+    || value === 'bug'
+    || value === 'hotfix';
+}
+
 export type FlowDirectMergePolicy = 'off' | 'warn' | 'block';
 
 export type FlowDirectMergeAction = 'allow' | 'warn' | 'block';

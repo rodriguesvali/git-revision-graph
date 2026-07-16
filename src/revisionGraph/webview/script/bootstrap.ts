@@ -730,7 +730,6 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function handleHostMessage(message: RevisionGraphWebviewHostMessage) {
-
       switch (message.type) {
         case 'init-state':
           applyTracedHostMessage(message, 'webview.apply.init-state', () => {
@@ -751,6 +750,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         case 'show-flow-pr-context':
           showFlowPullRequestContextForm(message);
           return;
+        case 'show-flow-branch-form': showRevisionGraphWebviewFlowBranchForm(message, getSelectableTargets(), showFlowBranchForm); return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');
           return;

@@ -35,6 +35,11 @@ All notable changes to this project will be documented in this file.
 - Added a first-position `Flow Governance` submenu on classified refs. `Start New Release` and
   `Start New Feature` now share a name/description form and create local branches from `main`
   using the configured release or feature pattern.
+- Added a host-side synchronization gate before the `Start New Release` form. A current `main`
+  that is ahead, behind, or divergent must be synchronized after explicit confirmation; canceling
+  or failing synchronization leaves the form closed and prevents release creation from stale code.
+- Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
+  when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Made `Description` mandatory when starting release, feature, task, bug, or hotfix branches,
   with matching validation in the webview and extension host.
 - Expanded reference cards using their branch-name length plus reserved badge space, keeping

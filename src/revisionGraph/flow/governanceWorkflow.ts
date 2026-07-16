@@ -10,11 +10,17 @@ import type {
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../../revisionGraphTypes';
+import { createRevisionGraphShowFlowBranchFormMessage } from '../hostMessages';
 import { resolveFlowConfigForRepository } from './flowConfig';
 import { FlowConfigPersistenceCoordinator } from './flowConfigPersistenceCoordinator';
+import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
 import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
-import { startFlowBranch, type FlowStartBranchKind } from './flowReleaseBranch';
+import {
+  prepareFlowBranchStart,
+  startFlowBranch,
+  type FlowStartBranchKind
+} from './flowReleaseBranch';
 import { applyFlowGovernanceOptionsUpdate } from './flowState';
 import type {
   FlowGovernanceOptionsUpdate,
@@ -98,7 +104,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.resolveSettings(repository)
     );
     if (!flowConfig.ok || !flowConfig.config.enabled) {
-      this.host.actionServices.ui.showWarningMessage('Flow Governance is not available for this repository.');
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
       return;
     }
 
@@ -120,6 +126,46 @@ export class RevisionGraphFlowGovernanceWorkflow {
     );
     if (outcome.status === 'rejected') {
       this.showConcurrentMutationWarning();
+    }
+  }
+
+  async prepareStartBranch(
+    branchKind: FlowStartBranchKind,
+    sourceRefName: string
+  ): Promise<void> {
+    const repository = this.host.getCurrentRepository();
+    if (!repository) {
+      return;
+    }
+
+    const flowConfig = await resolveFlowConfigForRepository(
+      repository.rootUri.fsPath,
+      this.resolveSettings(repository)
+    );
+    if (!flowConfig.ok || !flowConfig.config.enabled) {
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
+      return;
+    }
+
+    const outcome = await runGuardedRepositoryMutation(
+      this.host.mutationCoordinator,
+      repository,
+      this.host.actionServices,
+      (guardedRepository, services) => prepareFlowBranchStart(
+        guardedRepository,
+        { kind: branchKind, sourceBranch: sourceRefName },
+        services
+      )
+    );
+    if (outcome.status === 'rejected') {
+      this.showConcurrentMutationWarning();
+      return;
+    }
+
+    if (outcome.value) {
+      this.host.postHostMessage(createRevisionGraphShowFlowBranchFormMessage(branchKind, sourceRefName));
+    } else {
+      this.host.postCurrentState();
     }
   }
 

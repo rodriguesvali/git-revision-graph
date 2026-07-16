@@ -7,7 +7,7 @@ import type {
   RevisionGraphRef
 } from './model/commitGraphTypes';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
-import { FlowGovernanceOptionsUpdate } from './flow';
+import { FlowGovernanceOptionsUpdate, isFlowStartBranchKind } from './flow';
 export {
   isRevisionGraphMessageAllowedForCurrentRepository,
   isRevisionGraphMessageAllowedForState
@@ -115,12 +115,13 @@ export function validateRevisionGraphMessage(message: unknown): RevisionGraphMes
       return options ? { type: 'set-flow-governance-options', options } : undefined;
     }
     case 'start-flow-branch':
+      if (message.phase === 'prepare') {
+        return isBoundedNonEmptyString(message.sourceRefName) && isFlowStartBranchKind(message.branchKind)
+          ? { type: 'start-flow-branch', phase: 'prepare', branchKind: message.branchKind, sourceRefName: message.sourceRefName }
+          : undefined;
+      }
       return isBoundedNonEmptyString(message.sourceRefName)
-        && (message.branchKind === 'release'
-          || message.branchKind === 'feature'
-          || message.branchKind === 'task'
-          || message.branchKind === 'bug'
-          || message.branchKind === 'hotfix')
+        && isFlowStartBranchKind(message.branchKind)
         && isBoundedNonEmptyString(message.name, 240)
         && isBoundedNonEmptyString(message.description, 2048)
         && message.description.trim().length > 0

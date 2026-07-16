@@ -3,6 +3,7 @@
 type RevisionGraphWebviewRefKind = RevisionGraphProtocol.RefKind;
 type RevisionGraphWebviewMergeRefKind = RevisionGraphProtocol.MergeRefKind;
 type RevisionGraphWebviewTargetKind = RevisionGraphProtocol.TargetKind;
+type RevisionGraphWebviewFlowBranchKind = 'release' | 'feature' | 'hotfix' | 'task' | 'bug';
 
 interface RevisionGraphWebviewTarget {
   readonly id?: string;
@@ -65,5 +66,6 @@ type RevisionGraphWebviewHostMessage =
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: string }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: Record<string, unknown> | null }
   | { readonly type: 'show-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string; readonly title: string; readonly description: string }
+  | { readonly type: 'show-flow-branch-form'; readonly branchKind: RevisionGraphWebviewFlowBranchKind; readonly sourceRefName: string }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };

@@ -4,7 +4,9 @@ import {
   toErrorDetail,
   toOperationError
 } from '../../errorDetail';
-import { Repository } from '../../git';
+import { Branch, Repository } from '../../git';
+import { formatUpstreamLabel } from '../../gitState';
+import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
 import { validateGitBranchName } from '../../refActions/branchValidation';
 import {
   ensureWorkspaceReadyForMutation,
@@ -22,6 +24,11 @@ export interface StartFlowBranchOptions {
   readonly name: string;
   readonly description: string;
   readonly config: NormalizedFlowConfig;
+}
+
+export interface PrepareFlowBranchStartOptions {
+  readonly kind: FlowStartBranchKind;
+  readonly sourceBranch: string;
 }
 
 export interface FlowBranchNameResult {
@@ -63,6 +70,59 @@ export function resolveFlowBranchName(
     ok: false,
     message: `${getFlowBranchKindLabel(kind)} branch name must be a valid Git branch and match ${branchPattern}.`
   };
+}
+
+export async function prepareFlowBranchStart(
+  repository: Repository,
+  options: PrepareFlowBranchStartOptions,
+  services: RefActionServices
+): Promise<boolean> {
+  if (options.kind !== 'release') {
+    return true;
+  }
+
+  const sourceBranch = await getLocalBranch(repository, options.sourceBranch);
+  if (!sourceBranch?.upstream) {
+    return true;
+  }
+
+  const ahead = sourceBranch.ahead ?? 0;
+  const behind = sourceBranch.behind ?? 0;
+  if (ahead <= 0 && behind <= 0) {
+    return true;
+  }
+
+  const upstreamLabel = formatUpstreamLabel(sourceBranch.upstream.remote, sourceBranch.upstream.name);
+  const confirmed = await services.ui.confirm({
+    message: `${options.sourceBranch} is not synchronized with ${upstreamLabel} ` +
+      `(${formatFlowBranchSyncState(ahead, behind)}). Synchronize it before starting a new release?`,
+    confirmLabel: 'Synchronize and Continue'
+  });
+  if (!confirmed) {
+    return false;
+  }
+
+  if (repository.state.HEAD?.name === options.sourceBranch) {
+    return syncCurrentHeadWithUpstream(repository, services);
+  }
+
+  if (ahead > 0) {
+    await services.ui.showWarningMessage(
+      `${options.sourceBranch} cannot be synchronized safely while another branch is checked out ` +
+      `(${formatFlowBranchSyncState(ahead, behind)}). Check it out and synchronize it before starting a new release.`,
+      { modal: true }
+    );
+    return false;
+  }
+
+  return fastForwardNonCurrentFlowBranch(
+    repository,
+    options.sourceBranch,
+    sourceBranch.upstream.remote,
+    sourceBranch.upstream.name,
+    upstreamLabel,
+    services
+  );
 }
 
 export async function startFlowBranch(
@@ -231,12 +291,60 @@ function getUniqueCandidates(values: readonly (string | undefined)[]): readonly 
   return [...new Set(values.filter((value): value is string => !!value))];
 }
 
-async function getLocalBranch(repository: Repository, branchName: string): Promise<unknown | undefined> {
+async function getLocalBranch(repository: Repository, branchName: string): Promise<Branch | undefined> {
   try {
     return await repository.getBranch(branchName);
   } catch {
     return undefined;
   }
+}
+
+function formatFlowBranchSyncState(ahead: number, behind: number): string {
+  if (ahead > 0 && behind > 0) {
+    return `${ahead} ahead, ${behind} behind`;
+  }
+  if (behind > 0) {
+    return `${behind} behind`;
+  }
+  return `${ahead} ahead`;
+}
+
+async function fastForwardNonCurrentFlowBranch(
+  repository: Repository,
+  branchName: string,
+  remoteName: string,
+  upstreamName: string,
+  upstreamLabel: string,
+  services: RefActionServices
+): Promise<boolean> {
+  const remoteBranchName = getUpstreamBranchName(remoteName, upstreamName);
+  const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+  try {
+    await repository.fetch({
+      remote: remoteName,
+      ref: `refs/heads/${remoteBranchName}:refs/heads/${branchName}`
+    });
+  } catch (error) {
+    preparedRefresh.cancel();
+    await services.ui.showErrorMessage(
+      toOperationError(`Could not synchronize ${branchName} with ${upstreamLabel}.`, error),
+      isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+    );
+    return false;
+  }
+
+  services.refreshController.refresh(preparedRefresh.request);
+  services.ui.showInformationMessage(`${branchName} was updated from ${upstreamLabel}.`);
+  return true;
+}
+
+function getUpstreamBranchName(remoteName: string, upstreamName: string): string {
+  const remotePrefix = `${remoteName}/`;
+  const fullRemotePrefix = `refs/remotes/${remoteName}/`;
+  if (upstreamName.startsWith(fullRemotePrefix)) {
+    return upstreamName.slice(fullRemotePrefix.length);
+  }
+  return upstreamName.startsWith(remotePrefix) ? upstreamName.slice(remotePrefix.length) : upstreamName;
 }
 
 function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {

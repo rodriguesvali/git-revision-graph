@@ -1,7 +1,7 @@
 # Flow Governance 2.0.0
 
 Status: Build complete - manual validation pending
-Last updated: 2026-07-04
+Last updated: 2026-07-13
 Baseline: `1.5.8` plus completed Flow Governance Phase 1 foundation
 
 ## Goal
@@ -20,27 +20,29 @@ from an active release.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
    or focusing that item reveals `Start New Release`, `Start New Feature`, and
    `Start New Hot Fix`.
-5. The user chooses `Start New Release` or `Start New Feature`, fills the
-   required name and description, and confirms.
-6. The extension validates the input, derives the branch from `patterns.release`
+5. When the user chooses `Start New Release`, the host verifies the selected
+   `main` against its tracked upstream before opening the form. An out-of-sync
+   current branch requires explicit confirmation and successful synchronization.
+6. The user fills the required name and description and confirms.
+7. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
    saves the description as Git branch metadata.
-7. From a feature branch, the user can choose `Flow Governance > Start New Task`,
+8. From a feature branch, the user can choose `Flow Governance > Start New Task`,
    enter the required Dev Task number, short name, and description,
    and create a task branch named from `<task-dev>-<short-name>` through
    `patterns.task`.
-8. From a release or feature branch, the user can choose
+9. From a release or feature branch, the user can choose
    `Flow Governance > Start New Bug`, enter the required Bug ID, short name, and
    description, and create a bug branch named from `<bug-id>-<short-name>`
    through `patterns.bug`.
-9. The user selects a governed source or target branch.
-10. The graph explains applicable governance policy, including whether a PR is
+10. The user selects a governed source or target branch.
+11. The graph explains applicable governance policy, including whether a PR is
    required.
-11. For `release/*` promotion, the user can validate whether production is an
+12. For `release/*` promotion, the user can validate whether production is an
    ancestor of the release.
-12. If promotion is blocked, the extension guides the user toward a `sync/*`
+13. If promotion is blocked, the extension guides the user toward a `sync/*`
    equalization branch and PR handoff.
-13. From a release or feature branch, the user can choose
+14. From a release or feature branch, the user can choose
    `Prepare Equalization`, select `main` or an active release as the origin,
    enter a required description, and prepare a local `sync/*` branch without an
    automatic push.
@@ -102,10 +104,12 @@ from an active release.
 - When Flow Governance is active, a branch classified as `main` shows a
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
-- `Start New Release` and `Start New Feature` share a required-name and
-  required-description form, validate the resulting branch against
-  `patterns.release` or `patterns.feature`, create a local branch from `main`,
-  and never push automatically.
+- `Start New Release` verifies the selected `main` before showing its form. If
+  the current branch is ahead, behind, or divergent from its tracked upstream,
+  the user must confirm and complete synchronization first; cancellation or
+  failure keeps the form closed. The existing required-name and
+  required-description validation then creates the release branch from `main`
+  and separately offers optional confirmed publication after creation.
 - `Start New Hot Fix` is available from a branch classified as `main`. Its form
   requires a Hotfix ID, short name, and description, combines the identifying
   values as `<hotfix-id>-<short-name>`, validates the result through
@@ -373,6 +377,13 @@ from an active release.
 
 - Open the graph in an Extension Development Host.
 - Enable Flow Governance with a repository config file.
+- Leave the checked-out local `main` behind its tracked remote and run
+  `Start New Release`. Verify the form remains closed until `Synchronize and
+  Continue` is accepted and pull succeeds. Repeat with cancellation and a pull
+  failure; neither path may open the form or create a release branch.
+- With Flow Governance active, delete the repository flow file without
+  refreshing the graph and run `Start New Release`. Verify the unavailable
+  warning is modal, the form remains closed, and no branch is created.
 - Verify `Start New Release` and `Start New Feature` from the `main` Flow
   Governance submenu create local branches through the shared required-name and
   required-description form.

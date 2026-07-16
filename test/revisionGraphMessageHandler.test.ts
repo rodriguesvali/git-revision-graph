@@ -177,6 +177,24 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
   ]);
 });
 
+test('RevisionGraphMessageHandler prepares a Flow Governance branch before the form is shown', async () => {
+  const calls: Array<{ readonly branchKind: string; readonly sourceRefName: string }> = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async prepareFlowBranchStart(branchKind, sourceRefName) {
+      calls.push({ branchKind, sourceRefName });
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    phase: 'prepare',
+    branchKind: 'release',
+    sourceRefName: 'main'
+  });
+
+  assert.deepEqual(calls, [{ branchKind: 'release', sourceRefName: 'main' }]);
+});
+
 test('RevisionGraphMessageHandler runs Pull Request handoff through the host boundary', async () => {
   const calls: string[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -408,6 +426,7 @@ function createHost(
     postHostMessage() {},
     postCurrentState() {},
     async updateFlowGovernanceOptions() {},
+    async prepareFlowBranchStart() {},
     async startFlowBranch() {},
     async prepareFlowEqualization() {},
     async copyFlowPullRequestContext() {},

@@ -70,6 +70,14 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(
+    validateRevisionGraphMessage({ type: 'start-flow-branch', phase: 'prepare', branchKind: 'release', sourceRefName: '' }),
+    undefined
+  );
+  assert.equal(
+    validateRevisionGraphMessage({ type: 'start-flow-branch', phase: 'prepare', branchKind: 'invalid', sourceRefName: 'main' }),
+    undefined
+  );
+  assert.equal(
     validateRevisionGraphMessage({ type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '' }),
     undefined
   );
@@ -458,6 +466,20 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       options: {
         enabled: true
       }
+    }
+  );
+  assert.deepEqual(
+    validateRevisionGraphMessage({
+      type: 'start-flow-branch',
+      phase: 'prepare',
+      branchKind: 'release',
+      sourceRefName: 'main'
+    }),
+    {
+      type: 'start-flow-branch',
+      phase: 'prepare',
+      branchKind: 'release',
+      sourceRefName: 'main'
     }
   );
   assert.deepEqual(
@@ -944,6 +966,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       governedFlowState
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'release', sourceRefName: 'main' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'release', sourceRefName: 'release/1.0.0' },
+      governedFlowState
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
