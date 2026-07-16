@@ -309,6 +309,37 @@ test('Flow Governance resolves Pull Request targets and ahead status for release
   ]);
 });
 
+test('Flow Governance recovers one unambiguous legacy sync target from deterministic branch names', async () => {
+  const ranges: string[] = [];
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
+    { refName: 'feature/teste-01', kind: 'feature', isEphemeral: false, diagnostics: [] },
+    { refName: 'sync/teste-01', kind: 'sync', isEphemeral: true, diagnostics: [] }
+  ], undefined, async (_path, args) => {
+    ranges.push(args.at(-1) ?? '');
+    return { stdout: '1\n', stderr: '' };
+  });
+
+  assert.deepEqual(ranges, [
+    'release/2.0.0..feature/teste-01',
+    'feature/teste-01..sync/teste-01'
+  ]);
+  assert.deepEqual(targets.map((target) => [target.sourceRefName, target.targetRefName]), [
+    ['feature/teste-01', 'release/2.0.0'],
+    ['sync/teste-01', 'feature/teste-01']
+  ]);
+});
+
+test('Flow Governance does not infer a legacy sync target when feature and release names collide', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'release/teste-01', kind: 'release', isEphemeral: false, diagnostics: [] },
+    { refName: 'feature/teste-01', kind: 'feature', isEphemeral: false, diagnostics: [] },
+    { refName: 'sync/teste-01', kind: 'sync', isEphemeral: true, diagnostics: [] }
+  ], undefined, async () => ({ stdout: '1\n', stderr: '' }));
+
+  assert.equal(targets.some((target) => target.sourceRefName === 'sync/teste-01'), false);
+});
+
 test('Flow Governance blocks release and hotfix promotion when production is not an ancestor', async () => {
   const targets = await loadFlowPullRequestTargets('/workspace/repo', [
     { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },

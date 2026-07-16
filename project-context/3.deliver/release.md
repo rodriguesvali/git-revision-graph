@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-16 passed `npm run quality:check` (220 production files and 2,094 functions), `npm run build`, `npm test` (740 tests), `npm run test:platform` (31 tests), and `git diff --check`. |
+| Current automated source verification | Complete | Latest verification on 2026-07-16 passed `npm run quality:check` (221 production files and 2,097 functions), `npm run build`, `npm test` (742 tests), `npm run test:platform` (31 tests), and `git diff --check`. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -118,6 +118,10 @@ Recorded verification:
   hotspot-baseline increase; `npm run build`, all 740 tests, all 31 platform tests, and
   `git diff --check` passed. `graphify update .` rebuilt 4,468 nodes, 8,790 edges, and 355
   communities. Manual Extension Development Host conflict-resolution validation remains pending.
+  A same-day compatibility correction restores the Flow Governance submenu for pre-metadata sync
+  branches when deterministic naming identifies exactly one visible release or feature; ambiguous
+  matches remain fail-closed. The focused fallback tests and all 742 compiled tests passed;
+  `graphify update .` rebuilt 4,470 nodes, 8,798 edges, and 360 communities.
 
 - Governed branch source publication preflight was extended on 2026-07-16. A
   source without upstream is now checked when the repository has remotes; a

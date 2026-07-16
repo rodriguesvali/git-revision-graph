@@ -1,6 +1,7 @@
 import { hasGitExitCode, toErrorDetail } from '../../errorDetail';
 import { isAbortError } from '../../errors';
 import { execGitWithResult, GIT_EXEC_METADATA_PROFILE, GitExecOptions, GitExecResult } from '../../gitExec';
+import { suggestFlowEqualizationBranchName } from './flowEqualizationNaming';
 import type { FlowBranchInfo, FlowPullRequestTargetInfo } from './flowTypes';
 
 export type FlowPullRequestTargetGitExecutor = (
@@ -54,10 +55,7 @@ export async function loadFlowPullRequestTargets(
   }
 
   for (const source of references.filter((reference) => reference.kind === 'sync')) {
-    const target = references.find((reference) =>
-      reference.refName === source.equalizationTargetRefName
-      && (reference.kind === 'release' || reference.kind === 'feature')
-    );
+    const target = resolveFlowSyncPullRequestTarget(source, references);
     if (target && source.refName !== target.refName) {
       candidates.push({
         sourceRefName: source.refName,
@@ -75,6 +73,23 @@ export async function loadFlowPullRequestTargets(
     signal,
     execGit
   )));
+}
+
+function resolveFlowSyncPullRequestTarget(
+  source: FlowBranchInfo,
+  references: readonly FlowBranchInfo[]
+): FlowBranchInfo | undefined {
+  const eligibleTargets = references.filter((reference) =>
+    reference.kind === 'release' || reference.kind === 'feature'
+  );
+  if (source.equalizationTargetRefName) {
+    return eligibleTargets.find((reference) => reference.refName === source.equalizationTargetRefName);
+  }
+
+  const inferredTargets = eligibleTargets.filter((reference) =>
+    suggestFlowEqualizationBranchName(reference.refName) === source.refName
+  );
+  return inferredTargets.length === 1 ? inferredTargets[0] : undefined;
 }
 
 export async function checkFlowPullRequestTarget(

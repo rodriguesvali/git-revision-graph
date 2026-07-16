@@ -8,6 +8,7 @@ import {
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import { setFlowBranchDescription } from './flowBranchDescription';
+import { suggestFlowEqualizationBranchName } from './flowEqualizationNaming';
 import { setFlowEqualizationTarget } from './flowEqualizationTarget';
 
 export interface PrepareFlowEqualizationOptions {
@@ -19,15 +20,6 @@ export interface PrepareFlowEqualizationOptions {
 export interface FlowEqualizationDependencies {
   readonly setDescription?: typeof setFlowBranchDescription;
   readonly setTarget?: typeof setFlowEqualizationTarget;
-}
-
-export function suggestFlowEqualizationBranchName(targetBranch: string): string {
-  const suffix = targetBranch
-    .replace(/^(?:release|feature)\//, '')
-    .replace(/[^A-Za-z0-9._/-]+/g, '-')
-    .replace(/^[/.-]+|[/.-]+$/g, '')
-    .replace(/\/{2,}/g, '/');
-  return `sync/${suffix || 'release'}`;
 }
 
 export async function prepareFlowEqualizationBranch(

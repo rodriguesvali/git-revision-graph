@@ -66,7 +66,8 @@ All notable changes to this project will be documented in this file.
 - Equalization sync branches now persist the release or feature from which they were created and
   expose `Promotion PR Context` only for that target after the merge is completed. The host blocks
   alternate targets and merge-in-progress handoff, including after conflicts are resolved but
-  before the merge commit.
+  before the merge commit. Existing sync branches without metadata recover the submenu only when
+  their deterministic name identifies one unambiguous release or feature.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Changed concurrent-operation feedback in Flow Governance branch, equalization, and Pull Request
