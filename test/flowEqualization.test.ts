@@ -84,6 +84,40 @@ test('Flow Governance prepares a local feature equalization branch', async () =>
   assert.deepEqual(descriptions, ['Bring the stable platform baseline into the feature']);
 });
 
+test('Flow Governance shows description persistence warnings modally and continues equalization', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const warningRequests: Array<{ readonly message: string; readonly modal: boolean | undefined }> = [];
+  const services = {
+    ui: {
+      showInformationMessage() {},
+      showWarningMessage(message: string, options?: { readonly modal?: boolean }) {
+        warningRequests.push({ message, modal: options?.modal });
+      },
+      async showErrorMessage() {},
+      async showSourceControl() {}
+    },
+    refreshController: {
+      prepare() { return { cancel() {} }; },
+      refresh() {}
+    }
+  } as unknown as RefActionServices;
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'main',
+    targetBranch: 'release/2.0.0',
+    description: 'Bring production fixes into the release'
+  }, services, {
+    async setDescription() {
+      throw new Error('description persistence failed');
+    }
+  });
+
+  assert.equal(warningRequests.length, 1);
+  assert.match(warningRequests[0].message, /description could not be saved/);
+  assert.equal(warningRequests[0].modal, true);
+  assert.deepEqual(repository.calls.merge, ['main']);
+});
+
 test('Flow Governance equalization requires a description', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const errors: string[] = [];

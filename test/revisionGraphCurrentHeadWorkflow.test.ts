@@ -86,7 +86,7 @@ test('RevisionGraphCurrentHeadWorkflow posts current state before awaiting a mod
   await syncPromise;
 });
 
-test('RevisionGraphCurrentHeadWorkflow does not post current state before awaiting a non-modal error', async () => {
+test('RevisionGraphCurrentHeadWorkflow posts current state before errors without explicit options', async () => {
   const events: string[] = [];
   let closeErrorMessage: (() => void) | undefined;
   const workflow = new RevisionGraphCurrentHeadWorkflow(
@@ -119,11 +119,11 @@ test('RevisionGraphCurrentHeadWorkflow does not post current state before awaiti
   ]);
 
   assert.equal(resultBeforeDismissal, 'pending');
-  assert.deepEqual(events, ['show-error']);
+  assert.deepEqual(events, ['post-current-state', 'show-error']);
 
   closeErrorMessage?.();
   await syncPromise;
-  assert.deepEqual(events, ['show-error', 'post-current-state']);
+  assert.deepEqual(events, ['post-current-state', 'show-error', 'post-current-state']);
 });
 
 test('RevisionGraphCurrentHeadWorkflow does not post current state when an action schedules refresh', async () => {

@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-
 import { handleAsyncTaskSafely } from '../asyncTaskBoundary';
 import { API, Repository } from '../git';
 import { toErrorDetail, toOperationError } from '../errorDetail';
@@ -10,6 +9,7 @@ import {
   RefActionServices
 } from '../refActions';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
+import { showModalErrorMessage } from '../workbenchMessages';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
 import { openUnifiedDiffDocument } from './repository/log';
 import { pickRevisionGraphRepository } from './repository/picker';
@@ -391,7 +391,7 @@ export class RevisionGraphController implements vscode.Disposable {
                 errorMessage: detail
               };
               this.postHostMessage(createRevisionGraphErrorMessage(detail));
-              await vscode.window.showErrorMessage(detail);
+              await showModalErrorMessage(detail);
             },
             reportBoundaryFailure: (error) => {
               console.error('Revision graph error reporting failed.', error);
@@ -644,7 +644,7 @@ export class RevisionGraphController implements vscode.Disposable {
           errorMessage: detail
         };
         this.postHostMessage(createRevisionGraphErrorMessage(detail));
-        await vscode.window.showErrorMessage(detail);
+        await showModalErrorMessage(detail);
       },
       reportBoundaryFailure: (error) => {
         console.error('Revision graph task error reporting failed.', error);

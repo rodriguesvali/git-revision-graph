@@ -17,6 +17,14 @@ const measuredFunctions = [];
 for (const filePath of sourceFiles) {
   const relativePath = toPosix(path.relative(projectRoot, filePath));
   const sourceText = readFileSync(filePath, 'utf8');
+  if (
+    relativePath !== 'src/workbenchMessages.ts'
+    && sourceText.includes('vscode.window.showErrorMessage')
+  ) {
+    violations.push(
+      `${relativePath}: error messages must use the shared modal workbench presenter`
+    );
+  }
   const lineCount = countLines(sourceText);
   const allowedLines = baseline.files[relativePath] ?? defaultMaxFileLines;
   if (lineCount > allowedLines) {

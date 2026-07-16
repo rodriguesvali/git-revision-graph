@@ -3,6 +3,7 @@ import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
 import { toOperationError } from '../errorDetail';
 import type { Change, Repository } from '../git';
 import { isAbortError } from '../errors';
+import { showModalErrorMessage } from '../workbenchMessages';
 
 const REVERT_FILE_CONFIRMATION_ACTION = 'Revert File';
 const SHOW_LOG_RESTORE_SOURCE_SIDE: CompareResultRestoreSourceSide = 'right';
@@ -91,7 +92,7 @@ async function getDefaultShowLogFileRestoreServices(): Promise<ShowLogFileRestor
       return vscode.window.showWarningMessage(message, options, action);
     },
     async showErrorMessage(message) {
-      await vscode.window.showErrorMessage(message);
+      await showModalErrorMessage(message);
     },
     hasWorktreeChangeForCompareResultRestore: services.hasWorktreeChangeForCompareResultRestore,
     restoreWorktreeChangeFromRef: services.restoreWorktreeChangeFromRef

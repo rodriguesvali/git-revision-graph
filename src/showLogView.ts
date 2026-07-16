@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-
 import { toOperationError } from './errorDetail';
 import { isAbortError } from './errors';
 import type { Repository } from './git';
+import { showModalErrorMessage } from './workbenchMessages';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
 import {
@@ -740,7 +740,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
                 };
                 this.postState();
               }
-              await vscode.window.showErrorMessage(detail);
+              await showModalErrorMessage(detail);
             },
             reportBoundaryFailure: (error) => {
               console.error('Show Log error reporting failed.', error);

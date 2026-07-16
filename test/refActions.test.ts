@@ -2208,7 +2208,7 @@ test('mergeResolvedReference refreshes conflict state before waiting for the mod
   await mergePromise;
 });
 
-test('mergeResolvedReference keeps non-conflict merge errors non-modal', async () => {
+test('mergeResolvedReference omits conflict-only detail from generic merge errors', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
     head: createHead('main')

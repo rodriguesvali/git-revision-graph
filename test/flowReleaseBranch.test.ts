@@ -431,6 +431,33 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
 });
 
+test('Flow Governance shows description persistence warnings modally and continues branch creation', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const warningRequests: Array<{ readonly message: string; readonly modal: boolean | undefined }> = [];
+  const services = createReleaseServices({ warningRequests });
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'checkout-redesign',
+    description: 'Redesign the checkout experience',
+    config: DEFAULT_FLOW_CONFIG
+  }, services, {
+    async setDescription() {
+      throw new Error('description persistence failed');
+    }
+  });
+
+  assert.equal(warningRequests.length, 1);
+  assert.match(warningRequests[0].message, /description could not be saved/);
+  assert.equal(warningRequests[0].modal, true);
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'feature/checkout-redesign',
+    checkout: true,
+    ref: 'main'
+  }]);
+});
+
 test('Flow Governance refuses any flow branch without a description before mutation', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const errors: string[] = [];
@@ -702,6 +729,10 @@ function createReleaseServices(options: {
   readonly refreshes?: unknown[];
   readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly warnings?: string[];
+  readonly warningRequests?: Array<{
+    readonly message: string;
+    readonly modal: boolean | undefined;
+  }>;
   readonly confirmResult?: boolean;
   readonly remoteNames?: readonly string[];
   readonly pickedRemoteName?: string;
@@ -723,7 +754,10 @@ function createReleaseServices(options: {
         return options.confirmResult ?? false;
       },
       showInformationMessage(message) { options.informationMessages?.push(message); },
-      showWarningMessage(message) { options.warnings?.push(message); },
+      showWarningMessage(message, messageOptions) {
+        options.warnings?.push(message);
+        options.warningRequests?.push({ message, modal: messageOptions?.modal });
+      },
       async showErrorMessage(message) { options.errors?.push(message); },
       async showSourceControl() {}
     },

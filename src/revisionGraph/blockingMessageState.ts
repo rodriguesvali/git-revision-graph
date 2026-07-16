@@ -23,10 +23,7 @@ export function withCurrentStateBeforeBlockingMessage(
         await services.ui.showWarningMessage(message, options);
       },
       async showErrorMessage(message, options) {
-        if (options?.modal) {
-          postCurrentState();
-        }
-
+        postCurrentState();
         await services.ui.showErrorMessage(message, options);
       }
     }

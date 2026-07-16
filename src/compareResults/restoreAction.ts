@@ -3,6 +3,7 @@ import type { Change, Repository } from '../git';
 import type { CompareResultItem } from '../compareResultsShared';
 import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
 import { isAbortError } from '../errors';
+import { showModalErrorMessage } from '../workbenchMessages';
 
 const RESTORE_FILE_CONFIRMATION_ACTION = 'Revert File';
 
@@ -119,7 +120,7 @@ async function getDefaultCompareResultsRestoreServices(): Promise<CompareResults
       return vscode.window.showWarningMessage(message, options, action);
     },
     async showErrorMessage(message) {
-      await vscode.window.showErrorMessage(message);
+      await showModalErrorMessage(message);
     },
     hasWorktreeChangeForCompareResultRestore: services.hasWorktreeChangeForCompareResultRestore,
     restoreWorktreeChangeFromRef: services.restoreWorktreeChangeFromRef

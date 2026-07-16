@@ -48,6 +48,22 @@ test('Flow Governance clears graph loading before awaiting a modal warning resul
   assert.deepEqual(events, ['post-current-state', 'show-modal-warning']);
 });
 
+test('Flow Governance clears graph loading before every error because errors are modal', async () => {
+  const events: string[] = [];
+  const services = createServices({
+    async showErrorMessage() {
+      events.push('show-error');
+    }
+  });
+  const guarded = withCurrentStateBeforeBlockingMessage(services, () => {
+    events.push('post-current-state');
+  });
+
+  await guarded.ui.showErrorMessage('Could not synchronize the branch.');
+
+  assert.deepEqual(events, ['post-current-state', 'show-error']);
+});
+
 function createServices(
   ui: Partial<RefActionServices['ui']>
 ): RefActionServices {

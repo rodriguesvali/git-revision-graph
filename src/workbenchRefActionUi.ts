@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { CurrentBranchPushMode, RefActionUi, RemoteCheckoutInput } from './refActions';
 import { validateGitBranchName } from './refActions/branchValidation';
 import { validateGitTagName } from './refActions/tagValidation';
+import { showModalErrorMessage } from './workbenchMessages';
 
 export function createWorkbenchRefActionUi(): RefActionUi {
   return {
@@ -140,12 +141,7 @@ export function createWorkbenchRefActionUi(): RefActionUi {
       await vscode.window.showWarningMessage(message);
     },
     async showErrorMessage(message, options) {
-      if (options) {
-        await vscode.window.showErrorMessage(message, options);
-        return;
-      }
-
-      await vscode.window.showErrorMessage(message);
+      await showModalErrorMessage(message, options);
     },
     async showSourceControl() {
       await vscode.commands.executeCommand('workbench.view.scm');

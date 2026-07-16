@@ -4,6 +4,7 @@ import { toOperationError } from '../../errorDetail';
 import { formatShortCommitHash } from '../../commitHash';
 import { Repository } from '../../git';
 import { RevisionGraphDocumentBackend } from '../backend';
+import { showModalErrorMessage } from '../../workbenchMessages';
 
 export async function openUnifiedDiffDocument(
   repository: Repository,
@@ -28,7 +29,7 @@ export async function openUnifiedDiffDocument(
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(
+    await showModalErrorMessage(
       toOperationError('Could not open the unified diff.', error),
       { modal: true }
     );
@@ -59,7 +60,7 @@ export async function openUnifiedDiffWithWorktreeDocument(
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(
+    await showModalErrorMessage(
       toOperationError('Could not open the unified diff.', error),
       { modal: true }
     );
@@ -83,6 +84,6 @@ export async function openCommitDetails(
       preview: true
     });
   } catch (error) {
-    await vscode.window.showErrorMessage(toOperationError('Could not open the selected commit.', error));
+    await showModalErrorMessage(toOperationError('Could not open the selected commit.', error));
   }
 }

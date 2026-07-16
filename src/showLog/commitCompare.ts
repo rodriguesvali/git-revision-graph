@@ -2,6 +2,7 @@ import { toOperationError } from '../errorDetail';
 import type { Repository } from '../git';
 import type { CompareResultsPresenter } from '../refActions';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
+import { showModalErrorMessage } from '../workbenchMessages';
 
 export interface ShowLogCommitCompareUi {
   showInformationMessage(message: string): void;
@@ -82,7 +83,7 @@ async function getDefaultShowLogCommitCompareUi(): Promise<ShowLogCommitCompareU
       void vscode.window.showInformationMessage(message);
     },
     async showErrorMessage(message) {
-      await vscode.window.showErrorMessage(message);
+      await showModalErrorMessage(message);
     }
   };
 }

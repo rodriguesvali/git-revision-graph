@@ -5,6 +5,7 @@ import {
   type RefActionServices
 } from '../refActions';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
+import { showModalErrorMessage } from '../workbenchMessages';
 
 export interface ShowLogResetActionUi {
   showErrorMessage(message: string): Promise<void>;
@@ -49,10 +50,9 @@ export function getShowLogResetCommitLabel(entry: RevisionLogEntry, commitHash: 
 }
 
 async function getDefaultShowLogResetActionUi(): Promise<ShowLogResetActionUi> {
-  const vscode = await import('vscode');
   return {
     async showErrorMessage(message) {
-      await vscode.window.showErrorMessage(message);
+      await showModalErrorMessage(message);
     }
   };
 }

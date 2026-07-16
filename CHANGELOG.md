@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Notifications
+
+- Present every error as a native modal dialog, including generic Git, Revision Graph, Compare
+  Results, and Show Log failures that previously used transient toasts.
+- Present description-persistence warnings modally before equalization or governed branch creation
+  continues.
+
 ### Remote Hosting
 
 - Added Azure DevOps Services support for opening commits and Flow Governance Pull Request creation

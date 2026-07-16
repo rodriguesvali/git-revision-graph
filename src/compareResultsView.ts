@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import type { Change, Repository } from './git';
 import { toOperationError } from './errorDetail';
+import { showModalErrorMessage } from './workbenchMessages';
 import {
   CompareResultsCompletedState,
   CompareResultItem,
@@ -295,7 +296,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
             () => this.state
           );
         } catch (error) {
-          await vscode.window.showErrorMessage(
+          await showModalErrorMessage(
             toOperationError(
               'Could not refresh Compare Results before opening the unified diff.',
               error
@@ -398,7 +399,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
             onUnexpectedError: async (error) => {
               const detail = toOperationError('Could not handle the Compare Results action.', error);
               console.error(detail);
-              await vscode.window.showErrorMessage(detail);
+              await showModalErrorMessage(detail);
             },
             reportBoundaryFailure: (error) => {
               console.error('Compare Results error reporting failed.', error);

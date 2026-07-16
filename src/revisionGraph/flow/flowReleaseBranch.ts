@@ -24,6 +24,10 @@ export interface StartFlowBranchOptions {
   readonly config: NormalizedFlowConfig;
 }
 
+export interface StartFlowBranchDependencies {
+  readonly setDescription?: typeof setFlowBranchDescription;
+}
+
 export interface FlowBranchNameResult {
   readonly ok: boolean;
   readonly branchName?: string;
@@ -68,7 +72,8 @@ export function resolveFlowBranchName(
 export async function startFlowBranch(
   repository: Repository,
   options: StartFlowBranchOptions,
-  services: RefActionServices
+  services: RefActionServices,
+  dependencies: StartFlowBranchDependencies = {}
 ): Promise<void> {
   const branchKindLabel = getFlowBranchKindLabel(options.kind);
   const operationLabel = `starting a new ${options.kind}`;
@@ -101,10 +106,15 @@ export async function startFlowBranch(
     await services.referenceManager.unsetBranchUpstream(repository, branchName);
     const description = options.description.trim();
     try {
-      await setFlowBranchDescription(repository.rootUri.fsPath, branchName, description);
+      await (dependencies.setDescription ?? setFlowBranchDescription)(
+        repository.rootUri.fsPath,
+        branchName,
+        description
+      );
     } catch (error) {
       await services.ui.showWarningMessage(
-        toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error)
+        toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error),
+        { modal: true }
       );
     }
 

@@ -70,7 +70,8 @@ export async function prepareFlowEqualizationBranch(
       );
     } catch (error) {
       await services.ui.showWarningMessage(
-        toOperationError(`${branchName} was created, but its description could not be saved.`, error)
+        toOperationError(`${branchName} was created, but its description could not be saved.`, error),
+        { modal: true }
       );
     }
     await repository.merge(originBranch);
