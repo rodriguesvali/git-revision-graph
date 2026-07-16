@@ -109,6 +109,17 @@ Planned verification:
 
 Recorded verification:
 
+- Governed branch source publication preflight was extended on 2026-07-16. A
+  source without upstream is now checked when the repository has remotes; a
+  missing source offers confirmed publication, sets upstream, and must pass
+  post-push revalidation before the child-branch form opens. Read-only remotes,
+  cancellation, unsafe remote state, push failure, and failed revalidation
+  fail closed, while repositories without remotes preserve local-only creation.
+  `npm run quality:check` passed with 218 production files and 2,083 functions;
+  `npm run build`, all 736 tests, all 31 platform tests, and `git diff --check`
+  passed. `graphify update .` rebuilt 4,450 nodes, 8,735 edges, and 351
+  communities. Manual Extension Development Host validation remains pending.
+
 - Automatic Flow Governance remote fetch feedback was completed on 2026-07-16.
   Branch-start upstream checks, non-current fast-forward synchronization, Pull
   Request target verification, source publication checks, and post-push

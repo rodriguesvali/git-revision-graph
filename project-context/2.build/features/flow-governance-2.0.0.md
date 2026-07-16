@@ -21,9 +21,11 @@ from an active release.
    or focusing that item reveals `Start New Release`, `Start New Feature`, and
    `Start New Hot Fix`.
 5. Before any governed branch form opens, the host fetches the source's tracked
-   upstream and then verifies its refreshed state. Release, feature, and hotfix
-   require exact synchronization with `main`; task and bug require their source
-   not to be behind and block divergence for manual reconciliation.
+   upstream and then verifies its refreshed state. If a source has no upstream
+   but remotes are configured, the host checks the selected remote and offers
+   confirmed publication when the source is absent. Release, feature, and
+   hotfix require exact synchronization with `main`; task and bug require their
+   source not to be behind and block divergence for manual reconciliation.
 6. The user fills the required name and description and confirms.
 7. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
@@ -111,6 +113,12 @@ from an active release.
   first; fetch, synchronization, or cancellation failure keeps the form closed.
   Existing required-field validation then creates the branch from `main` and
   separately offers optional confirmed publication after creation.
+- Any governed branch source without an upstream is checked against a configured
+  remote before its form opens. A missing source offers `Publish and Continue`,
+  establishes upstream tracking through a normal push, and must pass a second
+  remote check. Cancellation, read-only remotes, push/revalidation failure, and
+  unsafe remote state keep the form closed; repositories without remotes retain
+  local-only branch creation.
 - `Start New Hot Fix` is available from a branch classified as `main`. Its form
   requires a Hotfix ID, short name, and description, combines the identifying
   values as `<hotfix-id>-<short-name>`, validates the result through
@@ -440,6 +448,11 @@ from an active release.
 - During every automatic branch-start or Pull Request remote fetch, verify the
   `Fetching remotes...` spinner is visible only for the network operation and
   clears before the next confirmation, warning, error, form, or URL handoff.
+- With an unpublished feature that has no upstream, run `Start New Task` and
+  verify `Publish and Continue` publishes and revalidates the feature before the
+  task form opens. Repeat with cancellation and a read-only remote; the form
+  must stay closed. With no repository remote, verify local-only creation still
+  proceeds.
 - Verify remote-ahead and divergent sources remain blocked with actionable
   guidance and that no force-push option is presented.
 - Run `Promotion PR Context` and verify the form displays

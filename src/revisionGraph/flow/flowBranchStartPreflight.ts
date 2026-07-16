@@ -4,6 +4,10 @@ import { formatUpstreamLabel } from '../../gitState';
 import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
 import { prepareFullRebuildRefresh } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
+import {
+  checkFlowPullRequestSourcePublication,
+  type FlowPullRequestSourcePublication
+} from './flowPullRequestPreflight';
 import type { FlowStartBranchKind } from './flowTypes';
 
 export type FlowBranchStartSyncPolicy = 'exact-sync' | 'not-behind';
@@ -15,10 +19,12 @@ export interface PrepareFlowBranchStartOptions {
 
 export interface FlowBranchStartPreflightDependencies {
   runWithRemoteFetchLoading<T>(operation: () => Promise<T>): Promise<T>;
+  readonly checkSourcePublication?: typeof checkFlowPullRequestSourcePublication;
 }
 
 const DEFAULT_DEPENDENCIES: FlowBranchStartPreflightDependencies = {
-  runWithRemoteFetchLoading: (operation) => operation()
+  runWithRemoteFetchLoading: (operation) => operation(),
+  checkSourcePublication: checkFlowPullRequestSourcePublication
 };
 
 export function getFlowBranchStartSyncPolicy(kind: FlowStartBranchKind): FlowBranchStartSyncPolicy {
@@ -34,8 +40,15 @@ export async function prepareFlowBranchStart(
   dependencies: FlowBranchStartPreflightDependencies = DEFAULT_DEPENDENCIES
 ): Promise<boolean> {
   const branchBeforeFetch = await getLocalBranch(repository, options.sourceBranch);
-  if (!branchBeforeFetch?.upstream) {
-    return true;
+  if (!branchBeforeFetch) {
+    await services.ui.showErrorMessage(
+      `Could not verify the local ${options.sourceBranch} branch before starting a new ${options.kind}.`,
+      { modal: true }
+    );
+    return false;
+  }
+  if (!branchBeforeFetch.upstream) {
+    return prepareUntrackedFlowBranchStart(repository, options, services, dependencies);
   }
 
   if (!await fetchFlowBranchUpstream(
@@ -105,6 +118,119 @@ export async function prepareFlowBranchStart(
     services,
     dependencies
   );
+}
+
+async function prepareUntrackedFlowBranchStart(
+  repository: Repository,
+  options: PrepareFlowBranchStartOptions,
+  services: RefActionServices,
+  dependencies: FlowBranchStartPreflightDependencies
+): Promise<boolean> {
+  try {
+    const remoteNames = await services.referenceManager.getRemoteNames(repository);
+    if (remoteNames.length === 0) {
+      return true;
+    }
+
+    const remoteName = remoteNames.length === 1
+      ? remoteNames[0]
+      : await services.ui.pickRemoteName(remoteNames, `Choose a remote to verify ${options.sourceBranch}`);
+    if (!remoteName) {
+      return false;
+    }
+
+    const checkSourcePublication = dependencies.checkSourcePublication ?? checkFlowPullRequestSourcePublication;
+    let publication = await dependencies.runWithRemoteFetchLoading(() => checkSourcePublication(
+      repository,
+      remoteName,
+      options.sourceBranch
+    ));
+    const policy = getFlowBranchStartSyncPolicy(options.kind);
+    if (publication.status === 'ready' || (publication.status === 'unpushed' && policy === 'not-behind')) {
+      return true;
+    }
+    if (!await canPublishUntrackedFlowBranch(publication, repository, options, services)) {
+      return false;
+    }
+
+    const isPublish = publication.status === 'unpublished';
+    const confirmed = await services.ui.confirm({
+      message: isPublish
+        ? `${options.sourceBranch} is not available on ${remoteName}. Publish it before starting a new ${options.kind}?`
+        : `${options.sourceBranch} has commits that are not available on ${remoteName}. Push them before starting a new ${options.kind}?`,
+      confirmLabel: isPublish ? 'Publish and Continue' : 'Push and Continue'
+    });
+    if (!confirmed) {
+      return false;
+    }
+
+    await repository.push(remoteName, options.sourceBranch, true);
+    publication = await dependencies.runWithRemoteFetchLoading(() => checkSourcePublication(
+      repository,
+      remoteName,
+      options.sourceBranch
+    ));
+    if (publication.status !== 'ready') {
+      await services.ui.showWarningMessage(
+        `${options.sourceBranch} was pushed, but could not be confirmed as synchronized with ` +
+        `${remoteName}/${options.sourceBranch}. The new ${options.kind} form was not opened.`,
+        { modal: true }
+      );
+      return false;
+    }
+
+    services.refreshController.refresh();
+    return true;
+  } catch (error) {
+    await services.ui.showErrorMessage(
+      toOperationError(`Could not verify or publish ${options.sourceBranch} before starting a new ${options.kind}.`, error),
+      { modal: true }
+    );
+    return false;
+  }
+}
+
+async function canPublishUntrackedFlowBranch(
+  publication: FlowPullRequestSourcePublication,
+  repository: Repository,
+  options: PrepareFlowBranchStartOptions,
+  services: RefActionServices
+): Promise<boolean> {
+  if (publication.status === 'remote-ahead') {
+    await services.ui.showWarningMessage(
+      `${publication.remoteName}/${options.sourceBranch} contains commits that are not present locally. ` +
+      `Configure and synchronize the upstream before starting a new ${options.kind}.`,
+      { modal: true }
+    );
+    return false;
+  }
+  if (publication.status === 'diverged') {
+    await services.ui.showWarningMessage(
+      `${options.sourceBranch} has diverged from ${publication.remoteName}/${options.sourceBranch}. ` +
+      `Resolve the divergence before starting a new ${options.kind}.`,
+      { modal: true }
+    );
+    return false;
+  }
+  if (publication.status === 'unknown') {
+    await services.ui.showWarningMessage(
+      `Could not verify ${options.sourceBranch} on ${publication.remoteName}. ` +
+      `The new ${options.kind} form was not opened. ${publication.detail ?? ''}`,
+      { modal: true }
+    );
+    return false;
+  }
+
+  const remote = repository.state.remotes.find((candidate) => candidate.name === publication.remoteName);
+  if (remote?.isReadOnly) {
+    await services.ui.showWarningMessage(
+      `${publication.remoteName} is read-only and ${options.sourceBranch} cannot be published or updated before ` +
+      `starting a new ${options.kind}.`,
+      { modal: true }
+    );
+    return false;
+  }
+  return publication.status === 'unpublished' || publication.status === 'unpushed';
 }
 
 async function fetchFlowBranchUpstream(

@@ -193,6 +193,155 @@ test('Flow Governance keeps the branch form closed when upstream fetch fails', a
   assert.match(errors[0] ?? '', /Could not fetch origin\/main before checking main synchronization.*fetch unavailable/);
 });
 
+test('Flow Governance publishes an untracked source before opening the branch form', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo'),
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const refreshes: unknown[] = [];
+  const loadingEvents: string[] = [];
+  let publicationChecks = 0;
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({
+    confirmations,
+    confirmResult: true,
+    remoteNames: ['origin'],
+    refreshes
+  }), {
+    async runWithRemoteFetchLoading(operation) {
+      loadingEvents.push('show:Fetching remotes...');
+      try {
+        return await operation();
+      } finally {
+        loadingEvents.push('hide');
+      }
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      publicationChecks += 1;
+      return publicationChecks === 1
+        ? { status: 'unpublished', remoteName, sourceRefName }
+        : { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+    }
+  });
+
+  assert.equal(ready, true);
+  assert.deepEqual(confirmations, [{
+    message: 'feature/demo is not available on origin. Publish it before starting a new task?',
+    confirmLabel: 'Publish and Continue'
+  }]);
+  assert.deepEqual(repository.calls.push, [{
+    remoteName: 'origin',
+    branchName: 'feature/demo',
+    setUpstream: true
+  }]);
+  assert.deepEqual(loadingEvents, [
+    'show:Fetching remotes...',
+    'hide',
+    'show:Fetching remotes...',
+    'hide'
+  ]);
+  assert.equal(refreshes.length, 1);
+});
+
+test('Flow Governance keeps the branch form closed when source publication is declined', async () => {
+  const repository = createRepository({ root: '/workspace/repo', head: createHead('feature/demo') });
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({ remoteNames: ['origin'], confirmResult: false }), {
+    async runWithRemoteFetchLoading(operation) { return operation(); },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      return { status: 'unpublished', remoteName, sourceRefName };
+    }
+  });
+
+  assert.equal(ready, false);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance allows an untracked local-only source when no remote is configured', async () => {
+  const repository = createRepository({ root: '/workspace/repo', head: createHead('feature/demo') });
+  let sourceChecked = false;
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices(), {
+    async runWithRemoteFetchLoading(operation) { return operation(); },
+    async checkSourcePublication() {
+      sourceChecked = true;
+      return { status: 'unknown', remoteName: 'origin', sourceRefName: 'feature/demo' };
+    }
+  });
+
+  assert.equal(ready, true);
+  assert.equal(sourceChecked, false);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance blocks untracked source publication to a read-only remote', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo'),
+    remotes: [{ name: 'origin', isReadOnly: true }]
+  });
+  const warnings: string[] = [];
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({ remoteNames: ['origin'], warnings, confirmations }), {
+    async runWithRemoteFetchLoading(operation) { return operation(); },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      return { status: 'unpublished', remoteName, sourceRefName };
+    }
+  });
+
+  assert.equal(ready, false);
+  assert.match(warnings[0] ?? '', /origin is read-only.*cannot be published or updated/);
+  assert.deepEqual(confirmations, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance keeps the branch form closed when source publication cannot be revalidated', async () => {
+  const repository = createRepository({ root: '/workspace/repo', head: createHead('feature/demo') });
+  const warnings: string[] = [];
+  let publicationChecks = 0;
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({
+    remoteNames: ['origin'],
+    confirmResult: true,
+    warnings
+  }), {
+    async runWithRemoteFetchLoading(operation) { return operation(); },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      publicationChecks += 1;
+      return publicationChecks === 1
+        ? { status: 'unpublished', remoteName, sourceRefName }
+        : { status: 'unknown', remoteName, sourceRefName, detail: 'remote unavailable' };
+    }
+  });
+
+  assert.equal(ready, false);
+  assert.equal(repository.calls.push.length, 1);
+  assert.match(warnings[0] ?? '', /was pushed, but could not be confirmed as synchronized/);
+});
+
 test('Flow Governance allows a task from an ahead-only feature after fetching', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

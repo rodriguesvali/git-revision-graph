@@ -55,6 +55,9 @@ All notable changes to this project will be documented in this file.
 - Extended fetch-first source preflight to hotfix, task, and bug creation. Main-based workflows
   require exact synchronization; task and bug allow ahead-only sources without pushing, confirm
   behind-only synchronization, and block divergent sources for manual reconciliation.
+- Governed branch creation now checks untracked source branches on a configured remote. Missing
+  sources offer `Publish and Continue`, establish upstream tracking through a normal push, and are
+  revalidated before the branch form opens; repositories without remotes retain local-only creation.
 - Added a fetch-first target preflight for `feature -> release` Pull Request handoff. The selected
   local release must match its remote tip before commits-ahead and source-publication checks; stale
   or divergent targets fail closed without pull, merge, equalization, or target push.
