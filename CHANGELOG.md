@@ -13,7 +13,8 @@ All notable changes to this project will be documented in this file.
 - Keep Flow Governance submenu actions open while the pointer crosses from the parent context menu,
   including left-opening menus near the viewport edge.
 - Show the existing blocking `Fetching remotes...` loading dialog during automatic Flow Governance
-  remote probes and fetches, clearing it before subsequent confirmations, failures, or forms.
+  remote probes and fetches, including feature targets cached as `not-ahead` or inconclusive, and
+  clear it before subsequent confirmations, failures, or forms.
 
 ### Remote Hosting
 
@@ -57,6 +58,8 @@ All notable changes to this project will be documented in this file.
 - Added a fetch-first target preflight for `feature -> release` Pull Request handoff. The selected
   local release must match its remote tip before commits-ahead and source-publication checks; stale
   or divergent targets fail closed without pull, merge, equalization, or target push.
+- Feature promotion context now always requires an explicit target release selection, even when
+  only one release is active; the selection triggers the remote fetch and opening the form does not.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Changed concurrent-operation feedback in Flow Governance branch, equalization, and Pull Request

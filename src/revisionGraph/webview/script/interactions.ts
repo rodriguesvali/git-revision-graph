@@ -808,19 +808,20 @@
       closeContextMenu();
       const dialog = ensureFlowPullRequestContextDialog();
       dialog.sourceRefName = target.name;
-      dialog.targetSelect.textContent = '';
+      dialog.targetRefName = '';
       const targets = getFlowPullRequestTargets(target.name);
-      dialog.targetLabel.hidden = targets.length <= 1;
-      for (const candidate of targets) {
-        const option = document.createElement('option');
-        option.value = candidate.targetRefName;
-        option.textContent = candidate.targetRefName;
-        dialog.targetSelect.appendChild(option);
-      }
+      initializeRevisionGraphWebviewFlowPullRequestTargetSelect(dialog.targetSelect, targets);
+      dialog.targetLabel.hidden = false;
+      dialog.flow.textContent = target.name + ' -> select a release';
+      dialog.titleInput.value = '';
+      dialog.descriptionInput.value = '';
+      setFlowPullRequestContextWarning(targets.length > 0
+        ? ''
+        : 'No release branch is available as a Pull Request target.');
+      setFlowPullRequestContextActionsEnabled(false);
       dialog.backdrop.hidden = false;
       document.body.classList.add('flow-dialog-open');
-      applyFlowPullRequestTargetSelection();
-      window.setTimeout(() => (dialog.targetLabel.hidden ? dialog.closeButton : dialog.targetSelect).focus(), 0);
+      window.setTimeout(() => dialog.targetSelect.focus(), 0);
     }
 
     function showFlowPullRequestContextForm(
@@ -847,6 +848,7 @@
       }
       dialog.titleInput.value = context.title;
       dialog.descriptionInput.value = context.description;
+      setFlowPullRequestContextWarning('');
       setFlowPullRequestContextActionsEnabled(true);
     }
 
@@ -973,7 +975,7 @@
       const dialog = ensureFlowPullRequestContextDialog();
       const candidate = getFlowPullRequestTargets(dialog.sourceRefName).find((target) =>
         target.targetRefName === dialog.targetSelect.value
-      ) || getFlowPullRequestTargets(dialog.sourceRefName)[0];
+      );
       dialog.targetRefName = candidate ? candidate.targetRefName : '';
       dialog.targetSelect.value = dialog.targetRefName;
       dialog.flow.textContent = dialog.targetRefName
@@ -987,12 +989,14 @@
         setFlowPullRequestContextActionsEnabled(false);
         return;
       }
+
+      setFlowPullRequestContextActionsEnabled(false);
+      postCopyFlowPullRequestContext(dialog.sourceRefName, dialog.targetRefName);
       if (candidate.status === 'production-not-ancestor') {
         setFlowPullRequestContextWarning(
           'Production promotion aborted: production contains commits missing from this source branch. ' +
           'Synchronize or equalize and validate the source before opening the Pull Request.'
         );
-        setFlowPullRequestContextActionsEnabled(false);
         return;
       }
       if (candidate.status === 'production-out-of-sync') {
@@ -1000,25 +1004,20 @@
           'Production promotion aborted: the local production branch is not synchronized with its remote. ' +
           'Synchronize production, refresh the graph, and retry.'
         );
-        setFlowPullRequestContextActionsEnabled(false);
         return;
       }
       if (candidate.status === 'not-ahead') {
         setFlowPullRequestContextWarning(
           dialog.sourceRefName + ' has no commits ahead of ' + dialog.targetRefName + '. Choose another release.'
         );
-        setFlowPullRequestContextActionsEnabled(false);
         return;
       }
       if (candidate.status === 'unknown') {
         setFlowPullRequestContextWarning('Could not verify whether this branch is eligible for the selected Pull Request target.');
-        setFlowPullRequestContextActionsEnabled(false);
         return;
       }
 
       setFlowPullRequestContextWarning('');
-      setFlowPullRequestContextActionsEnabled(false);
-      postCopyFlowPullRequestContext(dialog.sourceRefName, dialog.targetRefName);
     }
 
     function setFlowPullRequestContextWarning(message: string) {

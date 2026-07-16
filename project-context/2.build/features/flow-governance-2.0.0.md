@@ -346,9 +346,11 @@ from an active release.
   2026-07-11 after integrating the production-promotion ancestry guard into the PR
   handoff.
 - Feature references always expose `Promotion PR Context`. The form lists all
-  classified release branches as targets and warns when the feature has no
-  commits ahead of the selected release or the check is inconclusive. Copy and
-  GitHub actions remain disabled until an eligible release is selected.
+  classified release branches as targets and never auto-selects one, including
+  when only one release exists. The user selection triggers the remote fetch;
+  the form warns when the feature has no commits ahead of that release or the
+  check is inconclusive. Copy and GitHub actions remain disabled until an
+  eligible release is selected.
 - The trusted `feature -> release` handoff now resolves and fetches the selected
   remote release before repeating eligibility. The local release must exactly
   match that fetched tip before the ahead check can release context or a
@@ -370,6 +372,10 @@ from an active release.
   preflights now display the existing blocking `Fetching remotes...` overlay.
   The overlay clears in both success and failure paths before confirmations,
   warnings, errors, forms, or provider URLs are shown.
+- Feature-target statuses cached for the multi-release form no longer stop a
+  trusted host request. Even `not-ahead`, inconclusive, or stale local results
+  trigger the remote target preflight; the form keeps its immediate warning and
+  only host-confirmed context enables its actions.
 - Missing and locally-ahead sources offer `Publish and Continue` or
   `Push and Continue` only after explicit confirmation. Remote-ahead,
   divergent, read-only, and inconclusive states fail closed; force push is
@@ -441,8 +447,9 @@ from an active release.
   Description fields with independent copy icons on the right.
 - On a feature, verify `Promotion PR Context` remains available and lists every
   classified release. Selecting a release with no source-only commits must show
-  an alert and disable copy/GitHub actions; selecting an eligible release must
-  populate the context and enable `Open Pull Request on GitHub`.
+  an alert, trigger `Fetching remotes...`, and keep copy/GitHub actions disabled
+  after the trusted warning; selecting an eligible release must populate the
+  context and enable `Open Pull Request on GitHub`.
 - For an eligible feature target, leave the local release behind, ahead of, and
   divergent from its remote in turn. Verify the trusted handoff fetches the
   selected release, reports each mismatch modally, and releases neither context

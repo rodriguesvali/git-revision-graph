@@ -113,22 +113,29 @@ Recorded verification:
   Branch-start upstream checks, non-current fast-forward synchronization, Pull
   Request target verification, source publication checks, and post-push
   revalidation now show the existing blocking `Fetching remotes...` overlay.
+  Cached feature-target statuses no longer bypass the host preflight, so local
+  `not-ahead` and inconclusive selections also perform the remote operation.
   A shared `finally` lifecycle clears it before confirmations, warnings, errors,
   forms, or provider URLs. `npm run quality:check` passed with 217 production
   files and 2,077 functions; `npm run build`, all 731 tests, all 31 platform
   tests, and `git diff --check` passed. `graphify update .` rebuilt 4,435 nodes,
   8,711 edges, and 347 communities. Manual Extension Development Host
-  validation remains pending.
+  validation remains pending. The explicit release-selection follow-up passed
+  `npm run quality:check` with 218 production files and 2,078 functions,
+  `npm run build`, all 731 tests, all 31 platform tests, and `git diff --check`;
+  `graphify update .` rebuilt 4,439 nodes, 8,716 edges, and 361 communities.
 
 - Feature Pull Request target preflight was hardened on 2026-07-16. For
-  `feature -> release`, the trusted handoff now fetches the selected remote
+  `feature -> release`, the form now always requires explicit release selection,
+  even when only one release is active, and starts no fetch merely by opening.
+  Selection triggers the trusted handoff, which fetches the selected remote
   release, requires exact local/remote target synchronization, and only then
   checks commits ahead and source publication. Behind, ahead, divergent,
   missing, and inconclusive targets fail closed without pull, merge,
   equalization, checkout, or target push. Automated gate evidence is recorded
-  by `npm run quality:check` (216 production files and 2,068 functions),
-  `npm run build`, `npm test` (730 tests), `npm run test:platform` (31 tests),
-  `git diff --check`, and `graphify update .` (4,414 nodes, 8,674 edges, 347
+  by `npm run quality:check` (218 production files and 2,078 functions),
+  `npm run build`, `npm test` (731 tests), `npm run test:platform` (31 tests),
+  `git diff --check`, and `graphify update .` (4,439 nodes, 8,716 edges, 361
   communities). Manual Extension Development Host validation remains pending.
 
 - Flow Governance submenu hover stabilization was completed on 2026-07-16. The fix removes the
