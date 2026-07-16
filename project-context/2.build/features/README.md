@@ -16,6 +16,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   subitems.
 - `2.0.0-feature-pr-target-preflight.md`: fetch-first synchronization gate for selected
   `feature -> release` Pull Request targets without local branch mutation.
+- `2.0.0-remote-fetch-loading-feedback.md`: blocking `Fetching remotes...` feedback for automatic
+  Flow Governance remote probes and fetches.
 
 ## Published Baseline Retained For Integration
 

@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
   continues.
 - Keep Flow Governance submenu actions open while the pointer crosses from the parent context menu,
   including left-opening menus near the viewport edge.
+- Show the existing blocking `Fetching remotes...` loading dialog during automatic Flow Governance
+  remote probes and fetches, clearing it before subsequent confirmations, failures, or forms.
 
 ### Remote Hosting
 

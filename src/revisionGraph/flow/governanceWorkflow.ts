@@ -18,6 +18,10 @@ import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning'
 import { prepareFlowBranchStart } from './flowBranchStartPreflight';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
 import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
+import {
+  FlowRemoteFetchLoadingHost,
+  withFlowRemoteFetchLoading
+} from './remoteFetchLoading';
 import { startFlowBranch } from './flowReleaseBranch';
 import { applyFlowGovernanceOptionsUpdate } from './flowState';
 import type {
@@ -26,7 +30,7 @@ import type {
   FlowStartBranchKind
 } from './flowTypes';
 
-export interface RevisionGraphFlowGovernanceWorkflowHost {
+export interface RevisionGraphFlowGovernanceWorkflowHost extends FlowRemoteFetchLoadingHost {
   readonly actionServices: RefActionServices;
   readonly mutationCoordinator: RepositoryMutationCoordinator;
   getCurrentRepository(): Repository | undefined;
@@ -153,7 +157,10 @@ export class RevisionGraphFlowGovernanceWorkflow {
       (guardedRepository, services) => prepareFlowBranchStart(
         guardedRepository,
         { kind: branchKind, sourceBranch: sourceRefName },
-        services
+        services,
+        {
+          runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(this.host, operation)
+        }
       )
     );
     if (outcome.status === 'rejected') {

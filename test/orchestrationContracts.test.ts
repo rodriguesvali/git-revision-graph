@@ -91,6 +91,8 @@ test('Flow Pull Request workflow owns context clipboard orchestration', async (t
     mutationCoordinator: {} as never,
     getCurrentRepository: () => undefined,
     getCurrentState: () => ({}) as never,
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
     postHostMessage: () => assert.fail('No message should be posted without a repository.')
   });
 
@@ -131,6 +133,8 @@ test('Feature Pull Request preflight verifies the remote release before checking
         ]
       }
     }) as never,
+    postActionLoading: (label) => calls.push(`loading:${label}`),
+    postCurrentState: () => calls.push('loading:done'),
     postHostMessage: (message) => hostMessages.push(message)
   }, {
     async loadRemoteBranchCommit(_repository, remoteName, branchName) {
@@ -155,9 +159,13 @@ test('Feature Pull Request preflight verifies the remote release before checking
   await workflow.copyContext('feature/payment', 'release/2.0.0');
 
   assert.deepEqual(calls, [
+    'loading:Fetching remotes...',
     'remote:origin/release/2.0.0',
+    'loading:done',
     'target:release/2.0.0..feature/payment',
-    'source:origin/feature/payment'
+    'loading:Fetching remotes...',
+    'source:origin/feature/payment',
+    'loading:done'
   ]);
   assert.equal(hostMessages.length, 1);
 });
@@ -201,6 +209,8 @@ test('Feature Pull Request preflight blocks behind, ahead, and divergent local r
           ]
         }
       }) as never,
+      postActionLoading: () => undefined,
+      postCurrentState: () => undefined,
       postHostMessage: () => assert.fail('The context form must remain unpopulated.')
     }, {
       async loadRemoteBranchCommit() {
@@ -243,6 +253,7 @@ test('Flow Governance awaits the shared modal warning when a repository mutation
     getCurrentRepository: () => repository,
     getCurrentState: () => ({}) as never,
     setCurrentState: () => undefined,
+    postActionLoading: () => undefined,
     postCurrentState: () => undefined,
     postHostMessage: () => undefined
   });
@@ -286,6 +297,8 @@ test('Flow Pull Request preflight awaits the shared modal warning when a reposit
         ]
       }
     }) as never,
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
     postHostMessage: () => assert.fail('No Pull Request context should be posted.')
   });
 

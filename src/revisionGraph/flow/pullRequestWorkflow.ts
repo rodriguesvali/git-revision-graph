@@ -19,8 +19,12 @@ import {
   loadFlowPullRequestRemoteBranchCommit,
   resolveFlowPullRequestRemote
 } from './index';
+import {
+  FlowRemoteFetchLoadingHost,
+  withFlowRemoteFetchLoading
+} from './remoteFetchLoading';
 
-export interface RevisionGraphFlowPullRequestWorkflowHost {
+export interface RevisionGraphFlowPullRequestWorkflowHost extends FlowRemoteFetchLoadingHost {
   readonly actionServices: RefActionServices;
   readonly mutationCoordinator: RepositoryMutationCoordinator;
   getCurrentRepository(): Repository | undefined;
@@ -111,10 +115,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
         this.host.mutationCoordinator,
         repository,
         this.host.actionServices,
-        (guardedRepository) => this.dependencies.loadRemoteBranchCommit(
-          guardedRepository,
-          remote.name,
-          targetRefName
+        (guardedRepository) => withFlowRemoteFetchLoading(
+          this.host,
+          () => this.dependencies.loadRemoteBranchCommit(
+            guardedRepository,
+            remote.name,
+            targetRefName
+          )
         )
       );
       if (outcome.status === 'rejected') {
@@ -189,10 +196,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
         repository,
         this.host.actionServices,
         async (guardedRepository, services) => {
-          let publication = await this.dependencies.checkSourcePublication(
-            guardedRepository,
-            remote.name,
-            sourceRefName
+          let publication = await withFlowRemoteFetchLoading(
+            this.host,
+            () => this.dependencies.checkSourcePublication(
+              guardedRepository,
+              remote.name,
+              sourceRefName
+            )
           );
           if (publication.status === 'ready') return true;
           if (publication.status === 'remote-ahead') {
@@ -237,10 +247,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
           if (!confirmed) return false;
 
           await guardedRepository.push(remote.name, sourceRefName, isPublish);
-          publication = await this.dependencies.checkSourcePublication(
-            guardedRepository,
-            remote.name,
-            sourceRefName
+          publication = await withFlowRemoteFetchLoading(
+            this.host,
+            () => this.dependencies.checkSourcePublication(
+              guardedRepository,
+              remote.name,
+              sourceRefName
+            )
           );
           if (publication.status !== 'ready') {
             await services.ui.showWarningMessage(

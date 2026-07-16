@@ -13,6 +13,14 @@ export interface PrepareFlowBranchStartOptions {
   readonly sourceBranch: string;
 }
 
+export interface FlowBranchStartPreflightDependencies {
+  runWithRemoteFetchLoading<T>(operation: () => Promise<T>): Promise<T>;
+}
+
+const DEFAULT_DEPENDENCIES: FlowBranchStartPreflightDependencies = {
+  runWithRemoteFetchLoading: (operation) => operation()
+};
+
 export function getFlowBranchStartSyncPolicy(kind: FlowStartBranchKind): FlowBranchStartSyncPolicy {
   return kind === 'release' || kind === 'feature' || kind === 'hotfix'
     ? 'exact-sync'
@@ -22,14 +30,21 @@ export function getFlowBranchStartSyncPolicy(kind: FlowStartBranchKind): FlowBra
 export async function prepareFlowBranchStart(
   repository: Repository,
   options: PrepareFlowBranchStartOptions,
-  services: RefActionServices
+  services: RefActionServices,
+  dependencies: FlowBranchStartPreflightDependencies = DEFAULT_DEPENDENCIES
 ): Promise<boolean> {
   const branchBeforeFetch = await getLocalBranch(repository, options.sourceBranch);
   if (!branchBeforeFetch?.upstream) {
     return true;
   }
 
-  if (!await fetchFlowBranchUpstream(repository, options.sourceBranch, branchBeforeFetch, services)) {
+  if (!await fetchFlowBranchUpstream(
+    repository,
+    options.sourceBranch,
+    branchBeforeFetch,
+    services,
+    dependencies
+  )) {
     return false;
   }
 
@@ -87,7 +102,8 @@ export async function prepareFlowBranchStart(
     sourceBranch.upstream.remote,
     sourceBranch.upstream.name,
     upstreamLabel,
-    services
+    services,
+    dependencies
   );
 }
 
@@ -95,7 +111,8 @@ async function fetchFlowBranchUpstream(
   repository: Repository,
   branchName: string,
   branch: Branch,
-  services: RefActionServices
+  services: RefActionServices,
+  dependencies: FlowBranchStartPreflightDependencies
 ): Promise<boolean> {
   const upstream = branch.upstream;
   if (!upstream) {
@@ -105,10 +122,10 @@ async function fetchFlowBranchUpstream(
   const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
   const upstreamBranchName = getUpstreamBranchName(upstream.remote, upstream.name);
   try {
-    await repository.fetch({
+    await dependencies.runWithRemoteFetchLoading(() => repository.fetch({
       remote: upstream.remote,
       ref: `refs/heads/${upstreamBranchName}:refs/remotes/${upstream.remote}/${upstreamBranchName}`
-    });
+    }));
     return true;
   } catch (error) {
     await services.ui.showErrorMessage(
@@ -125,15 +142,16 @@ async function fastForwardNonCurrentFlowBranch(
   remoteName: string,
   upstreamName: string,
   upstreamLabel: string,
-  services: RefActionServices
+  services: RefActionServices,
+  dependencies: FlowBranchStartPreflightDependencies
 ): Promise<boolean> {
   const remoteBranchName = getUpstreamBranchName(remoteName, upstreamName);
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   try {
-    await repository.fetch({
+    await dependencies.runWithRemoteFetchLoading(() => repository.fetch({
       remote: remoteName,
       ref: `refs/heads/${remoteBranchName}:refs/heads/${branchName}`
-    });
+    }));
   } catch (error) {
     preparedRefresh.cancel();
     await services.ui.showErrorMessage(

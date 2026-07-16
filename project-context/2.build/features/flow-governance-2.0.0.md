@@ -366,6 +366,10 @@ from an active release.
 - Pull Request handoff now runs a trusted remote-source preflight for every
   governed source kind. It resolves the handoff remote, checks remote branch
   existence, fetches the exact source, and compares local and remote tips.
+- Automatic remote probes and fetches in branch-start and Pull Request
+  preflights now display the existing blocking `Fetching remotes...` overlay.
+  The overlay clears in both success and failure paths before confirmations,
+  warnings, errors, forms, or provider URLs are shown.
 - Missing and locally-ahead sources offer `Publish and Continue` or
   `Push and Continue` only after explicit confirmation. Remote-ahead,
   divergent, read-only, and inconclusive states fail closed; force push is
@@ -427,6 +431,9 @@ from an active release.
   `Publish and Continue`, sets upstream tracking, revalidates the remote tip,
   and opens the form only after success. Repeat with an already-published but
   locally-ahead source and verify `Push and Continue` performs a normal push.
+- During every automatic branch-start or Pull Request remote fetch, verify the
+  `Fetching remotes...` spinner is visible only for the network operation and
+  clears before the next confirmation, warning, error, form, or URL handoff.
 - Verify remote-ahead and divergent sources remain blocked with actionable
   guidance and that no force-push option is presented.
 - Run `Promotion PR Context` and verify the form displays

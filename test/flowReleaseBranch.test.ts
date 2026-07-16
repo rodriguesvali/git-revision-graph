@@ -140,7 +140,9 @@ test('Flow Governance fetches before checking whether main is behind for a new f
   const head = createHead('main', 0, 0, { remote: 'origin', name: 'main' });
   const repository = createRepository({ root: '/workspace/repo', head });
   const originalFetch = repository.fetch.bind(repository);
+  const loadingEvents: string[] = [];
   repository.fetch = async (options) => {
+    loadingEvents.push('fetch');
     await originalFetch(options);
     (head as { behind: number | undefined }).behind = 2;
   };
@@ -149,7 +151,16 @@ test('Flow Governance fetches before checking whether main is behind for a new f
   const ready = await prepareFlowBranchStart(repository, {
     kind: 'feature',
     sourceBranch: 'main'
-  }, createReleaseServices({ confirmations, confirmResult: true }));
+  }, createReleaseServices({ confirmations, confirmResult: true }), {
+    async runWithRemoteFetchLoading(operation) {
+      loadingEvents.push('show:Fetching remotes...');
+      try {
+        return await operation();
+      } finally {
+        loadingEvents.push('hide');
+      }
+    }
+  });
 
   assert.equal(ready, true);
   assert.deepEqual(repository.calls.fetch, [{
@@ -158,6 +169,7 @@ test('Flow Governance fetches before checking whether main is behind for a new f
   }]);
   assert.match(confirmations[0]?.message ?? '', /2 behind.*before starting a new feature/);
   assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(loadingEvents, ['show:Fetching remotes...', 'fetch', 'hide']);
 });
 
 test('Flow Governance keeps the branch form closed when upstream fetch fails', async () => {

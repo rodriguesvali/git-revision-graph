@@ -240,9 +240,8 @@ export class RevisionGraphController implements vscode.Disposable {
       mutationCoordinator: this.mutationCoordinator,
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
-      setCurrentState: (state) => {
-        this.currentState = state;
-      },
+      setCurrentState: (state) => { this.currentState = state; },
+      postActionLoading: (label) => this.postActionLoading(label),
       postCurrentState: () => this.postCurrentState(),
       postHostMessage: (message) => this.postHostMessage(message)
     });
