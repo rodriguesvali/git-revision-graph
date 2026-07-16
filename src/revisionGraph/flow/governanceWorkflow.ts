@@ -6,6 +6,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../../repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from '../../repositoryMutationWarning';
 import type {
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
@@ -123,7 +124,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       )
     );
     if (outcome.status === 'rejected') {
-      this.showConcurrentMutationWarning();
+      await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
     }
   }
 
@@ -156,7 +157,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       )
     );
     if (outcome.status === 'rejected') {
-      this.showConcurrentMutationWarning();
+      await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
       return;
     }
 
@@ -188,7 +189,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       )
     );
     if (outcome.status === 'rejected') {
-      this.showConcurrentMutationWarning();
+      await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
     }
   }
 
@@ -206,9 +207,5 @@ export class RevisionGraphFlowGovernanceWorkflow {
 
   async openPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void> {
     await this.pullRequestWorkflow.openUrl(sourceRefName, targetRefName);
-  }
-
-  private showConcurrentMutationWarning(): void {
-    this.host.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
   }
 }

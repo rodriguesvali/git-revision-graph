@@ -45,6 +45,8 @@ All notable changes to this project will be documented in this file.
   behind-only synchronization, and block divergent sources for manual reconciliation.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
+- Changed concurrent-operation feedback in Flow Governance branch, equalization, and Pull Request
+  workflows from transient toasts to the shared awaited modal warning.
 - Made `Description` mandatory when starting release, feature, task, bug, or hotfix branches,
   with matching validation in the webview and extension host.
 - Expanded reference cards using their branch-name length plus reserved badge space, keeping

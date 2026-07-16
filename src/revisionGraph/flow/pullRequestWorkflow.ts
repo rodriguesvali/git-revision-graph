@@ -7,6 +7,7 @@ import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
 } from '../../repositoryMutationCoordinator';
+import { showConcurrentRepositoryMutationWarning } from '../../repositoryMutationWarning';
 import type { RevisionGraphViewState } from '../../revisionGraphTypes';
 import { createRevisionGraphFlowPullRequestContextMessage } from '../hostMessages';
 import type { RevisionGraphViewHostMessage } from '../../revisionGraphTypes';
@@ -100,7 +101,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
         (guardedRepository) => loadFlowPullRequestRemoteBranchCommit(guardedRepository, remote.name, targetRefName)
       );
       if (outcome.status === 'rejected') {
-        this.showConcurrentMutationWarning();
+        await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
         return false;
       }
       const remoteTarget = outcome.value;
@@ -232,7 +233,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
         }
       );
       if (outcome.status === 'rejected') {
-        this.showConcurrentMutationWarning();
+        await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
         return false;
       }
       return outcome.value;
@@ -253,9 +254,5 @@ export class RevisionGraphFlowPullRequestWorkflow {
 
   private resolvePreferredRemote(repository: Repository, preferredRemote: Remote | undefined): Remote | undefined {
     return preferredRemote ?? this.resolveRemote(repository);
-  }
-
-  private showConcurrentMutationWarning(): void {
-    this.host.actionServices.ui.showWarningMessage('Another Git operation is already running for this repository.');
   }
 }

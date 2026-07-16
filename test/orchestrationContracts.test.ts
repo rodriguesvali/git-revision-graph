@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createApi, createRepository } from './fakes';
+import { CONCURRENT_REPOSITORY_MUTATION_MESSAGE } from '../src/repositoryMutationWarning';
 
 test('Compare Results reuses, disposes, and recreates its editor panel', async (t) => {
   const harness = installVscodePanelMock(t);
@@ -97,6 +98,123 @@ test('Flow Pull Request workflow owns context clipboard orchestration', async (t
 
   assert.deepEqual(harness.clipboardWrites, ['Merge feature/demo into main']);
 });
+
+test('Flow Governance awaits the shared modal warning when a repository mutation is rejected', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/governanceWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/governanceWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  const warning = createBlockingWarningHarness();
+  const workflow = new RevisionGraphFlowGovernanceWorkflow({
+    actionServices: { ui: warning.ui } as never,
+    mutationCoordinator: createRejectedMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({}) as never,
+    setCurrentState: () => undefined,
+    postCurrentState: () => undefined,
+    postHostMessage: () => undefined
+  });
+
+  const operation = workflow.prepareEqualization('release/2.0.0', 'main', 'Equalize release');
+
+  assert.equal(await getPromiseState(operation), 'pending');
+  assert.deepEqual(warning.requests, [{
+    message: CONCURRENT_REPOSITORY_MUTATION_MESSAGE,
+    options: { modal: true }
+  }]);
+
+  warning.dismiss();
+  await operation;
+});
+
+test('Flow Pull Request preflight awaits the shared modal warning when a repository mutation is rejected', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const warning = createBlockingWarningHarness();
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: { ui: warning.ui } as never,
+    mutationCoordinator: createRejectedMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({
+      flowGovernance: {
+        references: [
+          { refName: 'release/2.0.0', kind: 'release' },
+          { refName: 'main', kind: 'main' }
+        ]
+      }
+    }) as never,
+    postHostMessage: () => assert.fail('No Pull Request context should be posted.')
+  });
+
+  const operation = workflow.copyContext('release/2.0.0', 'main');
+
+  assert.equal(await getPromiseState(operation), 'pending');
+  assert.deepEqual(warning.requests, [{
+    message: CONCURRENT_REPOSITORY_MUTATION_MESSAGE,
+    options: { modal: true }
+  }]);
+
+  warning.dismiss();
+  await operation;
+});
+
+function createRejectedMutationCoordinator(): never {
+  return {
+    async run() {
+      return { status: 'rejected' as const };
+    }
+  } as never;
+}
+
+function createBlockingWarningHarness(): {
+  readonly ui: {
+    showWarningMessage(message: string, options?: { readonly modal?: boolean }): Promise<void>;
+  };
+  readonly requests: Array<{
+    readonly message: string;
+    readonly options: { readonly modal?: boolean } | undefined;
+  }>;
+  dismiss(): void;
+} {
+  const requests: Array<{
+    readonly message: string;
+    readonly options: { readonly modal?: boolean } | undefined;
+  }> = [];
+  let dismissWarning: (() => void) | undefined;
+  return {
+    ui: {
+      async showWarningMessage(message, options) {
+        requests.push({ message, options });
+        await new Promise<void>((resolve) => {
+          dismissWarning = resolve;
+        });
+      }
+    },
+    requests,
+    dismiss() {
+      dismissWarning?.();
+    }
+  };
+}
+
+async function getPromiseState(promise: Promise<unknown>): Promise<'completed' | 'pending'> {
+  return Promise.race([
+    promise.then(() => 'completed' as const),
+    new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
+  ]);
+}
 
 interface TestPanel {
   readonly webview: Record<string, unknown>;
