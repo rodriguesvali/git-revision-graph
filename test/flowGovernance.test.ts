@@ -19,6 +19,7 @@ import {
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
   evaluateFlowTransition,
+  loadFlowPullRequestRemoteBranchCommit,
   loadFlowPullRequestTargets,
   normalizeFlowConfig,
   resolveFlowConfigForRepository,
@@ -355,6 +356,32 @@ test('Flow Governance fetches and compares a published Pull Request source', asy
     '--end-of-options',
     'hotfix/INC-482-login...0123456789abcdef'
   ]);
+});
+
+test('Flow Governance fetches a remote Pull Request target without modifying local branches', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const result = await loadFlowPullRequestRemoteBranchCommit(
+    repository,
+    'origin',
+    'release/2.0.0',
+    async (_path, args) => {
+      assert.deepEqual(args, [
+        'ls-remote',
+        '--heads',
+        '--refs',
+        'origin',
+        'refs/heads/release/2.0.0'
+      ]);
+      return { stdout: '0123456789abcdef\trefs/heads/release/2.0.0\n', stderr: '' };
+    }
+  );
+
+  assert.deepEqual(result, { status: 'found', commit: '0123456789abcdef' });
+  assert.deepEqual(repository.calls.fetch, [{ remote: 'origin', ref: 'release/2.0.0' }]);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.merge, []);
+  assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(repository.calls.createBranch, []);
 });
 
 test('Flow Governance fails closed when Pull Request source verification fails', async () => {

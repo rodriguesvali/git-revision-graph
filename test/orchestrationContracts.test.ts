@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createApi, createRepository } from './fakes';
 import { CONCURRENT_REPOSITORY_MUTATION_MESSAGE } from '../src/repositoryMutationWarning';
+import { RepositoryMutationCoordinator } from '../src/repositoryMutationCoordinator';
 
 test('Compare Results reuses, disposes, and recreates its editor panel', async (t) => {
   const harness = installVscodePanelMock(t);
@@ -99,6 +100,136 @@ test('Flow Pull Request workflow owns context clipboard orchestration', async (t
   assert.deepEqual(harness.clipboardWrites, ['Merge feature/demo into main']);
 });
 
+test('Feature Pull Request preflight verifies the remote release before checking commits ahead', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const calls: string[] = [];
+  const hostMessages: unknown[] = [];
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: createFlowPullRequestTestServices({
+      showWarningMessage: () => assert.fail('No warning expected.'),
+      showInformationMessage: () => undefined
+    }),
+    mutationCoordinator: new RepositoryMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({
+      flowGovernance: {
+        references: [
+          { refName: 'feature/payment', kind: 'feature' },
+          { refName: 'release/2.0.0', kind: 'release' }
+        ]
+      }
+    }) as never,
+    postHostMessage: (message) => hostMessages.push(message)
+  }, {
+    async loadRemoteBranchCommit(_repository, remoteName, branchName) {
+      calls.push(`remote:${remoteName}/${branchName}`);
+      return { status: 'found', commit: 'remote-release-commit' };
+    },
+    async checkTarget(_path, sourceRefName, targetRefName, options) {
+      calls.push(`target:${targetRefName}..${sourceRefName}`);
+      assert.deepEqual(options, {
+        requireTargetAncestor: false,
+        requireTargetSynchronized: true,
+        targetCommitish: 'remote-release-commit'
+      });
+      return { sourceRefName, targetRefName, status: 'ahead' };
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      calls.push(`source:${remoteName}/${sourceRefName}`);
+      return { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+    }
+  });
+
+  await workflow.copyContext('feature/payment', 'release/2.0.0');
+
+  assert.deepEqual(calls, [
+    'remote:origin/release/2.0.0',
+    'target:release/2.0.0..feature/payment',
+    'source:origin/feature/payment'
+  ]);
+  assert.equal(hostMessages.length, 1);
+});
+
+test('Feature Pull Request preflight blocks behind, ahead, and divergent local releases', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const cases = [
+    { localAhead: 0, remoteAhead: 2, expected: 'is behind origin/release/2.0.0 by 2 commit(s)' },
+    { localAhead: 3, remoteAhead: 0, expected: 'is ahead of origin/release/2.0.0 by 3 commit(s)' },
+    { localAhead: 1, remoteAhead: 1, expected: 'has diverged from origin/release/2.0.0' }
+  ];
+
+  for (const scenario of cases) {
+    const warnings: Array<{ message: string; options?: { readonly modal?: boolean } }> = [];
+    let sourceChecked = false;
+    const workflow = new RevisionGraphFlowPullRequestWorkflow({
+      actionServices: createFlowPullRequestTestServices({
+        showWarningMessage(message: string, options?: { readonly modal?: boolean }) {
+          warnings.push({ message, options });
+        }
+      }),
+      mutationCoordinator: new RepositoryMutationCoordinator(),
+      getCurrentRepository: () => repository,
+      getCurrentState: () => ({
+        flowGovernance: {
+          references: [
+            { refName: 'feature/payment', kind: 'feature' },
+            { refName: 'release/2.0.0', kind: 'release' }
+          ]
+        }
+      }) as never,
+      postHostMessage: () => assert.fail('The context form must remain unpopulated.')
+    }, {
+      async loadRemoteBranchCommit() {
+        return { status: 'found', commit: 'remote-release-commit' };
+      },
+      async checkTarget(_path, sourceRefName, targetRefName) {
+        return {
+          sourceRefName,
+          targetRefName,
+          status: 'production-out-of-sync',
+          targetLocalAhead: scenario.localAhead,
+          targetRemoteAhead: scenario.remoteAhead
+        };
+      },
+      async checkSourcePublication(_repository, remoteName, sourceRefName) {
+        sourceChecked = true;
+        return { status: 'ready', remoteName, sourceRefName };
+      }
+    });
+
+    await workflow.copyContext('feature/payment', 'release/2.0.0');
+
+    assert.equal(sourceChecked, false);
+    assert.equal(warnings.length, 1);
+    assert.ok(warnings[0].message.includes(scenario.expected));
+    assert.deepEqual(warnings[0].options, { modal: true });
+  }
+});
+
 test('Flow Governance awaits the shared modal warning when a repository mutation is rejected', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
@@ -175,6 +306,18 @@ function createRejectedMutationCoordinator(): never {
     async run() {
       return { status: 'rejected' as const };
     }
+  } as never;
+}
+
+function createFlowPullRequestTestServices(ui: object): never {
+  return {
+    ui,
+    diffPresenter: {},
+    compareResultsPresenter: {},
+    refreshController: { refresh: () => undefined },
+    referenceManager: {},
+    ancestryInspector: {},
+    formatPath: (value: string) => value
   } as never;
 }
 

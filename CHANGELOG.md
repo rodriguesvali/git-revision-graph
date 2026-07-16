@@ -52,6 +52,9 @@ All notable changes to this project will be documented in this file.
 - Extended fetch-first source preflight to hotfix, task, and bug creation. Main-based workflows
   require exact synchronization; task and bug allow ahead-only sources without pushing, confirm
   behind-only synchronization, and block divergent sources for manual reconciliation.
+- Added a fetch-first target preflight for `feature -> release` Pull Request handoff. The selected
+  local release must match its remote tip before commits-ahead and source-publication checks; stale
+  or divergent targets fail closed without pull, merge, equalization, or target push.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Changed concurrent-operation feedback in Flow Governance branch, equalization, and Pull Request

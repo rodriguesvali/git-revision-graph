@@ -28,8 +28,23 @@ export interface RevisionGraphFlowPullRequestWorkflowHost {
   postHostMessage(message: RevisionGraphViewHostMessage): void;
 }
 
+export interface RevisionGraphFlowPullRequestWorkflowDependencies {
+  readonly checkSourcePublication: typeof checkFlowPullRequestSourcePublication;
+  readonly checkTarget: typeof checkFlowPullRequestTarget;
+  readonly loadRemoteBranchCommit: typeof loadFlowPullRequestRemoteBranchCommit;
+}
+
+const DEFAULT_DEPENDENCIES: RevisionGraphFlowPullRequestWorkflowDependencies = {
+  checkSourcePublication: checkFlowPullRequestSourcePublication,
+  checkTarget: checkFlowPullRequestTarget,
+  loadRemoteBranchCommit: loadFlowPullRequestRemoteBranchCommit
+};
+
 export class RevisionGraphFlowPullRequestWorkflow {
-  constructor(private readonly host: RevisionGraphFlowPullRequestWorkflowHost) {}
+  constructor(
+    private readonly host: RevisionGraphFlowPullRequestWorkflowHost,
+    private readonly dependencies: RevisionGraphFlowPullRequestWorkflowDependencies = DEFAULT_DEPENDENCIES
+  ) {}
 
   async copyContext(sourceRefName: string, targetRefName: string): Promise<void> {
     const repository = this.host.getCurrentRepository();
@@ -79,26 +94,28 @@ export class RevisionGraphFlowPullRequestWorkflow {
     preferredRemote?: Remote
   ): Promise<boolean> {
     const flowReferences = this.host.getCurrentState().flowGovernance?.references ?? [];
-    const requiresProductionAncestry = flowReferences.some((reference) => (
-      reference.refName === sourceRefName && (reference.kind === 'release' || reference.kind === 'hotfix')
-    )) && flowReferences.some((reference) => reference.refName === targetRefName && reference.kind === 'main');
+    const policy = resolveFlowPullRequestTargetPolicy(flowReferences, sourceRefName, targetRefName);
     let targetCommitish: string | undefined;
-    let productionRemoteName: string | undefined;
-    if (requiresProductionAncestry) {
+    let targetRemoteName: string | undefined;
+    if (policy.requiresRemoteSynchronization) {
       const remote = this.resolvePreferredRemote(repository, preferredRemote);
       if (!remote) {
         await this.host.actionServices.ui.showWarningMessage(
-          `Production promotion aborted: no remote is available to verify the current ${targetRefName} branch.`,
+          createMissingTargetRemoteMessage(policy, targetRefName),
           { modal: true }
         );
         return false;
       }
-      productionRemoteName = remote.name;
+      targetRemoteName = remote.name;
       const outcome = await runGuardedRepositoryMutation(
         this.host.mutationCoordinator,
         repository,
         this.host.actionServices,
-        (guardedRepository) => loadFlowPullRequestRemoteBranchCommit(guardedRepository, remote.name, targetRefName)
+        (guardedRepository) => this.dependencies.loadRemoteBranchCommit(
+          guardedRepository,
+          remote.name,
+          targetRefName
+        )
       );
       if (outcome.status === 'rejected') {
         await showConcurrentRepositoryMutationWarning(this.host.actionServices.ui);
@@ -110,7 +127,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
           ? `${remote.name}/${targetRefName} does not exist.`
           : remoteTarget.detail;
         await this.host.actionServices.ui.showWarningMessage(
-          `Production promotion aborted: the current production branch could not be verified on ${remote.name}. ${detail}`,
+          createUnverifiedTargetMessage(policy, remote.name, detail),
           { modal: true }
         );
         return false;
@@ -118,13 +135,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
       targetCommitish = remoteTarget.commit;
     }
 
-    const eligibility = await checkFlowPullRequestTarget(
+    const eligibility = await this.dependencies.checkTarget(
       repository.rootUri.fsPath,
       sourceRefName,
       targetRefName,
       {
-        requireTargetAncestor: requiresProductionAncestry,
-        requireTargetSynchronized: requiresProductionAncestry,
+        requireTargetAncestor: policy.requiresTargetAncestry,
+        requireTargetSynchronized: policy.requiresRemoteSynchronization,
         ...(targetCommitish ? { targetCommitish } : {})
       }
     );
@@ -132,16 +149,13 @@ export class RevisionGraphFlowPullRequestWorkflow {
 
     let message: string;
     if (eligibility.status === 'production-out-of-sync') {
-      const remoteLabel = `${productionRemoteName ?? 'remote'}/${targetRefName}`;
-      const localAhead = eligibility.targetLocalAhead ?? 0;
-      const remoteAhead = eligibility.targetRemoteAhead ?? 0;
-      const relationship = remoteAhead > 0 && localAhead === 0
-        ? `${targetRefName} is behind ${remoteLabel} by ${remoteAhead} commit(s)`
-        : localAhead > 0 && remoteAhead === 0
-          ? `${targetRefName} is ahead of ${remoteLabel} by ${localAhead} commit(s)`
-          : `${targetRefName} has diverged from ${remoteLabel}`;
-      message = `Production promotion aborted: ${relationship}. ` +
-        `Synchronize the local ${targetRefName} branch with ${remoteLabel}, refresh the graph, and retry.`;
+      message = createOutOfSyncTargetMessage(
+        policy,
+        targetRemoteName,
+        targetRefName,
+        eligibility.targetLocalAhead,
+        eligibility.targetRemoteAhead
+      );
     } else if (eligibility.status === 'production-not-ancestor') {
       message = `Production promotion aborted: ${sourceRefName} does not contain every commit from ${targetRefName}. ` +
         'The source may have been created from outdated production and can be incompatible with current production. ' +
@@ -175,7 +189,11 @@ export class RevisionGraphFlowPullRequestWorkflow {
         repository,
         this.host.actionServices,
         async (guardedRepository, services) => {
-          let publication = await checkFlowPullRequestSourcePublication(guardedRepository, remote.name, sourceRefName);
+          let publication = await this.dependencies.checkSourcePublication(
+            guardedRepository,
+            remote.name,
+            sourceRefName
+          );
           if (publication.status === 'ready') return true;
           if (publication.status === 'remote-ahead') {
             await services.ui.showWarningMessage(
@@ -219,7 +237,11 @@ export class RevisionGraphFlowPullRequestWorkflow {
           if (!confirmed) return false;
 
           await guardedRepository.push(remote.name, sourceRefName, isPublish);
-          publication = await checkFlowPullRequestSourcePublication(guardedRepository, remote.name, sourceRefName);
+          publication = await this.dependencies.checkSourcePublication(
+            guardedRepository,
+            remote.name,
+            sourceRefName
+          );
           if (publication.status !== 'ready') {
             await services.ui.showWarningMessage(
               `The branch was pushed, but ${sourceRefName} could not be confirmed as synchronized with ` +
@@ -255,4 +277,67 @@ export class RevisionGraphFlowPullRequestWorkflow {
   private resolvePreferredRemote(repository: Repository, preferredRemote: Remote | undefined): Remote | undefined {
     return preferredRemote ?? this.resolveRemote(repository);
   }
+}
+
+interface FlowPullRequestTargetPolicy {
+  readonly isProductionPromotion: boolean;
+  readonly requiresRemoteSynchronization: boolean;
+  readonly requiresTargetAncestry: boolean;
+}
+
+function resolveFlowPullRequestTargetPolicy(
+  references: NonNullable<RevisionGraphViewState['flowGovernance']>['references'],
+  sourceRefName: string,
+  targetRefName: string
+): FlowPullRequestTargetPolicy {
+  const sourceKind = references.find((reference) => reference.refName === sourceRefName)?.kind;
+  const targetKind = references.find((reference) => reference.refName === targetRefName)?.kind;
+  const isProductionPromotion = (sourceKind === 'release' || sourceKind === 'hotfix') && targetKind === 'main';
+  const isFeaturePromotion = sourceKind === 'feature' && targetKind === 'release';
+  return {
+    isProductionPromotion,
+    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion,
+    requiresTargetAncestry: isProductionPromotion
+  };
+}
+
+function createMissingTargetRemoteMessage(
+  policy: FlowPullRequestTargetPolicy,
+  targetRefName: string
+): string {
+  return policy.isProductionPromotion
+    ? `Production promotion aborted: no remote is available to verify the current ${targetRefName} branch.`
+    : `Pull Request context was not opened: no remote is available to verify the current ${targetRefName} branch.`;
+}
+
+function createUnverifiedTargetMessage(
+  policy: FlowPullRequestTargetPolicy,
+  remoteName: string,
+  detail: string
+): string {
+  return policy.isProductionPromotion
+    ? `Production promotion aborted: the current production branch could not be verified on ${remoteName}. ${detail}`
+    : `Pull Request context was not opened: the target release could not be verified on ${remoteName}. ${detail}`;
+}
+
+function createOutOfSyncTargetMessage(
+  policy: FlowPullRequestTargetPolicy,
+  remoteName: string | undefined,
+  targetRefName: string,
+  targetLocalAhead: number | undefined,
+  targetRemoteAhead: number | undefined
+): string {
+  const remoteLabel = `${remoteName ?? 'remote'}/${targetRefName}`;
+  const localAhead = targetLocalAhead ?? 0;
+  const remoteAhead = targetRemoteAhead ?? 0;
+  const relationship = remoteAhead > 0 && localAhead === 0
+    ? `${targetRefName} is behind ${remoteLabel} by ${remoteAhead} commit(s)`
+    : localAhead > 0 && remoteAhead === 0
+      ? `${targetRefName} is ahead of ${remoteLabel} by ${localAhead} commit(s)`
+      : `${targetRefName} has diverged from ${remoteLabel}`;
+  const prefix = policy.isProductionPromotion
+    ? 'Production promotion aborted'
+    : 'Pull Request context was not opened';
+  return `${prefix}: ${relationship}. ` +
+    `Synchronize the local ${targetRefName} branch with ${remoteLabel}, refresh the graph, and retry.`;
 }

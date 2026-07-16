@@ -14,6 +14,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   whose workflows continue.
 - `2.0.0-flow-governance-submenu-hover.md`: stable pointer access to Flow Governance context-menu
   subitems.
+- `2.0.0-feature-pr-target-preflight.md`: fetch-first synchronization gate for selected
+  `feature -> release` Pull Request targets without local branch mutation.
 
 ## Published Baseline Retained For Integration
 

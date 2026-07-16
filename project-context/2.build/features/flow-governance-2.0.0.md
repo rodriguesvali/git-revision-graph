@@ -349,6 +349,11 @@ from an active release.
   classified release branches as targets and warns when the feature has no
   commits ahead of the selected release or the check is inconclusive. Copy and
   GitHub actions remain disabled until an eligible release is selected.
+- The trusted `feature -> release` handoff now resolves and fetches the selected
+  remote release before repeating eligibility. The local release must exactly
+  match that fetched tip before the ahead check can release context or a
+  provider URL. Behind, ahead, divergent, missing, and inconclusive targets fail
+  closed without pull, merge, equalization, checkout, or target push.
 - `feature -> release` is now an explicit governed PR transition. The GitHub
   action moved into the context form, so `Open Promotion PR URL` is no longer a
   separate context-menu item for any branch kind.
@@ -431,6 +436,11 @@ from an active release.
   classified release. Selecting a release with no source-only commits must show
   an alert and disable copy/GitHub actions; selecting an eligible release must
   populate the context and enable `Open Pull Request on GitHub`.
+- For an eligible feature target, leave the local release behind, ahead of, and
+  divergent from its remote in turn. Verify the trusted handoff fetches the
+  selected release, reports each mismatch modally, and releases neither context
+  nor provider URL. Synchronize the local release and verify the ahead/source
+  preflights then proceed without any automatic pull, merge, or equalization.
 - The context-menu label is `Promotion PR Context`; the earlier `Copy`
   prefix was removed because copying happens per field inside the review form.
 - Verify `Start New Bug` appears for both release and feature references,
