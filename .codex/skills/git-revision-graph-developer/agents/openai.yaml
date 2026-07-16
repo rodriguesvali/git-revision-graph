@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Revision Graph Developer"
+  short_description: "Develop Git Revision Graph safely"
+  default_prompt: "Use $git-revision-graph-developer to implement and verify a scoped change in this extension."
