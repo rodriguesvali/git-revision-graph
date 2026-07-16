@@ -10,6 +10,7 @@ export type FlowBranchKind =
   | 'unknown';
 
 export type FlowPatternBranchKind = Exclude<FlowBranchKind, 'main' | 'unknown'>;
+export type FlowStartBranchKind = Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task' | 'bug' | 'hotfix'>;
 
 export type FlowConfigSource = 'repository' | 'workspace' | 'user' | 'defaults' | 'invalid' | 'disabled';
 
@@ -99,7 +100,7 @@ export interface FlowPullRequestTargetInfo {
 
 export type FlowGovernanceOptionsUpdate = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;
 
-export function isFlowStartBranchKind(value: unknown): value is Extract<FlowPatternBranchKind, 'release' | 'feature' | 'task' | 'bug' | 'hotfix'> {
+export function isFlowStartBranchKind(value: unknown): value is FlowStartBranchKind {
   return value === 'release'
     || value === 'feature'
     || value === 'task'

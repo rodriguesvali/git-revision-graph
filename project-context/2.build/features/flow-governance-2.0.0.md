@@ -20,10 +20,10 @@ from an active release.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
    or focusing that item reveals `Start New Release`, `Start New Feature`, and
    `Start New Hot Fix`.
-5. When the user chooses `Start New Release` or `Start New Feature`, the host
-   fetches the tracked upstream and then verifies the selected `main` before
-   opening the form. An out-of-sync branch requires explicit confirmation and
-   successful synchronization.
+5. Before any governed branch form opens, the host fetches the source's tracked
+   upstream and then verifies its refreshed state. Release, feature, and hotfix
+   require exact synchronization with `main`; task and bug require their source
+   not to be behind and block divergence for manual reconciliation.
 6. The user fills the required name and description and confirms.
 7. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
@@ -105,11 +105,11 @@ from an active release.
 - When Flow Governance is active, a branch classified as `main` shows a
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
-- `Start New Release` and `Start New Feature` fetch the tracked upstream before
-  verifying the selected `main`. If it is ahead, behind, or divergent, the user
-  must confirm and complete synchronization first; fetch, synchronization, or
-  cancellation failure keeps the form closed. Existing required-name and
-  required-description validation then creates the branch from `main` and
+- `Start New Release`, `Start New Feature`, and `Start New Hot Fix` fetch the
+  tracked upstream before verifying the selected `main`. If it is ahead,
+  behind, or divergent, the user must confirm and complete synchronization
+  first; fetch, synchronization, or cancellation failure keeps the form closed.
+  Existing required-field validation then creates the branch from `main` and
   separately offers optional confirmed publication after creation.
 - `Start New Hot Fix` is available from a branch classified as `main`. Its form
   requires a Hotfix ID, short name, and description, combines the identifying
@@ -120,12 +120,16 @@ from an active release.
   Its form requires a numeric Dev Task, a short name, and a description,
   combines the values as `<task-dev>-<short-name>`, validates the
   result through `patterns.task`, and creates the local branch from that feature.
+  The tracked feature is fetched first: ahead-only proceeds without a source
+  push, behind-only requires confirmed synchronization, and divergence blocks
+  the form pending manual reconciliation.
 - Branches classified as `release` or `feature` show
   `Flow Governance > Start New Bug`. Its form requires a Bug ID, short name, and
   description, combines the identifying values as `<bug-id>-<short-name>`,
   validates the result through `patterns.bug`, creates and checks out the local
   branch from the selected source, stores its description, and never pushes
-  automatically.
+  automatically. Its tracked feature or release source uses the same fetch-first
+  not-behind policy as task creation.
 - Release and feature branches show `Flow Governance > Prepare Equalization`.
   Its form requires an origin branch and description. The origin list contains
   `main` and visible active releases, excludes the target when applicable, and
@@ -385,6 +389,12 @@ from an active release.
 - Advance remote `main` without fetching locally, then run `Start New Feature`.
   Verify the workflow fetches first, detects the refreshed behind state, and
   opens the feature form only after confirmed synchronization succeeds.
+- Repeat the stale tracked-`main` scenario with `Start New Hot Fix`; verify the
+  hotfix form is protected by the same fetch-first exact-sync gate.
+- On a tracked feature, verify task and bug preflight after fetch in three
+  states: ahead-only opens the form without pushing; behind-only opens it only
+  after confirmed synchronization; divergent shows a modal manual-reconciliation
+  warning and leaves the form closed. Repeat bug preflight from a release.
 - With Flow Governance active, delete the repository flow file without
   refreshing the graph and run `Start New Release`. Verify the unavailable
   warning is modal, the form remains closed, and no branch is created.

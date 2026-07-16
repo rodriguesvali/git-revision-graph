@@ -14,17 +14,15 @@ import { createRevisionGraphShowFlowBranchFormMessage } from '../hostMessages';
 import { resolveFlowConfigForRepository } from './flowConfig';
 import { FlowConfigPersistenceCoordinator } from './flowConfigPersistenceCoordinator';
 import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning';
+import { prepareFlowBranchStart } from './flowBranchStartPreflight';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
 import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
-import {
-  prepareFlowBranchStart,
-  startFlowBranch,
-  type FlowStartBranchKind
-} from './flowReleaseBranch';
+import { startFlowBranch } from './flowReleaseBranch';
 import { applyFlowGovernanceOptionsUpdate } from './flowState';
 import type {
   FlowGovernanceOptionsUpdate,
-  FlowGovernanceSettings
+  FlowGovernanceSettings,
+  FlowStartBranchKind
 } from './flowTypes';
 
 export interface RevisionGraphFlowGovernanceWorkflowHost {

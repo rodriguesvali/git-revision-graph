@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Latest verification on 2026-07-16 passed `npm run quality:check` (214 production files and 2,058 functions), `npm run build`, `npm test` (715 tests), and `git diff --check`. |
+| Current automated source verification | Complete | Latest verification on 2026-07-16 passed `npm run quality:check` (215 production files and 2,060 functions), `npm run build`, `npm test` (719 tests), and `git diff --check`. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -65,6 +65,10 @@ Candidate scope:
   AWS CodeCommit remotes through provider-neutral actions.
 - Add production-to-release equalization guidance using local `sync/*` helper branches without
   automatic push.
+- Apply fetch-first source preflight to every governed branch creation action. Main-based release,
+  feature, and hotfix starts require exact synchronization; task and bug starts accept ahead-only
+  sources without pushing, synchronize behind-only sources after confirmation, and block
+  divergence for manual reconciliation.
 - Update README and CHANGELOG notes for the shipped 2.0.0 behavior.
 
 Explicitly out of scope:
@@ -100,6 +104,13 @@ Planned verification:
 
 Recorded verification:
 
+- Governed branch source preflight was extended on 2026-07-16 to release, feature, hotfix, task,
+  and bug creation. Every tracked source is fetched before comparison. Main-based actions require
+  exact synchronization; task and bug use a not-behind policy that preserves ahead-only local
+  work without pushing and blocks divergence for manual reconciliation. `npm run quality:check`
+  (215 production files and 2,060 functions), `npm run build`, `npm test` (719 tests), and
+  `git diff --check` passed. The maintainer confirmed targeted Extension Development Host
+  validation on 2026-07-16; the full release-candidate smoke matrix remains pending.
 - Hosted Git provider adapters and URL-only support for GitLab.com, AWS CodeCommit, and Google
   Secure Source Manager were implemented on 2026-07-13. GitLab.com supports exact commit and
   branch-aware Merge Request URLs; CodeCommit supports exact regional commit URLs and opens its

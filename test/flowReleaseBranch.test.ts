@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { RefActionServices } from '../src/refActions';
 import {
   DEFAULT_FLOW_CONFIG,
+  getFlowBranchStartSyncPolicy,
   prepareFlowBranchStart,
   resolveFlowBranchName,
   resolveFlowReleaseBranchName,
@@ -35,6 +36,14 @@ test('Flow Governance release branch names follow the configured release pattern
     resolveFlowReleaseBranchName('bad release name', DEFAULT_FLOW_CONFIG).ok,
     false
   );
+});
+
+test('Flow Governance selects synchronization policy from the governed branch source model', () => {
+  assert.equal(getFlowBranchStartSyncPolicy('release'), 'exact-sync');
+  assert.equal(getFlowBranchStartSyncPolicy('feature'), 'exact-sync');
+  assert.equal(getFlowBranchStartSyncPolicy('hotfix'), 'exact-sync');
+  assert.equal(getFlowBranchStartSyncPolicy('task'), 'not-behind');
+  assert.equal(getFlowBranchStartSyncPolicy('bug'), 'not-behind');
 });
 
 test('Flow Governance opens the release form preflight immediately when main is synchronized', async () => {
@@ -170,6 +179,66 @@ test('Flow Governance keeps the branch form closed when upstream fetch fails', a
   assert.equal(ready, false);
   assert.deepEqual(confirmations, []);
   assert.match(errors[0] ?? '', /Could not fetch origin\/main before checking main synchronization.*fetch unavailable/);
+});
+
+test('Flow Governance allows a task from an ahead-only feature after fetching', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo', 2, 0, { remote: 'origin', name: 'feature/demo' })
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({ confirmations }));
+
+  assert.equal(ready, true);
+  assert.deepEqual(repository.calls.fetch, [{
+    remote: 'origin',
+    ref: 'refs/heads/feature/demo:refs/remotes/origin/feature/demo'
+  }]);
+  assert.deepEqual(confirmations, []);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance synchronizes a behind-only feature before starting a task', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo', 0, 1, { remote: 'origin', name: 'feature/demo' })
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({ confirmations, confirmResult: true }));
+
+  assert.equal(ready, true);
+  assert.match(confirmations[0]?.message ?? '', /1 behind.*before starting a new task/);
+  assert.deepEqual(repository.calls.pull, [true]);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance blocks a task when its feature has diverged from upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/demo', 2, 1, { remote: 'origin', name: 'feature/demo' })
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const warnings: string[] = [];
+
+  const ready = await prepareFlowBranchStart(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/demo'
+  }, createReleaseServices({ confirmations, warnings }));
+
+  assert.equal(ready, false);
+  assert.deepEqual(confirmations, []);
+  assert.match(warnings[0] ?? '', /has diverged from origin\/feature\/demo.*Reconcile the branch manually/);
+  assert.deepEqual(repository.calls.pull, []);
+  assert.deepEqual(repository.calls.push, []);
 });
 
 test('Flow Governance fast-forwards a behind non-current release base without switching branches', async () => {

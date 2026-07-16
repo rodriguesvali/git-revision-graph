@@ -40,6 +40,9 @@ All notable changes to this project will be documented in this file.
   or failing synchronization leaves the form closed and prevents release creation from stale code.
 - Extended the synchronization gate to `Start New Feature` and made both workflows fetch the
   tracked upstream before evaluating ahead/behind; fetch failures now fail closed before the form.
+- Extended fetch-first source preflight to hotfix, task, and bug creation. Main-based workflows
+  require exact synchronization; task and bug allow ahead-only sources without pushing, confirm
+  behind-only synchronization, and block divergent sources for manual reconciliation.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Made `Description` mandatory when starting release, feature, task, bug, or hotfix branches,

@@ -10,6 +10,7 @@ export * from './flowPullRequestContext';
 export * from './flowPullRequestPreflight';
 export * from './flowPullRequestTargets';
 export * from './flowReleaseBranch';
+export * from './flowBranchStartPreflight';
 export * from './flowState';
 export * from './flowTransitionPolicy';
 export * from './flowTypes';

@@ -345,18 +345,18 @@
         entries.push(
           { label: 'Start New Release', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'release')) },
           { label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) },
-          { label: 'Start New Hot Fix', onClick: () => showFlowBranchForm(target, 'hotfix') }
+          { label: 'Start New Hot Fix', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'hotfix')) }
         );
       } else if (flowBranch.kind === 'feature') {
         entries.push(
-          { label: 'Start New Task', onClick: () => showFlowBranchForm(target, 'task') },
-          { label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') },
+          { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) },
+          { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) },
           { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) },
           { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
-        entries.push({ label: 'Start New Bug', onClick: () => showFlowBranchForm(target, 'bug') });
+        entries.push({ label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
         if (productionBranchName) {
           entries.push(
