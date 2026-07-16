@@ -605,7 +605,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
-  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?if \(productionBranchName\)[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, productionBranchName\)/);
+  assert.match(html, /flowBranch\.kind === 'hotfix' \|\| flowBranch\.kind === 'sync'[\s\S]*?getFlowProductionBranchName\(\)[\s\S]*?getFlowPullRequestTargets\(target\.name\)\[0\]\?\.targetRefName[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, pullRequestTargetName\)/);
   assert.match(html, /targetText\.textContent = 'Target release';/);
   assert.match(html, /function initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(select, targets\)/);
   assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a release\.\.\.' : 'No release branches available';/);

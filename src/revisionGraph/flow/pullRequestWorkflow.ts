@@ -9,6 +9,7 @@ import {
 } from '../../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../../repositoryMutationWarning';
 import type { RevisionGraphViewState } from '../../revisionGraphTypes';
+import { isMergeInProgress } from '../../gitState';
 import { createRevisionGraphFlowPullRequestContextMessage } from '../hostMessages';
 import type { RevisionGraphViewHostMessage } from '../../revisionGraphTypes';
 import {
@@ -36,12 +37,14 @@ export interface RevisionGraphFlowPullRequestWorkflowDependencies {
   readonly checkSourcePublication: typeof checkFlowPullRequestSourcePublication;
   readonly checkTarget: typeof checkFlowPullRequestTarget;
   readonly loadRemoteBranchCommit: typeof loadFlowPullRequestRemoteBranchCommit;
+  readonly isMergeInProgress: typeof isMergeInProgress;
 }
 
 const DEFAULT_DEPENDENCIES: RevisionGraphFlowPullRequestWorkflowDependencies = {
   checkSourcePublication: checkFlowPullRequestSourcePublication,
   checkTarget: checkFlowPullRequestTarget,
-  loadRemoteBranchCommit: loadFlowPullRequestRemoteBranchCommit
+  loadRemoteBranchCommit: loadFlowPullRequestRemoteBranchCommit,
+  isMergeInProgress
 };
 
 export class RevisionGraphFlowPullRequestWorkflow {
@@ -53,6 +56,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
   async copyContext(sourceRefName: string, targetRefName: string): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository) return;
+    if (!await this.ensureMergeCompleted(repository, sourceRefName)) return;
     if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName)) return;
     if (!await this.ensureSourceReady(repository, sourceRefName)) return;
 
@@ -77,6 +81,7 @@ export class RevisionGraphFlowPullRequestWorkflow {
   async openUrl(sourceRefName: string, targetRefName: string): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository) return;
+    if (!await this.ensureMergeCompleted(repository, sourceRefName)) return;
     const remote = resolveFlowPullRequestRemote(repository);
     if (!remote) {
       this.host.actionServices.ui.showInformationMessage(
@@ -174,6 +179,20 @@ export class RevisionGraphFlowPullRequestWorkflow {
         'Pull Request context was not opened.';
     }
     await this.host.actionServices.ui.showWarningMessage(message, { modal: true });
+    return false;
+  }
+
+  private async ensureMergeCompleted(repository: Repository, sourceRefName: string): Promise<boolean> {
+    const sourceKind = this.host.getCurrentState().flowGovernance?.references
+      .find((reference) => reference.refName === sourceRefName)?.kind;
+    if (sourceKind !== 'sync' || !this.dependencies.isMergeInProgress(repository)) {
+      return true;
+    }
+
+    await this.host.actionServices.ui.showWarningMessage(
+      `Complete or abort the merge on ${sourceRefName} before opening Pull Request context.`,
+      { modal: true }
+    );
     return false;
   }
 
@@ -307,9 +326,10 @@ function resolveFlowPullRequestTargetPolicy(
   const targetKind = references.find((reference) => reference.refName === targetRefName)?.kind;
   const isProductionPromotion = (sourceKind === 'release' || sourceKind === 'hotfix') && targetKind === 'main';
   const isFeaturePromotion = sourceKind === 'feature' && targetKind === 'release';
+  const isSyncPromotion = sourceKind === 'sync' && (targetKind === 'release' || targetKind === 'feature');
   return {
     isProductionPromotion,
-    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion,
+    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion || isSyncPromotion,
     requiresTargetAncestry: isProductionPromotion
   };
 }
@@ -330,7 +350,7 @@ function createUnverifiedTargetMessage(
 ): string {
   return policy.isProductionPromotion
     ? `Production promotion aborted: the current production branch could not be verified on ${remoteName}. ${detail}`
-    : `Pull Request context was not opened: the target release could not be verified on ${remoteName}. ${detail}`;
+    : `Pull Request context was not opened: the target branch could not be verified on ${remoteName}. ${detail}`;
 }
 
 function createOutOfSyncTargetMessage(

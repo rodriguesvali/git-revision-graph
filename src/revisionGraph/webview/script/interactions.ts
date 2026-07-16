@@ -364,11 +364,12 @@
             { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
-      } else if (flowBranch.kind === 'hotfix') {
-        const productionBranchName = getFlowProductionBranchName();
-        if (productionBranchName) {
+      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync') {
+        const pullRequestTargetName = flowBranch.kind === 'hotfix' ? getFlowProductionBranchName()
+          : getFlowPullRequestTargets(target.name)[0]?.targetRefName;
+        if (pullRequestTargetName) {
           entries.push(
-            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
+            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, pullRequestTargetName) }
           );
         }
       }

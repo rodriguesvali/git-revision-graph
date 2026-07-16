@@ -33,14 +33,7 @@ import {
 } from '../webview/shared';
 import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
-import {
-  classifyFlowBranches,
-  createFlowGovernanceViewState,
-  FlowGovernanceSettings,
-  FlowGovernanceViewState,
-  loadFlowPullRequestTargets,
-  resolveFlowConfigForRepository
-} from '../flow';
+import { FlowGovernanceSettings, loadFlowGovernanceViewState } from '../flow';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
 
@@ -380,7 +373,15 @@ async function buildReadyRevisionGraphViewStateFromParts(
   );
   traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
   throwIfAborted(signal, 'The revision graph load was aborted.');
-  const flowGovernance = await buildFlowGovernanceViewState(repository, references, context?.flowGovernanceSettings);
+  const branchRefNames = references
+    .filter((ref) => ref.kind === 'head' || ref.kind === 'branch')
+    .map((ref) => ref.name);
+  const flowGovernance = await loadFlowGovernanceViewState(
+    repository.rootUri.fsPath,
+    branchRefNames,
+    context?.flowGovernanceSettings,
+    signal
+  );
   const branchDescriptionsStartedAt = nowMs();
   const branchDescriptions = context?.branchDescriptions
     ?? await loadGitBranchDescriptions(repository.rootUri.fsPath, signal);
@@ -424,26 +425,6 @@ async function buildReadyRevisionGraphViewStateFromParts(
   };
   traceDuration(trace, 'state.readyViewState', partsStartedAt, `nodes=${scene.nodes.length}; refs=${references.length}`);
   return state;
-}
-
-async function buildFlowGovernanceViewState(
-  repository: Repository,
-  references: readonly RevisionGraphViewReference[],
-  settings: FlowGovernanceSettings | undefined
-): Promise<FlowGovernanceViewState | undefined> {
-  const resolution = await resolveFlowConfigForRepository(repository.rootUri.fsPath, settings);
-  const branchRefs = references
-    .filter((ref) => ref.kind === 'head' || ref.kind === 'branch')
-    .map((ref) => ref.name);
-  const flowReferences = classifyFlowBranches([...new Set(branchRefs)], resolution.config);
-  const state = createFlowGovernanceViewState(resolution, flowReferences);
-  const pullRequestTargets = state.enabled
-    ? await loadFlowPullRequestTargets(repository.rootUri.fsPath, state.references)
-    : [];
-  const enrichedState: FlowGovernanceViewState = { ...state, pullRequestTargets };
-  return state.enabled || state.configSource === 'repository' || state.configSource === 'invalid'
-    ? enrichedState
-    : undefined;
 }
 
 export function buildRevisionGraphSceneLayoutKey(

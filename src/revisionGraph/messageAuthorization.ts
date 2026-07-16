@@ -247,7 +247,12 @@ function isKnownGovernedFlowTransition(
 ): boolean {
   const source = state.flowGovernance?.references.find((ref) => ref.refName === sourceRefName);
   const target = state.flowGovernance?.references.find((ref) => ref.refName === targetRefName);
-  return !!source && !!target && isFlowGovernedTransition(source.kind, target.kind);
+  if (!source || !target || !isFlowGovernedTransition(source.kind, target.kind)) {
+    return false;
+  }
+  return source.kind !== 'sync' || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
+    candidate.sourceRefName === sourceRefName && candidate.targetRefName === targetRefName
+  ) === true;
 }
 
 function hasKnownReference(

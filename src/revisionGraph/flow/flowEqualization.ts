@@ -8,6 +8,7 @@ import {
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import { setFlowBranchDescription } from './flowBranchDescription';
+import { setFlowEqualizationTarget } from './flowEqualizationTarget';
 
 export interface PrepareFlowEqualizationOptions {
   readonly originBranch: string;
@@ -17,6 +18,7 @@ export interface PrepareFlowEqualizationOptions {
 
 export interface FlowEqualizationDependencies {
   readonly setDescription?: typeof setFlowBranchDescription;
+  readonly setTarget?: typeof setFlowEqualizationTarget;
 }
 
 export function suggestFlowEqualizationBranchName(targetBranch: string): string {
@@ -57,11 +59,18 @@ export async function prepareFlowEqualizationBranch(
     return;
   }
 
+  const branchBaseRefName = targetBranch;
+  const mergeRefName = originBranch;
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   let branchCreated = false;
   try {
-    await repository.createBranch(branchName, true, targetBranch);
+    await repository.createBranch(branchName, true, branchBaseRefName);
     branchCreated = true;
+    await (dependencies.setTarget ?? setFlowEqualizationTarget)(
+      repository.rootUri.fsPath,
+      branchName,
+      targetBranch
+    );
     try {
       await (dependencies.setDescription ?? setFlowBranchDescription)(
         repository.rootUri.fsPath,
@@ -74,10 +83,10 @@ export async function prepareFlowEqualizationBranch(
         { modal: true }
       );
     }
-    await repository.merge(originBranch);
+    await repository.merge(mergeRefName);
     services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(
-      `${branchName} was created locally from ${targetBranch} and equalized with ${originBranch}. Review it, then publish and open a Pull Request when ready.`
+      `${branchName} was created locally from ${branchBaseRefName} and equalized with ${mergeRefName}. Review it, then publish and open a Pull Request when ready.`
     );
   } catch (error) {
     if (!branchCreated) {

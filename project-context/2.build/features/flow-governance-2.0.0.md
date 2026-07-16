@@ -143,7 +143,9 @@ from an active release.
   `main` and visible active releases, excludes the target when applicable, and
   orders `main` first. Submission creates a deterministic local `sync/*` branch
   from the target branch, stores the description, merges the selected origin,
-  never pushes automatically, and hands conflicts to VS Code Source Control.
+  never pushes automatically, and hands conflicts to VS Code Source Control. The helper persists
+  its original target locally and, after the merge is completed, exposes `Promotion PR Context`
+  back to that exact release or feature.
 - Existing compare, checkout, branch, merge, sync, delete, diff, log, minimap,
   search, focus, refresh, empty-state, and multi-repository behavior remains
   intact.
@@ -306,6 +308,10 @@ from an active release.
   no-push guarantee.
 - `npm run build` and `npm test` passed with 601 tests on 2026-07-10 after
   extending equalization to feature branches.
+- Equalization sync promotion was completed on 2026-07-16. Each new sync branch records the action
+  target before merging the selected origin. Flow state restores that mapping across refreshes,
+  offers only `sync -> original release/feature`, and blocks PR context while `MERGE_HEAD` exists.
+  Host authorization rejects alternate sync targets.
 - Hotfix and release references expose `Promotion PR Context` whenever the
   configured production branch is available. Activating it performs a fresh
   host-side ahead check before opening the form.
@@ -478,6 +484,9 @@ from an active release.
   itself a release. Verify Description is required, submission prepares the
   local `sync/*` branch from the selected target, merges the selected origin,
   and performs no push.
+- Force an equalization conflict, resolve the files without committing, and verify the sync
+  `Promotion PR Context` remains blocked. Complete the merge, refresh the graph, and verify the
+  action targets only the original release or feature.
 - Verify long governed branch names remain readable beside their badges and
   exceptional names are truncated only at the bounded maximum card width.
 - On a feature branch, verify `Start New Task` requires a numeric Dev Task,

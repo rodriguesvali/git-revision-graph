@@ -153,7 +153,8 @@ test('Feature Pull Request preflight verifies the remote release before checking
     async checkSourcePublication(_repository, remoteName, sourceRefName) {
       calls.push(`source:${remoteName}/${sourceRefName}`);
       return { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
-    }
+    },
+    isMergeInProgress: () => false
   });
 
   await workflow.copyContext('feature/payment', 'release/2.0.0');
@@ -228,7 +229,8 @@ test('Feature Pull Request preflight blocks behind, ahead, and divergent local r
       async checkSourcePublication(_repository, remoteName, sourceRefName) {
         sourceChecked = true;
         return { status: 'ready', remoteName, sourceRefName };
-      }
+      },
+      isMergeInProgress: () => false
     });
 
     await workflow.copyContext('feature/payment', 'release/2.0.0');
@@ -238,6 +240,80 @@ test('Feature Pull Request preflight blocks behind, ahead, and divergent local r
     assert.ok(warnings[0].message.includes(scenario.expected));
     assert.deepEqual(warnings[0].options, { modal: true });
   }
+});
+
+test('Sync Pull Request context remains blocked until the equalization merge is completed', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const warnings: Array<{ message: string; options?: { readonly modal?: boolean } }> = [];
+  const calls: string[] = [];
+  const hostMessages: unknown[] = [];
+  let mergeInProgress = true;
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: createFlowPullRequestTestServices({
+      showWarningMessage(message: string, options?: { readonly modal?: boolean }) {
+        warnings.push({ message, options });
+      }
+    }),
+    mutationCoordinator: new RepositoryMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({
+      flowGovernance: {
+        references: [
+          { refName: 'sync/payment', kind: 'sync' },
+          { refName: 'feature/payment', kind: 'feature' }
+        ]
+      }
+    }) as never,
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
+    postHostMessage: (message) => hostMessages.push(message)
+  }, {
+    async loadRemoteBranchCommit(_repository, remoteName, branchName) {
+      calls.push(`target-remote:${remoteName}/${branchName}`);
+      return { status: 'found', commit: 'remote-feature-commit' };
+    },
+    async checkTarget(_path, sourceRefName, targetRefName, options) {
+      calls.push(`target:${targetRefName}..${sourceRefName}`);
+      assert.equal(options?.requireTargetSynchronized, true);
+      return { sourceRefName, targetRefName, status: 'ahead' };
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      calls.push(`source:${remoteName}/${sourceRefName}`);
+      return { status: 'ready', remoteName, sourceRefName };
+    },
+    isMergeInProgress: () => mergeInProgress
+  });
+
+  await workflow.copyContext('sync/payment', 'feature/payment');
+
+  assert.deepEqual(calls, []);
+  assert.deepEqual(warnings, [{
+    message: 'Complete or abort the merge on sync/payment before opening Pull Request context.',
+    options: { modal: true }
+  }]);
+  assert.deepEqual(hostMessages, []);
+
+  mergeInProgress = false;
+  await workflow.copyContext('sync/payment', 'feature/payment');
+
+  assert.deepEqual(calls, [
+    'target-remote:origin/feature/payment',
+    'target:feature/payment..sync/payment',
+    'source:origin/sync/payment'
+  ]);
+  assert.equal(hostMessages.length, 1);
 });
 
 test('Flow Governance awaits the shared modal warning when a repository mutation is rejected', async (t) => {

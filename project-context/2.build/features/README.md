@@ -18,6 +18,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   `feature -> release` Pull Request targets without local branch mutation.
 - `2.0.0-remote-fetch-loading-feedback.md`: blocking `Fetching remotes...` feedback for automatic
   Flow Governance remote probes and fetches.
+- `2.0.0-sync-promotion-pr-context.md`: durable equalization target mapping and guarded
+  `sync -> original target` Pull Request handoff after merge completion.
 
 ## Published Baseline Retained For Integration
 

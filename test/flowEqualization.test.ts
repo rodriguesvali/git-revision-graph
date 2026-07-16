@@ -9,6 +9,7 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
   const descriptions: Array<{ branchName: string; description: string }> = [];
+  const targets: Array<{ branchName: string; targetRefName: string }> = [];
   const refreshes: unknown[] = [];
   const services = {
     ui: {
@@ -28,6 +29,9 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
     targetBranch: 'release/2.0.0',
     description: 'Bring the stable payment fix into the 2.0 release'
   }, services, {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    },
     async setDescription(_repositoryPath, branchName, description) {
       descriptions.push({ branchName, description });
     }
@@ -40,6 +44,10 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
   }]);
   assert.deepEqual(repository.calls.merge, ['release/1.9.0']);
   assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(targets, [{
+    branchName: 'sync/2.0.0',
+    targetRefName: 'release/2.0.0'
+  }]);
   assert.deepEqual(descriptions, [{
     branchName: 'sync/2.0.0',
     description: 'Bring the stable payment fix into the 2.0 release'
@@ -51,6 +59,7 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
 test('Flow Governance prepares a local feature equalization branch', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const descriptions: string[] = [];
+  const targets: string[] = [];
   const services = {
     ui: {
       showInformationMessage() {},
@@ -69,6 +78,9 @@ test('Flow Governance prepares a local feature equalization branch', async () =>
     targetBranch: 'feature/payment-summary',
     description: 'Bring the stable platform baseline into the feature'
   }, services, {
+    async setTarget(_repositoryPath, _branchName, targetRefName) {
+      targets.push(targetRefName);
+    },
     async setDescription(_repositoryPath, _branchName, description) {
       descriptions.push(description);
     }
@@ -81,7 +93,39 @@ test('Flow Governance prepares a local feature equalization branch', async () =>
   }]);
   assert.deepEqual(repository.calls.merge, ['main']);
   assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(targets, ['feature/payment-summary']);
   assert.deepEqual(descriptions, ['Bring the stable platform baseline into the feature']);
+});
+
+test('Flow Governance creates equalization branches from the selected feature target before merging the origin', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const services = {
+    ui: {
+      showInformationMessage() {},
+      showWarningMessage() {},
+      async showErrorMessage() {},
+      async showSourceControl() {}
+    },
+    refreshController: {
+      prepare() { return { cancel() {} }; },
+      refresh() {}
+    }
+  } as unknown as RefActionServices;
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'release/1.9.0',
+    targetBranch: 'feature/payment-summary',
+    description: 'Bring the release fix into the feature branch'
+  }, services, {
+    async setTarget() {}
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'sync/payment-summary',
+    checkout: true,
+    ref: 'feature/payment-summary'
+  }]);
+  assert.deepEqual(repository.calls.merge, ['release/1.9.0']);
 });
 
 test('Flow Governance shows description persistence warnings modally and continues equalization', async () => {
@@ -107,6 +151,7 @@ test('Flow Governance shows description persistence warnings modally and continu
     targetBranch: 'release/2.0.0',
     description: 'Bring production fixes into the release'
   }, services, {
+    async setTarget() {},
     async setDescription() {
       throw new Error('description persistence failed');
     }
@@ -116,6 +161,41 @@ test('Flow Governance shows description persistence warnings modally and continu
   assert.match(warningRequests[0].message, /description could not be saved/);
   assert.equal(warningRequests[0].modal, true);
   assert.deepEqual(repository.calls.merge, ['main']);
+});
+
+test('Flow Governance stops before merge when the equalization target cannot be persisted', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = {
+    ui: {
+      showInformationMessage() {},
+      showWarningMessage() {},
+      async showErrorMessage(message: string) { errors.push(message); },
+      async showSourceControl() {}
+    },
+    refreshController: {
+      prepare() { return { cancel() {} }; },
+      refresh() {}
+    }
+  } as unknown as RefActionServices;
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'main',
+    targetBranch: 'feature/payment-summary',
+    description: 'Bring production into the feature'
+  }, services, {
+    async setTarget() {
+      throw new Error('target persistence failed');
+    }
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'sync/payment-summary',
+    checkout: true,
+    ref: 'feature/payment-summary'
+  }]);
+  assert.deepEqual(repository.calls.merge, []);
+  assert.match(errors[0] ?? '', /equalization did not complete/);
 });
 
 test('Flow Governance equalization requires a description', async () => {

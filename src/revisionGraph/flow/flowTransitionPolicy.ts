@@ -24,7 +24,8 @@ export const FLOW_GOVERNED_TRANSITION_RULES: readonly FlowTransitionRule[] = [
   { id: 'bug-to-main', sourceKind: 'bug', targetKind: 'main' },
   { id: 'bug-to-release', sourceKind: 'bug', targetKind: 'release' },
   { id: 'bug-to-feature', sourceKind: 'bug', targetKind: 'feature' },
-  { id: 'sync-to-release', sourceKind: 'sync', targetKind: 'release' }
+  { id: 'sync-to-release', sourceKind: 'sync', targetKind: 'release' },
+  { id: 'sync-to-feature', sourceKind: 'sync', targetKind: 'feature' }
 ];
 
 export function evaluateFlowTransition(

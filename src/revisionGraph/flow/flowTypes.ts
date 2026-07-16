@@ -73,6 +73,7 @@ export interface FlowBranchInfo {
   readonly kind: FlowBranchKind;
   readonly isEphemeral: boolean;
   readonly diagnostics: readonly FlowDiagnostic[];
+  readonly equalizationTargetRefName?: string;
 }
 
 export interface FlowGovernanceViewState {
@@ -121,7 +122,8 @@ export type FlowTransitionRuleId =
   | 'bug-to-main'
   | 'bug-to-release'
   | 'bug-to-feature'
-  | 'sync-to-release';
+  | 'sync-to-release'
+  | 'sync-to-feature';
 
 export interface FlowTransitionPolicyOptions {
   readonly directMergePolicy?: FlowDirectMergePolicy;

@@ -41,10 +41,7 @@ export async function loadFlowPullRequestTargets(
     }
   }
 
-  for (const source of references) {
-    if (source.kind !== 'feature') {
-      continue;
-    }
+  for (const source of references.filter((reference) => reference.kind === 'feature')) {
     for (const target of releaseBranches) {
       if (source.refName !== target.refName) {
         candidates.push({
@@ -53,6 +50,20 @@ export async function loadFlowPullRequestTargets(
           requireTargetAncestor: false
         });
       }
+    }
+  }
+
+  for (const source of references.filter((reference) => reference.kind === 'sync')) {
+    const target = references.find((reference) =>
+      reference.refName === source.equalizationTargetRefName
+      && (reference.kind === 'release' || reference.kind === 'feature')
+    );
+    if (target && source.refName !== target.refName) {
+      candidates.push({
+        sourceRefName: source.refName,
+        targetRefName: target.refName,
+        requireTargetAncestor: false
+      });
     }
   }
 

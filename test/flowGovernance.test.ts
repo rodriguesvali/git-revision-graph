@@ -7,6 +7,7 @@ import * as path from 'node:path';
 import {
   classifyFlowBranch,
   classifyFlowBranches,
+  applyFlowEqualizationTargets,
   applyFlowGovernanceOptionsUpdate,
   buildFlowPullRequestUrl,
   buildFlowPullRequestUrlFromRemoteUrl,
@@ -22,6 +23,7 @@ import {
   loadFlowPullRequestRemoteBranchCommit,
   loadFlowPullRequestTargets,
   normalizeFlowConfig,
+  parseFlowEqualizationTargets,
   resolveFlowConfigForRepository,
   resolveFlowPullRequestRemote,
   suggestFlowEqualizationBranchName,
@@ -212,7 +214,8 @@ test('Flow Governance transition policy marks governed integrations as PR-requir
     ['bug', 'main', 'bug-to-main'],
     ['bug', 'release', 'bug-to-release'],
     ['bug', 'feature', 'bug-to-feature'],
-    ['sync', 'release', 'sync-to-release']
+    ['sync', 'release', 'sync-to-release'],
+    ['sync', 'feature', 'sync-to-feature']
   ] as const;
 
   for (const [sourceKind, targetKind, ruleId] of governedPairs) {
@@ -227,13 +230,46 @@ test('Flow Governance transition policy marks governed integrations as PR-requir
   }
 });
 
-test('Flow Governance resolves Pull Request targets and ahead status for release, hotfix, and feature branches', async () => {
+test('Flow Governance persists and applies equalization targets to sync branches', () => {
+  const parsed = parseFlowEqualizationTargets(
+    'branch.sync/payment.git-revision-graph-flow-target\nfeature/payment\0' +
+    'branch.sync/2.0.0.git-revision-graph-flow-target\nrelease/2.0.0\0' +
+    'branch.feature/payment.description\nignored\0'
+  );
+  const references = applyFlowEqualizationTargets([
+    { refName: 'sync/payment', kind: 'sync', isEphemeral: true, diagnostics: [] },
+    { refName: 'feature/payment', kind: 'feature', isEphemeral: false, diagnostics: [] }
+  ], parsed);
+
+  assert.deepEqual([...parsed], [
+    ['sync/payment', 'feature/payment'],
+    ['sync/2.0.0', 'release/2.0.0']
+  ]);
+  assert.equal(references[0].equalizationTargetRefName, 'feature/payment');
+  assert.equal(references[1].equalizationTargetRefName, undefined);
+});
+
+test('Flow Governance resolves Pull Request targets and ahead status for release, hotfix, feature, and mapped sync branches', async () => {
   const references = [
     { refName: 'main', kind: 'main' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'release/2.0.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'release/2.1.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'hotfix/INC-482-login', kind: 'hotfix' as const, isEphemeral: false, diagnostics: [] },
-    { refName: 'feature/payment', kind: 'feature' as const, isEphemeral: false, diagnostics: [] }
+    { refName: 'feature/payment', kind: 'feature' as const, isEphemeral: false, diagnostics: [] },
+    {
+      refName: 'sync/payment',
+      kind: 'sync' as const,
+      isEphemeral: true,
+      diagnostics: [],
+      equalizationTargetRefName: 'feature/payment'
+    },
+    {
+      refName: 'sync/2.0.0',
+      kind: 'sync' as const,
+      isEphemeral: true,
+      diagnostics: [],
+      equalizationTargetRefName: 'release/2.0.0'
+    }
   ];
   const ranges: string[] = [];
   const ancestryChecks: string[] = [];
@@ -258,14 +294,18 @@ test('Flow Governance resolves Pull Request targets and ahead status for release
     'main..release/2.1.0',
     'main..hotfix/INC-482-login',
     'release/2.0.0..feature/payment',
-    'release/2.1.0..feature/payment'
+    'release/2.1.0..feature/payment',
+    'feature/payment..sync/payment',
+    'release/2.0.0..sync/2.0.0'
   ].sort());
   assert.deepEqual(targets.map((target) => [target.sourceRefName, target.targetRefName, target.status]), [
     ['release/2.0.0', 'main', 'ahead'],
     ['release/2.1.0', 'main', 'ahead'],
     ['hotfix/INC-482-login', 'main', 'ahead'],
     ['feature/payment', 'release/2.0.0', 'not-ahead'],
-    ['feature/payment', 'release/2.1.0', 'ahead']
+    ['feature/payment', 'release/2.1.0', 'ahead'],
+    ['sync/payment', 'feature/payment', 'ahead'],
+    ['sync/2.0.0', 'release/2.0.0', 'ahead']
   ]);
 });
 
