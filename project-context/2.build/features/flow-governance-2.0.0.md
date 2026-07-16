@@ -20,9 +20,10 @@ from an active release.
 4. The graph shows a first-position `Flow Governance` context submenu. Hovering
    or focusing that item reveals `Start New Release`, `Start New Feature`, and
    `Start New Hot Fix`.
-5. When the user chooses `Start New Release`, the host verifies the selected
-   `main` against its tracked upstream before opening the form. An out-of-sync
-   current branch requires explicit confirmation and successful synchronization.
+5. When the user chooses `Start New Release` or `Start New Feature`, the host
+   fetches the tracked upstream and then verifies the selected `main` before
+   opening the form. An out-of-sync branch requires explicit confirmation and
+   successful synchronization.
 6. The user fills the required name and description and confirms.
 7. The extension validates the input, derives the branch from `patterns.release`
    or `patterns.feature`, creates and checks out the branch from `main`, and
@@ -104,12 +105,12 @@ from an active release.
 - When Flow Governance is active, a branch classified as `main` shows a
   first-position `Flow Governance` submenu with `Start New Release` and
   `Start New Feature`, separated from the standard context-menu actions.
-- `Start New Release` verifies the selected `main` before showing its form. If
-  the current branch is ahead, behind, or divergent from its tracked upstream,
-  the user must confirm and complete synchronization first; cancellation or
-  failure keeps the form closed. The existing required-name and
-  required-description validation then creates the release branch from `main`
-  and separately offers optional confirmed publication after creation.
+- `Start New Release` and `Start New Feature` fetch the tracked upstream before
+  verifying the selected `main`. If it is ahead, behind, or divergent, the user
+  must confirm and complete synchronization first; fetch, synchronization, or
+  cancellation failure keeps the form closed. Existing required-name and
+  required-description validation then creates the branch from `main` and
+  separately offers optional confirmed publication after creation.
 - `Start New Hot Fix` is available from a branch classified as `main`. Its form
   requires a Hotfix ID, short name, and description, combines the identifying
   values as `<hotfix-id>-<short-name>`, validates the result through
@@ -381,6 +382,9 @@ from an active release.
   `Start New Release`. Verify the form remains closed until `Synchronize and
   Continue` is accepted and pull succeeds. Repeat with cancellation and a pull
   failure; neither path may open the form or create a release branch.
+- Advance remote `main` without fetching locally, then run `Start New Feature`.
+  Verify the workflow fetches first, detects the refreshed behind state, and
+  opens the feature form only after confirmed synchronization succeeds.
 - With Flow Governance active, delete the repository flow file without
   refreshing the graph and run `Start New Release`. Verify the unavailable
   warning is modal, the form remains closed, and no branch is created.

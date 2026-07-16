@@ -976,6 +976,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'feature', sourceRefName: 'main' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', phase: 'prepare', branchKind: 'release', sourceRefName: 'release/1.0.0' },
       governedFlowState
     ),

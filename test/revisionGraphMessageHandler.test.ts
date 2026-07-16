@@ -191,8 +191,17 @@ test('RevisionGraphMessageHandler prepares a Flow Governance branch before the f
     branchKind: 'release',
     sourceRefName: 'main'
   });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    phase: 'prepare',
+    branchKind: 'feature',
+    sourceRefName: 'main'
+  });
 
-  assert.deepEqual(calls, [{ branchKind: 'release', sourceRefName: 'main' }]);
+  assert.deepEqual(calls, [
+    { branchKind: 'release', sourceRefName: 'main' },
+    { branchKind: 'feature', sourceRefName: 'main' }
+  ]);
 });
 
 test('RevisionGraphMessageHandler runs Pull Request handoff through the host boundary', async () => {

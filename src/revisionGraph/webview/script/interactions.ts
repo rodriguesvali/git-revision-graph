@@ -344,7 +344,7 @@
       if (flowBranch.kind === 'main') {
         entries.push(
           { label: 'Start New Release', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'release')) },
-          { label: 'Start New Feature', onClick: () => showFlowBranchForm(target, 'feature') },
+          { label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) },
           { label: 'Start New Hot Fix', onClick: () => showFlowBranchForm(target, 'hotfix') }
         );
       } else if (flowBranch.kind === 'feature') {

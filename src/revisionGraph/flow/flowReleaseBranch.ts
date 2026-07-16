@@ -77,13 +77,26 @@ export async function prepareFlowBranchStart(
   options: PrepareFlowBranchStartOptions,
   services: RefActionServices
 ): Promise<boolean> {
-  if (options.kind !== 'release') {
+  if (options.kind !== 'release' && options.kind !== 'feature') {
     return true;
+  }
+
+  const branchBeforeFetch = await getLocalBranch(repository, options.sourceBranch);
+  if (!branchBeforeFetch?.upstream) {
+    return true;
+  }
+
+  if (!await fetchFlowBranchUpstream(repository, options.sourceBranch, branchBeforeFetch, services)) {
+    return false;
   }
 
   const sourceBranch = await getLocalBranch(repository, options.sourceBranch);
   if (!sourceBranch?.upstream) {
-    return true;
+    await services.ui.showErrorMessage(
+      `Could not verify whether ${options.sourceBranch} is synchronized after fetching its upstream.`,
+      { modal: true }
+    );
+    return false;
   }
 
   const ahead = sourceBranch.ahead ?? 0;
@@ -95,7 +108,7 @@ export async function prepareFlowBranchStart(
   const upstreamLabel = formatUpstreamLabel(sourceBranch.upstream.remote, sourceBranch.upstream.name);
   const confirmed = await services.ui.confirm({
     message: `${options.sourceBranch} is not synchronized with ${upstreamLabel} ` +
-      `(${formatFlowBranchSyncState(ahead, behind)}). Synchronize it before starting a new release?`,
+      `(${formatFlowBranchSyncState(ahead, behind)}). Synchronize it before starting a new ${options.kind}?`,
     confirmLabel: 'Synchronize and Continue'
   });
   if (!confirmed) {
@@ -109,7 +122,7 @@ export async function prepareFlowBranchStart(
   if (ahead > 0) {
     await services.ui.showWarningMessage(
       `${options.sourceBranch} cannot be synchronized safely while another branch is checked out ` +
-      `(${formatFlowBranchSyncState(ahead, behind)}). Check it out and synchronize it before starting a new release.`,
+      `(${formatFlowBranchSyncState(ahead, behind)}). Check it out and synchronize it before starting a new ${options.kind}.`,
       { modal: true }
     );
     return false;
@@ -123,6 +136,34 @@ export async function prepareFlowBranchStart(
     upstreamLabel,
     services
   );
+}
+
+async function fetchFlowBranchUpstream(
+  repository: Repository,
+  branchName: string,
+  branch: Branch,
+  services: RefActionServices
+): Promise<boolean> {
+  const upstream = branch.upstream;
+  if (!upstream) {
+    return true;
+  }
+
+  const upstreamLabel = formatUpstreamLabel(upstream.remote, upstream.name);
+  const upstreamBranchName = getUpstreamBranchName(upstream.remote, upstream.name);
+  try {
+    await repository.fetch({
+      remote: upstream.remote,
+      ref: `refs/heads/${upstreamBranchName}:refs/remotes/${upstream.remote}/${upstreamBranchName}`
+    });
+    return true;
+  } catch (error) {
+    await services.ui.showErrorMessage(
+      toOperationError(`Could not fetch ${upstreamLabel} before checking ${branchName} synchronization.`, error),
+      { modal: true }
+    );
+    return false;
+  }
 }
 
 export async function startFlowBranch(

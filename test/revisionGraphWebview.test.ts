@@ -598,7 +598,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /appendFlowGovernanceActions\(getFlowBranchInfo\(target\.name\), target\);/);
-  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => showFlowBranchForm\(target, 'feature'\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => showFlowBranchForm\(target, 'hotfix'\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?showFlowBranchForm\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?showFlowBranchForm\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);

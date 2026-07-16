@@ -1,21 +1,23 @@
-# Flow Release Base Synchronization
+# Flow Branch Base Synchronization
 
 Status: Build complete - manual validation pending
-Last updated: 2026-07-13
+Last updated: 2026-07-16
 Target: `2.0.0`
 
 ## Goal
 
-Prevent `Start New Release` from creating a release branch from a stale local
-`main`. The branch-creation form must open only after the selected production
-branch is synchronized with its tracked upstream, or after the user explicitly
-confirms and completes synchronization.
+Prevent `Start New Release` and `Start New Feature` from creating a branch from
+a stale local `main`. The extension must fetch the tracked upstream before
+checking ahead/behind, and the branch-creation form must open only after the
+refreshed local base is synchronized or the user explicitly confirms and
+completes synchronization.
 
 ## User Workflow
 
-1. The user opens `Flow Governance > Start New Release` on `main`.
-2. The extension checks the local branch's ahead/behind state against its
-   configured upstream before opening the form.
+1. The user opens `Flow Governance > Start New Release` or
+   `Flow Governance > Start New Feature` on `main`.
+2. The extension fetches the configured upstream into its remote-tracking ref,
+   reloads the local branch, and only then checks ahead/behind.
 3. If the branch is already synchronized, the release form opens immediately.
 4. If it is ahead, behind, or divergent, the extension describes that state and
    asks the user to `Synchronize and Continue`.
@@ -23,13 +25,15 @@ confirms and completes synchronization.
    workflow. Cancellation, a dirty/conflicted workspace, or a Git failure keeps
    the form closed.
 6. After successful synchronization, the extension opens the existing release
-   form. Host-side validation creates and checks out the release branch.
+   or feature form. Host-side validation creates and checks out the branch.
 7. After creation, the existing independent confirmation asks whether to
    publish the new branch and sets upstream tracking when accepted.
 
 ## Acceptance Criteria
 
-- A current `main` with `behind > 0` cannot open the release form until the user
+- A tracked `main` is fetched before ahead/behind is evaluated for both release
+  and feature starts; a fetch failure keeps the form closed.
+- A current `main` with `behind > 0` cannot open either form until the user
   confirms synchronization and pull succeeds.
 - Ahead-only and divergent current branches use the same explicit sync gate;
   no push occurs without confirmation.
@@ -61,19 +65,19 @@ confirms and completes synchronization.
 
 ## Verification
 
-- Unit coverage for synchronized, behind/accepted, declined, failed, and
-  non-current base branches.
+- Unit coverage for fetch-first detection, synchronized, behind/accepted,
+  declined, failed, feature, and non-current base branches.
 - Protocol validation/authorization and message-handler coverage for the new
   preflight request.
 - Rendered-webview coverage for request-before-form and host-triggered form
   display.
 - `npm run build`, `npm test`, `git diff --check`, and `graphify update .`.
 
-Automated verification on 2026-07-13:
+Automated verification on 2026-07-16:
 
-- `npm run quality:check` passed with 213 production files and 2,056 functions.
+- `npm run quality:check` passed with 214 production files and 2,058 functions.
 - `npm run build` passed, including all isolated webview type checks.
-- `npm test` passed with 712 tests.
+- `npm test` passed with 715 tests.
 - `git diff --check` passed.
 
 Manual Extension Development Host validation remains pending through the release
