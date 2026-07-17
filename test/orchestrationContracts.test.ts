@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createApi, createRepository } from './fakes';
+import { createApi, createChange, createRepository } from './fakes';
 import { CONCURRENT_REPOSITORY_MUTATION_MESSAGE } from '../src/repositoryMutationWarning';
 import { RepositoryMutationCoordinator } from '../src/repositoryMutationCoordinator';
 
@@ -22,6 +22,97 @@ test('Compare Results reuses, disposes, and recreates its editor panel', async (
 
   provider.handleRepositoryClosed(repository);
   assert.equal(harness.panels[1].disposed, true);
+  provider.dispose();
+});
+
+test('Compare Results cancels and ignores an AI briefing when the comparison changes', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  let resolveGeneration: ((value: { readonly status: 'ready'; readonly content: string }) => void) | undefined;
+  let generationToken: { readonly isCancellationRequested: boolean } | undefined;
+  const provider = new CompareResultsViewProvider(
+    harness.extensionUri,
+    {
+      async loadUnifiedDiff() {
+        return 'diff --git a/src/app.ts b/src/app.ts\n+change\n';
+      }
+    } as never,
+    undefined,
+    {
+      async generate(_input, token) {
+        generationToken = token;
+        return new Promise((resolve) => { resolveGeneration = resolve; });
+      }
+    }
+  );
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showBetweenRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature', label: 'feature' },
+    [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  );
+  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  await waitForAsyncHandlers();
+  assert.ok(harness.panels[0].postedMessages.some((message) =>
+    (message as { readonly state?: { readonly briefing?: { readonly kind?: string } } })
+      .state?.briefing?.kind === 'loading'
+  ));
+
+  await provider.showBetweenRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'next', label: 'next' },
+    [createChange({ uriPath: '/workspace/repo/src/next.ts' })]
+  );
+  assert.equal(generationToken?.isCancellationRequested, true);
+  resolveGeneration?.({ status: 'ready', content: 'stale briefing' });
+  await waitForAsyncHandlers();
+
+  const states = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: unknown }).state)
+    .filter((state): state is { readonly briefing?: { readonly content?: string } } => !!state);
+  assert.equal(states.some((state) => state.briefing?.content === 'stale briefing'), false);
+  assert.deepEqual(states.at(-1)?.briefing, { kind: 'idle' });
+  provider.dispose();
+});
+
+test('Compare Results copies only the current generated AI briefing', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(
+    harness.extensionUri,
+    {
+      async loadUnifiedDiff() {
+        return 'diff --git a/src/app.ts b/src/app.ts\n+change\n';
+      }
+    } as never,
+    undefined,
+    {
+      async generate() {
+        return { status: 'ready', content: 'Summary\nReview src/app.ts.' };
+      }
+    }
+  );
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showBetweenRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature', label: 'feature' },
+    [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  );
+  harness.panels[0].receiveMessage({ type: 'copyBriefing' });
+  await waitForAsyncHandlers();
+  assert.deepEqual(harness.clipboardWrites, []);
+
+  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  await waitForAsyncHandlers();
+  harness.panels[0].receiveMessage({ type: 'copyBriefing' });
+  await waitForAsyncHandlers();
+
+  assert.deepEqual(harness.clipboardWrites, ['Summary\nReview src/app.ts.']);
   provider.dispose();
 });
 
@@ -546,6 +637,7 @@ interface TestPanel {
   disposed: boolean;
   iconPath?: unknown;
   reveal(): void;
+  receiveMessage(message: unknown): void;
   dispose(): void;
   onDidDispose(listener: () => void): { dispose(): void };
 }
@@ -583,6 +675,9 @@ function installVscodePanelMock(t: test.TestContext): {
         }
       },
       reveal() { panel.revealCount += 1; },
+      receiveMessage(message: unknown) {
+        for (const listener of [...messageListeners]) listener(message);
+      },
       dispose() {
         if (panel.disposed) return;
         panel.disposed = true;
@@ -612,6 +707,32 @@ function installVscodePanelMock(t: test.TestContext): {
     },
     ViewColumn: { One: 1 },
     ThemeIcon: class {},
+    CancellationTokenSource: class {
+      private cancelled = false;
+      private readonly listeners = new Set<() => void>();
+      readonly token: {
+        readonly isCancellationRequested: boolean;
+        onCancellationRequested(listener: () => void): { dispose(): void };
+      };
+      constructor() {
+        const tokenSource = this;
+        this.token = {
+          get isCancellationRequested() { return tokenSource.cancelled; },
+          onCancellationRequested(listener: () => void) {
+            tokenSource.listeners.add(listener);
+            return { dispose: () => tokenSource.listeners.delete(listener) };
+          }
+        };
+      }
+      cancel() {
+        if (this.cancelled) return;
+        this.cancelled = true;
+        for (const listener of [...this.listeners]) listener();
+      }
+      dispose() {
+        this.listeners.clear();
+      }
+    },
     window: {
       createWebviewPanel: () => createPanel(),
       showInformationMessage: async () => undefined,
@@ -637,6 +758,10 @@ function installVscodePanelMock(t: test.TestContext): {
   };
   t.after(() => { moduleLoader._load = originalLoad; });
   return { extensionUri: extensionUri as never, panels, clipboardWrites, createPanel };
+}
+
+async function waitForAsyncHandlers(): Promise<void> {
+  await new Promise<void>((resolve) => setImmediate(resolve));
 }
 
 function loadFresh(moduleId: string): unknown {

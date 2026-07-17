@@ -11,9 +11,12 @@ import type {
   CompareResultsWebviewItem,
   CompareResultsWebviewState
 } from '../compareResultsWebview';
+import type { CompareBriefingState } from './aiBriefing';
 
 export function createCompareResultsWebviewState(
-  state: CompareResultsState
+  state: CompareResultsState,
+  briefing: CompareBriefingState = { kind: 'idle' },
+  hasBriefingGenerator = false
 ): CompareResultsWebviewState {
   if (state.kind === 'empty') {
     return {
@@ -21,6 +24,8 @@ export function createCompareResultsWebviewState(
       summary: '',
       emptyMessage: buildCompareResultsMessage(state),
       canOpenUnifiedDiff: false,
+      canGenerateBriefing: false,
+      briefing: { kind: 'idle' },
       items: []
     };
   }
@@ -32,6 +37,8 @@ export function createCompareResultsWebviewState(
       sourceLabel: state.sourceLabel,
       targetLabel: state.targetLabel,
       canOpenUnifiedDiff: false,
+      canGenerateBriefing: false,
+      briefing: { kind: 'idle' },
       items: []
     };
   }
@@ -42,6 +49,8 @@ export function createCompareResultsWebviewState(
     sourceLabel: state.kind === 'between' ? state.left.label : state.target.label,
     targetLabel: state.kind === 'between' ? state.right.label : 'Worktree',
     canOpenUnifiedDiff: true,
+    canGenerateBriefing: hasBriefingGenerator,
+    briefing,
     items: getCompareResultItems(state).map((item) => toCompareResultsWebviewItem(item))
   };
 }

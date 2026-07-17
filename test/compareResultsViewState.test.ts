@@ -14,6 +14,8 @@ test('createCompareResultsWebviewState builds an empty compare results state', (
     summary: '',
     emptyMessage: 'Run a compare from the revision graph or Command Palette to keep the changed files here.',
     canOpenUnifiedDiff: false,
+    canGenerateBriefing: false,
+    briefing: { kind: 'idle' },
     items: []
   });
 });
@@ -33,6 +35,8 @@ test('createCompareResultsWebviewState builds a loading compare results state', 
     sourceLabel: 'main',
     targetLabel: 'release/2026',
     canOpenUnifiedDiff: false,
+    canGenerateBriefing: false,
+    briefing: { kind: 'idle' },
     items: []
   });
 });
@@ -55,6 +59,8 @@ test('createCompareResultsWebviewState builds between-ref labels and items', () 
   assert.equal(state.sourceLabel, 'main');
   assert.equal(state.targetLabel, 'release/2026');
   assert.equal(state.canOpenUnifiedDiff, true);
+  assert.equal(state.canGenerateBriefing, false);
+  assert.deepEqual(state.briefing, { kind: 'idle' });
   assert.deepEqual(
     state.items.map((item) => item.path),
     ['src/a.ts', 'src/b.ts']
@@ -78,13 +84,18 @@ test('createCompareResultsWebviewState builds worktree item display paths', () =
         status: Status.INDEX_RENAMED
       })
     ]
-  });
+  }, { kind: 'ready', content: 'Review risks\n- Check src/new-name.ts' }, true);
 
   assert.equal(state.kind, 'results');
   assert.equal(state.summary, 'feature <-> worktree • 1 file changed');
   assert.equal(state.sourceLabel, 'feature');
   assert.equal(state.targetLabel, 'Worktree');
   assert.equal(state.canOpenUnifiedDiff, true);
+  assert.equal(state.canGenerateBriefing, true);
+  assert.deepEqual(state.briefing, {
+    kind: 'ready',
+    content: 'Review risks\n- Check src/new-name.ts'
+  });
   assert.equal(state.items[0].path, 'src/new-name.ts');
   assert.equal(state.items[0].originalPath, 'src/old-name.ts');
   assert.equal(state.items[0].name, 'new-name.ts');

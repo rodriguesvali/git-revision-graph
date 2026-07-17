@@ -1,3 +1,5 @@
+import { renderCompareResultsBriefingStyles } from './webviewBriefing';
+
 export function renderCompareResultsWebviewStyles(): string {
   return `
     :root {
@@ -467,5 +469,6 @@ export function renderCompareResultsWebviewStyles(): string {
       pointer-events: auto;
       transform: translateX(0);
     }
+    ${renderCompareResultsBriefingStyles()}
   `;
 }

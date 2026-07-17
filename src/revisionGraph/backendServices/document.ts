@@ -4,13 +4,25 @@ import { execGit, execGitWithResult } from '../../gitExec';
 import { Repository } from '../../git';
 
 export interface RevisionGraphDocumentBackend {
-  loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string>;
+  loadUnifiedDiff(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphUnifiedDiffOptions
+  ): Promise<string>;
   loadUnifiedDiffWithWorktree(
     repository: Repository,
     ref: string,
-    untrackedPaths: readonly string[]
+    untrackedPaths: readonly string[],
+    options?: RevisionGraphUnifiedDiffOptions
   ): Promise<string>;
   loadCommitDetails(repository: Repository, commitHash: string): Promise<string>;
+}
+
+export interface RevisionGraphUnifiedDiffOptions {
+  readonly paths?: readonly string[];
+  readonly signal?: AbortSignal;
+  readonly maxOutputBytes?: number;
 }
 
 const DEFAULT_GIT_COMMAND_TIMEOUT_MS = 15000;
@@ -18,12 +30,19 @@ const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
 
 export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumentBackend {
-  async loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string> {
+  async loadUnifiedDiff(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphUnifiedDiffOptions
+  ): Promise<string> {
+    const paths = normalizeRepositoryRelativePaths(options?.paths);
     return execGit(
       repository.rootUri.fsPath,
-      ['diff', '--no-color', '--end-of-options', left, right],
+      ['diff', '--no-color', '--end-of-options', left, right, ...toGitPathArgs(paths)],
       {
-        maxOutputBytes: UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        maxOutputBytes: options?.maxOutputBytes ?? UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        signal: options?.signal,
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     );
@@ -32,16 +51,18 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
   async loadUnifiedDiffWithWorktree(
     repository: Repository,
     ref: string,
-    untrackedPaths: readonly string[]
+    untrackedPaths: readonly string[],
+    options?: RevisionGraphUnifiedDiffOptions
   ): Promise<string> {
-    const normalizedUntrackedPaths = [...new Set(
-      untrackedPaths.map((untrackedPath) => normalizeRepositoryRelativePath(untrackedPath))
-    )].sort();
+    const normalizedUntrackedPaths = normalizeRepositoryRelativePaths(untrackedPaths) ?? [];
+    const paths = normalizeRepositoryRelativePaths(options?.paths);
+    const maxOutputBytes = options?.maxOutputBytes ?? UNIFIED_DIFF_MAX_OUTPUT_BYTES;
     const sections = [await execGit(
       repository.rootUri.fsPath,
-      ['diff', '--no-color', '--end-of-options', ref],
+      ['diff', '--no-color', '--end-of-options', ref, ...toGitPathArgs(paths)],
       {
-        maxOutputBytes: UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        maxOutputBytes,
+        signal: options?.signal,
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
     )];
@@ -50,7 +71,7 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
     let hasContent = sections[0].length > 0;
     for (const untrackedPath of normalizedUntrackedPaths) {
       const separatorBytes = hasContent ? 1 : 0;
-      const remainingBytes = UNIFIED_DIFF_MAX_OUTPUT_BYTES - capturedBytes - separatorBytes;
+      const remainingBytes = maxOutputBytes - capturedBytes - separatorBytes;
       if (remainingBytes <= 0) {
         throw new Error('The unified diff exceeded the maximum captured output.');
       }
@@ -61,6 +82,7 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
         {
           allowedExitCodes: [1],
           maxOutputBytes: remainingBytes,
+          signal: options?.signal,
           timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
         }
       );
@@ -89,6 +111,20 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
       }
     );
   }
+}
+
+function normalizeRepositoryRelativePaths(
+  values: readonly string[] | undefined
+): string[] | undefined {
+  if (!values) {
+    return undefined;
+  }
+
+  return [...new Set(values.map((value) => normalizeRepositoryRelativePath(value)))].sort();
+}
+
+function toGitPathArgs(paths: readonly string[] | undefined): string[] {
+  return paths ? ['--', ...paths] : [];
 }
 
 function normalizeRepositoryRelativePath(value: string): string {

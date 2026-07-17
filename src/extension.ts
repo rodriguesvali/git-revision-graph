@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 import { CompareResultsViewProvider } from './compareResultsView';
+import { createWorkbenchAiCompareBriefingGenerator } from './workbenchAiCompareBriefing';
 import { RefCommandServices } from './refCommands';
 import { API, GitExtension } from './git';
 import { configureGitExecutablePath } from './gitExec';
@@ -51,7 +52,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const compareResultsProvider = new CompareResultsViewProvider(
     context.extensionUri,
     backend,
-    mutationCoordinator
+    mutationCoordinator,
+    createWorkbenchAiCompareBriefingGenerator()
   );
   let services: RefCommandServices | undefined;
   const showLogProvider = new ShowLogViewProvider(

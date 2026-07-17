@@ -8,11 +8,15 @@ import { DefaultRevisionGraphMergeAnalysisBackend } from './backendServices/merg
 import { DefaultRevisionGraphSnapshotBackend } from './backendServices/snapshot';
 import { DefaultRevisionLogBackend } from './backendServices/revisionLog';
 import type { RevisionGraphDocumentBackend } from './backendServices/document';
+import type { RevisionGraphUnifiedDiffOptions } from './backendServices/document';
 import type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 import type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend, RevisionGraphSnapshotLoadContext } from './backendServices/snapshot';
 import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
 
-export type { RevisionGraphDocumentBackend } from './backendServices/document';
+export type {
+  RevisionGraphDocumentBackend,
+  RevisionGraphUnifiedDiffOptions
+} from './backendServices/document';
 export type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 export type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend } from './backendServices/snapshot';
 export type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
@@ -79,16 +83,22 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     return this.revisionLogBackend.loadRevisionLogChanges(repository, commitHash, parentHash);
   }
 
-  async loadUnifiedDiff(repository: Repository, left: string, right: string): Promise<string> {
-    return this.documentBackend.loadUnifiedDiff(repository, left, right);
+  async loadUnifiedDiff(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphUnifiedDiffOptions
+  ): Promise<string> {
+    return this.documentBackend.loadUnifiedDiff(repository, left, right, options);
   }
 
   async loadUnifiedDiffWithWorktree(
     repository: Repository,
     ref: string,
-    untrackedPaths: readonly string[]
+    untrackedPaths: readonly string[],
+    options?: RevisionGraphUnifiedDiffOptions
   ): Promise<string> {
-    return this.documentBackend.loadUnifiedDiffWithWorktree(repository, ref, untrackedPaths);
+    return this.documentBackend.loadUnifiedDiffWithWorktree(repository, ref, untrackedPaths, options);
   }
 
   async loadCommitDetails(repository: Repository, commitHash: string): Promise<string> {

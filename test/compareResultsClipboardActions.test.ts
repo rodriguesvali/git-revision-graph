@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  copyCompareBriefingToClipboard,
   copyCompareResultFileNames,
   copyCompareResultFullPaths
 } from '../src/compareResults/clipboardActions';
@@ -65,6 +66,22 @@ test('copyCompareResultFileNames ignores empty or stale selections', async () =>
 
   assert.equal(copied, false);
   assert.deepEqual(writes, []);
+});
+
+test('copyCompareBriefingToClipboard writes only a ready briefing', async () => {
+  const writes: string[] = [];
+  const clipboard = {
+    async writeText(text: string) {
+      writes.push(text);
+    }
+  };
+
+  assert.equal(await copyCompareBriefingToClipboard({ kind: 'idle' }, clipboard), false);
+  assert.equal(await copyCompareBriefingToClipboard({
+    kind: 'ready',
+    content: 'Summary\nReview the authentication changes.'
+  }, clipboard), true);
+  assert.deepEqual(writes, ['Summary\nReview the authentication changes.']);
 });
 
 function createWorktreeState(): CompareResultsState {

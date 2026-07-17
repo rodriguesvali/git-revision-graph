@@ -372,6 +372,38 @@ test('loads unified diffs through the document backend with bounded git args', a
   );
 });
 
+test('loads a path-filtered unified diff for bounded AI context', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram("process.stdout.write('filtered diff\\n');"),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const diff = await backend.loadUnifiedDiff(repository, 'main', 'feature', {
+        paths: ['src/z.ts', 'src/a file.ts', 'src/z.ts'],
+        maxOutputBytes: 2048
+      });
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(diff, 'filtered diff\n');
+      assert.equal(
+        calls.trim(),
+        'diff --no-color --end-of-options main feature -- src/a file.ts src/z.ts'
+      );
+    }
+  );
+});
+
+test('rejects unsafe path filters before running git', async () => {
+  const backend = new DefaultRevisionGraphDocumentBackend();
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await assert.rejects(
+    backend.loadUnifiedDiff(repository, 'main', 'feature', { paths: ['../outside.txt'] }),
+    /outside the repository/
+  );
+});
+
 test('loads worktree unified diffs with sorted unique untracked file patches', async () => {
   await withFakeGitScript(
     createFakeGitProgram(

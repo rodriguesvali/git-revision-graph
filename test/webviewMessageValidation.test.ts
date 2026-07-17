@@ -1269,6 +1269,14 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
     { type: 'copyFullPath', itemIds: ['file:0'] }
   );
   assert.deepEqual(
+    validateCompareResultsWebviewMessage({ type: 'copyBriefing' }),
+    { type: 'copyBriefing' }
+  );
+  assert.deepEqual(
+    validateCompareResultsWebviewMessage({ type: 'generateBriefing' }),
+    { type: 'generateBriefing' }
+  );
+  assert.deepEqual(
     validateCompareResultsWebviewMessage({ type: 'unifiedDiff' }),
     { type: 'unifiedDiff' }
   );

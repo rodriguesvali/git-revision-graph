@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (227 production files and 2,226 functions), `npm run build`, and `npm test` (755 tests). The package-hygiene follow-up removed the obsolete E2E trace, excludes `tmp/**` from Git and VSIX inputs, passed `git diff --check e95542fcd98601dc5c21dd1aa679a19b48c833ec`, and confirmed through `npx vsce ls` that no trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
+| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (232 production files and 2,277 functions), `npm run build`, and `npm test` (765 tests), including the AI Compare Briefing scroll/copy follow-up. The package-hygiene follow-up removed the obsolete E2E trace, excludes `tmp/**` from Git and VSIX inputs, passed `git diff --check e95542fcd98601dc5c21dd1aa679a19b48c833ec`, and confirmed through `npx vsce ls` that no trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -34,6 +34,7 @@ Target version: `2.0.0`
 
 Focused build artifact:
 
+- `project-context/2.build/features/2.0.0-ai-compare-briefing.md`
 - `project-context/2.build/features/2.0.0-message-boundary-quality-ratchet.md`
 - `project-context/2.build/features/2.0.0-flow-dialog-controller-extraction.md`
 - `project-context/2.build/features/2.0.0-flow-governance-icon-badges.md`
@@ -55,6 +56,10 @@ Focused build artifact:
 
 Candidate scope:
 
+- Add an optional, explicitly invoked AI Compare Briefing to completed Compare Results panels. It uses
+  an available GitHub Copilot language model through the VS Code Language Model API, sends only bounded
+  path-filtered comparison context after excluding known sensitive paths, renders plain text, and
+  cancels stale requests without changing Git state.
 - Keep Flow Governance Phase 1 as the foundation, not as the final release value.
 - Add repository flow-file resolution with VS Code settings fallback and invalid-config diagnostics.
 - Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
@@ -113,6 +118,28 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- AI Compare Briefing was implemented on 2026-07-17 as an optional, user-initiated Compare Results
+  action backed by the VS Code Language Model API and an available GitHub Copilot model. Context is
+  built from a bounded path-filtered diff after known sensitive paths are excluded before Git loading;
+  output is plain text, and cancellation plus exact-state guards prevent stale completion. The existing
+  Compare Results webview file ceiling was reduced from 725 to 717 after extracting the action UI.
+  Focused tests passed 47/47; `npm run quality:check` passed with 232 production files and 2,274
+  functions; `npm run build`, all 763 tests, and `git diff --check` passed. `graphify update .` rebuilt
+  4,737 nodes, 9,220 edges, and 376 communities. Manual Copilot consent/model and visual smoke remain
+  pending. A visual-review follow-up replaced the textual action with an icon-only AI action whose
+  tooltip and accessible label track its state, added close and Escape affordances to the result panel,
+  and lets a dismissed result reopen without a new model request. The 3 focused webview tests,
+  `npm run quality:check`, `npm run build`, all 763 tests, and `git diff --check` passed; `graphify
+  update .` rebuilt 4,737 nodes, 9,220 edges, and 377 communities. No command contribution, setting,
+  dependency, minimum VS Code version, Git mutation, package version, packaging, or Marketplace
+  publication changed.
+  A subsequent UX follow-up bounds the briefing body to `min(45vh, 420px)` with vertical scrolling and
+  adds a ready-only copy icon with the `Copy to clipboard` tooltip. Its no-payload protocol message is
+  validated and the host copies only the current ready briefing. The 28 affected tests, `npm run
+  quality:check` (232 production files and 2,277 functions), `npm run build`, all 765 tests, and `git
+  diff --check` passed. `graphify update .` rebuilt 4,739 nodes, 9,228 edges, and 381 communities.
+  Updated visual confirmation remains pending.
 
 - The revision graph message boundary and quality ratchet were hardened on 2026-07-17. Exhaustive
   typed registries now own structural validation, state/repository authorization policy, and host

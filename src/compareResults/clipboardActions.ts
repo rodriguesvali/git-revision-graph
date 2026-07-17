@@ -3,6 +3,7 @@ import {
   type ClipboardWriter
 } from '../clipboard';
 import type { CompareResultsState } from '../compareResultsShared';
+import type { CompareBriefingState } from './aiBriefing';
 import {
   getCompareResultItemFileNameList,
   getCompareResultItemFullPathList
@@ -38,6 +39,19 @@ export async function copyCompareResultFullPaths(
 
   const clipboard = services ?? await getDefaultClipboardWriter();
   await clipboard.writeText(getCompareResultItemFullPathList(items));
+  return true;
+}
+
+export async function copyCompareBriefingToClipboard(
+  briefing: CompareBriefingState,
+  services?: CompareResultsClipboardServices
+): Promise<boolean> {
+  if (briefing.kind !== 'ready') {
+    return false;
+  }
+
+  const clipboard = services ?? await getDefaultClipboardWriter();
+  await clipboard.writeText(briefing.content);
   return true;
 }
 

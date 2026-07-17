@@ -23,6 +23,7 @@ import {
   openCompareResultItem
 } from './compareResults/itemActions';
 import {
+  copyCompareBriefingToClipboard,
   copyCompareResultFileNames,
   copyCompareResultFullPaths
 } from './compareResults/clipboardActions';
@@ -30,6 +31,8 @@ import {
   createCompareResultsWebviewState,
   getCompareResultItems
 } from './compareResults/viewState';
+import type { CompareBriefingGenerator } from './compareResults/aiBriefing';
+import { CompareBriefingController } from './compareResults/briefingController';
 import {
   prepareCompareResultsWorktreeUnifiedDiff,
   refreshCompareResultsWorktreeComparison
@@ -54,6 +57,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
   private openingUnifiedDiff = false;
+  private readonly briefingController: CompareBriefingController;
   private readonly panelDisposables: vscode.Disposable[] = [];
   private readonly messageHandlers: CompareResultsMessageHandlers = {
     ready: () => {
@@ -62,6 +66,8 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     base: (itemId) => this.compareItemWithBase(itemId),
     copyFileName: (itemIds) => this.copyFileNames(itemIds),
     copyFullPath: (itemIds) => this.copyFullPaths(itemIds),
+    copyBriefing: () => this.copyBriefing(),
+    generateBriefing: () => this.briefingController.generate(),
     unifiedDiff: () => this.openUnifiedDiff(),
     worktree: (itemId) => this.compareItemWithWorktree(itemId),
     revert: (itemId) => this.revertItem(itemId)
@@ -70,10 +76,19 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly backend: RevisionGraphDocumentBackend,
-    private readonly mutationCoordinator?: RepositoryMutationCoordinator
-  ) {}
+    private readonly mutationCoordinator?: RepositoryMutationCoordinator,
+    briefingGenerator?: CompareBriefingGenerator
+  ) {
+    this.briefingController = new CompareBriefingController(
+      backend,
+      briefingGenerator,
+      () => this.state,
+      () => this.postState()
+    );
+  }
 
   dispose(): void {
+    this.briefingController.dispose();
     this.disposePanel();
   }
 
@@ -82,6 +97,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       return;
     }
 
+    this.resetBriefing();
     this.state = { kind: 'empty' };
     this.disposePanel();
   }
@@ -92,6 +108,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     right: RefSelection,
     changes: readonly Change[]
   ): Promise<void> {
+    this.resetBriefing();
     this.state = {
       kind: 'between',
       repository,
@@ -116,6 +133,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     target: RefSelection,
     changes: readonly Change[]
   ): Promise<void> {
+    this.resetBriefing();
     this.state = {
       kind: 'worktree',
       repository,
@@ -146,6 +164,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async hideWithRevisionGraph(): Promise<void> {
+    this.resetBriefing();
     this.state = { kind: 'empty' };
     this.refresh();
     this.disposePanel();
@@ -192,6 +211,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private showLoading(repository: Repository, sourceLabel: string, targetLabel: string): void {
+    this.resetBriefing();
     const previousState: CompareResultsCompletedState =
       this.state.kind === 'loading' ? this.state.previousState : this.state;
     this.state = {
@@ -232,7 +252,11 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private createWebviewState(): CompareResultsWebviewState {
-    return createCompareResultsWebviewState(this.state);
+    return createCompareResultsWebviewState(
+      this.state,
+      this.briefingController.state,
+      this.briefingController.isAvailable
+    );
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
@@ -266,6 +290,14 @@ export class CompareResultsViewProvider implements vscode.Disposable {
 
   private async copyFullPaths(itemIds: readonly string[]): Promise<void> {
     await copyCompareResultFullPaths(this.state, itemIds);
+  }
+
+  private async copyBriefing(): Promise<void> {
+    await copyCompareBriefingToClipboard(this.briefingController.state);
+  }
+
+  private resetBriefing(): void {
+    this.briefingController.reset();
   }
 
   private async openUnifiedDiff(): Promise<void> {
@@ -351,6 +383,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     }
 
     this.state = outcome.nextState;
+    this.resetBriefing();
     if (this.state.kind === 'empty') {
       this.refresh();
       this.disposePanel();
@@ -388,6 +421,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       panel.onDidDispose(() => {
         if (this.panel === panel) {
           this.panel = undefined;
+          this.resetBriefing();
           this.state = { kind: 'empty' };
         }
         this.disposePanelDisposables();

@@ -3,6 +3,12 @@ import {
   createWebviewNonce
 } from './webviewSecurity';
 import { renderCompareResultsWebviewStyles } from './compareResults/webviewStyles';
+import type { CompareBriefingState } from './compareResults/aiBriefing';
+import {
+  renderCompareResultsActionScript,
+  renderCompareResultsBriefingAction,
+  renderCompareResultsBriefingPanel
+} from './compareResults/webviewBriefing';
 
 export interface CompareResultsWebviewItem {
   readonly id: string;
@@ -25,6 +31,8 @@ export interface CompareResultsWebviewState {
   readonly targetLabel?: string | undefined;
   readonly emptyMessage?: string | undefined;
   readonly canOpenUnifiedDiff: boolean;
+  readonly canGenerateBriefing: boolean;
+  readonly briefing: CompareBriefingState;
   readonly items: readonly CompareResultsWebviewItem[];
 }
 
@@ -51,6 +59,7 @@ export function renderCompareResultsWebviewHtml(): string {
         </div>
         <div class="comparison-meta">
           <button id="unifiedDiffButton" class="toolbar-action" type="button" hidden>Unified Diff</button>
+          ${renderCompareResultsBriefingAction()}
           <div class="result-count" id="resultCount"></div>
           <div id="selectionSummary" class="selection-summary"></div>
         </div>
@@ -72,6 +81,7 @@ export function renderCompareResultsWebviewHtml(): string {
         </div>
       </div>
     </div>
+    ${renderCompareResultsBriefingPanel()}
     <div id="content"></div>
   </div>
   <div id="contextMenu" class="context-menu" hidden></div>
@@ -82,7 +92,6 @@ export function renderCompareResultsWebviewHtml(): string {
     const comparisonDirection = document.getElementById('comparisonDirection');
     const sourceLabel = document.getElementById('sourceLabel');
     const targetLabel = document.getElementById('targetLabel');
-    const unifiedDiffButton = document.getElementById('unifiedDiffButton');
     const resultCount = document.getElementById('resultCount');
     const statusFilters = document.getElementById('statusFilters');
     const selectionSummary = document.getElementById('selectionSummary');
@@ -96,6 +105,8 @@ export function renderCompareResultsWebviewHtml(): string {
       targetLabel: '',
       emptyMessage: 'Run a compare from the revision graph or Command Palette to keep the changed files here.',
       canOpenUnifiedDiff: false,
+      canGenerateBriefing: false,
+      briefing: { kind: 'idle' },
       items: []
     };
     let activeStatusFilter = 'all';
@@ -104,13 +115,13 @@ export function renderCompareResultsWebviewHtml(): string {
     let contextMenuItemIds = [];
     let lastPrimaryClickItemId = undefined;
     let lastPrimaryClickAt = 0;
-    let isOpeningUnifiedDiff = false;
     const doubleClickThresholdMs = 500;
 
     window.addEventListener('message', (event) => {
       const message = event.data;
       if (message && message.type === 'state') {
         currentState = message.state;
+        syncCompareResultsActionsFromState();
         searchInput.value = '';
         activeStatusFilter = 'all';
         selectedItemIds = currentState.items.length === 1 ? [currentState.items[0].id] : [];
@@ -134,17 +145,6 @@ export function renderCompareResultsWebviewHtml(): string {
       closeContextMenu();
       render();
       searchInput.focus();
-    });
-
-    unifiedDiffButton.addEventListener('click', () => {
-      if (!currentState.canOpenUnifiedDiff || isOpeningUnifiedDiff) {
-        return;
-      }
-      isOpeningUnifiedDiff = true;
-      updateUnifiedDiffButton();
-      closeContextMenu();
-      resetDoubleClickTracking();
-      vscode.postMessage({ type: 'unifiedDiff' });
     });
 
     statusFilters.addEventListener('click', (event) => {
@@ -350,7 +350,7 @@ export function renderCompareResultsWebviewHtml(): string {
       resultCount.title = currentState.summary || '';
       selectionSummary.textContent = formatSelectionSummary(totalCount, filteredItems.length, selectedCount);
       statusFilters.innerHTML = renderStatusFilters(currentState.items);
-      updateUnifiedDiffButton();
+      updateCompareResultsActions();
       searchInput.disabled = currentState.kind === 'loading';
       clearSearchButton.disabled = filterQuery.length === 0;
 
@@ -359,7 +359,7 @@ export function renderCompareResultsWebviewHtml(): string {
         selectionSummary.textContent = '';
         statusFilters.innerHTML = '';
         clearSearchButton.disabled = true;
-        updateUnifiedDiffButton();
+        updateCompareResultsActions();
         content.innerHTML = ''
           + '<div class="loading-state">'
           + '  <div class="loading-dialog" role="dialog" aria-modal="true" aria-live="polite">'
@@ -375,7 +375,7 @@ export function renderCompareResultsWebviewHtml(): string {
         resultCount.textContent = '';
         selectionSummary.textContent = '';
         statusFilters.innerHTML = '';
-        updateUnifiedDiffButton();
+        updateCompareResultsActions();
         content.innerHTML = '<div class="empty-state">' + escapeHtml(currentState.emptyMessage || '') + '</div>';
         return;
       }
@@ -423,15 +423,6 @@ export function renderCompareResultsWebviewHtml(): string {
           + '  </div>'
           + '</div>';
       }).join('') + '</div>';
-    }
-
-    function updateUnifiedDiffButton() {
-      const canOpen = currentState.kind !== 'empty' && currentState.canOpenUnifiedDiff;
-      unifiedDiffButton.hidden = !canOpen;
-      unifiedDiffButton.disabled = canOpen && isOpeningUnifiedDiff;
-      unifiedDiffButton.textContent = isOpeningUnifiedDiff ? 'Generating Diff...' : 'Unified Diff';
-      unifiedDiffButton.title = isOpeningUnifiedDiff ? 'Generating unified diff...' : 'Open unified diff';
-      unifiedDiffButton.setAttribute('aria-busy', isOpeningUnifiedDiff ? 'true' : 'false');
     }
 
     function getFilteredItems(query) {
@@ -717,6 +708,7 @@ export function renderCompareResultsWebviewHtml(): string {
         .replace(/"/g, '&quot;');
     }
 
+    ${renderCompareResultsActionScript()}
     vscode.postMessage({ type: 'ready' });
   </script>
 </body>
