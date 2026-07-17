@@ -2,7 +2,10 @@ import * as vscode from 'vscode';
 
 import { toOperationError } from '../../errorDetail';
 import type { Repository } from '../../git';
-import type { RevisionGraphViewHostMessage } from '../../revisionGraphTypes';
+import type {
+  RevisionGraphViewHostMessage,
+  RevisionGraphViewState
+} from '../../revisionGraphTypes';
 import { showModalErrorMessage } from '../../workbenchMessages';
 import { createRevisionGraphFlowAiTextResultMessage } from '../hostMessages';
 import type { FlowPullRequestContext } from './flowPullRequestContext';
@@ -12,10 +15,12 @@ import type {
   FlowAiTextImprovementInput,
   FlowAiTextSurface
 } from './aiTextAssistant';
-import type { FlowAiTextDocumentContextProvider } from './aiTextDocumentContext';
+import { resolveFlowAiPullRequestPromptProfile } from './aiPrompts/policy';
+import type { FlowAiTextContextProvider } from './aiTextContext';
 
 export interface RevisionGraphFlowAiTextWorkflowHost {
   getCurrentRepository(): Repository | undefined;
+  getCurrentState(): RevisionGraphViewState;
   postHostMessage(message: RevisionGraphViewHostMessage): void;
 }
 
@@ -26,7 +31,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
   constructor(
     private readonly host: RevisionGraphFlowAiTextWorkflowHost,
     private readonly improver: FlowAiTextImprover | undefined,
-    private readonly documentContextProvider?: FlowAiTextDocumentContextProvider
+    private readonly contextProvider?: FlowAiTextContextProvider
   ) {}
 
   dispose(): void {
@@ -85,7 +90,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
     this.requests.set(key, request);
 
     try {
-      const preparedInput = await this.withDocumentContext(repository, input, request);
+      const preparedInput = await this.withPromptContext(repository, input, request);
       if (!this.isCurrentRequest(key, request)) return;
       const result = await improver.improve(preparedInput, request.tokenSource.token);
       if (!this.isCurrentRequest(key, request) || result.status === 'cancelled') return;
@@ -137,20 +142,57 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
       : createFlowPullRequestContext(input, input.title, content);
   }
 
-  private async withDocumentContext(
+  private async withPromptContext(
     repository: Repository,
     input: FlowAiTextImprovementInput,
     request: FlowAiTextRequest
   ): Promise<FlowAiTextImprovementInput> {
-    if (input.surface !== 'pull-request' || input.field !== 'description' || !this.documentContextProvider) {
+    if (input.surface !== 'pull-request') {
       return input;
     }
-    const documentContext = await this.documentContextProvider.load(
+    const contextualInput = this.addPullRequestPromptProfile(input);
+    if (contextualInput.field !== 'description' || !this.contextProvider) {
+      return contextualInput;
+    }
+    const content = await this.contextProvider.load(
       repository,
-      input,
+      contextualInput,
       request.tokenSource.token
     );
-    return documentContext ? { ...input, documentContext } : input;
+    return content && contextualInput.promptContext
+      ? {
+        ...contextualInput,
+        promptContext: { ...contextualInput.promptContext, content }
+      }
+      : contextualInput;
+  }
+
+  private addPullRequestPromptProfile(
+    input: Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>
+  ): Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }> {
+    const state = this.host.getCurrentState();
+    const source = state.flowGovernance?.references.find((reference) =>
+      reference.refName === input.sourceRefName
+    );
+    const target = state.flowGovernance?.references.find((reference) =>
+      reference.refName === input.targetRefName
+    );
+    if (!source || !target) return input;
+
+    const profile = resolveFlowAiPullRequestPromptProfile(source.kind, target.kind);
+    if (!profile) return input;
+    const sourceDescription = state.references
+      .find((reference) => reference.name === input.sourceRefName)
+      ?.description
+      ?.trim()
+      .slice(0, 2048);
+    return {
+      ...input,
+      promptContext: {
+        ...profile,
+        ...(sourceDescription ? { sourceDescription } : {})
+      }
+    };
   }
 
   private isCurrentRequest(key: string, request: FlowAiTextRequest): boolean {

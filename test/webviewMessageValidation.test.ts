@@ -931,13 +931,14 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch', title: 'feature/demo' },
       { id: 'feature2::branch::feature/other', hash: 'feature2', name: 'feature/other', kind: 'branch', title: 'feature/other' },
       { id: 'task1::branch::task/4312-adjust-timeout', hash: 'task1', name: 'task/4312-adjust-timeout', kind: 'branch', title: 'task/4312-adjust-timeout' },
+      { id: 'bug1::branch::bug/BUG-731-payment-rounding', hash: 'bug1', name: 'bug/BUG-731-payment-rounding', kind: 'branch', title: 'bug/BUG-731-payment-rounding' },
       { id: 'sync1::branch::sync/demo', hash: 'sync1', name: 'sync/demo', kind: 'branch', title: 'sync/demo' }
     ],
     flowGovernance: {
       enabled: true,
       configSource: 'workspace',
       diagnostics: [],
-      branchKinds: ['main', 'feature', 'task', 'release', 'sync', 'unknown'],
+      branchKinds: ['main', 'feature', 'task', 'bug', 'release', 'sync', 'unknown'],
       references: [
         { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
         { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
@@ -952,6 +953,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
           promotionTargetRefName: 'feature/demo'
         },
         {
+          refName: 'bug/BUG-731-payment-rounding',
+          kind: 'bug',
+          isEphemeral: false,
+          diagnostics: [],
+          promotionTargetRefName: 'release/2.0.0'
+        },
+        {
           refName: 'sync/demo',
           kind: 'sync',
           isEphemeral: true,
@@ -963,6 +971,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
         { sourceRefName: 'release/1.0.0', targetRefName: 'main', status: 'ahead' },
         { sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0', status: 'ahead' },
         { sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/demo', status: 'ahead' },
+        { sourceRefName: 'bug/BUG-731-payment-rounding', targetRefName: 'release/2.0.0', status: 'ahead' },
         { sourceRefName: 'sync/demo', targetRefName: 'feature/demo', status: 'ahead' }
       ]
     }
@@ -994,6 +1003,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-flow-pr-context', sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/other' },
+      governedFlowState
+    ),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'bug/BUG-731-payment-rounding', targetRefName: 'release/2.0.0' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'bug/BUG-731-payment-rounding', targetRefName: 'feature/demo' },
       governedFlowState
     ),
     false

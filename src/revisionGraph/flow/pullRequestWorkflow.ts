@@ -342,10 +342,12 @@ function resolveFlowPullRequestTargetPolicy(
   const isProductionPromotion = (sourceKind === 'release' || sourceKind === 'hotfix') && targetKind === 'main';
   const isFeaturePromotion = sourceKind === 'feature' && targetKind === 'release';
   const isTaskPromotion = sourceKind === 'task' && targetKind === 'feature';
+  const isBugPromotion = sourceKind === 'bug' && (targetKind === 'release' || targetKind === 'feature');
   const isSyncPromotion = sourceKind === 'sync' && (targetKind === 'release' || targetKind === 'feature');
   return {
     isProductionPromotion,
-    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion || isTaskPromotion || isSyncPromotion,
+    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion
+      || isTaskPromotion || isBugPromotion || isSyncPromotion,
     requiresTargetAncestry: isProductionPromotion
   };
 }

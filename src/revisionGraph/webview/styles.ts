@@ -606,7 +606,7 @@ export function renderRevisionGraphStyles(): string {
       resize: vertical;
     }
     .flow-pr-context-dialog {
-      width: min(560px, calc(100vw - 40px));
+      width: min(728px, calc(100vw - 40px));
     }
     .flow-pr-context-flow {
       border: 1px solid var(--border);
@@ -616,13 +616,10 @@ export function renderRevisionGraphStyles(): string {
       padding: 7px 8px;
       font-family: var(--vscode-editor-font-family, monospace);
     }
-    .flow-pr-context-copy-row {
-      display: grid; grid-template-columns: minmax(0, 1fr) 26px 26px; align-items: start; gap: 4px;
-    }
     .flow-ai-field-row {
       display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: start; gap: 4px;
     }
-    .flow-pr-context-copy, .flow-ai-text-action {
+    .flow-ai-text-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -636,18 +633,18 @@ export function renderRevisionGraphStyles(): string {
       padding: 0;
       cursor: pointer;
     }
-    .flow-pr-context-copy:hover, .flow-pr-context-copy:focus-visible, .flow-ai-text-action:hover, .flow-ai-text-action:focus-visible {
+    .flow-ai-text-action:hover, .flow-ai-text-action:focus-visible {
       outline: none;
       background: color-mix(in srgb, var(--accent) 14%, transparent);
       color: var(--vscode-textLink-activeForeground, var(--text));
     }
-    .flow-pr-context-copy svg, .flow-ai-text-action svg {
+    .flow-ai-text-action svg {
       position: static;
       width: 17px;
       height: 17px;
       fill: currentColor;
     }
-    .flow-pr-context-copy-row .flow-form-textarea {
+    .flow-ai-field-row .flow-form-textarea {
       min-height: 96px;
     }
     .flow-pr-context-warning {
@@ -662,7 +659,7 @@ export function renderRevisionGraphStyles(): string {
     .flow-pr-context-warning[hidden] {
       display: none;
     }
-    .flow-pr-context-copy:disabled, .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
+    .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
     .flow-ai-text-action[data-loading="true"] svg { animation: flow-ai-text-pulse 900ms ease-in-out infinite alternate; }
     @keyframes flow-ai-text-pulse { from { opacity: 0.45; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     .flow-form-error {

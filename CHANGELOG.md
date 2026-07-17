@@ -61,6 +61,8 @@ All notable changes to this project will be documented in this file.
 - Task branches created through Flow Governance now retain their source feature and expose
   `Promotion PR Context` only for that mapped target. The handoff fetches and verifies the feature,
   checks task commits ahead, and reuses confirmed publish/push with post-push revalidation.
+- Bug branches now retain their source feature or release and expose `Promotion PR Context` only
+  for that mapped target, using the same guarded target and source-publication preflight.
 - Governed branch creation now checks untracked source branches on a configured remote. Missing
   sources offer `Publish and Continue`, establish upstream tracking through a normal push, and are
   revalidated before the branch form opens; repositories without remotes retain local-only creation.
@@ -84,6 +86,12 @@ All notable changes to this project will be documented in this file.
   workflows from transient toasts to the shared awaited modal warning.
 - Made `Description` mandatory when starting release, feature, task, bug, or hotfix branches,
   with matching validation in the webview and extension host.
+- Added optional, field-level AI improvement for editable Pull Request and new-release text.
+  Delivery and release PRs use bounded project-document changes; bug, hotfix, and synchronization
+  PRs use bounded code diffs after sensitive paths are excluded. Context-specific prompts retain
+  explicit user control and adapt optional context to the available model token window.
+- Simplified `Promotion PR Context` by removing the per-field copy actions and widening its
+  responsive dialog from 560 px to 728 px while preserving editable fields and AI actions.
 - Expanded reference cards using their branch-name length plus reserved badge space, keeping
   longer governed branch names visible while retaining ellipsis for exceptional names.
 - Added `Start New Task` to the Flow Governance submenu for feature branches. Its shared form

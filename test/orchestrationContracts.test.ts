@@ -202,6 +202,7 @@ test('Flow AI workflow keeps improved Pull Request text in host-owned transient 
   const messages: unknown[] = [];
   const workflow = new RevisionGraphFlowAiTextWorkflow({
     getCurrentRepository: () => repository,
+    getCurrentState: () => createFlowAiTestState('release/2.0.0', 'release', 'main', 'main'),
     postHostMessage: (message) => messages.push(message)
   }, {
     async improve() {
@@ -252,6 +253,13 @@ test('Flow AI workflow supplies project-document context when improving a Pull R
   let improvementInput: unknown;
   const workflow = new RevisionGraphFlowAiTextWorkflow({
     getCurrentRepository: () => repository,
+    getCurrentState: () => createFlowAiTestState(
+      'release/2.0.0',
+      'release',
+      'main',
+      'main',
+      'Prepare the documented 2.0.0 delivery'
+    ),
     postHostMessage: () => undefined
   }, {
     async improve(input) {
@@ -287,11 +295,91 @@ test('Flow AI workflow supplies project-document context when improving a Pull R
     targetRefName: 'main',
     title: 'Promote release 2.0.0',
     description: 'Promotion context',
-    documentContext: 'diff --git a/README.md b/README.md\n+AI-assisted Pull Request descriptions'
+    promptContext: {
+      transition: 'release-to-main',
+      sourceKind: 'release',
+      targetKind: 'main',
+      promptKind: 'release',
+      contextSource: 'project-document-diff',
+      sourceDescription: 'Prepare the documented 2.0.0 delivery',
+      content: 'diff --git a/README.md b/README.md\n+AI-assisted Pull Request descriptions'
+    }
   });
   assert.equal(
     workflow.getPullRequestContext('release/2.0.0', 'main')?.body,
     'Documented delivery summary'
+  );
+  workflow.dispose();
+});
+
+test('Flow AI workflow derives defect prompts and code context from host-owned branch kinds', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/aiTextWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/aiTextWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  let contextInput: unknown;
+  let improvementInput: unknown;
+  const workflow = new RevisionGraphFlowAiTextWorkflow({
+    getCurrentRepository: () => repository,
+    getCurrentState: () => createFlowAiTestState(
+      'bug/BUG-731-payment-rounding',
+      'bug',
+      'release/2.0.0',
+      'release',
+      'Correct rounding in the release payment summary'
+    ),
+    postHostMessage: () => undefined
+  }, {
+    async improve(input) {
+      improvementInput = input;
+      return { status: 'ready', content: 'Grounded defect summary' };
+    }
+  }, {
+    async load(_repository, input) {
+      contextInput = input;
+      return 'diff --git a/src/payment.ts b/src/payment.ts\n+roundCorrectly();';
+    }
+  });
+  workflow.setPullRequestContext({
+    sourceRefName: 'bug/BUG-731-payment-rounding',
+    targetRefName: 'release/2.0.0',
+    title: 'Correct payment rounding',
+    body: 'Promotion context',
+    text: 'Title: Correct payment rounding\n\nPromotion context'
+  });
+
+  await workflow.improve(14, {
+    surface: 'pull-request',
+    field: 'description',
+    sourceRefName: 'bug/BUG-731-payment-rounding',
+    targetRefName: 'release/2.0.0',
+    title: 'Correct payment rounding',
+    description: 'Promotion context'
+  });
+
+  assert.deepEqual(
+    (contextInput as { readonly promptContext?: unknown }).promptContext,
+    {
+      transition: 'bug-to-release',
+      sourceKind: 'bug',
+      targetKind: 'release',
+      promptKind: 'defect',
+      contextSource: 'code-diff',
+      sourceDescription: 'Correct rounding in the release payment summary'
+    }
+  );
+  assert.deepEqual(
+    (improvementInput as { readonly promptContext?: unknown }).promptContext,
+    {
+      transition: 'bug-to-release',
+      sourceKind: 'bug',
+      targetKind: 'release',
+      promptKind: 'defect',
+      contextSource: 'code-diff',
+      sourceDescription: 'Correct rounding in the release payment summary',
+      content: 'diff --git a/src/payment.ts b/src/payment.ts\n+roundCorrectly();'
+    }
   );
   workflow.dispose();
 });
@@ -307,6 +395,12 @@ test('Flow AI workflow cancels and ignores a result after the Pull Request targe
   let token: { readonly isCancellationRequested: boolean } | undefined;
   const workflow = new RevisionGraphFlowAiTextWorkflow({
     getCurrentRepository: () => repository,
+    getCurrentState: () => createFlowAiTestState(
+      'feature/demo',
+      'feature',
+      'release/2.0.0',
+      'release'
+    ),
     postHostMessage: (message) => messages.push(message)
   }, {
     async improve(_input, cancellationToken) {
@@ -414,6 +508,67 @@ test('Feature Pull Request preflight verifies the remote release before checking
     'loading:done'
   ]);
   assert.equal(hostMessages.length, 1);
+});
+
+test('Bug Pull Request preflight verifies its persisted release target before opening context', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const calls: string[] = [];
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: createFlowPullRequestTestServices({
+      showWarningMessage: () => assert.fail('No warning expected.'),
+      showInformationMessage: () => undefined
+    }),
+    mutationCoordinator: new RepositoryMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({
+      flowGovernance: {
+        references: [
+          { refName: 'bug/BUG-731-payment-rounding', kind: 'bug' },
+          { refName: 'release/2.0.0', kind: 'release' }
+        ]
+      }
+    }) as never,
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
+    postHostMessage: () => undefined
+  }, {
+    async loadRemoteBranchCommit(_repository, remoteName, branchName) {
+      calls.push(`remote:${remoteName}/${branchName}`);
+      return { status: 'found', commit: 'remote-release-commit' };
+    },
+    async checkTarget(_path, sourceRefName, targetRefName, options) {
+      calls.push(`target:${targetRefName}..${sourceRefName}`);
+      assert.ok(options);
+      assert.equal(options.requireTargetSynchronized, true);
+      assert.equal(options.targetCommitish, 'remote-release-commit');
+      return { sourceRefName, targetRefName, status: 'ahead' };
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      calls.push(`source:${remoteName}/${sourceRefName}`);
+      return { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+    },
+    isMergeInProgress: () => false
+  });
+
+  await workflow.copyContext('bug/BUG-731-payment-rounding', 'release/2.0.0');
+
+  assert.deepEqual(calls, [
+    'remote:origin/release/2.0.0',
+    'target:release/2.0.0..bug/BUG-731-payment-rounding',
+    'source:origin/bug/BUG-731-payment-rounding'
+  ]);
 });
 
 test('Task Pull Request preflight verifies its mapped feature and pushes committed work after confirmation', async (t) => {
@@ -912,6 +1067,27 @@ function installVscodePanelMock(t: test.TestContext): {
   };
   t.after(() => { moduleLoader._load = originalLoad; });
   return { extensionUri: extensionUri as never, panels, clipboardWrites, createPanel };
+}
+
+function createFlowAiTestState(
+  sourceRefName: string,
+  sourceKind: 'release' | 'feature' | 'bug',
+  targetRefName: string,
+  targetKind: 'main' | 'release',
+  sourceDescription?: string
+): never {
+  return {
+    references: [
+      { name: sourceRefName, description: sourceDescription },
+      { name: targetRefName }
+    ],
+    flowGovernance: {
+      references: [
+        { refName: sourceRefName, kind: sourceKind },
+        { refName: targetRefName, kind: targetKind }
+      ]
+    }
+  } as never;
 }
 
 async function waitForAsyncHandlers(): Promise<void> {

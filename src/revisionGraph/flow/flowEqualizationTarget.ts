@@ -93,7 +93,7 @@ export function applyFlowBranchTargets(
     if (reference.kind === 'sync') {
       return { ...reference, equalizationTargetRefName: targetRefName };
     }
-    if (reference.kind === 'task') {
+    if (reference.kind === 'task' || reference.kind === 'bug') {
       return { ...reference, promotionTargetRefName: targetRefName };
     }
     return reference;

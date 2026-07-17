@@ -59,7 +59,7 @@ Candidate scope:
 
 - Add optional field-level AI text improvement to Flow Governance PR title/description and new-release
   description forms. Existing deterministic/user-entered content remains the default, requests are
-  explicitly initiated, and improved PR context is transiently host-owned for copy/provider handoff.
+  explicitly initiated, and improved PR context is transiently host-owned for provider handoff.
 - Add an optional, explicitly invoked AI Compare Briefing to completed Compare Results panels. It uses
   an available GitHub Copilot language model through the VS Code Language Model API, sends only bounded
   path-filtered comparison context after excluding known sensitive paths, renders plain text, and
@@ -78,7 +78,7 @@ Candidate scope:
   Phase 1 template content.
 - Add PR-required transition diagnostics for governed source/target pairs.
 - Add release promotion readiness checks with `ready`, `blocked`, and `inconclusive` outcomes.
-- Add PR handoff through copyable context or recognized GitHub, Azure DevOps, GitLab.com,
+- Add PR handoff through reviewable context or recognized GitHub, Azure DevOps, GitLab.com,
   AWS CodeCommit, and Google Secure Source Manager destinations.
 - Open commits from Revision Graph and Show Log on supported GitHub, Azure DevOps, GitLab.com, and
   AWS CodeCommit remotes through provider-neutral actions.
@@ -127,7 +127,7 @@ Recorded verification:
   title, PR description, and new-release description. It uses the VS Code Language Model API only after
   a field-level user action, bounds and delimits untrusted input, forbids invented release claims, and
   cancels superseded, closed-form, target-change, and repository-change requests. Improved PR text is
-  held transiently by the host so copy and supported provider URLs use the reviewed value. The follow-up
+  held transiently by the host so supported provider URLs use the reviewed value. The follow-up
   keeps PR title/description editable, validates the exact bounded visible values on explicit actions,
   and grounds description improvement in a cancellable diff restricted to `README.md`, `CHANGELOG.md`,
   and approved `project-context` paths. Adaptive fitting now tries the complete prompt across available
@@ -139,6 +139,28 @@ Recorded verification:
   --check` passed, and Graphify was refreshed. The styles and interaction-controller ceilings were
   reduced and an obsolete host-message complexity exception was removed. No command, setting,
   dependency, Git mutation, version, package, or publication changed.
+
+- The context-aware AI PR follow-up was completed on 2026-07-17. The extension host now derives a
+  trusted Flow transition and selects typed title/delivery/defect/hotfix/release/synchronization
+  prompts. Delivery and release descriptions retain allowlisted project-document context; bug,
+  hotfix, and synchronization descriptions use at most 80 safe changed files after both sides of
+  rename/copy records are filtered for environment files, credentials, keys, and certificates before
+  loading a bounded diff. Bug branches now persist their exact feature/release source, expose guarded
+  Promotion PR Context only for that mapped target, and verify the remote target before handoff.
+  Optional document or code context remains model-fitted without dropping form content or shared
+  safety rules. `npm run quality:check` passed with 251 production files and 2,392 functions;
+  `npm run build`, 113 focused tests, all 788 compiled tests, and `git diff --check` passed.
+  `graphify update .` rebuilt 4,905 nodes, 9,651 edges, and 384 communities. Manual Copilot output and
+  visual Extension Development Host smoke remain pending. No command, setting, dependency, minimum
+  VS Code version, package version, packaging, or Marketplace publication changed.
+
+- The Promotion PR Context UX follow-up removed the Title and Description copy-icon actions and
+  widened the responsive form exactly 30%, from 560 px to 728 px. The fields remain editable and the
+  optional AI actions plus hosted-provider handoff are unchanged. The introduction now directs users
+  to review and improve the generated context. `npm run quality:check`, `npm run build`, all 788 tests,
+  and `git diff --check` passed; `graphify update .` rebuilt 4,905 nodes, 9,651 edges, and 382
+  communities. Manual visual Extension Development Host smoke remains pending. No protocol, command,
+  setting, dependency, Git mutation, version, packaging, or publication changed.
 
 - AI Compare Briefing was implemented on 2026-07-17 as an optional, user-initiated Compare Results
   action backed by the VS Code Language Model API and an available GitHub Copilot model. Context is

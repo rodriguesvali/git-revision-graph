@@ -372,6 +372,32 @@ test('loads unified diffs through the document backend with bounded git args', a
   );
 });
 
+test('loads changed-path metadata with rename pairs for safe AI filtering', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram(
+      "process.stdout.write('M\\0src/payment.ts\\0R100\\0.env\\0src/config.ts\\0');"
+    ),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const changes = await backend.loadChangedPaths(repository, '--option-like-left', 'bug/fix', {
+        maxOutputBytes: 4096
+      });
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.deepEqual(changes, [
+        { status: 'M', paths: ['src/payment.ts'] },
+        { status: 'R100', paths: ['.env', 'src/config.ts'] }
+      ]);
+      assert.equal(
+        calls.trim(),
+        'diff --name-status -z --find-renames --find-copies --end-of-options --option-like-left bug/fix'
+      );
+    }
+  );
+});
+
 test('loads a path-filtered unified diff for bounded AI context', async () => {
   await withFakeGitScript(
     createFakeGitProgram("process.stdout.write('filtered diff\\n');"),

@@ -1,7 +1,7 @@
 interface RevisionGraphWebviewFlowAiTextInteractions {
   readonly pullRequestDependencies: Pick<
     RevisionGraphWebviewFlowPullRequestDialogDependencies,
-    'copyField' | 'improveText' | 'cancelImprovement' | 'openUrl'
+    'improveText' | 'cancelImprovement' | 'openUrl'
   >;
   readonly releaseDependencies: Pick<
     RevisionGraphWebviewFlowBranchDialogDependencies,
@@ -15,11 +15,6 @@ function createRevisionGraphWebviewFlowAiTextInteractions(
   let nextRequestId = 1;
   return {
     pullRequestDependencies: {
-      copyField(sourceRefName, targetRefName, field, text) {
-        postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(
-          sourceRefName, targetRefName, field, text
-        ));
-      },
       improveText(sourceRefName, targetRefName, field, title, description) {
         const requestId = nextRequestId++;
         postMessage(createRevisionGraphImproveFlowPullRequestTextMessage(

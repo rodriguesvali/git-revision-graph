@@ -19,7 +19,7 @@ import { prepareFlowBranchStart } from './flowBranchStartPreflight';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
 import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
 import { RevisionGraphFlowAiTextWorkflow } from './aiTextWorkflow';
-import type { FlowAiTextDocumentContextProvider } from './aiTextDocumentContext';
+import type { FlowAiTextContextProvider } from './aiTextContext';
 import type {
   FlowAiTextField,
   FlowAiTextImprover,
@@ -57,13 +57,13 @@ export class RevisionGraphFlowGovernanceWorkflow {
   constructor(
     private readonly host: RevisionGraphFlowGovernanceWorkflowHost,
     aiTextImprover?: FlowAiTextImprover,
-    aiTextDocumentContextProvider?: FlowAiTextDocumentContextProvider
+    aiTextContextProvider?: FlowAiTextContextProvider
   ) {
     this.pullRequestWorkflow = new RevisionGraphFlowPullRequestWorkflow(host);
     this.aiTextWorkflow = new RevisionGraphFlowAiTextWorkflow(
       host,
       aiTextImprover,
-      aiTextDocumentContextProvider
+      aiTextContextProvider
     );
   }
 

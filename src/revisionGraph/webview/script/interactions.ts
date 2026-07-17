@@ -324,7 +324,6 @@
       if (!flowBranch) {
         return;
       }
-
       const entries: RevisionGraphWebviewMenuEntry[] = [];
       if (flowBranch.kind === 'main') {
         entries.push(
@@ -348,7 +347,8 @@
             { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
-      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync' || flowBranch.kind === 'task') {
+      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync'
+        || flowBranch.kind === 'task' || flowBranch.kind === 'bug') {
         const pullRequestTargetName = flowBranch.kind === 'hotfix' ? getFlowProductionBranchName()
           : getFlowPullRequestTargets(target.name)[0]?.targetRefName;
         if (pullRequestTargetName) {
@@ -551,8 +551,7 @@
       closeContextMenu,
       getTargets: getFlowPullRequestTargets,
       requestContext: postCopyFlowPullRequestContext,
-      ...flowAiTextInteractions.pullRequestDependencies,
-      renderCopyIcon: renderCopyHashIcon
+      ...flowAiTextInteractions.pullRequestDependencies
     });
 
     function openFlowPullRequestContextForm(target: RevisionGraphWebviewTarget) {

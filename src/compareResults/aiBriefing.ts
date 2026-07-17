@@ -1,5 +1,10 @@
 import type * as vscode from 'vscode';
 
+import {
+  isSensitiveAiContextPath,
+  normalizeAiContextPath
+} from '../aiContextPaths';
+
 export const MAX_COMPARE_BRIEFING_FILES = 80;
 export const MAX_COMPARE_BRIEFING_DIFF_CHARS = 120_000;
 export const MAX_COMPARE_BRIEFING_OUTPUT_CHARS = 12_000;
@@ -35,55 +40,12 @@ export interface CompareBriefingGenerator {
   ): Promise<CompareBriefingGenerationResult>;
 }
 
-const SENSITIVE_BASENAMES = new Set([
-  '.env',
-  '.netrc',
-  '.npmrc',
-  '.pypirc',
-  'credentials',
-  'credentials.json',
-  'id_dsa',
-  'id_ecdsa',
-  'id_ed25519',
-  'id_rsa',
-  'secrets.json'
-]);
-
-const SENSITIVE_EXTENSIONS = [
-  '.jks',
-  '.key',
-  '.keystore',
-  '.p12',
-  '.pem',
-  '.pfx'
-];
-
 export function normalizeCompareBriefingPath(value: string): string | undefined {
-  const normalized = value.replace(/\\/g, '/').replace(/^\.\//, '');
-  if (
-    normalized.length === 0
-    || normalized.startsWith('/')
-    || /^[a-z]:\//i.test(normalized)
-    || normalized.split('/').some((segment) => segment === '..')
-  ) {
-    return undefined;
-  }
-  return normalized;
+  return normalizeAiContextPath(value);
 }
 
 export function isSensitiveCompareBriefingPath(value: string): boolean {
-  const normalized = normalizeCompareBriefingPath(value)?.toLowerCase();
-  if (!normalized) {
-    return true;
-  }
-
-  const basename = normalized.split('/').at(-1) ?? normalized;
-  return SENSITIVE_BASENAMES.has(basename)
-    || basename.startsWith('.env.')
-    || basename.includes('private-key')
-    || SENSITIVE_EXTENSIONS.some((extension) => basename.endsWith(extension))
-    || normalized === '.aws/credentials'
-    || normalized.endsWith('/.aws/credentials');
+  return isSensitiveAiContextPath(value);
 }
 
 export function truncateCompareBriefingDiff(

@@ -23,7 +23,7 @@ test('Flow AI prompt fitting preserves provider order when the full prompt fits'
   assert.match(fitted?.prompt ?? '', /Next stable release/);
 });
 
-test('Flow AI prompt fitting uses the largest window and reduces only document context', async () => {
+test('Flow AI prompt fitting uses the largest window and reduces only optional context', async () => {
   const small = createModel('small', 500, () => 300);
   const larger = createModel('larger', 1_800, countPromptWithDocumentChars);
   const documentContext = 'x'.repeat(20_000);
@@ -85,7 +85,7 @@ function countPromptWithDocumentChars(prompt: string): number {
   return 300 + (prompt.match(/x/g) ?? []).length;
 }
 
-function createPullRequestDescriptionInput(documentContext: string) {
+function createPullRequestDescriptionInput(content: string) {
   return {
     surface: 'pull-request' as const,
     field: 'description' as const,
@@ -93,7 +93,14 @@ function createPullRequestDescriptionInput(documentContext: string) {
     targetRefName: 'main',
     title: 'Promote release 2.0.0',
     description: 'Existing promotion description',
-    documentContext
+    promptContext: {
+      transition: 'release-to-main' as const,
+      sourceKind: 'release' as const,
+      targetKind: 'main' as const,
+      promptKind: 'release' as const,
+      contextSource: 'project-document-diff' as const,
+      content
+    }
   };
 }
 

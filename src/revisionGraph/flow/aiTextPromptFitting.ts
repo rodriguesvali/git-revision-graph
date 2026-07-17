@@ -4,10 +4,10 @@ import {
   buildFlowAiTextImprovementPrompt,
   type FlowAiTextImprovementInput
 } from './aiTextAssistant';
-import { truncateFlowAiDocumentContext } from './aiTextDocumentContext';
+import { truncateFlowAiContext } from './aiTextContext';
 
 const FLOW_AI_INPUT_TOKEN_RESERVE = 256;
-const MIN_FLOW_AI_DOCUMENT_CONTEXT_CHARS = 1_000;
+const MIN_FLOW_AI_CONTEXT_CHARS = 1_000;
 
 export interface FlowAiTextTokenCountingModel {
   readonly maxInputTokens: number;
@@ -30,53 +30,58 @@ export async function selectFittedFlowAiTextPrompt<TModel extends FlowAiTextToke
     if (await flowAiPromptFits(model, fullPrompt, token)) return { model, prompt: fullPrompt };
   }
 
-  if (!canReduceFlowAiDocumentContext(input)) return undefined;
+  if (!canReduceFlowAiContext(input)) return undefined;
   const rankedModels = models
     .map((model, index) => ({ model, index }))
     .sort((left, right) => right.model.maxInputTokens - left.model.maxInputTokens || left.index - right.index);
   for (const { model } of rankedModels) {
-    const prompt = await fitReducedFlowAiDocumentContext(model, input, token);
+    const prompt = await fitReducedFlowAiContext(model, input, token);
     if (prompt) return { model, prompt };
   }
   return undefined;
 }
 
-async function fitReducedFlowAiDocumentContext(
+async function fitReducedFlowAiContext(
   model: FlowAiTextTokenCountingModel,
   input: Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>,
   token: vscode.CancellationToken
 ): Promise<string | undefined> {
-  const documentContext = input.documentContext ?? '';
-  let documentChars = reduceFlowAiDocumentContextChars(documentContext.length);
-  while (documentChars >= MIN_FLOW_AI_DOCUMENT_CONTEXT_CHARS) {
+  const promptContext = input.promptContext;
+  const content = promptContext?.content ?? '';
+  let contextChars = reduceFlowAiContextChars(content.length);
+  while (promptContext && contextChars >= MIN_FLOW_AI_CONTEXT_CHARS) {
     if (token.isCancellationRequested) return undefined;
     const prompt = buildFlowAiTextImprovementPrompt({
       ...input,
-      documentContext: truncateFlowAiDocumentContext(documentContext, documentChars)
+      promptContext: {
+        ...promptContext,
+        content: truncateFlowAiContext(content, promptContext.contextSource, contextChars)
+      }
     });
     if (await flowAiPromptFits(model, prompt, token)) return prompt;
-    documentChars = reduceFlowAiDocumentContextChars(documentChars);
+    contextChars = reduceFlowAiContextChars(contextChars);
   }
 
   const essentialPrompt = buildFlowAiTextImprovementPrompt({
     ...input,
-    documentContext: undefined,
-    documentContextWasOmitted: true
+    promptContext: promptContext
+      ? { ...promptContext, content: undefined, contentWasOmitted: true }
+      : undefined
   });
   return await flowAiPromptFits(model, essentialPrompt, token) ? essentialPrompt : undefined;
 }
 
-function reduceFlowAiDocumentContextChars(currentChars: number): number {
-  if (currentChars <= MIN_FLOW_AI_DOCUMENT_CONTEXT_CHARS) return 0;
-  return Math.max(MIN_FLOW_AI_DOCUMENT_CONTEXT_CHARS, Math.floor(currentChars * 0.7));
+function reduceFlowAiContextChars(currentChars: number): number {
+  if (currentChars <= MIN_FLOW_AI_CONTEXT_CHARS) return 0;
+  return Math.max(MIN_FLOW_AI_CONTEXT_CHARS, Math.floor(currentChars * 0.7));
 }
 
-function canReduceFlowAiDocumentContext(
+function canReduceFlowAiContext(
   input: FlowAiTextImprovementInput
 ): input is Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }> {
   return input.surface === 'pull-request'
     && input.field === 'description'
-    && !!input.documentContext;
+    && !!input.promptContext?.content;
 }
 
 async function flowAiPromptFits(

@@ -2,12 +2,6 @@ interface RevisionGraphWebviewFlowPullRequestDialogDependencies {
   readonly closeContextMenu: () => void;
   readonly getTargets: (sourceRefName: string) => readonly RevisionGraphWebviewFlowPullRequestTarget[];
   readonly requestContext: (sourceRefName: string, targetRefName: string) => void;
-  readonly copyField: (
-    sourceRefName: string,
-    targetRefName: string,
-    field: 'title' | 'description',
-    text: string
-  ) => void;
   readonly improveText: (
     sourceRefName: string,
     targetRefName: string,
@@ -22,7 +16,6 @@ interface RevisionGraphWebviewFlowPullRequestDialogDependencies {
     title: string,
     description: string
   ) => void;
-  readonly renderCopyIcon: () => string;
 }
 
 interface RevisionGraphWebviewFlowPullRequestDialogController {
@@ -43,8 +36,6 @@ interface RevisionGraphWebviewFlowPullRequestDialogElements {
   readonly targetSelect: HTMLSelectElement;
   readonly titleInput: HTMLInputElement;
   readonly descriptionInput: HTMLTextAreaElement;
-  readonly titleCopyButton: HTMLButtonElement;
-  readonly descriptionCopyButton: HTMLButtonElement;
   readonly titleAiButton: HTMLButtonElement;
   readonly descriptionAiButton: HTMLButtonElement;
   readonly warning: HTMLElement;
@@ -180,14 +171,6 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     setWarning(getRevisionGraphWebviewFlowPullRequestWarning(sourceRefName, candidate));
   }
 
-  function copyField(field: 'title' | 'description'): void {
-    if (sourceRefName && targetRefName) {
-      const dialog = ensureDialog();
-      const text = field === 'title' ? dialog.titleInput.value.trim() : dialog.descriptionInput.value.trim();
-      if (text) dependencies.copyField(sourceRefName, targetRefName, field, text);
-    }
-  }
-
   function improveField(field: 'title' | 'description'): void {
     const dialog = ensureDialog();
     if (!sourceRefName || !targetRefName
@@ -236,8 +219,6 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     const dialog = ensureDialog();
     const hasTitle = contextReady && !!dialog.titleInput.value.trim();
     const hasDescription = contextReady && !!dialog.descriptionInput.value.trim();
-    dialog.titleCopyButton.disabled = !hasTitle;
-    dialog.descriptionCopyButton.disabled = !hasDescription;
     setRevisionGraphWebviewFlowAiTextButtonState(
       dialog.titleAiButton,
       hasTitle && hasDescription,
@@ -274,7 +255,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
 
     const introduction = document.createElement('p');
     introduction.className = 'flow-dialog-description';
-    introduction.textContent = 'Review the generated context and copy each field into your Pull Request.';
+    introduction.textContent = 'Review and improve the generated context before opening your Pull Request.';
     dialog.appendChild(introduction);
 
     const targetLabel = document.createElement('label');
@@ -302,14 +283,12 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     const titleField = createRevisionGraphWebviewFlowPullRequestContextField(
       'Title',
       'flowPullRequestTitleInput',
-      false,
-      dependencies.renderCopyIcon
+      false
     );
     const descriptionField = createRevisionGraphWebviewFlowPullRequestContextField(
       'Description',
       'flowPullRequestDescriptionInput',
-      true,
-      dependencies.renderCopyIcon
+      true
     );
     dialog.append(titleField.container, descriptionField.container);
 
@@ -341,15 +320,11 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       targetSelect,
       titleInput: titleField.input as HTMLInputElement,
       descriptionInput: descriptionField.input as HTMLTextAreaElement,
-      titleCopyButton: titleField.copyButton,
-      descriptionCopyButton: descriptionField.copyButton,
       titleAiButton: titleField.aiButton,
       descriptionAiButton: descriptionField.aiButton,
       warning,
       openButton
     };
-    titleField.copyButton.addEventListener('click', () => copyField('title'));
-    descriptionField.copyButton.addEventListener('click', () => copyField('description'));
     titleField.aiButton.addEventListener('click', () => improveField('title'));
     descriptionField.aiButton.addEventListener('click', () => improveField('description'));
     titleField.input.addEventListener('input', () => handleFieldInput('title'));
@@ -383,12 +358,10 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
 function createRevisionGraphWebviewFlowPullRequestContextField(
   labelText: string,
   inputId: string,
-  multiline: boolean,
-  renderCopyIcon: () => string
+  multiline: boolean
 ): {
   readonly container: HTMLElement;
   readonly input: HTMLInputElement | HTMLTextAreaElement;
-  readonly copyButton: HTMLButtonElement;
   readonly aiButton: HTMLButtonElement;
 } {
   const container = document.createElement('div');
@@ -398,7 +371,7 @@ function createRevisionGraphWebviewFlowPullRequestContextField(
   label.setAttribute('for', inputId);
   label.textContent = labelText;
   const row = document.createElement('div');
-  row.className = 'flow-pr-context-copy-row';
+  row.className = 'flow-ai-field-row';
   const input = multiline ? document.createElement('textarea') : document.createElement('input');
   input.id = inputId;
   input.className = 'flow-form-input' + (multiline ? ' flow-form-textarea' : '');
@@ -406,14 +379,8 @@ function createRevisionGraphWebviewFlowPullRequestContextField(
   if (input instanceof HTMLInputElement) {
     input.type = 'text';
   }
-  const copyButton = document.createElement('button');
-  copyButton.className = 'flow-pr-context-copy';
-  copyButton.type = 'button';
-  copyButton.title = 'Copy ' + labelText;
-  copyButton.setAttribute('aria-label', 'Copy ' + labelText);
-  copyButton.innerHTML = renderCopyIcon();
   const aiButton = createRevisionGraphWebviewFlowAiTextButton('Improve with AI');
-  row.append(input, aiButton, copyButton);
+  row.append(input, aiButton);
   container.append(label, row);
-  return { container, input, copyButton, aiButton };
+  return { container, input, aiButton };
 }

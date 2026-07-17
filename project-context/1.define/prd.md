@@ -36,6 +36,8 @@ The current package baseline is read from `package.json`. At consolidation time 
 - Preserve multi-repository behavior, empty states, cancellation, and conflict guards.
 - Keep user-visible workflows native where VS Code already has strong primitives.
 - Keep AI features user-controlled, bounded, cancellable, and advisory; they must not initiate Git mutations.
+- Select assisted-authoring prompts and bounded evidence from host-derived workflow context: delivery
+  documentation for feature/release work and sensitive-path-filtered code diffs for defects and hotfixes.
 - Keep feature slices small enough to verify with deterministic tests plus focused manual smoke paths.
 - Promote durable product or architecture learning into `prd.md` or `sad.md`; archive completed feature and release artifacts.
 

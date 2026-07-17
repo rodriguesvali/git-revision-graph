@@ -9,11 +9,14 @@ import { DefaultRevisionGraphSnapshotBackend } from './backendServices/snapshot'
 import { DefaultRevisionLogBackend } from './backendServices/revisionLog';
 import type { RevisionGraphDocumentBackend } from './backendServices/document';
 import type { RevisionGraphUnifiedDiffOptions } from './backendServices/document';
+import type { RevisionGraphChangedPathOptions } from './backendServices/document';
 import type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 import type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend, RevisionGraphSnapshotLoadContext } from './backendServices/snapshot';
 import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
 
 export type {
+  RevisionGraphChangedPath,
+  RevisionGraphChangedPathOptions,
   RevisionGraphDocumentBackend,
   RevisionGraphUnifiedDiffOptions
 } from './backendServices/document';
@@ -81,6 +84,15 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     parentHash?: string
   ): ReturnType<RevisionLogChangesBackend['loadRevisionLogChanges']> {
     return this.revisionLogBackend.loadRevisionLogChanges(repository, commitHash, parentHash);
+  }
+
+  async loadChangedPaths(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphChangedPathOptions
+  ): ReturnType<RevisionGraphDocumentBackend['loadChangedPaths']> {
+    return this.documentBackend.loadChangedPaths(repository, left, right, options);
   }
 
   async loadUnifiedDiff(

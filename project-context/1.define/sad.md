@@ -176,10 +176,10 @@ Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and
   provider adapter registry.
 - `flowPullRequestPreflight.ts`: provider-aligned remote-source existence and exact-tip verification before PR handoff, with fail-closed publication states.
 - `flowSyncPlan.ts`: production-to-release equalization planning, sync branch naming, precondition checks, and no-push handoff metadata.
-- `aiTextAssistant.ts`, `aiTextDocumentContext.ts`, `aiTextPromptFitting.ts`, and `aiTextWorkflow.ts`:
-  bounded prompt/output policy, allowlisted project-document diff context, per-model token fitting,
-  explicit request lifecycle, transient host-owned PR context, cancellation, and stale-response
-  rejection for PR/release text.
+- `aiTextAssistant.ts`, `aiPrompts/*`, `aiTextContext.ts`, `aiTextPromptFitting.ts`, and
+  `aiTextWorkflow.ts`: bounded context-specific prompt/output policy, allowlisted project-document or
+  sensitive-path-filtered code-diff context, per-model token fitting, explicit request lifecycle,
+  transient host-owned PR context, cancellation, and stale-response rejection for PR/release text.
 
 Provider API PR creation, cleanup candidates, provider authentication, and persistent diagnostics
 panels remain outside the initial 2.0.0 architecture unless a focused feature artifact explicitly
@@ -192,9 +192,12 @@ expands them.
 - Release readiness may use targeted Git ancestry checks where the public Git API is insufficient, and must report missing refs or command errors as inconclusive rather than ready or blocked.
 - PR handoff should work without provider authentication first by copying PR context or opening recognized compare/PR URLs.
 - Optional AI text improvement must start only from a field-level user action. The webview sends bounded
-  visible field values, the host may load only allowlisted project-document changes for PR descriptions,
-  and then invokes the workbench language-model adapter. Only the matching current form may accept the
-  result; PR copy and provider URL handoff consume the validated, reviewed context.
+  visible field values, while the host derives the governed transition and selects a typed prompt/context
+  policy. Delivery and release PRs may load only allowlisted project-document changes; bug, hotfix, and
+  synchronization PRs may load a bounded code diff only after changed paths are filtered for sensitive
+  files. The workbench language-model adapter accepts the resulting bounded prompt. Only the matching
+  current form may accept the result; PR copy and provider URL handoff consume the validated, reviewed
+  context.
 - PR handoff must verify that the selected source exists at the same commit on the handoff remote. Missing or locally-ahead sources may be published/pushed only after explicit confirmation; remote-ahead and divergent sources fail closed, and force push is never offered.
 - Equalization may create a local `sync/*` branch and merge production only after explicit confirmation and only when existing clean-worktree/conflict guards pass. It must never push automatically and must never perform the final governed merge into `release/*`.
 

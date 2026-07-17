@@ -4,6 +4,12 @@ import { execGit, execGitWithResult } from '../../gitExec';
 import { Repository } from '../../git';
 
 export interface RevisionGraphDocumentBackend {
+  loadChangedPaths(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphChangedPathOptions
+  ): Promise<readonly RevisionGraphChangedPath[]>;
   loadUnifiedDiff(
     repository: Repository,
     left: string,
@@ -19,6 +25,16 @@ export interface RevisionGraphDocumentBackend {
   loadCommitDetails(repository: Repository, commitHash: string): Promise<string>;
 }
 
+export interface RevisionGraphChangedPath {
+  readonly status: string;
+  readonly paths: readonly string[];
+}
+
+export interface RevisionGraphChangedPathOptions {
+  readonly signal?: AbortSignal;
+  readonly maxOutputBytes?: number;
+}
+
 export interface RevisionGraphUnifiedDiffOptions {
   readonly paths?: readonly string[];
   readonly signal?: AbortSignal;
@@ -30,6 +46,24 @@ const UNIFIED_DIFF_MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 const COMMIT_DETAILS_MAX_OUTPUT_BYTES = 24 * 1024 * 1024;
 
 export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumentBackend {
+  async loadChangedPaths(
+    repository: Repository,
+    left: string,
+    right: string,
+    options?: RevisionGraphChangedPathOptions
+  ): Promise<readonly RevisionGraphChangedPath[]> {
+    const output = await execGit(
+      repository.rootUri.fsPath,
+      ['diff', '--name-status', '-z', '--find-renames', '--find-copies', '--end-of-options', left, right],
+      {
+        maxOutputBytes: options?.maxOutputBytes ?? UNIFIED_DIFF_MAX_OUTPUT_BYTES,
+        signal: options?.signal,
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
+      }
+    );
+    return parseRevisionGraphChangedPaths(output);
+  }
+
   async loadUnifiedDiff(
     repository: Repository,
     left: string,
@@ -111,6 +145,23 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
       }
     );
   }
+}
+
+export function parseRevisionGraphChangedPaths(output: string): readonly RevisionGraphChangedPath[] {
+  const records = output.split('\0');
+  const changes: RevisionGraphChangedPath[] = [];
+  let index = 0;
+  while (index < records.length) {
+    const status = records[index++];
+    if (!status) continue;
+    const pathCount = status.startsWith('R') || status.startsWith('C') ? 2 : 1;
+    const paths = records.slice(index, index + pathCount);
+    index += pathCount;
+    if (paths.length === pathCount && paths.every((value) => value.length > 0)) {
+      changes.push({ status, paths });
+    }
+  }
+  return changes;
 }
 
 function normalizeRepositoryRelativePaths(

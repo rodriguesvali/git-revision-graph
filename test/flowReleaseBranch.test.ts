@@ -856,6 +856,7 @@ test('Flow Governance starts a local bug branch from release with a required des
   const informationMessages: string[] = [];
   const upstreamClears: string[] = [];
   const refreshes: unknown[] = [];
+  const targets: Array<{ readonly branchName: string; readonly targetRefName: string }> = [];
   const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
 
   await startFlowBranch(repository, {
@@ -864,7 +865,11 @@ test('Flow Governance starts a local bug branch from release with a required des
     name: 'BUG-731-payment-rounding',
     description: 'Correct rounding in the release payment summary',
     config: DEFAULT_FLOW_CONFIG
-  }, services);
+  }, services, {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    }
+  });
 
   assert.deepEqual(repository.calls.createBranch, [{
     name: 'bug/BUG-731-payment-rounding',
@@ -872,6 +877,10 @@ test('Flow Governance starts a local bug branch from release with a required des
     ref: 'release/2.0.0'
   }]);
   assert.deepEqual(upstreamClears, ['bug/BUG-731-payment-rounding']);
+  assert.deepEqual(targets, [{
+    branchName: 'bug/BUG-731-payment-rounding',
+    targetRefName: 'release/2.0.0'
+  }]);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Bug branch bug\/BUG-731-payment-rounding was created/);
 });

@@ -16,6 +16,12 @@ export interface FlowPullRequestTargetCheckOptions {
   readonly targetCommitish?: string;
 }
 
+interface FlowPullRequestCandidate {
+  readonly sourceRefName: string;
+  readonly targetRefName: string;
+  readonly requireTargetAncestor: boolean;
+}
+
 export async function loadFlowPullRequestTargets(
   repositoryPath: string,
   references: readonly FlowBranchInfo[],
@@ -24,11 +30,7 @@ export async function loadFlowPullRequestTargets(
 ): Promise<readonly FlowPullRequestTargetInfo[]> {
   const productionBranch = references.find((reference) => reference.kind === 'main')?.refName;
   const releaseBranches = references.filter((reference) => reference.kind === 'release');
-  const candidates: Array<{
-    sourceRefName: string;
-    targetRefName: string;
-    requireTargetAncestor: boolean;
-  }> = [];
+  const candidates: FlowPullRequestCandidate[] = [];
 
   if (productionBranch) {
     for (const source of references) {
@@ -54,18 +56,7 @@ export async function loadFlowPullRequestTargets(
     }
   }
 
-  for (const source of references.filter((reference) => reference.kind === 'task')) {
-    const target = references.find((reference) =>
-      reference.kind === 'feature' && reference.refName === source.promotionTargetRefName
-    );
-    if (target && source.refName !== target.refName) {
-      candidates.push({
-        sourceRefName: source.refName,
-        targetRefName: target.refName,
-        requireTargetAncestor: false
-      });
-    }
-  }
+  appendMappedPromotionCandidates(candidates, references);
 
   for (const source of references.filter((reference) => reference.kind === 'sync')) {
     const target = resolveFlowSyncPullRequestTarget(source, references);
@@ -86,6 +77,28 @@ export async function loadFlowPullRequestTargets(
     signal,
     execGit
   )));
+}
+
+function appendMappedPromotionCandidates(
+  candidates: FlowPullRequestCandidate[],
+  references: readonly FlowBranchInfo[]
+): void {
+  for (const source of references.filter((reference) =>
+    reference.kind === 'task' || reference.kind === 'bug'
+  )) {
+    const target = references.find((reference) =>
+      reference.refName === source.promotionTargetRefName
+      && (source.kind === 'task'
+        ? reference.kind === 'feature'
+        : reference.kind === 'release' || reference.kind === 'feature')
+    );
+    if (!target || source.refName === target.refName) continue;
+    candidates.push({
+      sourceRefName: source.refName,
+      targetRefName: target.refName,
+      requireTargetAncestor: false
+    });
+  }
 }
 
 function resolveFlowSyncPullRequestTarget(

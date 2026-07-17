@@ -106,7 +106,7 @@ export async function startFlowBranch(
     await repository.createBranch(branchName, true, options.sourceBranch);
     branchCreated = true;
     await services.referenceManager.unsetBranchUpstream(repository, branchName);
-    if (options.kind === 'task') {
+    if (options.kind === 'task' || options.kind === 'bug') {
       await (dependencies.setTarget ?? setFlowBranchTarget)(
         repository.rootUri.fsPath,
         branchName,

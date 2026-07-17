@@ -63,7 +63,7 @@ import {
 } from '../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
 import { RevisionGraphFlowGovernanceWorkflow, type FlowAiTextImprover } from './flow/governanceWorkflow';
-import { createFlowAiTextDocumentContextProvider } from './flow/aiTextDocumentContext';
+import { createFlowAiTextContextProvider } from './flow/aiTextContext';
 import { RevisionGraphRemoteTagStatePublisher } from './remoteTagStatePublisher';
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -241,7 +241,7 @@ export class RevisionGraphController implements vscode.Disposable {
       postActionLoading: (label) => this.postActionLoading(label),
       postCurrentState: () => this.postCurrentState(),
       postHostMessage: (message) => this.postHostMessage(message)
-    }, flowAiTextImprover, createFlowAiTextDocumentContextProvider(this.backend));
+    }, flowAiTextImprover, createFlowAiTextContextProvider(this.backend));
     this.remoteTagStatePublisher = new RevisionGraphRemoteTagStatePublisher({
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
