@@ -138,7 +138,9 @@ Recorded verification:
   branch, remote, tag, and stash tooltips, with accessible labels and a textual fallback for
   unexpected kinds. It passed `npm run quality:check` with 224 production files and 2,111
   functions, `npm run build`, all 753 tests, and `git diff --check`; `graphify update .` rebuilt
-  4,521 nodes, 8,870 edges, and 362 communities. Targeted visual confirmation remains pending.
+  4,521 nodes, 8,870 edges, and 362 communities. Maintainer visual review on 2026-07-17 confirmed
+  that the cloud icon is appropriate for Remote references; the remaining targeted tooltip smoke
+  remains pending.
 
 - Task promotion context was completed on 2026-07-17. Tasks created through Flow Governance now
   persist their exact source feature, expose a single authorized `task -> feature` handoff, verify
