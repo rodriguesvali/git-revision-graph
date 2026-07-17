@@ -816,8 +816,13 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.flow-badge-icon\[data-icon="tasklist"\] \{ width: 11px; height: 11px; \}/);
   assert.match(html, /body\.vscode-high-contrast \.flow-badge,[\s\S]*?body\.vscode-high-contrast-light \.flow-badge \{[\s\S]*?--vscode-contrastBorder/s);
   assert.match(html, /function renderReferenceTooltipKind\(flowKind, referenceKind\)/);
+  assert.match(html, /flowKind !== 'unknown'/);
   assert.match(html, /reference-tooltip-flow-badge flow-badge flow-kind-/);
   assert.match(html, /role="img" aria-label="[\s\S]*?branch type/);
+  assert.match(html, /reference-tooltip-unknown-kind/);
+  assert.match(html, /reference-tooltip-unknown-kind[\s\S]*?aria-hidden="true"/);
+  assert.match(html, /reference-tooltip-unknown-label[\s\S]*?escapeHtml\(kindLabel\)[\s\S]*?branch/);
+  assert.match(html, /\.reference-tooltip-unknown-label \{[\s\S]*?color: var\(--muted\);[\s\S]*?font-size: 10px;[\s\S]*?white-space: nowrap;/s);
   assert.match(html, /renderRevisionGraphWebviewFlowKindIcon\(flowKind\)/);
   assert.doesNotMatch(html, /--flow-kind-accent/);
   assert.doesNotMatch(html, /\.flow-badge\.flow-kind-(?:main|release|feature|task)/);

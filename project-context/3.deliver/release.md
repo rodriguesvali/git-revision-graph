@@ -124,10 +124,16 @@ Recorded verification:
   removed the button-like border and saturated per-kind backgrounds from graph badges, reduced
   their footprint to 18px, added high-contrast outlines, kept only subdued kind accents in textual
   tooltip chips, and changed Release/Feature to the clearer `rocket`/`lightbulb` glyphs. A follow-up
-  carries the same tonal icon badge into Flow Governance tooltips with full accessible kind labels.
-  Targeted visual Extension Development Host validation completed by maintainer confirmation on
-  2026-07-17. The release-wide final Extension Development Host smoke remains a separate pending
-  gate.
+  carries the same tonal icon badge into Flow Governance tooltips. A subsequent learnability
+  refinement briefly displayed every complete `<kind> branch` label beside its tooltip icon, but
+  maintainer review found that redundant for known kinds. The final behavior keeps known tooltips
+  icon-only with accessible branch-type labels and displays `Unknown branch` only when the
+  question-mark icon cannot provide a classification. The refinement passed
+  `npm run quality:check` with 223 production files and 2,110 functions, `npm run build`, all 751
+  tests, and `git diff --check`; `graphify update .` rebuilt 4,515 nodes, 8,866 edges, and 361
+  communities. The original icon treatment received targeted visual Extension Development Host
+  confirmation on 2026-07-17; the unknown-label follow-up and release-wide final Extension
+  Development Host smoke remain pending gates.
 
 - Task promotion context was completed on 2026-07-17. Tasks created through Flow Governance now
   persist their exact source feature, expose a single authorized `task -> feature` handoff, verify

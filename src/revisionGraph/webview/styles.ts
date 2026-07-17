@@ -336,6 +336,18 @@ export function renderRevisionGraphStyles(): string {
       line-height: 12px;
       text-transform: uppercase;
     }
+    .reference-tooltip-unknown-kind {
+      display: inline-flex; align-items: center;
+      flex: 0 0 auto;
+      gap: 6px;
+    }
+    .reference-tooltip-unknown-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
     .reference-tooltip-name {
       min-width: 0;
       overflow-wrap: anywhere;

@@ -171,12 +171,25 @@
       }
 
       const kindLabel = getRevisionGraphWebviewFlowKindLabel(flowKind);
-      return '  <span class="reference-tooltip-flow-badge flow-badge flow-kind-'
+      if (flowKind !== 'unknown') {
+        return '  <span class="reference-tooltip-flow-badge flow-badge flow-kind-'
+          + escapeHtml(flowKind)
+          + '" role="img" aria-label="'
+          + escapeHtml(kindLabel)
+          + ' branch type">'
+          + renderRevisionGraphWebviewFlowKindIcon(flowKind)
+          + '</span>';
+      }
+
+      return '  <span class="reference-tooltip-unknown-kind">'
+        + '<span class="reference-tooltip-flow-badge flow-badge flow-kind-'
         + escapeHtml(flowKind)
-        + '" role="img" aria-label="'
-        + escapeHtml(kindLabel)
-        + ' branch type">'
+        + '" aria-hidden="true">'
         + renderRevisionGraphWebviewFlowKindIcon(flowKind)
+        + '</span>'
+        + '<span class="reference-tooltip-unknown-label">'
+        + escapeHtml(kindLabel)
+        + ' branch</span>'
         + '</span>';
     }
 
