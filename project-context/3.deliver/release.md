@@ -133,7 +133,12 @@ Recorded verification:
   tests, and `git diff --check`; `graphify update .` rebuilt 4,515 nodes, 8,866 edges, and 361
   communities. The original icon treatment received targeted visual Extension Development Host
   confirmation on 2026-07-17; the unknown-label follow-up and release-wide final Extension
-  Development Host smoke remain pending gates.
+  Development Host smoke remain pending gates. A final neutral-reference refinement reuses the
+  Show Log target, branch, cloud, tag, and archive shapes as icon-only tonal badges for HEAD,
+  branch, remote, tag, and stash tooltips, with accessible labels and a textual fallback for
+  unexpected kinds. It passed `npm run quality:check` with 224 production files and 2,111
+  functions, `npm run build`, all 753 tests, and `git diff --check`; `graphify update .` rebuilt
+  4,521 nodes, 8,870 edges, and 362 communities. Targeted visual confirmation remains pending.
 
 - Task promotion context was completed on 2026-07-17. Tasks created through Flow Governance now
   persist their exact source feature, expose a single authorized `task -> feature` handoff, verify

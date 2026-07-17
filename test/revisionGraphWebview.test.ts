@@ -816,6 +816,10 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /\.flow-badge-icon\[data-icon="tasklist"\] \{ width: 11px; height: 11px; \}/);
   assert.match(html, /body\.vscode-high-contrast \.flow-badge,[\s\S]*?body\.vscode-high-contrast-light \.flow-badge \{[\s\S]*?--vscode-contrastBorder/s);
   assert.match(html, /function renderReferenceTooltipKind\(flowKind, referenceKind\)/);
+  assert.match(html, /getRevisionGraphWebviewReferenceKindLabel\(referenceKind\)/);
+  assert.match(html, /renderRevisionGraphWebviewReferenceKindIcon\(referenceKind\)/);
+  assert.match(html, /reference-tooltip-kind-badge flow-badge/);
+  assert.match(html, /escapeHtml\(referenceKindLabel\)[\s\S]*?reference/);
   assert.match(html, /flowKind !== 'unknown'/);
   assert.match(html, /reference-tooltip-flow-badge flow-badge flow-kind-/);
   assert.match(html, /role="img" aria-label="[\s\S]*?branch type/);
@@ -2280,6 +2284,46 @@ test('maps every Flow Governance kind to an accessible Codicon presentation', ()
     assert.match(iconMarkup, new RegExp(`data-icon="${iconName}"`));
     assert.match(iconMarkup, /aria-hidden="true" focusable="false" fill="currentColor"/);
   }
+});
+
+test('maps every neutral reference kind to the established Show Log icon language', () => {
+  const runtime = createWebviewRuntime();
+  const expectedPresentations = {
+    head: ['HEAD', 'target'],
+    branch: ['Branch', 'branch'],
+    remote: ['Remote', 'cloud'],
+    tag: ['Tag', 'tag'],
+    stash: ['Stash', 'archive']
+  };
+
+  for (const [referenceKind, [label, iconName]] of Object.entries(expectedPresentations)) {
+    assert.equal(runtime.context.getRevisionGraphWebviewReferenceKindLabel(referenceKind), label);
+    const iconMarkup = runtime.context.renderRevisionGraphWebviewReferenceKindIcon(referenceKind);
+    assert.match(iconMarkup, new RegExp(`data-icon="${iconName}"`));
+    assert.match(iconMarkup, /aria-hidden="true" focusable="false" fill="none" stroke="currentColor"/);
+  }
+
+  assert.equal(runtime.context.getRevisionGraphWebviewReferenceKindLabel('unexpected'), null);
+  assert.equal(runtime.context.renderRevisionGraphWebviewReferenceKindIcon('unexpected'), '');
+});
+
+test('renders neutral reference tooltip icons without overriding Flow Governance kinds', () => {
+  const runtime = createWebviewRuntime();
+
+  const tagMarkup = runtime.context.renderReferenceTooltipKind(null, 'tag');
+  assert.match(tagMarkup, /class="reference-tooltip-kind-badge flow-badge" role="img" aria-label="Tag reference"/);
+  assert.match(tagMarkup, /data-icon="tag"/);
+
+  const fallbackMarkup = runtime.context.renderReferenceTooltipKind(null, 'custom<kind>');
+  assert.equal(fallbackMarkup, '  <span class="reference-tooltip-kind">custom&lt;kind&gt;</span>');
+
+  const releaseMarkup = runtime.context.renderReferenceTooltipKind('release', 'branch');
+  assert.match(releaseMarkup, /reference-tooltip-flow-badge flow-badge flow-kind-release/);
+  assert.match(releaseMarkup, /aria-label="Release branch type"/);
+  assert.doesNotMatch(releaseMarkup, /reference-tooltip-kind-badge/);
+
+  const unknownMarkup = runtime.context.renderReferenceTooltipKind('unknown', 'branch');
+  assert.match(unknownMarkup, /reference-tooltip-unknown-label">Unknown branch/);
 });
 
 test('commits revision graph virtual scene markup through the typed module', () => {

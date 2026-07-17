@@ -165,8 +165,18 @@
 
     function renderReferenceTooltipKind(flowKind: string | null, referenceKind: string): string {
       if (!flowKind) {
+        const referenceKindLabel = getRevisionGraphWebviewReferenceKindLabel(referenceKind);
+        const referenceKindIcon = renderRevisionGraphWebviewReferenceKindIcon(referenceKind);
+        if (referenceKindLabel && referenceKindIcon) {
+          return '  <span class="reference-tooltip-kind-badge flow-badge" role="img" aria-label="'
+            + escapeHtml(referenceKindLabel)
+            + ' reference">'
+            + referenceKindIcon
+            + '</span>';
+        }
+
         return '  <span class="reference-tooltip-kind">'
-          + escapeHtml(getReferenceKindLabel(referenceKind))
+          + escapeHtml(referenceKind)
           + '</span>';
       }
 
@@ -282,9 +292,4 @@
       const top = Math.max(margin, Math.min(anchor.top - 4, window.innerHeight - tooltipRect.height - margin));
       referenceTooltip.style.left = Math.max(margin, left) + 'px';
       referenceTooltip.style.top = top + 'px';
-    }
-
-    function getReferenceKindLabel(kind: string): string {
-      const labels: Readonly<Record<string, string>> = { head: 'head', branch: 'branch', remote: 'remote', tag: 'tag', stash: 'stash' };
-      return labels[kind] || kind;
     }
