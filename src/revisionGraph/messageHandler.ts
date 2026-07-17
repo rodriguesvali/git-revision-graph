@@ -2,6 +2,7 @@ import { Repository } from '../git';
 import { isAbortError } from '../errors';
 import { RevisionGraphCommitShortStat, RevisionGraphMessage } from '../revisionGraphTypes';
 import type { FlowGovernanceOptionsUpdate } from './flow';
+import type { FlowAiTextImprovementInput } from './flow/aiTextAssistant';
 import { formatShortCommitHash } from '../commitHash';
 import { createRevisionGraphCommitShortStatMessage } from './hostMessages';
 import { ShowLogPresenter } from '../showLogView';
@@ -48,9 +49,21 @@ export interface RevisionGraphMessageHandlerHost
   copyFlowPullRequestContextField(
     sourceRefName: string,
     targetRefName: string,
-    field: 'title' | 'description'
+    field: 'title' | 'description',
+    text: string
   ): Promise<void>;
-  openFlowPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void>;
+  openFlowPullRequestUrl(
+    sourceRefName: string,
+    targetRefName: string,
+    title: string,
+    description: string
+  ): Promise<void>;
+  improveFlowText(requestId: number, input: FlowAiTextImprovementInput): Promise<void>;
+  cancelFlowAiText(
+    requestId: number,
+    surface: 'pull-request' | 'release',
+    field: 'title' | 'description'
+  ): void;
   clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
     phase: string,
@@ -126,11 +139,39 @@ export class RevisionGraphMessageHandler {
         await this.host.copyFlowPullRequestContextField(
           message.sourceRefName,
           message.targetRefName,
-          message.field
+          message.field,
+          message.text
         );
       },
       'open-flow-pr-url': async (message) => {
-        await this.host.openFlowPullRequestUrl(message.sourceRefName, message.targetRefName);
+        await this.host.openFlowPullRequestUrl(
+          message.sourceRefName,
+          message.targetRefName,
+          message.title,
+          message.description
+        );
+      },
+      'improve-flow-pr-text': async (message) => {
+        await this.host.improveFlowText(message.requestId, {
+          surface: 'pull-request',
+          field: message.field,
+          sourceRefName: message.sourceRefName,
+          targetRefName: message.targetRefName,
+          title: message.title,
+          description: message.description
+        });
+      },
+      'improve-flow-release-text': async (message) => {
+        await this.host.improveFlowText(message.requestId, {
+          surface: 'release',
+          field: 'description',
+          sourceRefName: message.sourceRefName,
+          releaseName: message.releaseName,
+          text: message.text
+        });
+      },
+      'cancel-flow-ai-text': async (message) => {
+        this.host.cancelFlowAiText(message.requestId, message.surface, message.field);
       },
       'compare-selected': async (message) => {
         await this.refActionWorkflow.compareSelected(

@@ -26,6 +26,7 @@ interface RevisionGraphWebviewFlowBranchDialogElements {
   readonly shortNameLabel: HTMLLabelElement;
   readonly shortNameInput: HTMLInputElement;
   readonly descriptionInput: HTMLTextAreaElement;
+  readonly descriptionAiButton: HTMLButtonElement;
   readonly error: HTMLElement;
 }
 
@@ -35,6 +36,9 @@ interface RevisionGraphWebviewFlowBranchDialogController {
     branchKind: RevisionGraphWebviewFlowBranchKind
   ) => void;
   readonly close: () => void;
+  readonly showImprovementResult: (
+    result: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'set-flow-ai-text-result' }>
+  ) => void;
 }
 
 interface RevisionGraphWebviewFlowBranchDialogDependencies {
@@ -45,6 +49,12 @@ interface RevisionGraphWebviewFlowBranchDialogDependencies {
     name: string,
     description: string
   ) => void;
+  readonly improveReleaseText: (
+    sourceRefName: string,
+    releaseName: string,
+    text: string
+  ) => number;
+  readonly cancelImprovement: (requestId: number) => void;
 }
 
 function showRevisionGraphWebviewFlowBranchForm(
@@ -91,9 +101,11 @@ function createRevisionGraphWebviewFlowBranchDialogController(
   let elements: RevisionGraphWebviewFlowBranchDialogElements | null = null;
   let target: RevisionGraphWebviewTarget | null = null;
   let branchKind: RevisionGraphWebviewFlowBranchKind | null = null;
+  let pendingRequestId: number | undefined;
 
   function show(nextTarget: RevisionGraphWebviewTarget, nextBranchKind: RevisionGraphWebviewFlowBranchKind): void {
     dependencies.closeContextMenu();
+    cancelPendingImprovement();
     const dialog = ensureDialog();
     const copy = getRevisionGraphWebviewFlowBranchDialogCopy(nextBranchKind);
     const usesStructuredName = isRevisionGraphWebviewStructuredFlowBranchKind(nextBranchKind);
@@ -118,6 +130,8 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     dialog.taskDevInput.value = '';
     dialog.shortNameInput.value = '';
     dialog.descriptionInput.value = '';
+    dialog.descriptionAiButton.hidden = nextBranchKind !== 'release';
+    syncAiAction();
     setError('');
     dialog.backdrop.hidden = false;
     document.body.classList.add('flow-dialog-open');
@@ -128,10 +142,60 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     if (!elements) {
       return;
     }
+    cancelPendingImprovement();
     elements.backdrop.hidden = true;
     target = null;
     branchKind = null;
     document.body.classList.remove('flow-dialog-open');
+  }
+
+  function showImprovementResult(
+    result: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'set-flow-ai-text-result' }>
+  ): void {
+    if (result.surface !== 'release' || result.field !== 'description'
+      || result.requestId !== pendingRequestId) return;
+    pendingRequestId = undefined;
+    syncAiAction();
+    if (result.status === 'ready' && typeof result.content === 'string') {
+      ensureDialog().descriptionInput.value = result.content;
+      syncAiAction();
+    }
+  }
+
+  function improveReleaseText(): void {
+    const dialog = ensureDialog();
+    if (!target || branchKind !== 'release') return;
+    const releaseName = dialog.nameInput.value.trim();
+    const text = dialog.descriptionInput.value.trim();
+    if (!releaseName || !text) return;
+    cancelPendingImprovement();
+    pendingRequestId = dependencies.improveReleaseText(target.name, releaseName, text);
+    syncAiAction();
+  }
+
+  function cancelPendingImprovement(): void {
+    if (pendingRequestId === undefined) return;
+    const requestId = pendingRequestId;
+    pendingRequestId = undefined;
+    dependencies.cancelImprovement(requestId);
+  }
+
+  function handleReleaseInput(): void {
+    cancelPendingImprovement();
+    syncAiAction();
+  }
+
+  function syncAiAction(): void {
+    if (!elements) return;
+    const enabled = branchKind === 'release'
+      && !!target
+      && !!elements.nameInput.value.trim()
+      && !!elements.descriptionInput.value.trim();
+    setRevisionGraphWebviewFlowAiTextButtonState(
+      elements.descriptionAiButton,
+      enabled,
+      pendingRequestId !== undefined
+    );
   }
 
   function submit(event: Event): void {
@@ -216,7 +280,12 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     descriptionInput.required = true;
     descriptionInput.setAttribute('aria-required', 'true');
     descriptionInput.maxLength = 2048;
-    descriptionLabel.append(descriptionText, descriptionInput);
+    const descriptionRow = document.createElement('div');
+    descriptionRow.className = 'flow-ai-field-row';
+    const descriptionAiButton = createRevisionGraphWebviewFlowAiTextButton('Improve with AI');
+    descriptionAiButton.hidden = true;
+    descriptionRow.append(descriptionInput, descriptionAiButton);
+    descriptionLabel.append(descriptionText, descriptionRow);
     form.appendChild(descriptionLabel);
 
     const error = document.createElement('div');
@@ -252,6 +321,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
       shortNameLabel: shortName.label,
       shortNameInput: shortName.input,
       descriptionInput,
+      descriptionAiButton,
       error
     };
     backdrop.addEventListener('click', (event) => {
@@ -260,6 +330,9 @@ function createRevisionGraphWebviewFlowBranchDialogController(
       }
     });
     cancelButton.addEventListener('click', close);
+    descriptionAiButton.addEventListener('click', improveReleaseText);
+    name.input.addEventListener('input', handleReleaseInput);
+    descriptionInput.addEventListener('input', handleReleaseInput);
     form.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -270,7 +343,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     return elements;
   }
 
-  return { show, close };
+  return { show, close, showImprovementResult };
 }
 
 function createRevisionGraphWebviewFlowBranchTextField(

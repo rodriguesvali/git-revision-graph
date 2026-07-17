@@ -29,6 +29,7 @@ const exportedNames = [
   'createRevisionGraphFocusRangeMessage',
   'createRevisionGraphWebviewContextMenuPlan',
   'createRevisionGraphWebviewContextSubmenuCloseScheduler',
+  'createRevisionGraphWebviewFlowAiTextInteractions',
   'createRevisionGraphWebviewNodeRenderKey',
   'createRevisionGraphWebviewRelationshipHighlights',
   'createRevisionGraphWebviewRuntimeStateModel',

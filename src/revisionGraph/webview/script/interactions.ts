@@ -526,13 +526,14 @@
       contextMenu.appendChild(button);
     }
 
+    const flowAiTextInteractions = createRevisionGraphWebviewFlowAiTextInteractions((message) => vscode.postMessage(message));
     const flowBranchDialogController = createRevisionGraphWebviewFlowBranchDialogController({
       closeContextMenu,
       submit: (target, branchKind, name, description) => {
         vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
-      }
+      },
+      ...flowAiTextInteractions.releaseDependencies
     });
-
     function showFlowBranchForm(target: RevisionGraphWebviewTarget, branchKind: RevisionGraphWebviewFlowBranchKind) {
       flowBranchDialogController.show(target, branchKind);
     }
@@ -546,24 +547,11 @@
       );
     }
 
-    function copyFlowPullRequestContextField(
-      sourceRefName: string,
-      targetRefName: string,
-      field: 'title' | 'description'
-    ) {
-      vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(
-        sourceRefName,
-        targetRefName,
-        field
-      ));
-    }
-
     const flowPullRequestDialogController = createRevisionGraphWebviewFlowPullRequestDialogController({
       closeContextMenu,
       getTargets: getFlowPullRequestTargets,
       requestContext: postCopyFlowPullRequestContext,
-      copyField: copyFlowPullRequestContextField,
-      openUrl: postOpenFlowPullRequestUrl,
+      ...flowAiTextInteractions.pullRequestDependencies,
       renderCopyIcon: renderCopyHashIcon
     });
 
@@ -571,9 +559,7 @@
       flowPullRequestDialogController.open(target);
     }
 
-    function showFlowPullRequestContextForm(
-      context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>
-    ) {
+    function showFlowPullRequestContextForm(context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>) {
       flowPullRequestDialogController.showContext(context);
     }
 
@@ -697,10 +683,6 @@
 
     function postCopyFlowPullRequestContext(sourceRefName: string, targetRefName: string) {
       vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName));
-    }
-
-    function postOpenFlowPullRequestUrl(sourceRefName: string, targetRefName: string) {
-      vscode.postMessage(createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName, targetRefName));
     }
 
     function getFlowProductionBranchName() {

@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import { CompareResultsViewProvider } from './compareResultsView';
 import { createWorkbenchAiCompareBriefingGenerator } from './workbenchAiCompareBriefing';
+import { createWorkbenchAiFlowTextImprover } from './workbenchAiFlowTextAssistant';
 import { RefCommandServices } from './refCommands';
 import { API, GitExtension } from './git';
 import { configureGitExecutablePath } from './gitExec';
@@ -76,7 +77,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     },
     backend,
     () => layoutCachePersistence.clear(),
-    mutationCoordinator
+    mutationCoordinator,
+    createWorkbenchAiFlowTextImprover()
   );
   const commandServices = createCommandServices(
     revisionGraphEditorPanel,

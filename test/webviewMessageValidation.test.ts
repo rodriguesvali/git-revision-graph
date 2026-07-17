@@ -592,12 +592,16 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
     validateRevisionGraphMessage({
       type: 'open-flow-pr-url',
       sourceRefName: 'release/1.0.0',
-      targetRefName: 'main'
+      targetRefName: 'main',
+      title: 'Promote release 1.0.0',
+      description: 'Promotion details'
     }),
     {
       type: 'open-flow-pr-url',
       sourceRefName: 'release/1.0.0',
-      targetRefName: 'main'
+      targetRefName: 'main',
+      title: 'Promote release 1.0.0',
+      description: 'Promotion details'
     }
   );
   assert.deepEqual(
@@ -605,13 +609,15 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       type: 'copy-flow-pr-context-field',
       sourceRefName: 'release/1.0.0',
       targetRefName: 'main',
-      field: 'description'
+      field: 'description',
+      text: 'Promotion details'
     }),
     {
       type: 'copy-flow-pr-context-field',
       sourceRefName: 'release/1.0.0',
       targetRefName: 'main',
-      field: 'description'
+      field: 'description',
+      text: 'Promotion details'
     }
   );
   assert.deepEqual(
@@ -970,7 +976,10 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0' },
+      {
+        type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0',
+        title: 'Promote feature demo', description: 'Promotion details'
+      },
       governedFlowState
     ),
     true
@@ -1009,10 +1018,54 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
         type: 'copy-flow-pr-context-field',
         sourceRefName: 'release/1.0.0',
         targetRefName: 'main',
-        field: 'title'
+        field: 'title',
+        text: 'Promote release 1.0.0'
       },
       governedFlowState
     ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-pr-text',
+      requestId: 1,
+      sourceRefName: 'release/1.0.0',
+      targetRefName: 'main',
+      field: 'description',
+      title: 'Promote release 1.0.0',
+      description: 'Promotion context'
+    }, governedFlowState),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-pr-text',
+      requestId: 2,
+      sourceRefName: 'release/2.0.0',
+      targetRefName: 'main',
+      field: 'title',
+      title: 'Unverified promotion',
+      description: 'Promotion context'
+    }, governedFlowState),
+    false
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-release-text',
+      requestId: 3,
+      sourceRefName: 'main',
+      releaseName: '3.0.0',
+      text: 'Next release'
+    }, governedFlowState),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'cancel-flow-ai-text',
+      requestId: 3,
+      surface: 'release',
+      field: 'description'
+    }, governedFlowState),
     true
   );
   assert.equal(
@@ -1179,14 +1232,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'main' },
+      {
+        type: 'open-flow-pr-url', sourceRefName: 'feature/demo', targetRefName: 'main',
+        title: 'Promote feature demo', description: 'Promotion details'
+      },
       governedFlowState
     ),
     false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
-      { type: 'open-flow-pr-url', sourceRefName: 'release/1.0.0', targetRefName: 'missing' },
+      {
+        type: 'open-flow-pr-url', sourceRefName: 'release/1.0.0', targetRefName: 'missing',
+        title: 'Promote release 1.0.0', description: 'Promotion details'
+      },
       governedFlowState
     ),
     false
@@ -1252,6 +1311,73 @@ test('isRevisionGraphMessageAllowedForCurrentRepository rejects stale repository
     ),
     true
   );
+});
+
+test('validateRevisionGraphMessage bounds and sanitizes Flow AI requests', () => {
+  assert.deepEqual(validateRevisionGraphMessage({
+    type: 'improve-flow-pr-text',
+    requestId: 3.4,
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    field: 'description',
+    title: 'Promote release 2.0.0',
+    description: 'Clarify the promotion context.'
+  }), {
+    type: 'improve-flow-pr-text',
+    requestId: 3,
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    field: 'description',
+    title: 'Promote release 2.0.0',
+    description: 'Clarify the promotion context.'
+  });
+  assert.deepEqual(validateRevisionGraphMessage({
+    type: 'improve-flow-release-text',
+    requestId: 4,
+    sourceRefName: 'main',
+    releaseName: '2.0.0',
+    text: 'Stable release.'
+  }), {
+    type: 'improve-flow-release-text',
+    requestId: 4,
+    sourceRefName: 'main',
+    releaseName: '2.0.0',
+    text: 'Stable release.'
+  });
+  assert.deepEqual(validateRevisionGraphMessage({
+    type: 'cancel-flow-ai-text',
+    requestId: 4,
+    surface: 'release',
+    field: 'description'
+  }), {
+    type: 'cancel-flow-ai-text',
+    requestId: 4,
+    surface: 'release',
+    field: 'description'
+  });
+
+  assert.equal(validateRevisionGraphMessage({
+    type: 'improve-flow-pr-text',
+    requestId: -1,
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    field: 'title',
+    title: 'Release',
+    description: 'Promotion details'
+  }), undefined);
+  assert.equal(validateRevisionGraphMessage({
+    type: 'improve-flow-release-text',
+    requestId: 5,
+    sourceRefName: 'main',
+    releaseName: '2.0.0',
+    text: 'x'.repeat(2049)
+  }), undefined);
+  assert.equal(validateRevisionGraphMessage({
+    type: 'cancel-flow-ai-text',
+    requestId: 5,
+    surface: 'release',
+    field: 'title'
+  }), undefined);
 });
 
 test('validateCompareResultsWebviewMessage rejects malformed compare result messages', () => {

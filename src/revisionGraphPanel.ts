@@ -9,6 +9,7 @@ import { REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE } from './revisionGraphTypes';
 import { ShowLogPresenter } from './showLogView';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 import { RepositoryMutationCoordinator } from './repositoryMutationCoordinator';
+import type { FlowAiTextImprover } from './revisionGraph/flow/aiTextAssistant';
 
 export class RevisionGraphEditorPanel implements vscode.Disposable {
   private readonly controller: RevisionGraphController;
@@ -22,7 +23,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     private readonly closeDependentViews: () => Promise<void> | void = () => undefined,
     backend: RevisionGraphBackend = createRevisionGraphBackend(),
     clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
-    mutationCoordinator?: RepositoryMutationCoordinator
+    mutationCoordinator?: RepositoryMutationCoordinator,
+    flowAiTextImprover?: FlowAiTextImprover
   ) {
     this.controller = new RevisionGraphController(
       extensionUri,
@@ -33,7 +35,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       REVISION_GRAPH_EDITOR_PANEL_VIEW_TYPE,
       undefined,
       clearLayoutCache,
-      mutationCoordinator
+      mutationCoordinator,
+      flowAiTextImprover
     );
   }
 

@@ -31,6 +31,9 @@ const REVISION_GRAPH_MESSAGE_AUTHORIZATION_POLICIES: RevisionGraphMessageAuthori
   'copy-flow-pr-context': { repositoryScoped: true, isAllowed: authorizeFlowPullRequestContext },
   'copy-flow-pr-context-field': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
   'open-flow-pr-url': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
+  'improve-flow-pr-text': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
+  'improve-flow-release-text': { repositoryScoped: true, isAllowed: authorizeFlowReleaseText },
+  'cancel-flow-ai-text': { repositoryScoped: true, isAllowed: authorizeFlowAiTextCancellation },
   'compare-selected': { repositoryScoped: true, isAllowed: authorizeCompareSelected },
   'show-log': { repositoryScoped: true, isAllowed: authorizeShowLog },
   'open-unified-diff': { repositoryScoped: true, isAllowed: authorizeOpenUnifiedDiff },
@@ -109,6 +112,13 @@ function authorizeFlowGovernanceOptions(
   return state.viewMode === 'ready' && !!state.flowGovernance;
 }
 
+function authorizeFlowAiTextCancellation(
+  _message: RevisionGraphMessageOf<'cancel-flow-ai-text'>,
+  state: RevisionGraphViewState
+): boolean {
+  return state.viewMode === 'ready' && state.flowGovernance?.enabled === true;
+}
+
 function authorizeFlowBranchStart(
   message: RevisionGraphMessageOf<'start-flow-branch'>,
   state: RevisionGraphViewState
@@ -143,7 +153,7 @@ function authorizeFlowPullRequestContext(
 }
 
 function authorizeEligibleFlowPullRequestTarget(
-  message: RevisionGraphMessageOf<'copy-flow-pr-context-field' | 'open-flow-pr-url'>,
+  message: RevisionGraphMessageOf<'copy-flow-pr-context-field' | 'open-flow-pr-url' | 'improve-flow-pr-text'>,
   state: RevisionGraphViewState
 ): boolean {
   return isFlowPullRequestTargetKnown(message, state)
@@ -156,13 +166,24 @@ function authorizeEligibleFlowPullRequestTarget(
 }
 
 function isFlowPullRequestTargetKnown(
-  message: RevisionGraphMessageOf<'copy-flow-pr-context' | 'copy-flow-pr-context-field' | 'open-flow-pr-url'>,
+  message: RevisionGraphMessageOf<'copy-flow-pr-context' | 'copy-flow-pr-context-field' | 'open-flow-pr-url' | 'improve-flow-pr-text'>,
   state: RevisionGraphViewState
 ): boolean {
   return state.viewMode === 'ready'
     && state.flowGovernance?.enabled === true
     && hasKnownReferenceName(state, message.sourceRefName)
     && hasKnownReferenceName(state, message.targetRefName);
+}
+
+function authorizeFlowReleaseText(
+  message: RevisionGraphMessageOf<'improve-flow-release-text'>,
+  state: RevisionGraphViewState
+): boolean {
+  return state.viewMode === 'ready'
+    && state.flowGovernance?.enabled === true
+    && state.flowGovernance.references.some((ref) =>
+      ref.refName === message.sourceRefName && isAllowedFlowStartSourceKind('release', ref.kind)
+    );
 }
 
 function authorizeTrackedCurrentHead(

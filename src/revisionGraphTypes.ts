@@ -66,6 +66,9 @@ export interface RevisionGraphHostTraceContext {
   readonly sentAtMs: number;
 }
 
+export type RevisionGraphFlowAiTextSurface = 'pull-request' | 'release';
+export type RevisionGraphFlowAiTextField = 'title' | 'description';
+
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
@@ -82,6 +85,14 @@ export type RevisionGraphViewHostMessage =
     readonly type: 'show-flow-branch-form';
     readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
+  }
+  | {
+    readonly type: 'set-flow-ai-text-result';
+    readonly requestId: number;
+    readonly surface: RevisionGraphFlowAiTextSurface;
+    readonly field: RevisionGraphFlowAiTextField;
+    readonly status: 'ready' | 'unavailable';
+    readonly content?: string;
   }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };

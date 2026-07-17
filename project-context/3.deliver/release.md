@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (232 production files and 2,277 functions), `npm run build`, and `npm test` (765 tests), including the AI Compare Briefing scroll/copy follow-up. The package-hygiene follow-up removed the obsolete E2E trace, excludes `tmp/**` from Git and VSIX inputs, passed `git diff --check e95542fcd98601dc5c21dd1aa679a19b48c833ec`, and confirmed through `npx vsce ls` that no trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
+| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (240 production files and 2,356 functions), `npm run build`, and `npm test` (781 tests), including editable Promotion PR Context fields, bounded project-document grounding, and adaptive token fitting across available Copilot models. `git diff --check` passed and `graphify update .` refreshed the repository graph. The prior package-hygiene check confirmed through `npx vsce ls` that no obsolete trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -35,6 +35,7 @@ Target version: `2.0.0`
 Focused build artifact:
 
 - `project-context/2.build/features/2.0.0-ai-compare-briefing.md`
+- `project-context/2.build/features/2.0.0-ai-pr-release-assistant.md`
 - `project-context/2.build/features/2.0.0-message-boundary-quality-ratchet.md`
 - `project-context/2.build/features/2.0.0-flow-dialog-controller-extraction.md`
 - `project-context/2.build/features/2.0.0-flow-governance-icon-badges.md`
@@ -56,6 +57,9 @@ Focused build artifact:
 
 Candidate scope:
 
+- Add optional field-level AI text improvement to Flow Governance PR title/description and new-release
+  description forms. Existing deterministic/user-entered content remains the default, requests are
+  explicitly initiated, and improved PR context is transiently host-owned for copy/provider handoff.
 - Add an optional, explicitly invoked AI Compare Briefing to completed Compare Results panels. It uses
   an available GitHub Copilot language model through the VS Code Language Model API, sends only bounded
   path-filtered comparison context after excluding known sensitive paths, renders plain text, and
@@ -118,6 +122,23 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- The AI PR and Release Assistant was implemented on 2026-07-17 as optional icon actions beside PR
+  title, PR description, and new-release description. It uses the VS Code Language Model API only after
+  a field-level user action, bounds and delimits untrusted input, forbids invented release claims, and
+  cancels superseded, closed-form, target-change, and repository-change requests. Improved PR text is
+  held transiently by the host so copy and supported provider URLs use the reviewed value. The follow-up
+  keeps PR title/description editable, validates the exact bounded visible values on explicit actions,
+  and grounds description improvement in a cancellable diff restricted to `README.md`, `CHANGELOG.md`,
+  and approved `project-context` paths. Adaptive fitting now tries the complete prompt across available
+  Copilot models and, when required, progressively reduces only optional documentation using each
+  model's tokenizer; form values and instructions remain intact. Protocol, authorization, prompt/output,
+  document-context, token-fitting, host orchestration, URL override, and webview composition tests were
+  added. Manual Copilot consent/model and visual smoke remain pending. `npm run quality:check` passed with
+  240 production files and 2,356 functions, `npm run build` passed, all 781 tests passed, `git diff
+  --check` passed, and Graphify was refreshed. The styles and interaction-controller ceilings were
+  reduced and an obsolete host-message complexity exception was removed. No command, setting,
+  dependency, Git mutation, version, package, or publication changed.
 
 - AI Compare Briefing was implemented on 2026-07-17 as an optional, user-initiated Compare Results
   action backed by the VS Code Language Model API and an available GitHub Copilot model. Context is

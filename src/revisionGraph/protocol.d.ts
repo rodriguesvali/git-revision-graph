@@ -88,8 +88,37 @@ declare namespace RevisionGraphProtocol {
       readonly sourceRefName: string;
       readonly targetRefName: string;
       readonly field: 'title' | 'description';
+      readonly text: string;
     }
-    | { readonly type: 'open-flow-pr-url'; readonly sourceRefName: string; readonly targetRefName: string }
+    | {
+      readonly type: 'open-flow-pr-url';
+      readonly sourceRefName: string;
+      readonly targetRefName: string;
+      readonly title: string;
+      readonly description: string;
+    }
+    | {
+      readonly type: 'improve-flow-pr-text';
+      readonly requestId: number;
+      readonly sourceRefName: string;
+      readonly targetRefName: string;
+      readonly field: 'title' | 'description';
+      readonly title: string;
+      readonly description: string;
+    }
+    | {
+      readonly type: 'improve-flow-release-text';
+      readonly requestId: number;
+      readonly sourceRefName: string;
+      readonly releaseName: string;
+      readonly text: string;
+    }
+    | {
+      readonly type: 'cancel-flow-ai-text';
+      readonly requestId: number;
+      readonly surface: 'pull-request' | 'release';
+      readonly field: 'title' | 'description';
+    }
     | {
       readonly type: 'compare-selected';
       readonly baseRevision: string;

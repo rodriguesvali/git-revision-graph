@@ -73,5 +73,13 @@ type RevisionGraphWebviewHostMessage =
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: Record<string, unknown> | null }
   | { readonly type: 'show-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string; readonly title: string; readonly description: string }
   | { readonly type: 'show-flow-branch-form'; readonly branchKind: RevisionGraphWebviewFlowBranchKind; readonly sourceRefName: string }
+  | {
+    readonly type: 'set-flow-ai-text-result';
+    readonly requestId: number;
+    readonly surface: 'pull-request' | 'release';
+    readonly field: 'title' | 'description';
+    readonly status: 'ready' | 'unavailable';
+    readonly content?: string;
+  }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };

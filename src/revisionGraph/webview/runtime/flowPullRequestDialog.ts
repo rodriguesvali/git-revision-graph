@@ -5,9 +5,23 @@ interface RevisionGraphWebviewFlowPullRequestDialogDependencies {
   readonly copyField: (
     sourceRefName: string,
     targetRefName: string,
-    field: 'title' | 'description'
+    field: 'title' | 'description',
+    text: string
   ) => void;
-  readonly openUrl: (sourceRefName: string, targetRefName: string) => void;
+  readonly improveText: (
+    sourceRefName: string,
+    targetRefName: string,
+    field: 'title' | 'description',
+    title: string,
+    description: string
+  ) => number;
+  readonly cancelImprovement: (requestId: number, field: 'title' | 'description') => void;
+  readonly openUrl: (
+    sourceRefName: string,
+    targetRefName: string,
+    title: string,
+    description: string
+  ) => void;
   readonly renderCopyIcon: () => string;
 }
 
@@ -15,6 +29,9 @@ interface RevisionGraphWebviewFlowPullRequestDialogController {
   readonly open: (target: RevisionGraphWebviewTarget) => void;
   readonly showContext: (
     context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>
+  ) => void;
+  readonly showImprovementResult: (
+    result: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'set-flow-ai-text-result' }>
   ) => void;
   readonly close: () => void;
 }
@@ -28,6 +45,8 @@ interface RevisionGraphWebviewFlowPullRequestDialogElements {
   readonly descriptionInput: HTMLTextAreaElement;
   readonly titleCopyButton: HTMLButtonElement;
   readonly descriptionCopyButton: HTMLButtonElement;
+  readonly titleAiButton: HTMLButtonElement;
+  readonly descriptionAiButton: HTMLButtonElement;
   readonly warning: HTMLElement;
   readonly openButton: HTMLButtonElement;
 }
@@ -59,9 +78,12 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
   let elements: RevisionGraphWebviewFlowPullRequestDialogElements | null = null;
   let sourceRefName = '';
   let targetRefName = '';
+  let contextReady = false;
+  const pendingRequestIds: Partial<Record<'title' | 'description', number>> = {};
 
   function open(target: RevisionGraphWebviewTarget): void {
     dependencies.closeContextMenu();
+    cancelPendingImprovements();
     const dialog = ensureDialog();
     sourceRefName = target.name;
     targetRefName = '';
@@ -106,18 +128,38 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     setActionsEnabled(true);
   }
 
+  function showImprovementResult(
+    result: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'set-flow-ai-text-result' }>
+  ): void {
+    if (result.surface !== 'pull-request' || pendingRequestIds[result.field] !== result.requestId) {
+      return;
+    }
+    delete pendingRequestIds[result.field];
+    const dialog = ensureDialog();
+    if (result.status !== 'ready' || typeof result.content !== 'string') {
+      syncActions();
+      return;
+    }
+    if (result.field === 'title') dialog.titleInput.value = result.content;
+    else dialog.descriptionInput.value = result.content;
+    syncActions();
+  }
+
   function close(): void {
     if (!elements) {
       return;
     }
+    cancelPendingImprovements();
     elements.backdrop.hidden = true;
     sourceRefName = '';
     targetRefName = '';
+    contextReady = false;
     document.body.classList.remove('flow-dialog-open');
   }
 
   function applyTargetSelection(): void {
     const dialog = ensureDialog();
+    cancelPendingImprovements();
     const candidate = dependencies.getTargets(sourceRefName).find((target) =>
       target.targetRefName === dialog.targetSelect.value
     );
@@ -140,8 +182,43 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
 
   function copyField(field: 'title' | 'description'): void {
     if (sourceRefName && targetRefName) {
-      dependencies.copyField(sourceRefName, targetRefName, field);
+      const dialog = ensureDialog();
+      const text = field === 'title' ? dialog.titleInput.value.trim() : dialog.descriptionInput.value.trim();
+      if (text) dependencies.copyField(sourceRefName, targetRefName, field, text);
     }
+  }
+
+  function improveField(field: 'title' | 'description'): void {
+    const dialog = ensureDialog();
+    if (!sourceRefName || !targetRefName
+      || !dialog.titleInput.value.trim() || !dialog.descriptionInput.value.trim()) return;
+    cancelPendingImprovement(field);
+    const requestId = dependencies.improveText(
+      sourceRefName,
+      targetRefName,
+      field,
+      dialog.titleInput.value.trim(),
+      dialog.descriptionInput.value.trim()
+    );
+    pendingRequestIds[field] = requestId;
+    syncActions();
+  }
+
+  function cancelPendingImprovement(field: 'title' | 'description'): void {
+    const requestId = pendingRequestIds[field];
+    if (requestId === undefined) return;
+    delete pendingRequestIds[field];
+    dependencies.cancelImprovement(requestId, field);
+  }
+
+  function cancelPendingImprovements(): void {
+    cancelPendingImprovement('title');
+    cancelPendingImprovement('description');
+  }
+
+  function handleFieldInput(field: 'title' | 'description'): void {
+    cancelPendingImprovement(field);
+    syncActions();
   }
 
   function setWarning(message: string): void {
@@ -151,10 +228,27 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
   }
 
   function setActionsEnabled(enabled: boolean): void {
+    contextReady = enabled;
+    syncActions();
+  }
+
+  function syncActions(): void {
     const dialog = ensureDialog();
-    dialog.titleCopyButton.disabled = !enabled;
-    dialog.descriptionCopyButton.disabled = !enabled;
-    dialog.openButton.disabled = !enabled;
+    const hasTitle = contextReady && !!dialog.titleInput.value.trim();
+    const hasDescription = contextReady && !!dialog.descriptionInput.value.trim();
+    dialog.titleCopyButton.disabled = !hasTitle;
+    dialog.descriptionCopyButton.disabled = !hasDescription;
+    setRevisionGraphWebviewFlowAiTextButtonState(
+      dialog.titleAiButton,
+      hasTitle && hasDescription,
+      pendingRequestIds.title !== undefined
+    );
+    setRevisionGraphWebviewFlowAiTextButtonState(
+      dialog.descriptionAiButton,
+      hasTitle && hasDescription,
+      pendingRequestIds.description !== undefined
+    );
+    dialog.openButton.disabled = !hasTitle || !hasDescription;
   }
 
   function ensureDialog(): RevisionGraphWebviewFlowPullRequestDialogElements {
@@ -249,15 +343,23 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       descriptionInput: descriptionField.input as HTMLTextAreaElement,
       titleCopyButton: titleField.copyButton,
       descriptionCopyButton: descriptionField.copyButton,
+      titleAiButton: titleField.aiButton,
+      descriptionAiButton: descriptionField.aiButton,
       warning,
       openButton
     };
     titleField.copyButton.addEventListener('click', () => copyField('title'));
     descriptionField.copyButton.addEventListener('click', () => copyField('description'));
+    titleField.aiButton.addEventListener('click', () => improveField('title'));
+    descriptionField.aiButton.addEventListener('click', () => improveField('description'));
+    titleField.input.addEventListener('input', () => handleFieldInput('title'));
+    descriptionField.input.addEventListener('input', () => handleFieldInput('description'));
     targetSelect.addEventListener('change', applyTargetSelection);
     openButton.addEventListener('click', () => {
       if (sourceRefName && targetRefName) {
-        dependencies.openUrl(sourceRefName, targetRefName);
+        const title = elements?.titleInput.value.trim();
+        const description = elements?.descriptionInput.value.trim();
+        if (title && description) dependencies.openUrl(sourceRefName, targetRefName, title, description);
       }
     });
     closeButton.addEventListener('click', close);
@@ -275,7 +377,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     return elements;
   }
 
-  return { open, showContext, close };
+  return { open, showContext, showImprovementResult, close };
 }
 
 function createRevisionGraphWebviewFlowPullRequestContextField(
@@ -287,6 +389,7 @@ function createRevisionGraphWebviewFlowPullRequestContextField(
   readonly container: HTMLElement;
   readonly input: HTMLInputElement | HTMLTextAreaElement;
   readonly copyButton: HTMLButtonElement;
+  readonly aiButton: HTMLButtonElement;
 } {
   const container = document.createElement('div');
   container.className = 'flow-form-field';
@@ -299,7 +402,7 @@ function createRevisionGraphWebviewFlowPullRequestContextField(
   const input = multiline ? document.createElement('textarea') : document.createElement('input');
   input.id = inputId;
   input.className = 'flow-form-input' + (multiline ? ' flow-form-textarea' : '');
-  input.readOnly = true;
+  input.maxLength = multiline ? 2048 : 240;
   if (input instanceof HTMLInputElement) {
     input.type = 'text';
   }
@@ -309,7 +412,8 @@ function createRevisionGraphWebviewFlowPullRequestContextField(
   copyButton.title = 'Copy ' + labelText;
   copyButton.setAttribute('aria-label', 'Copy ' + labelText);
   copyButton.innerHTML = renderCopyIcon();
-  row.append(input, copyButton);
+  const aiButton = createRevisionGraphWebviewFlowAiTextButton('Improve with AI');
+  row.append(input, aiButton, copyButton);
   container.append(label, row);
-  return { container, input, copyButton };
+  return { container, input, copyButton, aiButton };
 }

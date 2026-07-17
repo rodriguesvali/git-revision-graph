@@ -193,6 +193,160 @@ test('Flow Pull Request workflow owns context clipboard orchestration', async (t
   assert.deepEqual(harness.clipboardWrites, ['Merge feature/demo into main']);
 });
 
+test('Flow AI workflow keeps improved Pull Request text in host-owned transient context', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/aiTextWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/aiTextWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  const messages: unknown[] = [];
+  const workflow = new RevisionGraphFlowAiTextWorkflow({
+    getCurrentRepository: () => repository,
+    postHostMessage: (message) => messages.push(message)
+  }, {
+    async improve() {
+      return { status: 'ready', content: 'Ship release 2.0.0' };
+    }
+  });
+  workflow.setPullRequestContext({
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Old title',
+    body: 'Existing description',
+    text: 'Title: Old title\n\nExisting description'
+  });
+
+  await workflow.improve(11, {
+    surface: 'pull-request',
+    field: 'title',
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Old title',
+    description: 'Existing description'
+  });
+
+  assert.deepEqual(workflow.getPullRequestContext('release/2.0.0', 'main'), {
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Ship release 2.0.0',
+    body: 'Existing description',
+    text: 'Title: Ship release 2.0.0\n\nExisting description'
+  });
+  assert.deepEqual(messages, [{
+    type: 'set-flow-ai-text-result',
+    requestId: 11,
+    surface: 'pull-request',
+    field: 'title',
+    status: 'ready',
+    content: 'Ship release 2.0.0'
+  }]);
+  workflow.dispose();
+});
+
+test('Flow AI workflow supplies project-document context when improving a Pull Request description', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/aiTextWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/aiTextWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  let improvementInput: unknown;
+  const workflow = new RevisionGraphFlowAiTextWorkflow({
+    getCurrentRepository: () => repository,
+    postHostMessage: () => undefined
+  }, {
+    async improve(input) {
+      improvementInput = input;
+      return { status: 'ready', content: 'Documented delivery summary' };
+    }
+  }, {
+    async load() {
+      return 'diff --git a/README.md b/README.md\n+AI-assisted Pull Request descriptions';
+    }
+  });
+  workflow.setPullRequestContext({
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Promote release 2.0.0',
+    body: 'Promotion context',
+    text: 'Title: Promote release 2.0.0\n\nPromotion context'
+  });
+
+  await workflow.improve(13, {
+    surface: 'pull-request',
+    field: 'description',
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Promote release 2.0.0',
+    description: 'Promotion context'
+  });
+
+  assert.deepEqual(improvementInput, {
+    surface: 'pull-request',
+    field: 'description',
+    sourceRefName: 'release/2.0.0',
+    targetRefName: 'main',
+    title: 'Promote release 2.0.0',
+    description: 'Promotion context',
+    documentContext: 'diff --git a/README.md b/README.md\n+AI-assisted Pull Request descriptions'
+  });
+  assert.equal(
+    workflow.getPullRequestContext('release/2.0.0', 'main')?.body,
+    'Documented delivery summary'
+  );
+  workflow.dispose();
+});
+
+test('Flow AI workflow cancels and ignores a result after the Pull Request target changes', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/aiTextWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/aiTextWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  const messages: unknown[] = [];
+  let resolveImprovement: ((value: { readonly status: 'ready'; readonly content: string }) => void) | undefined;
+  let token: { readonly isCancellationRequested: boolean } | undefined;
+  const workflow = new RevisionGraphFlowAiTextWorkflow({
+    getCurrentRepository: () => repository,
+    postHostMessage: (message) => messages.push(message)
+  }, {
+    async improve(_input, cancellationToken) {
+      token = cancellationToken;
+      return new Promise((resolve) => { resolveImprovement = resolve; });
+    }
+  });
+  workflow.setPullRequestContext({
+    sourceRefName: 'feature/demo',
+    targetRefName: 'release/2.0.0',
+    title: 'Demo',
+    body: 'Demo body',
+    text: 'Title: Demo\n\nDemo body'
+  });
+
+  const operation = workflow.improve(12, {
+    surface: 'pull-request',
+    field: 'description',
+    sourceRefName: 'feature/demo',
+    targetRefName: 'release/2.0.0',
+    title: 'Demo',
+    description: 'Demo body'
+  });
+  await waitForAsyncHandlers();
+  workflow.setPullRequestContext({
+    sourceRefName: 'feature/demo',
+    targetRefName: 'release/3.0.0',
+    title: 'Demo',
+    body: 'New target',
+    text: 'Title: Demo\n\nNew target'
+  });
+  assert.equal(token?.isCancellationRequested, true);
+  resolveImprovement?.({ status: 'ready', content: 'Stale result' });
+  await operation;
+
+  assert.deepEqual(messages, []);
+  assert.equal(workflow.getPullRequestContext('feature/demo', 'release/3.0.0')?.body, 'New target');
+  workflow.dispose();
+});
+
 test('Feature Pull Request preflight verifies the remote release before checking commits ahead', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(

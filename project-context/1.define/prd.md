@@ -25,6 +25,8 @@ The current package baseline is read from `package.json`. At consolidation time 
 - The graph supports range focus and descendant focus over the currently loaded snapshot.
 - Users can compare refs, compare with worktree, open unified diffs, inspect logs, checkout, create branches and tags, publish branches, push/delete tags, pull/push/sync the current branch, merge refs, abort conflicted merges, stash/apply/pop/drop, reset the current branch, restore worktree files, and delete local or supported remote refs.
 - The extension preserves native VS Code ergonomics for picks, confirmations, diff editors, Source Control handoff, notifications, and theming.
+- AI assistance is optional and explicitly invoked: Compare Results can generate a bounded review briefing,
+  while Flow Governance can improve existing PR and release-form text without replacing normal defaults.
 
 ## Product Principles
 
@@ -33,6 +35,7 @@ The current package baseline is read from `package.json`. At consolidation time 
 - Keep targeted Git CLI calls for graph/history/textual data that the public API does not expose.
 - Preserve multi-repository behavior, empty states, cancellation, and conflict guards.
 - Keep user-visible workflows native where VS Code already has strong primitives.
+- Keep AI features user-controlled, bounded, cancellable, and advisory; they must not initiate Git mutations.
 - Keep feature slices small enough to verify with deterministic tests plus focused manual smoke paths.
 - Promote durable product or architecture learning into `prd.md` or `sad.md`; archive completed feature and release artifacts.
 
@@ -42,6 +45,7 @@ Future work should strengthen the current product rather than introduce a second
 
 - Graph fidelity: commit-centric modeling, projection correctness, layout stability, and better branch/merge readability.
 - Review workflows: faster compare, unified diff, Show Log, and file-level inspection flows.
+- Assisted authoring: optional improvements to review and governance text while preserving user approval.
 - Git workflow safety: clearer confirmations, conflict handling, remote-permission errors, and mutation coordination.
 - Performance: activation cost, bounded Git I/O, projection-only refreshes, layout caching, viewport work, and large-repository validation.
 - Release quality: deterministic packaging, manual smoke matrices, Marketplace copy, and rollback notes.

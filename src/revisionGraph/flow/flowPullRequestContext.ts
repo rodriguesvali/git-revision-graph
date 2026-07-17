@@ -39,20 +39,22 @@ export function createFlowPullRequestContext(sourceRefName: string, targetRefNam
 export function buildFlowPullRequestUrl(
   repository: Repository,
   sourceRefName: string,
-  targetRefName: string
+  targetRefName: string,
+  contextOverride?: Pick<FlowPullRequestContext, 'title' | 'body'>
 ): string | undefined {
   const remote = resolveFlowPullRequestRemote(repository);
   return remote
-    ? buildFlowPullRequestUrlForRemote(remote, sourceRefName, targetRefName)
+    ? buildFlowPullRequestUrlForRemote(remote, sourceRefName, targetRefName, contextOverride)
     : undefined;
 }
 
 export function buildFlowPullRequestUrlForRemote(
   remote: Pick<HostedGitRemote, 'provider' | 'repositoryWebUrl'>,
   sourceRefName: string,
-  targetRefName: string
+  targetRefName: string,
+  contextOverride?: Pick<FlowPullRequestContext, 'title' | 'body'>
 ): string | undefined {
-  const context = createFlowPullRequestContext(sourceRefName, targetRefName);
+  const context = contextOverride ?? createFlowPullRequestContext(sourceRefName, targetRefName);
   return buildHostedPullRequestUrlForRemote(
     remote,
     sourceRefName,
@@ -69,9 +71,10 @@ export function resolveFlowPullRequestRemote(repository: Repository): HostedGitR
 export function buildFlowPullRequestUrlFromRemoteUrl(
   remoteUrl: string | undefined,
   sourceRefName: string,
-  targetRefName: string
+  targetRefName: string,
+  contextOverride?: Pick<FlowPullRequestContext, 'title' | 'body'>
 ): string | undefined {
-  const context = createFlowPullRequestContext(sourceRefName, targetRefName);
+  const context = contextOverride ?? createFlowPullRequestContext(sourceRefName, targetRefName);
   return buildHostedPullRequestUrlFromRemoteUrl(
     remoteUrl,
     sourceRefName,

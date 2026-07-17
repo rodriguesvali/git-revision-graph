@@ -17,6 +17,7 @@ import {
   checkFlowPullRequestSourcePublication,
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
+  type FlowPullRequestContext,
   loadFlowPullRequestRemoteBranchCommit,
   resolveFlowPullRequestRemote
 } from './index';
@@ -53,12 +54,15 @@ export class RevisionGraphFlowPullRequestWorkflow {
     private readonly dependencies: RevisionGraphFlowPullRequestWorkflowDependencies = DEFAULT_DEPENDENCIES
   ) {}
 
-  async copyContext(sourceRefName: string, targetRefName: string): Promise<void> {
+  async copyContext(
+    sourceRefName: string,
+    targetRefName: string
+  ): Promise<FlowPullRequestContext | undefined> {
     const repository = this.host.getCurrentRepository();
-    if (!repository) return;
-    if (!await this.ensureMergeCompleted(repository, sourceRefName)) return;
-    if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName)) return;
-    if (!await this.ensureSourceReady(repository, sourceRefName)) return;
+    if (!repository) return undefined;
+    if (!await this.ensureMergeCompleted(repository, sourceRefName)) return undefined;
+    if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName)) return undefined;
+    if (!await this.ensureSourceReady(repository, sourceRefName)) return undefined;
 
     const context = createFlowPullRequestContext(sourceRefName, targetRefName);
     this.host.postHostMessage(createRevisionGraphFlowPullRequestContextMessage(
@@ -67,18 +71,24 @@ export class RevisionGraphFlowPullRequestWorkflow {
       context.title,
       context.body
     ));
+    return context;
   }
 
   async copyContextField(
     sourceRefName: string,
     targetRefName: string,
-    field: 'title' | 'description'
+    field: 'title' | 'description',
+    textOverride?: string
   ): Promise<void> {
     const context = createFlowPullRequestContext(sourceRefName, targetRefName);
-    await vscode.env.clipboard.writeText(field === 'title' ? context.title : context.body);
+    await vscode.env.clipboard.writeText(textOverride ?? (field === 'title' ? context.title : context.body));
   }
 
-  async openUrl(sourceRefName: string, targetRefName: string): Promise<void> {
+  async openUrl(
+    sourceRefName: string,
+    targetRefName: string,
+    contextOverride?: Pick<FlowPullRequestContext, 'title' | 'body'>
+  ): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository) return;
     if (!await this.ensureMergeCompleted(repository, sourceRefName)) return;
@@ -92,7 +102,12 @@ export class RevisionGraphFlowPullRequestWorkflow {
     if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName, remote)) return;
     if (!await this.ensureSourceReady(repository, sourceRefName, remote)) return;
 
-    const url = buildFlowPullRequestUrlForRemote(remote, sourceRefName, targetRefName);
+    const url = buildFlowPullRequestUrlForRemote(
+      remote,
+      sourceRefName,
+      targetRefName,
+      contextOverride
+    );
     if (url) await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 

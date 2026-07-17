@@ -18,6 +18,15 @@ import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning'
 import { prepareFlowBranchStart } from './flowBranchStartPreflight';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
 import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
+import { RevisionGraphFlowAiTextWorkflow } from './aiTextWorkflow';
+import type { FlowAiTextDocumentContextProvider } from './aiTextDocumentContext';
+import type {
+  FlowAiTextField,
+  FlowAiTextImprover,
+  FlowAiTextImprovementInput,
+  FlowAiTextSurface
+} from './aiTextAssistant';
+export type { FlowAiTextImprover } from './aiTextAssistant';
 import {
   FlowRemoteFetchLoadingHost,
   withFlowRemoteFetchLoading
@@ -43,9 +52,39 @@ export interface RevisionGraphFlowGovernanceWorkflowHost extends FlowRemoteFetch
 export class RevisionGraphFlowGovernanceWorkflow {
   private readonly configPersistence = new FlowConfigPersistenceCoordinator();
   private readonly pullRequestWorkflow: RevisionGraphFlowPullRequestWorkflow;
+  private readonly aiTextWorkflow: RevisionGraphFlowAiTextWorkflow;
 
-  constructor(private readonly host: RevisionGraphFlowGovernanceWorkflowHost) {
+  constructor(
+    private readonly host: RevisionGraphFlowGovernanceWorkflowHost,
+    aiTextImprover?: FlowAiTextImprover,
+    aiTextDocumentContextProvider?: FlowAiTextDocumentContextProvider
+  ) {
     this.pullRequestWorkflow = new RevisionGraphFlowPullRequestWorkflow(host);
+    this.aiTextWorkflow = new RevisionGraphFlowAiTextWorkflow(
+      host,
+      aiTextImprover,
+      aiTextDocumentContextProvider
+    );
+  }
+
+  dispose(): void {
+    this.aiTextWorkflow.dispose();
+  }
+
+  resetAiText(): void {
+    this.aiTextWorkflow.reset();
+  }
+
+  improveText(requestId: number, input: FlowAiTextImprovementInput): Promise<void> {
+    return this.aiTextWorkflow.improve(requestId, input);
+  }
+
+  cancelTextImprovement(
+    requestId: number,
+    surface: FlowAiTextSurface,
+    field: FlowAiTextField
+  ): void {
+    this.aiTextWorkflow.cancel(surface, field, requestId);
   }
 
   resolveSettings(repository: Repository): FlowGovernanceSettings {
@@ -206,18 +245,34 @@ export class RevisionGraphFlowGovernanceWorkflow {
   }
 
   async copyPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {
-    await this.pullRequestWorkflow.copyContext(sourceRefName, targetRefName);
+    const context = await this.pullRequestWorkflow.copyContext(sourceRefName, targetRefName);
+    if (context) this.aiTextWorkflow.setPullRequestContext(context);
   }
 
   async copyPullRequestContextField(
     sourceRefName: string,
     targetRefName: string,
-    field: 'title' | 'description'
+    field: 'title' | 'description',
+    text: string
   ): Promise<void> {
-    await this.pullRequestWorkflow.copyContextField(sourceRefName, targetRefName, field);
+    await this.pullRequestWorkflow.copyContextField(
+      sourceRefName,
+      targetRefName,
+      field,
+      text
+    );
   }
 
-  async openPullRequestUrl(sourceRefName: string, targetRefName: string): Promise<void> {
-    await this.pullRequestWorkflow.openUrl(sourceRefName, targetRefName);
+  async openPullRequestUrl(
+    sourceRefName: string,
+    targetRefName: string,
+    title: string,
+    description: string
+  ): Promise<void> {
+    await this.pullRequestWorkflow.openUrl(
+      sourceRefName,
+      targetRefName,
+      { title, body: description }
+    );
   }
 }

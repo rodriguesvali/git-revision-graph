@@ -12,6 +12,7 @@
   },
   "files": [
     "src/revisionGraph/webview/runtime/contracts.d.ts",
+    "src/revisionGraph/webview/runtime/flowAiTextUi.ts",
     "src/revisionGraph/webview/runtime/flowPullRequestTargetUi.ts",
     "src/revisionGraph/webview/runtime/flowPullRequestDialog.ts"
   ]

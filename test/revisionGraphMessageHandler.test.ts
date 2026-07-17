@@ -210,11 +210,11 @@ test('RevisionGraphMessageHandler runs Pull Request handoff through the host bou
     async copyFlowPullRequestContext(sourceRefName, targetRefName) {
       calls.push(`show:${sourceRefName}->${targetRefName}`);
     },
-    async copyFlowPullRequestContextField(sourceRefName, targetRefName, field) {
-      calls.push(`copy-${field}:${sourceRefName}->${targetRefName}`);
+    async copyFlowPullRequestContextField(sourceRefName, targetRefName, field, text) {
+      calls.push(`copy-${field}:${sourceRefName}->${targetRefName}:${text}`);
     },
-    async openFlowPullRequestUrl(sourceRefName, targetRefName) {
-      calls.push(`open:${sourceRefName}->${targetRefName}`);
+    async openFlowPullRequestUrl(sourceRefName, targetRefName, title, description) {
+      calls.push(`open:${sourceRefName}->${targetRefName}:${title}:${description}`);
     }
   }));
 
@@ -226,19 +226,82 @@ test('RevisionGraphMessageHandler runs Pull Request handoff through the host bou
   await handler.handleMessage({
     type: 'open-flow-pr-url',
     sourceRefName: 'release/1.0.0',
-    targetRefName: 'main'
+    targetRefName: 'main',
+    title: 'Promote 1.0.0',
+    description: 'Promotion summary'
   });
   await handler.handleMessage({
     type: 'copy-flow-pr-context-field',
     sourceRefName: 'release/1.0.0',
     targetRefName: 'main',
-    field: 'title'
+    field: 'title',
+    text: 'Promote 1.0.0'
   });
 
   assert.deepEqual(calls, [
     'show:release/1.0.0->main',
-    'open:release/1.0.0->main',
-    'copy-title:release/1.0.0->main'
+    'open:release/1.0.0->main:Promote 1.0.0:Promotion summary',
+    'copy-title:release/1.0.0->main:Promote 1.0.0'
+  ]);
+});
+
+test('RevisionGraphMessageHandler routes user-initiated Flow AI improvements and cancellation', async () => {
+  const calls: unknown[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async improveFlowText(requestId, input) {
+      calls.push({ requestId, input });
+    },
+    cancelFlowAiText(requestId, surface, field) {
+      calls.push({ cancel: { surface, field, requestId } });
+    }
+  }));
+
+  await handler.handleMessage({
+    type: 'improve-flow-pr-text',
+    requestId: 7,
+    sourceRefName: 'release/1.0.0',
+    targetRefName: 'main',
+    field: 'title',
+    title: 'release ready',
+    description: 'promotion details'
+  });
+  await handler.handleMessage({
+    type: 'improve-flow-release-text',
+    requestId: 8,
+    sourceRefName: 'main',
+    releaseName: '2.0.0',
+    text: 'next stable release'
+  });
+  await handler.handleMessage({
+    type: 'cancel-flow-ai-text',
+    requestId: 8,
+    surface: 'release',
+    field: 'description'
+  });
+
+  assert.deepEqual(calls, [
+    {
+      requestId: 7,
+      input: {
+        surface: 'pull-request',
+        field: 'title',
+        sourceRefName: 'release/1.0.0',
+        targetRefName: 'main',
+        title: 'release ready',
+        description: 'promotion details'
+      }
+    },
+    {
+      requestId: 8,
+      input: {
+        surface: 'release',
+        field: 'description',
+        sourceRefName: 'main',
+        releaseName: '2.0.0',
+        text: 'next stable release'
+      }
+    },
+    { cancel: { surface: 'release', field: 'description', requestId: 8 } }
   ]);
 });
 
@@ -441,6 +504,8 @@ function createHost(
     async copyFlowPullRequestContext() {},
     async copyFlowPullRequestContextField() {},
     async openFlowPullRequestUrl() {},
+    async improveFlowText() {},
+    cancelFlowAiText() {},
     traceWebviewLoadEvent() {},
     createRemoteTagPublicationRequestContext(): RemoteTagPublicationRequestContext {
       return {

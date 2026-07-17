@@ -608,6 +608,13 @@ test('Flow Governance creates Pull Request context and hosted provider URLs', ()
     buildFlowPullRequestUrl(repository, 'release/1.0.0', 'main'),
     'https://github.com/owner/project/compare/main...release%2F1.0.0?quick_pull=1&title=Merge+release%2F1.0.0+into+main&body=Source%3A+release%2F1.0.0%0ATarget%3A+main%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
   );
+  assert.equal(
+    buildFlowPullRequestUrl(repository, 'release/1.0.0', 'main', {
+      title: 'Promote release 1.0.0',
+      body: 'Reviewed promotion context'
+    }),
+    'https://github.com/owner/project/compare/main...release%2F1.0.0?quick_pull=1&title=Promote+release+1.0.0&body=Reviewed+promotion+context'
+  );
   assert.deepEqual(resolveFlowPullRequestRemote(repository), {
     provider: 'github',
     providerLabel: 'GitHub',

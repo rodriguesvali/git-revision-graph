@@ -220,9 +220,12 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphFlowGovernanceOptionsMessage\(options\) \{\s*return \{ type: 'set-flow-governance-options', options \};\s*\}/s);
   assert.match(html, /function createRevisionGraphPrepareFlowEqualizationMessage\(targetRefName, originRefName, description\)/);
   assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'copy-flow-pr-context', sourceRefName, targetRefName \};\s*\}/s);
-  assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextFieldMessage\(sourceRefName, targetRefName, field\) \{\s*return \{ type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field \};\s*\}/s);
-  assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName\) \{\s*return \{ type: 'open-flow-pr-url', sourceRefName, targetRefName \};\s*\}/s);
+  assert.match(html, /function createRevisionGraphCopyFlowPullRequestContextFieldMessage\(sourceRefName, targetRefName, field, text\)/);
+  assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName, title, description\)/);
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
+  assert.match(html, /function createRevisionGraphImproveFlowPullRequestTextMessage\(/);
+  assert.match(html, /function createRevisionGraphImproveFlowReleaseTextMessage\(/);
+  assert.match(html, /function createRevisionGraphCancelFlowAiTextMessage\(/);
   assert.match(html, /function createRevisionGraphPrepareStartFlowBranchMessage\(target, branchKind\)/);
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
@@ -238,17 +241,23 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /Open Promotion PR URL/);
   assert.match(html, /openButton\.textContent = 'Open Pull Request';/);
   assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
+  assert.match(html, /case 'set-flow-ai-text-result':[\s\S]*?flowPullRequestDialogController\.showImprovementResult\(message\);[\s\S]*?flowBranchDialogController\.showImprovementResult\(message\);/s);
   assert.match(html, /case 'show-flow-branch-form':\s*showRevisionGraphWebviewFlowBranchForm\(message, getSelectableTargets\(\), showFlowBranchForm\);\s*return;/s);
   assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
   assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
   assert.match(html, /flowLabel\.textContent = 'Flow';/);
   assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Title',\s*'flowPullRequestTitleInput',\s*false,/s);
   assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Description',\s*'flowPullRequestDescriptionInput',\s*true,/s);
-  assert.match(html, /input\.readOnly = true;/);
+  assert.doesNotMatch(html, /input\.readOnly = true;/);
+  assert.match(html, /input\.maxLength = multiline \? 2048 : 240;/);
   assert.match(html, /copyButton\.setAttribute\('aria-label', 'Copy ' \+ labelText\);/);
   assert.match(html, /copyButton\.innerHTML = renderCopyIcon\(\);/);
-  assert.match(html, /\.flow-pr-context-copy \{[\s\S]*?padding: 0;[\s\S]*?\.flow-pr-context-copy svg \{\s*position: static;\s*width: 17px;\s*height: 17px;\s*fill: currentColor;/s);
-  assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*sourceRefName,\s*targetRefName,\s*field\s*\)/s);
+  assert.match(html, /createRevisionGraphWebviewFlowAiTextButton\('Improve with AI'\)/);
+  assert.match(html, /descriptionAiButton\.hidden = nextBranchKind !== 'release';/);
+  assert.match(html, /button\.setAttribute\('aria-label', label\);/);
+  assert.match(html, /\.flow-pr-context-copy,\s*\.flow-ai-text-action \{[\s\S]*?padding: 0;/s);
+  assert.match(html, /\.flow-pr-context-copy svg,\s*\.flow-ai-text-action svg \{\s*position: static;\s*width: 17px;\s*height: 17px;\s*fill: currentColor;/s);
+  assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*sourceRefName,\s*targetRefName,\s*field,\s*text\s*\)/s);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
@@ -1521,6 +1530,52 @@ test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
     )),
     ['main', 'release/1.9.0']
   );
+});
+
+test('creates explicit Flow AI field requests with stable ids and cancellation messages', () => {
+  const runtime = createWebviewRuntime();
+  const messages: unknown[] = [];
+  const interactions = runtime.context.createRevisionGraphWebviewFlowAiTextInteractions(
+    (message: unknown) => messages.push(message)
+  );
+
+  const pullRequestId = interactions.pullRequestDependencies.improveText(
+    'release/2.0.0', 'main', 'title', 'Promote release', 'Promotion details'
+  );
+  const releaseId = interactions.releaseDependencies.improveReleaseText(
+    'main', '3.0.0', 'Next stable release'
+  );
+  interactions.pullRequestDependencies.cancelImprovement(pullRequestId, 'title');
+  interactions.releaseDependencies.cancelImprovement(releaseId);
+
+  assert.deepEqual(messages, [
+    {
+      type: 'improve-flow-pr-text', requestId: 1, sourceRefName: 'release/2.0.0',
+      targetRefName: 'main', field: 'title', title: 'Promote release', description: 'Promotion details'
+    },
+    {
+      type: 'improve-flow-release-text', requestId: 2, sourceRefName: 'main',
+      releaseName: '3.0.0', text: 'Next stable release'
+    },
+    { type: 'cancel-flow-ai-text', requestId: 1, surface: 'pull-request', field: 'title' },
+    { type: 'cancel-flow-ai-text', requestId: 2, surface: 'release', field: 'description' }
+  ]);
+});
+
+test('validates exact Flow AI host result shapes before applying them', () => {
+  const runtime = createWebviewRuntime();
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 1, surface: 'pull-request',
+    field: 'description', status: 'ready', content: 'Improved description'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 2, surface: 'release',
+    field: 'description', status: 'unavailable'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 3, surface: 'release',
+    field: 'title', status: 'ready', content: 'Invalid release title'
+  }), false);
 });
 
 test('rejects malformed host state before applying it to the webview runtime', () => {

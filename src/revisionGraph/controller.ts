@@ -24,10 +24,10 @@ import type { RevisionGraphSnapshot } from './source/graphSnapshot';
 import { RevisionGraphRenderCoordinator } from './renderCoordinator';
 import {
   createDefaultRevisionGraphProjectionOptions,
+  REVISION_GRAPH_VIEW_ID,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
-import { REVISION_GRAPH_VIEW_ID } from '../revisionGraphTypes';
 import { GRAPH_LIMIT_POLICY } from './panel/shared';
 import { renderRevisionGraphShellHtml } from '../revisionGraphWebview';
 import { getRevisionGraphViewTitle } from './viewTitle';
@@ -62,23 +62,20 @@ import {
   runGuardedRepositoryMutation
 } from '../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
-import { RevisionGraphFlowGovernanceWorkflow } from './flow/governanceWorkflow';
+import { RevisionGraphFlowGovernanceWorkflow, type FlowAiTextImprover } from './flow/governanceWorkflow';
+import { createFlowAiTextDocumentContextProvider } from './flow/aiTextDocumentContext';
 import { RevisionGraphRemoteTagStatePublisher } from './remoteTagStatePublisher';
-
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
-
 interface RevisionGraphWebviewSurface {
   readonly webview: vscode.Webview;
   onDidDispose(listener: () => void): vscode.Disposable;
   setTitle(title: string): void;
 }
-
 interface RevisionGraphRenderRequestContext {
   readonly requestId: number;
   readonly intent: RevisionGraphRefreshIntent;
 }
-
 interface RevisionGraphRenderResult {
   readonly state: RevisionGraphViewState;
   readonly repositoryPath?: string;
@@ -190,7 +187,7 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY,
     private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
-    mutationCoordinator?: RepositoryMutationCoordinator
+    mutationCoordinator?: RepositoryMutationCoordinator, flowAiTextImprover?: FlowAiTextImprover
   ) {
     this.mutationCoordinator = mutationCoordinator ?? new RepositoryMutationCoordinator();
     this.ownsMutationCoordinator = !mutationCoordinator;
@@ -201,7 +198,7 @@ export class RevisionGraphController implements vscode.Disposable {
     this.repositoryLifecycle = new RevisionGraphRepositoryLifecycle(git, {
       onCurrentRepositoryChanging: (repository) => {
         this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
-        this.abortCommitShortStatRequests();
+        this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
       },
       onCurrentRepositoryChanged: (repositoryChanged) => {
         if (repositoryChanged) {
@@ -211,7 +208,7 @@ export class RevisionGraphController implements vscode.Disposable {
         this.syncViewTitle();
       },
       onRepositoryClosed: (repository) => {
-        this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
+        this.mutationCoordinator.invalidate(repository.rootUri.fsPath); this.flowGovernanceWorkflow.resetAiText();
       },
       onRepositorySetChanged: () => {
         this.handleRepositorySetChanged();
@@ -244,7 +241,7 @@ export class RevisionGraphController implements vscode.Disposable {
       postActionLoading: (label) => this.postActionLoading(label),
       postCurrentState: () => this.postCurrentState(),
       postHostMessage: (message) => this.postHostMessage(message)
-    });
+    }, flowAiTextImprover, createFlowAiTextDocumentContextProvider(this.backend));
     this.remoteTagStatePublisher = new RevisionGraphRemoteTagStatePublisher({
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
@@ -297,12 +294,15 @@ export class RevisionGraphController implements vscode.Disposable {
       copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
         await this.flowGovernanceWorkflow.copyPullRequestContext(sourceRefName, targetRefName);
       },
-      copyFlowPullRequestContextField: async (sourceRefName, targetRefName, field) => {
-        await this.flowGovernanceWorkflow.copyPullRequestContextField(sourceRefName, targetRefName, field);
+      copyFlowPullRequestContextField: async (sourceRefName, targetRefName, field, text) => {
+        await this.flowGovernanceWorkflow.copyPullRequestContextField(sourceRefName, targetRefName, field, text);
       },
-      openFlowPullRequestUrl: async (sourceRefName, targetRefName) => {
-        await this.flowGovernanceWorkflow.openPullRequestUrl(sourceRefName, targetRefName);
+      openFlowPullRequestUrl: async (sourceRefName, targetRefName, title, description) => {
+        await this.flowGovernanceWorkflow.openPullRequestUrl(sourceRefName, targetRefName, title, description);
       },
+      improveFlowText: (requestId, input) => this.flowGovernanceWorkflow.improveText(requestId, input),
+      cancelFlowAiText: (requestId, surface, field) =>
+        this.flowGovernanceWorkflow.cancelTextImprovement(requestId, surface, field),
       clearLayoutCache: () => {
         return this.clearLayoutCache();
       },
@@ -339,7 +339,7 @@ export class RevisionGraphController implements vscode.Disposable {
     if (this.currentRepository) {
       this.mutationCoordinator.invalidate(this.currentRepository.rootUri.fsPath);
     }
-    this.abortCommitShortStatRequests();
+    this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.dispose();
     if (this.ownsMutationCoordinator) {
       this.mutationCoordinator.dispose();
     }
@@ -362,7 +362,7 @@ export class RevisionGraphController implements vscode.Disposable {
       view.onDidDispose(() => {
         if (this.view === view) {
           this.renderCoordinator.cancel();
-          this.abortCommitShortStatRequests();
+          this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
           this.view = undefined;
         }
         this.disposeViewDisposables();

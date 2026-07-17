@@ -89,12 +89,40 @@
       return { type: 'copy-flow-pr-context', sourceRefName, targetRefName };
     }
 
-    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName: string, targetRefName: string, field: 'title' | 'description'): RevisionGraphWebviewMessageOf<'copy-flow-pr-context-field'> {
-      return { type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field };
+    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName: string, targetRefName: string, field: 'title' | 'description', text: string): RevisionGraphWebviewMessageOf<'copy-flow-pr-context-field'> {
+      return { type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field, text };
     }
 
-    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName: string, targetRefName: string): RevisionGraphWebviewMessageOf<'open-flow-pr-url'> {
-      return { type: 'open-flow-pr-url', sourceRefName, targetRefName };
+    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName: string, targetRefName: string, title: string, description: string): RevisionGraphWebviewMessageOf<'open-flow-pr-url'> {
+      return { type: 'open-flow-pr-url', sourceRefName, targetRefName, title, description };
+    }
+
+    function createRevisionGraphImproveFlowPullRequestTextMessage(
+      requestId: number,
+      sourceRefName: string,
+      targetRefName: string,
+      field: 'title' | 'description',
+      title: string,
+      description: string
+    ): RevisionGraphWebviewMessageOf<'improve-flow-pr-text'> {
+      return { type: 'improve-flow-pr-text', requestId, sourceRefName, targetRefName, field, title, description };
+    }
+
+    function createRevisionGraphImproveFlowReleaseTextMessage(
+      requestId: number,
+      sourceRefName: string,
+      releaseName: string,
+      text: string
+    ): RevisionGraphWebviewMessageOf<'improve-flow-release-text'> {
+      return { type: 'improve-flow-release-text', requestId, sourceRefName, releaseName, text };
+    }
+
+    function createRevisionGraphCancelFlowAiTextMessage(
+      requestId: number,
+      surface: 'pull-request' | 'release',
+      field: 'title' | 'description'
+    ): RevisionGraphWebviewMessageOf<'cancel-flow-ai-text'> {
+      return { type: 'cancel-flow-ai-text', requestId, surface, field };
     }
 
     function createRevisionGraphCompareSelectedMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'compare-selected'> {

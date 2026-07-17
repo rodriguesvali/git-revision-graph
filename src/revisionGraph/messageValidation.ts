@@ -3,6 +3,11 @@ import type { RevisionGraphRef } from './model/commitGraphTypes';
 import { isFlowStartBranchKind } from './flow';
 import { isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '../webviewMessageValidation';
 import { validateFlowGovernanceOptions, validateProjectionOptions } from './messageValidationOptions';
+import {
+  validateCancelFlowAiTextMessage,
+  validateImproveFlowPullRequestTextMessage,
+  validateImproveFlowReleaseTextMessage
+} from './messageValidationFlowAi';
 
 export {
   isRevisionGraphMessageAllowedForCurrentRepository,
@@ -46,6 +51,9 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'copy-flow-pr-context': validateCopyFlowPullRequestContextMessage,
   'copy-flow-pr-context-field': validateCopyFlowPullRequestContextFieldMessage,
   'open-flow-pr-url': validateOpenFlowPullRequestUrlMessage,
+  'improve-flow-pr-text': validateImproveFlowPullRequestTextMessage,
+  'improve-flow-release-text': validateImproveFlowReleaseTextMessage,
+  'cancel-flow-ai-text': validateCancelFlowAiTextMessage,
   'compare-selected': validateCompareSelectedMessage,
   'show-log': validateShowLogMessage,
   'open-unified-diff': validateOpenUnifiedDiffMessage,
@@ -169,19 +177,31 @@ function validateOpenFlowPullRequestUrlMessage(
   message: RawRevisionGraphMessage
 ): RevisionGraphProtocol.MessageOf<'open-flow-pr-url'> | undefined {
   return validateFlowPullRequestTarget(message)
-    ? { type: 'open-flow-pr-url', sourceRefName: message.sourceRefName, targetRefName: message.targetRefName }
+    && isBoundedNonEmptyString(message.title, 240)
+    && isBoundedNonEmptyString(message.description, 2048)
+    ? {
+      type: 'open-flow-pr-url',
+      sourceRefName: message.sourceRefName,
+      targetRefName: message.targetRefName,
+      title: message.title,
+      description: message.description
+    }
     : undefined;
 }
 
 function validateCopyFlowPullRequestContextFieldMessage(
   message: RawRevisionGraphMessage
 ): RevisionGraphProtocol.MessageOf<'copy-flow-pr-context-field'> | undefined {
-  return validateFlowPullRequestTarget(message) && (message.field === 'title' || message.field === 'description')
+  const field = message.field;
+  return validateFlowPullRequestTarget(message)
+    && (field === 'title' || field === 'description')
+    && isBoundedNonEmptyString(message.text, field === 'title' ? 240 : 2048)
     ? {
       type: 'copy-flow-pr-context-field',
       sourceRefName: message.sourceRefName,
       targetRefName: message.targetRefName,
-      field: message.field
+      field,
+      text: message.text
     }
     : undefined;
 }

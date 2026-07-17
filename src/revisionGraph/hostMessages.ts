@@ -1,6 +1,8 @@
 import {
   RemoteTagPublicationState,
   RevisionGraphCommitShortStat,
+  RevisionGraphFlowAiTextField,
+  RevisionGraphFlowAiTextSurface,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -73,6 +75,23 @@ export function createRevisionGraphShowFlowBranchFormMessage(
     type: 'show-flow-branch-form',
     branchKind,
     sourceRefName
+  };
+}
+
+export function createRevisionGraphFlowAiTextResultMessage(
+  requestId: number,
+  surface: RevisionGraphFlowAiTextSurface,
+  field: RevisionGraphFlowAiTextField,
+  status: 'ready' | 'unavailable',
+  content?: string
+): RevisionGraphViewHostMessage {
+  return {
+    type: 'set-flow-ai-text-result',
+    requestId,
+    surface,
+    field,
+    status,
+    ...(content === undefined ? {} : { content })
   };
 }
 
