@@ -12,6 +12,6 @@
   },
   "files": [
     "src/revisionGraph/webview/runtime/contracts.d.ts",
-    "src/revisionGraph/webview/runtime/flowBranchForm.ts"
+    "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts"
   ]
 }

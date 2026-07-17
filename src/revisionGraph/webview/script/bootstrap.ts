@@ -48,6 +48,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly configSource?: string;
       readonly branchKinds?: readonly unknown[];
       readonly references?: readonly RevisionGraphWebviewLegacyFlowReference[];
+      readonly pullRequestTargets?: readonly RevisionGraphWebviewFlowPullRequestTarget[];
     };
     type RevisionGraphWebviewStateHostMessage = Extract<
       RevisionGraphWebviewHostMessage,

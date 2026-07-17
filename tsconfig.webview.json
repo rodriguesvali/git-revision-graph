@@ -63,6 +63,8 @@
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/runtime/flowBranchForm.ts",
     "src/revisionGraph/webview/runtime/flowPullRequestTargetUi.ts",
+    "src/revisionGraph/webview/runtime/flowPullRequestDialog.ts",
+    "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts",
     "src/revisionGraph/webview/runtime/contextMenu.ts",
     "src/revisionGraph/webview/script/messages.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",

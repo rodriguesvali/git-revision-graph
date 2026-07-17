@@ -242,13 +242,13 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
   assert.match(html, /introduction\.textContent = 'Review the generated context and copy each field into your Pull Request\.';/);
   assert.match(html, /flowLabel\.textContent = 'Flow';/);
-  assert.match(html, /createFlowPullRequestContextField\('Title', 'flowPullRequestTitleInput', false\)/);
-  assert.match(html, /createFlowPullRequestContextField\('Description', 'flowPullRequestDescriptionInput', true\)/);
+  assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Title',\s*'flowPullRequestTitleInput',\s*false,/s);
+  assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Description',\s*'flowPullRequestDescriptionInput',\s*true,/s);
   assert.match(html, /input\.readOnly = true;/);
   assert.match(html, /copyButton\.setAttribute\('aria-label', 'Copy ' \+ labelText\);/);
-  assert.match(html, /copyButton\.innerHTML = renderCopyHashIcon\(\);/);
+  assert.match(html, /copyButton\.innerHTML = renderCopyIcon\(\);/);
   assert.match(html, /\.flow-pr-context-copy \{[\s\S]*?padding: 0;[\s\S]*?\.flow-pr-context-copy svg \{\s*position: static;\s*width: 17px;\s*height: 17px;\s*fill: currentColor;/s);
-  assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*dialog\.sourceRefName,\s*dialog\.targetRefName,\s*field\s*\)/s);
+  assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*sourceRefName,\s*targetRefName,\s*field\s*\)/s);
   assert.match(html, /type: 'load-trace'/);
   assert.match(html, /case 'set-loading'/);
   assert.match(html, /case 'set-error'/);
@@ -611,16 +611,16 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a release\.\.\.' : 'No release branches available';/);
   assert.match(html, /placeholder\.disabled = true;\s*placeholder\.selected = true;\s*select\.appendChild\(placeholder\);/s);
   assert.match(html, /initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(dialog\.targetSelect, targets\);\s*dialog\.targetLabel\.hidden = false;/s);
-  assert.match(html, /setFlowPullRequestContextActionsEnabled\(false\);\s*dialog\.backdrop\.hidden = false;[\s\S]*?window\.setTimeout\(\(\) => dialog\.targetSelect\.focus\(\), 0\);/s);
+  assert.match(html, /setActionsEnabled\(false\);\s*dialog\.backdrop\.hidden = false;[\s\S]*?window\.setTimeout\(\(\) => dialog\.targetSelect\.focus\(\), 0\);/s);
   assert.doesNotMatch(html, /dialog\.targetLabel\.hidden = targets\.length <= 1;/);
   assert.doesNotMatch(html, /openFlowPullRequestContextForm\(target\)[\s\S]*?applyFlowPullRequestTargetSelection\(\);/);
-  assert.match(html, /targetSelect\.addEventListener\('change', applyFlowPullRequestTargetSelection\);/);
+  assert.match(html, /targetSelect\.addEventListener\('change', applyTargetSelection\);/);
   assert.doesNotMatch(html, /target\.targetRefName === dialog\.targetSelect\.value\s*\) \|\| getFlowPullRequestTargets/);
-  assert.match(html, /candidate\.status === 'production-not-ancestor'[\s\S]*?Production promotion aborted:/);
-  assert.match(html, /candidate\.status === 'production-out-of-sync'[\s\S]*?local production branch is not synchronized/);
-  assert.match(html, /candidate\.status === 'not-ahead'[\s\S]*?has no commits ahead of/);
-  assert.match(html, /if \(!candidate\) \{[\s\S]*?return;\s*\}\s*setFlowPullRequestContextActionsEnabled\(false\);\s*postCopyFlowPullRequestContext\(dialog\.sourceRefName, dialog\.targetRefName\);\s*if \(candidate\.status === 'production-not-ancestor'\)/s);
-  assert.match(html, /dialog\.descriptionInput\.value = context\.description;\s*setFlowPullRequestContextWarning\(''\);\s*setFlowPullRequestContextActionsEnabled\(true\);/s);
+  assert.match(html, /target\.status === 'production-not-ancestor'[\s\S]*?Production promotion aborted:/);
+  assert.match(html, /target\.status === 'production-out-of-sync'[\s\S]*?local production branch is not synchronized/);
+  assert.match(html, /target\.status === 'not-ahead'[\s\S]*?has no commits ahead of/);
+  assert.match(html, /if \(!candidate\) \{[\s\S]*?return;\s*\}\s*setActionsEnabled\(false\);\s*dependencies\.requestContext\(sourceRefName, targetRefName\);\s*setWarning\(getRevisionGraphWebviewFlowPullRequestWarning\(sourceRefName, candidate\)\);/s);
+  assert.match(html, /dialog\.descriptionInput\.value = context\.description;\s*setWarning\(''\);\s*setActionsEnabled\(true\);/s);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
@@ -885,15 +885,15 @@ test('renders grouped graph context menus', () => {
   assert.doesNotMatch(html, /anchorRect\.right \+ 6|anchorRect\.left - width - 6/);
   assert.match(html, /function showFlowBranchForm\(target, branchKind\)/);
   assert.match(html, /function showRevisionGraphWebviewFlowBranchForm\(message, targets, showForm\)/);
-  assert.match(html, /taskDevText\.textContent = 'Dev Task \*';/);
-  assert.match(html, /shortNameText\.textContent = 'Short name \*';/);
-  assert.match(html, /branchKind === 'bug'[\s\S]*?'Bug ID \*'[\s\S]*?branchKind === 'hotfix' \? 'Hotfix ID \*' : 'Dev Task \*'/);
+  assert.match(html, /createRevisionGraphWebviewFlowBranchTextField\('flowBranchTaskDevInput', 'Dev Task \*', 40\)/);
+  assert.match(html, /createRevisionGraphWebviewFlowBranchTextField\('flowBranchShortNameInput', 'Short name \*', 199\)/);
+  assert.match(html, /nextBranchKind === 'bug'[\s\S]*?'Bug ID \*'[\s\S]*?nextBranchKind === 'hotfix' \? 'Hotfix ID \*' : 'Dev Task \*'/);
   assert.match(html, /if \(!description\)/);
   assert.match(html, /taskDev \+ '-' \+ shortName/);
   assert.match(html, /!\/\^\[0-9\]\+\$\/\.test\(taskDev\)/);
-  assert.match(html, /function getFlowBranchDialogCopy\(branchKind\)/);
-  assert.match(html, /nameText\.textContent = 'Name \*';/);
-  assert.match(html, /nameInput\.setAttribute\('aria-required', 'true'\);/);
+  assert.match(html, /function getRevisionGraphWebviewFlowBranchDialogCopy\(branchKind\)/);
+  assert.match(html, /createRevisionGraphWebviewFlowBranchTextField\('flowBranchNameInput', 'Name \*', 240\)/);
+  assert.match(html, /input\.setAttribute\('aria-required', 'true'\);/);
   assert.match(html, /descriptionText\.textContent = 'Description \*';/);
   assert.match(html, /descriptionInput\.required = true;/);
   assert.match(html, /descriptionInput\.setAttribute\('aria-required', 'true'\);/);
@@ -1487,6 +1487,39 @@ test('lists main and other active releases as equalization origins', () => {
   assert.deepEqual(
     Array.from(runtime.context.getFlowEqualizationOrigins('feature/payment')),
     ['main', 'release/1.9.0', 'release/2.0.0']
+  );
+});
+
+test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
+  const runtime = createWebviewRuntime();
+
+  assert.deepEqual(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError('task', 'ABC', 'work', 'ABC-work', 'Description'),
+    { message: 'Dev Task must be a number.', input: 'taskDevInput' }
+  );
+  assert.deepEqual(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError('feature', '', '', 'feature-name', 'Description'),
+    null
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowPullRequestWarning('feature/payment', {
+      sourceRefName: 'feature/payment',
+      targetRefName: 'release/2.0.0',
+      status: 'not-ahead'
+    }),
+    'feature/payment has no commits ahead of release/2.0.0. Choose another release.'
+  );
+  assert.deepEqual(
+    Array.from(runtime.context.getRevisionGraphWebviewFlowEqualizationOrigins(
+      true,
+      [
+        { refName: 'release/2.0.0', kind: 'release' },
+        { refName: 'main', kind: 'main' },
+        { refName: 'release/1.9.0', kind: 'release' }
+      ],
+      'release/2.0.0'
+    )),
+    ['main', 'release/1.9.0']
   );
 });
 

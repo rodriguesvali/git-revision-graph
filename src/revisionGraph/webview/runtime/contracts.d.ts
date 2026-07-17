@@ -14,6 +14,12 @@ interface RevisionGraphWebviewTarget {
   readonly kind: RevisionGraphWebviewTargetKind;
 }
 
+interface RevisionGraphWebviewFlowPullRequestTarget {
+  readonly sourceRefName: string;
+  readonly targetRefName: string;
+  readonly status?: 'eligible' | 'production-not-ancestor' | 'production-out-of-sync' | 'not-ahead' | 'unknown';
+}
+
 type RevisionGraphWebviewProjectionOptions = RevisionGraphProtocol.ProjectionOptionsUpdate;
 type RevisionGraphWebviewFlowGovernanceOptions = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;
 
