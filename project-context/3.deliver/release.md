@@ -140,7 +140,13 @@ Recorded verification:
   functions, `npm run build`, all 753 tests, and `git diff --check`; `graphify update .` rebuilt
   4,521 nodes, 8,870 edges, and 362 communities. Maintainer visual review on 2026-07-17 confirmed
   that the cloud icon is appropriate for Remote references; the remaining targeted tooltip smoke
-  remains pending.
+  remains pending. A subsequent review found that the two-node diagonal Branch shape resembled a
+  tilted telephone at tooltip size. The approved replacement uses the VS Code-aligned
+  `git-branch` silhouette: a vertical trunk, one lateral branch, and three smaller outline nodes in
+  both the reference tooltip and Show Log. The refinement passed `npm run quality:check` with 224
+  production files and 2,111 functions, `npm run build`, all 753 tests, and `git diff --check`;
+  `graphify update .` rebuilt 4,521 nodes, 8,870 edges, and 362 communities. Targeted visual
+  confirmation of the revised shape remains pending.
 
 - Task promotion context was completed on 2026-07-17. Tasks created through Flow Governance now
   persist their exact source feature, expose a single authorized `task -> feature` handoff, verify

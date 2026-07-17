@@ -2305,6 +2305,13 @@ test('maps every neutral reference kind to the established Show Log icon languag
 
   assert.equal(runtime.context.getRevisionGraphWebviewReferenceKindLabel('unexpected'), null);
   assert.equal(runtime.context.renderRevisionGraphWebviewReferenceKindIcon('unexpected'), '');
+
+  const branchIconMarkup = runtime.context.renderRevisionGraphWebviewReferenceKindIcon('branch');
+  assert.equal(branchIconMarkup.match(/<circle /g)?.length, 3);
+  assert.match(branchIconMarkup, /<circle cx="4\.5" cy="3" r="1\.5"><\/circle>/);
+  assert.match(branchIconMarkup, /<circle cx="4\.5" cy="13" r="1\.5"><\/circle>/);
+  assert.match(branchIconMarkup, /<circle cx="11\.5" cy="5\.5" r="1\.5"><\/circle>/);
+  assert.match(branchIconMarkup, /<path d="M4\.5 4\.5v7M4\.5 10h2\.3a4\.7 4\.7 0 0 0 4\.7-3"><\/path>/);
 });
 
 test('renders neutral reference tooltip icons without overriding Flow Governance kinds', () => {

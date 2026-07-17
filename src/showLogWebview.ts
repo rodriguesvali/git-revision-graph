@@ -316,9 +316,9 @@ export function renderShowLogWebviewHtml(): string {
           '</svg>';
         case 'branch':
           return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +
-            '<circle cx="5" cy="4" r="1.7"></circle>' +
-            '<circle cx="11" cy="12" r="1.7"></circle>' +
-            '<path d="M5 5.7v2.1a4.2 4.2 0 0 0 4.2 4.2H9.3"></path>' +
+            '<circle cx="4.5" cy="3" r="1.5"></circle><circle cx="4.5" cy="13" r="1.5"></circle>' +
+            '<circle cx="11.5" cy="5.5" r="1.5"></circle>' +
+            '<path d="M4.5 4.5v7M4.5 10h2.3a4.7 4.7 0 0 0 4.7-3"></path>' +
           '</svg>';
         case 'remote':
           return '<svg class="ref-badge-icon" aria-hidden="true" focusable="false" viewBox="0 0 16 16">' +

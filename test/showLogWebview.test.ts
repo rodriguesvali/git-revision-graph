@@ -63,6 +63,10 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function renderShowLogRefBadgeIcon\(kind\)/);
   assert.match(html, /data-ref-kind="' \+ escapeHtml\(ref\.kind\)/);
   assert.match(html, /class="ref-badge-label">'\s*\+\s*escapeHtml\(ref\.label\)/);
+  assert.match(html, /case 'branch':[\s\S]*?<circle cx="4\.5" cy="3" r="1\.5"><\/circle>/);
+  assert.match(html, /case 'branch':[\s\S]*?<circle cx="4\.5" cy="13" r="1\.5"><\/circle>/);
+  assert.match(html, /case 'branch':[\s\S]*?<circle cx="11\.5" cy="5\.5" r="1\.5"><\/circle>/);
+  assert.match(html, /case 'branch':[\s\S]*?<path d="M4\.5 4\.5v7M4\.5 10h2\.3a4\.7 4\.7 0 0 0 4\.7-3"><\/path>/);
   assert.match(html, /function renderTopology\(topology, isMerge, isFirstVisible, height\)/);
   assert.match(html, /const GRAPH_MAIN_HEIGHT = 34;/);
   assert.match(html, /const GRAPH_MAIN_META_HEIGHT = 42;/);
