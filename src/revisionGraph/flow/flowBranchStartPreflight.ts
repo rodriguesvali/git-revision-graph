@@ -1,4 +1,4 @@
-import { isRemotePermissionDeniedError, toOperationError } from '../../errorDetail';
+import { toOperationError } from '../../errorDetail';
 import type { Branch, Repository } from '../../git';
 import { formatUpstreamLabel } from '../../gitState';
 import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
@@ -15,6 +15,13 @@ export type FlowBranchStartSyncPolicy = 'exact-sync' | 'not-behind';
 export interface PrepareFlowBranchStartOptions {
   readonly kind: FlowStartBranchKind;
   readonly sourceBranch: string;
+}
+
+export interface PrepareFlowBranchSourceOptions {
+  readonly sourceBranch: string;
+  readonly syncPolicy: FlowBranchStartSyncPolicy;
+  readonly actionLabel: string;
+  readonly failureMessage: string;
 }
 
 export interface FlowBranchStartPreflightDependencies {
@@ -39,16 +46,30 @@ export async function prepareFlowBranchStart(
   services: RefActionServices,
   dependencies: FlowBranchStartPreflightDependencies = DEFAULT_DEPENDENCIES
 ): Promise<boolean> {
+  return prepareFlowBranchSource(repository, {
+    sourceBranch: options.sourceBranch,
+    syncPolicy: getFlowBranchStartSyncPolicy(options.kind),
+    actionLabel: `starting a new ${options.kind}`,
+    failureMessage: `The new ${options.kind} form was not opened.`
+  }, services, dependencies);
+}
+
+export async function prepareFlowBranchSource(
+  repository: Repository,
+  options: PrepareFlowBranchSourceOptions,
+  services: RefActionServices,
+  dependencies: FlowBranchStartPreflightDependencies = DEFAULT_DEPENDENCIES
+): Promise<boolean> {
   const branchBeforeFetch = await getLocalBranch(repository, options.sourceBranch);
   if (!branchBeforeFetch) {
     await services.ui.showErrorMessage(
-      `Could not verify the local ${options.sourceBranch} branch before starting a new ${options.kind}.`,
+      `Could not verify the local ${options.sourceBranch} branch before ${options.actionLabel}.`,
       { modal: true }
     );
     return false;
   }
   if (!branchBeforeFetch.upstream) {
-    return prepareUntrackedFlowBranchStart(repository, options, services, dependencies);
+    return prepareUntrackedFlowBranchSource(repository, options, services, dependencies);
   }
 
   if (!await fetchFlowBranchUpstream(
@@ -72,7 +93,7 @@ export async function prepareFlowBranchStart(
 
   const ahead = sourceBranch.ahead ?? 0;
   const behind = sourceBranch.behind ?? 0;
-  const policy = getFlowBranchStartSyncPolicy(options.kind);
+  const policy = options.syncPolicy;
   if (behind <= 0 && (policy === 'not-behind' || ahead <= 0)) {
     return true;
   }
@@ -81,7 +102,7 @@ export async function prepareFlowBranchStart(
   if (policy === 'not-behind' && ahead > 0) {
     await services.ui.showWarningMessage(
       `${options.sourceBranch} has diverged from ${upstreamLabel} (${formatFlowBranchSyncState(ahead, behind)}). ` +
-      `Reconcile the branch manually before starting a new ${options.kind}.`,
+      `Reconcile the branch manually before ${options.actionLabel}.`,
       { modal: true }
     );
     return false;
@@ -89,7 +110,7 @@ export async function prepareFlowBranchStart(
 
   const confirmed = await services.ui.confirm({
     message: `${options.sourceBranch} is not synchronized with ${upstreamLabel} ` +
-      `(${formatFlowBranchSyncState(ahead, behind)}). Synchronize it before starting a new ${options.kind}?`,
+      `(${formatFlowBranchSyncState(ahead, behind)}). Synchronize it before ${options.actionLabel}?`,
     confirmLabel: 'Synchronize and Continue'
   });
   if (!confirmed) {
@@ -103,7 +124,7 @@ export async function prepareFlowBranchStart(
   if (ahead > 0) {
     await services.ui.showWarningMessage(
       `${options.sourceBranch} cannot be synchronized safely while another branch is checked out ` +
-      `(${formatFlowBranchSyncState(ahead, behind)}). Check it out and synchronize it before starting a new ${options.kind}.`,
+      `(${formatFlowBranchSyncState(ahead, behind)}). Check it out and synchronize it before ${options.actionLabel}.`,
       { modal: true }
     );
     return false;
@@ -120,9 +141,9 @@ export async function prepareFlowBranchStart(
   );
 }
 
-async function prepareUntrackedFlowBranchStart(
+async function prepareUntrackedFlowBranchSource(
   repository: Repository,
-  options: PrepareFlowBranchStartOptions,
+  options: PrepareFlowBranchSourceOptions,
   services: RefActionServices,
   dependencies: FlowBranchStartPreflightDependencies
 ): Promise<boolean> {
@@ -134,7 +155,10 @@ async function prepareUntrackedFlowBranchStart(
 
     const remoteName = remoteNames.length === 1
       ? remoteNames[0]
-      : await services.ui.pickRemoteName(remoteNames, `Choose a remote to verify ${options.sourceBranch}`);
+      : await services.ui.pickRemoteName(
+        remoteNames,
+        `Choose a remote to verify ${options.sourceBranch} before ${options.actionLabel}`
+      );
     if (!remoteName) {
       return false;
     }
@@ -145,7 +169,7 @@ async function prepareUntrackedFlowBranchStart(
       remoteName,
       options.sourceBranch
     ));
-    const policy = getFlowBranchStartSyncPolicy(options.kind);
+    const policy = options.syncPolicy;
     if (publication.status === 'ready' || (publication.status === 'unpushed' && policy === 'not-behind')) {
       return true;
     }
@@ -156,8 +180,8 @@ async function prepareUntrackedFlowBranchStart(
     const isPublish = publication.status === 'unpublished';
     const confirmed = await services.ui.confirm({
       message: isPublish
-        ? `${options.sourceBranch} is not available on ${remoteName}. Publish it before starting a new ${options.kind}?`
-        : `${options.sourceBranch} has commits that are not available on ${remoteName}. Push them before starting a new ${options.kind}?`,
+        ? `${options.sourceBranch} is not available on ${remoteName}. Publish it before ${options.actionLabel}?`
+        : `${options.sourceBranch} has commits that are not available on ${remoteName}. Push them before ${options.actionLabel}?`,
       confirmLabel: isPublish ? 'Publish and Continue' : 'Push and Continue'
     });
     if (!confirmed) {
@@ -173,7 +197,7 @@ async function prepareUntrackedFlowBranchStart(
     if (publication.status !== 'ready') {
       await services.ui.showWarningMessage(
         `${options.sourceBranch} was pushed, but could not be confirmed as synchronized with ` +
-        `${remoteName}/${options.sourceBranch}. The new ${options.kind} form was not opened.`,
+        `${remoteName}/${options.sourceBranch}. ${options.failureMessage}`,
         { modal: true }
       );
       return false;
@@ -183,7 +207,7 @@ async function prepareUntrackedFlowBranchStart(
     return true;
   } catch (error) {
     await services.ui.showErrorMessage(
-      toOperationError(`Could not verify or publish ${options.sourceBranch} before starting a new ${options.kind}.`, error),
+      toOperationError(`Could not verify or publish ${options.sourceBranch} before ${options.actionLabel}.`, error),
       { modal: true }
     );
     return false;
@@ -193,13 +217,13 @@ async function prepareUntrackedFlowBranchStart(
 async function canPublishUntrackedFlowBranch(
   publication: FlowPullRequestSourcePublication,
   repository: Repository,
-  options: PrepareFlowBranchStartOptions,
+  options: PrepareFlowBranchSourceOptions,
   services: RefActionServices
 ): Promise<boolean> {
   if (publication.status === 'remote-ahead') {
     await services.ui.showWarningMessage(
       `${publication.remoteName}/${options.sourceBranch} contains commits that are not present locally. ` +
-      `Configure and synchronize the upstream before starting a new ${options.kind}.`,
+      `Configure and synchronize the upstream before ${options.actionLabel}.`,
       { modal: true }
     );
     return false;
@@ -207,7 +231,7 @@ async function canPublishUntrackedFlowBranch(
   if (publication.status === 'diverged') {
     await services.ui.showWarningMessage(
       `${options.sourceBranch} has diverged from ${publication.remoteName}/${options.sourceBranch}. ` +
-      `Resolve the divergence before starting a new ${options.kind}.`,
+      `Resolve the divergence before ${options.actionLabel}.`,
       { modal: true }
     );
     return false;
@@ -215,7 +239,7 @@ async function canPublishUntrackedFlowBranch(
   if (publication.status === 'unknown') {
     await services.ui.showWarningMessage(
       `Could not verify ${options.sourceBranch} on ${publication.remoteName}. ` +
-      `The new ${options.kind} form was not opened. ${publication.detail ?? ''}`,
+      `${options.failureMessage} ${publication.detail ?? ''}`,
       { modal: true }
     );
     return false;
@@ -225,7 +249,7 @@ async function canPublishUntrackedFlowBranch(
   if (remote?.isReadOnly) {
     await services.ui.showWarningMessage(
       `${publication.remoteName} is read-only and ${options.sourceBranch} cannot be published or updated before ` +
-      `starting a new ${options.kind}.`,
+      `${options.actionLabel}.`,
       { modal: true }
     );
     return false;
@@ -282,7 +306,7 @@ async function fastForwardNonCurrentFlowBranch(
     preparedRefresh.cancel();
     await services.ui.showErrorMessage(
       toOperationError(`Could not synchronize ${branchName} with ${upstreamLabel}.`, error),
-      isRemotePermissionDeniedError(error) ? { modal: true } : undefined
+      { modal: true }
     );
     return false;
   }

@@ -192,7 +192,12 @@ export class RevisionGraphFlowGovernanceWorkflow {
       (guardedRepository, services) => prepareFlowEqualizationBranch(
         guardedRepository,
         { targetBranch: targetRefName, originBranch: originRefName, description },
-        services
+        services,
+        {
+          sourcePreflight: {
+            runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(this.host, operation)
+          }
+        }
       )
     );
     if (outcome.status === 'rejected') {

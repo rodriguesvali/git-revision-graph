@@ -68,6 +68,10 @@ All notable changes to this project will be documented in this file.
   alternate targets and merge-in-progress handoff, including after conflicts are resolved but
   before the merge commit. Existing sync branches without metadata recover the submenu only when
   their deterministic name identifies one unambiguous release or feature.
+- Equalization now fetches and verifies both its target and selected origin before creating the
+  local `sync/*` branch. Ahead-only local work is preserved without an automatic push, behind-only
+  branches can be fast-forwarded after confirmation, and divergence or fetch failure blocks the
+  operation before branch creation or merge.
 - Changed the blocking Flow Governance unavailable warning to a native modal dialog, including
   when the repository flow file is deleted while previously loaded graph metadata is still visible.
 - Changed concurrent-operation feedback in Flow Governance branch, equalization, and Pull Request

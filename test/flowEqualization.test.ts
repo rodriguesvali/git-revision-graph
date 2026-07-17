@@ -2,8 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { RefActionServices } from '../src/refActions';
-import { prepareFlowEqualizationBranch } from '../src/revisionGraph/flow';
-import { createRepository } from './fakes';
+import {
+  prepareFlowEqualizationBranch,
+  prepareFlowEqualizationSources
+} from '../src/revisionGraph/flow';
+import { RefType } from '../src/git';
+import { createBranch, createHead, createRepository } from './fakes';
+
+const allowSourcePreflight = async () => true;
 
 test('Flow Governance prepares a local equalization branch without pushing', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
@@ -29,6 +35,7 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
     targetBranch: 'release/2.0.0',
     description: 'Bring the stable payment fix into the 2.0 release'
   }, services, {
+    prepareSources: allowSourcePreflight,
     async setTarget(_repositoryPath, branchName, targetRefName) {
       targets.push({ branchName, targetRefName });
     },
@@ -78,6 +85,7 @@ test('Flow Governance prepares a local feature equalization branch', async () =>
     targetBranch: 'feature/payment-summary',
     description: 'Bring the stable platform baseline into the feature'
   }, services, {
+    prepareSources: allowSourcePreflight,
     async setTarget(_repositoryPath, _branchName, targetRefName) {
       targets.push(targetRefName);
     },
@@ -117,6 +125,7 @@ test('Flow Governance creates equalization branches from the selected feature ta
     targetBranch: 'feature/payment-summary',
     description: 'Bring the release fix into the feature branch'
   }, services, {
+    prepareSources: allowSourcePreflight,
     async setTarget() {}
   });
 
@@ -151,6 +160,7 @@ test('Flow Governance shows description persistence warnings modally and continu
     targetBranch: 'release/2.0.0',
     description: 'Bring production fixes into the release'
   }, services, {
+    prepareSources: allowSourcePreflight,
     async setTarget() {},
     async setDescription() {
       throw new Error('description persistence failed');
@@ -184,6 +194,7 @@ test('Flow Governance stops before merge when the equalization target cannot be 
     targetBranch: 'feature/payment-summary',
     description: 'Bring production into the feature'
   }, services, {
+    prepareSources: allowSourcePreflight,
     async setTarget() {
       throw new Error('target persistence failed');
     }
@@ -241,3 +252,202 @@ test('Flow Governance equalization rejects the target release as its own origin'
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.merge, []);
 });
+
+test('Flow Governance fetches target and origin before creating an equalization branch', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/payment-summary', 2, 0, {
+      remote: 'origin',
+      name: 'feature/payment-summary'
+    }),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'release/2.0.0',
+        ahead: 0,
+        behind: 0,
+        upstream: { remote: 'origin', name: 'release/2.0.0' }
+      })
+    ]
+  });
+  const events: string[] = [];
+  const originalFetch = repository.fetch.bind(repository);
+  const originalCreateBranch = repository.createBranch.bind(repository);
+  repository.fetch = async (options) => {
+    events.push(`fetch:${options?.ref}`);
+    return originalFetch(options);
+  };
+  repository.createBranch = async (name, checkout, ref) => {
+    events.push(`create:${name}`);
+    return originalCreateBranch(name, checkout, ref);
+  };
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'release/2.0.0',
+    targetBranch: 'feature/payment-summary',
+    description: 'Bring the release changes into the feature'
+  }, createEqualizationServices(), {
+    async setTarget() {},
+    sourcePreflight: {
+      async runWithRemoteFetchLoading(operation) {
+        events.push('loading:show');
+        try {
+          return await operation();
+        } finally {
+          events.push('loading:hide');
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(events, [
+    'loading:show',
+    'fetch:refs/heads/feature/payment-summary:refs/remotes/origin/feature/payment-summary',
+    'loading:hide',
+    'loading:show',
+    'fetch:refs/heads/release/2.0.0:refs/remotes/origin/release/2.0.0',
+    'loading:hide',
+    'create:sync/payment-summary'
+  ]);
+  assert.deepEqual(repository.calls.push, []);
+  assert.deepEqual(repository.calls.merge, ['release/2.0.0']);
+});
+
+test('Flow Governance safely fast-forwards a behind non-current equalization source after confirmation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/payment-summary', 0, 0, {
+      remote: 'origin',
+      name: 'feature/payment-summary'
+    }),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'release/2.0.0',
+        ahead: 0,
+        behind: 2,
+        upstream: { remote: 'origin', name: 'release/2.0.0' }
+      })
+    ]
+  });
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+
+  const ready = await prepareFlowEqualizationSources(repository, {
+    targetBranch: 'feature/payment-summary',
+    originBranch: 'release/2.0.0'
+  }, createEqualizationServices({ confirmations, confirmResult: true }));
+
+  assert.equal(ready, true);
+  assert.match(confirmations[0]?.message ?? '', /release\/2\.0\.0.*2 behind.*preparing equalization/);
+  assert.deepEqual(repository.calls.fetch, [
+    {
+      remote: 'origin',
+      ref: 'refs/heads/feature/payment-summary:refs/remotes/origin/feature/payment-summary'
+    },
+    {
+      remote: 'origin',
+      ref: 'refs/heads/release/2.0.0:refs/remotes/origin/release/2.0.0'
+    },
+    {
+      remote: 'origin',
+      ref: 'refs/heads/release/2.0.0:refs/heads/release/2.0.0'
+    }
+  ]);
+  assert.deepEqual(repository.calls.checkout, []);
+  assert.deepEqual(repository.calls.push, []);
+});
+
+test('Flow Governance blocks equalization when a source diverged from its upstream', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/payment-summary', 1, 1, {
+      remote: 'origin',
+      name: 'feature/payment-summary'
+    }),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'release/2.0.0',
+        ahead: 0,
+        behind: 0,
+        upstream: { remote: 'origin', name: 'release/2.0.0' }
+      })
+    ]
+  });
+  const warningRequests: Array<{ readonly message: string; readonly modal: boolean | undefined }> = [];
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'release/2.0.0',
+    targetBranch: 'feature/payment-summary',
+    description: 'Bring the release changes into the feature'
+  }, createEqualizationServices({ warningRequests }));
+
+  assert.equal(repository.calls.fetch.length, 1);
+  assert.match(warningRequests[0]?.message ?? '', /has diverged.*before preparing equalization/);
+  assert.equal(warningRequests[0]?.modal, true);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.merge, []);
+});
+
+test('Flow Governance blocks equalization when a source upstream cannot be fetched', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('feature/payment-summary', 0, 0, {
+      remote: 'origin',
+      name: 'feature/payment-summary'
+    }),
+    refs: [
+      createBranch({
+        type: RefType.Head,
+        name: 'release/2.0.0',
+        ahead: 0,
+        behind: 0,
+        upstream: { remote: 'origin', name: 'release/2.0.0' }
+      })
+    ]
+  });
+  repository.fetch = async () => {
+    throw new Error('remote unavailable');
+  };
+  const errors: string[] = [];
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'release/2.0.0',
+    targetBranch: 'feature/payment-summary',
+    description: 'Bring the release changes into the feature'
+  }, createEqualizationServices({ errors }));
+
+  assert.match(errors[0] ?? '', /Could not fetch origin\/feature\/payment-summary.*remote unavailable/);
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.deepEqual(repository.calls.merge, []);
+});
+
+function createEqualizationServices(options: {
+  readonly errors?: string[];
+  readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;
+  readonly confirmResult?: boolean;
+  readonly warningRequests?: Array<{ readonly message: string; readonly modal: boolean | undefined }>;
+} = {}): RefActionServices {
+  return {
+    ui: {
+      async pickRemoteName() { return undefined; },
+      async confirm(confirmation: { readonly message: string; readonly confirmLabel: string }) {
+        options.confirmations?.push(confirmation);
+        return options.confirmResult ?? false;
+      },
+      showInformationMessage() {},
+      showWarningMessage(message: string, messageOptions?: { readonly modal?: boolean }) {
+        options.warningRequests?.push({ message, modal: messageOptions?.modal });
+      },
+      async showErrorMessage(message: string) { options.errors?.push(message); },
+      async showSourceControl() {}
+    },
+    referenceManager: {
+      async getRemoteNames() { return []; }
+    },
+    refreshController: {
+      prepare() { return { cancel() {} }; },
+      refresh() {}
+    }
+  } as unknown as RefActionServices;
+}

@@ -7,6 +7,7 @@ export * from './flowDefaults';
 export * from './flowDiagnostics';
 export * from './flowEqualization';
 export * from './flowEqualizationNaming';
+export * from './flowEqualizationPreflight';
 export * from './flowEqualizationTarget';
 export * from './flowPullRequestContext';
 export * from './flowPullRequestPreflight';

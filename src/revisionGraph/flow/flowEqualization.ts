@@ -9,7 +9,11 @@ import {
 import type { RefActionServices } from '../../refActions/types';
 import { setFlowBranchDescription } from './flowBranchDescription';
 import { suggestFlowEqualizationBranchName } from './flowEqualizationNaming';
+import {
+  prepareFlowEqualizationSources
+} from './flowEqualizationPreflight';
 import { setFlowEqualizationTarget } from './flowEqualizationTarget';
+import type { FlowBranchStartPreflightDependencies } from './flowBranchStartPreflight';
 
 export interface PrepareFlowEqualizationOptions {
   readonly originBranch: string;
@@ -20,6 +24,8 @@ export interface PrepareFlowEqualizationOptions {
 export interface FlowEqualizationDependencies {
   readonly setDescription?: typeof setFlowBranchDescription;
   readonly setTarget?: typeof setFlowEqualizationTarget;
+  readonly prepareSources?: typeof prepareFlowEqualizationSources;
+  readonly sourcePreflight?: FlowBranchStartPreflightDependencies;
 }
 
 export async function prepareFlowEqualizationBranch(
@@ -41,6 +47,15 @@ export async function prepareFlowEqualizationBranch(
 
   if (originBranch === targetBranch) {
     await services.ui.showErrorMessage('Could not prepare equalization. Origin branch must differ from the target branch.');
+    return;
+  }
+
+  if (!await (dependencies.prepareSources ?? prepareFlowEqualizationSources)(
+    repository,
+    { targetBranch, originBranch },
+    services,
+    dependencies.sourcePreflight
+  )) {
     return;
   }
 
