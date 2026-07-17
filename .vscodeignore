@@ -12,6 +12,7 @@ project-context/**
 out-test/**
 src/**
 test/**
+tmp/**
 tsconfig.json
 tsconfig.test.json
 *.ts

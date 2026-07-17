@@ -106,4 +106,3 @@ Select the affected paths from `project-context/3.deliver/extension-host-smoke-m
 - Record publication timestamp and installed-version evidence only after confirmation.
 - Keep rollback scoped: source/config/contribution rollback before publication; follow-up patch or Marketplace action after publication according to maintainer decision.
 - Never delete user-owned repository flow configuration during rollback.
-

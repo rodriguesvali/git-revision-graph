@@ -112,4 +112,3 @@ browser intent
 - Strip credentials from parsed URLs and require fetch/push identity compatibility for pull-request destinations.
 - Represent unsupported exact links or capabilities honestly; do not fabricate provider routes.
 - Avoid provider authentication, API clients, or new dependencies unless explicitly approved.
-
