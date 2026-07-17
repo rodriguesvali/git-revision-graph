@@ -758,6 +758,7 @@ test('Flow Governance starts a local task branch from its feature', async () => 
   const informationMessages: string[] = [];
   const upstreamClears: string[] = [];
   const refreshes: unknown[] = [];
+  const targets: Array<{ readonly branchName: string; readonly targetRefName: string }> = [];
   const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
 
   await startFlowBranch(repository, {
@@ -766,7 +767,11 @@ test('Flow Governance starts a local task branch from its feature', async () => 
     name: '4312-adjust-timeout',
     description: 'Keep checkout requests bounded',
     config: DEFAULT_FLOW_CONFIG
-  }, services);
+  }, services, {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    }
+  });
 
   assert.deepEqual(repository.calls.createBranch, [{
     name: 'task/4312-adjust-timeout',
@@ -774,8 +779,34 @@ test('Flow Governance starts a local task branch from its feature', async () => 
     ref: 'feature/checkout-redesign'
   }]);
   assert.deepEqual(upstreamClears, ['task/4312-adjust-timeout']);
+  assert.deepEqual(targets, [{
+    branchName: 'task/4312-adjust-timeout',
+    targetRefName: 'feature/checkout-redesign'
+  }]);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Task branch task\/4312-adjust-timeout was created/);
+});
+
+test('Flow Governance stops task setup before publication when its feature target cannot be persisted', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = createReleaseServices({ errors, confirmResult: true, remoteNames: ['origin'] });
+
+  await startFlowBranch(repository, {
+    kind: 'task',
+    sourceBranch: 'feature/checkout-redesign',
+    name: '4312-adjust-timeout',
+    description: 'Keep checkout requests bounded',
+    config: DEFAULT_FLOW_CONFIG
+  }, services, {
+    async setTarget() {
+      throw new Error('target persistence failed');
+    }
+  });
+
+  assert.equal(repository.calls.createBranch.length, 1);
+  assert.deepEqual(repository.calls.push, []);
+  assert.match(errors[0] ?? '', /Could not start the task.*target persistence failed/);
 });
 
 test('Flow Governance starts a local hotfix branch from main with a required description', async () => {

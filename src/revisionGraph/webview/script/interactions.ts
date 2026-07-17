@@ -364,7 +364,7 @@
             { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
-      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync') {
+      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync' || flowBranch.kind === 'task') {
         const pullRequestTargetName = flowBranch.kind === 'hotfix' ? getFlowProductionBranchName()
           : getFlowPullRequestTargets(target.name)[0]?.targetRefName;
         if (pullRequestTargetName) {

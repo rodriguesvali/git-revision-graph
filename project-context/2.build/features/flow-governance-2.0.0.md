@@ -138,6 +138,10 @@ from an active release.
   branch from the selected source, stores its description, and never pushes
   automatically. Its tracked feature or release source uses the same fetch-first
   not-behind policy as task creation.
+- A task created through `Start New Task` persists its source feature and exposes
+  `Promotion PR Context` only for that feature. The handoff fetches and requires an exactly
+  synchronized target feature, verifies commits ahead, and then reuses confirmed task
+  publication/push and post-push revalidation.
 - Release and feature branches show `Flow Governance > Prepare Equalization`.
   Its form requires an origin branch and description. The origin list contains
   `main` and visible active releases, excludes the target when applicable, and

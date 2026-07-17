@@ -171,6 +171,96 @@ test('Feature Pull Request preflight verifies the remote release before checking
   assert.equal(hostMessages.length, 1);
 });
 
+test('Task Pull Request preflight verifies its mapped feature and pushes committed work after confirmation', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const calls: string[] = [];
+  const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+  const hostMessages: unknown[] = [];
+  let sourceChecks = 0;
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: createFlowPullRequestTestServices({
+      async confirm(confirmation: { readonly message: string; readonly confirmLabel: string }) {
+        confirmations.push(confirmation);
+        return true;
+      },
+      showWarningMessage: () => assert.fail('No warning expected.'),
+      showInformationMessage: () => undefined
+    }),
+    mutationCoordinator: new RepositoryMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({
+      flowGovernance: {
+        references: [
+          { refName: 'task/4312-adjust-timeout', kind: 'task' },
+          { refName: 'feature/payment', kind: 'feature' }
+        ]
+      }
+    }) as never,
+    postActionLoading: (label) => calls.push(`loading:${label}`),
+    postCurrentState: () => calls.push('loading:done'),
+    postHostMessage: (message) => hostMessages.push(message)
+  }, {
+    async loadRemoteBranchCommit(_repository, remoteName, branchName) {
+      calls.push(`remote:${remoteName}/${branchName}`);
+      return { status: 'found', commit: 'remote-feature-commit' };
+    },
+    async checkTarget(_path, sourceRefName, targetRefName, options) {
+      calls.push(`target:${targetRefName}..${sourceRefName}`);
+      assert.deepEqual(options, {
+        requireTargetAncestor: false,
+        requireTargetSynchronized: true,
+        targetCommitish: 'remote-feature-commit'
+      });
+      return { sourceRefName, targetRefName, status: 'ahead' };
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      sourceChecks += 1;
+      calls.push(`source:${remoteName}/${sourceRefName}:${sourceChecks}`);
+      return sourceChecks === 1
+        ? { status: 'unpushed', remoteName, sourceRefName, localAhead: 1, remoteAhead: 0 }
+        : { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+    },
+    isMergeInProgress: () => false
+  });
+
+  await workflow.copyContext('task/4312-adjust-timeout', 'feature/payment');
+
+  assert.deepEqual(confirmations, [{
+    message: 'task/4312-adjust-timeout has commits that are not available on origin. Push them before creating the Pull Request?',
+    confirmLabel: 'Push and Continue'
+  }]);
+  assert.deepEqual(repository.calls.push, [{
+    remoteName: 'origin',
+    branchName: 'task/4312-adjust-timeout',
+    setUpstream: false
+  }]);
+  assert.deepEqual(calls, [
+    'loading:Fetching remotes...',
+    'remote:origin/feature/payment',
+    'loading:done',
+    'target:feature/payment..task/4312-adjust-timeout',
+    'loading:Fetching remotes...',
+    'source:origin/task/4312-adjust-timeout:1',
+    'loading:done',
+    'loading:Fetching remotes...',
+    'source:origin/task/4312-adjust-timeout:2',
+    'loading:done'
+  ]);
+  assert.equal(hostMessages.length, 1);
+});
+
 test('Feature Pull Request preflight blocks behind, ahead, and divergent local releases', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(

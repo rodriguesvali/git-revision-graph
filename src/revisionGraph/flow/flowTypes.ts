@@ -74,6 +74,7 @@ export interface FlowBranchInfo {
   readonly isEphemeral: boolean;
   readonly diagnostics: readonly FlowDiagnostic[];
   readonly equalizationTargetRefName?: string;
+  readonly promotionTargetRefName?: string;
 }
 
 export interface FlowGovernanceViewState {

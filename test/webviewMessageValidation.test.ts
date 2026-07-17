@@ -923,18 +923,28 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { id: 'release1::branch::release/1.0.0', hash: 'release1', name: 'release/1.0.0', kind: 'branch', title: 'release/1.0.0' },
       { id: 'release2::branch::release/2.0.0', hash: 'release2', name: 'release/2.0.0', kind: 'branch', title: 'release/2.0.0' },
       { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch', title: 'feature/demo' },
+      { id: 'feature2::branch::feature/other', hash: 'feature2', name: 'feature/other', kind: 'branch', title: 'feature/other' },
+      { id: 'task1::branch::task/4312-adjust-timeout', hash: 'task1', name: 'task/4312-adjust-timeout', kind: 'branch', title: 'task/4312-adjust-timeout' },
       { id: 'sync1::branch::sync/demo', hash: 'sync1', name: 'sync/demo', kind: 'branch', title: 'sync/demo' }
     ],
     flowGovernance: {
       enabled: true,
       configSource: 'workspace',
       diagnostics: [],
-      branchKinds: ['main', 'feature', 'release', 'sync', 'unknown'],
+      branchKinds: ['main', 'feature', 'task', 'release', 'sync', 'unknown'],
       references: [
         { refName: 'main', kind: 'main', isEphemeral: false, diagnostics: [] },
         { refName: 'release/1.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
         { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
         { refName: 'feature/demo', kind: 'feature', isEphemeral: false, diagnostics: [] },
+        { refName: 'feature/other', kind: 'feature', isEphemeral: false, diagnostics: [] },
+        {
+          refName: 'task/4312-adjust-timeout',
+          kind: 'task',
+          isEphemeral: false,
+          diagnostics: [],
+          promotionTargetRefName: 'feature/demo'
+        },
         {
           refName: 'sync/demo',
           kind: 'sync',
@@ -946,6 +956,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       pullRequestTargets: [
         { sourceRefName: 'release/1.0.0', targetRefName: 'main', status: 'ahead' },
         { sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0', status: 'ahead' },
+        { sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/demo', status: 'ahead' },
         { sourceRefName: 'sync/demo', targetRefName: 'feature/demo', status: 'ahead' }
       ]
     }
@@ -963,6 +974,20 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       governedFlowState
     ),
     true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/demo' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/other' },
+      governedFlowState
+    ),
+    false
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(

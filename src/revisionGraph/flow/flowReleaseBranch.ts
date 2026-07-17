@@ -13,6 +13,7 @@ import {
 import type { RefActionServices } from '../../refActions/types';
 import type { FlowStartBranchKind, NormalizedFlowConfig } from './flowTypes';
 import { setFlowBranchDescription } from './flowBranchDescription';
+import { setFlowBranchTarget } from './flowEqualizationTarget';
 
 export type { FlowStartBranchKind } from './flowTypes';
 
@@ -26,6 +27,7 @@ export interface StartFlowBranchOptions {
 
 export interface StartFlowBranchDependencies {
   readonly setDescription?: typeof setFlowBranchDescription;
+  readonly setTarget?: typeof setFlowBranchTarget;
 }
 
 export interface FlowBranchNameResult {
@@ -104,6 +106,13 @@ export async function startFlowBranch(
     await repository.createBranch(branchName, true, options.sourceBranch);
     branchCreated = true;
     await services.referenceManager.unsetBranchUpstream(repository, branchName);
+    if (options.kind === 'task') {
+      await (dependencies.setTarget ?? setFlowBranchTarget)(
+        repository.rootUri.fsPath,
+        branchName,
+        options.sourceBranch
+      );
+    }
     const description = options.description.trim();
     try {
       await (dependencies.setDescription ?? setFlowBranchDescription)(

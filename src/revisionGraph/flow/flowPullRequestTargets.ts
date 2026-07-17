@@ -54,6 +54,19 @@ export async function loadFlowPullRequestTargets(
     }
   }
 
+  for (const source of references.filter((reference) => reference.kind === 'task')) {
+    const target = references.find((reference) =>
+      reference.kind === 'feature' && reference.refName === source.promotionTargetRefName
+    );
+    if (target && source.refName !== target.refName) {
+      candidates.push({
+        sourceRefName: source.refName,
+        targetRefName: target.refName,
+        requireTargetAncestor: false
+      });
+    }
+  }
+
   for (const source of references.filter((reference) => reference.kind === 'sync')) {
     const target = resolveFlowSyncPullRequestTarget(source, references);
     if (target && source.refName !== target.refName) {

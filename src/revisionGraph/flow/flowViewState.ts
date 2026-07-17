@@ -1,6 +1,6 @@
 import {
-  applyFlowEqualizationTargets,
-  loadFlowEqualizationTargets
+  applyFlowBranchTargets,
+  loadFlowBranchTargets
 } from './flowEqualizationTarget';
 import { classifyFlowBranches } from './flowBranchClassifier';
 import { resolveFlowConfigForRepository } from './flowConfig';
@@ -16,8 +16,8 @@ export async function loadFlowGovernanceViewState(
 ): Promise<FlowGovernanceViewState | undefined> {
   const resolution = await resolveFlowConfigForRepository(repositoryPath, settings);
   const classifiedReferences = classifyFlowBranches([...new Set(branchRefNames)], resolution.config);
-  const equalizationTargets = await loadFlowEqualizationTargets(repositoryPath, signal);
-  const references = applyFlowEqualizationTargets(classifiedReferences, equalizationTargets);
+  const branchTargets = await loadFlowBranchTargets(repositoryPath, signal);
+  const references = applyFlowBranchTargets(classifiedReferences, branchTargets);
   const state = createFlowGovernanceViewState(resolution, references);
   const pullRequestTargets = state.enabled
     ? await loadFlowPullRequestTargets(repositoryPath, state.references, signal)

@@ -326,10 +326,11 @@ function resolveFlowPullRequestTargetPolicy(
   const targetKind = references.find((reference) => reference.refName === targetRefName)?.kind;
   const isProductionPromotion = (sourceKind === 'release' || sourceKind === 'hotfix') && targetKind === 'main';
   const isFeaturePromotion = sourceKind === 'feature' && targetKind === 'release';
+  const isTaskPromotion = sourceKind === 'task' && targetKind === 'feature';
   const isSyncPromotion = sourceKind === 'sync' && (targetKind === 'release' || targetKind === 'feature');
   return {
     isProductionPromotion,
-    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion || isSyncPromotion,
+    requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion || isTaskPromotion || isSyncPromotion,
     requiresTargetAncestry: isProductionPromotion
   };
 }

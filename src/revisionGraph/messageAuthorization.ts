@@ -250,7 +250,7 @@ function isKnownGovernedFlowTransition(
   if (!source || !target || !isFlowGovernedTransition(source.kind, target.kind)) {
     return false;
   }
-  return source.kind !== 'sync' || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
+  return (source.kind !== 'sync' && source.kind !== 'task') || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
     candidate.sourceRefName === sourceRefName && candidate.targetRefName === targetRefName
   ) === true;
 }
