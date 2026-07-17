@@ -91,6 +91,9 @@ from an active release.
   graph projection remain visible.
 - Reference cards reserve room for Flow Governance badges and expand for common
   long branch names, using ellipsis only after the bounded maximum width.
+- Flow Governance badges use compact Codicon glyphs with a quiet tonal treatment inherited from
+  each reference row and accessible branch-kind labels; reference tooltips reuse the same tonal
+  icon treatment while keeping the complete kind in assistive labels.
 - Hovering or focusing a reference shows a compact reference-specific tooltip
   with its badge, full name, optional branch description, commit subject, short
   hash, author, and date instead of the browser-native multi-reference block.

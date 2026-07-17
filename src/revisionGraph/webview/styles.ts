@@ -248,7 +248,7 @@ export function renderRevisionGraphStyles(): string {
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
     .ref-line + .ref-line {
       border-top: 1px solid rgba(0, 0, 0, 0.08);
@@ -284,37 +284,25 @@ export function renderRevisionGraphStyles(): string {
       align-items: center;
       justify-content: center;
       flex: 0 0 auto;
-      min-width: 28px;
-      height: 16px;
-      padding: 0 4px;
-      border-radius: 3px;
-      border: 1px solid rgba(0, 0, 0, 0.24);
-      background: color-mix(in srgb, var(--panel) 84%, white 16%);
-      color: var(--node-text-dark);
-      font-family: var(--vscode-font-family);
-      font-size: 9px;
-      font-weight: 700;
-      line-height: 1;
-      text-transform: uppercase;
+      width: 18px; min-width: 18px;
+      height: 18px; padding: 0;
+      box-sizing: border-box;
+      border: 0;
+      border-radius: 4px;
+      background: color-mix(in srgb, currentColor 12%, transparent);
+      color: inherit;
+      line-height: 0;
     }
-    .flow-badge.flow-kind-main,
-    .reference-tooltip-kind.flow-kind-main { background: color-mix(in srgb, var(--node-head) 82%, white 18%); color: white; }
-    .flow-badge.flow-kind-release,
-    .reference-tooltip-kind.flow-kind-release { background: #42b883; color: #101414; }
-    .flow-badge.flow-kind-sync,
-    .reference-tooltip-kind.flow-kind-sync { background: #8c8f97; color: white; }
-    .flow-badge.flow-kind-package,
-    .reference-tooltip-kind.flow-kind-package { background: #4aa3ff; color: #07131f; }
-    .flow-badge.flow-kind-feature,
-    .reference-tooltip-kind.flow-kind-feature { background: #19d60f; color: #102010; }
-    .flow-badge.flow-kind-task,
-    .reference-tooltip-kind.flow-kind-task { background: #f0c34e; color: #1f1804; }
-    .flow-badge.flow-kind-bug,
-    .reference-tooltip-kind.flow-kind-bug { background: #ff7a59; color: #1f0803; }
-    .flow-badge.flow-kind-hotfix,
-    .reference-tooltip-kind.flow-kind-hotfix { background: #d62828; color: white; }
-    .flow-badge.flow-kind-unknown,
-    .reference-tooltip-kind.flow-kind-unknown { background: color-mix(in srgb, var(--muted) 82%, var(--panel)); color: var(--text); }
+    .flow-badge-icon {
+      display: block; position: static; inset: auto; width: 12px; height: 12px;
+      flex: 0 0 auto;
+      pointer-events: none;
+    }
+    .flow-badge-icon[data-icon="tasklist"] { width: 11px; height: 11px; }
+    body.vscode-high-contrast .flow-badge,
+    body.vscode-high-contrast-light .flow-badge {
+      box-shadow: inset 0 0 0 1px var(--vscode-contrastBorder, currentColor);
+    }
     .reference-tooltip {
       position: fixed;
       z-index: 58;

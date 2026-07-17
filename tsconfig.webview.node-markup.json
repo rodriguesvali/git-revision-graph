@@ -12,6 +12,7 @@
   },
   "files": [
     "src/revisionGraph/webview/runtime/nodePresentation.ts",
+    "src/revisionGraph/webview/runtime/flowKindPresentation.ts",
     "src/revisionGraph/webview/runtime/nodeMarkup.ts"
   ]
 }

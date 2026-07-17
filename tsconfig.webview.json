@@ -49,6 +49,7 @@
     "src/revisionGraph/webview/runtime/canvasSizing.ts",
     "src/revisionGraph/webview/runtime/edgeMarkup.ts",
     "src/revisionGraph/webview/runtime/nodePresentation.ts",
+    "src/revisionGraph/webview/runtime/flowKindPresentation.ts",
     "src/revisionGraph/webview/runtime/nodeMarkup.ts",
     "src/revisionGraph/webview/runtime/nodeDrag.ts",
     "src/revisionGraph/webview/runtime/remoteToolbarUi.ts",

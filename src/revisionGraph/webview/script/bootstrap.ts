@@ -146,29 +146,6 @@ const VIEWPORT_PADDING_LEFT = 18;
     let virtualEdgeIndex = new Map<number, RevisionGraphWebviewLegacyEdge[]>();
     let reloadCacheMenu: HTMLDivElement | null = null;
     let pushModeMenu: HTMLDivElement | null = null;
-    const flowKindLabels: Readonly<Record<string, string>> = {
-      main: 'Main',
-      release: 'Release',
-      sync: 'Sync',
-      package: 'Package',
-      feature: 'Feature',
-      task: 'Task',
-      bug: 'Bug',
-      hotfix: 'Hotfix',
-      unknown: 'Unknown'
-    };
-    const flowKindBadges: Readonly<Record<string, string>> = {
-      main: 'main',
-      release: 'rel',
-      sync: 'sync',
-      package: 'pkg',
-      feature: 'feat',
-      task: 'task',
-      bug: 'bug',
-      hotfix: 'hotfix',
-      unknown: '?'
-    };
-
     window.addEventListener('message', (event) => {
       if (isRevisionGraphWebviewHostMessage(event.data)) {
         handleHostMessage(event.data);
@@ -1672,8 +1649,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         getFlowKind: (referenceName) => {
           const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(referenceName) : null;
           return flowBranch?.kind ?? null;
-        },
-        flowKindBadges
+        }
       });
     }
 

@@ -810,8 +810,19 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);
   assert.match(html, /reference-tooltip-kind/);
   assert.match(html, /\.reference-tooltip-kind \{[\s\S]*?display: inline-flex;[\s\S]*?min-height: 19px;[\s\S]*?padding: 3px 5px 2px;/s);
-  assert.match(html, /flowKindBadges/);
-  assert.match(html, /reference-tooltip-kind' \+ kindClass/);
+  assert.match(html, /\.ref-line \{[\s\S]*?gap: 7px;/s);
+  assert.match(html, /\.flow-badge \{[\s\S]*?width: 18px; min-width: 18px;[\s\S]*?border: 0;[\s\S]*?background: color-mix\(in srgb, currentColor 12%, transparent\);[\s\S]*?color: inherit;/s);
+  assert.match(html, /\.flow-badge-icon \{[\s\S]*?position: static;[\s\S]*?inset: auto; width: 12px; height: 12px;/s);
+  assert.match(html, /\.flow-badge-icon\[data-icon="tasklist"\] \{ width: 11px; height: 11px; \}/);
+  assert.match(html, /body\.vscode-high-contrast \.flow-badge,[\s\S]*?body\.vscode-high-contrast-light \.flow-badge \{[\s\S]*?--vscode-contrastBorder/s);
+  assert.match(html, /function renderReferenceTooltipKind\(flowKind, referenceKind\)/);
+  assert.match(html, /reference-tooltip-flow-badge flow-badge flow-kind-/);
+  assert.match(html, /role="img" aria-label="[\s\S]*?branch type/);
+  assert.match(html, /renderRevisionGraphWebviewFlowKindIcon\(flowKind\)/);
+  assert.doesNotMatch(html, /--flow-kind-accent/);
+  assert.doesNotMatch(html, /\.flow-badge\.flow-kind-(?:main|release|feature|task)/);
+  assert.match(html, /getRevisionGraphWebviewFlowKindLabel\(flowKind\)/);
+  assert.match(html, /reference-tooltip-kind">/);
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /function bindReferenceTooltipEvents\(\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);
@@ -2224,11 +2235,12 @@ test('renders revision graph node markup through the typed module', () => {
     layout: { width: 100, height: 40, defaultLeft: 10, defaultTop: 20 },
     nodeRenderKey: 'key<one>',
     visibleReferences: branchNode.refs,
-    getFlowKind: () => 'release',
-    flowKindBadges: { release: 'rel' }
+    getFlowKind: () => 'release'
   });
   assert.match(branchMarkup, /data-node-render-key="key&lt;one&gt;"/);
-  assert.match(branchMarkup, /flow-badge flow-kind-release">rel<\/span>/);
+  assert.match(branchMarkup, /flow-badge flow-kind-release" role="img" aria-label="Release branch type"/);
+  assert.match(branchMarkup, /flow-badge-icon" data-icon="rocket"/);
+  assert.doesNotMatch(branchMarkup, />rel<\/span>/);
   assert.match(branchMarkup, /data-ref-name="release\/&lt;next&gt;"/);
 
   const structuralMarkup = runtime.context.renderRevisionGraphWebviewNodeMarkup({
@@ -2236,12 +2248,33 @@ test('renders revision graph node markup through the typed module', () => {
     layout: { width: 60, height: 24, defaultLeft: 0, defaultTop: 0 },
     nodeRenderKey: 'structural',
     visibleReferences: [],
-    getFlowKind: () => null,
-    flowKindBadges: {}
+    getFlowKind: () => null
   });
   assert.match(structuralMarkup, /class="node node-structural"/);
   assert.match(structuralMarkup, /node-summary">abcdef01<\/div>/);
   assert.match(structuralMarkup, /title="abcdef0123456789\nA &lt; B &amp; &quot;C&quot;/);
+});
+
+test('maps every Flow Governance kind to an accessible Codicon presentation', () => {
+  const runtime = createWebviewRuntime();
+  const expectedPresentations = {
+    main: ['Main', 'home'],
+    release: ['Release', 'rocket'],
+    sync: ['Sync', 'sync'],
+    package: ['Package', 'package'],
+    feature: ['Feature', 'lightbulb'],
+    task: ['Task', 'tasklist'],
+    bug: ['Bug', 'bug'],
+    hotfix: ['Hotfix', 'flame'],
+    unknown: ['Unknown', 'question']
+  };
+
+  for (const [flowKind, [label, iconName]] of Object.entries(expectedPresentations)) {
+    assert.equal(runtime.context.getRevisionGraphWebviewFlowKindLabel(flowKind), label);
+    const iconMarkup = runtime.context.renderRevisionGraphWebviewFlowKindIcon(flowKind);
+    assert.match(iconMarkup, new RegExp(`data-icon="${iconName}"`));
+    assert.match(iconMarkup, /aria-hidden="true" focusable="false" fill="currentColor"/);
+  }
 });
 
 test('commits revision graph virtual scene markup through the typed module', () => {

@@ -135,18 +135,14 @@
       node: RevisionGraphWebviewTooltipNode
     ): string {
       const flowBranch = isFlowGovernanceActive() ? getFlowBranchInfo(reference.name) : null;
-      const flowKind = flowBranch ? flowBranch.kind : null;
-      const kindLabel = flowKind
-        ? (flowKindBadges[flowKind] || flowKind)
-        : getReferenceKindLabel(reference.kind);
-      const kindClass = flowKind ? ' flow-kind-' + escapeHtml(flowKind) : '';
+      const flowKind = flowBranch?.kind ?? null;
       const description = reference.description
         ? '<div class="reference-tooltip-description">' + escapeHtml(reference.description) + '</div>'
         : '';
 
       return ''
         + '<div class="reference-tooltip-header">'
-        + '  <span class="reference-tooltip-kind' + kindClass + '">' + escapeHtml(kindLabel) + '</span>'
+        + renderReferenceTooltipKind(flowKind, reference.kind)
         + '  <span class="reference-tooltip-name">' + escapeHtml(reference.name) + '</span>'
         + '</div>'
         + description
@@ -165,6 +161,23 @@
         + renderCopyHashIconButton('reference-tooltip-action reference-tooltip-action-icon', 'data-reference-tooltip-action', 'copy-commit-hash', node.hash)
         + '  <button class="reference-tooltip-action" type="button" data-reference-tooltip-action="open-commit-on-remote" data-commit-hash="' + escapeHtml(node.hash) + '">Open on Remote</button>'
         + '</div>';
+    }
+
+    function renderReferenceTooltipKind(flowKind: string | null, referenceKind: string): string {
+      if (!flowKind) {
+        return '  <span class="reference-tooltip-kind">'
+          + escapeHtml(getReferenceKindLabel(referenceKind))
+          + '</span>';
+      }
+
+      const kindLabel = getRevisionGraphWebviewFlowKindLabel(flowKind);
+      return '  <span class="reference-tooltip-flow-badge flow-badge flow-kind-'
+        + escapeHtml(flowKind)
+        + '" role="img" aria-label="'
+        + escapeHtml(kindLabel)
+        + ' branch type">'
+        + renderRevisionGraphWebviewFlowKindIcon(flowKind)
+        + '</span>';
     }
 
     function hideReferenceTooltip() {

@@ -4,7 +4,6 @@ interface RevisionGraphWebviewNodeMarkupInput {
   readonly nodeRenderKey: string;
   readonly visibleReferences: readonly RevisionGraphWebviewNodePresentationReference[];
   readonly getFlowKind: (referenceName: string) => string | null;
-  readonly flowKindBadges: Readonly<Record<string, string>>;
 }
 
 function renderRevisionGraphWebviewNodeMarkup(input: RevisionGraphWebviewNodeMarkupInput): string {
@@ -32,8 +31,9 @@ function renderRevisionGraphWebviewNodeReferenceMarkup(
   reference: RevisionGraphWebviewNodePresentationReference
 ): string {
   const flowKind = input.getFlowKind(reference.name);
+  const flowLabel = flowKind ? getRevisionGraphWebviewFlowKindLabel(flowKind) : '';
   const flowBadge = flowKind
-    ? `<span class="flow-badge flow-kind-${escapeRevisionGraphWebviewNodeMarkupHtml(flowKind)}">${escapeRevisionGraphWebviewNodeMarkupHtml(input.flowKindBadges[flowKind] ?? flowKind)}</span>`
+    ? `<span class="flow-badge flow-kind-${escapeRevisionGraphWebviewNodeMarkupHtml(flowKind)}" role="img" aria-label="${escapeRevisionGraphWebviewNodeMarkupHtml(flowLabel)} branch type">${renderRevisionGraphWebviewFlowKindIcon(flowKind)}</span>`
     : '';
   const flowClass = flowKind
     ? ` flow-branch flow-kind-${escapeRevisionGraphWebviewNodeMarkupHtml(flowKind)}`

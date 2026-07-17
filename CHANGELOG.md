@@ -35,6 +35,9 @@ All notable changes to this project will be documented in this file.
 
 - Added an optional Flow Governance metadata overlay for branch classification and branch-kind
   badges in the revision graph webview.
+- Replaced textual branch-kind abbreviations with compact Codicon glyphs using quiet,
+  theme-adaptive tonal badges in graph cards and reference tooltips, with full accessible
+  branch-kind labels.
 - Added repository flow-file resolution with fallback VS Code settings, invalid-config diagnostics,
   and safe handling that does not alter Git history, refs, projection edges, or existing workflows.
 - Added `Create Flow Governance Config` to create the repository `.git-revision-graph-flow.json`
