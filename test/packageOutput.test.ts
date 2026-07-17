@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 type PackageScripts = {
@@ -31,6 +32,39 @@ test('code quality gate accepts the reviewed production baseline', () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Code quality: \d+ files and \d+ functions checked\./);
+});
+
+test('code quality gate requires explicit baselines to match current measurements', () => {
+  const temporaryDirectory = mkdtempSync(path.join(tmpdir(), 'git-revision-graph-quality-'));
+  const temporaryBaselinePath = path.join(temporaryDirectory, 'baseline.json');
+  try {
+    const baseline = JSON.parse(
+      readFileSync(path.join(process.cwd(), 'scripts/code-quality-baseline.json'), 'utf8')
+    ) as {
+      defaults: { maxFileLines: number; maxFunctionComplexity: number };
+      files: Record<string, number>;
+      functions: Record<string, number>;
+    };
+    const fileKey = Object.keys(baseline.files)[0];
+    const functionKey = Object.keys(baseline.functions)[0];
+    assert.ok(fileKey);
+    assert.ok(functionKey);
+    baseline.files[fileKey] += 1;
+    baseline.functions[functionKey] += 1;
+    writeFileSync(temporaryBaselinePath, JSON.stringify(baseline));
+
+    const result = spawnSync(
+      process.execPath,
+      ['scripts/check-code-quality.mjs', '--baseline', temporaryBaselinePath],
+      { cwd: process.cwd(), encoding: 'utf8' }
+    );
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /ratchet the file baseline/);
+    assert.match(result.stderr, /ratchet or remove the function baseline/);
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
 });
 
 test('webview build discovers every isolated config and keeps the bundle last', () => {

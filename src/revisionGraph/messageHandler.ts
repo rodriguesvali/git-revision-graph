@@ -5,22 +5,16 @@ import type { FlowGovernanceOptionsUpdate } from './flow';
 import { formatShortCommitHash } from '../commitHash';
 import { createRevisionGraphCommitShortStatMessage } from './hostMessages';
 import { ShowLogPresenter } from '../showLogView';
-import {
-  RevisionGraphRemoteTagWorkflow,
-  RevisionGraphRemoteTagWorkflowHost
-} from './remoteTagWorkflow';
-import {
-  RevisionGraphCurrentHeadWorkflow,
-  RevisionGraphCurrentHeadWorkflowHost
-} from './currentHeadWorkflow';
-import {
-  RevisionGraphRefActionWorkflow,
-  RevisionGraphRefActionWorkflowHost
-} from './refActionWorkflow';
-import {
-  RevisionGraphViewStateWorkflow,
-  RevisionGraphViewStateWorkflowHost
-} from './viewStateWorkflow';
+import { RevisionGraphRemoteTagWorkflow, RevisionGraphRemoteTagWorkflowHost } from './remoteTagWorkflow';
+import { RevisionGraphCurrentHeadWorkflow, RevisionGraphCurrentHeadWorkflowHost } from './currentHeadWorkflow';
+import { RevisionGraphRefActionWorkflow, RevisionGraphRefActionWorkflowHost } from './refActionWorkflow';
+import { RevisionGraphViewStateWorkflow, RevisionGraphViewStateWorkflowHost } from './viewStateWorkflow';
+
+type RevisionGraphMessageHandlerMap = {
+  readonly [Type in RevisionGraphProtocol.MessageType]: (
+    message: RevisionGraphProtocol.MessageOf<Type>
+  ) => Promise<void>;
+};
 
 export interface RevisionGraphMessageHandlerHost
   extends RevisionGraphRemoteTagWorkflowHost,
@@ -71,194 +65,188 @@ export class RevisionGraphMessageHandler {
   private readonly refActionWorkflow: RevisionGraphRefActionWorkflow;
   private readonly remoteTagWorkflow: RevisionGraphRemoteTagWorkflow;
   private readonly viewStateWorkflow: RevisionGraphViewStateWorkflow;
+  private readonly handlers: RevisionGraphMessageHandlerMap;
 
   constructor(private readonly host: RevisionGraphMessageHandlerHost) {
     this.currentHeadWorkflow = new RevisionGraphCurrentHeadWorkflow(host);
     this.refActionWorkflow = new RevisionGraphRefActionWorkflow(host);
     this.remoteTagWorkflow = new RevisionGraphRemoteTagWorkflow(host);
     this.viewStateWorkflow = new RevisionGraphViewStateWorkflow(host);
+    this.handlers = this.createHandlers();
   }
 
   async handleMessage(message: RevisionGraphMessage): Promise<void> {
-    switch (message.type) {
-      case 'webview-ready':
+    await dispatchRevisionGraphMessage(this.handlers, message);
+  }
+
+  private createHandlers(): RevisionGraphMessageHandlerMap {
+    return {
+      'webview-ready': async () => {
         this.host.rehydrateWebview();
-        return;
-      case 'load-trace':
+      },
+      'load-trace': async (message) => {
         this.host.traceWebviewLoadEvent(message.phase, message.durationMs, message.detail, message.requestId);
-        return;
-      case 'refresh':
+      },
+      refresh: async () => {
         await this.host.refresh('full-rebuild');
-        return;
-      case 'refresh-with-empty-cache':
+      },
+      'refresh-with-empty-cache': async () => {
         await this.host.clearLayoutCache();
         await this.host.refresh({ intent: 'full-rebuild', clearSnapshotCache: true });
-        return;
-      case 'fetch-current-repository':
+      },
+      'fetch-current-repository': async () => {
         await this.host.runFetchCurrentRepository();
-        return;
-      case 'abort-merge':
-        await this.refActionWorkflow.abortMerge();
-        return;
-      case 'choose-repository':
+      },
+      'choose-repository': async () => {
         await this.viewStateWorkflow.chooseRepository();
-        return;
-      case 'set-projection-options':
+      },
+      'abort-merge': async () => {
+        await this.refActionWorkflow.abortMerge();
+      },
+      'set-projection-options': async (message) => {
         await this.viewStateWorkflow.setProjectionOptions(message.options);
-        return;
-      case 'set-flow-governance-options':
+      },
+      'set-flow-governance-options': async (message) => {
         await this.host.updateFlowGovernanceOptions(message.options);
-        return;
-      case 'start-flow-branch':
+      },
+      'start-flow-branch': async (message) => {
         await handleFlowBranchStartMessage(this.host, message);
-        return;
-      case 'prepare-flow-equalization':
+      },
+      'prepare-flow-equalization': async (message) => {
         await this.host.prepareFlowEqualization(
           message.targetRefName,
           message.originRefName,
           message.description
         );
-        return;
-      case 'copy-flow-pr-context':
+      },
+      'copy-flow-pr-context': async (message) => {
         await this.host.copyFlowPullRequestContext(message.sourceRefName, message.targetRefName);
-        return;
-      case 'copy-flow-pr-context-field':
+      },
+      'copy-flow-pr-context-field': async (message) => {
         await this.host.copyFlowPullRequestContextField(
           message.sourceRefName,
           message.targetRefName,
           message.field
         );
-        return;
-      case 'open-flow-pr-url':
+      },
+      'open-flow-pr-url': async (message) => {
         await this.host.openFlowPullRequestUrl(message.sourceRefName, message.targetRefName);
-        return;
-      case 'compare-selected':
+      },
+      'compare-selected': async (message) => {
         await this.refActionWorkflow.compareSelected(
           message.baseRevision,
           message.baseLabel,
           message.compareRevision,
           message.compareLabel
         );
-        return;
-      case 'show-log':
+      },
+      'show-log': async (message) => {
         await this.runWithCurrentRepository((repository) =>
           this.host.showLogPresenter.showSource(repository, message.source)
         );
-        return;
-      case 'open-unified-diff':
+      },
+      'open-unified-diff': async (message) => {
         await this.runWithCurrentRepository((repository) =>
           this.host.openUnifiedDiff(repository, message.baseRevision, message.compareRevision)
         );
-        return;
-      case 'compare-with-worktree':
+      },
+      'compare-with-worktree': async (message) => {
         await this.refActionWorkflow.compareWithWorktree(message.revision, message.label);
-        return;
-      case 'copy-commit-hash':
+      },
+      'copy-commit-hash': async (message) => {
         await this.host.writeClipboard(message.commitHash);
-        this.host.actionServices.ui.showInformationMessage(`Copied commit ${formatShortCommitHash(message.commitHash)}.`);
-        return;
-      case 'load-commit-short-stat':
-        await this.runWithCurrentRepository(async (repository) => {
-          let shortStat: RevisionGraphCommitShortStat | undefined;
-          try {
-            shortStat = await this.host.loadCommitShortStat(repository, message.commitHash);
-          } catch (error) {
-            if (isAbortError(error)) {
-              return;
-            }
-
-            throw error;
-          }
-          if (this.host.getCurrentRepository()?.rootUri.fsPath !== repository.rootUri.fsPath) {
-            return;
-          }
-          this.host.postHostMessage(createRevisionGraphCommitShortStatMessage(message.commitHash, shortStat));
-        });
-        return;
-      case 'open-commit-on-remote':
+        this.host.actionServices.ui.showInformationMessage(
+          `Copied commit ${formatShortCommitHash(message.commitHash)}.`
+        );
+      },
+      'load-commit-short-stat': async (message) => {
+        await this.loadCommitShortStat(message.commitHash);
+      },
+      'open-commit-on-remote': async (message) => {
         await this.runWithCurrentRepository((repository) =>
           this.host.openCommitOnRemote(repository, message.commitHash)
         );
-        return;
-      case 'copy-ref-name':
+      },
+      'copy-ref-name': async (message) => {
         await this.host.writeClipboard(message.refName);
         this.host.actionServices.ui.showInformationMessage(`Copied ref ${message.refName}.`);
-        return;
-      case 'checkout':
+      },
+      checkout: async (message) => {
         await this.refActionWorkflow.checkout(message.refName, message.refKind);
-        return;
-      case 'reset-to-commit':
+      },
+      'reset-to-commit': async (message) => {
         await this.refActionWorkflow.resetToCommit(message.commitHash, message.label);
-        return;
-      case 'create-branch':
-        await this.refActionWorkflow.createBranch(
-          message.revision,
-          message.label,
-          message.refKind
-        );
-        return;
-      case 'create-tag':
-        await this.refActionWorkflow.createTag(
-          message.revision,
-          message.label,
-          message.refKind
-        );
-        return;
-      case 'resolve-remote-tag-state':
+      },
+      'create-branch': async (message) => {
+        await this.refActionWorkflow.createBranch(message.revision, message.label, message.refKind);
+      },
+      'create-tag': async (message) => {
+        await this.refActionWorkflow.createTag(message.revision, message.label, message.refKind);
+      },
+      'resolve-remote-tag-state': async (message) => {
         await this.remoteTagWorkflow.resolveRemoteTagState(message.refName);
-        return;
-      case 'push-tag':
+      },
+      'push-tag': async (message) => {
         await this.remoteTagWorkflow.pushTag(message.refName, message.label, message.refKind);
-        return;
-      case 'delete-remote-tag':
+      },
+      'delete-remote-tag': async (message) => {
         await this.remoteTagWorkflow.deleteRemoteTag(message.refName, message.label, message.refKind);
-        return;
-      case 'publish-branch':
-        await this.refActionWorkflow.publishBranch(
-          message.refName,
-          message.label,
-          message.refKind
-        );
-        return;
-      case 'sync-current-head':
+      },
+      'publish-branch': async (message) => {
+        await this.refActionWorkflow.publishBranch(message.refName, message.label, message.refKind);
+      },
+      'sync-current-head': async () => {
         await this.currentHeadWorkflow.syncCurrentHead();
-        return;
-      case 'pull-current-head':
+      },
+      'pull-current-head': async () => {
         await this.currentHeadWorkflow.pullCurrentHead();
-        return;
-      case 'push-current-head':
+      },
+      'push-current-head': async (message) => {
         await this.currentHeadWorkflow.pushCurrentHead(message.mode);
-        return;
-      case 'stash-save':
-        if (!await this.refActionWorkflow.stashSave()) {
-          this.host.postCurrentState();
-        }
-        return;
-      case 'stash-apply':
-        if (!await this.refActionWorkflow.stashApply(message.refName)) {
-          this.host.postCurrentState();
-        }
-        return;
-      case 'stash-pop':
-        if (!await this.refActionWorkflow.stashPop(message.refName)) {
-          this.host.postCurrentState();
-        }
-        return;
-      case 'stash-drop':
-        if (!await this.refActionWorkflow.stashDrop(message.refName)) {
-          this.host.postCurrentState();
-        }
-        return;
-      case 'delete':
+      },
+      'stash-save': async () => {
+        await this.runStashAction(() => this.refActionWorkflow.stashSave());
+      },
+      'stash-apply': async (message) => {
+        await this.runStashAction(() => this.refActionWorkflow.stashApply(message.refName));
+      },
+      'stash-pop': async (message) => {
+        await this.runStashAction(() => this.refActionWorkflow.stashPop(message.refName));
+      },
+      'stash-drop': async (message) => {
+        await this.runStashAction(() => this.refActionWorkflow.stashDrop(message.refName));
+      },
+      delete: async (message) => {
         await this.refActionWorkflow.deleteReference(message.refName, message.refKind);
-        return;
-      case 'merge':
+      },
+      merge: async (message) => {
         await this.refActionWorkflow.merge(message.refName, message.refKind);
-        return;
-    }
+      }
+    };
+  }
 
-    const unhandledMessage: never = message;
-    return unhandledMessage;
+  private async loadCommitShortStat(commitHash: string): Promise<void> {
+    await this.runWithCurrentRepository(async (repository) => {
+      let shortStat: RevisionGraphCommitShortStat | undefined;
+      try {
+        shortStat = await this.host.loadCommitShortStat(repository, commitHash);
+      } catch (error) {
+        if (isAbortError(error)) {
+          return;
+        }
+        throw error;
+      }
+      if (this.host.getCurrentRepository()?.rootUri.fsPath !== repository.rootUri.fsPath) {
+        return;
+      }
+      this.host.postHostMessage(createRevisionGraphCommitShortStatMessage(commitHash, shortStat));
+    });
+  }
+
+  private async runStashAction(action: () => Promise<boolean>): Promise<void> {
+    if (!await action()) {
+      this.host.postCurrentState();
+    }
   }
 
   private async runWithCurrentRepository(
@@ -268,14 +256,20 @@ export class RevisionGraphMessageHandler {
     if (!repository) {
       return;
     }
-
     await action(repository);
   }
 }
 
+async function dispatchRevisionGraphMessage<Type extends RevisionGraphProtocol.MessageType>(
+  handlers: RevisionGraphMessageHandlerMap,
+  message: RevisionGraphProtocol.MessageOf<Type>
+): Promise<void> {
+  await handlers[message.type](message);
+}
+
 async function handleFlowBranchStartMessage(
   host: RevisionGraphMessageHandlerHost,
-  message: Extract<RevisionGraphMessage, { readonly type: 'start-flow-branch' }>
+  message: RevisionGraphProtocol.MessageOf<'start-flow-branch'>
 ): Promise<void> {
   if ('phase' in message) {
     await host.prepareFlowBranchStart(message.branchKind, message.sourceRefName);

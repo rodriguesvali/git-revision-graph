@@ -6,13 +6,14 @@ import { fileURLToPath } from 'node:url';
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
-const baselinePath = path.join(projectRoot, 'scripts', 'code-quality-baseline.json');
+const baselinePath = resolveBaselinePath(process.argv.slice(2));
 const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
 const defaultMaxFileLines = baseline.defaults.maxFileLines;
 const defaultMaxFunctionComplexity = baseline.defaults.maxFunctionComplexity;
 const sourceFiles = collectTypeScriptFiles(path.join(projectRoot, 'src'));
 const violations = [];
 const measuredFunctions = [];
+const measuredFileLines = new Map();
 
 for (const filePath of sourceFiles) {
   const relativePath = toPosix(path.relative(projectRoot, filePath));
@@ -26,6 +27,7 @@ for (const filePath of sourceFiles) {
     );
   }
   const lineCount = countLines(sourceText);
+  measuredFileLines.set(relativePath, lineCount);
   const allowedLines = baseline.files[relativePath] ?? defaultMaxFileLines;
   if (lineCount > allowedLines) {
     violations.push(
@@ -66,6 +68,23 @@ for (const stale of staleFileBaselines) {
 for (const stale of staleFunctionBaselines) {
   violations.push(`${stale}: stale function baseline`);
 }
+for (const [file, allowedLines] of Object.entries(baseline.files)) {
+  const measuredLines = measuredFileLines.get(file);
+  if (measuredLines !== undefined && measuredLines < allowedLines) {
+    violations.push(
+      `${file}: baseline ${allowedLines} exceeds current ${measuredLines}; ratchet the file baseline`
+    );
+  }
+}
+for (const measurement of measuredFunctions) {
+  const allowedComplexity = baseline.functions[measurement.key];
+  if (allowedComplexity !== undefined && measurement.complexity < allowedComplexity) {
+    violations.push(
+      `${measurement.key}: baseline ${allowedComplexity} exceeds current ${measurement.complexity}; `
+      + 'ratchet or remove the function baseline'
+    );
+  }
+}
 
 if (process.argv.includes('--report')) {
   printReport(sourceFiles, measuredFunctions, baseline);
@@ -85,6 +104,18 @@ if (violations.length > 0) {
 process.stdout.write(
   `Code quality: ${sourceFiles.length} files and ${measuredFunctions.length} functions checked.\n`
 );
+
+function resolveBaselinePath(args) {
+  const optionIndex = args.indexOf('--baseline');
+  if (optionIndex < 0) {
+    return path.join(projectRoot, 'scripts', 'code-quality-baseline.json');
+  }
+  const requestedPath = args[optionIndex + 1];
+  if (!requestedPath) {
+    throw new Error('--baseline requires a path');
+  }
+  return path.resolve(projectRoot, requestedPath);
+}
 
 function collectTypeScriptFiles(directory) {
   const files = [];

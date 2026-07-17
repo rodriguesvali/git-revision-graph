@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (226 production files and 2,114 functions), `npm run build`, and `npm test` (754 tests). The package-hygiene follow-up removed the obsolete E2E trace, excludes `tmp/**` from Git and VSIX inputs, passed `git diff --check e95542fcd98601dc5c21dd1aa679a19b48c833ec`, and confirmed through `npx vsce ls` that no trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
+| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (227 production files and 2,226 functions), `npm run build`, and `npm test` (755 tests). The package-hygiene follow-up removed the obsolete E2E trace, excludes `tmp/**` from Git and VSIX inputs, passed `git diff --check e95542fcd98601dc5c21dd1aa679a19b48c833ec`, and confirmed through `npx vsce ls` that no trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -34,6 +34,7 @@ Target version: `2.0.0`
 
 Focused build artifact:
 
+- `project-context/2.build/features/2.0.0-message-boundary-quality-ratchet.md`
 - `project-context/2.build/features/2.0.0-flow-dialog-controller-extraction.md`
 - `project-context/2.build/features/2.0.0-flow-governance-icon-badges.md`
 - `project-context/2.build/features/2.0.0-task-promotion-pr-context.md`
@@ -112,6 +113,17 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- The revision graph message boundary and quality ratchet were hardened on 2026-07-17. Exhaustive
+  typed registries now own structural validation, state/repository authorization policy, and host
+  handler routing without the previous high-complexity switches. Projection and Flow option
+  validation moved to a focused module. Five message-boundary complexity exceptions were removed.
+  The quality gate now rejects explicit baselines above current measurements; three file ceilings
+  were reduced, one obsolete function exception was removed, and one remaining exception was
+  reduced to its measured value. Focused boundary tests passed 21/21; `npm run quality:check`
+  passed with 227 production files and 2,226 functions; `npm run build`, all 755 tests, and
+  `git diff --check` passed. `graphify update .` completed successfully. No protocol, command,
+  dependency, Git workflow, version, packaging, or Marketplace behavior changed.
 
 - The Flow Governance webview dialogs were extracted from the central interaction script on
   2026-07-17. Typed branch, Pull Request context, and equalization controllers now own their DOM,
