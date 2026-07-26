@@ -2,7 +2,8 @@ import type * as vscode from 'vscode';
 
 import {
   isSensitiveAiContextPath,
-  normalizeAiContextPath
+  normalizeAiContextPath,
+  sanitizeAiContextText
 } from '../../aiContextPaths';
 import type { Repository } from '../../git';
 import type {
@@ -14,9 +15,11 @@ import type {
   FlowAiTextImprovementInput
 } from './aiTextAssistant';
 
-const FLOW_AI_DOCUMENT_PATHS = [
+const FLOW_AI_DOCUMENT_FILES = new Set([
   'README.md',
-  'CHANGELOG.md',
+  'CHANGELOG.md'
+]);
+const FLOW_AI_DOCUMENT_DIRECTORIES = [
   'project-context/1.define',
   'project-context/2.build/features',
   'project-context/3.deliver'
@@ -78,17 +81,31 @@ async function loadDocumentContext(
   input: PullRequestInput,
   signal: AbortSignal
 ): Promise<string | undefined> {
+  const changes = await backend.loadChangedPaths(
+    repository,
+    input.targetRefName,
+    input.sourceRefName,
+    { signal, maxOutputBytes: FLOW_AI_CHANGED_PATHS_MAX_OUTPUT_BYTES }
+  );
+  const selectedChanges = changes
+    .map((change) => toSafeChangedPath(change, isFlowAiDocumentPath))
+    .filter((change): change is SafeChangedPath => !!change)
+    .sort((left, right) => left.displayPath.localeCompare(right.displayPath))
+    .slice(0, FLOW_AI_CODE_CONTEXT_MAX_FILES);
+  if (selectedChanges.length === 0) return undefined;
+
+  const paths = [...new Set(selectedChanges.flatMap((change) => change.paths))];
   const diff = await backend.loadUnifiedDiff(
     repository,
     input.targetRefName,
     input.sourceRefName,
     {
-      paths: FLOW_AI_DOCUMENT_PATHS,
+      paths,
       signal,
       maxOutputBytes: FLOW_AI_CONTEXT_GIT_MAX_OUTPUT_BYTES
     }
   );
-  return diff.trim() ? diff : undefined;
+  return sanitizeLoadedAiContext(diff);
 }
 
 async function loadSafeCodeContext(
@@ -104,7 +121,7 @@ async function loadSafeCodeContext(
     { signal, maxOutputBytes: FLOW_AI_CHANGED_PATHS_MAX_OUTPUT_BYTES }
   );
   const safeChanges = changes
-    .map(toSafeChangedPath)
+    .map((change) => toSafeChangedPath(change))
     .filter((change): change is SafeChangedPath => !!change)
     .sort((left, right) => left.displayPath.localeCompare(right.displayPath));
   const selectedChanges = safeChanges.slice(0, FLOW_AI_CODE_CONTEXT_MAX_FILES);
@@ -121,7 +138,8 @@ async function loadSafeCodeContext(
       maxOutputBytes: FLOW_AI_CONTEXT_GIT_MAX_OUTPUT_BYTES
     }
   );
-  if (!diff.trim()) return undefined;
+  const sanitizedDiff = sanitizeLoadedAiContext(diff);
+  if (!sanitizedDiff) return undefined;
 
   const omittedCount = changes.length - selectedChanges.length;
   return [
@@ -133,7 +151,7 @@ async function loadSafeCodeContext(
     ...selectedChanges.map((change) => `- ${change.status}: ${change.displayPath}`),
     '',
     'Unified diff:',
-    diff
+    sanitizedDiff
   ].filter((line) => line.length > 0).join('\n');
 }
 
@@ -145,11 +163,16 @@ interface SafeChangedPath {
   readonly displayPath: string;
 }
 
-function toSafeChangedPath(change: RevisionGraphChangedPath): SafeChangedPath | undefined {
+function toSafeChangedPath(
+  change: RevisionGraphChangedPath,
+  isAllowed: (path: string) => boolean = () => true
+): SafeChangedPath | undefined {
   const paths = change.paths.map(normalizeAiContextPath);
   if (
     paths.some((value) => !value)
-    || paths.some((value) => value ? isSensitiveAiContextPath(value) : true)
+    || paths.some((value) => value
+      ? isSensitiveAiContextPath(value) || !isAllowed(value)
+      : true)
   ) {
     return undefined;
   }
@@ -159,4 +182,19 @@ function toSafeChangedPath(change: RevisionGraphChangedPath): SafeChangedPath | 
     paths: normalizedPaths,
     displayPath: normalizedPaths.join(' -> ')
   };
+}
+
+function isFlowAiDocumentPath(value: string): boolean {
+  return FLOW_AI_DOCUMENT_FILES.has(value)
+    || FLOW_AI_DOCUMENT_DIRECTORIES.some((directory) =>
+      value.startsWith(`${directory}/`)
+    );
+}
+
+function sanitizeLoadedAiContext(value: string): string | undefined {
+  if (!value.trim()) return undefined;
+  const sanitized = sanitizeAiContextText(value);
+  return sanitized.redacted
+    ? `Sensitive-looking values were redacted before model use.\n${sanitized.text}`
+    : sanitized.text;
 }

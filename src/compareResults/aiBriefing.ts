@@ -26,6 +26,7 @@ export interface CompareBriefingInput {
   readonly omittedFileCount: number;
   readonly diff: string;
   readonly diffTruncated: boolean;
+  readonly sensitiveContentRedacted: boolean;
 }
 
 export type CompareBriefingGenerationResult =
@@ -75,6 +76,9 @@ export function buildCompareBriefingPrompt(
       : undefined,
     input.diffTruncated || boundedDiff.truncated
       ? 'The diff context is truncated.'
+      : undefined,
+    input.sensitiveContentRedacted
+      ? 'Sensitive-looking values were redacted before model use.'
       : undefined
   ].filter((value): value is string => !!value).join(' ');
 

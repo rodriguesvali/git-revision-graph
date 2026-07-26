@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode';
 
+import { sanitizeAiContextText } from '../aiContextPaths';
 import {
   getRepositoryRelativeChangePath,
   getRepositoryRelativeUriPath,
@@ -80,7 +81,11 @@ export async function prepareCompareBriefing(
       return { status: 'unavailable', message: 'No diff content is available for an AI briefing.' };
     }
 
-    const boundedDiff = truncateCompareBriefingDiff(diff, MAX_COMPARE_BRIEFING_DIFF_CHARS);
+    const sanitizedDiff = sanitizeAiContextText(diff);
+    const boundedDiff = truncateCompareBriefingDiff(
+      sanitizedDiff.text,
+      MAX_COMPARE_BRIEFING_DIFF_CHARS
+    );
     return {
       status: 'ready',
       input: {
@@ -92,7 +97,8 @@ export async function prepareCompareBriefing(
         })),
         omittedFileCount: state.changes.length - selectedChanges.length,
         diff: boundedDiff.text,
-        diffTruncated: boundedDiff.truncated
+        diffTruncated: boundedDiff.truncated,
+        sensitiveContentRedacted: sanitizedDiff.redacted
       }
     };
   } finally {

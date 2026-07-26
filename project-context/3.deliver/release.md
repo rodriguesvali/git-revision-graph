@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-26 passed `npm run quality:check`, the clean production build, `npm test` (792 tests), `npm run test:platform` (31 tests), `npm audit --omit=dev`, `npm audit`, and `git diff --check`. The real VSCE file-list regression retained both production runtime entrypoints while excluding E2E output, TypeScript build configurations, and the repository Flow Governance config. |
+| Current automated source verification | Complete | Latest verification on 2026-07-26 passed `npm run quality:check`, the clean production build, `npm test` (796 tests), and `git diff --check`. The candidate also retains the same-day passing `npm run test:platform` (31 tests), zero-vulnerability runtime/full audits, and real VSCE file-list regression. |
 | Automated Extension Host baseline | Complete | `npm run test:e2e` passed locally on 2026-07-26 against VS Code `1.90.0` and stable `1.130.0`. Each version passed activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated profiles. CI now enforces both entries. Minimum-version execution exposed and verified the compatibility fallback for the newer optional `Repository.onDidCheckout` event. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -60,11 +60,13 @@ Candidate scope:
 
 - Add optional field-level AI text improvement to Flow Governance PR title/description and new-release
   description forms. Existing deterministic/user-entered content remains the default, requests are
-  explicitly initiated, and improved PR context is transiently host-owned for provider handoff.
+  explicitly initiated, improved PR context is transiently host-owned for provider handoff, and
+  documentation/code evidence is exact-path filtered and content-redacted before prompt construction.
 - Add an optional, explicitly invoked AI Compare Briefing to completed Compare Results panels. It uses
   an available GitHub Copilot language model through the VS Code Language Model API, sends only bounded
-  path-filtered comparison context after excluding known sensitive paths, renders plain text, and
-  cancels stale requests without changing Git state.
+  path-filtered comparison context after excluding known sensitive paths and redacting
+  high-confidence secret forms, renders plain text, and cancels stale requests without changing Git
+  state.
 - Keep Flow Governance Phase 1 as the foundation, not as the final release value.
 - Add repository flow-file resolution with VS Code settings fallback and invalid-config diagnostics.
 - Classify branch refs into Phase 1 kinds and attach serializable Flow Governance view state.
@@ -123,6 +125,17 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- AI context disclosure defenses were hardened on 2026-07-26. Compare Briefing and Flow PR
+  descriptions now share expanded sensitive-path exclusions plus deterministic redaction of
+  high-confidence credential assignments, provider/bearer tokens, credential-bearing URLs, and
+  private-key blocks before prompt construction. Flow project-document context now inventories and
+  validates every changed path before loading exact patches, closing the prior broad-directory
+  pathspec gap. Boundary tests verify representative secret values are absent from final prompts.
+  `npm run quality:check` passed with 251 production files and 2,402 functions, the clean build and
+  all 796 tests passed, and `git diff --check` passed. `graphify update .` rebuilt 4,930 nodes, 9,696
+  edges, and 386 communities. The residual heuristic limitation is documented; no dependency,
+  command, Git mutation, package version, VSIX, or Marketplace state changed.
 
 - Extension Host release coverage was hardened on 2026-07-26. The Ubuntu CI job now runs the
   isolated zero/one-repository and singleton-panel baseline against both the minimum supported VS
