@@ -16,10 +16,13 @@ npx vsce login <publisher-id>
 ## Package a VSIX
 
 ```bash
-npm install
+npm ci
 npm test
 npm run package:vsix
 ```
+
+VSCE runs `vscode:prepublish` before packaging, which performs a clean production build even when
+`out/` is missing or stale. `npm test` remains a separate required release gate.
 
 The generated `.vsix` can be installed in VS Code via `Extensions: Install from VSIX...`.
 
@@ -31,6 +34,9 @@ Current version already set in `package.json`:
 npm test
 npm run publish:current
 ```
+
+The publish commands use the same VSCE `vscode:prepublish` lifecycle and therefore rebuild the
+production output before upload. They do not replace the required test and release-readiness gates.
 
 Patch release:
 

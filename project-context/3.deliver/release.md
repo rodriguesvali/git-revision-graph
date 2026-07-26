@@ -25,7 +25,7 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-17 passed `npm run quality:check` (240 production files and 2,356 functions), `npm run build`, and `npm test` (781 tests), including editable Promotion PR Context fields, bounded project-document grounding, and adaptive token fitting across available Copilot models. `git diff --check` passed and `graphify update .` refreshed the repository graph. The prior package-hygiene check confirmed through `npx vsce ls` that no obsolete trace or `tmp/` content is included; the existing platform baseline remains 31 passing tests. |
+| Current automated source verification | Complete | Verification on 2026-07-26 passed the clean VSCE prepublish build, `npm test` (789 tests), `npm audit --omit=dev`, and `npm audit`. The real VSCE file-list regression retained both production runtime entrypoints while excluding E2E output, TypeScript build configurations, and the repository Flow Governance config. The existing platform baseline remains 31 passing tests. |
 | Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
@@ -34,6 +34,7 @@ Target version: `2.0.0`
 
 Focused build artifact:
 
+- `project-context/2.build/features/2.0.0-package-hygiene.md`
 - `project-context/2.build/features/2.0.0-ai-compare-briefing.md`
 - `project-context/2.build/features/2.0.0-ai-pr-release-assistant.md`
 - `project-context/2.build/features/2.0.0-message-boundary-quality-ratchet.md`
@@ -122,6 +123,15 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- Package hygiene was hardened on 2026-07-26. VSCE now runs the clean production build through
+  `vscode:prepublish` before package or direct publish commands. `.vscodeignore` excludes E2E output,
+  TypeScript build configurations, and the repository's Flow Governance configuration. The package
+  output test executes the real VSCE file listing, requires both production runtime entrypoints, and
+  rejects those development-only artifacts. `npm run vscode:prepublish` passed, `npm test` passed all
+  789 tests, both runtime-only and full `npm audit` reported zero vulnerabilities, and VSCE listed
+  649 files with no forbidden package entries. `git diff --check` passed. No VSIX was created and no
+  Marketplace action was performed.
 
 - The AI PR and Release Assistant was implemented on 2026-07-17 as optional icon actions beside PR
   title, PR description, and new-release description. It uses the VS Code Language Model API only after

@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `2.0.0-package-hygiene.md`: clean VSCE prepublish builds and deterministic exclusion of
+  development-only package content.
 - `flow-governance-2.0.0.md`: operational Flow Governance release scope.
 - `2.0.0-modal-error-and-warning-policy.md`: modal presentation policy for errors and warnings
   whose workflows continue.

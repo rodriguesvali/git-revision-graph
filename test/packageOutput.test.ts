@@ -15,6 +15,10 @@ test('production build cleans compiled output before TypeScript runs', () => {
   ) as PackageScripts;
 
   assert.equal(
+    manifest.scripts?.['vscode:prepublish'],
+    'npm run build'
+  );
+  assert.equal(
     manifest.scripts?.['clean:out'],
     'node -e "require(\'fs\').rmSync(\'out\', { recursive: true, force: true })"'
   );
@@ -143,6 +147,37 @@ test('compiled JavaScript output has a matching TypeScript source', () => {
     `compiled JavaScript without matching TypeScript source:\n${orphanedOutputs.join('\n')}`
   );
   assert.equal(outputFiles.includes('webview/revisionGraph.js'), true);
+});
+
+test('VSIX file list contains runtime assets and excludes development-only artifacts', () => {
+  const vscePath = path.join(
+    process.cwd(),
+    'node_modules',
+    '@vscode',
+    'vsce',
+    'vsce'
+  );
+  const result = spawnSync(process.execPath, [vscePath, 'ls'], {
+    cwd: process.cwd(),
+    encoding: 'utf8'
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const packagedFiles = result.stdout.trim().split(/\r?\n/);
+  assert.equal(packagedFiles.includes('out/extension.js'), true);
+  assert.equal(packagedFiles.includes('out/webview/revisionGraph.js'), true);
+
+  const developmentOnlyFiles = packagedFiles.filter((file) =>
+    file === '.git-revision-graph-flow.json'
+    || file === 'tsconfig.e2e.json'
+    || file.startsWith('tsconfig.webview')
+    || file.startsWith('out-e2e/')
+  );
+  assert.deepEqual(
+    developmentOnlyFiles,
+    [],
+    `development-only files included in VSIX:\n${developmentOnlyFiles.join('\n')}`
+  );
 });
 
 function collectRelativeFiles(root: string, extension: string): string[] {

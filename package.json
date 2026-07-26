@@ -114,6 +114,7 @@
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run build",
     "clean:out": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
     "prebuild": "npm run clean:out",
     "build": "tsc -p ./ && npm run build:webview",
