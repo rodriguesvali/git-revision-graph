@@ -2,10 +2,16 @@
 set -euo pipefail
 
 apt-get update
-apt-get install -y bubblewrap libatk1.0-0 xvfb
+apt-get install -y --no-install-recommends \
+  bubblewrap \
+  libasound2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnss3 \
+  xvfb
 
 if [ -f package.json ]; then
-  npm install
+  npm ci
 fi
 
 python3 -m pip install --upgrade graphifyy

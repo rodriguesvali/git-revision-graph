@@ -12,7 +12,8 @@ risking user work.
 - `npm run build` has passed.
 - `npm run quality:check` has passed.
 - `npm test` has passed for behavior-affecting changes.
-- `npm run test:e2e` has passed locally or in CI for the current candidate.
+- The Extension Host E2E matrix has passed locally or in CI for the current candidate on both the
+  minimum supported VS Code version and the current stable release.
 - The Extension Development Host is launched from the current workspace.
 - At least one disposable Git repository is available with:
   - a current branch with an upstream;
@@ -29,8 +30,9 @@ risking user work.
 
 ## Automated Extension Host Baseline
 
-`npm run test:e2e` launches two isolated VS Code instances and verifies the non-destructive release
-baseline before the manual matrix:
+The CI matrix runs `npm run test:e2e` against VS Code `1.90.0` and the current stable release. Each
+entry launches two isolated VS Code instances and verifies the non-destructive release baseline
+before the manual matrix:
 
 | Scenario | Automated evidence |
 | --- | --- |

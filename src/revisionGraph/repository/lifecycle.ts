@@ -217,16 +217,22 @@ export class RevisionGraphRepositoryLifecycle implements vscode.Disposable {
       return;
     }
 
-    this.repoSubscriptions.set(
-      key,
-      vscode.Disposable.from(
-        repository.state.onDidChange(() => {
-          this.host.onRepositoryStateChange(repository, 'full-rebuild', 'state');
-        }),
+    const subscriptions = [
+      repository.state.onDidChange(() => {
+        this.host.onRepositoryStateChange(repository, 'full-rebuild', 'state');
+      })
+    ];
+    if (repository.onDidCheckout) {
+      subscriptions.push(
         repository.onDidCheckout(() => {
           this.host.onRepositoryStateChange(repository, 'full-rebuild', 'checkout');
         })
-      )
+      );
+    }
+
+    this.repoSubscriptions.set(
+      key,
+      vscode.Disposable.from(...subscriptions)
     );
   }
 

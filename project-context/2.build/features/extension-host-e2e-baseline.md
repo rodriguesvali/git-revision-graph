@@ -12,6 +12,7 @@ without replacing the existing manual smoke matrix.
 - Use the built-in `vscode.git` extension rather than a fake API.
 - Verify extension activation and singleton revision-graph editor launch.
 - Run the baseline in Linux CI through `xvfb`.
+- Run the baseline against both the minimum supported VS Code version and the current stable release.
 - Keep all fixtures temporary and all exercised workflows non-destructive.
 
 ## Acceptance Criteria
@@ -23,14 +24,33 @@ without replacing the existing manual smoke matrix.
 - Running the graph command twice leaves one `TabInputWebview` whose view type resolves to
   `gitRefs.revisionGraphEditorPanel`.
 - The runner uses isolated user-data and extension directories for each scenario.
-- CI runs the baseline on Ubuntu with Node 24 and `xvfb`.
+- CI runs the baseline on Ubuntu with Node 24 and `xvfb` for VS Code `1.90.0` and `stable`.
+- The devcontainer installs the desktop Electron libraries required to reproduce both runs locally.
+- The runner accepts only `stable` or an exact `x.y.z` version and rejects ambiguous values before
+  downloading or launching VS Code.
 
 ## Design Notes
 
-`@vscode/test-electron` remains on the compatible `2.x` line used by the implemented baseline;
-upgrading that dependency is a separate change from the Node 24 runtime migration. The custom
-runner downloads the stable VS Code release once, reuses that executable for both scenarios, and
-accepts `VSCODE_E2E_VERSION` or `VSCODE_E2E_EXECUTABLE_PATH` overrides.
+`@vscode/test-electron` remains at the installed `2.5.2`; upgrading that dependency is outside this
+change. Its installed declarations and Microsoft documentation confirm that
+`downloadAndUnzipVSCode` accepts `stable` or an exact release such as `1.90.0`. The custom runner
+downloads the requested VS Code release once, reuses that executable for both scenarios, and accepts
+the cross-platform `--vscode-version`, `VSCODE_E2E_VERSION`, or `VSCODE_E2E_EXECUTABLE_PATH`
+overrides. The command-line version takes precedence over the environment.
+
+The workflow's static matrix is protected by a compiled regression test that derives the minimum
+version from `engines.vscode` and requires the same version plus `stable` in CI. The same test checks
+the devcontainer's direct Electron runtime packages and ensures the runner removes the inherited
+`ELECTRON_RUN_AS_NODE` flag so a manifest or environment change cannot silently reduce coverage.
+
+The VS Code `1.90.0` `vscode.git` contract exposes `Repository.state.onDidChange` but not the newer
+`Repository.onDidCheckout` event. The repository lifecycle therefore treats `onDidCheckout` as an
+optional optimization: newer hosts retain the checkout-specific refresh signal, while 1.90 uses the
+existing state-change signal. A focused lifecycle test constructs the 1.90 contract without
+`onDidCheckout` and verifies activation-safe attachment and disposal. Contract evidence:
+
+- `@vscode/test-electron`: https://github.com/microsoft/vscode-test/blob/main/README.md
+- VS Code 1.90 Git API: https://github.com/microsoft/vscode/blob/1.90.0/extensions/git/src/api/git.d.ts
 
 The baseline intentionally stops at host integration boundaries. It does not automate rendered
 webview pixels, native pickers and confirmations, remote authentication, multi-repository choices,
@@ -71,3 +91,26 @@ so future host/API changes are visible directly in CI output.
 - Attempted after the view-type matcher correction: `xvfb-run -a npm run test:e2e` rebuilt the
   extension and E2E runner, but the local VS Code executable could not start because the container
   lacks `libatk-bridge-2.0.so.0`. A successful Ubuntu CI rerun remains required.
+- Implemented on 2026-07-26: the Ubuntu E2E job now has independent `1.90.0` and `stable` matrix
+  entries; the runner validates exact requested versions; and the devcontainer installs GTK,
+  NSS, GBM, ALSA, and Xvfb prerequisites. Configuration regression tests keep the VS Code engine,
+  CI matrix, and Linux prerequisites aligned.
+- Fixed during local matrix verification: the devcontainer's Extension Host environment exported
+  `ELECTRON_RUN_AS_NODE=1`, which made the downloaded VS Code binary interpret the workspace path as
+  a Node module. The standalone runner now removes that inherited flag before spawning desktop
+  Electron, and the configuration regression test protects the normalization.
+- Found by the first real VS Code `1.90.0` repository scenario: extension activation failed because
+  `Repository.onDidCheckout` was added after the declared engine baseline. The minimal Git contract
+  and repository lifecycle now treat that event as optional and preserve state-change refresh as the
+  1.90-compatible fallback.
+- Passed on 2026-07-26: `xvfb-run -a npm run test:e2e -- --vscode-version 1.90.0`.
+  Both the empty and disposable-repository scenarios passed activation, real `vscode.git` discovery,
+  and singleton revision-graph panel checks.
+- Passed on 2026-07-26: `xvfb-run -a npm run test:e2e -- --vscode-version stable`.
+  `@vscode/test-electron` resolved stable to VS Code `1.130.0`; both scenarios passed.
+- Passed on 2026-07-26: `npm run quality:check` (251 production files and 2,388 functions).
+- Passed on 2026-07-26: `npm test` (792 tests).
+- Passed on 2026-07-26: `npm run test:platform` (31 tests), `npm audit --omit=dev`,
+  `npm audit`, and `git diff --check`.
+- Passed after source changes: `graphify update .` (4,918 nodes, 9,663 edges, and 380
+  communities).

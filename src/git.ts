@@ -96,7 +96,7 @@ export interface FetchOptions {
 export interface Repository {
   readonly rootUri: vscode.Uri;
   readonly state: RepositoryState;
-  readonly onDidCheckout: vscode.Event<void>;
+  readonly onDidCheckout?: vscode.Event<void>;
 
   getRefs(query?: RefQuery, cancellationToken?: vscode.CancellationToken): Promise<Ref[]>;
   show(ref: string, path: string): Promise<string>;

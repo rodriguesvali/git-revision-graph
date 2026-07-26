@@ -36,8 +36,12 @@ jobs:
       - run: npm audit
 
   extension-host-e2e:
-    name: Extension Host E2E / Ubuntu
+    name: Extension Host E2E / VS Code ${{ matrix.vscode-version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vscode-version: ['1.90.0', stable]
 
     steps:
       - uses: actions/checkout@v4
@@ -49,3 +53,5 @@ jobs:
 
       - run: npm ci
       - run: xvfb-run -a npm run test:e2e
+        env:
+          VSCODE_E2E_VERSION: ${{ matrix.vscode-version }}

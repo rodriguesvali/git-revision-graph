@@ -25,8 +25,8 @@ Target version: `2.0.0`
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
-| Current automated source verification | Complete | Verification on 2026-07-26 passed the clean VSCE prepublish build, `npm test` (789 tests), `npm audit --omit=dev`, and `npm audit`. The real VSCE file-list regression retained both production runtime entrypoints while excluding E2E output, TypeScript build configurations, and the repository Flow Governance config. The existing platform baseline remains 31 passing tests. |
-| Automated Extension Host baseline | Implemented; verification rerun pending | `npm run test:e2e` covers activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated VS Code profiles. Ubuntu runs exposed false-negative assertions caused first by VS Code's internal webview type prefix and then by the panel's dynamic title. The assertion now recognizes the extension view type with or without a host prefix and retains observed-tab diagnostics. A successful rerun remains required. |
+| Current automated source verification | Complete | Verification on 2026-07-26 passed `npm run quality:check`, the clean production build, `npm test` (792 tests), `npm run test:platform` (31 tests), `npm audit --omit=dev`, `npm audit`, and `git diff --check`. The real VSCE file-list regression retained both production runtime entrypoints while excluding E2E output, TypeScript build configurations, and the repository Flow Governance config. |
+| Automated Extension Host baseline | Complete | `npm run test:e2e` passed locally on 2026-07-26 against VS Code `1.90.0` and stable `1.130.0`. Each version passed activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated profiles. CI now enforces both entries. Minimum-version execution exposed and verified the compatibility fallback for the newer optional `Repository.onDidCheckout` event. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
 | VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
 | Marketplace publication | Not authorized | Publish only after explicit maintainer approval and after all preceding gates pass. Record publication timestamp and installed-version evidence if authorized. |
@@ -123,6 +123,19 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- Extension Host release coverage was hardened on 2026-07-26. The Ubuntu CI job now runs the
+  isolated zero/one-repository and singleton-panel baseline against both the minimum supported VS
+  Code `1.90.0` and the current stable release. The runner accepts only `stable` or exact `x.y.z`
+  releases and removes the inherited `ELECTRON_RUN_AS_NODE` flag before launching desktop Electron,
+  while a compiled regression test keeps `engines.vscode`, the CI matrix, and required devcontainer
+  Electron libraries aligned. The first minimum-version run also exposed a hard dependency on the
+  newer `vscode.git` `Repository.onDidCheckout` event; the lifecycle now treats it as optional and
+  falls back to the state-change event available in 1.90. Local matrix execution passed both
+  scenarios on VS Code `1.90.0` and stable `1.130.0`; `npm run quality:check` passed with 251
+  production files and 2,388 functions, and all 792 tests passed. Verification details are recorded
+  in the focused Extension Host E2E artifact. No dependency, minimum VS Code version, package
+  version, VSIX, or Marketplace state changed.
 
 - Package hygiene was hardened on 2026-07-26. VSCE now runs the clean production build through
   `vscode:prepublish` before package or direct publish commands. `.vscodeignore` excludes E2E output,

@@ -6,6 +6,9 @@ import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 type PackageScripts = {
+  readonly engines?: {
+    readonly vscode?: string;
+  };
   readonly scripts?: Record<string, string>;
 };
 
@@ -26,6 +29,58 @@ test('production build cleans compiled output before TypeScript runs', () => {
   assert.equal(manifest.scripts?.build, 'tsc -p ./ && npm run build:webview');
   assert.equal(manifest.scripts?.['build:webview'], 'node scripts/build-webview.mjs');
   assert.equal(manifest.scripts?.['quality:check'], 'node scripts/check-code-quality.mjs');
+});
+
+test('Extension Host E2E covers the minimum VS Code engine and stable', () => {
+  const manifest = JSON.parse(
+    readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')
+  ) as PackageScripts;
+  const minimumVersion = manifest.engines?.vscode?.match(/^\^(\d+\.\d+\.\d+)$/)?.[1];
+  assert.ok(minimumVersion, 'engines.vscode must declare an exact caret baseline');
+
+  const workflow = readFileSync(
+    path.join(process.cwd(), '.github/workflows/verify.yml'),
+    'utf8'
+  );
+  assert.match(
+    workflow,
+    new RegExp(
+      `vscode-version: \\['${minimumVersion.replaceAll('.', '\\.')}', stable\\]`
+    )
+  );
+  assert.match(
+    workflow,
+    /VSCODE_E2E_VERSION: \$\{\{ matrix\.vscode-version \}\}/
+  );
+
+  const runner = readFileSync(
+    path.join(process.cwd(), 'scripts/run-extension-host-tests.mjs'),
+    'utf8'
+  );
+  assert.match(runner, /delete process\.env\.ELECTRON_RUN_AS_NODE;/);
+
+  const postCreate = readFileSync(
+    path.join(process.cwd(), '.devcontainer/post-create.sh'),
+    'utf8'
+  );
+  for (const requiredPackage of ['libasound2', 'libgbm1', 'libgtk-3-0', 'libnss3', 'xvfb']) {
+    assert.match(postCreate, new RegExp(`\\b${requiredPackage.replaceAll('.', '\\.')}\\b`));
+  }
+  assert.match(postCreate, /\bnpm ci\b/);
+});
+
+test('Extension Host E2E rejects ambiguous VS Code versions before launch', () => {
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/run-extension-host-tests.mjs', '--vscode-version', 'minimum'],
+    {
+      cwd: process.cwd(),
+      encoding: 'utf8'
+    }
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Unsupported VS Code E2E version "minimum"/);
 });
 
 test('code quality gate accepts the reviewed production baseline', () => {

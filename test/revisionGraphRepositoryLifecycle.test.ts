@@ -28,6 +28,23 @@ test('repository lifecycle enriches refresh requests with the current repository
   });
 });
 
+test('repository lifecycle supports the VS Code 1.90 Git repository contract', () => {
+  const { RevisionGraphRepositoryLifecycle } = loadRepositoryLifecycleModule();
+  const currentRepository = createRepository({ root: '/workspace/repo' });
+  const repository = {
+    ...currentRepository,
+    onDidCheckout: undefined
+  };
+
+  const lifecycle = new RevisionGraphRepositoryLifecycle(
+    createApi([repository]),
+    createHost()
+  );
+
+  assert.equal(lifecycle.getCurrentRepository(), repository);
+  lifecycle.dispose();
+});
+
 test('repository lifecycle reports current repository changes only when the path changes', () => {
   const { RevisionGraphRepositoryLifecycle } = loadRepositoryLifecycleModule();
   const repoA = createRepository({ root: '/workspace/a' });

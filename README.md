@@ -226,12 +226,16 @@ npm test
 Run the Extension Host E2E baseline against an isolated VS Code installation:
 
 ```bash
-npm run test:e2e
+npm run test:e2e -- --vscode-version 1.90.0
+npm run test:e2e -- --vscode-version stable
 ```
 
-The E2E command downloads the current stable VS Code release by default and reuses it from
-`.vscode-test`. Set `VSCODE_E2E_VERSION` to test another release. Linux environments require the
-desktop Electron libraries and an active display; CI runs the command through `xvfb`.
+The first command proves compatibility with the minimum `engines.vscode` release; the second detects
+forward-compatibility regressions against the current stable release. The E2E command defaults to
+`stable`, accepts an exact `x.y.z` version through `--vscode-version` or `VSCODE_E2E_VERSION`, and
+reuses downloads from `.vscode-test`. Linux environments require the desktop Electron libraries and
+an active display; the devcontainer installs those libraries and CI runs both versions through
+`xvfb`.
 
 Run the production code-quality budget check:
 
