@@ -9,18 +9,18 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-- `2.0.0-package-hygiene.md`: clean VSCE prepublish builds and deterministic exclusion of
+- `1.6.0-package-hygiene.md`: clean VSCE prepublish builds and deterministic exclusion of
   development-only package content.
 - `flow-governance-2.0.0.md`: operational Flow Governance release scope.
-- `2.0.0-modal-error-and-warning-policy.md`: modal presentation policy for errors and warnings
+- `1.6.0-modal-error-and-warning-policy.md`: modal presentation policy for errors and warnings
   whose workflows continue.
-- `2.0.0-flow-governance-submenu-hover.md`: stable pointer access to Flow Governance context-menu
+- `1.6.0-flow-governance-submenu-hover.md`: stable pointer access to Flow Governance context-menu
   subitems.
-- `2.0.0-feature-pr-target-preflight.md`: fetch-first synchronization gate for selected
+- `1.6.0-feature-pr-target-preflight.md`: fetch-first synchronization gate for selected
   `feature -> release` Pull Request targets without local branch mutation.
-- `2.0.0-remote-fetch-loading-feedback.md`: blocking `Fetching remotes...` feedback for automatic
+- `1.6.0-remote-fetch-loading-feedback.md`: blocking `Fetching remotes...` feedback for automatic
   Flow Governance remote probes and fetches.
-- `2.0.0-sync-promotion-pr-context.md`: durable equalization target mapping and guarded
+- `1.6.0-sync-promotion-pr-context.md`: durable equalization target mapping and guarded
   `sync -> original target` Pull Request handoff after merge completion.
 
 ## Published Baseline Retained For Integration
@@ -28,8 +28,6 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 - `1.5.9-reference-tooltips.md`: published cosmetic tooltip scope now integrated into the active
   Flow Governance 1.6.0 development line.
 
-The filenames that retain `2.0.0` are historical development identifiers; their release target is
-now `1.6.0`.
 
 ## Required Shape
 

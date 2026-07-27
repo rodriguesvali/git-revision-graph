@@ -34,21 +34,18 @@ Target version: `1.6.0`
 
 Focused build artifact:
 
-The artifact filenames that retain `2.0.0` record the original development-line name; the
-unpublished candidate is now version `1.6.0`.
-
-- `project-context/2.build/features/2.0.0-package-hygiene.md`
-- `project-context/2.build/features/2.0.0-ai-compare-briefing.md`
-- `project-context/2.build/features/2.0.0-ai-pr-release-assistant.md`
-- `project-context/2.build/features/2.0.0-message-boundary-quality-ratchet.md`
-- `project-context/2.build/features/2.0.0-flow-dialog-controller-extraction.md`
-- `project-context/2.build/features/2.0.0-flow-governance-icon-badges.md`
-- `project-context/2.build/features/2.0.0-task-promotion-pr-context.md`
-- `project-context/2.build/features/2.0.0-modal-error-and-warning-policy.md`
-- `project-context/2.build/features/2.0.0-flow-governance-submenu-hover.md`
-- `project-context/2.build/features/2.0.0-feature-pr-target-preflight.md`
-- `project-context/2.build/features/2.0.0-remote-fetch-loading-feedback.md`
-- `project-context/2.build/features/2.0.0-sync-promotion-pr-context.md`
+- `project-context/2.build/features/1.6.0-package-hygiene.md`
+- `project-context/2.build/features/1.6.0-ai-compare-briefing.md`
+- `project-context/2.build/features/1.6.0-ai-pr-release-assistant.md`
+- `project-context/2.build/features/1.6.0-message-boundary-quality-ratchet.md`
+- `project-context/2.build/features/1.6.0-flow-dialog-controller-extraction.md`
+- `project-context/2.build/features/1.6.0-flow-governance-icon-badges.md`
+- `project-context/2.build/features/1.6.0-task-promotion-pr-context.md`
+- `project-context/2.build/features/1.6.0-modal-error-and-warning-policy.md`
+- `project-context/2.build/features/1.6.0-flow-governance-submenu-hover.md`
+- `project-context/2.build/features/1.6.0-feature-pr-target-preflight.md`
+- `project-context/2.build/features/1.6.0-remote-fetch-loading-feedback.md`
+- `project-context/2.build/features/1.6.0-sync-promotion-pr-context.md`
 - `project-context/2.build/features/flow-governance-phase-1.md`
 - `project-context/2.build/features/flow-governance-2.0.0.md`
 - `project-context/2.build/features/extension-host-e2e-baseline.md`
@@ -131,9 +128,9 @@ Recorded verification:
 
 - The maintainer confirmed on 2026-07-27 that `2.0.0` was never published and approved the
   reclassification of this candidate as `1.6.0`. Package and lockfile root metadata plus active
-  AAMAD release artifacts were updated; legacy `2.0.0` artifact filenames, historical notes,
-  dependency versions, and branch-name test fixtures remain unchanged. `npm test` and
-  `git diff --check` passed. No VSIX or Marketplace action was performed.
+  AAMAD release artifacts were updated; historical notes, dependency versions, and branch-name
+  test fixtures remain unchanged. `npm test` and `git diff --check` passed. No VSIX or Marketplace
+  action was performed.
 
 - AI context disclosure defenses were hardened on 2026-07-26. Compare Briefing and Flow PR
   descriptions now share expanded sensitive-path exclusions plus deterministic redaction of
