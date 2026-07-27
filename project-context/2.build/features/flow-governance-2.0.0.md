@@ -1,4 +1,4 @@
-# Flow Governance 2.0.0
+# Flow Governance 1.6.0
 
 Status: Build complete - manual validation pending
 Last updated: 2026-07-13
@@ -7,7 +7,7 @@ Baseline: `1.5.8` plus completed Flow Governance Phase 1 foundation
 ## Goal
 
 Ship Flow Governance as an operational governance feature, not as a visual-only
-overlay. The 2.0.0 release should help users understand governed branch roles,
+overlay. The 1.6.0 release should help users understand governed branch roles,
 see when final integration requires a Pull Request, validate release promotion
 readiness, and prepare safe equalization when production changes are missing
 from an active release.
@@ -162,7 +162,7 @@ from an active release.
 - False release-readiness results: keep ancestry checks explicit and report
   inconclusive states honestly.
 - Governance UX overload: keep feedback contextual and avoid a separate panel
-  for 2.0.0.
+  for 1.6.0.
 - Unsafe Git mutation: require confirmation, preserve conflict guards, and avoid
   automatic push or final governed merges.
 - Provider scope creep: ship PR handoff before API-based PR creation unless
@@ -513,7 +513,7 @@ from an active release.
 
 ## Release-Note Impact
 
-2.0.0 should be described as Flow Governance becoming operational: branch
+1.6.0 should be described as Flow Governance becoming operational: branch
 classification, PR-required diagnostics, release readiness, PR handoff, and
 safe production-to-release equalization guidance.
 

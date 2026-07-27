@@ -160,13 +160,13 @@ Focused verification must cover:
 
 Manual Extension Development Host smoke for Phase 1 must cover graph load, repository switching, Flow Governance on/off, refresh, invalid config, empty repository state, disabled behavior, all branch refs remaining visible, and existing compare/diff/log/context-menu basics.
 
-## Flow Governance 2.0.0 Architecture Direction
+## Flow Governance 1.6.0 Architecture Direction
 
-Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and add operational governance value before release. The target architecture keeps classification, policy, diagnostics, promotion checks, PR handoff, and sync planning in focused flow modules while preserving the existing revision graph controller, repository lifecycle, backend, and native workbench action boundaries.
+Flow Governance 1.6.0 should build on the completed Phase 1 metadata overlay and add operational governance value before release. The target architecture keeps classification, policy, diagnostics, promotion checks, PR handoff, and sync planning in focused flow modules while preserving the existing revision graph controller, repository lifecycle, backend, and native workbench action boundaries.
 
-2.0.0 must not reintroduce branch visibility filters, branch-type visibility checkboxes, hidden `sync/*` treatment, or webview-side branch governance inference. All branch refs included by the current graph projection remain visible. Flow Governance adds classification, diagnostics, readiness results, and guided actions over the graph.
+1.6.0 must not reintroduce branch visibility filters, branch-type visibility checkboxes, hidden `sync/*` treatment, or webview-side branch governance inference. All branch refs included by the current graph projection remain visible. Flow Governance adds classification, diagnostics, readiness results, and guided actions over the graph.
 
-### 2.0.0 Candidate Modules
+### 1.6.0 Candidate Modules
 
 - `flowTransitionPolicy.ts`: pure governed source/target transition matching and direct-merge policy outcomes.
 - `flowPromotionChecks.ts`: release promotion ancestry validation with `ready`, `blocked`, and `inconclusive` results.
@@ -182,10 +182,10 @@ Flow Governance 2.0.0 should build on the completed Phase 1 metadata overlay and
   transient host-owned PR context, cancellation, and stale-response rejection for PR/release text.
 
 Provider API PR creation, cleanup candidates, provider authentication, and persistent diagnostics
-panels remain outside the initial 2.0.0 architecture unless a focused feature artifact explicitly
+panels remain outside the initial 1.6.0 architecture unless a focused feature artifact explicitly
 expands them.
 
-### 2.0.0 Integration Boundaries
+### 1.6.0 Integration Boundaries
 
 - Transition policy and release readiness must be deterministic host-side logic with unit coverage before webview wiring.
 - The webview may display diagnostics and dispatch explicit user intents, but it must not evaluate branch policy, read configuration, call provider APIs, or perform Git operations.
@@ -222,7 +222,7 @@ expands them.
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
 - Flow Governance Phase 1 is a metadata overlay over the loaded graph. It must not hide branch refs or change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
-- Flow Governance 2.0.0 is not releasable as badges alone; it should add PR-required diagnostics, release readiness, PR handoff, and safe equalization guidance before publication.
+- Flow Governance 1.6.0 is not releasable as badges alone; it should add PR-required diagnostics, release readiness, PR handoff, and safe equalization guidance before publication.
 - AI-assisted PR/release authoring is advisory and transient: deterministic defaults remain available,
   model output never performs Git operations, and closing/changing forms or repositories cancels it.
 - Promotion PR handoff from a release or hotfix to the configured production branch must fail closed unless the local production ref exactly matches the current remote production tip and that tip is an ancestor of the source. These guards are rechecked before opening the provider URL so stale local governance state or incompatible promotion sources cannot bypass current production.

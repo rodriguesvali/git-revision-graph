@@ -2,7 +2,7 @@
 
 Status: Build complete - manual validation pending
 Last updated: 2026-07-16
-Target: `2.0.0`
+Target: `1.6.0`
 
 ## Goal
 

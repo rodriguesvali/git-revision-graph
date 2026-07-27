@@ -1,30 +1,30 @@
 # Release Readiness
 
 Status: Active
-Last consolidated: 2026-07-13
+Last consolidated: 2026-07-27
 
 ## Current State
 
-- Current package version: `2.0.0` in `package.json`.
+- Current package version: `1.6.0` in `package.json`.
 - Latest recorded published release: `1.5.9`.
 - Release cycle status: `1.5.9` was published by maintainer confirmation on 2026-07-09. Flow
   Governance Phase 1 and operational Flow Governance work remain staged for the next release target,
-  `2.0.0`, now integrated with the published `1.5.9` baseline.
+  `1.6.0`, now integrated with the published `1.5.9` baseline.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release Candidate: Flow Governance 2.0.0
+## Open Release Candidate: Flow Governance 1.6.0
 
 Status: Automated source verification current; final candidate smoke and approved package inspection pending
 Opened: 2026-07-01
 Published baseline version: `1.5.9`
-Target version: `2.0.0`
+Target version: `1.6.0`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.5.9` was published on 2026-07-09 by maintainer confirmation. |
-| Baseline integration | Complete | The published `1.5.9` changes were integrated into the `2.0.0` line and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
+| Baseline integration | Complete | The published `1.5.9` changes were integrated into the `1.6.0` candidate and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
 | Current automated source verification | Complete | Latest verification on 2026-07-26 passed `npm run quality:check`, the clean production build, `npm test` (796 tests), and `git diff --check`. The candidate also retains the same-day passing `npm run test:platform` (31 tests), zero-vulnerability runtime/full audits, and real VSCE file-list regression. |
 | Automated Extension Host baseline | Complete | `npm run test:e2e` passed locally on 2026-07-26 against VS Code `1.90.0` and stable `1.130.0`. Each version passed activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated profiles. CI now enforces both entries. Minimum-version execution exposed and verified the compatibility fallback for the newer optional `Repository.onDidCheckout` event. |
 | Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
@@ -33,6 +33,9 @@ Target version: `2.0.0`
 | Rollback readiness | Documented | Candidate-specific and standard rollback notes are recorded below; no rollback action is currently required. |
 
 Focused build artifact:
+
+The artifact filenames that retain `2.0.0` record the original development-line name; the
+unpublished candidate is now version `1.6.0`.
 
 - `project-context/2.build/features/2.0.0-package-hygiene.md`
 - `project-context/2.build/features/2.0.0-ai-compare-briefing.md`
@@ -91,7 +94,7 @@ Candidate scope:
   feature, and hotfix starts require exact synchronization; task and bug starts accept ahead-only
   sources without pushing, synchronize behind-only sources after confirmation, and block
   divergence for manual reconciliation.
-- Update README and CHANGELOG notes for the shipped 2.0.0 behavior.
+- Update README and CHANGELOG notes for the shipped 1.6.0 behavior.
 
 Explicitly out of scope:
 
@@ -109,7 +112,7 @@ Release constraints:
   sync, delete, stash, reset, Show Log, and Compare Results workflows.
 - Treat Flow Governance as metadata only; it must not hide refs, alter Git history, graph ancestry,
   or repository state.
-- Treat Flow Governance 2.0.0 as operational guidance: diagnostics and handoff may guide actions,
+- Treat Flow Governance 1.6.0 as operational guidance: diagnostics and handoff may guide actions,
   but final governed integration remains PR-gated.
 - Keep malformed/stale webview messages bounded by the existing message validation and repository
   authorization layers.
@@ -125,6 +128,12 @@ Planned verification:
   `project-context/3.deliver/extension-host-smoke-matrix.md`.
 
 Recorded verification:
+
+- The maintainer confirmed on 2026-07-27 that `2.0.0` was never published and approved the
+  reclassification of this candidate as `1.6.0`. Package and lockfile root metadata plus active
+  AAMAD release artifacts were updated; legacy `2.0.0` artifact filenames, historical notes,
+  dependency versions, and branch-name test fixtures remain unchanged. `npm test` and
+  `git diff --check` passed. No VSIX or Marketplace action was performed.
 
 - AI context disclosure defenses were hardened on 2026-07-26. Compare Briefing and Flow PR
   descriptions now share expanded sensitive-path exclusions plus deterministic redaction of
@@ -488,7 +497,7 @@ Recorded verification:
   with clean-workspace and confirmation guards, validated local `sync/*`
   naming, no automatic push, and Source Control conflict handoff.
 - `npm test` passed with 575 tests on 2026-07-02 after the equalization slice.
-- Published `1.5.9` changes were integrated into the `2.0.0` development line on 2026-07-09,
+- Published `1.5.9` changes were integrated into the `1.6.0` candidate line on 2026-07-09,
   preserving interactive reference details, lazy commit statistics, hash/GitHub actions, Show Log
   badge alignment, and paging fixes alongside Flow Governance badges and actions.
 - Integration verification passed on 2026-07-09 with `npm run build`, `npm test` (590 tests), and
@@ -502,7 +511,7 @@ Marketplace impact:
 - User-visible additions are a Command Palette action, new configuration settings, README text, and
   Flow Governance controls inside the existing revision graph webview when Flow Governance metadata
   is present.
-- Marketplace copy should describe 2.0.0 as branch classification, PR-required diagnostics,
+- Marketplace copy should describe 1.6.0 as branch classification, PR-required diagnostics,
   URL-only handoff for supported hosted Git providers, release readiness, and safe equalization
   guidance. It must not claim branch hiding, authenticated provider APIs, or branch-prefilled
   CodeCommit/Secure Source Manager creation pages.

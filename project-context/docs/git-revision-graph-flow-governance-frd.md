@@ -4,9 +4,9 @@
 - **Target extension:** Git Revision Graph (`rodriguesvali.git-revision-graph`)
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
-- **Feature status:** Approved product proposal; Phase 1 foundation implemented, 2.0.0 scope now targets operational governance value
+- **Feature status:** Approved product proposal; Phase 1 foundation implemented, 1.6.0 scope now targets operational governance value
 - **Package baseline at review:** `package.json` version `1.5.6` on 2026-07-01
-- **Document version:** 3.1 - 2.0.0 operational governance alignment
+- **Document version:** 3.1 - 1.6.0 operational governance alignment
 - **Language:** English
 
 ---
@@ -1312,12 +1312,12 @@ Phase 1 verification gate:
 - no packaging, version bump, or Marketplace publish command is run without
   maintainer approval.
 
-### 2.0.0 Release Scope - Operational Flow Governance
+### 1.6.0 Release Scope - Operational Flow Governance
 
 Goal: ship Flow Governance only when it provides operational value beyond visual
 classification.
 
-The 2.0.0 release should include the completed Phase 1 foundation plus:
+The 1.6.0 release should include the completed Phase 1 foundation plus:
 
 - PR-required transition policy diagnostics for governed source/target pairs;
 - release promotion ancestry validation with `ready`, `blocked`, and
@@ -1327,7 +1327,7 @@ The 2.0.0 release should include the completed Phase 1 foundation plus:
 - production-to-release equalization guidance using `sync/*` helper branches,
   without automatic push and without final direct merge into the release branch.
 
-2.0.0 must not reintroduce branch hiding or branch-type visibility checkboxes.
+1.6.0 must not reintroduce branch hiding or branch-type visibility checkboxes.
 All branch refs included by the current graph projection remain visible; Flow
 Governance adds meaning, diagnostics, and guided actions on top of them.
 
@@ -1587,11 +1587,11 @@ the AAMAD development pipeline. This FRD is the product baseline; individual
 phases still require focused build artifacts before implementation.
 
 Treat the completed Phase 1 work as the technical foundation, not as the final
-2.0.0 product value. The next release should continue with PR-gated transition
+1.6.0 product value. The next release should continue with PR-gated transition
 diagnostics, release readiness, PR handoff, and production-to-release
 equalization guidance before publication.
 
-Before implementation continues, open a focused 2.0.0 feature artifact under
+Before implementation continues, open a focused 1.6.0 feature artifact under
 `project-context/2.build/features/`, confirm the target release scope, update
 the SAD with final integration boundaries, list any `package.json` and README
 changes, and record verification, Marketplace impact, manual smoke coverage,

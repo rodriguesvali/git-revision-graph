@@ -2,7 +2,7 @@
 
 Status: Implemented; manual Extension Development Host validation pending
 Last updated: 2026-07-13
-Baseline: `2.0.0`
+Baseline: `1.6.0`
 
 ## Goal
 

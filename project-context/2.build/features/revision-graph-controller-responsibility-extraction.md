@@ -1,7 +1,7 @@
 # Revision Graph Controller Responsibility Extraction
 
 Status: Implemented
-Target version: `2.0.0`
+Target version: `1.6.0`
 
 ## Goal
 

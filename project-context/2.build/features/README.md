@@ -26,7 +26,10 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 ## Published Baseline Retained For Integration
 
 - `1.5.9-reference-tooltips.md`: published cosmetic tooltip scope now integrated into the active
-  Flow Governance 2.0.0 development line.
+  Flow Governance 1.6.0 development line.
+
+The filenames that retain `2.0.0` are historical development identifiers; their release target is
+now `1.6.0`.
 
 ## Required Shape
 

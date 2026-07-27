@@ -2,7 +2,7 @@
 
 Status: Complete - strict external runtime with explicit bundle ownership
 Last updated: 2026-07-13
-Release target: `2.0.0`
+Release target: `1.6.0`
 
 ## Goal
 
