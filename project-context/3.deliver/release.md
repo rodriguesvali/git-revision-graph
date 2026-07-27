@@ -1,21 +1,22 @@
 # Release Readiness
 
-Status: Active
+Status: Published; evidence reconciliation pending
 Last consolidated: 2026-07-27
 
 ## Current State
 
 - Current package version: `1.6.0` in `package.json`.
-- Latest recorded published release: `1.5.9`.
-- Release cycle status: `1.5.9` was published by maintainer confirmation on 2026-07-09. Flow
-  Governance Phase 1 and operational Flow Governance work remain staged for the next release target,
-  `1.6.0`, now integrated with the published `1.5.9` baseline.
+- Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
+- Release cycle status: `1.6.0` was published after the published `1.5.9` baseline. The exact
+  Marketplace timestamp, installed-version evidence, final smoke record, and VSIX inspection record
+  have not yet been supplied for the release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release Candidate: Flow Governance 1.6.0
+## Published Release: Flow Governance 1.6.0
 
-Status: Automated source verification current; final candidate smoke and approved package inspection pending
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-07-01
+Published: 2026-07-27 (maintainer confirmation)
 Published baseline version: `1.5.9`
 Target version: `1.6.0`
 
@@ -27,9 +28,9 @@ Target version: `1.6.0`
 | Baseline integration | Complete | The published `1.5.9` changes were integrated into the `1.6.0` candidate and verified with build, 590 tests, and `git diff --check` on 2026-07-09. This gate is not pending. |
 | Current automated source verification | Complete | Latest verification on 2026-07-26 passed `npm run quality:check`, the clean production build, `npm test` (796 tests), and `git diff --check`. The candidate also retains the same-day passing `npm run test:platform` (31 tests), zero-vulnerability runtime/full audits, and real VSCE file-list regression. |
 | Automated Extension Host baseline | Complete | `npm run test:e2e` passed locally on 2026-07-26 against VS Code `1.90.0` and stable `1.130.0`. Each version passed activation, real `vscode.git` discovery with zero/one repository, and singleton graph-panel launch in isolated profiles. CI now enforces both entries. Minimum-version execution exposed and verified the compatibility fallback for the newer optional `Repository.onDidCheckout` event. |
-| Final Extension Development Host smoke | Pending | Run the full current-candidate matrix in `project-context/3.deliver/extension-host-smoke-matrix.md` and record date, operator, VS Code version, platform, and pass/fail evidence. Earlier Flow Governance smoke remains useful history but does not close this final gate after subsequent integration and runtime changes. |
-| VSIX package inspection | Pending approval | After explicit maintainer approval, create the candidate VSIX and record filename, checksum, size, embedded package version, and clean-profile installation result. No package evidence exists yet. |
-| Marketplace publication | Not authorized | Publish only after explicit maintainer approval and after all preceding gates pass. Record publication timestamp and installed-version evidence if authorized. |
+| Final Extension Development Host smoke | Evidence not recorded | The full current-candidate matrix result, including date, operator, VS Code version, platform, and pass/fail evidence, was not supplied before the confirmed publication. |
+| VSIX package inspection | Evidence not recorded | The VSIX filename, checksum, size, embedded version, and clean-profile installation result were not supplied. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-07-27. Record the exact Marketplace timestamp and installed-version evidence when available. |
 | Rollback readiness | Documented | Candidate-specific and standard rollback notes are recorded below; no rollback action is currently required. |
 
 Focused build artifact:
@@ -56,7 +57,7 @@ Focused build artifact:
 - `project-context/2.build/features/flow-governance-blocking-message-dialogs.md`
 - Manual smoke matrix: `project-context/3.deliver/extension-host-smoke-matrix.md`
 
-Candidate scope:
+Release scope:
 
 - Add optional field-level AI text improvement to Flow Governance PR title/description and new-release
   description forms. Existing deterministic/user-entered content remains the default, requests are
@@ -115,7 +116,7 @@ Release constraints:
   authorization layers.
 - Do not run packaging or Marketplace publication commands without explicit maintainer approval.
 
-Planned verification:
+Planned verification before publication:
 
 - `npm run quality:check`
 - `npm run build`
@@ -126,11 +127,16 @@ Planned verification:
 
 Recorded verification:
 
+- The maintainer reported Marketplace publication of `1.6.0` complete on 2026-07-27. No packaging
+  or publication command was run by Codex. The exact Marketplace timestamp, installed-version
+  evidence, final Extension Development Host smoke record, and VSIX inspection details remain to be
+  added if available.
+
 - The maintainer confirmed on 2026-07-27 that `2.0.0` was never published and approved the
   reclassification of this candidate as `1.6.0`. Package and lockfile root metadata plus active
   AAMAD release artifacts were updated; historical notes, dependency versions, and branch-name
   test fixtures remain unchanged. `npm test` and `git diff --check` passed. No VSIX or Marketplace
-  action was performed.
+  action had been performed at that point.
 
 - AI context disclosure defenses were hardened on 2026-07-26. Compare Briefing and Flow PR
   descriptions now share expanded sensitive-path exclusions plus deterministic redaction of
