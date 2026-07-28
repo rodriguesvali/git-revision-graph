@@ -20,7 +20,15 @@ import {
   createFlowTransitionDiagnostics,
   createFlowGovernanceViewState,
   createFlowReferenceDecoration,
+  DEFAULT_FLOW_CONFIG,
   evaluateFlowTransition,
+  FLOW_CONFIG_MAX_BRANCH_NAME_LENGTH,
+  FLOW_CONFIG_MAX_FILE_BYTES,
+  FLOW_CONFIG_MAX_JSON_DEPTH,
+  FLOW_CONFIG_MAX_MAIN_BRANCHES,
+  FLOW_CONFIG_MAX_PATH_LENGTH,
+  FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS,
+  FLOW_PATTERN_MAX_LENGTH,
   loadFlowPullRequestRemoteBranchCommit,
   loadFlowPullRequestTargets,
   normalizeFlowConfig,
@@ -113,6 +121,116 @@ test('Flow Governance rejects invalid schema and invalid regex without throwing'
   assert.deepEqual(
     result.issues.map((issue) => issue.path),
     ['schemaVersion', 'patterns.feature']
+  );
+});
+
+test('Flow Governance rejects resource-heavy config collections and strings', () => {
+  const acceptedBoundary = normalizeFlowConfig({
+    schemaVersion: 1,
+    mainBranches: Array.from(
+      { length: FLOW_CONFIG_MAX_MAIN_BRANCHES },
+      (_, index) => `branch-${index}`
+    ),
+    patterns: {
+      feature: 'a'.repeat(FLOW_PATTERN_MAX_LENGTH)
+    }
+  });
+  const tooManyMainBranches = normalizeFlowConfig({
+    schemaVersion: 1,
+    mainBranches: Array.from(
+      { length: FLOW_CONFIG_MAX_MAIN_BRANCHES + 1 },
+      (_, index) => `branch-${index}`
+    )
+  });
+  const tooLongMainBranch = normalizeFlowConfig({
+    schemaVersion: 1,
+    mainBranches: ['a'.repeat(FLOW_CONFIG_MAX_BRANCH_NAME_LENGTH + 1)]
+  });
+  const tooLongPattern = normalizeFlowConfig({
+    schemaVersion: 1,
+    patterns: {
+      feature: 'a'.repeat(FLOW_PATTERN_MAX_LENGTH + 1)
+    }
+  });
+  const tooManyFields = Object.fromEntries([
+    ['schemaVersion', 1],
+    ...Array.from(
+      { length: FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS },
+      (_, index) => [`futureField${index}`, true]
+    )
+  ]);
+
+  assert.equal(acceptedBoundary.ok, true);
+  assert.equal(tooManyMainBranches.ok, false);
+  assert.match(tooManyMainBranches.issues[0]?.message ?? '', /32 entries/);
+  assert.equal(tooLongMainBranch.ok, false);
+  assert.match(tooLongMainBranch.issues[0]?.message ?? '', /256 characters/);
+  assert.equal(tooLongPattern.ok, false);
+  assert.match(tooLongPattern.issues[0]?.message ?? '', /256 characters/);
+  const tooManyTopLevelFields = normalizeFlowConfig(tooManyFields);
+  assert.equal(tooManyTopLevelFields.ok, false);
+  assert.match(tooManyTopLevelFields.issues[0]?.message ?? '', /64 top-level fields/);
+});
+
+test('Flow Governance rejects unsafe regex features before branch classification', () => {
+  const result = normalizeFlowConfig({
+    schemaVersion: 1,
+    enabled: true,
+    patterns: {
+      release: '^(a+)+$',
+      sync: '^a*a*a*b$',
+      package: `^${'a?'.repeat(17)}$`,
+      feature: '^(a|aa)+$',
+      task: '^(a+)\\1$',
+      bug: '^a{1001}$'
+    }
+  });
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(
+    result.issues.map((issue) => issue.path),
+    [
+      'patterns.release',
+      'patterns.sync',
+      'patterns.package',
+      'patterns.feature',
+      'patterns.task',
+      'patterns.bug'
+    ]
+  );
+  assert.match(result.issues[0]?.message ?? '', /nested or ambiguous repeated groups/);
+  assert.match(result.issues[1]?.message ?? '', /adjacent repetitions/);
+  assert.match(result.issues[2]?.message ?? '', /more than 16 repetition operators/);
+  assert.match(result.issues[3]?.message ?? '', /nested or ambiguous repeated groups/);
+  assert.match(result.issues[4]?.message ?? '', /backreferences/);
+  assert.match(result.issues[5]?.message ?? '', /more than 1000 times/);
+});
+
+test('Flow Governance retains safe custom regex and rejects an unsafe config at runtime', () => {
+  const safe = normalizeFlowConfig({
+    schemaVersion: 1,
+    enabled: true,
+    patterns: {
+      feature: '^(?:feature|feat)/[a-z0-9._-]+$',
+      package: '^package(?:/.+)?$',
+      task: '^[a-z]+/[0-9]+$'
+    }
+  });
+  const bypassedConfig = {
+    ...DEFAULT_FLOW_CONFIG,
+    enabled: true,
+    patterns: {
+      ...DEFAULT_FLOW_CONFIG.patterns,
+      feature: '^(a+)+$'
+    }
+  };
+
+  assert.equal(safe.ok, true);
+  assert.equal(classifyFlowBranch('feat/safe-pattern', safe.config).kind, 'feature');
+  assert.equal(classifyFlowBranch('alpha/123', safe.config).kind, 'task');
+  assert.equal(
+    classifyFlowBranch(`${'a'.repeat(128)}!`, bypassedConfig).kind,
+    'unknown'
   );
 });
 
@@ -809,6 +927,63 @@ test('Flow Governance resolves repository file before fallback settings', async 
   assert.equal(result.source, 'repository');
   assert.equal(result.config.enabled, true);
   assert.deepEqual(result.config.mainBranches, ['production']);
+});
+
+test('Flow Governance rejects repository configs larger than 64 KiB before parsing or updating', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-bounds-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const exactBoundary = JSON.stringify({ schemaVersion: 1, enabled: true })
+    .padEnd(FLOW_CONFIG_MAX_FILE_BYTES, ' ');
+  await writeFile(configPath, exactBoundary);
+
+  try {
+    const accepted = await resolveFlowConfigForRepository(root);
+    assert.equal(accepted.ok, true);
+
+    await writeFile(configPath, ' '.repeat(FLOW_CONFIG_MAX_FILE_BYTES + 1));
+    const resolved = await resolveFlowConfigForRepository(root);
+    const updated = await updateRepositoryFlowConfigOptions(root, undefined, { enabled: false });
+
+    assert.equal(resolved.ok, false);
+    assert.match(resolved.issues[0]?.message ?? '', /64 KiB/);
+    assert.equal(updated.ok, false);
+    assert.match(updated.issue.message, /64 KiB/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance rejects deeply nested repository config JSON before parsing', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-depth-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  let nested = 'true';
+  for (let depth = 1; depth < FLOW_CONFIG_MAX_JSON_DEPTH; depth += 1) {
+    nested = `{"nested":${nested}}`;
+  }
+  await writeFile(configPath, `{"schemaVersion":1,"future":${nested}}`);
+
+  try {
+    const accepted = await resolveFlowConfigForRepository(root);
+    assert.equal(accepted.ok, true);
+
+    await writeFile(configPath, `{"schemaVersion":1,"future":{"nested":${nested}}}`);
+    const result = await resolveFlowConfigForRepository(root);
+
+    assert.equal(result.ok, false);
+    assert.match(result.issues[0]?.message ?? '', /nesting depth of 32/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance rejects oversized repository config paths before filesystem access', async () => {
+  const result = await resolveFlowConfigForRepository('/workspace/repository-does-not-need-to-exist', {
+    configPath: 'a'.repeat(FLOW_CONFIG_MAX_PATH_LENGTH + 1)
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.issues[0]?.path, 'configPath');
+  assert.match(result.issues[0]?.message ?? '', /1024 characters/);
 });
 
 test('Flow Governance persists repository option updates while preserving other config fields', async () => {

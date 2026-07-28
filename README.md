@@ -121,6 +121,15 @@ This approach keeps the extension lightweight for reference workflows. The revis
 - `gitRevisionGraph.flowGovernance.configPath`
   - Repository-relative path for the Flow Governance configuration file. The default is `.git-revision-graph-flow.json`.
 
+Flow Governance repository configuration is deliberately bounded so a malformed repository cannot
+stall the extension host. The JSON file may be at most 64 KiB and 32 levels deep, with at most 64
+top-level fields. `mainBranches` accepts at most 32 entries of 256 characters each. Classification
+patterns accept at most 256 characters and a safe JavaScript regular-expression subset: backreferences,
+oversized repeat counts, excessive quantifiers, adjacent potentially overlapping repetitions, and
+nested or ambiguous repeated groups are rejected.
+An invalid configuration disables Flow Governance for that repository and reports a diagnostic while
+normal Git Revision Graph loading remains available.
+
 ## Project Structure
 
 ```text

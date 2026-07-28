@@ -60,6 +60,8 @@ Phase 1 should use a small `src/revisionGraph/flow/` module set. Later-phase mod
 - `flowTypes.ts`: serializable Phase 1 contracts for branch kinds, normalized config, branch metadata, diagnostics, and view-state payloads.
 - `flowDefaults.ts`: default branch kinds, main branch names, regex patterns, and default enablement.
 - `flowConfig.ts`: repository flow-file loading, VS Code settings fallback, source precedence, validation, normalization, and default file content generation.
+- `flowPatternSafety.ts`: bounded regex compilation shared by config normalization, branch
+  classification, and governed branch-name validation.
 - `flowBranchClassifier.ts`: deterministic branch classification from normalized config, including main-branch precedence and `unknown` fallback.
 - `flowDiagnostics.ts`: Phase 1 diagnostics only, limited to invalid configuration reporting and unknown-branch metadata.
 - `flowDecorations.ts`: mapping from branch metadata to compact view-model decorations consumed by the existing webview.
@@ -73,6 +75,13 @@ Phase 1 must not add `flowBranchCreation.ts`, `flowTransitionPolicy.ts`, `flowPr
 - Workspace settings and user settings are fallback inputs only. A repository flow file is not deep-merged with settings.
 - Configuration is resolved per active repository and must follow repository switching, repository closure, zero-repository state, and multi-root semantics owned by `RevisionGraphRepositoryLifecycle`.
 - Invalid repository configuration disables Flow Governance for that repository and reports a recoverable validation result without breaking normal graph loading.
+- Repository flow-file reads are bounded to 64 KiB and JSON nesting depth 32 before parsing.
+- Normalization accepts at most 64 top-level fields, 32 main branch names of 256 characters each, and
+  classification patterns of 256 characters. Config paths are bounded to 1,024 characters.
+- Regex execution is allowed only after centralized syntax and safety validation. Backreferences,
+  more than 16 quantifiers, repeat counts above 1,000, adjacent repetitions whose atoms may overlap,
+  and repeated groups containing alternation or another quantifier are rejected; simple
+  alternatives, literal-separated repetitions, and the existing default patterns remain supported.
 - Phase 1 generated flow files contain only supported Phase 1 fields.
 - Future-phase fields may be parsed for preservation/reporting, but they are inert and cannot affect classification, visibility, actions, provider authentication, or Git mutation paths.
 

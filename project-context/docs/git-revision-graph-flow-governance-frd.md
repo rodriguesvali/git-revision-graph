@@ -542,7 +542,15 @@ Validation rules:
 - `enabled` is a boolean when present;
 - `mainBranches` must contain non-empty branch names and defaults to `main` and
   `master`;
-- each branch-kind pattern must be a valid JavaScript regular expression string;
+- repository flow files must not exceed 64 KiB or JSON nesting depth 32;
+- repository config must contain at most 64 top-level fields;
+- `mainBranches` accepts at most 32 entries of 256 characters each;
+- each branch-kind pattern must be a valid JavaScript regular expression string
+  of at most 256 characters;
+- classification patterns must not use backreferences, more than 16
+  quantifiers, repeat counts above 1,000, adjacent potentially overlapping
+  repetitions, or repeated groups that contain alternation or another
+  quantifier;
 - pattern evaluation order must be deterministic;
 - `mainBranches` classification wins before custom branch-kind patterns;
 - unmatched refs become `unknown`;

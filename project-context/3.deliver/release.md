@@ -8,8 +8,8 @@ Last consolidated: 2026-07-28
 - Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. No correction has been completed, packaged,
-  or published in this cycle yet.
+  security hardening, and user-experience corrections. The first correction has completed automated
+  verification; no candidate has been packaged or published.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
@@ -17,7 +17,7 @@ Last consolidated: 2026-07-28
 
 ## Active Release: Reliability and Security Hardening 1.6.1
 
-Status: Open; implementation not yet started
+Status: Implementation in progress; item 1 automated verification complete
 Opened: 2026-07-28
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
@@ -28,7 +28,7 @@ Target version: `1.6.1`
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
 | Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Opening baseline complete; final candidate pending | On 2026-07-28, the production build and `npm test` passed with 796 tests after opening the version. Re-run the full suite after each completed correction and for the final candidate. |
+| Current automated source verification | Item 1 complete; final candidate pending | On 2026-07-28, `npm run quality:check`, the production build, `npm test` (803 tests), and `npm run test:platform` (31 tests) passed after Flow config and regex hardening. Re-run proportional gates after each correction and for the final candidate. |
 | Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
 | Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
 | VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
@@ -41,8 +41,8 @@ Focused build artifact:
 
 Release scope:
 
-- Bound repository Flow Governance configuration input and regex evaluation so malformed or
-  adversarial repository content cannot stall the extension host.
+- Complete: bound repository Flow Governance configuration input and regex evaluation so malformed
+  or adversarial repository content cannot stall the extension host.
 - Close repository-config persistence races so path validation remains true at the write boundary.
 - Prevent stale Compare Results work from replacing a newer comparison or crossing repository
   ownership boundaries.
@@ -79,6 +79,20 @@ Opening record:
   `git diff --check` passed on 2026-07-28.
 - No source correction, dependency change, VSIX package, version publication, or Marketplace action
   occurred while opening the cycle.
+
+Implementation record:
+
+- Flow Governance config and regex hardening completed automated verification on 2026-07-28.
+  Repository files are capped at 64 KiB and JSON depth 32 before parsing; top-level fields,
+  `mainBranches`, config paths, and pattern lengths are bounded during normalization.
+- A shared dependency-free regex compiler now rejects backreferences, excessive or oversized
+  repetitions, adjacent potentially overlapping repetitions, and nested or ambiguous repeated
+  groups before classification or governed branch naming. Default and safe custom patterns remain
+  supported.
+- `npm run quality:check`, `npm run build`, `npm test` (803 tests), and `npm run test:platform`
+  (31 tests) passed. Relevant manual Extension Development Host Flow Governance validation remains
+  pending.
+- No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
 
 Rollback:
 

@@ -10,6 +10,14 @@ All notable changes to this project will be documented in this file.
   corrections identified during the post-`1.6.0` system review.
 - Aligned package and lockfile version metadata without packaging or publishing a release.
 
+### Flow Governance
+
+- Bound repository flow-file reads, JSON depth, configuration collections, paths, branch names, and
+  classification-pattern lengths before applying repository-controlled input.
+- Reject backreferences, excessive or oversized repetitions, adjacent potentially overlapping
+  repetitions, and nested or ambiguous repeated regex groups through one shared validation boundary
+  used by normalization, classification, and governed branch naming.
+
 ## 1.6.0 - 2026-07-27
 
 ### Notifications

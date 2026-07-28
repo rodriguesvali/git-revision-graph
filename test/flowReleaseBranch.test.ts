@@ -38,6 +38,20 @@ test('Flow Governance release branch names follow the configured release pattern
   );
 });
 
+test('Flow Governance rejects an unsafe branch pattern supplied outside config normalization', () => {
+  const config = {
+    patterns: {
+      ...DEFAULT_FLOW_CONFIG.patterns,
+      feature: '^(a+)+$'
+    }
+  };
+
+  const result = resolveFlowBranchName('feature', `${'a'.repeat(128)}!`, config);
+
+  assert.equal(result.ok, false);
+  assert.match(result.message ?? '', /nested or ambiguous repeated groups/);
+});
+
 test('Flow Governance selects synchronization policy from the governed branch source model', () => {
   assert.equal(getFlowBranchStartSyncPolicy('release'), 'exact-sync');
   assert.equal(getFlowBranchStartSyncPolicy('feature'), 'exact-sync');

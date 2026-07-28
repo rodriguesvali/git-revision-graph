@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { open, writeFile } from 'node:fs/promises';
 
 import {
   createDefaultFlowConfig,
@@ -16,6 +16,7 @@ import {
   NormalizedFlowConfig
 } from './flowTypes';
 import { inspectRepositoryConfigPath } from './flowConfigPathSafety';
+import { compileFlowPattern } from './flowPatternSafety';
 
 const PHASE_1_CONFIG_KEYS = new Set([
   'schemaVersion',
@@ -24,6 +25,12 @@ const PHASE_1_CONFIG_KEYS = new Set([
   'patterns'
 ]);
 export const DEFAULT_FLOW_CONFIG_PATH = '.git-revision-graph-flow.json';
+export const FLOW_CONFIG_MAX_FILE_BYTES = 64 * 1024;
+export const FLOW_CONFIG_MAX_JSON_DEPTH = 32;
+export const FLOW_CONFIG_MAX_MAIN_BRANCHES = 32;
+export const FLOW_CONFIG_MAX_BRANCH_NAME_LENGTH = 256;
+export const FLOW_CONFIG_MAX_PATH_LENGTH = 1_024;
+export const FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS = 64;
 
 export interface RepositoryFlowConfigOptionsUpdate {
   readonly enabled?: boolean;
@@ -42,7 +49,17 @@ export function normalizeFlowConfig(
     issues.push({ path: 'schemaVersion', message: 'schemaVersion must be 1.' });
   }
 
-  const ignoredFields = Object.keys(rawConfig).filter((key) => !PHASE_1_CONFIG_KEYS.has(key)).sort();
+  const configKeys = Object.keys(rawConfig);
+  if (configKeys.length > FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS) {
+    issues.push({
+      path: '$',
+      message: `Flow configuration must not contain more than ${FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS} top-level fields.`
+    });
+  }
+  const ignoredFields = configKeys
+    .filter((key) => !PHASE_1_CONFIG_KEYS.has(key))
+    .slice(0, FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS)
+    .sort();
 
   const enabled = readOptionalBoolean(rawConfig, 'enabled', issues) ?? DEFAULT_FLOW_CONFIG.enabled;
   const mainBranches = readMainBranches(rawConfig.mainBranches, issues);
@@ -68,8 +85,15 @@ export function normalizeFlowSettings(
 
   const issues: FlowConfigValidationIssue[] = [];
   const configPath = settings.configPath;
-  if (configPath !== undefined && (typeof configPath !== 'string' || configPath.trim().length === 0)) {
-    issues.push({ path: 'configPath', message: 'configPath must be a non-empty string when set.' });
+  if (configPath !== undefined) {
+    if (typeof configPath !== 'string' || configPath.trim().length === 0) {
+      issues.push({ path: 'configPath', message: 'configPath must be a non-empty string when set.' });
+    } else if (configPath.length > FLOW_CONFIG_MAX_PATH_LENGTH) {
+      issues.push({
+        path: 'configPath',
+        message: `configPath must be at most ${FLOW_CONFIG_MAX_PATH_LENGTH} characters.`
+      });
+    }
   }
 
   const config = createDefaultFlowConfig({
@@ -89,6 +113,10 @@ export async function resolveFlowConfigForRepository(
   settings?: FlowGovernanceSettings
 ): Promise<FlowConfigResolution> {
   const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
+  const configPathIssue = getFlowConfigPathIssue(configPath);
+  if (configPathIssue) {
+    return invalid([configPathIssue]);
+  }
   const inspectedConfigPath = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
   if (!inspectedConfigPath.ok) {
     return invalid([{ path: 'configPath', message: inspectedConfigPath.message }]);
@@ -96,6 +124,12 @@ export async function resolveFlowConfigForRepository(
 
   if (inspectedConfigPath.exists) {
     const rawConfig = await readRepositoryFlowConfig(inspectedConfigPath.path);
+    if (!rawConfig.exists) {
+      return invalid([{
+        path: '$',
+        message: 'Could not read Flow Governance config: configuration file is no longer available.'
+      }]);
+    }
     return rawConfig.value === undefined
       ? invalid(rawConfig.issues)
       : normalizeFlowConfig(rawConfig.value, 'repository');
@@ -113,6 +147,10 @@ export async function updateRepositoryFlowConfigOptions(
   | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
 > {
   const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
+  const configPathIssue = getFlowConfigPathIssue(configPath);
+  if (configPathIssue) {
+    return { ok: false, issue: configPathIssue };
+  }
   const inspectedConfigPath = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
   if (!inspectedConfigPath.ok) {
     return { ok: false, issue: { path: 'configPath', message: inspectedConfigPath.message } };
@@ -124,15 +162,17 @@ export async function updateRepositoryFlowConfigOptions(
     };
   }
 
-  let rawConfig: unknown;
-  try {
-    rawConfig = JSON.parse(await readFile(inspectedConfigPath.path, 'utf8'));
-  } catch (error) {
+  const readResult = await readRepositoryFlowConfig(inspectedConfigPath.path);
+  if (!readResult.exists || readResult.value === undefined) {
     return {
       ok: false,
-      issue: { path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }
+      issue: readResult.issues[0] ?? {
+        path: '$',
+        message: 'Could not read Flow Governance config: configuration file does not exist.'
+      }
     };
   }
+  const rawConfig = readResult.value;
 
   if (!isRecord(rawConfig)) {
     return {
@@ -200,11 +240,25 @@ function readMainBranches(value: unknown, issues: FlowConfigValidationIssue[]): 
     issues.push({ path: 'mainBranches', message: 'mainBranches must be an array of non-empty strings.' });
     return DEFAULT_FLOW_CONFIG.mainBranches;
   }
+  if (value.length > FLOW_CONFIG_MAX_MAIN_BRANCHES) {
+    issues.push({
+      path: 'mainBranches',
+      message: `mainBranches must not contain more than ${FLOW_CONFIG_MAX_MAIN_BRANCHES} entries.`
+    });
+    return DEFAULT_FLOW_CONFIG.mainBranches;
+  }
 
   const branches: string[] = [];
   value.forEach((entry, index) => {
     if (typeof entry !== 'string' || entry.trim().length === 0) {
       issues.push({ path: `mainBranches[${index}]`, message: 'mainBranches entries must be non-empty strings.' });
+      return;
+    }
+    if (entry.length > FLOW_CONFIG_MAX_BRANCH_NAME_LENGTH) {
+      issues.push({
+        path: `mainBranches[${index}]`,
+        message: `mainBranches entries must be at most ${FLOW_CONFIG_MAX_BRANCH_NAME_LENGTH} characters.`
+      });
       return;
     }
     branches.push(entry);
@@ -238,11 +292,14 @@ function readPatterns(
       continue;
     }
 
-    try {
-      new RegExp(pattern);
+    const compilation = compileFlowPattern(pattern);
+    if (compilation.ok) {
       patterns[kind] = pattern;
-    } catch {
-      issues.push({ path: `patterns.${kind}`, message: `${kind} pattern must be a valid JavaScript regular expression.` });
+    } else {
+      issues.push({
+        path: `patterns.${kind}`,
+        message: `${kind} pattern ${compilation.message}`
+      });
     }
   }
 
@@ -267,10 +324,38 @@ async function readRepositoryFlowConfig(
   | { readonly exists: true; readonly value: unknown; readonly issues: readonly [] }
   | { readonly exists: true; readonly value?: undefined; readonly issues: readonly FlowConfigValidationIssue[] }
 > {
+  let handle: Awaited<ReturnType<typeof open>> | undefined;
   try {
+    handle = await open(configPath, 'r');
+    const buffer = Buffer.allocUnsafe(FLOW_CONFIG_MAX_FILE_BYTES + 1);
+    let bytesRead = 0;
+    while (bytesRead < buffer.length) {
+      const result = await handle.read(buffer, bytesRead, buffer.length - bytesRead, bytesRead);
+      if (result.bytesRead === 0) {
+        break;
+      }
+      bytesRead += result.bytesRead;
+    }
+
+    if (bytesRead > FLOW_CONFIG_MAX_FILE_BYTES) {
+      return {
+        exists: true,
+        issues: [{
+          path: '$',
+          message: `Flow Governance config must not exceed ${FLOW_CONFIG_MAX_FILE_BYTES / 1024} KiB.`
+        }]
+      };
+    }
+
+    const content = buffer.toString('utf8', 0, bytesRead);
+    const depthIssue = getJsonDepthIssue(content);
+    if (depthIssue) {
+      return { exists: true, issues: [depthIssue] };
+    }
+
     return {
       exists: true,
-      value: JSON.parse(await readFile(configPath, 'utf8')),
+      value: JSON.parse(content),
       issues: []
     };
   } catch (error) {
@@ -282,7 +367,56 @@ async function readRepositoryFlowConfig(
       exists: true,
       issues: [{ path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }]
     };
+  } finally {
+    await handle?.close();
   }
+}
+
+function getFlowConfigPathIssue(configPath: string): FlowConfigValidationIssue | undefined {
+  if (configPath.length > FLOW_CONFIG_MAX_PATH_LENGTH) {
+    return {
+      path: 'configPath',
+      message: `configPath must be at most ${FLOW_CONFIG_MAX_PATH_LENGTH} characters.`
+    };
+  }
+  return undefined;
+}
+
+function getJsonDepthIssue(content: string): FlowConfigValidationIssue | undefined {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (const character of content) {
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === '\\') {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+      continue;
+    }
+    if (character === '{' || character === '[') {
+      depth += 1;
+      if (depth > FLOW_CONFIG_MAX_JSON_DEPTH) {
+        return {
+          path: '$',
+          message: `Flow Governance config JSON must not exceed a nesting depth of ${FLOW_CONFIG_MAX_JSON_DEPTH}.`
+        };
+      }
+    } else if (character === '}' || character === ']') {
+      depth = Math.max(0, depth - 1);
+    }
+  }
+
+  return undefined;
 }
 
 function isNodeError(error: unknown): error is NodeJS.ErrnoException {

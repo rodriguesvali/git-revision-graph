@@ -5,6 +5,7 @@ import {
   FlowDiagnostic,
   NormalizedFlowConfig
 } from './flowTypes';
+import { compileFlowPattern } from './flowPatternSafety';
 
 export function classifyFlowBranch(refName: string, config: NormalizedFlowConfig): FlowBranchInfo {
   const kind = getFlowBranchKind(refName, config);
@@ -39,7 +40,8 @@ export function getFlowBranchKind(refName: string, config: NormalizedFlowConfig)
   }
 
   for (const kind of FLOW_PATTERN_BRANCH_KINDS) {
-    if (new RegExp(config.patterns[kind]).test(refName)) {
+    const compilation = compileFlowPattern(config.patterns[kind]);
+    if (compilation.ok && compilation.regex.test(refName)) {
       return kind;
     }
   }

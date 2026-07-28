@@ -14,6 +14,7 @@ import type { RefActionServices } from '../../refActions/types';
 import type { FlowStartBranchKind, NormalizedFlowConfig } from './flowTypes';
 import { setFlowBranchDescription } from './flowBranchDescription';
 import { setFlowBranchTarget } from './flowEqualizationTarget';
+import { compileFlowPattern } from './flowPatternSafety';
 
 export type { FlowStartBranchKind } from './flowTypes';
 
@@ -47,7 +48,14 @@ export function resolveFlowBranchName(
   }
 
   const branchPattern = config.patterns[kind];
-  const branchRegex = new RegExp(branchPattern);
+  const compilation = compileFlowPattern(branchPattern);
+  if (!compilation.ok) {
+    return {
+      ok: false,
+      message: `Configured ${kind} pattern ${compilation.message}`
+    };
+  }
+  const branchRegex = compilation.regex;
   const prefix = inferFlowBranchLiteralPrefix(branchPattern);
   const candidates = getUniqueCandidates([
     trimmedName,
