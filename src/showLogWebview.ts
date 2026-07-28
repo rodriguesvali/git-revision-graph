@@ -105,8 +105,8 @@ export function renderShowLogWebviewHtml(): string {
       syncSelectedCommitHashes(state.commits || []);
 
       const sections = [];
-      if (state.errorMessage) {
-        sections.push('<div class="status-card error">' + escapeHtml(state.errorMessage) + '</div>');
+      if (state.errorMessage || state.searchNotice) {
+        sections.push('<div class="status-card' + (state.errorMessage ? ' error' : '') + '" role="status">' + escapeHtml(state.errorMessage || state.searchNotice) + '</div>');
       }
       if (state.commits.length === 0 && state.emptyMessage) {
         sections.push('<div class="empty-state">' + escapeHtml(state.emptyMessage) + '</div>');

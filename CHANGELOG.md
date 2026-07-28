@@ -18,6 +18,11 @@ All notable changes to this project will be documented in this file.
   repetitions, and nested or ambiguous repeated regex groups through one shared validation boundary
   used by normalization, classification, and governed branch naming.
 
+### Show Log
+
+- Identify filtered searches that stop at the 2,000-commit scan ceiling and clearly label partial
+  results or scoped empty results instead of implying that older unsearched commits do not match.
+
 ## 1.6.0 - 2026-07-27
 
 ### Notifications

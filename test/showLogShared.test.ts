@@ -83,6 +83,7 @@ test('builds expanded show log webview commits with inline file changes and lane
       }
     ],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,
@@ -146,6 +147,7 @@ test('updates the summary count when more commits are appended', () => {
       }
     ],
     hasMore: true,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,
@@ -213,6 +215,7 @@ test('builds incremental show log append patches from appended commits', () => {
       }
     ],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,
@@ -247,6 +250,7 @@ test('builds a filtered empty message for show log searches with no matches', ()
     filterText: 'Ada',
     entries: [],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,
@@ -258,6 +262,58 @@ test('builds a filtered empty message for show log searches with no matches', ()
 
   assert.equal(webviewState.filterText, 'Ada');
   assert.equal(webviewState.emptyMessage, 'No commits found matching "Ada".');
+});
+
+test('builds truthful filtered search truncation presentation', () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const baseState = {
+    kind: 'visible' as const,
+    sourceToken: 'test-source-truncated',
+    repository,
+    source: { kind: 'target' as const, revision: 'main', label: 'main' },
+    showAllBranches: false,
+    filterText: 'needle',
+    entries: [],
+    hasMore: false,
+    searchTruncated: true,
+    loading: false,
+    loadingMore: false,
+    errorMessage: undefined,
+    expandedCommitHash: undefined,
+    loadingCommitHash: undefined,
+    expandedCommitError: undefined,
+    cachedChanges: {}
+  };
+
+  const emptyState = buildShowLogWebviewState(baseState);
+  const loadedState = {
+    ...baseState,
+    entries: [{
+      hash: 'a'.repeat(40),
+      shortHash: 'aaaaaaa',
+      author: 'Ada',
+      date: '2026-04-18',
+      subject: 'Needle',
+      message: 'Needle',
+      parentHashes: [],
+      references: [],
+      shortStat: undefined
+    }]
+  };
+  const resultState = buildShowLogWebviewState(loadedState);
+  const appendPatch = buildShowLogWebviewAppendPatch(loadedState, 0);
+
+  assert.equal(
+    emptyState.emptyMessage,
+    'No commits found matching "needle" in the first 2,000 commits. Older history was not searched.'
+  );
+  assert.equal(emptyState.searchNotice, undefined);
+  assert.equal(resultState.emptyMessage, undefined);
+  assert.equal(
+    resultState.searchNotice,
+    'Showing matches from the first 2,000 commits. Older history was not searched.'
+  );
+  assert.equal(appendPatch?.commits.length, 1);
 });
 
 test('keeps a hidden default state before any show log request', () => {

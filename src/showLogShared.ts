@@ -12,6 +12,7 @@ export interface ShowLogState {
   readonly filterText: string;
   readonly entries: readonly RevisionLogEntry[];
   readonly hasMore: boolean;
+  readonly searchTruncated: boolean;
   readonly loading: boolean;
   readonly loadingMore: boolean;
   readonly errorMessage: string | undefined;
@@ -31,6 +32,7 @@ export function createHiddenShowLogState(): ShowLogState {
     filterText: '',
     entries: [],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,

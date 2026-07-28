@@ -61,6 +61,16 @@ import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWar
 
 const SHOW_LOG_PAGE_SIZE = 50;
 
+function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited<ReturnType<RevisionGraphLogBackend['loadRevisionLog']>>): ShowLogState {
+  return {
+    ...state,
+    loading: false,
+    entries: [...result.entries],
+    hasMore: result.hasMore,
+    searchTruncated: result.searchTruncated
+  };
+}
+
 export interface ShowLogPresenter {
   showSource(repository: Repository, source: RevisionLogSource): Promise<void>;
 }
@@ -131,6 +141,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       filterText: '',
       entries: [],
       hasMore: false,
+      searchTruncated: false,
       loading: true,
       loadingMore: false,
       errorMessage: undefined,
@@ -160,12 +171,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         return;
       }
 
-      this.state = {
-        ...this.state,
-        loading: false,
-        entries: [...result.entries],
-        hasMore: result.hasMore
-      };
+      this.state = replaceLoadedShowLogEntries(this.state, result);
       this.postState();
     } catch (error) {
       if (!this.logLoadRequests.isCurrent(activeRequest)) {
@@ -304,6 +310,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       errorMessage: undefined,
       entries: [],
       hasMore: false,
+      searchTruncated: false,
       expandedCommitHash: undefined,
       loadingCommitHash: undefined,
       expandedCommitError: undefined,
@@ -326,12 +333,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         return;
       }
 
-      this.state = {
-        ...this.state,
-        loading: false,
-        entries: [...result.entries],
-        hasMore: result.hasMore
-      };
+      this.state = replaceLoadedShowLogEntries(this.state, result);
       this.postState();
     } catch (error) {
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
@@ -382,6 +384,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       errorMessage: undefined,
       entries: [],
       hasMore: false,
+      searchTruncated: false,
       expandedCommitHash: undefined,
       loadingCommitHash: undefined,
       expandedCommitError: undefined,
@@ -404,12 +407,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         return;
       }
 
-      this.state = {
-        ...this.state,
-        loading: false,
-        entries: [...result.entries],
-        hasMore: result.hasMore
-      };
+      this.state = replaceLoadedShowLogEntries(this.state, result);
       this.postState();
     } catch (error) {
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
@@ -465,9 +463,10 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         ...this.state,
         loadingMore: false,
         entries: [...this.state.entries, ...result.entries],
-        hasMore: result.hasMore
+        hasMore: result.hasMore,
+        searchTruncated: result.searchTruncated
       };
-      this.postAppendCommits(skip);
+      result.searchTruncated ? this.postState() : this.postAppendCommits(skip);
     } catch (error) {
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;

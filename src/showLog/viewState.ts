@@ -1,7 +1,10 @@
 import { getRepositoryRelativeChangePath, getStatusLabel } from '../changePresentation';
 import type { RevisionLogEntry, RevisionLogSource } from '../revisionGraphTypes';
+import { REVISION_LOG_FILTER_SCAN_MAX_COMMITS } from '../revisionGraph/revisionLogTypes';
 import type { ShowLogState } from '../showLogShared';
 import { buildShowLogLaneRows, type ShowLogLaneRow } from './showLogLanes';
+
+const FILTER_SCAN_LIMIT_LABEL = REVISION_LOG_FILTER_SCAN_MAX_COMMITS.toLocaleString('en-US');
 
 export interface ShowLogWebviewChangeItem {
   readonly id: string;
@@ -43,6 +46,7 @@ export interface ShowLogWebviewState {
   readonly canToggleAllBranches: boolean;
   readonly filterText: string;
   readonly emptyMessage: string | undefined;
+  readonly searchNotice: string | undefined;
   readonly errorMessage: string | undefined;
   readonly commits: readonly ShowLogWebviewCommitItem[];
   readonly hasMore: boolean;
@@ -85,6 +89,9 @@ export function buildShowLogEmptyMessage(state: ShowLogState): string | undefine
   }
 
   if (state.filterText.trim()) {
+    if (state.searchTruncated) {
+      return `No commits found matching "${state.filterText.trim()}" in the first ${FILTER_SCAN_LIMIT_LABEL} commits. Older history was not searched.`;
+    }
     return `No commits found matching "${state.filterText.trim()}".`;
   }
 
@@ -94,6 +101,14 @@ export function buildShowLogEmptyMessage(state: ShowLogState): string | undefine
     case 'range':
       return `No commits found between ${state.source.baseLabel} and ${state.source.compareLabel}.`;
   }
+}
+
+export function buildShowLogSearchNotice(state: ShowLogState): string | undefined {
+  if (!state.searchTruncated || state.entries.length === 0) {
+    return undefined;
+  }
+
+  return `Showing matches from the first ${FILTER_SCAN_LIMIT_LABEL} commits. Older history was not searched.`;
 }
 
 export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewState {
@@ -109,6 +124,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       canToggleAllBranches: false,
       filterText: '',
       emptyMessage: buildShowLogEmptyMessage(state),
+      searchNotice: undefined,
       errorMessage: undefined,
       commits: [],
       hasMore: false
@@ -128,6 +144,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     canToggleAllBranches: state.source?.kind === 'target',
     filterText: state.filterText,
     emptyMessage: state.entries.length === 0 ? buildShowLogEmptyMessage(state) : undefined,
+    searchNotice: buildShowLogSearchNotice(state),
     errorMessage: state.errorMessage,
     commits: state.entries.map((entry) => {
       const changes = state.cachedChanges[entry.hash] ?? [];

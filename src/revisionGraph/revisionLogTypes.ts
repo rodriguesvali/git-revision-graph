@@ -2,6 +2,8 @@ import type { RevisionGraphRef } from './model/commitGraphTypes';
 
 export type RevisionLogSource = RevisionGraphProtocol.RevisionLogSource;
 
+export const REVISION_LOG_FILTER_SCAN_MAX_COMMITS = 2000;
+
 export interface RevisionLogEntry {
   readonly hash: string;
   readonly shortHash: string;

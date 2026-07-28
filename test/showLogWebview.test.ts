@@ -22,6 +22,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /class="filter-input" id="filterInput"/);
   assert.match(html, /placeholder="Filter commits"/);
   assert.match(html, /class="filter-clear" id="filterClear"/);
+  assert.match(html, /class="status-card' \+ \(state\.errorMessage \? ' error' : ''\) \+ '" role="status"/);
+  assert.match(html, /state\.searchNotice/);
   assert.match(html, /class="commit-tooltip" id="commitTooltip" role="tooltip" hidden/);
   assert.match(html, /graph-header-label">Graph<\/span>/);
   assert.match(html, /Show All Branches/);

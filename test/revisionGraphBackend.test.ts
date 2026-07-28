@@ -62,6 +62,26 @@ function createFakeGitProgram(
   ].filter(Boolean).join('\n');
 }
 
+function createPagedRevisionLogProgram(
+  totalCommitCount: number,
+  matchingCommitIndex = -1
+): string {
+  return createFakeGitProgram([
+    `const totalCommitCount = ${totalCommitCount};`,
+    `const matchingCommitIndex = ${matchingCommitIndex};`,
+    "const maxCount = Number(args.find((arg) => arg.startsWith('--max-count='))?.split('=')[1] || 0);",
+    "const skip = Number(args.find((arg) => arg.startsWith('--skip='))?.split('=')[1] || 0);",
+    'const end = Math.min(totalCommitCount, skip + maxCount);',
+    "let stdout = '';",
+    'for (let index = skip; index < end; index += 1) {',
+    "  const hash = index.toString(16).padStart(40, '0');",
+    "  const subject = index === matchingCommitIndex ? 'needle' : 'ordinary';",
+    "  stdout += `\\x1e${hash}\\x1f\\x1fAda\\x1f2026-05-03\\x1f\\x1f${subject}\\x1f${subject}\\x1e`;",
+    '}',
+    'process.stdout.write(stdout);'
+  ].join('\n'));
+}
+
 test('reuses completed graph snapshot cache entries for cancelable refreshes', async () => {
   await withFakeGitScript(
     createFakeGitProgram(
@@ -327,8 +347,10 @@ test('loads filtered show log pages across message author hashes and refs', asyn
 
       assert.deepEqual(firstPage.entries.map((entry) => entry.shortHash), ['aaa111a']);
       assert.equal(firstPage.hasMore, true);
+      assert.equal(firstPage.searchTruncated, false);
       assert.deepEqual(secondPage.entries.map((entry) => entry.shortHash), ['ccc333c']);
       assert.equal(secondPage.hasMore, false);
+      assert.equal(secondPage.searchTruncated, false);
 
       const authorMatch = await backend.loadRevisionLog(
         repository,
@@ -348,6 +370,54 @@ test('loads filtered show log pages across message author hashes and refs', asyn
         'tag:v1.0.0'
       );
       assert.deepEqual(tagMatch.entries.map((entry) => entry.shortHash), ['bbb222b']);
+    }
+  );
+});
+
+test('reports when filtered show log search stops before older history', async () => {
+  await withFakeGitScript(
+    createPagedRevisionLogProgram(2_001, 2_000),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const result = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        50,
+        0,
+        false,
+        'needle'
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.deepEqual(result.entries, []);
+      assert.equal(result.hasMore, false);
+      assert.equal(result.searchTruncated, true);
+      assert.match(calls, /--max-count=201 --skip=1800/);
+    }
+  );
+});
+
+test('does not report filtered show log truncation at the exact scan limit', async () => {
+  await withFakeGitScript(
+    createPagedRevisionLogProgram(2_000),
+    async (repositoryPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      const result = await backend.loadRevisionLog(
+        repository,
+        { kind: 'target', revision: 'main', label: 'main' },
+        50,
+        0,
+        false,
+        'needle'
+      );
+
+      assert.deepEqual(result.entries, []);
+      assert.equal(result.hasMore, false);
+      assert.equal(result.searchTruncated, false);
     }
   );
 });

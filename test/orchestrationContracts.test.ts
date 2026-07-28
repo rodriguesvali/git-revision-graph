@@ -297,7 +297,7 @@ test('Show Log reuses, disposes, and recreates its editor panel', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
   const backend = {
-    async loadRevisionLog() { return { entries: [], hasMore: false }; }
+    async loadRevisionLog() { return { entries: [], hasMore: false, searchTruncated: false }; }
   } as never;
   const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
   const repository = createRepository({ root: '/workspace/repo' });
@@ -314,6 +314,61 @@ test('Show Log reuses, disposes, and recreates its editor panel', async (t) => {
 
   provider.handleRepositoryClosed(repository);
   assert.equal(harness.panels[1].disposed, true);
+  provider.dispose();
+});
+
+test('Show Log publishes truthful filtered search truncation state', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  const backend = {
+    async loadRevisionLog(
+      _repository: unknown,
+      _source: unknown,
+      _limit: number,
+      _skip: number,
+      _showAllBranches: boolean,
+      filterText: string
+    ) {
+      return {
+        entries: [],
+        hasMore: false,
+        searchTruncated: filterText === 'needle'
+      };
+    }
+  } as never;
+  const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showSource(
+    repository,
+    { kind: 'target', revision: 'main', label: 'main' }
+  );
+  const initialState = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: { readonly sourceToken?: string } }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  harness.panels[0].receiveMessage({
+    type: 'setFilterText',
+    value: 'needle',
+    sourceToken: initialState?.sourceToken
+  });
+  await waitForAsyncHandlers();
+
+  const finalState = harness.panels[0].postedMessages
+    .map((message) => (message as {
+      readonly state?: {
+        readonly emptyMessage?: string;
+        readonly searchNotice?: string;
+      };
+    }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  assert.equal(
+    finalState?.emptyMessage,
+    'No commits found matching "needle" in the first 2,000 commits. Older history was not searched.'
+  );
+  assert.equal(finalState?.searchNotice, undefined);
+
   provider.dispose();
 });
 

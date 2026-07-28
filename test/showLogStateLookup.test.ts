@@ -75,6 +75,7 @@ function createVisibleState(repository: ReturnType<typeof createRepository>) {
       }
     ],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,

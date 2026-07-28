@@ -112,6 +112,7 @@ function createVisibleState(): ShowLogState {
       })
     ],
     hasMore: false,
+    searchTruncated: false,
     loading: false,
     loadingMore: false,
     errorMessage: undefined,
