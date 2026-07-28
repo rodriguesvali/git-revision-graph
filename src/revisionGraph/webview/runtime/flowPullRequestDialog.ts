@@ -187,6 +187,15 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     syncActions();
   }
 
+  function toggleFieldImprovement(field: 'title' | 'description'): void {
+    if (pendingRequestIds[field] !== undefined) {
+      cancelPendingImprovement(field);
+      syncActions();
+      return;
+    }
+    improveField(field);
+  }
+
   function cancelPendingImprovement(field: 'title' | 'description'): void {
     const requestId = pendingRequestIds[field];
     if (requestId === undefined) return;
@@ -325,8 +334,8 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       warning,
       openButton
     };
-    titleField.aiButton.addEventListener('click', () => improveField('title'));
-    descriptionField.aiButton.addEventListener('click', () => improveField('description'));
+    titleField.aiButton.addEventListener('click', () => toggleFieldImprovement('title'));
+    descriptionField.aiButton.addEventListener('click', () => toggleFieldImprovement('description'));
     titleField.input.addEventListener('input', () => handleFieldInput('title'));
     descriptionField.input.addEventListener('input', () => handleFieldInput('description'));
     targetSelect.addEventListener('change', applyTargetSelection);

@@ -35,6 +35,13 @@ export class CompareBriefingController implements vscode.Disposable {
     this.currentState = { kind: 'idle' };
   }
 
+  cancel(): void {
+    const request = this.cancelRequest();
+    if (request) {
+      this.setState(request.restoreState);
+    }
+  }
+
   async generate(): Promise<void> {
     const generator = this.generator;
     const comparisonState = this.getComparisonState();
@@ -42,9 +49,13 @@ export class CompareBriefingController implements vscode.Disposable {
       return;
     }
 
+    const restoreState: CompareBriefingState = this.currentState.kind === 'ready'
+      ? this.currentState
+      : { kind: 'idle' };
     this.cancelRequest();
     const request: BriefingRequest = {
       state: comparisonState,
+      restoreState,
       tokenSource: new vscode.CancellationTokenSource()
     };
     this.request = request;
@@ -98,15 +109,17 @@ export class CompareBriefingController implements vscode.Disposable {
     this.onStateChanged();
   }
 
-  private cancelRequest(): void {
+  private cancelRequest(): BriefingRequest | undefined {
     const request = this.request;
     this.request = undefined;
     request?.tokenSource.cancel();
     request?.tokenSource.dispose();
+    return request;
   }
 }
 
 interface BriefingRequest {
   readonly state: Extract<CompareResultsState, { readonly kind: 'between' | 'worktree' }>;
+  readonly restoreState: CompareBriefingState;
   readonly tokenSource: vscode.CancellationTokenSource;
 }

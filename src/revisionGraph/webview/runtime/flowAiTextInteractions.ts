@@ -3,9 +3,9 @@ interface RevisionGraphWebviewFlowAiTextInteractions {
     RevisionGraphWebviewFlowPullRequestDialogDependencies,
     'improveText' | 'cancelImprovement' | 'openUrl'
   >;
-  readonly releaseDependencies: Pick<
+  readonly branchDependencies: Pick<
     RevisionGraphWebviewFlowBranchDialogDependencies,
-    'improveReleaseText' | 'cancelImprovement'
+    'improveBranchText' | 'cancelImprovement'
   >;
 }
 
@@ -31,16 +31,16 @@ function createRevisionGraphWebviewFlowAiTextInteractions(
         ));
       }
     },
-    releaseDependencies: {
-      improveReleaseText(sourceRefName, releaseName, text) {
+    branchDependencies: {
+      improveBranchText(sourceRefName, branchKind, branchName, text) {
         const requestId = nextRequestId++;
-        postMessage(createRevisionGraphImproveFlowReleaseTextMessage(
-          requestId, sourceRefName, releaseName, text
+        postMessage(createRevisionGraphImproveFlowBranchTextMessage(
+          requestId, sourceRefName, branchKind, branchName, text
         ));
         return requestId;
       },
-      cancelImprovement(requestId) {
-        postMessage(createRevisionGraphCancelFlowAiTextMessage(requestId, 'release', 'description'));
+      cancelImprovement(requestId, branchKind) {
+        postMessage(createRevisionGraphCancelFlowAiTextMessage(requestId, branchKind, 'description'));
       }
     }
   };

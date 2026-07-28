@@ -26,6 +26,8 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /id="briefingButton"/);
   assert.match(html, /class="toolbar-action briefing-action"/);
   assert.match(html, /class="briefing-action-icon"/);
+  assert.match(html, /id="briefingSparkleIcon"/);
+  assert.match(html, /id="briefingStopIcon"[\s\S]*?<rect x="4" y="4" width="8" height="8" rx="1" \/>/);
   assert.match(html, /title="Generate AI briefing"/);
   assert.match(html, /aria-label="Generate AI briefing"/);
   assert.doesNotMatch(html, />AI Briefing<\/button>/);
@@ -89,17 +91,21 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /updateUnifiedDiffButton\(\)/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'unifiedDiff' \}\)/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'generateBriefing' \}\)/);
+  assert.match(html, /vscode\.postMessage\(\{ type: 'cancelBriefing' \}\)/);
   assert.match(html, /briefingBody\.textContent = briefing\.kind === 'loading'/);
   assert.doesNotMatch(html, /briefingBody\.innerHTML/);
   assert.match(html, /Show AI briefing/);
   assert.match(html, /Regenerate AI briefing/);
-  assert.match(html, /Generating AI briefing\.\.\./);
+  assert.match(html, /Cancel AI briefing generation/);
   assert.match(html, /briefingCloseButton\.addEventListener\('click', dismissBriefingPanel\)/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'copyBriefing' \}\)/);
   assert.match(html, /briefingCopyButton\.hidden = briefing\.kind !== 'ready'/);
   assert.match(html, /briefing\.kind === 'idle' \|\| isBriefingDismissed/);
   assert.match(html, /function dismissBriefingPanel\(\)/);
   assert.match(html, /briefingButton\.setAttribute\('aria-label', label\)/);
+  assert.match(html, /briefingButton\.disabled = !canGenerate/);
+  assert.match(html, /briefingSparkleIcon\.hidden = isGeneratingBriefing/);
+  assert.match(html, /briefingStopIcon\.hidden = !isGeneratingBriefing/);
   assert.match(html, /\.briefing-panel \{/);
   assert.match(html, /\.briefing-action \{/);
   assert.match(
@@ -111,6 +117,8 @@ test('renders a dense compare review list with visible and contextual actions', 
     /\.briefing-action:hover,[\s\S]*?\.briefing-action:focus-visible \{[\s\S]*?background: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 14%, transparent\);[\s\S]*?color: var\(--vscode-textLink-activeForeground, var\(--vscode-foreground\)\);/
   );
   assert.match(html, /\.briefing-action:disabled \{\s*opacity: 0\.45;/);
+  assert.match(html, /\.briefing-action\[data-loading="true"\] \{/);
+  assert.match(html, /\.briefing-action-icon\[hidden\] \{\s*display: none;/);
   assert.match(html, /\.briefing-header-button \{/);
   assert.match(html, /max-height: min\(45vh, 420px\)/);
   assert.match(html, /overflow-y: auto/);

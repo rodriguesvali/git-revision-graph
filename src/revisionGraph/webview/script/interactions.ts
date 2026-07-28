@@ -532,7 +532,7 @@
       submit: (target, branchKind, name, description) => {
         vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
       },
-      ...flowAiTextInteractions.releaseDependencies
+      ...flowAiTextInteractions.branchDependencies
     });
     function showFlowBranchForm(target: RevisionGraphWebviewTarget, branchKind: RevisionGraphWebviewFlowBranchKind) {
       flowBranchDialogController.show(target, branchKind);

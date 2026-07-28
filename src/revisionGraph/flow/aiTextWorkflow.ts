@@ -128,7 +128,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
   }
 
   private isCurrentForm(input: FlowAiTextImprovementInput): boolean {
-    if (input.surface === 'release') return true;
+    if (input.surface !== 'pull-request') return true;
     return !!this.getPullRequestContext(input.sourceRefName, input.targetRefName);
   }
 

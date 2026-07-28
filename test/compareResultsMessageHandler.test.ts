@@ -26,6 +26,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyFileName', itemIds: ['src/app.ts:0', 'src/util.ts:1'] }, handlers), true);
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyFullPath', itemIds: ['src/app.ts:0'] }, handlers), true);
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyBriefing' }, handlers), true);
+  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'cancelBriefing' }, handlers), true);
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'generateBriefing' }, handlers), true);
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'unifiedDiff' }, handlers), true);
   assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'worktree', itemId: 'src/app.ts:0' }, handlers), true);
@@ -37,6 +38,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
     'copyFileName:src/app.ts:0,src/util.ts:1',
     'copyFullPath:src/app.ts:0',
     'copyBriefing',
+    'cancelBriefing',
     'generateBriefing',
     'unifiedDiff',
     'worktree:src/app.ts:0',
@@ -60,6 +62,9 @@ function createHandlers(calls: string[]): CompareResultsMessageHandlers {
     },
     copyBriefing() {
       calls.push('copyBriefing');
+    },
+    cancelBriefing() {
+      calls.push('cancelBriefing');
     },
     generateBriefing() {
       calls.push('generateBriefing');

@@ -7,6 +7,7 @@ import type {
 } from './aiPrompts/types';
 
 export type {
+  FlowAiBranchTextSurface,
   FlowAiPromptContextSource,
   FlowAiPullRequestPromptContext,
   FlowAiPullRequestPromptKind,

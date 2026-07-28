@@ -167,6 +167,23 @@ Implementation record:
   tests, `npm run quality:check` (255 production files and 2,452 functions), `npm run build`, all
   826 tests, and `git diff --check` passed; `graphify update .` rebuilt 5,024 nodes, 9,925 edges,
   and 381 communities. Updated Extension Development Host visual confirmation remains pending.
+- In-flight AI actions in Compare Results and Flow Governance now remain clickable and replace the
+  sparkle with an accessible stop icon. Compare Results adds a validated payload-free cancellation
+  intent and restores a prior ready briefing after cancelled regeneration; Flow reuses its existing
+  request-ID/surface/field cancellation boundary. Both surfaces invalidate ownership immediately and
+  ignore late provider output. The 118 focused tests, `npm run quality:check` (255 production files
+  and 2,457 functions), `npm run build`, all 828 tests, and `git diff --check` passed. Manual
+  Extension Development Host cancellation timing and visual/keyboard confirmation remain pending.
+  `graphify update .` rebuilt 5,036 nodes, 9,941 edges, and 392 communities.
+- Feature, Task, Bug, and Hot Fix branch forms now enable their description AI action after their
+  required name fields and description are complete. The webview sends a bounded generic
+  branch-text intent, the host authorizes its `release | feature | task | bug | hotfix` kind against
+  the existing governed start-source policy, and prompt construction applies type-specific guidance
+  without inventing form facts. The 134 focused tests, `npm run quality:check` (255 production files
+  and 2,462 functions), `npm run build`, all 830 tests, and `git diff --check` passed.
+  `graphify update .` rebuilt 5,053 nodes, 9,967 edges, and 379
+  communities. Manual Extension Development Host visual/interaction smoke remains pending; full
+  evidence is recorded in `project-context/2.build/features/1.6.1-branch-ai-descriptions.md`.
 - `graphify update .` rebuilt the item 6 code graph with 5,025 nodes, 9,926 edges, and 385
   communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.

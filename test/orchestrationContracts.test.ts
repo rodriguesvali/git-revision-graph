@@ -255,6 +255,66 @@ test('Compare Results cancels and ignores an AI briefing when the comparison cha
   provider.dispose();
 });
 
+test('Compare Results lets the user cancel AI regeneration and restores the ready briefing', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  let generationCount = 0;
+  let resolveRegeneration: ((value: { readonly status: 'ready'; readonly content: string }) => void) | undefined;
+  let regenerationToken: { readonly isCancellationRequested: boolean } | undefined;
+  const provider = new CompareResultsViewProvider(
+    harness.extensionUri,
+    {
+      async loadUnifiedDiff() {
+        return 'diff --git a/src/app.ts b/src/app.ts\n+change\n';
+      }
+    } as never,
+    undefined,
+    {
+      async generate(_input, token) {
+        generationCount++;
+        if (generationCount === 1) {
+          return { status: 'ready', content: 'Original briefing' };
+        }
+        regenerationToken = token;
+        return new Promise((resolve) => { resolveRegeneration = resolve; });
+      }
+    }
+  );
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showBetweenRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature', label: 'feature' },
+    [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
+  );
+  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  await waitForAsyncHandlers();
+  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  await waitForAsyncHandlers();
+  harness.panels[0].receiveMessage({ type: 'cancelBriefing' });
+  await waitForAsyncHandlers();
+
+  assert.equal(regenerationToken?.isCancellationRequested, true);
+  const statesAfterCancel = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: unknown }).state)
+    .filter((state): state is { readonly briefing?: { readonly content?: string } } => !!state);
+  assert.deepEqual(statesAfterCancel.at(-1)?.briefing, {
+    kind: 'ready',
+    content: 'Original briefing'
+  });
+
+  resolveRegeneration?.({ status: 'ready', content: 'Stale regenerated briefing' });
+  await waitForAsyncHandlers();
+  const finalStates = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: unknown }).state)
+    .filter((state): state is { readonly briefing?: { readonly content?: string } } => !!state);
+  assert.equal(finalStates.some((state) =>
+    state.briefing?.content === 'Stale regenerated briefing'
+  ), false);
+  provider.dispose();
+});
+
 test('Compare Results copies only the current generated AI briefing', async (t) => {
   const harness = installVscodePanelMock(t);
   const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
@@ -613,6 +673,46 @@ test('Flow AI workflow derives defect prompts and code context from host-owned b
       content: 'diff --git a/src/payment.ts b/src/payment.ts\n+roundCorrectly();'
     }
   );
+  workflow.dispose();
+});
+
+test('Flow AI workflow improves Bug branch descriptions without Pull Request context', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/aiTextWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/aiTextWorkflow');
+  const repository = createRepository({ root: '/workspace/repo' });
+  const messages: unknown[] = [];
+  let improvementInput: unknown;
+  const workflow = new RevisionGraphFlowAiTextWorkflow({
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({}) as never,
+    postHostMessage: (message) => messages.push(message)
+  }, {
+    async improve(input) {
+      improvementInput = input;
+      return { status: 'ready', content: 'Payment totals are rounded incorrectly.' };
+    }
+  });
+  const input = {
+    surface: 'bug' as const,
+    field: 'description' as const,
+    sourceRefName: 'release/2.0.0',
+    branchName: 'BUG-42-payment-rounding',
+    text: 'Payment total wrong'
+  };
+
+  await workflow.improve(15, input);
+
+  assert.deepEqual(improvementInput, input);
+  assert.deepEqual(messages, [{
+    type: 'set-flow-ai-text-result',
+    requestId: 15,
+    surface: 'bug',
+    field: 'description',
+    status: 'ready',
+    content: 'Payment totals are rounded incorrectly.'
+  }]);
   workflow.dispose();
 });
 

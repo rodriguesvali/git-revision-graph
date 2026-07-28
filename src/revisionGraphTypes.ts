@@ -66,7 +66,13 @@ export interface RevisionGraphHostTraceContext {
   readonly sentAtMs: number;
 }
 
-export type RevisionGraphFlowAiTextSurface = 'pull-request' | 'release';
+export type RevisionGraphFlowAiTextSurface =
+  | 'pull-request'
+  | 'release'
+  | 'feature'
+  | 'task'
+  | 'bug'
+  | 'hotfix';
 export type RevisionGraphFlowAiTextField = 'title' | 'description';
 
 export type RevisionGraphViewHostMessage =

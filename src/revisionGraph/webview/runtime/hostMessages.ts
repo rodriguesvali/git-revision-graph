@@ -44,13 +44,18 @@ function isRevisionGraphWebviewFlowAiTextResultMessage(value: Record<string, unk
   return typeof value.requestId === 'number'
     && Number.isFinite(value.requestId)
     && value.requestId >= 0
-    && (value.surface === 'pull-request' || value.surface === 'release')
+    && isRevisionGraphWebviewFlowAiTextSurface(value.surface)
     && (value.field === 'title' || value.field === 'description')
-    && !(value.surface === 'release' && value.field !== 'description')
+    && !(value.surface !== 'pull-request' && value.field !== 'description')
     && (value.status === 'ready' || value.status === 'unavailable')
     && (value.status === 'ready'
       ? typeof value.content === 'string'
       : value.content === undefined);
+}
+
+function isRevisionGraphWebviewFlowAiTextSurface(value: unknown): boolean {
+  return value === 'pull-request' || value === 'release' || value === 'feature'
+    || value === 'task' || value === 'bug' || value === 'hotfix';
 }
 
 function isRevisionGraphWebviewFlowPullRequestContextMessage(value: Record<string, unknown>): boolean {

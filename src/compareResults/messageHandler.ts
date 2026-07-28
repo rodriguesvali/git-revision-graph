@@ -8,6 +8,7 @@ export interface CompareResultsMessageHandlers {
   readonly copyFileName: (itemIds: readonly string[]) => MaybePromise<void>;
   readonly copyFullPath: (itemIds: readonly string[]) => MaybePromise<void>;
   readonly copyBriefing: () => MaybePromise<void>;
+  readonly cancelBriefing: () => MaybePromise<void>;
   readonly generateBriefing: () => MaybePromise<void>;
   readonly unifiedDiff: () => MaybePromise<void>;
   readonly worktree: (itemId: string) => MaybePromise<void>;
@@ -38,6 +39,9 @@ export async function dispatchCompareResultsWebviewMessage(
       return true;
     case 'copyBriefing':
       await handlers.copyBriefing();
+      return true;
+    case 'cancelBriefing':
+      await handlers.cancelBriefing();
       return true;
     case 'generateBriefing':
       await handlers.generateBriefing();

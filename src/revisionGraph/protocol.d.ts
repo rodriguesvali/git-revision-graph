@@ -107,16 +107,17 @@ declare namespace RevisionGraphProtocol {
       readonly description: string;
     }
     | {
-      readonly type: 'improve-flow-release-text';
+      readonly type: 'improve-flow-branch-text';
       readonly requestId: number;
       readonly sourceRefName: string;
-      readonly releaseName: string;
+      readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+      readonly branchName: string;
       readonly text: string;
     }
     | {
       readonly type: 'cancel-flow-ai-text';
       readonly requestId: number;
-      readonly surface: 'pull-request' | 'release';
+      readonly surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
       readonly field: 'title' | 'description';
     }
     | {

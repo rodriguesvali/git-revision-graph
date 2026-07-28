@@ -2,7 +2,11 @@ import { Repository } from '../git';
 import { isAbortError } from '../errors';
 import { RevisionGraphCommitShortStat, RevisionGraphMessage } from '../revisionGraphTypes';
 import type { FlowGovernanceOptionsUpdate } from './flow';
-import type { FlowAiTextImprovementInput } from './flow/aiTextAssistant';
+import type {
+  FlowAiTextField,
+  FlowAiTextImprovementInput,
+  FlowAiTextSurface
+} from './flow/aiTextAssistant';
 import { formatShortCommitHash } from '../commitHash';
 import { createRevisionGraphCommitShortStatMessage } from './hostMessages';
 import { ShowLogPresenter } from '../showLogView';
@@ -61,8 +65,8 @@ export interface RevisionGraphMessageHandlerHost
   improveFlowText(requestId: number, input: FlowAiTextImprovementInput): Promise<void>;
   cancelFlowAiText(
     requestId: number,
-    surface: 'pull-request' | 'release',
-    field: 'title' | 'description'
+    surface: FlowAiTextSurface,
+    field: FlowAiTextField
   ): void;
   clearLayoutCache(): PromiseLike<void> | void;
   traceWebviewLoadEvent(
@@ -161,12 +165,12 @@ export class RevisionGraphMessageHandler {
           description: message.description
         });
       },
-      'improve-flow-release-text': async (message) => {
+      'improve-flow-branch-text': async (message) => {
         await this.host.improveFlowText(message.requestId, {
-          surface: 'release',
+          surface: message.branchKind,
           field: 'description',
           sourceRefName: message.sourceRefName,
-          releaseName: message.releaseName,
+          branchName: message.branchName,
           text: message.text
         });
       },

@@ -8,9 +8,12 @@ export function renderCompareResultsBriefingAction(): string {
       aria-label="Generate AI briefing"
       hidden
     >
-      <svg class="briefing-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <svg id="briefingSparkleIcon" class="briefing-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
         <path d="M7.5 1 8.7 4.3 12 5.5 8.7 6.7 7.5 10 6.3 6.7 3 5.5 6.3 4.3 7.5 1Z" />
         <path d="M12.5 9.2 13.1 10.9 14.8 11.5 13.1 12.1 12.5 13.8 11.9 12.1 10.2 11.5 11.9 10.9 12.5 9.2Z" />
+      </svg>
+      <svg id="briefingStopIcon" class="briefing-action-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false" hidden>
+        <rect x="4" y="4" width="8" height="8" rx="1" />
       </svg>
     </button>`;
 }
@@ -55,6 +58,8 @@ export function renderCompareResultsActionScript(): string {
   return `
     const unifiedDiffButton = document.getElementById('unifiedDiffButton');
     const briefingButton = document.getElementById('briefingButton');
+    const briefingSparkleIcon = document.getElementById('briefingSparkleIcon');
+    const briefingStopIcon = document.getElementById('briefingStopIcon');
     const briefingPanel = document.getElementById('briefingPanel');
     const briefingCopyButton = document.getElementById('briefingCopyButton');
     const briefingCloseButton = document.getElementById('briefingCloseButton');
@@ -75,7 +80,11 @@ export function renderCompareResultsActionScript(): string {
     });
 
     briefingButton.addEventListener('click', () => {
-      if (!currentState.canGenerateBriefing || isGeneratingBriefing) {
+      if (!currentState.canGenerateBriefing) {
+        return;
+      }
+      if (isGeneratingBriefing) {
+        vscode.postMessage({ type: 'cancelBriefing' });
         return;
       }
       if (currentState.briefing?.kind === 'ready' && isBriefingDismissed) {
@@ -130,16 +139,18 @@ export function renderCompareResultsActionScript(): string {
       const canGenerate = currentState.kind === 'results' && currentState.canGenerateBriefing;
       const hasBriefing = currentState.briefing?.kind === 'ready';
       const label = isGeneratingBriefing
-        ? 'Generating AI briefing...'
+        ? 'Cancel AI briefing generation'
         : hasBriefing && isBriefingDismissed
           ? 'Show AI briefing'
           : hasBriefing ? 'Regenerate AI briefing' : 'Generate AI briefing';
       briefingButton.hidden = !canGenerate;
-      briefingButton.disabled = canGenerate && isGeneratingBriefing;
+      briefingButton.disabled = !canGenerate;
       briefingButton.title = label;
       briefingButton.setAttribute('aria-label', label);
       briefingButton.setAttribute('aria-busy', isGeneratingBriefing ? 'true' : 'false');
       briefingButton.dataset.loading = isGeneratingBriefing ? 'true' : 'false';
+      briefingSparkleIcon.hidden = isGeneratingBriefing;
+      briefingStopIcon.hidden = !isGeneratingBriefing;
     }
 
     function updateBriefingPanel() {
@@ -193,13 +204,17 @@ export function renderCompareResultsBriefingStyles(): string {
     .briefing-action:disabled {
       opacity: 0.45;
     }
+    .briefing-action[data-loading="true"] {
+      background: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 14%, transparent);
+      color: var(--vscode-textLink-activeForeground, var(--vscode-foreground));
+    }
     .briefing-action-icon {
       width: 16px;
       height: 16px;
       fill: currentColor;
     }
-    .briefing-action[data-loading="true"] .briefing-action-icon {
-      animation: briefing-pulse 1s ease-in-out infinite alternate;
+    .briefing-action-icon[hidden] {
+      display: none;
     }
     .briefing-header {
       display: flex;
@@ -257,10 +272,6 @@ export function renderCompareResultsBriefingStyles(): string {
       font: inherit;
       line-height: 1.5;
       white-space: pre-wrap;
-    }
-    @keyframes briefing-pulse {
-      from { opacity: 0.45; }
-      to { opacity: 1; }
     }
   `;
 }

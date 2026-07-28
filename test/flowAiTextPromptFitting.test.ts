@@ -13,7 +13,7 @@ test('Flow AI prompt fitting preserves provider order when the full prompt fits'
       surface: 'release',
       field: 'description',
       sourceRefName: 'main',
-      releaseName: '2.0.0',
+      branchName: '2.0.0',
       text: 'Next stable release'
     },
     createCancellationToken()

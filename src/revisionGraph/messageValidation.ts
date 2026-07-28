@@ -6,7 +6,7 @@ import { validateFlowGovernanceOptions, validateProjectionOptions } from './mess
 import {
   validateCancelFlowAiTextMessage,
   validateImproveFlowPullRequestTextMessage,
-  validateImproveFlowReleaseTextMessage
+  validateImproveFlowBranchTextMessage
 } from './messageValidationFlowAi';
 
 export {
@@ -52,7 +52,7 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'copy-flow-pr-context-field': validateCopyFlowPullRequestContextFieldMessage,
   'open-flow-pr-url': validateOpenFlowPullRequestUrlMessage,
   'improve-flow-pr-text': validateImproveFlowPullRequestTextMessage,
-  'improve-flow-release-text': validateImproveFlowReleaseTextMessage,
+  'improve-flow-branch-text': validateImproveFlowBranchTextMessage,
   'cancel-flow-ai-text': validateCancelFlowAiTextMessage,
   'compare-selected': validateCompareSelectedMessage,
   'show-log': validateShowLogMessage,

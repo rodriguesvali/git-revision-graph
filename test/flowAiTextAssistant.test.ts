@@ -48,6 +48,50 @@ test('Flow AI defect and hotfix prompts request context-specific evidence', () =
   assert.match(hotfixPrompt, /rollback only when supplied evidence supports them/);
 });
 
+test('Flow AI branch prompts specialize feature, task, bug, and hotfix creation descriptions', () => {
+  const featurePrompt = buildFlowAiTextImprovementPrompt({
+    surface: 'feature',
+    field: 'description',
+    sourceRefName: 'main',
+    branchName: 'payment-summary',
+    text: 'Add a clearer payment summary.'
+  });
+  const bugPrompt = buildFlowAiTextImprovementPrompt({
+    surface: 'bug',
+    field: 'description',
+    sourceRefName: 'release/2.0.0',
+    branchName: 'BUG-42-payment-rounding',
+    text: 'Payment total is rounded incorrectly.'
+  });
+  const taskPrompt = buildFlowAiTextImprovementPrompt({
+    surface: 'task',
+    field: 'description',
+    sourceRefName: 'feature/payment-summary',
+    branchName: '4312-rounding-copy',
+    text: 'Adjust the payment rounding copy.'
+  });
+  const hotfixPrompt = buildFlowAiTextImprovementPrompt({
+    surface: 'hotfix',
+    field: 'description',
+    sourceRefName: 'main',
+    branchName: 'INC-42-payment-rounding',
+    text: 'Payment total is incorrect in production.'
+  });
+
+  assert.match(featurePrompt, /supplied feature branch description/);
+  assert.match(featurePrompt, /feature purpose, user value, and intended scope/);
+  assert.match(featurePrompt, /Feature branch name: payment-summary/);
+  assert.match(taskPrompt, /supplied task branch description/);
+  assert.match(taskPrompt, /task objective, implementation scope, and completion details/);
+  assert.match(taskPrompt, /Task branch name: 4312-rounding-copy/);
+  assert.match(bugPrompt, /supplied bug branch description/);
+  assert.match(bugPrompt, /observed problem, impact, and useful reproduction details/);
+  assert.match(bugPrompt, /Bug branch name: BUG-42-payment-rounding/);
+  assert.match(hotfixPrompt, /supplied hotfix branch description/);
+  assert.match(hotfixPrompt, /urgent problem, impact, and intended correction/);
+  assert.match(hotfixPrompt, /Hotfix branch name: INC-42-payment-rounding/);
+});
+
 test('Flow AI prompt policy selects context from trusted branch kinds', () => {
   assert.deepEqual(resolveFlowAiPullRequestPromptProfile('task', 'feature'), {
     transition: 'task-to-feature',

@@ -266,16 +266,17 @@ test('RevisionGraphMessageHandler routes user-initiated Flow AI improvements and
     description: 'promotion details'
   });
   await handler.handleMessage({
-    type: 'improve-flow-release-text',
+    type: 'improve-flow-branch-text',
     requestId: 8,
     sourceRefName: 'main',
-    releaseName: '2.0.0',
-    text: 'next stable release'
+    branchKind: 'feature',
+    branchName: 'payment-summary',
+    text: 'add a clearer payment summary'
   });
   await handler.handleMessage({
     type: 'cancel-flow-ai-text',
     requestId: 8,
-    surface: 'release',
+    surface: 'feature',
     field: 'description'
   });
 
@@ -294,14 +295,14 @@ test('RevisionGraphMessageHandler routes user-initiated Flow AI improvements and
     {
       requestId: 8,
       input: {
-        surface: 'release',
+        surface: 'feature',
         field: 'description',
         sourceRefName: 'main',
-        releaseName: '2.0.0',
-        text: 'next stable release'
+        branchName: 'payment-summary',
+        text: 'add a clearer payment summary'
       }
     },
-    { cancel: { surface: 'release', field: 'description', requestId: 8 } }
+    { cancel: { surface: 'feature', field: 'description', requestId: 8 } }
   ]);
 });
 

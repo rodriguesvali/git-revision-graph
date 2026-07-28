@@ -638,15 +638,15 @@ export function renderRevisionGraphStyles(): string {
       background: color-mix(in srgb, var(--accent) 14%, transparent);
       color: var(--vscode-textLink-activeForeground, var(--text));
     }
+    .flow-ai-text-action[data-loading="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--vscode-textLink-activeForeground, var(--text)); }
+    .flow-ai-text-action[hidden] { display: none; }
     .flow-ai-text-action svg {
       position: static;
       width: 17px;
       height: 17px;
       fill: currentColor;
     }
-    .flow-ai-field-row .flow-form-textarea {
-      min-height: 96px;
-    }
+    .flow-ai-field-row .flow-form-textarea { min-height: 96px; }
     .flow-pr-context-warning {
       margin: 0 0 12px;
       border-left: 2px solid var(--vscode-editorWarning-foreground, #cca700);
@@ -660,8 +660,6 @@ export function renderRevisionGraphStyles(): string {
       display: none;
     }
     .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
-    .flow-ai-text-action[data-loading="true"] svg { animation: flow-ai-text-pulse 900ms ease-in-out infinite alternate; }
-    @keyframes flow-ai-text-pulse { from { opacity: 0.45; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     .flow-form-error {
       margin: 0 0 12px;
       color: var(--vscode-errorForeground);

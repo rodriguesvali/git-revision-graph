@@ -24,18 +24,20 @@ export function validateImproveFlowPullRequestTextMessage(
     : undefined;
 }
 
-export function validateImproveFlowReleaseTextMessage(
+export function validateImproveFlowBranchTextMessage(
   message: RawRevisionGraphMessage
-): RevisionGraphProtocol.MessageOf<'improve-flow-release-text'> | undefined {
+): RevisionGraphProtocol.MessageOf<'improve-flow-branch-text'> | undefined {
   return isNonNegativeFiniteNumber(message.requestId)
     && isBoundedNonEmptyString(message.sourceRefName)
-    && isBoundedNonEmptyString(message.releaseName, 240)
+    && isFlowAiBranchKind(message.branchKind)
+    && isBoundedNonEmptyString(message.branchName, 240)
     && isBoundedNonEmptyString(message.text, 2048)
     ? {
-      type: 'improve-flow-release-text',
+      type: 'improve-flow-branch-text',
       requestId: Math.round(message.requestId),
       sourceRefName: message.sourceRefName,
-      releaseName: message.releaseName,
+      branchKind: message.branchKind,
+      branchName: message.branchName,
       text: message.text
     }
     : undefined;
@@ -45,9 +47,9 @@ export function validateCancelFlowAiTextMessage(
   message: RawRevisionGraphMessage
 ): RevisionGraphProtocol.MessageOf<'cancel-flow-ai-text'> | undefined {
   return isNonNegativeFiniteNumber(message.requestId)
-    && (message.surface === 'pull-request' || message.surface === 'release')
+    && (message.surface === 'pull-request' || isFlowAiBranchKind(message.surface))
     && (message.field === 'title' || message.field === 'description')
-    && !(message.surface === 'release' && message.field !== 'description')
+    && !(message.surface !== 'pull-request' && message.field !== 'description')
     ? {
       type: 'cancel-flow-ai-text',
       requestId: Math.round(message.requestId),
@@ -55,6 +57,11 @@ export function validateCancelFlowAiTextMessage(
       field: message.field
     }
     : undefined;
+}
+
+function isFlowAiBranchKind(value: unknown): value is 'release' | 'feature' | 'task' | 'bug' | 'hotfix' {
+  return value === 'release' || value === 'feature' || value === 'task'
+    || value === 'bug' || value === 'hotfix';
 }
 
 function isNonNegativeFiniteNumber(value: unknown): value is number {

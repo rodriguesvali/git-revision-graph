@@ -76,7 +76,7 @@ type RevisionGraphWebviewHostMessage =
   | {
     readonly type: 'set-flow-ai-text-result';
     readonly requestId: number;
-    readonly surface: 'pull-request' | 'release';
+    readonly surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly field: 'title' | 'description';
     readonly status: 'ready' | 'unavailable';
     readonly content?: string;

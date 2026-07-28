@@ -1074,11 +1074,45 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState({
-      type: 'improve-flow-release-text',
+      type: 'improve-flow-branch-text',
       requestId: 3,
       sourceRefName: 'main',
-      releaseName: '3.0.0',
+      branchKind: 'hotfix',
+      branchName: 'INC-42-payment-rounding',
       text: 'Next release'
+    }, governedFlowState),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-branch-text',
+      requestId: 6,
+      sourceRefName: 'feature/demo',
+      branchKind: 'task',
+      branchName: '4312-rounding-copy',
+      text: 'Adjust the payment rounding copy'
+    }, governedFlowState),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-branch-text',
+      requestId: 5,
+      sourceRefName: 'main',
+      branchKind: 'feature',
+      branchName: 'payment-summary',
+      text: 'Add a clearer payment summary'
+    }, governedFlowState),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState({
+      type: 'improve-flow-branch-text',
+      requestId: 4,
+      sourceRefName: 'release/1.0.0',
+      branchKind: 'bug',
+      branchName: 'BUG-42-payment-rounding',
+      text: 'Payment total is rounded incorrectly'
     }, governedFlowState),
     true
   );
@@ -1086,7 +1120,7 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     isRevisionGraphMessageAllowedForState({
       type: 'cancel-flow-ai-text',
       requestId: 3,
-      surface: 'release',
+      surface: 'hotfix',
       field: 'description'
     }, governedFlowState),
     true
@@ -1355,28 +1389,60 @@ test('validateRevisionGraphMessage bounds and sanitizes Flow AI requests', () =>
     description: 'Clarify the promotion context.'
   });
   assert.deepEqual(validateRevisionGraphMessage({
-    type: 'improve-flow-release-text',
+    type: 'improve-flow-branch-text',
     requestId: 4,
     sourceRefName: 'main',
-    releaseName: '2.0.0',
+    branchKind: 'bug',
+    branchName: 'BUG-42-payment-rounding',
     text: 'Stable release.'
   }), {
-    type: 'improve-flow-release-text',
+    type: 'improve-flow-branch-text',
     requestId: 4,
     sourceRefName: 'main',
-    releaseName: '2.0.0',
+    branchKind: 'bug',
+    branchName: 'BUG-42-payment-rounding',
     text: 'Stable release.'
   });
   assert.deepEqual(validateRevisionGraphMessage({
     type: 'cancel-flow-ai-text',
     requestId: 4,
-    surface: 'release',
+    surface: 'feature',
     field: 'description'
   }), {
     type: 'cancel-flow-ai-text',
     requestId: 4,
-    surface: 'release',
+    surface: 'feature',
     field: 'description'
+  });
+  assert.deepEqual(validateRevisionGraphMessage({
+    type: 'improve-flow-branch-text',
+    requestId: 5,
+    sourceRefName: 'main',
+    branchKind: 'feature',
+    branchName: 'payment-summary',
+    text: 'Add a clearer payment summary'
+  }), {
+    type: 'improve-flow-branch-text',
+    requestId: 5,
+    sourceRefName: 'main',
+    branchKind: 'feature',
+    branchName: 'payment-summary',
+    text: 'Add a clearer payment summary'
+  });
+  assert.deepEqual(validateRevisionGraphMessage({
+    type: 'improve-flow-branch-text',
+    requestId: 6,
+    sourceRefName: 'feature/demo',
+    branchKind: 'task',
+    branchName: '4312-rounding-copy',
+    text: 'Adjust the payment rounding copy'
+  }), {
+    type: 'improve-flow-branch-text',
+    requestId: 6,
+    sourceRefName: 'feature/demo',
+    branchKind: 'task',
+    branchName: '4312-rounding-copy',
+    text: 'Adjust the payment rounding copy'
   });
 
   assert.equal(validateRevisionGraphMessage({
@@ -1389,11 +1455,20 @@ test('validateRevisionGraphMessage bounds and sanitizes Flow AI requests', () =>
     description: 'Promotion details'
   }), undefined);
   assert.equal(validateRevisionGraphMessage({
-    type: 'improve-flow-release-text',
+    type: 'improve-flow-branch-text',
     requestId: 5,
     sourceRefName: 'main',
-    releaseName: '2.0.0',
+    branchKind: 'hotfix',
+    branchName: 'INC-42-payment-rounding',
     text: 'x'.repeat(2049)
+  }), undefined);
+  assert.equal(validateRevisionGraphMessage({
+    type: 'improve-flow-branch-text',
+    requestId: 6,
+    sourceRefName: 'main',
+    branchKind: 'sync',
+    branchName: 'payment-rounding',
+    text: 'New payment behavior'
   }), undefined);
   assert.equal(validateRevisionGraphMessage({
     type: 'cancel-flow-ai-text',
@@ -1420,6 +1495,10 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
   assert.deepEqual(
     validateCompareResultsWebviewMessage({ type: 'copyBriefing' }),
     { type: 'copyBriefing' }
+  );
+  assert.deepEqual(
+    validateCompareResultsWebviewMessage({ type: 'cancelBriefing' }),
+    { type: 'cancelBriefing' }
   );
   assert.deepEqual(
     validateCompareResultsWebviewMessage({ type: 'generateBriefing' }),

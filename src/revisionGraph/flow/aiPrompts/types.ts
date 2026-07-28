@@ -1,6 +1,7 @@
 import type { FlowBranchKind, FlowTransitionRuleId } from '../flowTypes';
 
-export type FlowAiTextSurface = 'pull-request' | 'release';
+export type FlowAiBranchTextSurface = 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+export type FlowAiTextSurface = 'pull-request' | FlowAiBranchTextSurface;
 export type FlowAiTextField = 'title' | 'description';
 export type FlowAiPullRequestPromptKind =
   | 'delivery'
@@ -32,9 +33,9 @@ export type FlowAiTextImprovementInput =
     readonly promptContext?: FlowAiPullRequestPromptContext;
   }
   | {
-    readonly surface: 'release';
+    readonly surface: FlowAiBranchTextSurface;
     readonly field: 'description';
     readonly sourceRefName: string;
-    readonly releaseName: string;
+    readonly branchName: string;
     readonly text: string;
   };

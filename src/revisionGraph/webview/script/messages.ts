@@ -108,18 +108,19 @@
       return { type: 'improve-flow-pr-text', requestId, sourceRefName, targetRefName, field, title, description };
     }
 
-    function createRevisionGraphImproveFlowReleaseTextMessage(
+    function createRevisionGraphImproveFlowBranchTextMessage(
       requestId: number,
       sourceRefName: string,
-      releaseName: string,
+      branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+      branchName: string,
       text: string
-    ): RevisionGraphWebviewMessageOf<'improve-flow-release-text'> {
-      return { type: 'improve-flow-release-text', requestId, sourceRefName, releaseName, text };
+    ): RevisionGraphWebviewMessageOf<'improve-flow-branch-text'> {
+      return { type: 'improve-flow-branch-text', requestId, sourceRefName, branchKind, branchName, text };
     }
 
     function createRevisionGraphCancelFlowAiTextMessage(
       requestId: number,
-      surface: 'pull-request' | 'release',
+      surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
       field: 'title' | 'description'
     ): RevisionGraphWebviewMessageOf<'cancel-flow-ai-text'> {
       return { type: 'cancel-flow-ai-text', requestId, surface, field };

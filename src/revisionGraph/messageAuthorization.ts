@@ -32,7 +32,7 @@ const REVISION_GRAPH_MESSAGE_AUTHORIZATION_POLICIES: RevisionGraphMessageAuthori
   'copy-flow-pr-context-field': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
   'open-flow-pr-url': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
   'improve-flow-pr-text': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
-  'improve-flow-release-text': { repositoryScoped: true, isAllowed: authorizeFlowReleaseText },
+  'improve-flow-branch-text': { repositoryScoped: true, isAllowed: authorizeFlowBranchText },
   'cancel-flow-ai-text': { repositoryScoped: true, isAllowed: authorizeFlowAiTextCancellation },
   'compare-selected': { repositoryScoped: true, isAllowed: authorizeCompareSelected },
   'show-log': { repositoryScoped: true, isAllowed: authorizeShowLog },
@@ -175,14 +175,15 @@ function isFlowPullRequestTargetKnown(
     && hasKnownReferenceName(state, message.targetRefName);
 }
 
-function authorizeFlowReleaseText(
-  message: RevisionGraphMessageOf<'improve-flow-release-text'>,
+function authorizeFlowBranchText(
+  message: RevisionGraphMessageOf<'improve-flow-branch-text'>,
   state: RevisionGraphViewState
 ): boolean {
   return state.viewMode === 'ready'
     && state.flowGovernance?.enabled === true
+    && hasKnownReferenceName(state, message.sourceRefName)
     && state.flowGovernance.references.some((ref) =>
-      ref.refName === message.sourceRefName && isAllowedFlowStartSourceKind('release', ref.kind)
+      ref.refName === message.sourceRefName && isAllowedFlowStartSourceKind(message.branchKind, ref.kind)
     );
 }
 

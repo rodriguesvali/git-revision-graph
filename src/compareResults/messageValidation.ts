@@ -6,6 +6,7 @@ export type CompareResultsWebviewMessage =
   | { readonly type: 'copyFileName'; readonly itemIds: readonly string[] }
   | { readonly type: 'copyFullPath'; readonly itemIds: readonly string[] }
   | { readonly type: 'copyBriefing' }
+  | { readonly type: 'cancelBriefing' }
   | { readonly type: 'generateBriefing' }
   | { readonly type: 'unifiedDiff' }
   | { readonly type: 'worktree'; readonly itemId: string }
@@ -21,6 +22,8 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
       return { type: 'ready' };
     case 'copyBriefing':
       return { type: 'copyBriefing' };
+    case 'cancelBriefing':
+      return { type: 'cancelBriefing' };
     case 'generateBriefing':
       return { type: 'generateBriefing' };
     case 'unifiedDiff':

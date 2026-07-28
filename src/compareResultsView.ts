@@ -72,6 +72,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     copyFileName: (itemIds) => this.copyFileNames(itemIds),
     copyFullPath: (itemIds) => this.copyFullPaths(itemIds),
     copyBriefing: () => this.copyBriefing(),
+    cancelBriefing: () => this.briefingController.cancel(),
     generateBriefing: () => this.briefingController.generate(),
     unifiedDiff: () => this.openUnifiedDiff(),
     worktree: (itemId) => this.compareItemWithWorktree(itemId),

@@ -224,7 +224,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphOpenFlowPullRequestUrlMessage\(sourceRefName, targetRefName, title, description\)/);
   assert.match(html, /function createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)/);
   assert.match(html, /function createRevisionGraphImproveFlowPullRequestTextMessage\(/);
-  assert.match(html, /function createRevisionGraphImproveFlowReleaseTextMessage\(/);
+  assert.match(html, /function createRevisionGraphImproveFlowBranchTextMessage\(/);
   assert.match(html, /function createRevisionGraphCancelFlowAiTextMessage\(/);
   assert.match(html, /function createRevisionGraphPrepareStartFlowBranchMessage\(target, branchKind\)/);
   assert.match(html, /Start New Release/);
@@ -252,10 +252,22 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /input\.maxLength = multiline \? 2048 : 240;/);
   assert.doesNotMatch(html, /flow-pr-context-copy|copyButton\.setAttribute\('aria-label', 'Copy '/);
   assert.match(html, /createRevisionGraphWebviewFlowAiTextButton\('Improve with AI'\)/);
-  assert.match(html, /descriptionAiButton\.hidden = nextBranchKind !== 'release';/);
+  assert.match(html, /descriptionAiButton\.hidden = !isRevisionGraphWebviewFlowAiBranchKind\(nextBranchKind\);/);
   assert.match(html, /button\.setAttribute\('aria-label', label\);/);
+  assert.match(html, /const label = busy \? 'Cancel AI text improvement' : 'Improve with AI';/);
+  assert.match(html, /button\.disabled = !enabled && !busy;/);
+  assert.match(html, /class="flow-ai-text-stop-icon"[\s\S]*?<rect x="4" y="4" width="8" height="8" rx="1"><\/rect>/);
+  assert.match(
+    html,
+    /function toggleFieldImprovement\(field\)[\s\S]*?cancelPendingImprovement\(field\);[\s\S]*?syncActions\(\);[\s\S]*?return;[\s\S]*?improveField\(field\);/
+  );
+  assert.match(
+    html,
+    /function toggleBranchTextImprovement\(\)[\s\S]*?cancelPendingImprovement\(\);[\s\S]*?syncAiAction\(\);[\s\S]*?return;[\s\S]*?improveBranchText\(\);/
+  );
   assert.match(html, /\.flow-pr-context-dialog \{\s*width: min\(728px, calc\(100vw - 40px\)\);/s);
   assert.match(html, /\.flow-ai-text-action \{[\s\S]*?padding: 0;/s);
+  assert.match(html, /\.flow-ai-text-action\[hidden\] \{ display: none; \}/);
   assert.match(html, /\.flow-ai-text-action svg \{\s*position: static;\s*width: 17px;\s*height: 17px;\s*fill: currentColor;/s);
   assert.match(html, /createRevisionGraphCopyFlowPullRequestContextFieldMessage\(\s*sourceRefName,\s*targetRefName,\s*field,\s*text\s*\)/s);
   assert.match(html, /type: 'load-trace'/);
@@ -1530,6 +1542,39 @@ test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
     )),
     ['main', 'release/1.9.0']
   );
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('bug'), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('hotfix'), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('release'), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('feature'), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('task'), true);
+  const branchFields = {
+    nameInput: { value: '' },
+    taskDevInput: { value: 'BUG-42' },
+    shortNameInput: { value: 'payment-rounding' }
+  };
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowAiBranchName(branchFields, 'bug'),
+    'BUG-42-payment-rounding'
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowAiBranchName({
+      ...branchFields,
+      nameInput: { value: 'payment-summary' }
+    }, 'feature'),
+    'payment-summary'
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowAiBranchName({
+      ...branchFields,
+      taskDevInput: { value: '4312' },
+      shortNameInput: { value: 'rounding-copy' }
+    }, 'task'),
+    '4312-rounding-copy'
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowAiBranchName(branchFields, 'task'),
+    ''
+  );
 });
 
 test('creates explicit Flow AI field requests with stable ids and cancellation messages', () => {
@@ -1542,11 +1587,11 @@ test('creates explicit Flow AI field requests with stable ids and cancellation m
   const pullRequestId = interactions.pullRequestDependencies.improveText(
     'release/2.0.0', 'main', 'title', 'Promote release', 'Promotion details'
   );
-  const releaseId = interactions.releaseDependencies.improveReleaseText(
-    'main', '3.0.0', 'Next stable release'
+  const branchId = interactions.branchDependencies.improveBranchText(
+    'feature/payment-summary', 'task', '4312-rounding-copy', 'Adjust the payment rounding copy'
   );
   interactions.pullRequestDependencies.cancelImprovement(pullRequestId, 'title');
-  interactions.releaseDependencies.cancelImprovement(releaseId);
+  interactions.branchDependencies.cancelImprovement(branchId, 'task');
 
   assert.deepEqual(messages, [
     {
@@ -1554,12 +1599,44 @@ test('creates explicit Flow AI field requests with stable ids and cancellation m
       targetRefName: 'main', field: 'title', title: 'Promote release', description: 'Promotion details'
     },
     {
-      type: 'improve-flow-release-text', requestId: 2, sourceRefName: 'main',
-      releaseName: '3.0.0', text: 'Next stable release'
+      type: 'improve-flow-branch-text', requestId: 2, sourceRefName: 'feature/payment-summary',
+      branchKind: 'task', branchName: '4312-rounding-copy',
+      text: 'Adjust the payment rounding copy'
     },
     { type: 'cancel-flow-ai-text', requestId: 1, surface: 'pull-request', field: 'title' },
-    { type: 'cancel-flow-ai-text', requestId: 2, surface: 'release', field: 'description' }
+    { type: 'cancel-flow-ai-text', requestId: 2, surface: 'task', field: 'description' }
   ]);
+});
+
+test('keeps the Flow AI stop action enabled while a request is active', () => {
+  const runtime = createWebviewRuntime();
+  const attributes = new Map<string, string>();
+  const button = {
+    dataset: {} as Record<string, string>,
+    disabled: false,
+    innerHTML: '',
+    title: '',
+    setAttribute(name: string, value: string) {
+      attributes.set(name, value);
+    }
+  };
+
+  runtime.context.setRevisionGraphWebviewFlowAiTextButtonState(button, true, true);
+
+  assert.equal(button.disabled, false);
+  assert.equal(button.title, 'Cancel AI text improvement');
+  assert.equal(attributes.get('aria-label'), 'Cancel AI text improvement');
+  assert.equal(attributes.get('aria-busy'), 'true');
+  assert.equal(button.dataset.loading, 'true');
+  assert.match(button.innerHTML, /class="flow-ai-text-stop-icon"/);
+  assert.match(button.innerHTML, /<rect x="4" y="4" width="8" height="8" rx="1"><\/rect>/);
+
+  runtime.context.setRevisionGraphWebviewFlowAiTextButtonState(button, false, false);
+
+  assert.equal(button.disabled, true);
+  assert.equal(button.title, 'Improve with AI');
+  assert.equal(button.dataset.loading, 'false');
+  assert.match(button.innerHTML, /class="flow-ai-text-sparkle-icon"/);
 });
 
 test('validates exact Flow AI host result shapes before applying them', () => {
@@ -1573,7 +1650,19 @@ test('validates exact Flow AI host result shapes before applying them', () => {
     field: 'description', status: 'unavailable'
   }), true);
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
-    type: 'set-flow-ai-text-result', requestId: 3, surface: 'release',
+    type: 'set-flow-ai-text-result', requestId: 3, surface: 'bug',
+    field: 'description', status: 'ready', content: 'Improved bug description'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 4, surface: 'feature',
+    field: 'description', status: 'ready', content: 'Improved feature description'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 5, surface: 'task',
+    field: 'description', status: 'ready', content: 'Improved task description'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'set-flow-ai-text-result', requestId: 6, surface: 'hotfix',
     field: 'title', status: 'ready', content: 'Invalid release title'
   }), false);
 });
