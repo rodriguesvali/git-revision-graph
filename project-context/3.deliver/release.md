@@ -147,10 +147,20 @@ Implementation record:
   to group `SIGKILL` after 250 ms only while the original leader remains active. Leader exit cancels
   escalation, failed group signaling never re-resolves a PID, and Windows retains `taskkill /T /F`.
 - Item 6 focused coverage uses a timed-out leader and descendant that both ignore `SIGTERM`, then
-  verifies bounded rejection, process-group exit, and descendant cleanup. `npm run quality:check`
+  verifies bounded rejection and both processes' cleanup through delayed survival markers. This
+  avoids permission-sensitive negative-PGID signal-0 probes that can return `EPERM` on hosted macOS
+  runners without weakening the assertion: a surviving process writes its marker and fails the
+  test. The verification matrix already includes `macos-latest`. `npm run quality:check`
   passed for 255 production files and 2,452 functions; `npm run build` passed; `npm test` passed all
   826 tests; `npm run test:platform` passed all 34 tests; and `git diff --check` passed. E2E was not
   rerun because activation, real `vscode.git` discovery, and graph-panel launch are unchanged.
+- The 2026-07-28 macOS portability follow-up passed the freshly compiled focused Git execution suite
+  (15 tests), `npm run quality:check` (255 files and 2,452 functions), `npm test` (826 tests),
+  `npm run test:platform` (34 tests), and `git diff --check` on Linux. Hosted macOS confirmation is
+  pending the next run of the existing `macos-latest` verification row; no workflow change was
+  necessary.
+- `graphify update .` rebuilt the portability-corrected test graph with 5,024 nodes, 9,925 edges,
+  and 381 communities.
 - `graphify update .` rebuilt the item 6 code graph with 5,025 nodes, 9,926 edges, and 385
   communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.

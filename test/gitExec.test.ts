@@ -62,23 +62,6 @@ async function withFakeGitProgram<T>(program: string, run: (repositoryPath: stri
   }
 }
 
-async function waitForUnixProcessGroupExit(processGroupId: number, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      process.kill(-processGroupId, 0);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
-        return;
-      }
-      throw error;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-
-  assert.fail(`Process group ${processGroupId} remained alive after ${timeoutMs} ms.`);
-}
-
 test('configureGitExecutablePath normalizes custom values and falls back to git for empty values', () => {
   configureGitExecutablePath('  /tmp/custom-git  ');
   assert.equal(getGitExecutablePath(), '/tmp/custom-git');
@@ -233,17 +216,25 @@ test('execGit timeout escalates when a Unix process group ignores SIGTERM', {
       "const fs = require('node:fs');",
       "const { spawn } = require('node:child_process');",
       "process.on('SIGTERM', () => undefined);",
-      "const descendantProgram = \"process.on('SIGTERM', () => undefined); setInterval(() => undefined, 10_000);\";",
+      "const descendantProgram = \"const fs = require('node:fs'); process.on('SIGTERM', () => undefined); setTimeout(() => fs.writeFileSync(process.env.GIT_EXEC_DESCENDANT_MARKER, 'alive'), 1_000); setInterval(() => undefined, 10_000);\";",
       "const descendant = spawn(process.execPath, ['-e', descendantProgram], { stdio: 'ignore' });",
       "fs.writeFileSync(process.env.GIT_EXEC_PID_FILE, JSON.stringify({ leaderPid: process.pid, descendantPid: descendant.pid }));",
+      "setTimeout(() => fs.writeFileSync(process.env.GIT_EXEC_LEADER_MARKER, 'alive'), 1_000);",
       'setInterval(() => undefined, 10_000);'
     ].join('\n'),
     async (repositoryPath) => {
       const pidFilePath = path.join(repositoryPath, 'process-identity.json');
+      const leaderMarkerPath = path.join(repositoryPath, 'leader-survived');
+      const descendantMarkerPath = path.join(repositoryPath, 'descendant-survived');
       const previousPidFile = process.env.GIT_EXEC_PID_FILE;
+      const previousLeaderMarker = process.env.GIT_EXEC_LEADER_MARKER;
+      const previousDescendantMarker = process.env.GIT_EXEC_DESCENDANT_MARKER;
       const commandTimeoutMs = 200;
-      let leaderPid: number | undefined;
+      let identity: { readonly leaderPid: number; readonly descendantPid: number } | undefined;
+      let processesVerifiedStopped = false;
       process.env.GIT_EXEC_PID_FILE = pidFilePath;
+      process.env.GIT_EXEC_LEADER_MARKER = leaderMarkerPath;
+      process.env.GIT_EXEC_DESCENDANT_MARKER = descendantMarkerPath;
 
       try {
         const startedAt = Date.now();
@@ -252,33 +243,50 @@ test('execGit timeout escalates when a Unix process group ignores SIGTERM', {
           (error: unknown) => error instanceof Error && error.name === 'TimeoutError'
         );
         const elapsedMs = Date.now() - startedAt;
-        const identity = JSON.parse(await fs.readFile(pidFilePath, 'utf8')) as {
+        identity = JSON.parse(await fs.readFile(pidFilePath, 'utf8')) as {
           readonly leaderPid: number;
           readonly descendantPid: number;
         };
-        leaderPid = identity.leaderPid;
 
         assert.ok(elapsedMs >= commandTimeoutMs + GIT_EXEC_TERMINATION_GRACE_MS - 10);
         assert.ok(elapsedMs < 3_000);
         assert.ok(Number.isSafeInteger(identity.leaderPid));
         assert.ok(Number.isSafeInteger(identity.descendantPid));
-        await waitForUnixProcessGroupExit(identity.leaderPid, 1_000);
-        assert.throws(
-          () => process.kill(identity.descendantPid, 0),
-          (error: unknown) => (error as NodeJS.ErrnoException).code === 'ESRCH'
-        );
+        // macOS runners can reject process-group probes with EPERM. Delayed survival markers verify
+        // both processes were actually stopped without treating a permission error as process exit.
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        await assert.rejects(fs.stat(leaderMarkerPath), { code: 'ENOENT' });
+        await assert.rejects(fs.stat(descendantMarkerPath), { code: 'ENOENT' });
+        processesVerifiedStopped = true;
       } finally {
-        if (leaderPid !== undefined) {
+        if (!processesVerifiedStopped && identity !== undefined) {
           try {
-            process.kill(-leaderPid, 'SIGKILL');
+            process.kill(-identity.leaderPid, 'SIGKILL');
           } catch {
-            // The tested process group already exited.
+            // Some runners reject process-group signaling. Exact child PIDs are safe for test cleanup.
+            for (const pid of [identity.leaderPid, identity.descendantPid]) {
+              try {
+                process.kill(pid, 'SIGKILL');
+              } catch {
+                // The tested process already exited.
+              }
+            }
           }
         }
         if (previousPidFile === undefined) {
           delete process.env.GIT_EXEC_PID_FILE;
         } else {
           process.env.GIT_EXEC_PID_FILE = previousPidFile;
+        }
+        if (previousLeaderMarker === undefined) {
+          delete process.env.GIT_EXEC_LEADER_MARKER;
+        } else {
+          process.env.GIT_EXEC_LEADER_MARKER = previousLeaderMarker;
+        }
+        if (previousDescendantMarker === undefined) {
+          delete process.env.GIT_EXEC_DESCENDANT_MARKER;
+        } else {
+          process.env.GIT_EXEC_DESCENDANT_MARKER = previousDescendantMarker;
         }
       }
     }
