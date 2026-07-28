@@ -23,6 +23,11 @@ All notable changes to this project will be documented in this file.
 - Identify filtered searches that stop at the 2,000-commit scan ceiling and clearly label partial
   results or scoped empty results instead of implying that older unsearched commits do not match.
 
+### Git Execution
+
+- Escalate timed-out or cancelled Unix Git process groups from graceful termination to forced
+  cleanup after a bounded grace period when the original process remains unresponsive.
+
 ## 1.6.0 - 2026-07-27
 
 ### Notifications

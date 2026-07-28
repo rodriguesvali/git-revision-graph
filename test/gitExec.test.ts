@@ -16,6 +16,7 @@ import {
   GIT_EXEC_LOCAL_MUTATION_PROFILE,
   GIT_EXEC_METADATA_PROFILE,
   GIT_EXEC_REMOTE_PROFILE,
+  GIT_EXEC_TERMINATION_GRACE_MS,
   resolveGitExecOptions
 } from '../src/gitExec';
 import { isAbortError } from '../src/errors';
@@ -59,6 +60,23 @@ async function withFakeGitProgram<T>(program: string, run: (repositoryPath: stri
     configureGitExecutablePath(undefined);
     await fs.rm(temporaryRoot, { recursive: true, force: true });
   }
+}
+
+async function waitForUnixProcessGroupExit(processGroupId: number, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      process.kill(-processGroupId, 0);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
+        return;
+      }
+      throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+
+  assert.fail(`Process group ${processGroupId} remained alive after ${timeoutMs} ms.`);
 }
 
 test('configureGitExecutablePath normalizes custom values and falls back to git for empty values', () => {
@@ -203,6 +221,66 @@ test('execGit stops when the configured timeout expires', async () => {
           return true;
         }
       );
+    }
+  );
+});
+
+test('execGit timeout escalates when a Unix process group ignores SIGTERM', {
+  skip: process.platform === 'win32'
+}, async () => {
+  await withFakeGitProgram(
+    [
+      "const fs = require('node:fs');",
+      "const { spawn } = require('node:child_process');",
+      "process.on('SIGTERM', () => undefined);",
+      "const descendantProgram = \"process.on('SIGTERM', () => undefined); setInterval(() => undefined, 10_000);\";",
+      "const descendant = spawn(process.execPath, ['-e', descendantProgram], { stdio: 'ignore' });",
+      "fs.writeFileSync(process.env.GIT_EXEC_PID_FILE, JSON.stringify({ leaderPid: process.pid, descendantPid: descendant.pid }));",
+      'setInterval(() => undefined, 10_000);'
+    ].join('\n'),
+    async (repositoryPath) => {
+      const pidFilePath = path.join(repositoryPath, 'process-identity.json');
+      const previousPidFile = process.env.GIT_EXEC_PID_FILE;
+      const commandTimeoutMs = 200;
+      let leaderPid: number | undefined;
+      process.env.GIT_EXEC_PID_FILE = pidFilePath;
+
+      try {
+        const startedAt = Date.now();
+        await assert.rejects(
+          execGit(repositoryPath, ['status'], { timeoutMs: commandTimeoutMs }),
+          (error: unknown) => error instanceof Error && error.name === 'TimeoutError'
+        );
+        const elapsedMs = Date.now() - startedAt;
+        const identity = JSON.parse(await fs.readFile(pidFilePath, 'utf8')) as {
+          readonly leaderPid: number;
+          readonly descendantPid: number;
+        };
+        leaderPid = identity.leaderPid;
+
+        assert.ok(elapsedMs >= commandTimeoutMs + GIT_EXEC_TERMINATION_GRACE_MS - 10);
+        assert.ok(elapsedMs < 3_000);
+        assert.ok(Number.isSafeInteger(identity.leaderPid));
+        assert.ok(Number.isSafeInteger(identity.descendantPid));
+        await waitForUnixProcessGroupExit(identity.leaderPid, 1_000);
+        assert.throws(
+          () => process.kill(identity.descendantPid, 0),
+          (error: unknown) => (error as NodeJS.ErrnoException).code === 'ESRCH'
+        );
+      } finally {
+        if (leaderPid !== undefined) {
+          try {
+            process.kill(-leaderPid, 'SIGKILL');
+          } catch {
+            // The tested process group already exited.
+          }
+        }
+        if (previousPidFile === undefined) {
+          delete process.env.GIT_EXEC_PID_FILE;
+        } else {
+          process.env.GIT_EXEC_PID_FILE = previousPidFile;
+        }
+      }
     }
   );
 });

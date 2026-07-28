@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 
 import { createAbortError } from './errors';
 
@@ -15,6 +15,7 @@ export const GIT_EXEC_REMOTE_PROFILE = Object.freeze({
   timeoutMs: 120_000,
   maxOutputBytes: 4 * 1024 * 1024
 });
+export const GIT_EXEC_TERMINATION_GRACE_MS = 250;
 export const GIT_EXEC_FALLBACK_PROFILE = GIT_EXEC_LOCAL_MUTATION_PROFILE;
 let configuredGitExecutablePath: string | undefined;
 let configuredGitExecutableArgumentPrefix: readonly string[] = [];
@@ -42,6 +43,12 @@ interface GitExecError extends Error {
   signal?: NodeJS.Signals | null;
   stdout?: string | Buffer;
   stderr?: string;
+}
+
+interface ChildTerminationTarget {
+  readonly child: ChildProcess;
+  readonly pid: number;
+  readonly processGroupId: number | undefined;
 }
 
 export function configureGitExecutablePath(
@@ -206,7 +213,7 @@ function execGitCapturedWithResult(
 
       settled = true;
       cleanup();
-      void terminateChildProcess(child.pid).then(
+      void terminateChildProcess(child).then(
         () => reject(error),
         () => reject(error)
       );
@@ -301,14 +308,15 @@ function execGitCapturedWithResult(
   });
 }
 
-function terminateChildProcess(pid: number | undefined): Promise<void> {
-  if (!pid) {
+function terminateChildProcess(child: ChildProcess): Promise<void> {
+  const target = createChildTerminationTarget(child);
+  if (!target) {
     return Promise.resolve();
   }
 
   if (process.platform === 'win32') {
     return new Promise((resolve) => {
-      const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
+      const killer = spawn('taskkill', ['/pid', String(target.pid), '/T', '/F'], {
         stdio: 'ignore',
         windowsHide: true
       });
@@ -317,15 +325,64 @@ function terminateChildProcess(pid: number | undefined): Promise<void> {
     });
   }
 
-  try {
-    process.kill(-pid, 'SIGTERM');
-  } catch {
-    try {
-      process.kill(pid, 'SIGTERM');
-    } catch {
-      // The process already exited between the state check and termination.
-    }
+  return terminateUnixProcessGroup(target);
+}
+
+function createChildTerminationTarget(child: ChildProcess): ChildTerminationTarget | undefined {
+  if (!child.pid) {
+    return undefined;
   }
 
-  return Promise.resolve();
+  return {
+    child,
+    pid: child.pid,
+    processGroupId: process.platform === 'win32' ? undefined : child.pid
+  };
+}
+
+function terminateUnixProcessGroup(target: ChildTerminationTarget): Promise<void> {
+  return new Promise((resolve) => {
+    let escalationTimeout: NodeJS.Timeout | undefined;
+    const finish = () => {
+      target.child.removeListener('exit', finish);
+      if (escalationTimeout) {
+        clearTimeout(escalationTimeout);
+        escalationTimeout = undefined;
+      }
+      resolve();
+    };
+
+    target.child.once('exit', finish);
+    signalUnixProcessGroup(target, 'SIGTERM');
+    if (!isChildTerminationTargetRunning(target)) {
+      finish();
+      return;
+    }
+
+    escalationTimeout = setTimeout(() => {
+      if (isChildTerminationTargetRunning(target)) {
+        signalUnixProcessGroup(target, 'SIGKILL');
+      }
+      finish();
+    }, GIT_EXEC_TERMINATION_GRACE_MS);
+  });
+}
+
+function isChildTerminationTargetRunning(target: ChildTerminationTarget): boolean {
+  return target.child.exitCode === null && target.child.signalCode === null;
+}
+
+function signalUnixProcessGroup(
+  target: ChildTerminationTarget,
+  signal: 'SIGTERM' | 'SIGKILL'
+): void {
+  if (target.processGroupId === undefined) {
+    return;
+  }
+
+  try {
+    process.kill(-target.processGroupId, signal);
+  } catch {
+    // Do not re-resolve or fall back to a PID that may no longer identify the spawned process.
+  }
 }

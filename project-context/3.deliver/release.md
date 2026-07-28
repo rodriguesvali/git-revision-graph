@@ -8,7 +8,7 @@ Last consolidated: 2026-07-28
 - Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. The first five corrections have completed
+  security hardening, and user-experience corrections. All six scoped corrections have completed
   automated verification; no candidate has been packaged or published.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
@@ -17,7 +17,7 @@ Last consolidated: 2026-07-28
 
 ## Active Release: Reliability and Security Hardening 1.6.1
 
-Status: Implementation in progress; items 1-5 automated verification complete
+Status: Scoped implementation complete; final candidate and manual release gates pending
 Opened: 2026-07-28
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
@@ -27,8 +27,8 @@ Target version: `1.6.1`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
-| Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Items 1-5 complete; final candidate pending | On 2026-07-28, item 5 passed `npm run quality:check`, the production build, `npm test` (825 tests), and `git diff --check`; the item 4 platform baseline remains 33 passing tests. Re-run proportional gates after each correction and for the final candidate. |
+| Patch scope | Complete | All six approved reliability, security, performance, and UX corrections are implemented. Reassess scope before adding unrelated feature work. |
+| Current automated source verification | Items 1-6 complete; final candidate pending | On 2026-07-28, item 6 passed `npm run quality:check`, the production build, `npm test` (826 tests), `npm run test:platform` (34 tests), and `git diff --check`. Re-run final-candidate gates before packaging. |
 | Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
 | Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
 | VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
@@ -50,8 +50,8 @@ Release scope:
 - Complete: bound and aggregate worktree unified-diff processing for large untracked-file sets.
 - Complete: make Show Log search limits explicit so valid older matches are not silently presented
   as absent.
-- Escalate timed-out Git process termination when graceful Unix process-group termination does not
-  complete.
+- Complete: escalate timed-out Git process termination when graceful Unix process-group termination
+  does not complete.
 
 Release constraints:
 
@@ -142,6 +142,16 @@ Implementation record:
   correction changes no platform-specific process/filesystem behavior or activation/real-Git panel
   discovery contract. Manual Show Log smoke remains pending.
 - `graphify update .` rebuilt the item 5 code graph with 5,017 nodes, 9,913 edges, and 386
+  communities.
+- Unix Git termination now snapshots the spawned child PID/PGID, sends group `SIGTERM`, and escalates
+  to group `SIGKILL` after 250 ms only while the original leader remains active. Leader exit cancels
+  escalation, failed group signaling never re-resolves a PID, and Windows retains `taskkill /T /F`.
+- Item 6 focused coverage uses a timed-out leader and descendant that both ignore `SIGTERM`, then
+  verifies bounded rejection, process-group exit, and descendant cleanup. `npm run quality:check`
+  passed for 255 production files and 2,452 functions; `npm run build` passed; `npm test` passed all
+  826 tests; `npm run test:platform` passed all 34 tests; and `git diff --check` passed. E2E was not
+  rerun because activation, real `vscode.git` discovery, and graph-panel launch are unchanged.
+- `graphify update .` rebuilt the item 6 code graph with 5,025 nodes, 9,926 edges, and 385
   communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
 
