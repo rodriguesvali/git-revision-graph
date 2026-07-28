@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-07-09
+Last consolidated: 2026-07-28
 
 Use this directory only for active or next-release feature work.
 
@@ -9,6 +9,9 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.1-reliability-security-hardening.md`: bounded Flow Governance configuration processing,
+  race-safe repository and Compare Results workflows, scalable diff/log behavior, and reliable Git
+  process termination.
 - `1.6.0-package-hygiene.md`: clean VSCE prepublish builds and deterministic exclusion of
   development-only package content.
 - `flow-governance-2.0.0.md`: operational Flow Governance release scope.

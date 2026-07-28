@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.1 - Unreleased
+
+### Release Preparation
+
+- Opened the `1.6.1` patch cycle for reliability, security hardening, and user-experience
+  corrections identified during the post-`1.6.0` system review.
+- Aligned package and lockfile version metadata without packaging or publishing a release.
+
 ## 1.6.0 - 2026-07-27
 
 ### Notifications

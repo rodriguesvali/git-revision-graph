@@ -1,16 +1,91 @@
 # Release Readiness
 
-Status: Published; evidence reconciliation pending
-Last consolidated: 2026-07-27
+Status: Active patch development; published baseline evidence reconciliation pending
+Last consolidated: 2026-07-28
 
 ## Current State
 
-- Current package version: `1.6.0` in `package.json`.
+- Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
-- Release cycle status: `1.6.0` was published after the published `1.5.9` baseline. The exact
-  Marketplace timestamp, installed-version evidence, final smoke record, and VSIX inspection record
-  have not yet been supplied for the release artifact.
+- Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
+  security hardening, and user-experience corrections. No correction has been completed, packaged,
+  or published in this cycle yet.
+- Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
+  evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
+  release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Active Release: Reliability and Security Hardening 1.6.1
+
+Status: Open; implementation not yet started
+Opened: 2026-07-28
+Published baseline version: `1.6.0`
+Target version: `1.6.1`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
+| Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
+| Current automated source verification | Opening baseline complete; final candidate pending | On 2026-07-28, the production build and `npm test` passed with 796 tests after opening the version. Re-run the full suite after each completed correction and for the final candidate. |
+| Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
+| Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
+| VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
+| Marketplace publication | Not authorized | Do not publish, bump beyond `1.6.1`, or create a Marketplace release without explicit maintainer approval. |
+| Rollback readiness | Documented | Before publication, revert the patch-cycle metadata if the cycle is abandoned. After publication, use the standard versioned rollback process. |
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.6.1-reliability-security-hardening.md`
+
+Release scope:
+
+- Bound repository Flow Governance configuration input and regex evaluation so malformed or
+  adversarial repository content cannot stall the extension host.
+- Close repository-config persistence races so path validation remains true at the write boundary.
+- Prevent stale Compare Results work from replacing a newer comparison or crossing repository
+  ownership boundaries.
+- Bound and batch worktree unified-diff processing for large untracked-file sets.
+- Make Show Log search limits explicit so valid older matches are not silently presented as absent.
+- Escalate timed-out Git process termination when graceful Unix process-group termination does not
+  complete.
+
+Release constraints:
+
+- Preserve the current extension architecture, built-in `vscode.git` integration, multi-repository
+  isolation, and targeted Git CLI model.
+- Add no runtime dependency, public command, setting, menu, or contribution point unless separately
+  approved.
+- Treat fixes as incomplete until focused regression coverage and the required release gates pass.
+- Do not package, publish, or update Marketplace state without explicit maintainer approval.
+
+Planned verification:
+
+- `npm run build`
+- `npm test`
+- `npm run test:platform` when a correction touches platform-specific Git process behavior
+- `npm run test:e2e` when a correction changes extension-host orchestration or webview ownership
+- Focused hostile-config, filesystem-race, stale-result, large-worktree, truncated-search, and
+  timeout-termination regression tests
+- Relevant manual rows from `project-context/3.deliver/extension-host-smoke-matrix.md`
+- `git diff --check`
+
+Opening record:
+
+- Version metadata was aligned to `1.6.1` on 2026-07-28.
+- The initial correction scope and release gates were recorded.
+- `npm run build`, `npm test` (796 tests), the package/lockfile version consistency check, and
+  `git diff --check` passed on 2026-07-28.
+- No source correction, dependency change, VSIX package, version publication, or Marketplace action
+  occurred while opening the cycle.
+
+Rollback:
+
+- Before publication, revert the `1.6.1` package/lockfile metadata and remove or archive this active
+  cycle record if the patch is abandoned.
+- After publication, never reuse the version; restore the last known-good package and prepare a new
+  patch version for any corrective release.
 
 ## Published Release: Flow Governance 1.6.0
 
