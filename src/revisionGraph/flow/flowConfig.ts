@@ -1,4 +1,4 @@
-import { open, writeFile } from 'node:fs/promises';
+import { FileHandle, open } from 'node:fs/promises';
 
 import {
   createDefaultFlowConfig,
@@ -16,7 +16,15 @@ import {
   NormalizedFlowConfig
 } from './flowTypes';
 import { inspectRepositoryConfigPath } from './flowConfigPathSafety';
+import {
+  getFlowConfigUpdatePathIssue,
+  openRepositoryFlowConfigForSafeUpdate,
+  persistRepositoryFlowConfigHandle,
+  type RepositoryFlowConfigUpdateServices
+} from './flowConfigSafePersistence';
 import { compileFlowPattern } from './flowPatternSafety';
+
+export type { RepositoryFlowConfigUpdateServices } from './flowConfigSafePersistence';
 
 const PHASE_1_CONFIG_KEYS = new Set([
   'schemaVersion',
@@ -35,6 +43,11 @@ export const FLOW_CONFIG_MAX_TOP_LEVEL_FIELDS = 64;
 export interface RepositoryFlowConfigOptionsUpdate {
   readonly enabled?: boolean;
 }
+
+type RepositoryFlowConfigReadResult =
+  | { readonly exists: false; readonly value?: undefined; readonly issues: readonly [] }
+  | { readonly exists: true; readonly value: unknown; readonly issues: readonly [] }
+  | { readonly exists: true; readonly value?: undefined; readonly issues: readonly FlowConfigValidationIssue[] };
 
 export function normalizeFlowConfig(
   rawConfig: unknown,
@@ -141,7 +154,8 @@ export async function resolveFlowConfigForRepository(
 export async function updateRepositoryFlowConfigOptions(
   repositoryRootPath: string,
   settings: FlowGovernanceSettings | undefined,
-  update: RepositoryFlowConfigOptionsUpdate
+  update: RepositoryFlowConfigOptionsUpdate,
+  services: RepositoryFlowConfigUpdateServices = {}
 ): Promise<
   | { readonly ok: true; readonly path: string }
   | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
@@ -162,25 +176,87 @@ export async function updateRepositoryFlowConfigOptions(
     };
   }
 
-  const readResult = await readRepositoryFlowConfig(inspectedConfigPath.path);
-  if (!readResult.exists || readResult.value === undefined) {
+  let handle: FileHandle | undefined;
+  try {
+    const opened = await openRepositoryFlowConfigForSafeUpdate(
+      inspectedConfigPath.path,
+      inspectedConfigPath.identity,
+      services
+    );
+    if (!opened.ok) {
+      return opened;
+    }
+    handle = opened.handle;
+
+    const openedPathIssue = await getFlowConfigUpdatePathIssue(
+      repositoryRootPath,
+      configPath,
+      inspectedConfigPath.path,
+      inspectedConfigPath.identity
+    );
+    if (openedPathIssue) {
+      return { ok: false, issue: openedPathIssue };
+    }
+
+    const readResult = await readRepositoryFlowConfigHandle(handle);
+    if (!readResult.exists || readResult.value === undefined) {
+      return {
+        ok: false,
+        issue: readResult.issues[0] ?? {
+          path: '$',
+          message: 'Could not read Flow Governance config: configuration file does not exist.'
+        }
+      };
+    }
+    if (!isRecord(readResult.value)) {
+      return {
+        ok: false,
+        issue: { path: '$', message: 'Flow configuration must be a JSON object.' }
+      };
+    }
+
+    const nextConfig = createUpdatedFlowConfig(readResult.value, update);
+    const persistencePathIssue = await getFlowConfigUpdatePathIssue(
+      repositoryRootPath,
+      configPath,
+      inspectedConfigPath.path,
+      inspectedConfigPath.identity
+    );
+    if (persistencePathIssue) {
+      return { ok: false, issue: persistencePathIssue };
+    }
+
+    await persistRepositoryFlowConfigHandle(
+      handle,
+      `${JSON.stringify(nextConfig, null, 2)}\n`,
+      services
+    );
+
+    const finalizedPathIssue = await getFlowConfigUpdatePathIssue(
+      repositoryRootPath,
+      configPath,
+      inspectedConfigPath.path,
+      inspectedConfigPath.identity
+    );
+    if (finalizedPathIssue) {
+      return { ok: false, issue: finalizedPathIssue };
+    }
+  } catch (error) {
     return {
       ok: false,
-      issue: readResult.issues[0] ?? {
-        path: '$',
-        message: 'Could not read Flow Governance config: configuration file does not exist.'
-      }
+      issue: { path: '$', message: `Could not write Flow Governance config: ${getErrorMessage(error)}` }
     };
-  }
-  const rawConfig = readResult.value;
-
-  if (!isRecord(rawConfig)) {
-    return {
-      ok: false,
-      issue: { path: '$', message: 'Flow configuration must be a JSON object.' }
-    };
+  } finally {
+    await handle?.close();
   }
 
+  return { ok: true, path: inspectedConfigPath.path };
+}
+
+function createUpdatedFlowConfig(
+  rawConfig: Record<string, unknown>,
+  update: RepositoryFlowConfigOptionsUpdate
+): Record<string, unknown> {
   const nextConfig: Record<string, unknown> = { ...rawConfig };
   delete nextConfig.hideSyncBranchesByDefault;
   delete nextConfig.highlightProductionTrunk;
@@ -188,29 +264,7 @@ export async function updateRepositoryFlowConfigOptions(
   if (update.enabled !== undefined) {
     nextConfig.enabled = update.enabled;
   }
-
-  try {
-    const reinspection = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
-    if (!reinspection.ok || !reinspection.exists || reinspection.path !== inspectedConfigPath.path) {
-      return {
-        ok: false,
-        issue: {
-          path: 'configPath',
-          message: reinspection.ok
-            ? 'Flow Governance config file is no longer available for safe update.'
-            : reinspection.message
-        }
-      };
-    }
-    await writeFile(reinspection.path, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
-  } catch (error) {
-    return {
-      ok: false,
-      issue: { path: '$', message: `Could not write Flow Governance config: ${getErrorMessage(error)}` }
-    };
-  }
-
-  return { ok: true, path: inspectedConfigPath.path };
+  return nextConfig;
 }
 
 function readOptionalBoolean(
@@ -319,14 +373,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function readRepositoryFlowConfig(
   configPath: string
-): Promise<
-  | { readonly exists: false; readonly value?: undefined; readonly issues: readonly [] }
-  | { readonly exists: true; readonly value: unknown; readonly issues: readonly [] }
-  | { readonly exists: true; readonly value?: undefined; readonly issues: readonly FlowConfigValidationIssue[] }
-> {
+): Promise<RepositoryFlowConfigReadResult> {
   let handle: Awaited<ReturnType<typeof open>> | undefined;
   try {
     handle = await open(configPath, 'r');
+    return await readRepositoryFlowConfigHandle(handle);
+  } catch (error) {
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      return { exists: false, issues: [] };
+    }
+
+    return {
+      exists: true,
+      issues: [{ path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }]
+    };
+  } finally {
+    await handle?.close();
+  }
+}
+
+async function readRepositoryFlowConfigHandle(
+  handle: FileHandle
+): Promise<RepositoryFlowConfigReadResult> {
+  try {
     const buffer = Buffer.allocUnsafe(FLOW_CONFIG_MAX_FILE_BYTES + 1);
     let bytesRead = 0;
     while (bytesRead < buffer.length) {
@@ -359,16 +428,10 @@ async function readRepositoryFlowConfig(
       issues: []
     };
   } catch (error) {
-    if (isNodeError(error) && error.code === 'ENOENT') {
-      return { exists: false, issues: [] };
-    }
-
     return {
       exists: true,
       issues: [{ path: '$', message: `Could not read Flow Governance config: ${getErrorMessage(error)}` }]
     };
-  } finally {
-    await handle?.close();
   }
 }
 

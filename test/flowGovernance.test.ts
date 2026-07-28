@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import {
+  link,
+  mkdir,
+  mkdtemp,
+  open,
+  readFile,
+  rename,
+  rm,
+  symlink,
+  writeFile
+} from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -1015,6 +1025,181 @@ test('Flow Governance persists repository option updates while preserving other 
   assert.equal(persisted.showUnknownBranches, undefined);
   assert.deepEqual(persisted.patterns, { feature: '^feature/.+' });
   assert.deepEqual(persisted.futureField, { enabled: true });
+});
+
+test('Flow Governance rejects regular-file substitution at the persistence boundary', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-race-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const displacedPath = path.join(root, '.git-revision-graph-flow.original.json');
+  const originalContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'original' });
+  const replacementContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'replacement' });
+  await writeFile(configPath, originalContent);
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(
+      root,
+      undefined,
+      { enabled: false },
+      {
+        openFile: async (filePath, flags) => {
+          const handle = await open(filePath, flags);
+          await rename(filePath, displacedPath);
+          await writeFile(filePath, replacementContent);
+          return handle;
+        }
+      }
+    );
+
+    assert.equal(result.ok, false);
+    assert.match(result.issue.message, /changed before it could be safely updated/i);
+    assert.equal(await readFile(displacedPath, 'utf8'), originalContent);
+    assert.equal(await readFile(configPath, 'utf8'), replacementContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance keeps a descriptor-bound write off a replacement path during persistence', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-race-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const displacedPath = path.join(root, '.git-revision-graph-flow.original.json');
+  const originalContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'original' });
+  const replacementContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'replacement' });
+  await writeFile(configPath, originalContent);
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(
+      root,
+      undefined,
+      { enabled: false },
+      {
+        persistFile: async (handle, content) => {
+          await rename(configPath, displacedPath);
+          await writeFile(configPath, replacementContent);
+          await handle.truncate(0);
+          await handle.writeFile(content, 'utf8');
+        }
+      }
+    );
+
+    assert.equal(result.ok, false);
+    assert.match(result.issue.message, /changed before it could be safely updated/i);
+    const persistedOriginal = JSON.parse(await readFile(displacedPath, 'utf8')) as Record<string, unknown>;
+    assert.equal(persistedOriginal.enabled, false);
+    assert.equal(persistedOriginal.marker, 'original');
+    assert.equal(await readFile(configPath, 'utf8'), replacementContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance refuses a symbolic-link substitution before opening for persistence', async (context) => {
+  if (process.platform === 'win32') {
+    context.skip('O_NOFOLLOW is not supported on Windows.');
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-race-'));
+  const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-outside-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const displacedPath = path.join(root, '.git-revision-graph-flow.original.json');
+  const outsidePath = path.join(outsideRoot, 'config.json');
+  const originalContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'original' });
+  const outsideContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'outside' });
+  await writeFile(configPath, originalContent);
+  await writeFile(outsidePath, outsideContent);
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(
+      root,
+      undefined,
+      { enabled: false },
+      {
+        openFile: async (filePath, flags) => {
+          await rename(filePath, displacedPath);
+          await symlink(outsidePath, filePath);
+          return open(filePath, flags);
+        }
+      }
+    );
+
+    assert.equal(result.ok, false);
+    assert.match(result.issue.message, /could not write Flow Governance config/i);
+    assert.equal(await readFile(displacedPath, 'utf8'), originalContent);
+    assert.equal(await readFile(outsidePath, 'utf8'), outsideContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outsideRoot, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance rejects symbolic-link ancestor substitution at the persistence boundary', async (context) => {
+  if (process.platform === 'win32') {
+    context.skip('Symlink creation requires platform-specific privileges on Windows.');
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-race-'));
+  const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-outside-'));
+  const configDirectory = path.join(root, 'config');
+  const displacedDirectory = path.join(root, 'config-original');
+  const configPath = path.join(configDirectory, 'flow.json');
+  const outsidePath = path.join(outsideRoot, 'flow.json');
+  const originalContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'original' });
+  const outsideContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'outside' });
+  await mkdir(configDirectory);
+  await writeFile(configPath, originalContent);
+  await writeFile(outsidePath, outsideContent);
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(
+      root,
+      { configPath: 'config/flow.json' },
+      { enabled: false },
+      {
+        openFile: async (filePath, flags) => {
+          const handle = await open(filePath, flags);
+          await rename(configDirectory, displacedDirectory);
+          await symlink(outsideRoot, configDirectory);
+          return handle;
+        }
+      }
+    );
+
+    assert.equal(result.ok, false);
+    assert.match(result.issue.message, /symbolic-link or junction ancestor/i);
+    assert.equal(await readFile(path.join(displacedDirectory, 'flow.json'), 'utf8'), originalContent);
+    assert.equal(await readFile(outsidePath, 'utf8'), outsideContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outsideRoot, { recursive: true, force: true });
+  }
+});
+
+test('Flow Governance rejects hard-linked config files without modifying their other links', async (context) => {
+  if (process.platform === 'win32') {
+    context.skip('Hard-link fixture behavior is platform-specific on Windows.');
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-hard-link-'));
+  const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-outside-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const outsidePath = path.join(outsideRoot, 'config.json');
+  const outsideContent = JSON.stringify({ schemaVersion: 1, enabled: true, marker: 'outside' });
+  await writeFile(outsidePath, outsideContent);
+  await link(outsidePath, configPath);
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(root, undefined, { enabled: false });
+
+    assert.equal(result.ok, false);
+    assert.match(result.issue.message, /must not be hard-linked/i);
+    assert.equal(await readFile(outsidePath, 'utf8'), outsideContent);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outsideRoot, { recursive: true, force: true });
+  }
 });
 
 test('Flow Governance rejects repository option persistence outside the repository', async () => {

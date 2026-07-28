@@ -6,12 +6,19 @@ export interface RepositoryConfigPath {
   readonly relativePath: string;
 }
 
+export interface RepositoryConfigFileIdentity {
+  readonly device: bigint;
+  readonly inode: bigint;
+  readonly hardLinkCount: bigint;
+}
+
 export type RepositoryConfigPathInspection =
   | {
     readonly ok: true;
     readonly path: string;
     readonly relativePath: string;
     readonly exists: boolean;
+    readonly identity?: RepositoryConfigFileIdentity;
   }
   | { readonly ok: false; readonly message: string };
 
@@ -117,22 +124,34 @@ export async function inspectRepositoryConfigPath(
     ok: true,
     path: canonicalPath,
     relativePath: canonicalRelativePath.split(path.sep).join('/'),
-    exists: true
+    exists: true,
+    identity: target.identity
   };
 }
 
 async function inspectPath(filePath: string): Promise<
-  | { readonly status: 'present'; readonly isSymbolicLink: boolean; readonly isDirectory: boolean; readonly isFile: boolean }
+  | {
+    readonly status: 'present';
+    readonly isSymbolicLink: boolean;
+    readonly isDirectory: boolean;
+    readonly isFile: boolean;
+    readonly identity: RepositoryConfigFileIdentity;
+  }
   | { readonly status: 'missing' }
   | { readonly status: 'error'; readonly message: string }
 > {
   try {
-    const stat = await lstat(filePath);
+    const stat = await lstat(filePath, { bigint: true });
     return {
       status: 'present',
       isSymbolicLink: stat.isSymbolicLink(),
       isDirectory: stat.isDirectory(),
-      isFile: stat.isFile()
+      isFile: stat.isFile(),
+      identity: {
+        device: stat.dev,
+        inode: stat.ino,
+        hardLinkCount: stat.nlink
+      }
     };
   } catch (error) {
     if (isNodeError(error) && error.code === 'ENOENT') {

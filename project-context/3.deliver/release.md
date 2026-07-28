@@ -8,8 +8,8 @@ Last consolidated: 2026-07-28
 - Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. The first correction has completed automated
-  verification; no candidate has been packaged or published.
+  security hardening, and user-experience corrections. The first two corrections have completed
+  automated verification; no candidate has been packaged or published.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
@@ -17,7 +17,7 @@ Last consolidated: 2026-07-28
 
 ## Active Release: Reliability and Security Hardening 1.6.1
 
-Status: Implementation in progress; item 1 automated verification complete
+Status: Implementation in progress; items 1-2 automated verification complete
 Opened: 2026-07-28
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
@@ -28,7 +28,7 @@ Target version: `1.6.1`
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
 | Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Item 1 complete; final candidate pending | On 2026-07-28, `npm run quality:check`, the production build, `npm test` (803 tests), and `npm run test:platform` (31 tests) passed after Flow config and regex hardening. Re-run proportional gates after each correction and for the final candidate. |
+| Current automated source verification | Items 1-2 complete; final candidate pending | On 2026-07-28, `npm run quality:check`, the production build, `npm test` (808 tests), and `npm run test:platform` (31 tests) passed after config input, regex, and persistence-race hardening. Re-run proportional gates after each correction and for the final candidate. |
 | Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
 | Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
 | VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
@@ -43,7 +43,8 @@ Release scope:
 
 - Complete: bound repository Flow Governance configuration input and regex evaluation so malformed
   or adversarial repository content cannot stall the extension host.
-- Close repository-config persistence races so path validation remains true at the write boundary.
+- Complete: close repository-config persistence races so path validation remains true at the write
+  boundary.
 - Prevent stale Compare Results work from replacing a newer comparison or crossing repository
   ownership boundaries.
 - Bound and batch worktree unified-diff processing for large untracked-file sets.
@@ -92,6 +93,16 @@ Implementation record:
 - `npm run quality:check`, `npm run build`, `npm test` (803 tests), and `npm run test:platform`
   (31 tests) passed. Relevant manual Extension Development Host Flow Governance validation remains
   pending.
+- Flow Governance option updates now open without truncation, compare exact device/inode identity,
+  reject hard-linked writable configs, revalidate the repository path, and read/write through the
+  same descriptor. Unix also uses `O_NOFOLLOW`; Windows relies on the shared identity and path
+  checks because that flag is unsupported there.
+- Deterministic regressions cover replacement by a regular file, replacement during the
+  descriptor-bound write, a pre-open symlink, a symlinked ancestor, and a hard link. Replacement and
+  external targets remain unchanged, and a moved target is not reported as a successful update.
+- After item 2, `npm run quality:check` passed for 253 production files and 2,430 functions;
+  `npm run build` passed; `npm test` passed with 808 tests; and `npm run test:platform` passed with
+  31 tests. Manual Extension Development Host config-persistence smoke remains pending.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
 
 Rollback:
