@@ -161,6 +161,12 @@ Implementation record:
   necessary.
 - `graphify update .` rebuilt the portability-corrected test graph with 5,024 nodes, 9,925 edges,
   and 381 communities.
+- Compare Results now renders its compact AI action with the same borderless `textLink` color,
+  translucent hover/focus treatment, active foreground, and disabled opacity as the Flow Governance
+  form AI actions. Toolbar sizing and AI briefing behavior are unchanged. The 3 focused webview
+  tests, `npm run quality:check` (255 production files and 2,452 functions), `npm run build`, all
+  826 tests, and `git diff --check` passed; `graphify update .` rebuilt 5,024 nodes, 9,925 edges,
+  and 381 communities. Updated Extension Development Host visual confirmation remains pending.
 - `graphify update .` rebuilt the item 6 code graph with 5,025 nodes, 9,926 edges, and 385
   communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.

@@ -180,7 +180,18 @@ export function renderCompareResultsBriefingStyles(): string {
       justify-content: center;
       width: 26px;
       min-width: 26px;
+      border: 0;
+      background: transparent;
+      color: var(--vscode-textLink-foreground, var(--vscode-focusBorder, #3794ff));
       padding: 3px;
+    }
+    .briefing-action:hover,
+    .briefing-action:focus-visible {
+      background: color-mix(in srgb, var(--vscode-focusBorder, #3794ff) 14%, transparent);
+      color: var(--vscode-textLink-activeForeground, var(--vscode-foreground));
+    }
+    .briefing-action:disabled {
+      opacity: 0.45;
     }
     .briefing-action-icon {
       width: 16px;

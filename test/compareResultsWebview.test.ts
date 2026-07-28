@@ -102,6 +102,15 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /briefingButton\.setAttribute\('aria-label', label\)/);
   assert.match(html, /\.briefing-panel \{/);
   assert.match(html, /\.briefing-action \{/);
+  assert.match(
+    html,
+    /\.briefing-action \{[\s\S]*?border: 0;[\s\S]*?background: transparent;[\s\S]*?color: var\(--vscode-textLink-foreground, var\(--vscode-focusBorder, #3794ff\)\);/
+  );
+  assert.match(
+    html,
+    /\.briefing-action:hover,[\s\S]*?\.briefing-action:focus-visible \{[\s\S]*?background: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 14%, transparent\);[\s\S]*?color: var\(--vscode-textLink-activeForeground, var\(--vscode-foreground\)\);/
+  );
+  assert.match(html, /\.briefing-action:disabled \{\s*opacity: 0\.45;/);
   assert.match(html, /\.briefing-header-button \{/);
   assert.match(html, /max-height: min\(45vh, 420px\)/);
   assert.match(html, /overflow-y: auto/);
