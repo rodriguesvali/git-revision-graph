@@ -24,6 +24,7 @@ export interface GitExecOptions {
   readonly maxOutputBytes?: number;
   readonly timeoutMs?: number;
   readonly allowedExitCodes?: readonly number[];
+  readonly gitIndexFile?: string;
 }
 
 export interface GitExecResult {
@@ -148,6 +149,9 @@ function execGitCapturedWithResult(
     const child = spawn(gitExecutablePath, [...configuredGitExecutableArgumentPrefix, ...args], {
       cwd: repositoryPath,
       detached: process.platform !== 'win32',
+      env: options.gitIndexFile
+        ? { ...process.env, GIT_INDEX_FILE: options.gitIndexFile }
+        : process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     });

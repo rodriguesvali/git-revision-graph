@@ -12,6 +12,7 @@ import { buildCommitGraph } from '../src/revisionGraph/model/commitGraph';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 import { RefType } from '../src/git';
 import { configureGitExecutablePath } from '../src/gitExec';
+import { isAbortError } from '../src/errors';
 import { createBranch, createRef, createRepository } from './fakes';
 import { createFakeGitExecutable } from './fakeGitExecutable';
 
@@ -434,9 +435,15 @@ test('loads worktree unified diffs with sorted unique untracked file patches', a
   await withFakeGitScript(
     createFakeGitProgram(
       [
-        "if (args[2] === '--no-index') {",
-        "  process.stdout.write(`diff --git a/${args[5]} b/${args[5]}\\n`);",
-        '  process.exitCode = 1;',
+        "if (args[0] === '--literal-pathspecs') {",
+        "  const pathspecPath = args.find((arg) => arg.startsWith('--pathspec-from-file=')).slice(21);",
+        "  const paths = fs.readFileSync(pathspecPath, 'utf8').split('\\0').filter(Boolean);",
+        "  if (paths.join('|') !== 'src/a.ts|src/z file.ts') process.exitCode = 9;",
+        "} else if (args.includes('--no-textconv')) {",
+        "  const path = require('node:path');",
+        "  const pathspecPath = path.join(path.dirname(process.env.GIT_INDEX_FILE), 'paths');",
+        "  const paths = fs.readFileSync(pathspecPath, 'utf8').split('\\0').filter(Boolean);",
+        "  for (const item of paths) process.stdout.write(`diff --git a/${item} b/${item}\\n`);",
         '} else {',
         "  process.stdout.write('diff --git a/tracked.txt b/tracked.txt\\n');",
         '}'
@@ -457,22 +464,209 @@ test('loads worktree unified diffs with sorted unique untracked file patches', a
         diff,
         [
           'diff --git a/tracked.txt b/tracked.txt',
-          '',
           'diff --git a/src/a.ts b/src/a.ts',
-          '',
           'diff --git a/src/z file.ts b/src/z file.ts',
           ''
         ].join('\n')
       );
+      const recordedCalls = calls.trim().split('\n');
+      assert.equal(recordedCalls.length, 3);
+      assert.equal(recordedCalls[0], 'diff --no-color --end-of-options --option-like-ref');
+      assert.match(
+        recordedCalls[1],
+        /^--literal-pathspecs add --intent-to-add --pathspec-from-file=.* --pathspec-file-nul$/
+      );
+      assert.equal(recordedCalls[2], 'diff --no-color --no-ext-diff --no-textconv');
+      const pathspecPath = recordedCalls[1]
+        .split(' ')
+        .find((entry) => entry.startsWith('--pathspec-from-file='))
+        ?.slice('--pathspec-from-file='.length);
+      assert.ok(pathspecPath);
+      await assert.rejects(fs.stat(pathspecPath), { code: 'ENOENT' });
+    }
+  );
+});
+
+test('aggregates a large untracked set into constant bounded Git work', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram(
+      [
+        "if (args[0] === '--literal-pathspecs') {",
+        "  const pathspecPath = args.find((arg) => arg.startsWith('--pathspec-from-file=')).slice(21);",
+        "  const paths = fs.readFileSync(pathspecPath, 'utf8').split('\\0').filter(Boolean);",
+        "  fs.appendFileSync(callsPath, `add:${paths.length}\\n`);",
+        "} else if (args.includes('--no-textconv')) {",
+        "  fs.appendFileSync(callsPath, 'untracked-diff\\n');",
+        "  process.stdout.write('diff --git a/first.txt b/first.txt\\n');",
+        '} else {',
+        "  fs.appendFileSync(callsPath, 'tracked-diff\\n');",
+        '}'
+      ].join('\n'),
+      'none'
+    ),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+      const untrackedPaths = Array.from(
+        { length: 1000 },
+        (_, index) => `generated/${String(index).padStart(4, '0')} file-ç.ts`
+      );
+
+      const diff = await backend.loadUnifiedDiffWithWorktree(
+        repository,
+        'main',
+        untrackedPaths
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(diff, 'diff --git a/first.txt b/first.txt\n');
+      assert.equal(calls, 'tracked-diff\nadd:1000\nuntracked-diff\n');
+    }
+  );
+});
+
+test('falls back to bounded path batches when Git lacks pathspec-from-file support', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram(
+      [
+        "if (args.some((arg) => arg.startsWith('--pathspec-from-file='))) {",
+        "  fs.appendFileSync(callsPath, 'aggregate-unsupported\\n');",
+        "  process.stderr.write('error: unknown option pathspec-from-file\\n');",
+        '  process.exitCode = 129;',
+        "} else if (args[0] === '--literal-pathspecs') {",
+        "  fs.appendFileSync(callsPath, `batch:${args.slice(args.indexOf('--') + 1).length}\\n`);",
+        "} else if (args.includes('--no-textconv')) {",
+        "  fs.appendFileSync(callsPath, 'untracked-diff\\n');",
+        "  process.stdout.write('diff --git a/first.txt b/first.txt\\n');",
+        '} else {',
+        "  fs.appendFileSync(callsPath, 'tracked-diff\\n');",
+        '}'
+      ].join('\n'),
+      'none'
+    ),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+      const untrackedPaths = Array.from(
+        { length: 300 },
+        (_, index) => `generated/${String(index).padStart(4, '0')}.ts`
+      );
+
+      const diff = await backend.loadUnifiedDiffWithWorktree(
+        repository,
+        'main',
+        untrackedPaths
+      );
+      const calls = await fs.readFile(callsPath, 'utf8');
+
+      assert.equal(diff, 'diff --git a/first.txt b/first.txt\n');
       assert.equal(
         calls,
         [
-          'diff --no-color --end-of-options --option-like-ref',
-          'diff --no-color --no-index -- /dev/null src/a.ts',
-          'diff --no-color --no-index -- /dev/null src/z file.ts',
+          'tracked-diff',
+          'aggregate-unsupported',
+          'batch:128',
+          'batch:128',
+          'batch:44',
+          'untracked-diff',
           ''
         ].join('\n')
       );
+    }
+  );
+});
+
+test('rejects untracked unified diff input above the bounded file count', async () => {
+  const backend = new DefaultRevisionGraphDocumentBackend();
+  const repository = createRepository({ root: '/workspace/repo' });
+  const untrackedPaths = Array.from(
+    { length: 4097 },
+    (_, index) => `generated/${index}.txt`
+  );
+
+  await assert.rejects(
+    backend.loadUnifiedDiffWithWorktree(repository, 'main', untrackedPaths),
+    /4097 untracked paths.*maximum is 4096/
+  );
+});
+
+test('rejects untracked unified diff path input above the bounded byte count', async () => {
+  const backend = new DefaultRevisionGraphDocumentBackend();
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await assert.rejects(
+    backend.loadUnifiedDiffWithWorktree(
+      repository,
+      'main',
+      [`generated/${'x'.repeat(2 * 1024 * 1024)}.txt`]
+    ),
+    /2 MiB unified-diff path input limit/
+  );
+});
+
+test('shares the unified diff output budget across tracked and untracked patches', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram(
+      [
+        "if (args[0] === '--literal-pathspecs') {",
+        "  process.exitCode = 0;",
+        "} else if (args.includes('--no-textconv')) {",
+        "  process.stdout.write('56789');",
+        '} else {',
+        "  process.stdout.write('1234');",
+        '}'
+      ].join('\n')
+    ),
+    async (repositoryPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+
+      await assert.rejects(
+        backend.loadUnifiedDiffWithWorktree(
+          repository,
+          'main',
+          ['new.txt'],
+          { maxOutputBytes: 8 }
+        ),
+        /maximum captured output/
+      );
+    }
+  );
+});
+
+test('cancels aggregate untracked diff preparation and removes its temporary index', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram(
+      [
+        "if (args[0] === '--literal-pathspecs') {",
+        "  fs.appendFileSync(callsPath, process.env.GIT_INDEX_FILE);",
+        '  setTimeout(() => undefined, 10_000);',
+        '}'
+      ].join('\n'),
+      'none'
+    ),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphDocumentBackend();
+      const repository = createRepository({ root: repositoryPath });
+      const abortController = new AbortController();
+      const execution = backend.loadUnifiedDiffWithWorktree(
+        repository,
+        'main',
+        ['new.txt'],
+        { signal: abortController.signal }
+      );
+      let indexPath = '';
+      for (let attempt = 0; attempt < 100 && indexPath.length === 0; attempt += 1) {
+        indexPath = await fs.readFile(callsPath, 'utf8').catch(() => '');
+        if (indexPath.length === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
+      assert.ok(indexPath);
+      abortController.abort();
+
+      await assert.rejects(execution, isAbortError);
+      await assert.rejects(fs.stat(path.dirname(indexPath)), { code: 'ENOENT' });
     }
   );
 });
@@ -491,9 +685,9 @@ test('rejects worktree unified diff errors reported for stale untracked files', 
   await withFakeGitScript(
     createFakeGitProgram(
       [
-        "if (args[2] === '--no-index') {",
-        "  process.stderr.write(`error: Could not access '${args[5]}'\\n`);",
-        '  process.exitCode = 1;',
+        "if (args[0] === '--literal-pathspecs') {",
+        "  process.stderr.write(\"fatal: pathspec 'stale.txt' did not match any files\\n\");",
+        '  process.exitCode = 128;',
         '}'
       ].join('\n'),
       'none'
@@ -504,7 +698,7 @@ test('rejects worktree unified diff errors reported for stale untracked files', 
 
       await assert.rejects(
         backend.loadUnifiedDiffWithWorktree(repository, 'main', ['stale.txt']),
-        /Could not access 'stale\.txt'/
+        /pathspec 'stale\.txt' did not match any files/
       );
     }
   );

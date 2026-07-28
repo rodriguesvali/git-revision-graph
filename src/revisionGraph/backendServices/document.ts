@@ -1,7 +1,11 @@
 import * as path from 'node:path';
 
-import { execGit, execGitWithResult } from '../../gitExec';
+import { execGit } from '../../gitExec';
 import { Repository } from '../../git';
+import {
+  loadUntrackedUnifiedDiff,
+  validateUntrackedUnifiedDiffPaths
+} from './untrackedUnifiedDiff';
 
 export interface RevisionGraphDocumentBackend {
   loadChangedPaths(
@@ -91,7 +95,8 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
     const normalizedUntrackedPaths = normalizeRepositoryRelativePaths(untrackedPaths) ?? [];
     const paths = normalizeRepositoryRelativePaths(options?.paths);
     const maxOutputBytes = options?.maxOutputBytes ?? UNIFIED_DIFF_MAX_OUTPUT_BYTES;
-    const sections = [await execGit(
+    validateUntrackedUnifiedDiffPaths(normalizedUntrackedPaths);
+    const trackedDiff = await execGit(
       repository.rootUri.fsPath,
       ['diff', '--no-color', '--end-of-options', ref, ...toGitPathArgs(paths)],
       {
@@ -99,40 +104,30 @@ export class DefaultRevisionGraphDocumentBackend implements RevisionGraphDocumen
         signal: options?.signal,
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
-    )];
-
-    let capturedBytes = Buffer.byteLength(sections[0], 'utf8');
-    let hasContent = sections[0].length > 0;
-    for (const untrackedPath of normalizedUntrackedPaths) {
-      const separatorBytes = hasContent ? 1 : 0;
-      const remainingBytes = maxOutputBytes - capturedBytes - separatorBytes;
-      if (remainingBytes <= 0) {
-        throw new Error('The unified diff exceeded the maximum captured output.');
-      }
-
-      const result = await execGitWithResult(
-        repository.rootUri.fsPath,
-        ['diff', '--no-color', '--no-index', '--', '/dev/null', untrackedPath],
-        {
-          allowedExitCodes: [1],
-          maxOutputBytes: remainingBytes,
-          signal: options?.signal,
-          timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
-        }
-      );
-      if (result.stderr.trim().length > 0) {
-        throw new Error(result.stderr.trim());
-      }
-
-      const section = result.stdout;
-      if (section.length > 0) {
-        capturedBytes += separatorBytes + Buffer.byteLength(section, 'utf8');
-        hasContent = true;
-      }
-      sections.push(section);
+    );
+    if (normalizedUntrackedPaths.length === 0) {
+      return trackedDiff;
     }
 
-    return sections.filter((section) => section.length > 0).join('\n');
+    const separator = trackedDiff.length > 0 && !trackedDiff.endsWith('\n') ? '\n' : '';
+    const remainingBytes = maxOutputBytes
+      - Buffer.byteLength(trackedDiff, 'utf8')
+      - Buffer.byteLength(separator, 'utf8');
+    if (remainingBytes <= 0) {
+      throw new Error('The unified diff exceeded the maximum captured output.');
+    }
+    const untrackedDiff = await loadUntrackedUnifiedDiff(
+      repository.rootUri.fsPath,
+      normalizedUntrackedPaths,
+      {
+        maxOutputBytes: remainingBytes,
+        signal: options?.signal,
+        timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
+      }
+    );
+    return untrackedDiff.length > 0
+      ? `${trackedDiff}${separator}${untrackedDiff}`
+      : trackedDiff;
   }
 
   async loadCommitDetails(repository: Repository, commitHash: string): Promise<string> {
@@ -179,6 +174,9 @@ function toGitPathArgs(paths: readonly string[] | undefined): string[] {
 }
 
 function normalizeRepositoryRelativePath(value: string): string {
+  if (value.includes('\0')) {
+    throw new Error('Cannot include an untracked path containing a NUL character.');
+  }
   const normalized = path.normalize(value);
   if (
     normalized.length === 0

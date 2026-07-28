@@ -97,6 +97,21 @@ test('execGit uses the configured Git executable path', async () => {
   }
 });
 
+test('execGit scopes an alternate index to the requested Git process', async () => {
+  await withFakeGitProgram(
+    'process.stdout.write(process.env.GIT_INDEX_FILE ?? "missing");\n',
+    async (repositoryPath) => {
+      const indexPath = path.join(repositoryPath, 'temporary-index');
+
+      const stdout = await execGit(repositoryPath, ['status'], {
+        gitIndexFile: indexPath
+      });
+
+      assert.equal(stdout, indexPath);
+    }
+  );
+});
+
 test('execGit reads large git output without failing on a fixed maxBuffer', async () => {
   const repositoryPath = await createTemporaryRepository();
 

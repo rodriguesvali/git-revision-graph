@@ -8,7 +8,7 @@ Last consolidated: 2026-07-28
 - Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. The first three corrections have completed
+  security hardening, and user-experience corrections. The first four corrections have completed
   automated verification; no candidate has been packaged or published.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
@@ -17,7 +17,7 @@ Last consolidated: 2026-07-28
 
 ## Active Release: Reliability and Security Hardening 1.6.1
 
-Status: Implementation in progress; items 1-3 automated verification complete
+Status: Implementation in progress; items 1-4 automated verification complete
 Opened: 2026-07-28
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
@@ -28,7 +28,7 @@ Target version: `1.6.1`
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
 | Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Items 1-3 complete; final candidate pending | On 2026-07-28, item 3 passed `npm run quality:check`, the production build, and `npm test` (813 tests). The latest applicable platform run remains the 31-test item 2 pass because item 3 changes no platform-specific contract. Re-run proportional gates after each correction and for the final candidate. |
+| Current automated source verification | Items 1-4 complete; final candidate pending | On 2026-07-28, item 4 passed `npm run quality:check`, the production build, `npm test` (821 tests), and `npm run test:platform` (33 tests). Re-run proportional gates after each correction and for the final candidate. |
 | Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
 | Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
 | VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
@@ -47,7 +47,7 @@ Release scope:
   boundary.
 - Complete: prevent stale Compare Results work from replacing a newer comparison or crossing repository
   ownership boundaries.
-- Bound and batch worktree unified-diff processing for large untracked-file sets.
+- Complete: bound and aggregate worktree unified-diff processing for large untracked-file sets.
 - Make Show Log search limits explicit so valid older matches are not silently presented as absent.
 - Escalate timed-out Git process termination when graceful Unix process-group termination does not
   complete.
@@ -115,6 +115,21 @@ Implementation record:
   because no filesystem, process, worker, or platform-specific contract changed. Manual rapid-switch
   Extension Development Host smoke remains pending.
 - `graphify update .` rebuilt the item 3 code graph with 5,002 nodes, 9,871 edges, and 388
+  communities.
+- Untracked worktree patches now use a private alternate Git index: current Git prepares every
+  NUL-delimited literal pathspec in one operation and emits one aggregate diff instead of one process
+  per file. Git without `add --pathspec-from-file` support falls back after exit code 129 to bounded
+  batches of at most 128 paths and 16 KiB.
+- The aggregate path accepts at most 4,096 normalized unique paths and 2 MiB of path data, retains
+  the 15-second command timeout, caps setup output at 256 KiB, and shares the existing 32 MiB final
+  diff budget with tracked changes. Temporary files are removed after completion, cancellation, and
+  failure; the real repository index remains unchanged.
+- Item 4 regressions cover a 1,000-path aggregate, older-Git fallback, input/output ceilings,
+  cancellation cleanup, stale paths, spaces, Unicode, leading dashes, binary content, and real-index
+  isolation. `npm run quality:check` passed for 255 production files and 2,443 functions;
+  `npm run build` passed; `npm test` passed all 821 tests; and `npm run test:platform` passed all
+  33 tests. Manual Extension Development Host large-worktree smoke remains pending.
+- `graphify update .` rebuilt the item 4 code graph with 5,011 nodes, 9,901 edges, and 376
   communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
 
