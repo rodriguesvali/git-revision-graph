@@ -13,6 +13,11 @@ test('compares two loaded show log commits through compare results', async () =>
     root: '/workspace/repo',
     diffBetween: [change]
   });
+  const events: string[] = [];
+  repository.diffBetween = async () => {
+    events.push('diff');
+    return [change];
+  };
   const comparisons: Array<{
     readonly left: { readonly refName: string; readonly label: string };
     readonly right: { readonly refName: string; readonly label: string };
@@ -30,7 +35,15 @@ test('compares two loaded show log commits through compare results', async () =>
     'a'.repeat(40),
     'b'.repeat(40),
     {
+      beginRequest() {
+        events.push('begin');
+        return { isCurrentFor: () => true };
+      },
+      async showLoadingBetweenRefs() {
+        events.push('loading');
+      },
       async showBetweenRefs(_repository, left, right, changes, options) {
+        events.push('results');
         comparisons.push({ left, right, changes, source: options?.source });
       },
       async showWithWorktree() {}
@@ -53,6 +66,53 @@ test('compares two loaded show log commits through compare results', async () =>
       source: 'showLog'
     }
   ]);
+  assert.deepEqual(messages, []);
+  assert.deepEqual(events, ['begin', 'loading', 'diff', 'results']);
+});
+
+test('ignores a stale Show Log comparison after newer Compare Results ownership', async () => {
+  const change = createChange({ uriPath: '/workspace/repo/src/stale.ts' });
+  let requestIsCurrent = true;
+  const repository = createRepository({ root: '/workspace/repo' });
+  repository.diffBetween = async () => {
+    requestIsCurrent = false;
+    return [change];
+  };
+  let compareCalls = 0;
+  const messages: string[] = [];
+
+  await compareLoadedShowLogCommits(
+    repository,
+    [
+      createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
+      createRevisionLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
+    ],
+    'a'.repeat(40),
+    'b'.repeat(40),
+    {
+      beginRequest() {
+        return {
+          isCurrentFor() {
+            return requestIsCurrent;
+          }
+        };
+      },
+      async showBetweenRefs() {
+        compareCalls += 1;
+      },
+      async showWithWorktree() {}
+    },
+    {
+      showInformationMessage(message) {
+        messages.push(message);
+      },
+      async showErrorMessage(message) {
+        messages.push(message);
+      }
+    }
+  );
+
+  assert.equal(compareCalls, 0);
   assert.deepEqual(messages, []);
 });
 

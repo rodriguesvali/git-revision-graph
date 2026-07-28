@@ -37,12 +37,16 @@ import {
   prepareCompareResultsWorktreeUnifiedDiff,
   refreshCompareResultsWorktreeComparison
 } from './compareResults/worktreeRefresh';
+import {
+  CompareResultsRequestOwner,
+  type CompareResultsRequest
+} from './compareResults/requestOwnership';
 import type { RevisionGraphDocumentBackend } from './revisionGraph/backend';
 import {
   openUnifiedDiffDocument,
   openUnifiedDiffWithWorktreeDocument
 } from './revisionGraph/repository/log';
-import type { RefSelection } from './refActions';
+import type { CompareResultsRevealOptions, RefSelection } from './refActions';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 import { handleWebviewMessageSafely } from './webviewMessageBoundary';
 import {
@@ -57,6 +61,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
   private openingUnifiedDiff = false;
+  private readonly requestOwner = new CompareResultsRequestOwner();
   private readonly briefingController: CompareBriefingController;
   private readonly panelDisposables: vscode.Disposable[] = [];
   private readonly messageHandlers: CompareResultsMessageHandlers = {
@@ -88,11 +93,13 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   dispose(): void {
+    this.requestOwner.invalidate();
     this.briefingController.dispose();
     this.disposePanel();
   }
 
   handleRepositoryClosed(repository: Repository): void {
+    this.requestOwner.invalidateFor(repository);
     if (!isCompareResultsStateForRepository(this.state, repository)) {
       return;
     }
@@ -106,8 +113,12 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     repository: Repository,
     left: RefSelection,
     right: RefSelection,
-    changes: readonly Change[]
+    changes: readonly Change[],
+    options?: CompareResultsRevealOptions
   ): Promise<void> {
+    if (!this.requestOwner.accept(repository, options?.request)) {
+      return;
+    }
     this.resetBriefing();
     this.state = {
       kind: 'between',
@@ -123,16 +134,21 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   async showLoadingBetweenRefs(
     repository: Repository,
     left: RefSelection,
-    right: RefSelection
+    right: RefSelection,
+    options?: CompareResultsRevealOptions
   ): Promise<void> {
-    this.showLoading(repository, left.label, right.label);
+    this.showLoading(repository, left.label, right.label, options?.request);
   }
 
   async showWithWorktree(
     repository: Repository,
     target: RefSelection,
-    changes: readonly Change[]
+    changes: readonly Change[],
+    options?: CompareResultsRevealOptions
   ): Promise<void> {
+    if (!this.requestOwner.accept(repository, options?.request)) {
+      return;
+    }
     this.resetBriefing();
     this.state = {
       kind: 'worktree',
@@ -146,13 +162,21 @@ export class CompareResultsViewProvider implements vscode.Disposable {
 
   async showLoadingWithWorktree(
     repository: Repository,
-    target: RefSelection
+    target: RefSelection,
+    options?: CompareResultsRevealOptions
   ): Promise<void> {
-    this.showLoading(repository, target.label, 'Worktree');
+    this.showLoading(repository, target.label, 'Worktree', options?.request);
   }
 
-  async hideLoading(): Promise<void> {
+  beginRequest(repository: Repository): CompareResultsRequest {
+    return this.requestOwner.start(repository);
+  }
+
+  async hideLoading(request?: CompareResultsRequest): Promise<void> {
     if (this.state.kind !== 'loading') {
+      return;
+    }
+    if (request && !request.isCurrentFor(this.state.repository)) {
       return;
     }
 
@@ -164,6 +188,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   async hideWithRevisionGraph(): Promise<void> {
+    this.requestOwner.invalidate();
     this.resetBriefing();
     this.state = { kind: 'empty' };
     this.refresh();
@@ -210,7 +235,15 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     return outcome.value;
   }
 
-  private showLoading(repository: Repository, sourceLabel: string, targetLabel: string): void {
+  private showLoading(
+    repository: Repository,
+    sourceLabel: string,
+    targetLabel: string,
+    request: CompareResultsRequest | undefined
+  ): void {
+    if (!this.requestOwner.accept(repository, request)) {
+      return;
+    }
     this.resetBriefing();
     const previousState: CompareResultsCompletedState =
       this.state.kind === 'loading' ? this.state.previousState : this.state;
@@ -420,6 +453,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     this.panelDisposables.push(
       panel.onDidDispose(() => {
         if (this.panel === panel) {
+          this.requestOwner.invalidate();
           this.panel = undefined;
           this.resetBriefing();
           this.state = { kind: 'empty' };

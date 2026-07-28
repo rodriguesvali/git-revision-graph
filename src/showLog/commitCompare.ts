@@ -1,6 +1,7 @@
 import { toOperationError } from '../errorDetail';
 import type { Repository } from '../git';
 import type { CompareResultsPresenter } from '../refActions';
+import { isCompareResultsRequestCurrent } from '../compareResults/requestOwnership';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
 import { showModalErrorMessage } from '../workbenchMessages';
 
@@ -23,10 +24,27 @@ export async function compareLoadedShowLogCommits(
     return;
   }
 
+  const request = compareResultsPresenter.beginRequest?.(repository);
   try {
+    await compareResultsPresenter.showLoadingBetweenRefs?.(
+      repository,
+      { refName: base.hash, label: base.shortHash },
+      { refName: compare.hash, label: compare.shortHash },
+      { source: 'showLog', request }
+    );
     const changes = await repository.diffBetween(base.hash, compare.hash);
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     if (changes.length === 0) {
+      await compareResultsPresenter.hideLoading?.(request);
+      if (!isCompareResultsRequestCurrent(request, repository)) {
+        return;
+      }
       const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+      if (!isCompareResultsRequestCurrent(request, repository)) {
+        return;
+      }
       compareUi.showInformationMessage(`No differences found between ${base.shortHash} and ${compare.shortHash}.`);
       return;
     }
@@ -36,10 +54,20 @@ export async function compareLoadedShowLogCommits(
       { refName: base.hash, label: base.shortHash },
       { refName: compare.hash, label: compare.shortHash },
       changes,
-      { source: 'showLog' }
+      { source: 'showLog', request }
     );
   } catch (error) {
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
+    await compareResultsPresenter.hideLoading?.(request);
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     await compareUi.showErrorMessage(toOperationError('Could not compare the selected commits.', error));
   }
 }
@@ -56,10 +84,26 @@ export async function compareLoadedShowLogCommitWithWorktree(
     return;
   }
 
+  const request = compareResultsPresenter.beginRequest?.(repository);
   try {
+    await compareResultsPresenter.showLoadingWithWorktree?.(
+      repository,
+      { refName: entry.hash, label: entry.shortHash },
+      { source: 'showLog', request }
+    );
     const changes = await repository.diffWith(entry.hash);
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     if (changes.length === 0) {
+      await compareResultsPresenter.hideLoading?.(request);
+      if (!isCompareResultsRequestCurrent(request, repository)) {
+        return;
+      }
       const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+      if (!isCompareResultsRequestCurrent(request, repository)) {
+        return;
+      }
       compareUi.showInformationMessage(`The worktree is already aligned with ${entry.shortHash}.`);
       return;
     }
@@ -68,10 +112,20 @@ export async function compareLoadedShowLogCommitWithWorktree(
       repository,
       { refName: entry.hash, label: entry.shortHash },
       changes,
-      { source: 'showLog' }
+      { source: 'showLog', request }
     );
   } catch (error) {
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
+    await compareResultsPresenter.hideLoading?.(request);
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     const compareUi = ui ?? await getDefaultShowLogCommitCompareUi();
+    if (!isCompareResultsRequestCurrent(request, repository)) {
+      return;
+    }
     await compareUi.showErrorMessage(toOperationError('Could not compare the selected commit with the worktree.', error));
   }
 }

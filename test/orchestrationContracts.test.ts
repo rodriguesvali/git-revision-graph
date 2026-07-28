@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createApi, createChange, createRepository } from './fakes';
+import {
+  createApi,
+  createChange,
+  createRepository,
+  createRevisionLogEntry
+} from './fakes';
+import type { Change } from '../src/git';
+import { compareResolvedRefs } from '../src/refActions/compare';
+import { compareLoadedShowLogCommits } from '../src/showLog/commitCompare';
 import { CONCURRENT_REPOSITORY_MUTATION_MESSAGE } from '../src/repositoryMutationWarning';
 import { RepositoryMutationCoordinator } from '../src/repositoryMutationCoordinator';
 
@@ -22,6 +30,175 @@ test('Compare Results reuses, disposes, and recreates its editor panel', async (
 
   provider.handleRepositoryClosed(repository);
   assert.equal(harness.panels[1].disposed, true);
+  provider.dispose();
+});
+
+test('Compare Results keeps the latest same-repository comparison when requests finish out of order', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
+  const first = createDeferred<Change[]>();
+  const second = createDeferred<Change[]>();
+  const repository = createRepository({ root: '/workspace/repo' });
+  repository.diffBetween = async (_left, right) =>
+    right === 'feature/first' ? first.promise : second.promise;
+  const messages: string[] = [];
+  const services = createCompareActionServices(provider, messages);
+
+  const firstOperation = compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature/first', label: 'feature/first' },
+    services
+  );
+  const secondOperation = compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature/latest', label: 'feature/latest' },
+    services
+  );
+
+  second.resolve([createChange({ uriPath: '/workspace/repo/src/latest.ts' })]);
+  await secondOperation;
+  first.resolve([createChange({ uriPath: '/workspace/repo/src/stale.ts' })]);
+  await firstOperation;
+
+  const resultStates = getCompareResultsStates(harness.panels[0])
+    .filter((state) => state.kind === 'results');
+  assert.deepEqual(
+    resultStates.map((state) => ({
+      sourceLabel: state.sourceLabel,
+      targetLabel: state.targetLabel,
+      paths: state.items.map((item) => item.path)
+    })),
+    [{
+      sourceLabel: 'main',
+      targetLabel: 'feature/latest',
+      paths: ['src/latest.ts']
+    }]
+  );
+  assert.deepEqual(messages, []);
+  provider.dispose();
+});
+
+test('Compare Results ignores stale errors after a newer repository owns the panel', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
+  const stale = createDeferred<Change[]>();
+  const latest = createDeferred<Change[]>();
+  const staleRepository = createRepository({ root: '/workspace/stale-repo' });
+  const latestRepository = createRepository({ root: '/workspace/latest-repo' });
+  staleRepository.diffBetween = async () => stale.promise;
+  latestRepository.diffBetween = async () => latest.promise;
+  const messages: string[] = [];
+  const services = createCompareActionServices(provider, messages);
+
+  const staleOperation = compareResolvedRefs(
+    staleRepository,
+    { refName: 'main', label: 'stale-main' },
+    { refName: 'feature', label: 'stale-feature' },
+    services
+  );
+  const latestOperation = compareResolvedRefs(
+    latestRepository,
+    { refName: 'main', label: 'latest-main' },
+    { refName: 'release', label: 'latest-release' },
+    services
+  );
+
+  latest.resolve([createChange({ uriPath: '/workspace/latest-repo/src/latest.ts' })]);
+  await latestOperation;
+  stale.reject(new Error('stale repository failed'));
+  await staleOperation;
+
+  const resultStates = getCompareResultsStates(harness.panels[0])
+    .filter((state) => state.kind === 'results');
+  assert.deepEqual(
+    resultStates.map((state) => ({
+      sourceLabel: state.sourceLabel,
+      targetLabel: state.targetLabel,
+      paths: state.items.map((item) => item.path)
+    })),
+    [{
+      sourceLabel: 'latest-main',
+      targetLabel: 'latest-release',
+      paths: ['src/latest.ts']
+    }]
+  );
+  assert.deepEqual(messages, []);
+  provider.dispose();
+});
+
+test('Compare Results keeps newer loading visible when an older empty comparison completes', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
+  const stale = createDeferred<Change[]>();
+  const latest = createDeferred<Change[]>();
+  const repository = createRepository({ root: '/workspace/repo' });
+  repository.diffBetween = async (_left, right) =>
+    right === 'feature/stale' ? stale.promise : latest.promise;
+  const messages: string[] = [];
+  const services = createCompareActionServices(provider, messages);
+
+  const staleOperation = compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature/stale', label: 'feature/stale' },
+    services
+  );
+  const latestOperation = compareResolvedRefs(
+    repository,
+    { refName: 'main', label: 'main' },
+    { refName: 'feature/latest', label: 'feature/latest' },
+    services
+  );
+
+  stale.resolve([]);
+  await staleOperation;
+
+  const stateAfterStaleCompletion = getCompareResultsStates(harness.panels[0]).at(-1);
+  assert.equal(stateAfterStaleCompletion?.kind, 'loading');
+  assert.equal(stateAfterStaleCompletion?.targetLabel, 'feature/latest');
+  assert.deepEqual(messages, []);
+
+  latest.resolve([createChange({ uriPath: '/workspace/repo/src/latest.ts' })]);
+  await latestOperation;
+  provider.dispose();
+});
+
+test('Compare Results does not recreate a request after its repository closes', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
+  const visibleRepository = createRepository({ root: '/workspace/visible-repo' });
+  const closingRepository = createRepository({ root: '/workspace/closing-repo' });
+  const stale = createDeferred<Change[]>();
+  closingRepository.diffBetween = async () => stale.promise;
+  await provider.showBetweenRefs(
+    visibleRepository,
+    { refName: 'main', label: 'visible-main' },
+    { refName: 'release', label: 'visible-release' },
+    [createChange({ uriPath: '/workspace/visible-repo/src/visible.ts' })]
+  );
+
+  const operation = compareLoadedShowLogCommits(
+    closingRepository,
+    [
+      createRevisionLogEntry({ hash: 'a'.repeat(40), shortHash: 'aaaaaaa' }),
+      createRevisionLogEntry({ hash: 'b'.repeat(40), shortHash: 'bbbbbbb' })
+    ],
+    'a'.repeat(40),
+    'b'.repeat(40),
+    provider
+  );
+  provider.handleRepositoryClosed(closingRepository);
+  stale.resolve([createChange({ uriPath: '/workspace/closing-repo/src/stale.ts' })]);
+  await operation;
+
+  assert.equal(harness.panels.length, 1);
+  assert.equal(harness.panels[0].disposed, true);
   provider.dispose();
 });
 
@@ -888,6 +1065,23 @@ function createRejectedMutationCoordinator(): never {
   } as never;
 }
 
+function createCompareActionServices(
+  compareResultsPresenter: import('../src/refActions').CompareResultsPresenter,
+  messages: string[]
+): never {
+  return {
+    compareResultsPresenter,
+    ui: {
+      showInformationMessage(message: string) {
+        messages.push(message);
+      },
+      async showErrorMessage(message: string) {
+        messages.push(message);
+      }
+    }
+  } as never;
+}
+
 function createFlowPullRequestTestServices(ui: object): never {
   return {
     ui,
@@ -936,6 +1130,40 @@ async function getPromiseState(promise: Promise<unknown>): Promise<'completed' |
     promise.then(() => 'completed' as const),
     new Promise<'pending'>((resolve) => setImmediate(() => resolve('pending')))
   ]);
+}
+
+interface CompareResultsPostedState {
+  readonly kind: 'empty' | 'loading' | 'results';
+  readonly sourceLabel?: string;
+  readonly targetLabel?: string;
+  readonly items: ReadonlyArray<{ readonly path: string }>;
+}
+
+function getCompareResultsStates(panel: TestPanel): CompareResultsPostedState[] {
+  return panel.postedMessages
+    .map((message) => (message as { readonly state?: CompareResultsPostedState }).state)
+    .filter((state): state is CompareResultsPostedState => !!state);
+}
+
+function createDeferred<T>(): {
+  readonly promise: Promise<T>;
+  resolve(value: T): void;
+  reject(error: unknown): void;
+} {
+  let resolvePromise!: (value: T) => void;
+  let rejectPromise!: (error: unknown) => void;
+  return {
+    promise: new Promise<T>((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    }),
+    resolve(value) {
+      resolvePromise(value);
+    },
+    reject(error) {
+      rejectPromise(error);
+    }
+  };
 }
 
 interface TestPanel {

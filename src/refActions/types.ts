@@ -1,5 +1,6 @@
 import { ChangeQuickPickItem } from '../changePresentation';
 import { Repository } from '../git';
+import type { CompareResultsRequest } from '../compareResults/requestOwnership';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash' | 'commit';
@@ -22,6 +23,7 @@ export interface RefActionMessageOptions {
 
 export interface CompareResultsRevealOptions {
   readonly source?: 'graph' | 'showLog';
+  readonly request?: CompareResultsRequest;
 }
 
 export interface RefActionTarget extends RefSelection {
@@ -64,6 +66,7 @@ export interface DiffPresenter {
 }
 
 export interface CompareResultsPresenter {
+  beginRequest?(repository: Repository): CompareResultsRequest;
   showLoadingBetweenRefs?(
     repository: Repository,
     left: RefSelection,
@@ -88,7 +91,7 @@ export interface CompareResultsPresenter {
     changes: readonly ChangeQuickPickItem['change'][],
     options?: CompareResultsRevealOptions
   ): Promise<void>;
-  hideLoading?(): Promise<void>;
+  hideLoading?(request?: CompareResultsRequest): Promise<void>;
 }
 
 export interface PreparedRefreshHandle {

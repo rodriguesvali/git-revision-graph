@@ -8,7 +8,7 @@ Last consolidated: 2026-07-28
 - Current package version: `1.6.1` in `package.json`.
 - Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. The first two corrections have completed
+  security hardening, and user-experience corrections. The first three corrections have completed
   automated verification; no candidate has been packaged or published.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
@@ -17,7 +17,7 @@ Last consolidated: 2026-07-28
 
 ## Active Release: Reliability and Security Hardening 1.6.1
 
-Status: Implementation in progress; items 1-2 automated verification complete
+Status: Implementation in progress; items 1-3 automated verification complete
 Opened: 2026-07-28
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
@@ -28,7 +28,7 @@ Target version: `1.6.1`
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
 | Patch scope | Open | The initial six reliability, security, performance, and UX corrections are recorded in the focused build artifact. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Items 1-2 complete; final candidate pending | On 2026-07-28, `npm run quality:check`, the production build, `npm test` (808 tests), and `npm run test:platform` (31 tests) passed after config input, regex, and persistence-race hardening. Re-run proportional gates after each correction and for the final candidate. |
+| Current automated source verification | Items 1-3 complete; final candidate pending | On 2026-07-28, item 3 passed `npm run quality:check`, the production build, and `npm test` (813 tests). The latest applicable platform run remains the 31-test item 2 pass because item 3 changes no platform-specific contract. Re-run proportional gates after each correction and for the final candidate. |
 | Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
 | Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
 | VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
@@ -45,7 +45,7 @@ Release scope:
   or adversarial repository content cannot stall the extension host.
 - Complete: close repository-config persistence races so path validation remains true at the write
   boundary.
-- Prevent stale Compare Results work from replacing a newer comparison or crossing repository
+- Complete: prevent stale Compare Results work from replacing a newer comparison or crossing repository
   ownership boundaries.
 - Bound and batch worktree unified-diff processing for large untracked-file sets.
 - Make Show Log search limits explicit so valid older matches are not silently presented as absent.
@@ -103,6 +103,19 @@ Implementation record:
 - After item 2, `npm run quality:check` passed for 253 production files and 2,430 functions;
   `npm run build` passed; `npm test` passed with 808 tests; and `npm run test:platform` passed with
   31 tests. Manual Extension Development Host config-persistence smoke remains pending.
+- Compare Results now assigns a monotonic, repository-bound request lease before each asynchronous
+  diff from ref actions or Show Log. Only the latest lease may publish results, hide loading, or
+  surface empty-result and failure messages; repository and panel closure invalidate outstanding
+  ownership.
+- Deterministic regressions cover same-repository out-of-order completion, cross-repository stale
+  failures, stale empty-result cleanup, repository closure, and a Show Log request superseded before
+  completion. Existing worktree refresh state-identity guards remain in place.
+- After item 3, `npm run quality:check` passed for 254 production files and 2,437 functions;
+  `npm run build` passed; and `npm test` passed all 813 tests. The platform harness was not rerun
+  because no filesystem, process, worker, or platform-specific contract changed. Manual rapid-switch
+  Extension Development Host smoke remains pending.
+- `graphify update .` rebuilt the item 3 code graph with 5,002 nodes, 9,871 edges, and 388
+  communities.
 - No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
 
 Rollback:
