@@ -1,24 +1,31 @@
 # Release Readiness
 
-Status: Active patch development; published baseline evidence reconciliation pending
-Last consolidated: 2026-07-28
+Status: `1.6.1` published by maintainer confirmation; evidence reconciliation pending
+Last consolidated: 2026-07-29
 
 ## Current State
 
 - Current package version: `1.6.1` in `package.json`.
-- Latest recorded published release: `1.6.0`, by maintainer confirmation on 2026-07-27.
+- Latest recorded published release: `1.6.1`, by maintainer confirmation on 2026-07-29.
 - Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. All six scoped corrections have completed
-  automated verification; no candidate has been packaged or published.
+  security hardening, and user-experience corrections. The scoped source implementation completed
+  automated verification at commit `5bf38f0`, and the final Extension Development Host smoke was
+  accepted as passed by maintainer confirmation on 2026-07-29. Marketplace publication was
+  confirmed complete by the maintainer on 2026-07-29.
+- Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
+  size, embedded-version inspection, clean-profile installation result, installed-version evidence,
+  hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
+  are not inferred.
 - Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Active Release: Reliability and Security Hardening 1.6.1
+## Published Release: Reliability and Security Hardening 1.6.1
 
-Status: Scoped implementation complete; final candidate and manual release gates pending
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-07-28
+Published: 2026-07-29 (maintainer confirmation)
 Published baseline version: `1.6.0`
 Target version: `1.6.1`
 
@@ -27,17 +34,21 @@ Target version: `1.6.1`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.0` was published on 2026-07-27 by maintainer confirmation. |
-| Patch scope | Complete | All six approved reliability, security, performance, and UX corrections are implemented. Reassess scope before adding unrelated feature work. |
-| Current automated source verification | Items 1-6 complete; final candidate pending | On 2026-07-28, item 6 passed `npm run quality:check`, the production build, `npm test` (826 tests), `npm run test:platform` (34 tests), and `git diff --check`. Re-run final-candidate gates before packaging. |
-| Automated Extension Host baseline | Pending | Re-run the supported Extension Host matrix for the final candidate when host-facing behavior changes. |
-| Final Extension Development Host smoke | Pending | Execute the relevant rows from `extension-host-smoke-matrix.md`, then record date, operator, VS Code version, platform, and evidence. |
-| VSIX package inspection | Not authorized | Do not create or inspect a release candidate package until explicitly authorized. |
-| Marketplace publication | Not authorized | Do not publish, bump beyond `1.6.1`, or create a Marketplace release without explicit maintainer approval. |
-| Rollback readiness | Documented | Before publication, revert the patch-cycle metadata if the cycle is abandoned. After publication, use the standard versioned rollback process. |
+| Patch scope | Complete | All six system-review corrections and the approved AI UX follow-ups are implemented. Any additional work belongs to a new release cycle. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` both declare the published `1.6.1` version. |
+| Current automated source verification | Complete | The source implementation at commit `5bf38f0` passed `npm run quality:check` (255 production files and 2,462 functions), `npm run build`, `npm test` (830 tests), and `git diff --check` on 2026-07-28. The process/filesystem subset also retains the same-cycle passing `npm run test:platform` result (34 tests). |
+| Hosted macOS platform confirmation | Evidence not recorded | The permission-safe Unix process-group regression is present in the existing `macos-latest` verification row, while the focused suite, full suite, and platform subset passed on Linux. A passing hosted result was not supplied before the confirmed publication. |
+| Automated Extension Host baseline | Evidence not recorded | The `1.6.1` delta does not change activation, real `vscode.git` discovery, or graph-panel launch, but a current-candidate E2E result was not supplied before the confirmed publication. |
+| Final Extension Development Host smoke | Complete by maintainer confirmation | The maintainer confirmed the applicable final `1.6.1` smoke passed on 2026-07-29. Operator name, VS Code version, platform, and fixture details were not supplied and are not inferred; see `extension-host-smoke-matrix.md`. |
+| VSIX package inspection | Evidence not recorded | VSIX filename, SHA-256 checksum, size, embedded version, runtime-asset inspection, and clean-profile installation result were not supplied. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-07-29. The exact Marketplace timestamp and installed-version evidence were not supplied. |
+| Rollback readiness | Documented | Never reuse `1.6.1`; restore the last known-good behavior through a new patch or take a Marketplace action according to maintainer decision. |
 
 Focused build artifact:
 
 - `project-context/2.build/features/1.6.1-reliability-security-hardening.md`
+- `project-context/2.build/features/1.6.1-ai-request-cancellation.md`
+- `project-context/2.build/features/1.6.1-branch-ai-descriptions.md`
 
 Release scope:
 
@@ -60,7 +71,8 @@ Release constraints:
 - Add no runtime dependency, public command, setting, menu, or contribution point unless separately
   approved.
 - Treat fixes as incomplete until focused regression coverage and the required release gates pass.
-- Do not package, publish, or update Marketplace state without explicit maintainer approval.
+- Packaging and Marketplace actions require explicit maintainer approval; future actions must use a
+  new version rather than reusing `1.6.1`.
 
 Planned verification:
 
@@ -82,6 +94,17 @@ Opening record:
 - No source correction, dependency change, VSIX package, version publication, or Marketplace action
   occurred while opening the cycle.
 
+Publication closure:
+
+- The maintainer reported Marketplace publication of `1.6.1` complete on 2026-07-29. No packaging
+  or publication command was run by Codex.
+- The changelog is dated 2026-07-29 and this release record is closed as published.
+- The exact Marketplace timestamp, installed-version evidence, VSIX filename, SHA-256 checksum,
+  size, embedded-version inspection, runtime-asset inspection, clean-profile installation result,
+  hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
+  are intentionally left unrecorded.
+- Future source or Marketplace corrections require a new version; never reuse `1.6.1`.
+
 Implementation record:
 
 - Flow Governance config and regex hardening completed automated verification on 2026-07-28.
@@ -92,8 +115,8 @@ Implementation record:
   groups before classification or governed branch naming. Default and safe custom patterns remain
   supported.
 - `npm run quality:check`, `npm run build`, `npm test` (803 tests), and `npm run test:platform`
-  (31 tests) passed. Relevant manual Extension Development Host Flow Governance validation remains
-  pending.
+  (31 tests) passed. Relevant manual Extension Development Host Flow Governance validation was
+  accepted as passed by maintainer confirmation on 2026-07-29.
 - Flow Governance option updates now open without truncation, compare exact device/inode identity,
   reject hard-linked writable configs, revalidate the repository path, and read/write through the
   same descriptor. Unix also uses `O_NOFOLLOW`; Windows relies on the shared identity and path
@@ -103,7 +126,8 @@ Implementation record:
   external targets remain unchanged, and a moved target is not reported as a successful update.
 - After item 2, `npm run quality:check` passed for 253 production files and 2,430 functions;
   `npm run build` passed; `npm test` passed with 808 tests; and `npm run test:platform` passed with
-  31 tests. Manual Extension Development Host config-persistence smoke remains pending.
+  31 tests. Manual Extension Development Host config-persistence smoke was accepted as passed by
+  maintainer confirmation on 2026-07-29.
 - Compare Results now assigns a monotonic, repository-bound request lease before each asynchronous
   diff from ref actions or Show Log. Only the latest lease may publish results, hide loading, or
   surface empty-result and failure messages; repository and panel closure invalidate outstanding
@@ -114,7 +138,7 @@ Implementation record:
 - After item 3, `npm run quality:check` passed for 254 production files and 2,437 functions;
   `npm run build` passed; and `npm test` passed all 813 tests. The platform harness was not rerun
   because no filesystem, process, worker, or platform-specific contract changed. Manual rapid-switch
-  Extension Development Host smoke remains pending.
+  Extension Development Host smoke was accepted as passed by maintainer confirmation on 2026-07-29.
 - `graphify update .` rebuilt the item 3 code graph with 5,002 nodes, 9,871 edges, and 388
   communities.
 - Untracked worktree patches now use a private alternate Git index: current Git prepares every
@@ -129,7 +153,8 @@ Implementation record:
   cancellation cleanup, stale paths, spaces, Unicode, leading dashes, binary content, and real-index
   isolation. `npm run quality:check` passed for 255 production files and 2,443 functions;
   `npm run build` passed; `npm test` passed all 821 tests; and `npm run test:platform` passed all
-  33 tests. Manual Extension Development Host large-worktree smoke remains pending.
+  33 tests. Manual Extension Development Host large-worktree smoke was accepted as passed by
+  maintainer confirmation on 2026-07-29.
 - `graphify update .` rebuilt the item 4 code graph with 5,011 nodes, 9,901 edges, and 376
   communities.
 - Filtered Show Log searches now request one sentinel commit at the final 2,000-commit scan batch.
@@ -140,7 +165,8 @@ Implementation record:
   for 255 production files and 2,445 functions; `npm run build` passed; `npm test` passed all 825
   tests; and `git diff --check` passed. The platform and E2E harnesses were not rerun because this
   correction changes no platform-specific process/filesystem behavior or activation/real-Git panel
-  discovery contract. Manual Show Log smoke remains pending.
+  discovery contract. Manual Show Log smoke was accepted as passed by maintainer confirmation on
+  2026-07-29.
 - `graphify update .` rebuilt the item 5 code graph with 5,017 nodes, 9,913 edges, and 386
   communities.
 - Unix Git termination now snapshots the spawned child PID/PGID, sends group `SIGTERM`, and escalates
@@ -166,21 +192,24 @@ Implementation record:
   form AI actions. Toolbar sizing and AI briefing behavior are unchanged. The 3 focused webview
   tests, `npm run quality:check` (255 production files and 2,452 functions), `npm run build`, all
   826 tests, and `git diff --check` passed; `graphify update .` rebuilt 5,024 nodes, 9,925 edges,
-  and 381 communities. Updated Extension Development Host visual confirmation remains pending.
+  and 381 communities. Updated Extension Development Host visual confirmation was accepted as
+  passed by maintainer confirmation on 2026-07-29.
 - In-flight AI actions in Compare Results and Flow Governance now remain clickable and replace the
   sparkle with an accessible stop icon. Compare Results adds a validated payload-free cancellation
   intent and restores a prior ready briefing after cancelled regeneration; Flow reuses its existing
   request-ID/surface/field cancellation boundary. Both surfaces invalidate ownership immediately and
   ignore late provider output. The 118 focused tests, `npm run quality:check` (255 production files
   and 2,457 functions), `npm run build`, all 828 tests, and `git diff --check` passed. Manual
-  Extension Development Host cancellation timing and visual/keyboard confirmation remain pending.
-  `graphify update .` rebuilt 5,036 nodes, 9,941 edges, and 392 communities.
+  Extension Development Host cancellation timing and visual/keyboard confirmation was accepted as
+  passed by maintainer confirmation on 2026-07-29. `graphify update .` rebuilt 5,036 nodes, 9,941
+  edges, and 392 communities.
 - Compare Results now reflects the `hidden` attribute directly on its sparkle and stop SVG elements.
   This fixes the runtime-only case where `.hidden` changed a JavaScript property without changing
   SVG visibility, even though briefing cancellation was already wired correctly. The 37 focused
   tests, `npm run quality:check` (255 production files and 2,462 functions), `npm run build`, all
   830 tests, and `git diff --check` passed. `graphify update .` rebuilt 5,053 nodes, 9,967 edges,
-  and 380 communities. Manual Extension Development Host visual/cancellation smoke remains pending.
+  and 380 communities. Manual Extension Development Host visual/cancellation smoke was accepted as
+  passed by maintainer confirmation on 2026-07-29.
 - Feature, Task, Bug, and Hot Fix branch forms now enable their description AI action after their
   required name fields and description are complete. The webview sends a bounded generic
   branch-text intent, the host authorizes its `release | feature | task | bug | hotfix` kind against
@@ -188,18 +217,24 @@ Implementation record:
   without inventing form facts. The 134 focused tests, `npm run quality:check` (255 production files
   and 2,462 functions), `npm run build`, all 830 tests, and `git diff --check` passed.
   `graphify update .` rebuilt 5,053 nodes, 9,967 edges, and 379
-  communities. Manual Extension Development Host visual/interaction smoke remains pending; full
-  evidence is recorded in `project-context/2.build/features/1.6.1-branch-ai-descriptions.md`.
+  communities. Manual Extension Development Host visual/interaction smoke was accepted as passed
+  by maintainer confirmation on 2026-07-29; full evidence is recorded in
+  `project-context/2.build/features/1.6.1-branch-ai-descriptions.md`.
+- The maintainer confirmed the applicable final `1.6.1` Extension Development Host smoke passed on
+  2026-07-29. Operator name, VS Code version, platform, and fixture details were not supplied and
+  are intentionally left unrecorded.
 - `graphify update .` rebuilt the item 6 code graph with 5,025 nodes, 9,926 edges, and 385
   communities.
-- No dependency, contribution point, VSIX package, publication, or Marketplace change was made.
+- No dependency or contribution point changed in `1.6.1`. Marketplace publication was confirmed by
+  the maintainer on 2026-07-29; package and installed-version evidence were not supplied.
 
 Rollback:
 
-- Before publication, revert the `1.6.1` package/lockfile metadata and remove or archive this active
-  cycle record if the patch is abandoned.
-- After publication, never reuse the version; restore the last known-good package and prepare a new
-  patch version for any corrective release.
+- Never reuse the published `1.6.1` version.
+- For a source correction, restore the last known-good behavior and prepare a new patch version.
+- Marketplace rollback remains a maintainer decision: publish a corrective patch or take the
+  appropriate Marketplace action.
+- Repository Flow Governance configuration is user-owned and must not be deleted during rollback.
 
 ## Published Release: Flow Governance 1.6.0
 

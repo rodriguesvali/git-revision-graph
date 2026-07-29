@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.6.1 - Unreleased
+## 1.6.1 - 2026-07-29
 
 ### Release Preparation
 
-- Opened the `1.6.1` patch cycle for reliability, security hardening, and user-experience
-  corrections identified during the post-`1.6.0` system review.
-- Aligned package and lockfile version metadata without packaging or publishing a release.
+- Prepared the `1.6.1` patch for reliability, security hardening, and user-experience corrections
+  identified during the post-`1.6.0` system review.
+- Aligned package and lockfile version metadata to the published `1.6.1` version.
 
 ### Flow Governance
 
@@ -17,9 +17,23 @@ All notable changes to this project will be documented in this file.
 - Reject backreferences, excessive or oversized repetitions, adjacent potentially overlapping
   repetitions, and nested or ambiguous repeated regex groups through one shared validation boundary
   used by normalization, classification, and governed branch naming.
+- Bind repository-config updates to the validated file descriptor, reject symbolic-link, hard-link,
+  ancestor, and replacement races, and leave replacement or external targets unchanged when
+  persistence cannot be proven safe.
+
+### Compare Results
+
+- Keep asynchronous comparisons owned by the latest repository-bound request so stale completions,
+  empty states, loading cleanup, and errors cannot replace a newer comparison or cross repository
+  boundaries.
+- Aggregate large untracked worktree diffs through a private alternate Git index with bounded input,
+  output, temporary-state cleanup, cancellation, real-index isolation, and a batched fallback for
+  older Git versions.
 
 ### AI Assistance
 
+- Match the compact Compare Results AI action to the theme-adaptive, borderless Flow Governance form
+  styling.
 - Turn active Compare Results and Flow Governance AI actions into accessible stop controls so users
   can cancel the exact in-flight request; cancelled briefing regeneration restores the previous
   ready result and late provider output remains ignored. Compare Results explicitly reflects SVG

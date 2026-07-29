@@ -55,7 +55,7 @@ Marketplace action succeeds.
 
 ## Future version increments
 
-Do not use the commands below for an already prepared candidate such as `1.6.0`. Use them only after
+Do not use the commands below for an already versioned release candidate. Use them only after
 the next version and release scope have been explicitly approved; each can change package metadata
 and create a Git version commit or tag.
 

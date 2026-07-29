@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-07-09
+Last consolidated: 2026-07-29
 
 ## Runtime
 
@@ -14,9 +14,9 @@ Monitor GitHub issues, Marketplace feedback, and maintainer reports after releas
 regressions in graph loading, repository switching, compare/diff, checkout, branch/tag, merge,
 sync, delete, reset, stash, restore, and log workflows as release-impacting.
 
-For the published `1.5.9` package, also monitor reference tooltip placement, keyboard focus,
-branch descriptions, lazy change-stat loading, Show Log reference badges, and Show Log paging /
-`Show All Branches` toggle behavior.
+For the published `1.6.1` release, also monitor Flow Governance classification, branch forms,
+remote-host handoff, AI text assistance, Compare Briefing, cancellation, modal failures, and
+multi-repository ownership.
 
 ## Runbook
 
@@ -27,14 +27,26 @@ branch descriptions, lazy change-stat loading, Show Log reference badges, and Sh
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
 
-## Published Release Watch: 1.5.9
+## Published Release Watch: 1.6.1
 
-- Primary user-facing areas: reference tooltips in the revision graph and reference badges in
-  Show Log rows/tooltips.
-- First rollback candidates: reference-tooltip runtime, branch-description metadata attachment,
-  lazy short-stat loading, Show Log badge rendering, and incremental Show Log toolbar sync.
-- No settings, data migrations, contribution points, or dependency changes require operational
-  migration.
+- Publication was confirmed complete by the maintainer on 2026-07-29.
+- Monitor bounded Flow config loading and persistence failures, stale Compare
+  Results suppression, large untracked worktree comparisons, Show Log truncation copy, timed-out
+  Git cleanup, and AI start/stop behavior across Compare Results and every governed branch form.
+- First rollback candidates are the focused `1.6.1` correction slices recorded in
+  `project-context/2.build/features/1.6.1-reliability-security-hardening.md`,
+  `project-context/2.build/features/1.6.1-ai-request-cancellation.md`, and
+  `project-context/2.build/features/1.6.1-branch-ai-descriptions.md`.
+- If a regression is discovered after publication, do not reuse `1.6.1`; restore the last known-good
+  behavior in a new patch. Never delete user-owned `.git-revision-graph-flow.json` files during
+  rollback.
+
+## Published Baseline Watch: 1.6.0
+
+- Primary user-facing areas: Flow Governance workflows and diagnostics, hosted-Git URL handoff,
+  Compare Briefing, AI PR/release text assistance, graph interaction, Compare Results, and Show Log.
+- The published `1.6.1` release adds no setting, command, view, contribution point, runtime
+  dependency, or data migration requiring operational migration.
 
 ## Ownership
 
