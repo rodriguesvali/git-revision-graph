@@ -149,8 +149,8 @@ export function renderCompareResultsActionScript(): string {
       briefingButton.setAttribute('aria-label', label);
       briefingButton.setAttribute('aria-busy', isGeneratingBriefing ? 'true' : 'false');
       briefingButton.dataset.loading = isGeneratingBriefing ? 'true' : 'false';
-      briefingSparkleIcon.hidden = isGeneratingBriefing;
-      briefingStopIcon.hidden = !isGeneratingBriefing;
+      briefingSparkleIcon.toggleAttribute('hidden', isGeneratingBriefing);
+      briefingStopIcon.toggleAttribute('hidden', !isGeneratingBriefing);
     }
 
     function updateBriefingPanel() {

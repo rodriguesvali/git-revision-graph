@@ -22,7 +22,8 @@ All notable changes to this project will be documented in this file.
 
 - Turn active Compare Results and Flow Governance AI actions into accessible stop controls so users
   can cancel the exact in-flight request; cancelled briefing regeneration restores the previous
-  ready result and late provider output remains ignored.
+  ready result and late provider output remains ignored. Compare Results explicitly reflects SVG
+  `hidden` attributes so the sparkle reliably changes to stop while generation is active.
 - Enable the description AI action in `Start New Feature`, `Start New Task`, `Start New Bug`, and
   `Start New Hot Fix` after their required fields are complete, with kind-specific prompts,
   governed-source authorization, and exact cancellation/result routing.

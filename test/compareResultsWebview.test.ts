@@ -104,8 +104,9 @@ test('renders a dense compare review list with visible and contextual actions', 
   assert.match(html, /function dismissBriefingPanel\(\)/);
   assert.match(html, /briefingButton\.setAttribute\('aria-label', label\)/);
   assert.match(html, /briefingButton\.disabled = !canGenerate/);
-  assert.match(html, /briefingSparkleIcon\.hidden = isGeneratingBriefing/);
-  assert.match(html, /briefingStopIcon\.hidden = !isGeneratingBriefing/);
+  assert.match(html, /briefingSparkleIcon\.toggleAttribute\('hidden', isGeneratingBriefing\)/);
+  assert.match(html, /briefingStopIcon\.toggleAttribute\('hidden', !isGeneratingBriefing\)/);
+  assert.doesNotMatch(html, /briefing(?:Sparkle|Stop)Icon\.hidden =/);
   assert.match(html, /\.briefing-panel \{/);
   assert.match(html, /\.briefing-action \{/);
   assert.match(

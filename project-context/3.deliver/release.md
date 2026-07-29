@@ -175,6 +175,12 @@ Implementation record:
   and 2,457 functions), `npm run build`, all 828 tests, and `git diff --check` passed. Manual
   Extension Development Host cancellation timing and visual/keyboard confirmation remain pending.
   `graphify update .` rebuilt 5,036 nodes, 9,941 edges, and 392 communities.
+- Compare Results now reflects the `hidden` attribute directly on its sparkle and stop SVG elements.
+  This fixes the runtime-only case where `.hidden` changed a JavaScript property without changing
+  SVG visibility, even though briefing cancellation was already wired correctly. The 37 focused
+  tests, `npm run quality:check` (255 production files and 2,462 functions), `npm run build`, all
+  830 tests, and `git diff --check` passed. `graphify update .` rebuilt 5,053 nodes, 9,967 edges,
+  and 380 communities. Manual Extension Development Host visual/cancellation smoke remains pending.
 - Feature, Task, Bug, and Hot Fix branch forms now enable their description AI action after their
   required name fields and description are complete. The webview sends a bounded generic
   branch-text intent, the host authorizes its `release | feature | task | bug | hotfix` kind against
