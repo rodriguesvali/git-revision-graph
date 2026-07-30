@@ -1141,6 +1141,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'feature', sourceRefName: 'release/1.0.0' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', phase: 'prepare', branchKind: 'hotfix', sourceRefName: 'main' },
       governedFlowState
     ),
@@ -1179,6 +1186,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', branchKind: 'feature', sourceRefName: 'main', name: 'checkout-redesign', description: 'Redesign checkout' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', branchKind: 'feature', sourceRefName: 'release/1.0.0', name: 'checkout-redesign', description: 'Redesign checkout' },
       governedFlowState
     ),
     true

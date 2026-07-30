@@ -30,9 +30,10 @@ Target version: `1.6.2`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.1` was published by maintainer confirmation on 2026-07-29. |
-| Release scope | Awaiting demands | No source, dependency, contribution-point, or behavior change is currently approved for this cycle. |
+| Release scope | Complete for current demand | `Start New Feature` is available from a classified `release` branch; other governed branch-start policies are unchanged. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.2`. |
-| Automated verification | Not run | Run gates proportionate to the approved change scope. |
+| Automated verification | Complete | `npm run quality:check` (255 files, 2,463 functions), `npm run build`, `npm test` (830 tests), `graphify update .`, and `git diff --check` passed on 2026-07-30. |
+| Extension Development Host smoke | Pending | From a release branch, select Flow Governance > Start New Feature; verify the existing synchronization prompt/form and successful guarded branch creation. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -41,6 +42,8 @@ Opening record:
 
 - Version metadata was aligned to `1.6.2` on 2026-07-30.
 - No source change, dependency change, VSIX package, publication command, or Marketplace action occurred while opening the cycle.
+- Flow Governance now exposes `Start New Feature` on classified release branches and authorizes the
+  corresponding prepare/create messages only when the known source is `main` or `release`.
 
 ## Published Release: Reliability and Security Hardening 1.6.1
 
