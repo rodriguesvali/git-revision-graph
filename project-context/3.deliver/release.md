@@ -1,17 +1,14 @@
 # Release Readiness
 
-Status: `1.6.1` published by maintainer confirmation; evidence reconciliation pending
-Last consolidated: 2026-07-29
+Status: `1.6.2` opened; awaiting scoped demands
+Last consolidated: 2026-07-30
 
 ## Current State
 
-- Current package version: `1.6.1` in `package.json`.
+- Current package version: `1.6.2` in `package.json` and the root `package-lock.json`.
 - Latest recorded published release: `1.6.1`, by maintainer confirmation on 2026-07-29.
-- Release cycle status: `1.6.1` was opened on 2026-07-28 as a patch release for reliability,
-  security hardening, and user-experience corrections. The scoped source implementation completed
-  automated verification at commit `5bf38f0`, and the final Extension Development Host smoke was
-  accepted as passed by maintainer confirmation on 2026-07-29. Marketplace publication was
-  confirmed complete by the maintainer on 2026-07-29.
+- Release cycle status: `1.6.2` was opened on 2026-07-30 as a patch release. Its scope,
+  verification evidence, packaging, and publication decisions await maintainer demands and approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
   hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
@@ -20,6 +17,30 @@ Last consolidated: 2026-07-29
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Release Preparation: 1.6.2
+
+Status: Open; awaiting scoped demands
+Opened: 2026-07-30
+Published baseline version: `1.6.1`
+Target version: `1.6.2`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.1` was published by maintainer confirmation on 2026-07-29. |
+| Release scope | Awaiting demands | No source, dependency, contribution-point, or behavior change is currently approved for this cycle. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.2`. |
+| Automated verification | Not run | Run gates proportionate to the approved change scope. |
+| VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
+| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.2` on 2026-07-30.
+- No source change, dependency change, VSIX package, publication command, or Marketplace action occurred while opening the cycle.
 
 ## Published Release: Reliability and Security Hardening 1.6.1
 
