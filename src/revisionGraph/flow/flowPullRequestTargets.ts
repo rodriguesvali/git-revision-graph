@@ -1,8 +1,13 @@
 import { hasGitExitCode, toErrorDetail } from '../../errorDetail';
 import { isAbortError } from '../../errors';
 import { execGitWithResult, GIT_EXEC_METADATA_PROFILE, GitExecOptions, GitExecResult } from '../../gitExec';
-import { suggestFlowEqualizationBranchName } from './flowEqualizationNaming';
-import type { FlowBranchInfo, FlowPullRequestTargetInfo } from './flowTypes';
+import { DEFAULT_FLOW_CONFIG } from './flowDefaults';
+import { resolveFlowEqualizationBranchName } from './flowEqualizationNaming';
+import type {
+  FlowBranchInfo,
+  FlowPullRequestTargetInfo,
+  NormalizedFlowConfig
+} from './flowTypes';
 
 export type FlowPullRequestTargetGitExecutor = (
   repositoryPath: string,
@@ -26,7 +31,8 @@ export async function loadFlowPullRequestTargets(
   repositoryPath: string,
   references: readonly FlowBranchInfo[],
   signal?: AbortSignal,
-  execGit: FlowPullRequestTargetGitExecutor = execGitWithResult
+  execGit: FlowPullRequestTargetGitExecutor = execGitWithResult,
+  config: Pick<NormalizedFlowConfig, 'patterns'> = DEFAULT_FLOW_CONFIG
 ): Promise<readonly FlowPullRequestTargetInfo[]> {
   const productionBranch = references.find((reference) => reference.kind === 'main')?.refName;
   const releaseBranches = references.filter((reference) => reference.kind === 'release');
@@ -59,7 +65,7 @@ export async function loadFlowPullRequestTargets(
   appendMappedPromotionCandidates(candidates, references);
 
   for (const source of references.filter((reference) => reference.kind === 'sync')) {
-    const target = resolveFlowSyncPullRequestTarget(source, references);
+    const target = resolveFlowSyncPullRequestTarget(source, references, config);
     if (target && source.refName !== target.refName) {
       candidates.push({
         sourceRefName: source.refName,
@@ -103,7 +109,8 @@ function appendMappedPromotionCandidates(
 
 function resolveFlowSyncPullRequestTarget(
   source: FlowBranchInfo,
-  references: readonly FlowBranchInfo[]
+  references: readonly FlowBranchInfo[],
+  config: Pick<NormalizedFlowConfig, 'patterns'>
 ): FlowBranchInfo | undefined {
   const eligibleTargets = references.filter((reference) =>
     reference.kind === 'release' || reference.kind === 'feature'
@@ -112,9 +119,10 @@ function resolveFlowSyncPullRequestTarget(
     return eligibleTargets.find((reference) => reference.refName === source.equalizationTargetRefName);
   }
 
-  const inferredTargets = eligibleTargets.filter((reference) =>
-    suggestFlowEqualizationBranchName(reference.refName) === source.refName
-  );
+  const inferredTargets = eligibleTargets.filter((reference) => {
+    const result = resolveFlowEqualizationBranchName(reference.refName, config);
+    return result.ok && result.branchName === source.refName;
+  });
   return inferredTargets.length === 1 ? inferredTargets[0] : undefined;
 }
 

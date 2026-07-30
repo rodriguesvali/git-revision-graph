@@ -224,13 +224,27 @@ export class RevisionGraphFlowGovernanceWorkflow {
       return;
     }
 
+    const flowConfig = await resolveFlowConfigForRepository(
+      repository.rootUri.fsPath,
+      this.resolveSettings(repository)
+    );
+    if (!flowConfig.ok || !flowConfig.config.enabled) {
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
+      return;
+    }
+
     const outcome = await runGuardedRepositoryMutation(
       this.host.mutationCoordinator,
       repository,
       this.host.actionServices,
       (guardedRepository, services) => prepareFlowEqualizationBranch(
         guardedRepository,
-        { targetBranch: targetRefName, originBranch: originRefName, description },
+        {
+          targetBranch: targetRefName,
+          originBranch: originRefName,
+          description,
+          config: flowConfig.config
+        },
         services,
         {
           sourcePreflight: {

@@ -1,5 +1,6 @@
 export * from './flowBranchClassifier';
 export * from './flowBranchDescription';
+export * from './flowBranchNameCollision';
 export * from './flowConfig';
 export * from './flowConfigPersistenceCoordinator';
 export * from './flowDecorations';
@@ -13,6 +14,7 @@ export * from './flowPullRequestContext';
 export * from './flowPullRequestPreflight';
 export * from './flowPullRequestTargets';
 export * from './flowPatternSafety';
+export * from './flowPatternCanonicalization';
 export * from './flowReleaseBranch';
 export * from './flowBranchStartPreflight';
 export * from './flowState';

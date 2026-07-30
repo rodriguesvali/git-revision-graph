@@ -7,18 +7,25 @@ import {
   shouldRevealSourceControlAfterWorkspaceConflict
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
+import {
+  findFlowBranchNameCollision,
+  formatFlowBranchNameCollision
+} from './flowBranchNameCollision';
 import { setFlowBranchDescription } from './flowBranchDescription';
-import { suggestFlowEqualizationBranchName } from './flowEqualizationNaming';
+import { DEFAULT_FLOW_CONFIG } from './flowDefaults';
+import { resolveFlowEqualizationBranchName } from './flowEqualizationNaming';
 import {
   prepareFlowEqualizationSources
 } from './flowEqualizationPreflight';
 import { setFlowEqualizationTarget } from './flowEqualizationTarget';
 import type { FlowBranchStartPreflightDependencies } from './flowBranchStartPreflight';
+import type { NormalizedFlowConfig } from './flowTypes';
 
 export interface PrepareFlowEqualizationOptions {
   readonly originBranch: string;
   readonly targetBranch: string;
   readonly description: string;
+  readonly config?: Pick<NormalizedFlowConfig, 'patterns'>;
 }
 
 export interface FlowEqualizationDependencies {
@@ -39,14 +46,8 @@ export async function prepareFlowEqualizationBranch(
     return;
   }
 
-  const description = options.description.trim();
+  const description = await validateEqualizationRequest(options, services);
   if (!description) {
-    await services.ui.showErrorMessage('Could not prepare equalization. Description is required.');
-    return;
-  }
-
-  if (originBranch === targetBranch) {
-    await services.ui.showErrorMessage('Could not prepare equalization. Origin branch must differ from the target branch.');
     return;
   }
 
@@ -59,10 +60,13 @@ export async function prepareFlowEqualizationBranch(
     return;
   }
 
-  const branchName = suggestFlowEqualizationBranchName(targetBranch);
-  const validationMessage = validateGitBranchName(branchName);
-  if (validationMessage) {
-    await services.ui.showErrorMessage(`Could not prepare equalization. ${validationMessage}`);
+  const branchName = await resolveAvailableEqualizationBranchName(
+    repository,
+    targetBranch,
+    options.config ?? DEFAULT_FLOW_CONFIG,
+    services
+  );
+  if (!branchName) {
     return;
   }
 
@@ -118,4 +122,56 @@ export async function prepareFlowEqualizationBranch(
       await services.ui.showSourceControl();
     }
   }
+}
+
+async function validateEqualizationRequest(
+  options: PrepareFlowEqualizationOptions,
+  services: RefActionServices
+): Promise<string | undefined> {
+  const description = options.description.trim();
+  if (!description) {
+    await services.ui.showErrorMessage('Could not prepare equalization. Description is required.');
+    return undefined;
+  }
+
+  if (options.originBranch === options.targetBranch) {
+    await services.ui.showErrorMessage(
+      'Could not prepare equalization. Origin branch must differ from the target branch.'
+    );
+    return undefined;
+  }
+
+  return description;
+}
+
+async function resolveAvailableEqualizationBranchName(
+  repository: Repository,
+  targetBranch: string,
+  config: Pick<NormalizedFlowConfig, 'patterns'>,
+  services: RefActionServices
+): Promise<string | undefined> {
+  const branchNameResult = resolveFlowEqualizationBranchName(targetBranch, config);
+  if (!branchNameResult.ok) {
+    await services.ui.showErrorMessage(
+      `Could not prepare equalization. ${branchNameResult.message}`
+    );
+    return undefined;
+  }
+
+  const branchName = branchNameResult.branchName;
+  const validationMessage = validateGitBranchName(branchName);
+  if (validationMessage) {
+    await services.ui.showErrorMessage(`Could not prepare equalization. ${validationMessage}`);
+    return undefined;
+  }
+
+  const collision = await findFlowBranchNameCollision(repository, branchName);
+  if (collision) {
+    await services.ui.showErrorMessage(
+      `Could not prepare equalization. ${formatFlowBranchNameCollision(branchName, collision)}`
+    );
+    return undefined;
+  }
+
+  return branchName;
 }

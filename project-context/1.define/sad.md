@@ -82,6 +82,14 @@ Phase 1 must not add `flowBranchCreation.ts`, `flowTransitionPolicy.ts`, `flowPr
   more than 16 quantifiers, repeat counts above 1,000, adjacent repetitions whose atoms may overlap,
   and repeated groups containing alternation or another quantifier are rejected; simple
   alternatives, literal-separated repetitions, and the existing default patterns remain supported.
+- Governed branch creation interprets only deterministic, start-anchored literal prefixes. A simple
+  ASCII case pair such as `[fF]` recognizes both members while its first member defines canonical
+  output. Classification still evaluates the complete configured regex, and unsupported template-like
+  constructs are never expanded or guessed. Equalization naming and legacy sync-target inference use
+  the same configured canonical-prefix analyzer.
+- Governed creation checks loaded local and remote-tracking refs with normalized case folding before
+  mutation so case-only branch conflicts fail consistently on case-sensitive and case-insensitive
+  filesystems.
 - Phase 1 generated flow files contain only supported Phase 1 fields.
 - Future-phase fields may be parsed for preservation/reporting, but they are inert and cannot affect classification, visibility, actions, provider authentication, or Git mutation paths.
 

@@ -4,7 +4,7 @@ import {
   toErrorDetail,
   toOperationError
 } from '../../errorDetail';
-import { Branch, Repository } from '../../git';
+import { Repository } from '../../git';
 import { validateGitBranchName } from '../../refActions/branchValidation';
 import {
   ensureWorkspaceReadyForMutation,
@@ -12,8 +12,16 @@ import {
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import type { FlowStartBranchKind, NormalizedFlowConfig } from './flowTypes';
+import {
+  findFlowBranchNameCollision,
+  formatFlowBranchNameCollision
+} from './flowBranchNameCollision';
 import { setFlowBranchDescription } from './flowBranchDescription';
 import { setFlowBranchTarget } from './flowEqualizationTarget';
+import {
+  analyzeFlowPatternCanonicalPrefix,
+  canonicalizeFlowPatternPrefix
+} from './flowPatternCanonicalization';
 import { compileFlowPattern } from './flowPatternSafety';
 
 export type { FlowStartBranchKind } from './flowTypes';
@@ -56,10 +64,14 @@ export function resolveFlowBranchName(
     };
   }
   const branchRegex = compilation.regex;
-  const prefix = inferFlowBranchLiteralPrefix(branchPattern);
+  const prefix = analyzeFlowPatternCanonicalPrefix(branchPattern);
+  const canonicalizedName = canonicalizeFlowPatternPrefix(trimmedName, branchPattern);
   const candidates = getUniqueCandidates([
-    trimmedName,
-    prefix && !trimmedName.startsWith(prefix) ? `${prefix}${trimmedName}` : undefined
+    canonicalizedName,
+    prefix && canonicalizedName === undefined
+      ? `${prefix.canonicalPrefix}${trimmedName}`
+      : undefined,
+    trimmedName
   ]);
 
   for (const candidate of candidates) {
@@ -103,8 +115,11 @@ export async function startFlowBranch(
   }
 
   const branchName = branchNameResult.branchName;
-  if (await getLocalBranch(repository, branchName)) {
-    await services.ui.showErrorMessage(`Could not start the ${options.kind}. Branch ${branchName} already exists.`);
+  const collision = await findFlowBranchNameCollision(repository, branchName);
+  if (collision) {
+    await services.ui.showErrorMessage(
+      `Could not start the ${options.kind}. ${formatFlowBranchNameCollision(branchName, collision)}`
+    );
     return;
   }
 
@@ -222,48 +237,8 @@ export async function startFlowReleaseBranch(
   await startFlowBranch(repository, { ...options, kind: 'release' }, services);
 }
 
-function inferFlowBranchLiteralPrefix(pattern: string): string | undefined {
-  if (!pattern.startsWith('^')) {
-    return undefined;
-  }
-
-  let prefix = '';
-  for (let index = 1; index < pattern.length; index += 1) {
-    const char = pattern[index];
-    if (!char) {
-      break;
-    }
-
-    if (char === '\\') {
-      const next = pattern[index + 1];
-      if (!next) {
-        break;
-      }
-      prefix += next;
-      index += 1;
-      continue;
-    }
-
-    if ('.+*?()[]{}|$^'.includes(char)) {
-      break;
-    }
-
-    prefix += char;
-  }
-
-  return prefix.length > 0 ? prefix : undefined;
-}
-
 function getUniqueCandidates(values: readonly (string | undefined)[]): readonly string[] {
   return [...new Set(values.filter((value): value is string => !!value))];
-}
-
-async function getLocalBranch(repository: Repository, branchName: string): Promise<Branch | undefined> {
-  try {
-    return await repository.getBranch(branchName);
-  } catch {
-    return undefined;
-  }
 }
 
 function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {

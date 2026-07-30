@@ -9,6 +9,9 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.2-flow-pattern-canonicalization.md`: ordered ASCII case-pair semantics for deterministic,
+  cross-platform Flow Governance branch creation and equalization.
+- `1.6.2-feature-start-from-release.md`: governed feature creation from classified release branches.
 - `1.6.1-reliability-security-hardening.md`: bounded Flow Governance configuration processing,
   race-safe repository and Compare Results workflows, scalable diff/log behavior, and reliable Git
   process termination.

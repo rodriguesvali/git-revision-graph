@@ -20,6 +20,7 @@ import {
   applyFlowBranchTargets,
   applyFlowEqualizationTargets,
   applyFlowGovernanceOptionsUpdate,
+  analyzeFlowPatternCanonicalPrefix,
   buildFlowPullRequestUrl,
   buildFlowPullRequestUrlFromRemoteUrl,
   checkFlowPullRequestTarget,
@@ -95,6 +96,69 @@ test('Flow Governance suggests local sync branch names for release and feature e
   assert.equal(suggestFlowEqualizationBranchName('feature/payment-summary'), 'sync/payment-summary');
   assert.equal(suggestFlowEqualizationBranchName('release/2026 Q3'), 'sync/2026-Q3');
   assert.equal(suggestFlowEqualizationBranchName('release/'), 'sync/release');
+});
+
+test('Flow Governance recognizes both cases and derives canonical prefixes for all patterns', () => {
+  const patterns = {
+    release: '^Latam/[rR]elease/.+$',
+    sync: '^Latam/[sS]ync/.+$',
+    package: '^Latam/[pP]ackage(?:/.+)?$',
+    feature: '^Latam/[fF]eature/.+$',
+    task: '^Latam/[tT]ask/.+$',
+    bug: '^Latam/[bB]ug/.+$',
+    hotfix: '^Latam/[Hh]otfix/.+$'
+  };
+  const config = {
+    ...DEFAULT_FLOW_CONFIG,
+    enabled: true,
+    patterns
+  };
+  const cases = [
+    ['release', 'Latam/release/2.0.0', 'Latam/Release/2.0.0', 'Latam/release/'],
+    ['sync', 'Latam/sync/2.0.0', 'Latam/Sync/2.0.0', 'Latam/sync/'],
+    ['package', 'Latam/package/2.0.0', 'Latam/Package/2.0.0', 'Latam/package'],
+    ['feature', 'Latam/feature/payment', 'Latam/Feature/payment', 'Latam/feature/'],
+    ['task', 'Latam/task/4312-payment', 'Latam/Task/4312-payment', 'Latam/task/'],
+    ['bug', 'Latam/bug/731-payment', 'Latam/Bug/731-payment', 'Latam/bug/'],
+    ['hotfix', 'Latam/Hotfix/INC-482', 'Latam/hotfix/INC-482', 'Latam/Hotfix/']
+  ] as const;
+
+  for (const [kind, firstName, secondName, canonicalPrefix] of cases) {
+    assert.equal(classifyFlowBranch(firstName, config).kind, kind);
+    assert.equal(classifyFlowBranch(secondName, config).kind, kind);
+    assert.equal(
+      analyzeFlowPatternCanonicalPrefix(patterns[kind])?.canonicalPrefix,
+      canonicalPrefix
+    );
+  }
+});
+
+test('Flow Governance derives configured canonical sync names from either target case', () => {
+  const config = {
+    patterns: {
+      ...DEFAULT_FLOW_CONFIG.patterns,
+      release: '^Latam/[rR]elease/.+$',
+      feature: '^Latam/[fF]eature/.+$',
+      sync: '^Latam/[sS]ync/.+$'
+    }
+  };
+
+  assert.equal(
+    suggestFlowEqualizationBranchName('Latam/Release/2.0.0', config),
+    'Latam/sync/2.0.0'
+  );
+  assert.equal(
+    suggestFlowEqualizationBranchName('Latam/feature/payment', config),
+    'Latam/sync/payment'
+  );
+});
+
+test('Flow Governance does not treat quantified case pairs as deterministic prefixes', () => {
+  assert.equal(analyzeFlowPatternCanonicalPrefix('^[fF]+/.+$'), undefined);
+  assert.equal(
+    analyzeFlowPatternCanonicalPrefix('^Latam/[fF]{1,2}/.+$')?.canonicalPrefix,
+    'Latam/'
+  );
 });
 
 test('Flow Governance normalizes Phase 1 defaults and ignores future fields inertly', () => {
@@ -511,6 +575,36 @@ test('Flow Governance recovers one unambiguous legacy sync target from determini
     ['feature/teste-01', 'release/2.0.0'],
     ['sync/teste-01', 'feature/teste-01']
   ]);
+});
+
+test('Flow Governance infers legacy sync targets with configured canonical prefixes', async () => {
+  const config = {
+    patterns: {
+      ...DEFAULT_FLOW_CONFIG.patterns,
+      release: '^Latam/[rR]elease/.+$',
+      feature: '^Latam/[fF]eature/.+$',
+      sync: '^Latam/[sS]ync/.+$'
+    }
+  };
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    {
+      refName: 'Latam/Release/2.0.0',
+      kind: 'release',
+      isEphemeral: false,
+      diagnostics: []
+    },
+    {
+      refName: 'Latam/sync/2.0.0',
+      kind: 'sync',
+      isEphemeral: true,
+      diagnostics: []
+    }
+  ], undefined, async () => ({ stdout: '1\n', stderr: '' }), config);
+
+  assert.deepEqual(
+    targets.map((target) => [target.sourceRefName, target.targetRefName]),
+    [['Latam/sync/2.0.0', 'Latam/Release/2.0.0']]
+  );
 });
 
 test('Flow Governance does not infer a legacy sync target when feature and release names collide', async () => {

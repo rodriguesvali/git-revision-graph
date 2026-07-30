@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.2 - Unreleased
+
+### Flow Governance
+
+- Allow `Start New Feature` from a classified release branch while retaining the existing guarded
+  source synchronization and creation workflow.
+- Let ordered ASCII case pairs in all Flow patterns recognize both spellings while defining the
+  canonical case used by governed branch creation, configured equalization names, and legacy sync
+  target inference.
+- Block exact and case-only local or remote-tracking branch collisions before governed creation for
+  consistent behavior on case-sensitive and case-insensitive filesystems.
+
 ## 1.6.1 - 2026-07-29
 
 ### Release Preparation

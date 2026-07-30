@@ -1139,7 +1139,7 @@ test('Sync Pull Request context remains blocked until the equalization merge is 
 });
 
 test('Flow Governance awaits the shared modal warning when a repository mutation is rejected', async (t) => {
-  installVscodePanelMock(t);
+  installVscodePanelMock(t, { flowGovernanceEnabled: true });
   const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
     '../src/revisionGraph/flow/governanceWorkflow'
   ) as typeof import('../src/revisionGraph/flow/governanceWorkflow');
@@ -1334,7 +1334,10 @@ interface TestPanel {
   onDidDispose(listener: () => void): { dispose(): void };
 }
 
-function installVscodePanelMock(t: test.TestContext): {
+function installVscodePanelMock(
+  t: test.TestContext,
+  options: { readonly flowGovernanceEnabled?: boolean } = {}
+): {
   readonly extensionUri: never;
   readonly panels: TestPanel[];
   readonly clipboardWrites: string[];
@@ -1435,7 +1438,12 @@ function installVscodePanelMock(t: test.TestContext): {
     },
     workspace: {
       asRelativePath: (value: { fsPath?: string } | string) => typeof value === 'string' ? value : value.fsPath ?? '',
-      getConfiguration: () => ({ get: <T>(_key: string, fallback?: T) => fallback })
+      getConfiguration: () => ({
+        get: <T>(key: string, fallback?: T) =>
+          key === 'enabled' && options.flowGovernanceEnabled !== undefined
+            ? options.flowGovernanceEnabled as T
+            : fallback
+      })
     },
     commands: { executeCommand: async () => undefined },
     env: {

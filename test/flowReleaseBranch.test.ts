@@ -52,6 +52,48 @@ test('Flow Governance rejects an unsafe branch pattern supplied outside config n
   assert.match(result.message ?? '', /nested or ambiguous repeated groups/);
 });
 
+test('Flow Governance canonicalizes configured case pairs for every startable branch kind', () => {
+  const cases = [
+    ['release', '^Latam/[rR]elease/.+$', 'Latam/Release/2.0.0', 'Latam/release/2.0.0'],
+    ['feature', '^Latam/[fF]eature/.+$', 'Latam/Feature/payment', 'Latam/feature/payment'],
+    ['task', '^Latam/[tT]ask/.+$', 'Latam/Task/4312-payment', 'Latam/task/4312-payment'],
+    ['bug', '^Latam/[bB]ug/.+$', 'Latam/Bug/731-payment', 'Latam/bug/731-payment'],
+    ['hotfix', '^Latam/[Hh]otfix/.+$', 'Latam/hotfix/INC-482', 'Latam/Hotfix/INC-482']
+  ] as const;
+
+  for (const [kind, pattern, input, expected] of cases) {
+    const config = {
+      patterns: {
+        ...DEFAULT_FLOW_CONFIG.patterns,
+        [kind]: pattern
+      }
+    };
+    assert.deepEqual(
+      resolveFlowBranchName(kind, input, config),
+      { ok: true, branchName: expected }
+    );
+    assert.deepEqual(
+      resolveFlowBranchName(kind, expected.slice(expected.lastIndexOf('/') + 1), config),
+      { ok: true, branchName: expected }
+    );
+  }
+});
+
+test('Flow Governance keeps full matching names when a pattern has no deterministic prefix', () => {
+  const config = {
+    patterns: {
+      ...DEFAULT_FLOW_CONFIG.patterns,
+      feature: '^(?:feature|Feature)/.+$'
+    }
+  };
+
+  assert.deepEqual(
+    resolveFlowBranchName('feature', 'Feature/payment', config),
+    { ok: true, branchName: 'Feature/payment' }
+  );
+  assert.equal(resolveFlowBranchName('feature', 'payment', config).ok, false);
+});
+
 test('Flow Governance selects synchronization policy from the governed branch source model', () => {
   assert.equal(getFlowBranchStartSyncPolicy('release'), 'exact-sync');
   assert.equal(getFlowBranchStartSyncPolicy('feature'), 'exact-sync');
@@ -935,6 +977,33 @@ test('Flow Governance refuses an existing release branch before mutation', async
 
   assert.deepEqual(repository.calls.createBranch, []);
   assert.match(errors[0] ?? '', /already exists/);
+});
+
+test('Flow Governance blocks case-only local branch collisions before mutation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createBranch({ type: RefType.Head, name: 'Latam/Feature/payment' })
+    ]
+  });
+  const errors: string[] = [];
+
+  await startFlowBranch(repository, {
+    kind: 'feature',
+    sourceBranch: 'main',
+    name: 'payment',
+    description: 'Canonical feature name',
+    config: {
+      ...DEFAULT_FLOW_CONFIG,
+      patterns: {
+        ...DEFAULT_FLOW_CONFIG.patterns,
+        feature: '^Latam/[fF]eature/.+$'
+      }
+    }
+  }, createReleaseServices({ errors }));
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.match(errors[0] ?? '', /Latam\/feature\/payment.*Latam\/Feature\/payment.*letter case/);
 });
 
 function createReleaseServices(options: {

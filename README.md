@@ -127,6 +127,12 @@ top-level fields. `mainBranches` accepts at most 32 entries of 256 characters ea
 patterns accept at most 256 characters and a safe JavaScript regular-expression subset: backreferences,
 oversized repeat counts, excessive quantifiers, adjacent potentially overlapping repetitions, and
 nested or ambiguous repeated groups are rejected.
+Within a deterministic start-anchored prefix, a two-letter case pair recognizes both spellings while
+its first member defines governed creation output. For example, `^Latam/[fF]eature/.+$` recognizes
+both `Latam/feature/...` and `Latam/Feature/...` and creates `Latam/feature/...`; `[Ff]` creates the
+uppercase spelling. This canonical rule applies to all configured Flow patterns, including generated
+sync names. Arbitrary character classes, ranges, groups, and alternatives remain classification
+expressions and are not treated as branch-name templates.
 An invalid configuration disables Flow Governance for that repository and reports a diagnostic while
 normal Git Revision Graph loading remains available.
 

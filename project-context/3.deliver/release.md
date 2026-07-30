@@ -1,14 +1,15 @@
 # Release Readiness
 
-Status: `1.6.2` opened; awaiting scoped demands
+Status: `1.6.2` automated verification complete; manual validation pending
 Last consolidated: 2026-07-30
 
 ## Current State
 
 - Current package version: `1.6.2` in `package.json` and the root `package-lock.json`.
 - Latest recorded published release: `1.6.1`, by maintainer confirmation on 2026-07-29.
-- Release cycle status: `1.6.2` was opened on 2026-07-30 as a patch release. Its scope,
-  verification evidence, packaging, and publication decisions await maintainer demands and approval.
+- Release cycle status: `1.6.2` was opened on 2026-07-30 as a patch release. Current scope includes
+  feature creation from release branches and cross-platform canonical Flow pattern creation.
+  Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
   hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
@@ -20,7 +21,7 @@ Last consolidated: 2026-07-30
 
 ## Release Preparation: 1.6.2
 
-Status: Open; awaiting scoped demands
+Status: Automated verification complete; manual validation pending
 Opened: 2026-07-30
 Published baseline version: `1.6.1`
 Target version: `1.6.2`
@@ -30,10 +31,10 @@ Target version: `1.6.2`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.1` was published by maintainer confirmation on 2026-07-29. |
-| Release scope | Complete for current demand | `Start New Feature` is available from a classified `release` branch; other governed branch-start policies are unchanged. |
+| Release scope | Complete for current demand | `Start New Feature` is available from a classified `release` branch. Ordered ASCII case pairs now define canonical governed creation for all Flow patterns, with case-only collision protection. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.2`. |
-| Automated verification | Complete | `npm run quality:check` (255 files, 2,463 functions), `npm run build`, `npm test` (830 tests), `graphify update .`, and `git diff --check` passed on 2026-07-30. |
-| Extension Development Host smoke | Pending | From a release branch, select Flow Governance > Start New Feature; verify the existing synchronization prompt/form and successful guarded branch creation. |
+| Automated verification | Complete | `npm run quality:check` (257 files, 2,479 functions), `npm test`, 10 focused canonical-pattern tests, `npm run test:platform` (34 tests), `graphify update .`, and `git diff --check` passed on 2026-07-30. |
+| Extension Development Host smoke | Pending | On Windows, verify canonical `[fF]`/`[Ff]` feature creation, case-only collision blocking, configured sync naming, and feature creation from release. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -44,6 +45,9 @@ Opening record:
 - No source change, dependency change, VSIX package, publication command, or Marketplace action occurred while opening the cycle.
 - Flow Governance now exposes `Start New Feature` on classified release branches and authorizes the
   corresponding prepare/create messages only when the known source is `main` or `release`.
+- Flow Governance now treats ordered ASCII case pairs in deterministic pattern prefixes as canonical
+  creation hints for all seven patterns while preserving full-regex classification. Governed start
+  and equalization operations reject exact or case-only loaded ref collisions before mutation.
 
 ## Published Release: Reliability and Security Hardening 1.6.1
 

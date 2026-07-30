@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { RefActionServices } from '../src/refActions';
 import {
+  DEFAULT_FLOW_CONFIG,
   prepareFlowEqualizationBranch,
   prepareFlowEqualizationSources
 } from '../src/revisionGraph/flow';
@@ -103,6 +104,69 @@ test('Flow Governance prepares a local feature equalization branch', async () =>
   assert.deepEqual(repository.calls.push, []);
   assert.deepEqual(targets, ['feature/payment-summary']);
   assert.deepEqual(descriptions, ['Bring the stable platform baseline into the feature']);
+});
+
+test('Flow Governance creates the configured canonical sync branch', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'main',
+    targetBranch: 'Latam/Release/2.0.0',
+    description: 'Equalize the configured release',
+    config: {
+      patterns: {
+        ...DEFAULT_FLOW_CONFIG.patterns,
+        release: '^Latam/[rR]elease/.+$',
+        feature: '^Latam/[fF]eature/.+$',
+        sync: '^Latam/[sS]ync/.+$'
+      }
+    }
+  }, createEqualizationServices(), {
+    prepareSources: allowSourcePreflight,
+    async setTarget() {}
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'Latam/sync/2.0.0',
+    checkout: true,
+    ref: 'Latam/Release/2.0.0'
+  }]);
+});
+
+test('Flow Governance blocks case-only remote sync collisions before mutation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [
+      createBranch({
+        type: RefType.RemoteHead,
+        remote: 'origin',
+        name: 'origin/Latam/Sync/2.0.0'
+      })
+    ]
+  });
+  const errors: string[] = [];
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'main',
+    targetBranch: 'Latam/Release/2.0.0',
+    description: 'Equalize the configured release',
+    config: {
+      patterns: {
+        ...DEFAULT_FLOW_CONFIG.patterns,
+        release: '^Latam/[rR]elease/.+$',
+        feature: '^Latam/[fF]eature/.+$',
+        sync: '^Latam/[sS]ync/.+$'
+      }
+    }
+  }, createEqualizationServices({ errors }), {
+    prepareSources: allowSourcePreflight
+  });
+
+  assert.deepEqual(repository.calls.createBranch, []);
+  assert.match(
+    errors[0] ?? '',
+    /Latam\/sync\/2\.0\.0.*origin\/Latam\/Sync\/2\.0\.0.*letter case/
+  );
 });
 
 test('Flow Governance creates equalization branches from the selected feature target before merging the origin', async () => {

@@ -20,7 +20,13 @@ export async function loadFlowGovernanceViewState(
   const references = applyFlowBranchTargets(classifiedReferences, branchTargets);
   const state = createFlowGovernanceViewState(resolution, references);
   const pullRequestTargets = state.enabled
-    ? await loadFlowPullRequestTargets(repositoryPath, state.references, signal)
+    ? await loadFlowPullRequestTargets(
+      repositoryPath,
+      state.references,
+      signal,
+      undefined,
+      resolution.config
+    )
     : [];
   const enrichedState: FlowGovernanceViewState = { ...state, pullRequestTargets };
   return state.enabled || state.configSource === 'repository' || state.configSource === 'invalid'
