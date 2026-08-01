@@ -21,6 +21,47 @@ interface RevisionGraphWebviewPrimaryPathContext {
   readonly nodesByHash: ReadonlyMap<string, RevisionGraphWebviewPrimaryPathNode>;
 }
 
+interface RevisionGraphWebviewTopologyCaches<Edge extends RevisionGraphWebviewPrimaryPathEdge> {
+  readonly headNodeHash: string | null;
+  readonly edgeByKey: ReadonlyMap<string, Edge>;
+  readonly parentMap: ReadonlyMap<string, readonly string[]>;
+  readonly childMap: ReadonlyMap<string, readonly string[]>;
+  readonly headDistanceByHash: ReadonlyMap<string, number>;
+}
+
+function createRevisionGraphWebviewTopologyCaches<
+  Node extends RevisionGraphWebviewPrimaryPathNode,
+  Edge extends RevisionGraphWebviewPrimaryPathEdge
+>(
+  nodes: readonly Node[],
+  edges: readonly Edge[],
+  headNodeHash: string | null,
+  getEdgeKey: (edge: Edge) => string
+): RevisionGraphWebviewTopologyCaches<Edge> {
+  const parentMap = buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'from', 'to');
+  return {
+    headNodeHash,
+    edgeByKey: new Map(edges.map((edge) => [getEdgeKey(edge), edge])),
+    parentMap,
+    childMap: buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'to', 'from'),
+    headDistanceByHash: headNodeHash
+      ? buildRevisionGraphWebviewDistanceMap(headNodeHash, parentMap)
+      : new Map()
+  };
+}
+
+function createEmptyRevisionGraphWebviewTopologyCaches<
+  Edge extends RevisionGraphWebviewPrimaryPathEdge
+>(): RevisionGraphWebviewTopologyCaches<Edge> {
+  return {
+    headNodeHash: null,
+    edgeByKey: new Map(),
+    parentMap: new Map(),
+    childMap: new Map(),
+    headDistanceByHash: new Map()
+  };
+}
+
 function buildRevisionGraphWebviewDirectionalMap(
   nodes: readonly RevisionGraphWebviewPrimaryPathNode[],
   edges: readonly RevisionGraphWebviewPrimaryPathEdge[],

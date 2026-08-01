@@ -1118,6 +1118,26 @@ test('omits incremental revision graph patch handlers', () => {
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
 });
 
+test('keeps graph topology cache rebuilding out of virtual viewport frames', () => {
+  const html = renderRevisionGraphShellHtml();
+  const virtualRenderStart = html.indexOf('function renderVirtualScene');
+  const virtualRenderEnd = html.indexOf('function getVirtualViewportBounds', virtualRenderStart);
+  assert.ok(virtualRenderStart >= 0 && virtualRenderEnd > virtualRenderStart);
+  const virtualRenderSource = html.slice(virtualRenderStart, virtualRenderEnd);
+
+  assert.match(
+    html,
+    /'webview\.render-scene\.topology-caches'[\s\S]*?createRevisionGraphWebviewTopologyCaches\(/
+  );
+  assert.match(
+    virtualRenderSource,
+    /refreshRenderedElementCaches:\s*refreshRenderedGraphElementCaches/
+  );
+  assert.doesNotMatch(virtualRenderSource, /createRevisionGraphWebviewTopologyCaches\(/);
+  assert.doesNotMatch(virtualRenderSource, /buildRevisionGraphWebviewDirectionalMap/);
+  assert.doesNotMatch(virtualRenderSource, /buildRevisionGraphWebviewDistanceMap/);
+});
+
 test('renders client-side graph search controls and runtime handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
@@ -2561,12 +2581,12 @@ test('coordinates revision graph virtual scene lifecycle through the typed modul
   runtime.context.completeRevisionGraphWebviewVirtualSceneCommit({
     sceneKey: 'next',
     setSceneKey: (sceneKey: string) => effects.push(`key:${sceneKey}`),
-    refreshGraphCaches: () => effects.push('caches'),
+    refreshRenderedElementCaches: () => effects.push('dom-caches'),
     applyNodeLayout: () => effects.push('layout'),
     syncSelection: () => effects.push('selection'),
     syncSearchHighlights: () => effects.push('search')
   });
-  assert.deepEqual(effects, ['key:next', 'caches', 'layout', 'selection', 'search']);
+  assert.deepEqual(effects, ['key:next', 'dom-caches', 'layout', 'selection', 'search']);
   runtime.context.resetRevisionGraphWebviewVirtualSceneKey(
     (sceneKey: string) => effects.push(`reset:${sceneKey}`)
   );
@@ -2616,7 +2636,7 @@ test('coordinates revision graph scene rendering through the typed lifecycle', (
     shouldPrecenterViewport: true,
     prepareGeometry: () => readyEvents.push('geometry'),
     clearScene: () => readyEvents.push('clear'),
-    refreshGraphCaches: () => readyEvents.push('caches'),
+    refreshRenderedElementCaches: () => readyEvents.push('dom-caches'),
     syncCanvasAndPlacement: () => readyEvents.push('canvas'),
     prepareIndexes: () => readyEvents.push('indexes'),
     precenterViewport: () => readyEvents.push('precenter'),
@@ -2624,7 +2644,7 @@ test('coordinates revision graph scene rendering through the typed lifecycle', (
     bindSceneEventHandlers: () => readyEvents.push('bind')
   });
   assert.deepEqual(readyEvents, [
-    'geometry', 'indexes', 'precenter', 'render', 'caches', 'bind', 'canvas'
+    'geometry', 'indexes', 'precenter', 'render', 'bind', 'canvas'
   ]);
 
   const emptyEvents: string[] = [];
@@ -2633,14 +2653,14 @@ test('coordinates revision graph scene rendering through the typed lifecycle', (
     shouldPrecenterViewport: true,
     prepareGeometry: () => emptyEvents.push('geometry'),
     clearScene: () => emptyEvents.push('clear'),
-    refreshGraphCaches: () => emptyEvents.push('caches'),
+    refreshRenderedElementCaches: () => emptyEvents.push('dom-caches'),
     syncCanvasAndPlacement: () => emptyEvents.push('canvas'),
     prepareIndexes: () => emptyEvents.push('indexes'),
     precenterViewport: () => emptyEvents.push('precenter'),
     renderVirtualScene: () => emptyEvents.push('render'),
     bindSceneEventHandlers: () => emptyEvents.push('bind')
   });
-  assert.deepEqual(emptyEvents, ['geometry', 'clear', 'caches', 'canvas']);
+  assert.deepEqual(emptyEvents, ['geometry', 'clear', 'dom-caches', 'canvas']);
 });
 
 test('applies revision graph scene geometry through the typed DOM adapter', () => {
@@ -2813,14 +2833,25 @@ test('traces revision graph primary paths through the typed graph module', () =>
     { from: 'parent', to: 'grandparent' },
     { from: 'head', to: 'alternate' }
   ];
-  const parentMap = runtime.context.buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'from', 'to');
-  const childMap = runtime.context.buildRevisionGraphWebviewDirectionalMap(nodes, edges, 'to', 'from');
-  const headDistanceByHash = runtime.context.buildRevisionGraphWebviewDistanceMap('head', parentMap);
+  const topology = runtime.context.createRevisionGraphWebviewTopologyCaches(
+    nodes,
+    edges,
+    'head',
+    (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
+  );
+  assert.equal(topology.headNodeHash, 'head');
+  assert.equal(topology.edgeByKey.get('head->parent'), edges[0]);
+  assert.deepEqual(topology.parentMap.get('head'), ['parent', 'alternate']);
+  assert.deepEqual(topology.childMap.get('parent'), ['head']);
+  assert.equal(topology.headDistanceByHash.get('grandparent'), 2);
+  const emptyTopology = runtime.context.createEmptyRevisionGraphWebviewTopologyCaches();
+  assert.equal(emptyTopology.headNodeHash, null);
+  assert.equal(emptyTopology.edgeByKey.size, 0);
   const context = {
     primaryAncestorNextByHash: {},
-    parentMap,
-    childMap,
-    headDistanceByHash,
+    parentMap: topology.parentMap,
+    childMap: topology.childMap,
+    headDistanceByHash: topology.headDistanceByHash,
     nodesByHash: new Map(nodes.map((node) => [node.hash, node]))
   };
 

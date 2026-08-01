@@ -51,7 +51,7 @@ type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTra
 	    function buildEdgePath(fromHash: string, toHash: string): string {
 	      const sourceHash = toHash;
 	      const targetHash = fromHash;
-        const edge = graphEdgeByKey.get(fromHash + '->' + toHash);
+        const edge = graphTopology.edgeByKey.get(fromHash + '->' + toHash);
         const sourceNode = graphNodeByHash.get(sourceHash);
         const targetNode = graphNodeByHash.get(targetHash);
         if (
@@ -240,14 +240,14 @@ type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTra
     }
 
     function getHeadAnchorBounds() {
-      if (!headNodeHash || !graphNodeByHash.has(headNodeHash)) {
+      if (!graphTopology.headNodeHash || !graphNodeByHash.has(graphTopology.headNodeHash)) {
         return null;
       }
-      const top = getNodeTop(headNodeHash);
-      const left = getNodeLeft(headNodeHash);
+      const top = getNodeTop(graphTopology.headNodeHash);
+      const left = getNodeLeft(graphTopology.headNodeHash);
       return {
-        centerX: left + getNodeWidth(headNodeHash) / 2,
-        centerY: top + getNodeHeight(headNodeHash) / 2
+        centerX: left + getNodeWidth(graphTopology.headNodeHash) / 2,
+        centerY: top + getNodeHeight(graphTopology.headNodeHash) / 2
       };
     }
 
@@ -423,7 +423,7 @@ type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTra
           graphEdges,
           graphNodes.map((layout) => layout.hash),
           new Set(graphNodeByHash.keys()),
-          headNodeHash,
+          graphTopology.headNodeHash,
           transform,
           {
             getNodeCenterX,

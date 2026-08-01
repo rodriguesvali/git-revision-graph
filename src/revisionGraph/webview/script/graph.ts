@@ -9,9 +9,9 @@
     function getPrimaryPathContext() {
       return {
         primaryAncestorNextByHash,
-        parentMap,
-        childMap,
-        headDistanceByHash,
+        parentMap: graphTopology.parentMap,
+        childMap: graphTopology.childMap,
+        headDistanceByHash: graphTopology.headDistanceByHash,
         nodesByHash: graphNodeByHash
       };
     }

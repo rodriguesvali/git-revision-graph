@@ -3,7 +3,7 @@ interface RevisionGraphWebviewSceneRenderLifecycleInput {
   readonly shouldPrecenterViewport: boolean;
   readonly prepareGeometry: () => void;
   readonly clearScene: () => void;
-  readonly refreshGraphCaches: () => void;
+  readonly refreshRenderedElementCaches: () => void;
   readonly syncCanvasAndPlacement: () => void;
   readonly prepareIndexes: () => void;
   readonly precenterViewport: () => void;
@@ -17,7 +17,7 @@ function runRevisionGraphWebviewSceneRenderLifecycle(
   input.prepareGeometry();
   if (!input.isReady) {
     input.clearScene();
-    input.refreshGraphCaches();
+    input.refreshRenderedElementCaches();
     input.syncCanvasAndPlacement();
     return;
   }
@@ -27,7 +27,6 @@ function runRevisionGraphWebviewSceneRenderLifecycle(
     input.precenterViewport();
   }
   input.renderVirtualScene();
-  input.refreshGraphCaches();
   input.bindSceneEventHandlers();
   input.syncCanvasAndPlacement();
 }

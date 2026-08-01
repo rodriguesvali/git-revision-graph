@@ -9,8 +9,8 @@ Last consolidated: 2026-08-01
 - Latest recorded published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
 - Release cycle status: `1.6.3` was opened on 2026-08-01 as a patch release. Current scope is package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
-  plus a critical `Focus Descendants` performance correction for large merge-heavy histories.
-  Packaging and publication remain subject to maintainer approval.
+  plus `Focus Descendants` projection and virtual-scene cache performance corrections for large
+  merge-heavy histories. Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
   hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
@@ -32,10 +32,10 @@ Target version: `1.6.3`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.2` was published by maintainer confirmation on 2026-08-01. |
-| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope, memoizes shared ancestry, and has non-root merge-heavy benchmark coverage. |
+| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope and memoizes shared ancestry. Virtual viewport frames no longer rebuild graph-wide topology; those caches are created once per scene state. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.3`. |
-| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,484 functions), `npm run build`, `npm test` (845 tests), `npm run benchmark:ci`, `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
-| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, and focus exit remain responsive from a non-root revision in a large merge-heavy repository. |
+| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,488 functions), `npm run build`, `npm test` (846 tests), `npm run benchmark:ci`, `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. The runtime regression verifies that virtual viewport frames cannot rebuild graph-wide topology. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
+| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, focus exit, scrolling, and zooming remain responsive from a non-root revision in a large merge-heavy repository. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -55,11 +55,17 @@ Opening record:
   non-root descendant-focus scenario with merge commits hidden, matching the reported performance
   failure mode. No Git-loading, layout-worker, protocol, contribution-point, dependency, or
   Marketplace surface changed.
+- The webview now separates graph-wide topology from rendered-element caches. A new state builds
+  edge lookup, parent/child adjacency, and HEAD-distance maps once; virtual scrolling and zooming
+  update only the rendered-element portion of that cache. The initial ready render also no longer
+  repeats the post-commit DOM cache scan. Existing selection, search, relationship highlighting,
+  minimap, edge routing, and node-offset behavior remain intact.
 
 Focused build artifacts:
 
 - `project-context/2.build/features/1.6.3-package-start-from-feature.md`
 - `project-context/2.build/features/1.6.3-focus-descendants-performance.md`
+- `project-context/2.build/features/1.6.3-virtual-scene-topology-cache.md`
 
 ## Published Release: 1.6.2
 

@@ -92,15 +92,11 @@ const VIEWPORT_PADDING_LEFT = 18;
     let graphNodes: RevisionGraphWebviewLegacyNodeLayout[] = [];
     let graphEdges: RevisionGraphWebviewLegacyEdge[] = [];
     let selected: string[] = [];
-    let headNodeHash: string | null = null;
     let nodeElements = new Map<string, HTMLElement>();
     let sceneNodeByHash = new Map<string, RevisionGraphWebviewLegacySceneNode>();
     let edgeElements: Element[] = [];
     let graphNodeByHash = new Map<string, RevisionGraphWebviewLegacyNodeLayout>();
-    let graphEdgeByKey = new Map<string, RevisionGraphWebviewLegacyEdge>();
-    let parentMap = new Map<string, string[]>();
-    let childMap = new Map<string, string[]>();
-    let headDistanceByHash = new Map<string, number>();
+    let graphTopology = createEmptyRevisionGraphWebviewTopologyCaches<RevisionGraphWebviewLegacyEdge>();
     let primaryAncestorNextByHash: Readonly<Record<string, string>> = {};
     let sceneLayoutKey = 'empty';
     let baseCanvasWidth = 880;
@@ -1280,16 +1276,28 @@ const VIEWPORT_PADDING_LEFT = 18;
           clearRevisionGraphWebviewVirtualSceneDom({ nodeLayer, edgeLayer });
           sceneNodeByHash = new Map();
           resetVirtualSceneIndexes();
+          graphTopology = createEmptyRevisionGraphWebviewTopologyCaches();
         }),
-        refreshGraphCaches: () => traceWebviewPhase('webview.render-scene.refresh-caches', () => refreshGraphCaches()),
+        refreshRenderedElementCaches: () => traceWebviewPhase(
+          'webview.render-scene.dom-caches',
+          () => refreshRenderedGraphElementCaches()
+        ),
         syncCanvasAndPlacement: () => traceWebviewPhase('webview.render-scene.canvas-layout', () => {
           syncCanvasSize();
           updateScenePlacement();
         }),
         prepareIndexes: () => {
           const sceneNodes = ((state.scene && state.scene.nodes) || []) as RevisionGraphWebviewLegacySceneNode[];
-          traceWebviewPhase('webview.render-scene.indexes', () => {
+          traceWebviewPhase('webview.render-scene.topology-caches', () => {
             sceneNodeByHash = new Map(sceneNodes.map((node) => [node.hash, node]));
+            graphTopology = createRevisionGraphWebviewTopologyCaches(
+              graphNodes,
+              graphEdges,
+              getCurrentHeadNodeHash(),
+              getVirtualEdgeKey
+            );
+          }, 'nodes=' + graphNodes.length + '; edges=' + graphEdges.length);
+          traceWebviewPhase('webview.render-scene.virtual-indexes', () => {
             rebuildVirtualSceneIndexes();
           }, 'nodes=' + graphNodes.length + '; edges=' + graphEdges.length);
         },
@@ -1333,7 +1341,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         resetRevisionGraphWebviewVirtualSceneKey((sceneKey) => {
           lastVirtualSceneKey = sceneKey;
         });
-        refreshGraphCaches();
+        refreshRenderedGraphElementCaches();
         return;
       }
 
@@ -1369,7 +1377,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         setSceneKey: (sceneKey) => {
           lastVirtualSceneKey = sceneKey;
         },
-        refreshGraphCaches,
+        refreshRenderedElementCaches: refreshRenderedGraphElementCaches,
         applyNodeLayout: () => applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false }),
         syncSelection,
         syncSearchHighlights
@@ -1479,20 +1487,10 @@ const VIEWPORT_PADDING_LEFT = 18;
       return createRevisionGraphWebviewVirtualSceneKey(visibleHashes, visibleEdges);
     }
 
-    function refreshGraphCaches() {
-      nodeElements = new Map(
-        Array.from(document.querySelectorAll<HTMLElement>('[data-node-hash]'))
-          .map((element) => [element.getAttribute('data-node-hash'), element] as const)
-          .filter((entry): entry is readonly [string, HTMLElement] => entry[0] !== null)
-      );
-      edgeElements = Array.from(document.querySelectorAll('[data-edge-from]'));
-      headNodeHash = getCurrentHeadNodeHash();
-      graphEdgeByKey = new Map(graphEdges.map((edge) => [getVirtualEdgeKey(edge), edge]));
-      parentMap = buildRevisionGraphWebviewDirectionalMap(graphNodes, graphEdges, 'from', 'to');
-      childMap = buildRevisionGraphWebviewDirectionalMap(graphNodes, graphEdges, 'to', 'from');
-      headDistanceByHash = headNodeHash
-        ? buildRevisionGraphWebviewDistanceMap(headNodeHash, parentMap)
-        : new Map();
+    function refreshRenderedGraphElementCaches() {
+      const elements = collectRevisionGraphWebviewRenderedElements(document);
+      nodeElements = elements.nodeElements;
+      edgeElements = elements.edgeElements;
     }
 
     function bindSceneEventHandlers() {
@@ -1803,6 +1801,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       edgeLayer.innerHTML = '';
       nodeLayer.innerHTML = '';
       lastVirtualSceneKey = '';
-      refreshGraphCaches();
+      refreshRenderedGraphElementCaches();
       showStatus(message, true);
     }

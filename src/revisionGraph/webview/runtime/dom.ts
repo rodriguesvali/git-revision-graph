@@ -7,3 +7,18 @@ function requireRevisionGraphElement<ElementType extends Element>(id: string): E
   // its caller; existence is validated here and all unsafety stays localized.
   return element as unknown as ElementType;
 }
+
+interface RevisionGraphWebviewRenderedElements {
+  readonly nodeElements: Map<string, HTMLElement>;
+  readonly edgeElements: Element[];
+}
+
+function collectRevisionGraphWebviewRenderedElements(root: ParentNode): RevisionGraphWebviewRenderedElements {
+  const nodeEntries = Array.from(root.querySelectorAll<HTMLElement>('[data-node-hash]'))
+    .map((element) => [element.getAttribute('data-node-hash'), element] as const)
+    .filter((entry): entry is readonly [string, HTMLElement] => entry[0] !== null);
+  return {
+    nodeElements: new Map(nodeEntries),
+    edgeElements: Array.from(root.querySelectorAll('[data-edge-from]'))
+  };
+}
