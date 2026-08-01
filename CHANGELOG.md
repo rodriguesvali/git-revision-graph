@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Show Log
 
+- Enable `Show All Branches` by default when opening a target history while keeping the scope toggle
+  available.
 - Create and check out an editable, suggested local branch from an exact loaded commit, or create a
   validated local tag from it, through the single-commit context menu, and show the new reference
   immediately in the existing Show Log panel.

@@ -377,6 +377,38 @@ test('Show Log reuses, disposes, and recreates its editor panel', async (t) => {
   provider.dispose();
 });
 
+test('Show Log enables all branches by default for target sources', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  const showAllBranchesValues: boolean[] = [];
+  const backend = {
+    async loadRevisionLog(
+      _repository: unknown,
+      _source: unknown,
+      _limit: number,
+      _skip: number,
+      showAllBranches: boolean
+    ) {
+      showAllBranchesValues.push(showAllBranches);
+      return { entries: [], hasMore: false, searchTruncated: false };
+    }
+  } as never;
+  const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
+
+  await provider.showSource(
+    createRepository({ root: '/workspace/repo' }),
+    { kind: 'target', revision: 'main', label: 'main' }
+  );
+
+  const visibleState = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: { readonly showAllBranches?: boolean } }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  assert.deepEqual(showAllBranchesValues, [true]);
+  assert.equal(visibleState?.showAllBranches, true);
+  provider.dispose();
+});
+
 test('Show Log reloads the current commit references after creating a tag', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');

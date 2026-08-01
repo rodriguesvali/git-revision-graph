@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.3-show-log-all-branches-default.md`: target histories open with `Show All Branches` enabled
+  while retaining the existing scope toggle.
 - `1.6.3-show-log-expanded-file-spacing.md`: fixed continuation-row sizing prevents expanded Show
   Log commits from adding intrinsic SVG height for every changed file.
 - `1.6.3-show-log-commit-checkout-tag.md`: editable local branch checkout and local tag creation from
