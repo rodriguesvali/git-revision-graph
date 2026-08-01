@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.3-ai-prompt-writing-quality.md`: shared simplicity, cohesion, and organization guidance for
+  every Flow Governance and Compare Results AI prompt.
 - `1.6.3-tooltip-delay.md`: consistent 500 ms activation for extension-controlled graph and Show
   Log tooltips, with pending activation cancelled before context-menu interaction.
 - `1.6.3-virtual-interval-index.md`: balanced interval indexes keep long edges from being replicated

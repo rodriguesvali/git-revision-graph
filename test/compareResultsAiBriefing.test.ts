@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { AI_PROMPT_WRITING_GUIDANCE } from '../src/aiPromptWritingGuidance';
 import {
   buildCompareBriefingPrompt,
   isSensitiveCompareBriefingPath,
@@ -39,6 +40,9 @@ test('AI briefing prompt bounds untrusted diff and requests a review-oriented st
   assert.match(prompt, /\.\.\. \[diff context truncated\]/);
   assert.match(prompt, /Summary\nKey changes\nReview risks\nVerification/);
   assert.match(prompt, /2 changed file\(s\) were omitted/);
+  for (const rule of AI_PROMPT_WRITING_GUIDANCE) {
+    assert.ok(prompt.includes(rule), `Expected AI briefing prompt to include writing guidance: ${rule}`);
+  }
 
   const bounded = truncateCompareBriefingDiff('abcdef', 3);
   assert.equal(bounded.truncated, true);

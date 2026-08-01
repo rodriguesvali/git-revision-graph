@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
   promotion target, and prepare one guarded package-to-feature Pull Request after consolidated
   validation.
 
+### AI Assistance
+
+- Guide branch descriptions, Pull Request titles and descriptions, and Compare Results briefings
+  toward simple language, cohesive ideas, and logical organization while retaining existing factual
+  and safety guardrails.
+
 ### Revision Graph
 
 - Delay custom reference and Show Log commit tooltips by 500 ms, cancel pending tooltips when the

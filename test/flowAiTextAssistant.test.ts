@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { AI_PROMPT_WRITING_GUIDANCE } from '../src/aiPromptWritingGuidance';
 import {
   FLOW_AI_DESCRIPTION_MAX_LENGTH,
   FLOW_AI_TITLE_MAX_LENGTH,
@@ -35,6 +36,7 @@ test('Flow AI delivery prompt delimits untrusted documentation and forbids inven
   assert.match(prompt, /Summary, Key changes, and Verification/);
   assert.match(prompt, /--- BEGIN UNTRUSTED PROJECT-DOCUMENT DIFF ---/);
   assert.match(prompt, /README: Adds governed release support\./);
+  assertWritingGuidance(prompt);
 });
 
 test('Flow AI defect and hotfix prompts request context-specific evidence', () => {
@@ -46,9 +48,18 @@ test('Flow AI defect and hotfix prompts request context-specific evidence', () =
   assert.match(defectPrompt, /--- BEGIN UNTRUSTED CODE DIFF ---/);
   assert.match(hotfixPrompt, /Production impact, Emergency fix, Verification, and Risk and rollback/);
   assert.match(hotfixPrompt, /rollback only when supplied evidence supports them/);
+  assertWritingGuidance(defectPrompt);
+  assertWritingGuidance(hotfixPrompt);
 });
 
-test('Flow AI branch prompts specialize feature, task, bug, and hotfix creation descriptions', () => {
+test('Flow AI branch prompts specialize every supported creation description', () => {
+  const releasePrompt = buildFlowAiTextImprovementPrompt({
+    surface: 'release',
+    field: 'description',
+    sourceRefName: 'main',
+    branchName: '2.1.0',
+    text: 'Prepare the documented 2.1.0 delivery.'
+  });
   const featurePrompt = buildFlowAiTextImprovementPrompt({
     surface: 'feature',
     field: 'description',
@@ -78,6 +89,9 @@ test('Flow AI branch prompts specialize feature, task, bug, and hotfix creation 
     text: 'Payment total is incorrect in production.'
   });
 
+  assert.match(releasePrompt, /supplied release branch description/);
+  assert.match(releasePrompt, /release purpose and scope/);
+  assert.match(releasePrompt, /Release branch name: 2\.1\.0/);
   assert.match(featurePrompt, /supplied feature branch description/);
   assert.match(featurePrompt, /feature purpose, user value, and intended scope/);
   assert.match(featurePrompt, /Feature branch name: payment-summary/);
@@ -90,6 +104,23 @@ test('Flow AI branch prompts specialize feature, task, bug, and hotfix creation 
   assert.match(hotfixPrompt, /supplied hotfix branch description/);
   assert.match(hotfixPrompt, /urgent problem, impact, and intended correction/);
   assert.match(hotfixPrompt, /Hotfix branch name: INC-42-payment-rounding/);
+  assertWritingGuidance(releasePrompt);
+  assertWritingGuidance(featurePrompt);
+  assertWritingGuidance(taskPrompt);
+  assertWritingGuidance(bugPrompt);
+  assertWritingGuidance(hotfixPrompt);
+});
+
+test('Flow AI title, release, and synchronization prompts share the writing guidance', () => {
+  const titlePrompt = buildFlowAiTextImprovementPrompt(createPullRequestPromptInput('delivery', 'title'));
+  const releasePrompt = buildFlowAiTextImprovementPrompt(createPullRequestPromptInput('release', 'description'));
+  const synchronizationPrompt = buildFlowAiTextImprovementPrompt(
+    createPullRequestPromptInput('synchronization', 'description')
+  );
+
+  assertWritingGuidance(titlePrompt);
+  assertWritingGuidance(releasePrompt);
+  assertWritingGuidance(synchronizationPrompt);
 });
 
 test('Flow AI prompt policy selects context from trusted branch kinds', () => {
@@ -139,4 +170,50 @@ function createDiffPromptInput(promptKind: 'defect' | 'hotfix') {
       content: 'diff --git a/src/payment.ts b/src/payment.ts\n+roundCorrectly();'
     }
   };
+}
+
+function createPullRequestPromptInput(
+  promptKind: 'delivery' | 'release' | 'synchronization',
+  field: 'title' | 'description'
+) {
+  const profiles = {
+    delivery: {
+      transition: 'feature-to-release' as const,
+      sourceKind: 'feature' as const,
+      targetKind: 'release' as const,
+      contextSource: 'project-document-diff' as const
+    },
+    release: {
+      transition: 'release-to-main' as const,
+      sourceKind: 'release' as const,
+      targetKind: 'main' as const,
+      contextSource: 'project-document-diff' as const
+    },
+    synchronization: {
+      transition: 'sync-to-feature' as const,
+      sourceKind: 'sync' as const,
+      targetKind: 'feature' as const,
+      contextSource: 'code-diff' as const
+    }
+  };
+  const profile = profiles[promptKind];
+  return {
+    surface: 'pull-request' as const,
+    field,
+    sourceRefName: `${profile.sourceKind}/source`,
+    targetRefName: profile.targetKind,
+    title: 'Promote governed work',
+    description: 'Promote the supplied changes.',
+    promptContext: {
+      ...profile,
+      promptKind,
+      content: 'Documented change context.'
+    }
+  };
+}
+
+function assertWritingGuidance(prompt: string): void {
+  for (const rule of AI_PROMPT_WRITING_GUIDANCE) {
+    assert.ok(prompt.includes(rule), `Expected prompt to include writing guidance: ${rule}`);
+  }
 }
