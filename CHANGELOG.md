@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.6.2 - Unreleased
+## 1.6.3 - Unreleased
+
+### Flow Governance
+
+- Start a new package from an exactly synchronized feature branch, retain that feature as the
+  promotion target, and prepare one guarded package-to-feature Pull Request after consolidated
+  validation.
+
+## 1.6.2 - 2026-08-01
 
 ### Flow Governance
 

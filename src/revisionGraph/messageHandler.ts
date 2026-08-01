@@ -39,11 +39,11 @@ export interface RevisionGraphMessageHandlerHost
   postCurrentState(): void;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void>;
   prepareFlowBranchStart(
-    branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+    branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string
   ): Promise<void>;
   startFlowBranch(
-    branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+    branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix',
     sourceRefName: string,
     name: string,
     description: string

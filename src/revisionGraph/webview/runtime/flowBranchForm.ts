@@ -424,6 +424,9 @@ function getRevisionGraphWebviewFlowBranchDialogCopy(
   if (branchKind === 'feature') {
     return { title: 'Start New Feature', submitLabel: 'Create Feature' };
   }
+  if (branchKind === 'package') {
+    return { title: 'Start New Package', submitLabel: 'Create Package' };
+  }
   if (branchKind === 'hotfix') {
     return { title: 'Start New Hot Fix', submitLabel: 'Create Hot Fix' };
   }

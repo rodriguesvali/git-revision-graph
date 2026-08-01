@@ -68,6 +68,7 @@ function isRevisionGraphWebviewFlowPullRequestContextMessage(value: Record<strin
 function isRevisionGraphWebviewFlowBranchFormMessage(value: Record<string, unknown>): boolean {
   return typeof value.sourceRefName === 'string'
     && (value.branchKind === 'release'
+      || value.branchKind === 'package'
       || value.branchKind === 'feature'
       || value.branchKind === 'task'
       || value.branchKind === 'bug'

@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-07-28
+Last consolidated: 2026-08-01
 
 Use this directory only for active or next-release feature work.
 
@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.3-package-start-from-feature.md`: governed package creation from a synchronized feature with
+  durable `package -> feature` Pull Request targeting for consolidated task delivery.
 - `1.6.2-flow-pattern-canonicalization.md`: ordered ASCII case-pair semantics for deterministic,
   cross-platform Flow Governance branch creation and equalization.
 - `1.6.2-feature-start-from-release.md`: governed feature creation from classified release branches.

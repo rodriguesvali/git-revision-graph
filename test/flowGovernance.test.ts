@@ -445,28 +445,38 @@ test('Flow Governance persists and applies equalization targets to sync branches
 
 test('Flow Governance applies persisted promotion targets only to eligible branch kinds', () => {
   const parsed = parseFlowBranchTargets(
+    'branch.package/payment-validation.git-revision-graph-flow-target\nfeature/payment\0' +
     'branch.task/4312-adjust-timeout.git-revision-graph-flow-target\nfeature/payment\0' +
     'branch.bug/BUG-731-payment-rounding.git-revision-graph-flow-target\nrelease/2.0.0\0' +
     'branch.release/2.0.0.git-revision-graph-flow-target\nmain\0'
   );
   const references = applyFlowBranchTargets([
+    { refName: 'package/payment-validation', kind: 'package', isEphemeral: false, diagnostics: [] },
     { refName: 'task/4312-adjust-timeout', kind: 'task', isEphemeral: false, diagnostics: [] },
     { refName: 'bug/BUG-731-payment-rounding', kind: 'bug', isEphemeral: false, diagnostics: [] },
     { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] }
   ], parsed);
 
   assert.equal(references[0].promotionTargetRefName, 'feature/payment');
-  assert.equal(references[1].promotionTargetRefName, 'release/2.0.0');
-  assert.equal(references[2].promotionTargetRefName, undefined);
+  assert.equal(references[1].promotionTargetRefName, 'feature/payment');
+  assert.equal(references[2].promotionTargetRefName, 'release/2.0.0');
+  assert.equal(references[3].promotionTargetRefName, undefined);
 });
 
-test('Flow Governance resolves Pull Request targets for release, hotfix, feature, task, bug, and mapped sync branches', async () => {
+test('Flow Governance resolves Pull Request targets for release, hotfix, feature, package, task, bug, and mapped sync branches', async () => {
   const references = [
     { refName: 'main', kind: 'main' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'release/2.0.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'release/2.1.0', kind: 'release' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'hotfix/INC-482-login', kind: 'hotfix' as const, isEphemeral: false, diagnostics: [] },
     { refName: 'feature/payment', kind: 'feature' as const, isEphemeral: false, diagnostics: [] },
+    {
+      refName: 'package/payment-validation',
+      kind: 'package' as const,
+      isEphemeral: false,
+      diagnostics: [],
+      promotionTargetRefName: 'feature/payment'
+    },
     {
       refName: 'task/4312-adjust-timeout',
       kind: 'task' as const,
@@ -520,6 +530,7 @@ test('Flow Governance resolves Pull Request targets for release, hotfix, feature
     'main..hotfix/INC-482-login',
     'release/2.0.0..feature/payment',
     'release/2.1.0..feature/payment',
+    'feature/payment..package/payment-validation',
     'feature/payment..task/4312-adjust-timeout',
     'release/2.0.0..bug/BUG-731-payment-rounding',
     'feature/payment..sync/payment',
@@ -531,11 +542,36 @@ test('Flow Governance resolves Pull Request targets for release, hotfix, feature
     ['hotfix/INC-482-login', 'main', 'ahead'],
     ['feature/payment', 'release/2.0.0', 'not-ahead'],
     ['feature/payment', 'release/2.1.0', 'ahead'],
+    ['package/payment-validation', 'feature/payment', 'ahead'],
     ['task/4312-adjust-timeout', 'feature/payment', 'ahead'],
     ['bug/BUG-731-payment-rounding', 'release/2.0.0', 'ahead'],
     ['sync/payment', 'feature/payment', 'ahead'],
     ['sync/2.0.0', 'release/2.0.0', 'ahead']
   ]);
+});
+
+test('Flow Governance does not invent a Pull Request target for an unmapped package branch', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'feature/payment', kind: 'feature', isEphemeral: false, diagnostics: [] },
+    { refName: 'package/payment-validation', kind: 'package', isEphemeral: false, diagnostics: [] }
+  ], undefined, async () => ({ stdout: '1\n', stderr: '' }));
+
+  assert.equal(targets.some((target) => target.sourceRefName === 'package/payment-validation'), false);
+});
+
+test('Flow Governance rejects a mapped package target that is not a feature', async () => {
+  const targets = await loadFlowPullRequestTargets('/workspace/repo', [
+    { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
+    {
+      refName: 'package/payment-validation',
+      kind: 'package',
+      isEphemeral: false,
+      diagnostics: [],
+      promotionTargetRefName: 'release/2.0.0'
+    }
+  ], undefined, async () => ({ stdout: '1\n', stderr: '' }));
+
+  assert.equal(targets.some((target) => target.sourceRefName === 'package/payment-validation'), false);
 });
 
 test('Flow Governance does not invent a Pull Request target for an unmapped task branch', async () => {

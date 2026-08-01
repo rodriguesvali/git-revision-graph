@@ -89,7 +89,7 @@ export type RevisionGraphViewHostMessage =
   }
   | {
     readonly type: 'show-flow-branch-form';
-    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+    readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
   }
   | {

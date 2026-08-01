@@ -229,6 +229,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /function createRevisionGraphPrepareStartFlowBranchMessage\(target, branchKind\)/);
   assert.match(html, /Start New Release/);
   assert.match(html, /Start New Feature/);
+  assert.match(html, /Start New Package/);
   assert.match(html, /Start New Task/);
   assert.match(html, /Start New Hot Fix/);
   assert.match(html, /Start New Bug/);
@@ -621,12 +622,13 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /appendFlowGovernanceActions\(getFlowBranchInfo\(target\.name\), target\);/);
   assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'hotfix'\)\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'task'\)/);
+  assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Package[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'package'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Promotion PR Context[\s\S]*?openFlowPullRequestContextForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Feature[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
-  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?flowBranch\.kind === 'sync'[\s\S]*?flowBranch\.kind === 'task'[\s\S]*?flowBranch\.kind === 'bug'[\s\S]*?getFlowProductionBranchName\(\)[\s\S]*?getFlowPullRequestTargets\(target\.name\)\[0\]\?\.targetRefName[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, pullRequestTargetName\)/);
+  assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?flowBranch\.kind === 'sync'[\s\S]*?flowBranch\.kind === 'package'[\s\S]*?flowBranch\.kind === 'task'[\s\S]*?flowBranch\.kind === 'bug'[\s\S]*?getFlowProductionBranchName\(\)[\s\S]*?getFlowPullRequestTargets\(target\.name\)\[0\]\?\.targetRefName[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, pullRequestTargetName\)/);
   assert.match(html, /targetText\.textContent = 'Target release';/);
   assert.match(html, /function initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(select, targets\)/);
   assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a release\.\.\.' : 'No release branches available';/);
@@ -913,6 +915,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /taskDev \+ '-' \+ shortName/);
   assert.match(html, /!\/\^\[0-9\]\+\$\/\.test\(taskDev\)/);
   assert.match(html, /function getRevisionGraphWebviewFlowBranchDialogCopy\(branchKind\)/);
+  assert.match(html, /if \(branchKind === 'package'\) \{\s*return \{ title: 'Start New Package', submitLabel: 'Create Package' \};\s*\}/s);
   assert.match(html, /createRevisionGraphWebviewFlowBranchTextField\('flowBranchNameInput', 'Name \*', 240\)/);
   assert.match(html, /input\.setAttribute\('aria-required', 'true'\);/);
   assert.match(html, /descriptionText\.textContent = 'Description \*';/);
@@ -1522,6 +1525,10 @@ test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
     runtime.context.getRevisionGraphWebviewFlowBranchValidationError('feature', '', '', 'feature-name', 'Description'),
     null
   );
+  assert.deepEqual(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError('package', '', '', 'payment-validation', 'Description'),
+    null
+  );
   assert.equal(
     runtime.context.getRevisionGraphWebviewFlowPullRequestWarning('feature/payment', {
       sourceRefName: 'feature/payment',
@@ -1547,6 +1554,7 @@ test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
   assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('release'), true);
   assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('feature'), true);
   assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('task'), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewFlowAiBranchKind('package'), false);
   const branchFields = {
     nameInput: { value: '' },
     taskDevInput: { value: 'BUG-42' },
@@ -1686,6 +1694,11 @@ test('rejects malformed host state before applying it to the webview runtime', (
     type: 'show-flow-branch-form',
     branchKind: 'release',
     sourceRefName: 'main'
+  }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    type: 'show-flow-branch-form',
+    branchKind: 'package',
+    sourceRefName: 'feature/demo'
   }), true);
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
     type: 'show-flow-branch-form',

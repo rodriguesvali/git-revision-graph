@@ -35,7 +35,7 @@ const DEFAULT_DEPENDENCIES: FlowBranchStartPreflightDependencies = {
 };
 
 export function getFlowBranchStartSyncPolicy(kind: FlowStartBranchKind): FlowBranchStartSyncPolicy {
-  return kind === 'release' || kind === 'feature' || kind === 'hotfix'
+  return kind === 'release' || kind === 'package' || kind === 'feature' || kind === 'hotfix'
     ? 'exact-sync'
     : 'not-behind';
 }

@@ -244,6 +244,9 @@ expands them.
   model output never performs Git operations, and closing/changing forms or repositories cancels it.
 - Promotion PR handoff from a release or hotfix to the configured production branch must fail closed unless the local production ref exactly matches the current remote production tip and that tip is an ancestor of the source. These guards are rechecked before opening the provider URL so stale local governance state or incompatible promotion sources cannot bypass current production.
 - Governed branch creation may offer immediate publication only after the local branch and its metadata are successfully created. Publication requires explicit confirmation, uses a normal Git API push with upstream tracking, and must leave the local branch intact when declined, canceled, unavailable, or failed.
+- Governed package creation starts only from an exactly synchronized feature, persists that feature
+  as local branch-target metadata, and reuses the mapped `package -> feature` Pull Request handoff so
+  consolidated task deliveries return through one explicit PR without target inference.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
 ## Quality Attributes

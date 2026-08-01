@@ -304,6 +304,9 @@ function isAllowedFlowStartSourceKind(
   if (branchKind === 'task') {
     return sourceKind === 'feature';
   }
+  if (branchKind === 'package') {
+    return sourceKind === 'feature';
+  }
   if (branchKind === 'bug') {
     return sourceKind === 'release' || sourceKind === 'feature';
   }
@@ -354,7 +357,7 @@ function isKnownGovernedFlowTransition(
   if (!source || !target || !isFlowGovernedTransition(source.kind, target.kind)) {
     return false;
   }
-  return (source.kind !== 'sync' && source.kind !== 'task' && source.kind !== 'bug') || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
+  return (source.kind !== 'sync' && source.kind !== 'package' && source.kind !== 'task' && source.kind !== 'bug') || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
     candidate.sourceRefName === sourceRefName && candidate.targetRefName === targetRefName
   ) === true;
 }

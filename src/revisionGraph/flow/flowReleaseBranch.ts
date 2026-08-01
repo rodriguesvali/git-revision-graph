@@ -68,6 +68,10 @@ export function resolveFlowBranchName(
   const canonicalizedName = canonicalizeFlowPatternPrefix(trimmedName, branchPattern);
   const candidates = getUniqueCandidates([
     canonicalizedName,
+    kind === 'package' && prefix && canonicalizedName === undefined
+      && !prefix.canonicalPrefix.endsWith('/')
+      ? `${prefix.canonicalPrefix}/${trimmedName}`
+      : undefined,
     prefix && canonicalizedName === undefined
       ? `${prefix.canonicalPrefix}${trimmedName}`
       : undefined,
@@ -129,7 +133,7 @@ export async function startFlowBranch(
     await repository.createBranch(branchName, true, options.sourceBranch);
     branchCreated = true;
     await services.referenceManager.unsetBranchUpstream(repository, branchName);
-    if (options.kind === 'task' || options.kind === 'bug') {
+    if (options.kind === 'package' || options.kind === 'task' || options.kind === 'bug') {
       await (dependencies.setTarget ?? setFlowBranchTarget)(
         repository.rootUri.fsPath,
         branchName,
@@ -247,6 +251,9 @@ function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {
   }
   if (kind === 'feature') {
     return 'Feature';
+  }
+  if (kind === 'package') {
+    return 'Package';
   }
   if (kind === 'task') {
     return 'Task';

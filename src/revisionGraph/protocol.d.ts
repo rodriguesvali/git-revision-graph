@@ -66,12 +66,12 @@ declare namespace RevisionGraphProtocol {
     | {
       readonly type: 'start-flow-branch';
       readonly phase: 'prepare';
-      readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+      readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
       readonly sourceRefName: string;
     }
     | {
       readonly type: 'start-flow-branch';
-      readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+      readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
       readonly sourceRefName: string;
       readonly name: string;
       readonly description: string;

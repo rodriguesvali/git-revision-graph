@@ -311,7 +311,6 @@
         'unified-diff': () => postUnifiedDiff(base, compare)
       };
     }
-
     function clearContextMenuSelection() {
       selected.splice(0, selected.length);
       syncSelection();
@@ -333,6 +332,7 @@
         );
       } else if (flowBranch.kind === 'feature') {
         entries.push(
+          { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) },
           { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) },
           { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) },
           { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) },
@@ -347,7 +347,7 @@
             { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
           );
         }
-      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync'
+      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync' || flowBranch.kind === 'package'
         || flowBranch.kind === 'task' || flowBranch.kind === 'bug') {
         const pullRequestTargetName = flowBranch.kind === 'hotfix' ? getFlowProductionBranchName()
           : getFlowPullRequestTargets(target.name)[0]?.targetRefName;

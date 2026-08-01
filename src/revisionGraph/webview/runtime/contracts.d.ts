@@ -3,7 +3,7 @@
 type RevisionGraphWebviewRefKind = RevisionGraphProtocol.RefKind;
 type RevisionGraphWebviewMergeRefKind = RevisionGraphProtocol.MergeRefKind;
 type RevisionGraphWebviewTargetKind = RevisionGraphProtocol.TargetKind;
-type RevisionGraphWebviewFlowBranchKind = 'release' | 'feature' | 'hotfix' | 'task' | 'bug';
+type RevisionGraphWebviewFlowBranchKind = 'release' | 'package' | 'feature' | 'hotfix' | 'task' | 'bug';
 
 interface RevisionGraphWebviewTarget {
   readonly id?: string;

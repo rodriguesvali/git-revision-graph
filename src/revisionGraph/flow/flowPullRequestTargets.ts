@@ -90,11 +90,11 @@ function appendMappedPromotionCandidates(
   references: readonly FlowBranchInfo[]
 ): void {
   for (const source of references.filter((reference) =>
-    reference.kind === 'task' || reference.kind === 'bug'
+    reference.kind === 'package' || reference.kind === 'task' || reference.kind === 'bug'
   )) {
     const target = references.find((reference) =>
       reference.refName === source.promotionTargetRefName
-      && (source.kind === 'task'
+      && (source.kind === 'package' || source.kind === 'task'
         ? reference.kind === 'feature'
         : reference.kind === 'release' || reference.kind === 'feature')
     );

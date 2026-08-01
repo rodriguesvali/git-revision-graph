@@ -96,7 +96,7 @@ test('RevisionGraphMessageHandler waits for Flow Governance option persistence',
 
 test('RevisionGraphMessageHandler starts Flow Governance branches through the host boundary', async () => {
   const calls: Array<{
-    readonly branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+    readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
     readonly sourceRefName: string;
     readonly name: string;
     readonly description: string;
@@ -120,6 +120,13 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
     sourceRefName: 'main',
     name: 'checkout-redesign',
     description: 'Redesign the checkout experience'
+  });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    branchKind: 'package',
+    sourceRefName: 'feature/checkout-redesign',
+    name: 'payment-validation',
+    description: 'Consolidate payment tasks before feature promotion'
   });
   await handler.handleMessage({
     type: 'start-flow-branch',
@@ -155,6 +162,12 @@ test('RevisionGraphMessageHandler starts Flow Governance branches through the ho
       sourceRefName: 'main',
       name: 'checkout-redesign',
       description: 'Redesign the checkout experience'
+    },
+    {
+      branchKind: 'package',
+      sourceRefName: 'feature/checkout-redesign',
+      name: 'payment-validation',
+      description: 'Consolidate payment tasks before feature promotion'
     },
     {
       branchKind: 'task',
@@ -194,12 +207,19 @@ test('RevisionGraphMessageHandler prepares a Flow Governance branch before the f
   await handler.handleMessage({
     type: 'start-flow-branch',
     phase: 'prepare',
+    branchKind: 'package',
+    sourceRefName: 'feature/checkout-redesign'
+  });
+  await handler.handleMessage({
+    type: 'start-flow-branch',
+    phase: 'prepare',
     branchKind: 'feature',
     sourceRefName: 'main'
   });
 
   assert.deepEqual(calls, [
     { branchKind: 'release', sourceRefName: 'main' },
+    { branchKind: 'package', sourceRefName: 'feature/checkout-redesign' },
     { branchKind: 'feature', sourceRefName: 'main' }
   ]);
 });

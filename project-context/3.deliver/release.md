@@ -1,28 +1,64 @@
 # Release Readiness
 
-Status: `1.6.2` automated verification complete; manual validation pending
-Last consolidated: 2026-07-30
+Status: `1.6.3` automated verification complete; manual validation pending
+Last consolidated: 2026-08-01
 
 ## Current State
 
-- Current package version: `1.6.2` in `package.json` and the root `package-lock.json`.
-- Latest recorded published release: `1.6.1`, by maintainer confirmation on 2026-07-29.
-- Release cycle status: `1.6.2` was opened on 2026-07-30 as a patch release. Current scope includes
-  feature creation from release branches and cross-platform canonical Flow pattern creation.
+- Current package version: `1.6.3` in `package.json` and the root `package-lock.json`.
+- Latest recorded published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
+- Release cycle status: `1.6.3` was opened on 2026-08-01 as a patch release. Current scope is package
+  creation from synchronized feature branches with exact package-to-feature Pull Request targeting.
   Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
   hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
   are not inferred.
-- Published-baseline reconciliation: the exact `1.6.0` Marketplace timestamp, installed-version
+- Published-baseline reconciliation: the exact `1.6.2` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Release Preparation: 1.6.2
+## Release Preparation: 1.6.3
 
 Status: Automated verification complete; manual validation pending
+Opened: 2026-08-01
+Published baseline version: `1.6.2`
+Target version: `1.6.3`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.2` was published by maintainer confirmation on 2026-08-01. |
+| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.3`. |
+| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,480 functions), `npm run build`, `npm test` (843 tests), `graphify update .` (5,120 nodes, 10,089 edges, 388 communities), and `git diff --check` passed. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
+| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. |
+| VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
+| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.3` on 2026-08-01.
+- No dependency change, VSIX package, publication command, or Marketplace action occurred while
+  opening the cycle.
+- Flow Governance now exposes `Start New Package` only on classified feature branches. Package
+  preflight requires an exactly synchronized feature; creation persists that feature as the package
+  promotion target; and the mapped package exposes one guarded `package -> feature` Pull Request
+  handoff. No package-description AI surface, command, setting, dependency, VSIX, or Marketplace
+  action was added.
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.6.3-package-start-from-feature.md`
+
+## Published Release: 1.6.2
+
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-07-30
+Published: 2026-08-01 (maintainer confirmation)
 Published baseline version: `1.6.1`
 Target version: `1.6.2`
 
@@ -31,23 +67,27 @@ Target version: `1.6.2`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.1` was published by maintainer confirmation on 2026-07-29. |
-| Release scope | Complete for current demand | `Start New Feature` is available from a classified `release` branch. Ordered ASCII case pairs now define canonical governed creation for all Flow patterns, with case-only collision protection. |
-| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.2`. |
-| Automated verification | Complete | `npm run quality:check` (257 files, 2,479 functions), `npm test`, 10 focused canonical-pattern tests, `npm run test:platform` (34 tests), `graphify update .`, and `git diff --check` passed on 2026-07-30. |
-| Extension Development Host smoke | Pending | On Windows, verify canonical `[fF]`/`[Ff]` feature creation, case-only collision blocking, configured sync naming, and feature creation from release. |
-| VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
-| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
-| Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
+| Release scope | Complete | `Start New Feature` is available from a classified `release`. Ordered ASCII case pairs define canonical governed creation for the five startable Flow branch kinds, with case-only collision protection. |
+| Package metadata | Complete | Release metadata declared `1.6.2` before closure; the current workspace now opens `1.6.3`. |
+| Automated verification | Complete | On 2026-07-30, `npm run quality:check` (257 files, 2,479 functions), `npm test`, 10 focused canonical-pattern tests, `npm run test:platform` (34 tests), `graphify update .`, and `git diff --check` passed. |
+| Final Extension Development Host smoke | Evidence not recorded | Operator, VS Code version, platform, fixture details, and final result were not supplied and are not inferred. |
+| VSIX package inspection | Evidence not recorded | VSIX filename, SHA-256 checksum, size, embedded version, runtime-asset inspection, and clean-profile installation result were not supplied. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-08-01. The exact Marketplace timestamp and installed-version evidence were not supplied. |
+| Rollback readiness | Documented | Never reuse `1.6.2`; restore behavior through a new patch or take a Marketplace action according to maintainer decision. |
 
-Opening record:
+Focused build artifacts:
 
-- Version metadata was aligned to `1.6.2` on 2026-07-30.
-- No source change, dependency change, VSIX package, publication command, or Marketplace action occurred while opening the cycle.
-- Flow Governance now exposes `Start New Feature` on classified release branches and authorizes the
-  corresponding prepare/create messages only when the known source is `main` or `release`.
-- Flow Governance now treats ordered ASCII case pairs in deterministic pattern prefixes as canonical
-  creation hints for all seven patterns while preserving full-regex classification. Governed start
-  and equalization operations reject exact or case-only loaded ref collisions before mutation.
+- `project-context/2.build/features/1.6.2-feature-start-from-release.md`
+- `project-context/2.build/features/1.6.2-flow-pattern-canonicalization.md`
+
+Publication closure:
+
+- The maintainer reported Marketplace publication of `1.6.2` complete on 2026-08-01. No packaging
+  or publication command was run by Codex for this reconciliation.
+- The changelog is dated 2026-08-01 and this release record is closed as published.
+- Exact publication, package-inspection, installed-version, and final manual-smoke evidence was not
+  supplied and remains intentionally unrecorded.
+- Future source or Marketplace corrections require a new version; never reuse `1.6.2`.
 
 ## Published Release: Reliability and Security Hardening 1.6.1
 

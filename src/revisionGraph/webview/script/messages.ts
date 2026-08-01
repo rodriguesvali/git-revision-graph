@@ -52,7 +52,7 @@
 
     function createRevisionGraphStartFlowBranchMessage(
       target: RevisionGraphWebviewTarget,
-      branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+      branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix',
       name: string,
       description: string
     ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
@@ -67,7 +67,7 @@
 
     function createRevisionGraphPrepareStartFlowBranchMessage(
       target: RevisionGraphWebviewTarget,
-      branchKind: 'release' | 'feature' | 'task' | 'bug' | 'hotfix'
+      branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix'
     ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
       return {
         type: 'start-flow-branch',

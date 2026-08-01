@@ -55,6 +55,7 @@ test('Flow Governance rejects an unsafe branch pattern supplied outside config n
 test('Flow Governance canonicalizes configured case pairs for every startable branch kind', () => {
   const cases = [
     ['release', '^Latam/[rR]elease/.+$', 'Latam/Release/2.0.0', 'Latam/release/2.0.0'],
+    ['package', '^Latam/[pP]ackage/.+$', 'Latam/Package/payment', 'Latam/package/payment'],
     ['feature', '^Latam/[fF]eature/.+$', 'Latam/Feature/payment', 'Latam/feature/payment'],
     ['task', '^Latam/[tT]ask/.+$', 'Latam/Task/4312-payment', 'Latam/task/4312-payment'],
     ['bug', '^Latam/[bB]ug/.+$', 'Latam/Bug/731-payment', 'Latam/bug/731-payment'],
@@ -96,6 +97,7 @@ test('Flow Governance keeps full matching names when a pattern has no determinis
 
 test('Flow Governance selects synchronization policy from the governed branch source model', () => {
   assert.equal(getFlowBranchStartSyncPolicy('release'), 'exact-sync');
+  assert.equal(getFlowBranchStartSyncPolicy('package'), 'exact-sync');
   assert.equal(getFlowBranchStartSyncPolicy('feature'), 'exact-sync');
   assert.equal(getFlowBranchStartSyncPolicy('hotfix'), 'exact-sync');
   assert.equal(getFlowBranchStartSyncPolicy('task'), 'not-behind');
@@ -646,6 +648,62 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.deepEqual(upstreamClears, ['feature/checkout-redesign']);
   assert.equal(refreshes.length, 1);
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
+});
+
+test('Flow Governance starts a local package branch from its feature and persists the PR target', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const informationMessages: string[] = [];
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const targets: Array<{ readonly branchName: string; readonly targetRefName: string }> = [];
+  const services = createReleaseServices({ informationMessages, upstreamClears, refreshes });
+
+  await startFlowBranch(repository, {
+    kind: 'package',
+    sourceBranch: 'feature/checkout-redesign',
+    name: 'payment-validation',
+    description: 'Consolidate payment tasks before feature promotion',
+    config: DEFAULT_FLOW_CONFIG
+  }, services, {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    }
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'package/payment-validation',
+    checkout: true,
+    ref: 'feature/checkout-redesign'
+  }]);
+  assert.deepEqual(upstreamClears, ['package/payment-validation']);
+  assert.deepEqual(targets, [{
+    branchName: 'package/payment-validation',
+    targetRefName: 'feature/checkout-redesign'
+  }]);
+  assert.equal(refreshes.length, 1);
+  assert.match(informationMessages[0] ?? '', /Package branch package\/payment-validation was created/);
+});
+
+test('Flow Governance stops package setup before publication when its feature target cannot be persisted', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const errors: string[] = [];
+  const services = createReleaseServices({ errors, confirmResult: true, remoteNames: ['origin'] });
+
+  await startFlowBranch(repository, {
+    kind: 'package',
+    sourceBranch: 'feature/checkout-redesign',
+    name: 'payment-validation',
+    description: 'Consolidate payment tasks before feature promotion',
+    config: DEFAULT_FLOW_CONFIG
+  }, services, {
+    async setTarget() {
+      throw new Error('target persistence failed');
+    }
+  });
+
+  assert.equal(repository.calls.createBranch.length, 1);
+  assert.deepEqual(repository.calls.push, []);
+  assert.match(errors[0] ?? '', /Could not start the package.*target persistence failed/);
 });
 
 test('Flow Governance shows description persistence warnings modally and continues branch creation', async () => {
