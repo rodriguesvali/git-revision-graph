@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 
 ### Revision Graph
 
+- Delay custom reference and Show Log commit tooltips by 500 ms, cancel pending tooltips when the
+  pointer leaves, and dismiss them before opening a context menu.
 - Keep `Focus Descendants` responsive on non-root revisions in large, merge-heavy histories by
   bounding projected-edge traversal to the focused scope and reusing shared ancestry results.
 - Avoid rebuilding graph-wide topology caches during virtual scrolling and zooming; rebuild them

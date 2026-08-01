@@ -62,6 +62,7 @@ export function renderShowLogWebviewHtml(): string {
     const GRAPH_RIGHT_PADDING = 6;
     const GRAPH_MAIN_HEIGHT = 34;
     const GRAPH_MAIN_META_HEIGHT = 42;
+    const TOOLTIP_SHOW_DELAY_MS = 500;
     const persistedUiState = vscode.getState() || {};
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
     let commitFileFilters = normalizeCommitFileFilters(persistedUiState[COMMIT_FILE_FILTERS_KEY]);
@@ -768,7 +769,6 @@ export function renderShowLogWebviewHtml(): string {
       if (tooltipShowTimer && pendingTooltipCommitHash === commitHash) {
         return;
       }
-
       cancelCommitTooltipShow();
       pendingTooltipCommitHash = commitHash;
       tooltipShowTimer = window.setTimeout(() => {
@@ -778,7 +778,7 @@ export function renderShowLogWebviewHtml(): string {
         tooltipShowTimer = 0;
         pendingTooltipCommitHash = '';
         showCommitTooltip(pendingCommitHash, { clientX, clientY });
-      }, 500);
+      }, TOOLTIP_SHOW_DELAY_MS);
     }
 
     function cancelCommitTooltipShow() {

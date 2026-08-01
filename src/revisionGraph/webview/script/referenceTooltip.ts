@@ -1,3 +1,6 @@
+    const TOOLTIP_SHOW_DELAY_MS = 500;
+    let referenceTooltipShowTimer = 0;
+    let pendingReferenceTooltipElement: HTMLElement | null = null;
     let referenceTooltipHideTimer = 0;
     let activeReferenceTooltipHash = '';
     interface RevisionGraphWebviewCommitShortStat {
@@ -103,6 +106,7 @@
       if (!referenceTooltip || !refElement) {
         return;
       }
+      cancelShowReferenceTooltip();
       const refId = refElement.getAttribute('data-ref-id');
       const reference = (refId ? getReference(refId) : null) as {
         readonly hash: string;
@@ -128,6 +132,32 @@
       referenceTooltip.hidden = false;
       placeReferenceTooltip(refElement);
       requestCommitShortStat(node.hash);
+    }
+
+    function scheduleShowReferenceTooltip(refElement: HTMLElement) {
+      cancelHideReferenceTooltip();
+      if (pendingReferenceTooltipElement === refElement && referenceTooltipShowTimer) {
+        return;
+      }
+
+      cancelShowReferenceTooltip();
+      pendingReferenceTooltipElement = refElement;
+      referenceTooltipShowTimer = window.setTimeout(() => {
+        const pendingElement = pendingReferenceTooltipElement;
+        referenceTooltipShowTimer = 0;
+        pendingReferenceTooltipElement = null;
+        if (pendingElement) {
+          showReferenceTooltip(pendingElement);
+        }
+      }, TOOLTIP_SHOW_DELAY_MS);
+    }
+
+    function cancelShowReferenceTooltip() {
+      if (referenceTooltipShowTimer) {
+        window.clearTimeout(referenceTooltipShowTimer);
+        referenceTooltipShowTimer = 0;
+      }
+      pendingReferenceTooltipElement = null;
     }
 
     function renderReferenceTooltip(
@@ -204,6 +234,7 @@
     }
 
     function hideReferenceTooltip() {
+      cancelShowReferenceTooltip();
       cancelHideReferenceTooltip();
       activeReferenceTooltipHash = '';
       if (referenceTooltip) {
@@ -212,6 +243,7 @@
     }
 
     function scheduleHideReferenceTooltip() {
+      cancelShowReferenceTooltip();
       cancelHideReferenceTooltip();
       referenceTooltipHideTimer = window.setTimeout(hideReferenceTooltip, 180);
     }

@@ -1530,7 +1530,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       nodeLayer.addEventListener('mouseover', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
         if (refElement && (!(event.relatedTarget instanceof Node) || !refElement.contains(event.relatedTarget))) {
-          showReferenceTooltip(refElement);
+          scheduleShowReferenceTooltip(refElement);
         }
       });
       nodeLayer.addEventListener('mouseout', (event) => {
@@ -1542,7 +1542,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       nodeLayer.addEventListener('focusin', (event) => {
         const refElement = findEventTargetElement(event, '[data-ref-id]');
         if (refElement) {
-          showReferenceTooltip(refElement);
+          scheduleShowReferenceTooltip(refElement);
         }
       });
       nodeLayer.addEventListener('focusout', handleReferenceTooltipReferenceFocusOut);
@@ -1559,8 +1559,8 @@ const VIEWPORT_PADDING_LEFT = 18;
         toggleSelection(refId, event.ctrlKey || event.metaKey);
         syncSelection();
       });
-
       nodeLayer.addEventListener('contextmenu', (event) => {
+        hideReferenceTooltip();
         const refElement = findEventTargetElement(event, '[data-ref-id]');
         if (refElement) {
           event.preventDefault();

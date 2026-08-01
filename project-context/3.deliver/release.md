@@ -9,8 +9,9 @@ Last consolidated: 2026-08-01
 - Latest recorded published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
 - Release cycle status: `1.6.3` was opened on 2026-08-01 as a patch release. Current scope is package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
-  plus `Focus Descendants` projection and virtual-scene rendering performance corrections for large
-  merge-heavy histories. Packaging and publication remain subject to maintainer approval.
+  `Focus Descendants` projection and virtual-scene rendering performance corrections for large
+  merge-heavy histories, and consistent delayed custom tooltips that do not obstruct context menus.
+  Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
   hosted `macos-latest` result, and current-candidate Extension Host E2E result were not supplied and
@@ -32,10 +33,10 @@ Target version: `1.6.3`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.2` was published by maintainer confirmation on 2026-08-01. |
-| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope and memoizes shared ancestry. Virtual viewport frames no longer rebuild graph-wide topology, regenerate full minimap content, or reapply search highlights. The first ready scene collects rendered-element caches only in its virtual commit, and long edges are stored once in a balanced interval index rather than every crossed vertical bucket. |
+| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope and memoizes shared ancestry. Virtual viewport frames no longer rebuild graph-wide topology, regenerate full minimap content, or reapply search highlights. The first ready scene collects rendered-element caches only in its virtual commit, and long edges are stored once in a balanced interval index rather than every crossed vertical bucket. Revision Graph reference and Show Log commit tooltips now use a 500 ms custom activation standard and are cancelled before context menus open. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.3`. |
-| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,499 functions), `npm run build`, `npm test` (848 tests), `npm run benchmark:ci`, the retained same-cycle `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. Runtime regressions verify that virtual viewport frames cannot rebuild graph-wide topology, regenerate full minimap content, apply search highlights twice, repeat the first-ready rendered-element cache refresh, or replicate a long edge by its vertical span. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
-| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, focus exit, scrolling, zooming, long crossing edges, minimap tracking, selection, and search remain responsive and correct from a non-root revision in a large merge-heavy repository. |
+| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,502 functions), `npm run build`, `npm test` (848 tests), the focused Revision Graph and Show Log webview suites (87 tests), `npm run benchmark:ci`, the retained same-cycle `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. Tooltip regressions verify the explicit 500 ms delay, pointer and focus scheduling, pending-show cancellation, and context-menu dismissal. Virtual-scene regressions verify that viewport frames cannot rebuild graph-wide topology, regenerate full minimap content, apply search highlights twice, repeat the first-ready rendered-element cache refresh, or replicate a long edge by its vertical span. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
+| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, focus exit, scrolling, zooming, long crossing edges, minimap tracking, selection, and search remain responsive and correct from a non-root revision in a large merge-heavy repository. Hover and keyboard-focus Revision Graph references and Show Log commits to confirm the 500 ms delay, then right-click before and after activation to confirm tooltips do not obstruct or reopen over context menus. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -71,6 +72,9 @@ Opening record:
   one tree node regardless of vertical span; queries prune by top or bottom ordering, preserve input
   order, and retain the final viewport visibility checks. The obsolete bucket-size constant and
   per-intermediate-bucket edge replication were removed.
+- Extension-controlled Revision Graph reference and Show Log commit tooltips now share an explicit
+  500 ms activation standard. Pending activation is cancelled on exit and before context menus open;
+  native HTML `title` tooltip timing remains controlled by Chromium.
 
 Focused build artifacts:
 
@@ -80,6 +84,7 @@ Focused build artifacts:
 - `project-context/2.build/features/1.6.3-virtual-scene-minimap-refresh.md`
 - `project-context/2.build/features/1.6.3-initial-scene-cache-refresh.md`
 - `project-context/2.build/features/1.6.3-virtual-interval-index.md`
+- `project-context/2.build/features/1.6.3-tooltip-delay.md`
 
 ## Published Release: 1.6.2
 

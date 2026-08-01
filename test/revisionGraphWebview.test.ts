@@ -857,6 +857,13 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /reference-tooltip-kind">/);
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /function bindReferenceTooltipEvents\(\)/);
+  assert.match(html, /const TOOLTIP_SHOW_DELAY_MS = 500;/);
+  assert.match(html, /function scheduleShowReferenceTooltip\(refElement\)/);
+  assert.match(html, /window\.setTimeout\(\(\) => \{[\s\S]*?showReferenceTooltip\(pendingElement\);[\s\S]*?\}, TOOLTIP_SHOW_DELAY_MS\);/s);
+  assert.match(html, /nodeLayer\.addEventListener\('mouseover',[\s\S]*?scheduleShowReferenceTooltip\(refElement\);/s);
+  assert.match(html, /nodeLayer\.addEventListener\('focusin',[\s\S]*?scheduleShowReferenceTooltip\(refElement\);/s);
+  assert.match(html, /function scheduleHideReferenceTooltip\(\) \{\s*cancelShowReferenceTooltip\(\);/s);
+  assert.match(html, /nodeLayer\.addEventListener\('contextmenu', \(event\) => \{\s*hideReferenceTooltip\(\);/s);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseenter', cancelHideReferenceTooltip\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('mouseleave', scheduleHideReferenceTooltip\)/);
   assert.match(html, /referenceTooltip\.addEventListener\('focusin', cancelHideReferenceTooltip\)/);
