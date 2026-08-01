@@ -377,6 +377,147 @@ test('Show Log reuses, disposes, and recreates its editor panel', async (t) => {
   provider.dispose();
 });
 
+test('Show Log reloads the current commit references after creating a tag', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  let loadCount = 0;
+  const backend = {
+    async loadRevisionLog() {
+      loadCount += 1;
+      return {
+        entries: [createRevisionLogEntry({
+          hash: 'abcdef123456',
+          shortHash: 'abcdef12',
+          references: loadCount > 1 ? [{ name: 'test-01', kind: 'tag' }] : []
+        })],
+        hasMore: false,
+        searchTruncated: false
+      };
+    }
+  } as never;
+  const createdTags: Array<{ readonly tagName: string; readonly refName: string }> = [];
+  const services = {
+    ui: {
+      async promptTagName() { return 'test-01'; },
+      showInformationMessage() {}
+    },
+    refreshController: {
+      prepare() { return undefined; },
+      refresh() {}
+    },
+    referenceManager: {
+      async createTag(_repository: unknown, tagName: string, refName: string) {
+        createdTags.push({ tagName, refName });
+      }
+    }
+  } as never;
+  const provider = new ShowLogViewProvider(
+    harness.extensionUri,
+    backend,
+    {} as never,
+    () => services
+  );
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showSource(
+    repository,
+    { kind: 'target', revision: 'main', label: 'main' }
+  );
+  harness.panels[0].receiveMessage({
+    type: 'createTagFromCommit',
+    commitHash: 'abcdef123456'
+  });
+  await waitForAsyncHandlers();
+
+  const finalState = harness.panels[0].postedMessages
+    .map((message) => (message as {
+      readonly state?: {
+        readonly commits?: ReadonlyArray<{
+          readonly refs: ReadonlyArray<{ readonly name: string; readonly kind: string }>;
+        }>;
+      };
+    }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  assert.equal(loadCount, 2);
+  assert.deepEqual(createdTags, [{ tagName: 'test-01', refName: 'abcdef123456' }]);
+  assert.deepEqual(finalState?.commits?.[0]?.refs.map(({ name, kind }) => ({ name, kind })), [
+    { name: 'test-01', kind: 'tag' }
+  ]);
+  provider.dispose();
+});
+
+test('Show Log reloads the current commit references after Checkout to This creates a branch', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  let loadCount = 0;
+  const backend = {
+    async loadRevisionLog() {
+      loadCount += 1;
+      return {
+        entries: [createRevisionLogEntry({
+          hash: 'abcdef123456',
+          shortHash: 'abcdef12',
+          references: loadCount > 1 ? [{ name: 'feature/from-show-log', kind: 'head' }] : []
+        })],
+        hasMore: false,
+        searchTruncated: false
+      };
+    }
+  } as never;
+  const services = {
+    ui: {
+      async promptBranchName() { return 'feature/from-show-log'; },
+      showInformationMessage() {}
+    },
+    referenceManager: {
+      async unsetBranchUpstream() {}
+    },
+    refreshController: {
+      prepare() { return undefined; },
+      refresh() {}
+    }
+  } as never;
+  const provider = new ShowLogViewProvider(
+    harness.extensionUri,
+    backend,
+    {} as never,
+    () => services
+  );
+  const repository = createRepository({ root: '/workspace/repo' });
+
+  await provider.showSource(
+    repository,
+    { kind: 'target', revision: 'main', label: 'main' }
+  );
+  harness.panels[0].receiveMessage({
+    type: 'checkoutCommit',
+    commitHash: 'abcdef123456'
+  });
+  await waitForAsyncHandlers();
+
+  const finalState = harness.panels[0].postedMessages
+    .map((message) => (message as {
+      readonly state?: {
+        readonly commits?: ReadonlyArray<{
+          readonly refs: ReadonlyArray<{ readonly name: string; readonly kind: string }>;
+        }>;
+      };
+    }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  assert.equal(loadCount, 2);
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'feature/from-show-log',
+    checkout: true,
+    ref: 'abcdef123456'
+  }]);
+  assert.deepEqual(finalState?.commits?.[0]?.refs.map(({ name, kind }) => ({ name, kind })), [
+    { name: 'feature/from-show-log', kind: 'head' }
+  ]);
+  provider.dispose();
+});
+
 test('Show Log publishes truthful filtered search truncation state', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');

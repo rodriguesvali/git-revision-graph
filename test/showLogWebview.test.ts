@@ -220,7 +220,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /event\.data && event\.data\.type === 'append'/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /Open Commit Details/);
-  assert.match(html, /data-menu-action="checkoutCommit">Checkout to this<\/button>/);
+  assert.match(html, /data-menu-action="checkoutCommit">Checkout to This<\/button>/);
   assert.match(html, /data-menu-action="createTagFromCommit">Create Tag<\/button>/);
   assert.match(html, /Reset to this/);
   assert.match(html, /data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>/);

@@ -1,7 +1,7 @@
 import { formatShortCommitHash } from '../commitHash';
 import type { Repository } from '../git';
 import {
-  checkoutResolvedReference,
+  createBranchFromResolvedReference,
   createTagFromResolvedReference,
   type RefActionServices,
   type RefActionTarget
@@ -22,7 +22,7 @@ export interface ShowLogCommitRefActionUi {
 }
 
 export interface ShowLogCommitRefActionWorkflows {
-  checkout(
+  createBranch(
     repository: Repository,
     target: RefActionTarget,
     services: RefActionServices
@@ -36,10 +36,11 @@ export interface ShowLogCommitRefActionWorkflows {
 
 export interface ShowLogCommitRefActionOutcome {
   readonly status: 'completed' | 'rejected';
+  readonly refreshRequested: boolean;
 }
 
 const DEFAULT_WORKFLOWS: ShowLogCommitRefActionWorkflows = {
-  checkout: checkoutResolvedReference,
+  createBranch: createBranchFromResolvedReference,
   createTag: createTagFromResolvedReference
 };
 
@@ -55,35 +56,45 @@ export async function runShowLogCommitRefAction(
   const repository = getVisibleShowLogRepository(state);
   const target = getShowLogCommitRefActionTarget(state, commitHash);
   if (!repository || !target) {
-    return { status: 'completed' };
+    return { status: 'completed', refreshRequested: false };
   }
 
   if (!services) {
     const actionUi = ui ?? getDefaultShowLogCommitRefActionUi();
     await actionUi.showErrorMessage(
       action === 'checkout'
-        ? 'Could not check out the commit because Git actions are not ready yet.'
+        ? 'Could not create the branch because Git actions are not ready yet.'
         : 'Could not create the tag because Git actions are not ready yet.'
     );
-    return { status: 'completed' };
+    return { status: 'completed', refreshRequested: false };
   }
 
+  let refreshRequested = false;
   const execute = async (currentRepository: Repository, currentServices: RefActionServices) => {
+    const observedRepository = observeBranchCreation(currentRepository, () => {
+      refreshRequested = true;
+    });
+    const observedServices = observeRefreshRequests(currentServices, () => {
+      refreshRequested = true;
+    });
     if (action === 'checkout') {
-      await workflows.checkout(currentRepository, target, currentServices);
+      await workflows.createBranch(observedRepository, target, observedServices);
     } else {
-      await workflows.createTag(currentRepository, target, currentServices);
+      await workflows.createTag(observedRepository, target, observedServices);
     }
   };
   if (!mutationCoordinator) {
     await execute(repository, services);
-    return { status: 'completed' };
+    return { status: 'completed', refreshRequested };
   }
 
-  return mutationCoordinator.run(repository.rootUri.fsPath, (lease) => execute(
+  const outcome = await mutationCoordinator.run(repository.rootUri.fsPath, (lease) => execute(
     createMutationGuardedRepository(repository, lease),
     createMutationGuardedRefActionServices(services, lease)
   ));
+  return outcome.status === 'rejected'
+    ? { status: 'rejected', refreshRequested: false }
+    : { status: 'completed', refreshRequested };
 }
 
 export function getShowLogCommitRefActionTarget(
@@ -108,4 +119,39 @@ function getDefaultShowLogCommitRefActionUi(): ShowLogCommitRefActionUi {
   return {
     showErrorMessage: showModalErrorMessage
   };
+}
+
+function observeRefreshRequests(
+  services: RefActionServices,
+  onRefresh: () => void
+): RefActionServices {
+  return {
+    ...services,
+    refreshController: {
+      prepare: (request) => services.refreshController.prepare(request),
+      refresh: (request) => {
+        services.refreshController.refresh(request);
+        onRefresh();
+      }
+    }
+  };
+}
+
+function observeBranchCreation(
+  repository: Repository,
+  onCreated: () => void
+): Repository {
+  return new Proxy(repository, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (property !== 'createBranch' || typeof value !== 'function') {
+        return value;
+      }
+
+      return async (...args: Parameters<Repository['createBranch']>) => {
+        await Reflect.apply(value, target, args);
+        onCreated();
+      };
+    }
+  });
 }

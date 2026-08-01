@@ -12,22 +12,29 @@ import {
 import type { ShowLogState } from '../src/showLogShared';
 import { createRepository, createRevisionLogEntry } from './fakes';
 
-test('Show Log commit ref actions resolve a loaded commit target for checkout and tag creation', async () => {
+test('Show Log commit ref actions resolve a loaded commit target for branch and tag creation', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const state = createVisibleState(repository);
   const services = {} as RefActionServices;
   const calls: Array<{
-    readonly action: 'checkout' | 'create-tag';
-    readonly repository: Repository;
+    readonly action: 'create-branch' | 'create-tag';
+    readonly repositoryPath: string;
     readonly target: RefActionTarget;
-    readonly services: RefActionServices;
   }> = [];
   const workflows: ShowLogCommitRefActionWorkflows = {
-    async checkout(currentRepository, target, currentServices) {
-      calls.push({ action: 'checkout', repository: currentRepository, target, services: currentServices });
+    async createBranch(currentRepository, target) {
+      calls.push({
+        action: 'create-branch',
+        repositoryPath: currentRepository.rootUri.fsPath,
+        target
+      });
     },
-    async createTag(currentRepository, target, currentServices) {
-      calls.push({ action: 'create-tag', repository: currentRepository, target, services: currentServices });
+    async createTag(currentRepository, target) {
+      calls.push({
+        action: 'create-tag',
+        repositoryPath: currentRepository.rootUri.fsPath,
+        target
+      });
     }
   };
 
@@ -57,17 +64,60 @@ test('Show Log commit ref actions resolve a loaded commit target for checkout an
 
   assert.deepEqual(calls, [
     {
-      action: 'checkout',
-      repository,
-      target: { refName: 'abcdef123456', label: 'abc123', kind: 'commit' },
-      services
+      action: 'create-branch',
+      repositoryPath: '/workspace/repo',
+      target: { refName: 'abcdef123456', label: 'abc123', kind: 'commit' }
     },
     {
       action: 'create-tag',
-      repository,
-      target: { refName: 'abcdef123456', label: 'abc123', kind: 'commit' },
-      services
+      repositoryPath: '/workspace/repo',
+      target: { refName: 'abcdef123456', label: 'abc123', kind: 'commit' }
     }
+  ]);
+});
+
+test('Checkout to This suggests an editable branch name and creates it from the loaded commit', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const prompts: Array<{ readonly prompt: string; readonly value: string }> = [];
+  const upstreamClears: string[] = [];
+  const informationMessages: string[] = [];
+  const services = {
+    ui: {
+      async promptBranchName(options: { readonly prompt: string; readonly value: string }) {
+        prompts.push(options);
+        return 'feature/from-show-log';
+      },
+      showInformationMessage(message: string) {
+        informationMessages.push(message);
+      }
+    },
+    referenceManager: {
+      async unsetBranchUpstream(_repository: Repository, branchName: string) {
+        upstreamClears.push(branchName);
+      }
+    }
+  } as RefActionServices;
+
+  const outcome = await runShowLogCommitRefAction(
+    createVisibleState(repository),
+    'abcdef123456',
+    'checkout',
+    services
+  );
+
+  assert.equal(outcome.status, 'completed');
+  assert.deepEqual(prompts, [{
+    prompt: 'Create a New Local Branch from abc123',
+    value: 'commit-abcdef12'
+  }]);
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'feature/from-show-log',
+    checkout: true,
+    ref: 'abcdef123456'
+  }]);
+  assert.deepEqual(upstreamClears, ['feature/from-show-log']);
+  assert.deepEqual(informationMessages, [
+    'Branch feature/from-show-log was created and checked out from abc123.'
   ]);
 });
 
@@ -81,7 +131,7 @@ test('Show Log commit ref actions ignore commits outside the current loaded stat
     undefined,
     undefined,
     {
-      async checkout() { calls.push('checkout'); },
+      async createBranch() { calls.push('create-branch'); },
       async createTag() { calls.push('create-tag'); }
     }
   );
@@ -102,7 +152,7 @@ test('Show Log commit ref actions report unavailable Git services', async () => 
   });
 
   assert.deepEqual(errors, [
-    'Could not check out the commit because Git actions are not ready yet.',
+    'Could not create the branch because Git actions are not ready yet.',
     'Could not create the tag because Git actions are not ready yet.'
   ]);
 });
@@ -116,7 +166,7 @@ test('Show Log commit ref actions reject overlapping repository mutations', asyn
     releaseCheckout = resolve;
   });
   const workflows: ShowLogCommitRefActionWorkflows = {
-    async checkout() { await checkoutBlocked; },
+    async createBranch() { await checkoutBlocked; },
     async createTag() {}
   };
 

@@ -37,6 +37,7 @@ import {
   ShowLogLoadRequests
 } from './showLog/loadRequests';
 import { openShowLogCommitOnRemote } from './showLog/remoteCommitAction';
+import { refreshVisibleShowLog } from './showLog/refresh';
 import { resetShowLogCommit } from './showLog/resetAction';
 import {
   findShowLogChange,
@@ -64,7 +65,6 @@ import {
 import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
 
 const SHOW_LOG_PAGE_SIZE = 50;
-
 function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited<ReturnType<RevisionGraphLogBackend['loadRevisionLog']>>): ShowLogState {
   return {
     ...state,
@@ -662,17 +662,17 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     await this.reportRejectedMutation(outcome.status);
   }
 
-  private async runCommitRefAction(
-    commitHash: string,
-    action: ShowLogCommitRefAction
-  ): Promise<void> {
+  private async runCommitRefAction(commitHash: string, action: ShowLogCommitRefAction): Promise<void> {
+    const sourceToken = this.state.kind === 'visible' ? this.state.sourceToken : undefined;
     const outcome = await runShowLogCommitRefAction(
-      this.state,
-      commitHash,
-      action,
-      this.getRefActionServices(),
-      this.mutationCoordinator
-    );
+      this.state, commitHash, action, this.getRefActionServices(), this.mutationCoordinator);
+    if (outcome.refreshRequested && sourceToken) {
+      await refreshVisibleShowLog({
+        sourceToken, pageSize: SHOW_LOG_PAGE_SIZE, backend: this.backend,
+        loadRequests: this.logLoadRequests, getState: () => this.state,
+        applyState: (state) => { this.state = state; this.postState(); }
+      });
+    }
     await this.reportRejectedMutation(outcome.status);
   }
 

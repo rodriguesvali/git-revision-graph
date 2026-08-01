@@ -9,8 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-- `1.6.3-show-log-commit-checkout-tag.md`: exact commit checkout and local tag creation from the
-  Show Log single-commit context menu through shared guarded Git workflows.
+- `1.6.3-show-log-commit-checkout-tag.md`: editable local branch checkout and local tag creation from
+  Show Log commits through shared guarded Git workflows.
 - `1.6.3-ai-prompt-writing-quality.md`: shared simplicity, cohesion, and organization guidance for
   every Flow Governance and Compare Results AI prompt.
 - `1.6.3-tooltip-delay.md`: consistent 500 ms activation for extension-controlled graph and Show
