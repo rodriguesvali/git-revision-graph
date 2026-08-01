@@ -41,8 +41,10 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /class="commit-file-search-clear"/);
   assert.match(html, /data-commit-file-filter-clear="/);
   assert.match(html, /\.commit-file-search-row \{\s*display: flex;\s*justify-content: flex-end;/);
-  assert.match(html, /\.graph-continuation-row\.search \{\s*min-height: 36px;/);
-  assert.match(html, /\.graph-continuation-row\.search \.commit-files-graph \.graph-svg \{\s*min-height: 36px;/);
+  assert.match(html, /\.graph-continuation-row \{\s*--show-log-continuation-height: 24px;\s*display: flex;\s*flex: 0 0 var\(--show-log-continuation-height\);/);
+  assert.match(html, /\.graph-continuation-row\.status \{\s*--show-log-continuation-height: 34px;/);
+  assert.match(html, /\.graph-continuation-row\.search \{\s*--show-log-continuation-height: 36px;/);
+  assert.match(html, /\.graph-continuation-row \.commit-files-graph \.graph-svg \{\s*height: var\(--show-log-continuation-height\);\s*min-height: var\(--show-log-continuation-height\);/);
   assert.match(html, /--show-log-ref-base-branch: #19d60f;/);
   assert.match(html, /--show-log-ref-base-head: #d62828;/);
   assert.match(html, /--show-log-ref-base-tag: #f7f300;/);
@@ -220,7 +222,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /event\.data && event\.data\.type === 'append'/);
   assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /Open Commit Details/);
-  assert.match(html, /data-menu-action="checkoutCommit">Checkout to This<\/button>/);
+  assert.match(html, /data-menu-action="checkoutCommit">Checkout to this<\/button>/);
   assert.match(html, /data-menu-action="createTagFromCommit">Create Tag<\/button>/);
   assert.match(html, /Reset to this/);
   assert.match(html, /data-menu-action="compareCommitWithWorktree">Compare with Worktree<\/button>/);

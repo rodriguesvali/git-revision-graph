@@ -76,7 +76,7 @@ test('Show Log commit ref actions resolve a loaded commit target for branch and 
   ]);
 });
 
-test('Checkout to This suggests an editable branch name and creates it from the loaded commit', async () => {
+test('Checkout to this suggests an editable branch name and creates it from the loaded commit', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const prompts: Array<{ readonly prompt: string; readonly value: string }> = [];
   const upstreamClears: string[] = [];

@@ -447,7 +447,7 @@ test('Show Log reloads the current commit references after creating a tag', asyn
   provider.dispose();
 });
 
-test('Show Log reloads the current commit references after Checkout to This creates a branch', async (t) => {
+test('Show Log reloads the current commit references after Checkout to this creates a branch', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
   let loadCount = 0;

@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
 - Create and check out an editable, suggested local branch from an exact loaded commit, or create a
   validated local tag from it, through the single-commit context menu, and show the new reference
   immediately in the existing Show Log panel.
+- Keep expanded changed-file rows compact and consistently spaced for commits with any number of
+  artifacts, without intrinsic SVG height creating proportional blank areas.
 
 ### Revision Graph
 

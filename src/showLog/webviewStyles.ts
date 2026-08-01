@@ -365,15 +365,16 @@ export function renderShowLogWebviewStyles(): string {
       overflow: hidden;
     }
     .graph-continuation-row {
+      --show-log-continuation-height: 24px;
       display: flex;
-      min-height: 24px;
+      flex: 0 0 var(--show-log-continuation-height);
       overflow: hidden;
     }
     .graph-continuation-row.status {
-      min-height: 34px;
+      --show-log-continuation-height: 34px;
     }
     .graph-continuation-row.search {
-      min-height: 36px;
+      --show-log-continuation-height: 36px;
     }
     .graph-svg {
       flex: none;
@@ -579,13 +580,8 @@ export function renderShowLogWebviewStyles(): string {
       opacity: 0.9;
     }
     .graph-continuation-row .commit-files-graph .graph-svg {
-      min-height: 24px;
-    }
-    .graph-continuation-row.status .commit-files-graph .graph-svg {
-      min-height: 34px;
-    }
-    .graph-continuation-row.search .commit-files-graph .graph-svg {
-      min-height: 36px;
+      height: var(--show-log-continuation-height);
+      min-height: var(--show-log-continuation-height);
     }
     .commit-files-list {
       display: flex;

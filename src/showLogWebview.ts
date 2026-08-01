@@ -835,7 +835,7 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + '<button class="context-menu-item" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
-        + '<button class="context-menu-item" type="button" data-menu-action="checkoutCommit">Checkout to This</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="checkoutCommit">Checkout to this</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="createTagFromCommit">Create Tag</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="resetToCommit">Reset to this</button>'
