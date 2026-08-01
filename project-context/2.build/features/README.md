@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.3-focus-descendants-performance.md`: scope-bounded, memoized edge projection and non-root
+  merge-heavy benchmark coverage for responsive `Focus Descendants` behavior.
 - `1.6.3-package-start-from-feature.md`: governed package creation from a synchronized feature with
   durable `package -> feature` Pull Request targeting for consolidated task delivery.
 - `1.6.2-flow-pattern-canonicalization.md`: ordered ASCII case-pair semantics for deterministic,

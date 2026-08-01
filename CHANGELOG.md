@@ -10,6 +10,11 @@ All notable changes to this project will be documented in this file.
   promotion target, and prepare one guarded package-to-feature Pull Request after consolidated
   validation.
 
+### Revision Graph
+
+- Keep `Focus Descendants` responsive on non-root revisions in large, merge-heavy histories by
+  bounding projected-edge traversal to the focused scope and reusing shared ancestry results.
+
 ## 1.6.2 - 2026-08-01
 
 ### Flow Governance

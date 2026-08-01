@@ -10,7 +10,7 @@ const {
   projectMajorOperationsGraph
 } = require('../out/revisionGraphData.js');
 
-const GENERATOR_VERSION = 1;
+const GENERATOR_VERSION = 2;
 const SEED = 0x15_00_20_26;
 const TIERS = {
   ci: { commits: 1_200, refs: 120, merges: 40, tags: 30 },
@@ -32,14 +32,17 @@ const commits = parseRevisionGraphLog(generated.payload);
 const graph = buildCommitGraph(commits);
 const parseMs = performance.now() - parseStartedAt;
 
-const projectionStartedAt = performance.now();
-const projection = projectMajorOperationsGraph(graph, {
+const baseProjectionOptions = {
   refScope: 'all',
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
-  showMergeCommits: true,
   showCurrentBranchDescendants: false
+};
+const projectionStartedAt = performance.now();
+const projection = projectMajorOperationsGraph(graph, {
+  ...baseProjectionOptions,
+  showMergeCommits: true,
 });
 const projectionMs = performance.now() - projectionStartedAt;
 
@@ -47,8 +50,27 @@ const layoutStartedAt = performance.now();
 const scene = await buildRevisionGraphScene(graph, projection);
 const layoutMs = performance.now() - layoutStartedAt;
 
+const descendantFocusAnchorIndex = Math.floor(tier.commits / 4);
+const descendantFocusProjectionStartedAt = performance.now();
+const descendantFocusProjection = projectMajorOperationsGraph(graph, {
+  ...baseProjectionOptions,
+  showMergeCommits: false,
+  descendantFocus: {
+    anchorRevision: toHash(descendantFocusAnchorIndex),
+    anchorLabel: `benchmark commit ${descendantFocusAnchorIndex}`
+  }
+});
+const descendantFocusProjectionMs = performance.now() - descendantFocusProjectionStartedAt;
+
+const descendantFocusLayoutStartedAt = performance.now();
+const descendantFocusScene = await buildRevisionGraphScene(graph, descendantFocusProjection);
+const descendantFocusLayoutMs = performance.now() - descendantFocusLayoutStartedAt;
+
 if (commits.length !== tier.commits || generated.mergeCount !== tier.merges) {
   throw new Error('Generated benchmark counts do not match the selected manifest.');
+}
+if (!descendantFocusProjection.nodes.some((node) => node.hash === toHash(descendantFocusAnchorIndex))) {
+  throw new Error('Descendant focus benchmark did not retain its non-root anchor.');
 }
 
 process.stdout.write(`${JSON.stringify({
@@ -56,6 +78,7 @@ process.stdout.write(`${JSON.stringify({
     generatorVersion: GENERATOR_VERSION,
     seed: SEED,
     tier: tierName,
+    descendantFocusAnchorIndex,
     ...tier,
     payloadBytes: Buffer.byteLength(generated.payload),
     payloadSha256: createHash('sha256').update(generated.payload).digest('hex')
@@ -67,7 +90,13 @@ process.stdout.write(`${JSON.stringify({
     projectedNodes: projection.nodes.length,
     projectedEdges: projection.edges.length,
     sceneNodes: scene.nodes.length,
-    sceneEdges: scene.edges.length
+    sceneEdges: scene.edges.length,
+    descendantFocusProjectionMs: round(descendantFocusProjectionMs),
+    descendantFocusLayoutMs: round(descendantFocusLayoutMs),
+    descendantFocusProjectedNodes: descendantFocusProjection.nodes.length,
+    descendantFocusProjectedEdges: descendantFocusProjection.edges.length,
+    descendantFocusSceneNodes: descendantFocusScene.nodes.length,
+    descendantFocusSceneEdges: descendantFocusScene.edges.length
   }
 }, null, 2)}\n`);
 

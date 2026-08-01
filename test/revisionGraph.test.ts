@@ -40,6 +40,21 @@ import { calculateD3DagSugiyamaLayoutInWorker } from '../src/revisionGraph/layou
 import { selectD3DagSugiyamaLayoutProfile } from '../src/revisionGraph/layout/d3DagSugiyamaLayout';
 import { ProjectedGraph } from '../src/revisionGraph/model/commitGraphTypes';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
+import { projectCommitGraph } from '../src/revisionGraph/projection/graphProjection';
+
+class CountingMap<Key, Value> extends Map<Key, Value> {
+  constructor(
+    entries: ReadonlyMap<Key, Value>,
+    private readonly accessCounts: Map<Key, number>
+  ) {
+    super(entries.entries());
+  }
+
+  override get(key: Key): Value | undefined {
+    this.accessCounts.set(key, (this.accessCounts.get(key) ?? 0) + 1);
+    return super.get(key);
+  }
+}
 
 test('parses git log output into revision graph commits', () => {
   const output = [
@@ -1319,6 +1334,61 @@ test('can focus the projection on all loaded descendants of one revision', () =>
     { from: 'main2', to: 'anchor1', through: ['main1'] },
     { from: 'feature2', to: 'anchor1', through: ['feature1'] }
   ]);
+});
+
+test('keeps descendant edge traversal inside the focused ancestry scope', () => {
+  const graph = buildCommitGraph([
+    { hash: 'tip1', parents: ['work1'], author: 'Ada', date: '2026-08-01', subject: 'Tip', refs: [{ name: 'main', kind: 'head' }] },
+    { hash: 'work1', parents: ['anchor1'], author: 'Ada', date: '2026-07-31', subject: 'Work', refs: [] },
+    { hash: 'anchor1', parents: ['outsideMerge1'], author: 'Ada', date: '2026-07-30', subject: 'Anchor', refs: [{ name: 'v1.6.2', kind: 'tag' }] },
+    { hash: 'outsideMerge1', parents: ['outsideMain1', 'outsideTopic1'], author: 'Ada', date: '2026-07-29', subject: 'Old merge', refs: [] },
+    { hash: 'outsideMain1', parents: ['root1'], author: 'Ada', date: '2026-07-28', subject: 'Old main', refs: [] },
+    { hash: 'outsideTopic1', parents: ['root1'], author: 'Ada', date: '2026-07-28', subject: 'Old topic', refs: [] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-07-27', subject: 'Root', refs: [] }
+  ]);
+  const accessCounts = new Map<string, number>();
+  const commitsByHash = new CountingMap(graph.commitsByHash, accessCounts);
+
+  const projection = projectMajorOperationsGraph({ ...graph, commitsByHash }, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    descendantFocus: {
+      anchorRevision: 'anchor1',
+      anchorLabel: 'v1.6.2'
+    }
+  });
+
+  assert.deepEqual(projection.nodes.map((node) => node.hash), ['tip1', 'anchor1']);
+  assert.deepEqual(projection.edges, [
+    { from: 'tip1', to: 'anchor1', through: ['work1'] }
+  ]);
+  assert.equal(accessCounts.get('outsideMerge1') ?? 0, 0);
+  assert.equal(accessCounts.get('outsideMain1') ?? 0, 0);
+  assert.equal(accessCounts.get('outsideTopic1') ?? 0, 0);
+  assert.equal(accessCounts.get('root1') ?? 0, 0);
+});
+
+test('memoizes projected targets shared by multiple visible commits', () => {
+  const graph = buildCommitGraph([
+    { hash: 'tipA', parents: ['sharedHidden1'], author: 'Ada', date: '2026-08-01', subject: 'Tip A', refs: [{ name: 'feature/a', kind: 'head' }] },
+    { hash: 'tipB', parents: ['sharedHidden1'], author: 'Linus', date: '2026-08-01', subject: 'Tip B', refs: [{ name: 'feature/b', kind: 'branch' }] },
+    { hash: 'sharedHidden1', parents: ['base1'], author: 'Grace', date: '2026-07-31', subject: 'Shared hidden work', refs: [] },
+    { hash: 'base1', parents: [], author: 'Ada', date: '2026-07-30', subject: 'Base', refs: [{ name: 'v1.6.2', kind: 'tag' }] }
+  ]);
+  const accessCounts = new Map<string, number>();
+  const commitsByHash = new CountingMap(graph.commitsByHash, accessCounts);
+  const visibleHashes = new Set(['tipA', 'tipB', 'base1']);
+
+  const projection = projectCommitGraph(
+    { ...graph, commitsByHash },
+    visibleHashes,
+    createDefaultRevisionGraphProjectionOptions()
+  );
+
+  assert.deepEqual(projection.edges, [
+    { from: 'tipA', to: 'base1', through: ['sharedHidden1'] },
+    { from: 'tipB', to: 'base1', through: ['sharedHidden1'] }
+  ]);
+  assert.equal(accessCounts.get('sharedHidden1'), 1);
 });
 
 test('does not broaden descendant focus when its anchor cannot be resolved', () => {

@@ -27,13 +27,14 @@ export function projectMajorOperationsGraph(
   const scopeHashes = getScopeHashes(graph, options);
   const visibleHashes = buildMajorOperationsVisibleHashes(graph, scopeHashes, options);
 
-  return projectCommitGraph(graph, visibleHashes, options);
+  return projectCommitGraph(graph, visibleHashes, options, scopeHashes);
 }
 
 export function projectCommitGraph(
   graph: CommitGraph,
   visibleHashes: ReadonlySet<string>,
-  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS,
+  scopeHashes?: ReadonlySet<string>
 ): ProjectedGraph {
   const nodes: ProjectedGraphNode[] = graph.orderedCommits
     .filter((commit) => visibleHashes.has(commit.hash))
@@ -48,6 +49,11 @@ export function projectCommitGraph(
 
   const edges: ProjectedGraphEdge[] = [];
   const edgeKeys = new Set<string>();
+  const resolveProjectedTargets = createProjectedTargetResolver(
+    graph,
+    visibleHashes,
+    scopeHashes
+  );
 
   for (const node of nodes) {
     const commit = graph.commitsByHash.get(node.hash);
@@ -56,7 +62,7 @@ export function projectCommitGraph(
     }
 
     for (const parentHash of commit.parents) {
-      for (const target of findProjectedTargets(graph, parentHash, visibleHashes)) {
+      for (const target of resolveProjectedTargets(parentHash)) {
         const key = `${node.hash}->${target.to}`;
         if (edgeKeys.has(key)) {
           continue;
@@ -252,51 +258,149 @@ function filterRefs(
   });
 }
 
-
-function findProjectedTargets(
-  graph: CommitGraph,
-  startHash: string,
-  visibleHashes: ReadonlySet<string>
-): Array<{ readonly to: string; readonly through: readonly string[] }> {
-  const targets: Array<{ readonly to: string; readonly through: readonly string[] }> = [];
-  const targetKeys = new Set<string>();
-
-  collectProjectedTargets(graph, startHash, visibleHashes, [], new Set(), targets, targetKeys);
-
-  return targets;
+interface ProjectedTarget {
+  readonly to: string;
+  readonly through: readonly string[];
 }
 
-function collectProjectedTargets(
+interface ResolvedProjectedTarget {
+  readonly to: string;
+  readonly through: ProjectedThroughPath | undefined;
+}
+
+interface ProjectedThroughPath {
+  readonly hash: string;
+  readonly next: ProjectedThroughPath | undefined;
+}
+
+interface ProjectedTargetResolutionFrame {
+  readonly hash: string;
+  readonly targets: ResolvedProjectedTarget[];
+  readonly targetKeys: Set<string>;
+  parents: readonly string[] | undefined;
+  parentIndex: number;
+}
+
+function createProjectedTargetResolver(
   graph: CommitGraph,
-  currentHash: string,
   visibleHashes: ReadonlySet<string>,
-  through: readonly string[],
-  visited: ReadonlySet<string>,
-  targets: Array<{ readonly to: string; readonly through: readonly string[] }>,
-  targetKeys: Set<string>
-): void {
-  if (visited.has(currentHash)) {
-    return;
-  }
-
-  if (visibleHashes.has(currentHash)) {
-    if (!targetKeys.has(currentHash)) {
-      targetKeys.add(currentHash);
-      targets.push({ to: currentHash, through });
+  scopeHashes: ReadonlySet<string> | undefined
+): (startHash: string) => readonly ProjectedTarget[] {
+  const memo = new Map<string, readonly ResolvedProjectedTarget[]>();
+  const materializedMemo = new Map<string, readonly ProjectedTarget[]>();
+  return (startHash) => {
+    const materializedTargets = materializedMemo.get(startHash);
+    if (materializedTargets) {
+      return materializedTargets;
     }
-    return;
-  }
+    if (!memo.has(startHash)) {
+      resolveProjectedTargets(graph, startHash, visibleHashes, scopeHashes, memo);
+    }
+    const targets = (memo.get(startHash) ?? []).map(materializeProjectedTarget);
+    materializedMemo.set(startHash, targets);
+    return targets;
+  };
+}
 
-  const commit = graph.commitsByHash.get(currentHash);
-  if (!commit || commit.parents.length === 0) {
-    return;
-  }
+function resolveProjectedTargets(
+  graph: CommitGraph,
+  startHash: string,
+  visibleHashes: ReadonlySet<string>,
+  scopeHashes: ReadonlySet<string> | undefined,
+  memo: Map<string, readonly ResolvedProjectedTarget[]>
+): void {
+  const activeHashes = new Set<string>();
+  const stack: ProjectedTargetResolutionFrame[] = [createProjectedTargetResolutionFrame(startHash)];
 
-  const nextVisited = new Set(visited);
-  nextVisited.add(currentHash);
-  const nextThrough = [...through, currentHash];
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1];
+    if (memo.has(frame.hash)) {
+      stack.pop();
+      continue;
+    }
 
-  for (const parentHash of commit.parents) {
-    collectProjectedTargets(graph, parentHash, visibleHashes, nextThrough, nextVisited, targets, targetKeys);
+    if (!frame.parents) {
+      if (scopeHashes && !scopeHashes.has(frame.hash)) {
+        memo.set(frame.hash, []);
+        stack.pop();
+        continue;
+      }
+      if (visibleHashes.has(frame.hash)) {
+        memo.set(frame.hash, [{ to: frame.hash, through: undefined }]);
+        stack.pop();
+        continue;
+      }
+
+      const commit = graph.commitsByHash.get(frame.hash);
+      if (!commit || commit.parents.length === 0) {
+        memo.set(frame.hash, []);
+        stack.pop();
+        continue;
+      }
+      frame.parents = commit.parents;
+      activeHashes.add(frame.hash);
+    }
+
+    if (frame.parentIndex >= frame.parents.length) {
+      memo.set(frame.hash, frame.targets);
+      activeHashes.delete(frame.hash);
+      stack.pop();
+      continue;
+    }
+
+    const parentHash = frame.parents[frame.parentIndex];
+    const parentTargets = memo.get(parentHash);
+    if (parentTargets) {
+      appendProjectedTargets(frame, parentTargets);
+      frame.parentIndex += 1;
+      continue;
+    }
+    if (activeHashes.has(parentHash)) {
+      frame.parentIndex += 1;
+      continue;
+    }
+    stack.push(createProjectedTargetResolutionFrame(parentHash));
   }
+}
+
+function createProjectedTargetResolutionFrame(hash: string): ProjectedTargetResolutionFrame {
+  return {
+    hash,
+    targets: [],
+    targetKeys: new Set(),
+    parents: undefined,
+    parentIndex: 0
+  };
+}
+
+function appendProjectedTargets(
+  frame: ProjectedTargetResolutionFrame,
+  parentTargets: readonly ResolvedProjectedTarget[]
+): void {
+  for (const target of parentTargets) {
+    if (frame.targetKeys.has(target.to)) {
+      continue;
+    }
+    frame.targetKeys.add(target.to);
+    frame.targets.push({
+      to: target.to,
+      through: {
+        hash: frame.hash,
+        next: target.through
+      }
+    });
+  }
+}
+
+function materializeProjectedTarget(target: ResolvedProjectedTarget): ProjectedTarget {
+  const through: string[] = [];
+  let path = target.through;
+  while (path) {
+    through.push(path.hash);
+    path = path.next;
+  }
+  return {
+    to: target.to,
+    through
+  };
 }

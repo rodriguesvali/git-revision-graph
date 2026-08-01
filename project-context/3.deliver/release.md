@@ -8,7 +8,8 @@ Last consolidated: 2026-08-01
 - Current package version: `1.6.3` in `package.json` and the root `package-lock.json`.
 - Latest recorded published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
 - Release cycle status: `1.6.3` was opened on 2026-08-01 as a patch release. Current scope is package
-  creation from synchronized feature branches with exact package-to-feature Pull Request targeting.
+  creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
+  plus a critical `Focus Descendants` performance correction for large merge-heavy histories.
   Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
@@ -31,10 +32,10 @@ Target version: `1.6.3`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.2` was published by maintainer confirmation on 2026-08-01. |
-| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. |
+| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope, memoizes shared ancestry, and has non-root merge-heavy benchmark coverage. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.3`. |
-| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,480 functions), `npm run build`, `npm test` (843 tests), `graphify update .` (5,120 nodes, 10,089 edges, 388 communities), and `git diff --check` passed. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
-| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. |
+| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,484 functions), `npm run build`, `npm test` (845 tests), `npm run benchmark:ci`, `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
+| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, and focus exit remain responsive from a non-root revision in a large merge-heavy repository. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -49,10 +50,16 @@ Opening record:
   promotion target; and the mapped package exposes one guarded `package -> feature` Pull Request
   handoff. No package-description AI surface, command, setting, dependency, VSIX, or Marketplace
   action was added.
+- Revision-graph projection now stops hidden-parent traversal at the selected descendant scope and
+  resolves shared hidden ancestry once per projection. The deterministic benchmark includes a
+  non-root descendant-focus scenario with merge commits hidden, matching the reported performance
+  failure mode. No Git-loading, layout-worker, protocol, contribution-point, dependency, or
+  Marketplace surface changed.
 
-Focused build artifact:
+Focused build artifacts:
 
 - `project-context/2.build/features/1.6.3-package-start-from-feature.md`
+- `project-context/2.build/features/1.6.3-focus-descendants-performance.md`
 
 ## Published Release: 1.6.2
 
