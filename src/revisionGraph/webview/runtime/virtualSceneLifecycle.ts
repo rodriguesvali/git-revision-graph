@@ -8,8 +8,7 @@ interface RevisionGraphWebviewVirtualScenePostCommitInput {
   readonly setSceneKey: (sceneKey: string) => void;
   readonly refreshRenderedElementCaches: () => void;
   readonly applyNodeLayout: () => void;
-  readonly syncSelection: () => void;
-  readonly syncSearchHighlights: () => void;
+  readonly syncRenderedHighlights: () => void;
 }
 
 function createRevisionGraphWebviewVirtualSceneRenderDecision(
@@ -29,8 +28,7 @@ function completeRevisionGraphWebviewVirtualSceneCommit(
   input.setSceneKey(input.sceneKey);
   input.refreshRenderedElementCaches();
   input.applyNodeLayout();
-  input.syncSelection();
-  input.syncSearchHighlights();
+  input.syncRenderedHighlights();
 }
 
 function resetRevisionGraphWebviewVirtualSceneKey(

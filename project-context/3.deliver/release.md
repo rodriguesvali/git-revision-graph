@@ -9,7 +9,7 @@ Last consolidated: 2026-08-01
 - Latest recorded published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
 - Release cycle status: `1.6.3` was opened on 2026-08-01 as a patch release. Current scope is package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
-  plus `Focus Descendants` projection and virtual-scene cache performance corrections for large
+  plus `Focus Descendants` projection and virtual-scene rendering performance corrections for large
   merge-heavy histories. Packaging and publication remain subject to maintainer approval.
 - Publication evidence reconciliation: the exact Marketplace timestamp, VSIX filename, checksum,
   size, embedded-version inspection, clean-profile installation result, installed-version evidence,
@@ -32,10 +32,10 @@ Target version: `1.6.3`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.2` was published by maintainer confirmation on 2026-08-01. |
-| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope and memoizes shared ancestry. Virtual viewport frames no longer rebuild graph-wide topology; those caches are created once per scene state. |
+| Release scope | Complete for current demand | `Start New Package` is available only from a classified `feature`, requires exact source synchronization, and retains that exact feature for one `package -> feature` Pull Request. `Focus Descendants` now bounds projected-edge traversal to the descendant scope and memoizes shared ancestry. Virtual viewport frames no longer rebuild graph-wide topology, regenerate full minimap content, or reapply search highlights. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.3`. |
-| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,488 functions), `npm run build`, `npm test` (846 tests), `npm run benchmark:ci`, `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. The runtime regression verifies that virtual viewport frames cannot rebuild graph-wide topology. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
-| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, focus exit, scrolling, and zooming remain responsive from a non-root revision in a large merge-heavy repository. |
+| Automated verification | Complete | On 2026-08-01, `npm run quality:check` (257 files, 2,489 functions), `npm run build`, `npm test` (847 tests), `npm run benchmark:ci`, the retained same-cycle `npm run benchmark:rc`, `graphify update .`, and `git diff --check` passed. Runtime regressions verify that virtual viewport frames cannot rebuild graph-wide topology, regenerate full minimap content, or apply search highlights twice. In the deterministic 12,000-commit RC fixture, non-root descendant-focus projection completed in 49.89 ms and layout in 195.13 ms. The unchanged platform subset retains the 34-test `1.6.2` baseline recorded on 2026-07-30. |
+| Extension Development Host smoke | Pending | Verify package creation from a synchronized feature, absence from every other branch kind, persisted package target, and `Promotion PR Context` back to that feature. Also verify `Focus Descendants`, focus updates, focus exit, scrolling, zooming, minimap tracking, selection, and search remain responsive and correct from a non-root revision in a large merge-heavy repository. |
 | VSIX package inspection | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, restore metadata and scoped source changes; after publication, use a new patch or a Marketplace action by maintainer decision. |
@@ -60,12 +60,17 @@ Opening record:
   update only the rendered-element portion of that cache. The initial ready render also no longer
   repeats the post-commit DOM cache scan. Existing selection, search, relationship highlighting,
   minimap, edge routing, and node-offset behavior remain intact.
+- Virtual viewport commits now synchronize rendered selection, relationship, and search highlights
+  once while explicitly skipping full minimap regeneration. Scroll events retain the lightweight
+  minimap viewport update, while selection, ready-state, and geometry-changing paths retain their
+  existing full synchronization behavior.
 
 Focused build artifacts:
 
 - `project-context/2.build/features/1.6.3-package-start-from-feature.md`
 - `project-context/2.build/features/1.6.3-focus-descendants-performance.md`
 - `project-context/2.build/features/1.6.3-virtual-scene-topology-cache.md`
+- `project-context/2.build/features/1.6.3-virtual-scene-minimap-refresh.md`
 
 ## Published Release: 1.6.2
 

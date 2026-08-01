@@ -1138,6 +1138,21 @@ test('keeps graph topology cache rebuilding out of virtual viewport frames', () 
   assert.doesNotMatch(virtualRenderSource, /buildRevisionGraphWebviewDistanceMap/);
 });
 
+test('keeps full minimap and duplicate search refreshes out of virtual viewport commits', () => {
+  const html = renderRevisionGraphShellHtml();
+  const virtualRenderStart = html.indexOf('function renderVirtualScene');
+  const virtualRenderEnd = html.indexOf('function getVirtualViewportBounds', virtualRenderStart);
+  assert.ok(virtualRenderStart >= 0 && virtualRenderEnd > virtualRenderStart);
+  const virtualRenderSource = html.slice(virtualRenderStart, virtualRenderEnd);
+
+  assert.match(
+    virtualRenderSource,
+    /syncRenderedHighlights:\s*\(\) => syncSelection\(\{ syncMinimap: false \}\)/
+  );
+  assert.doesNotMatch(virtualRenderSource, /syncMinimap\(/);
+  assert.doesNotMatch(virtualRenderSource, /syncSearchHighlights[,:]/);
+});
+
 test('renders client-side graph search controls and runtime handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
@@ -2583,10 +2598,9 @@ test('coordinates revision graph virtual scene lifecycle through the typed modul
     setSceneKey: (sceneKey: string) => effects.push(`key:${sceneKey}`),
     refreshRenderedElementCaches: () => effects.push('dom-caches'),
     applyNodeLayout: () => effects.push('layout'),
-    syncSelection: () => effects.push('selection'),
-    syncSearchHighlights: () => effects.push('search')
+    syncRenderedHighlights: () => effects.push('highlights')
   });
-  assert.deepEqual(effects, ['key:next', 'dom-caches', 'layout', 'selection', 'search']);
+  assert.deepEqual(effects, ['key:next', 'dom-caches', 'layout', 'highlights']);
   runtime.context.resetRevisionGraphWebviewVirtualSceneKey(
     (sceneKey: string) => effects.push(`reset:${sceneKey}`)
   );

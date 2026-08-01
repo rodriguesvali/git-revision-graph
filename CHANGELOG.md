@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
   bounding projected-edge traversal to the focused scope and reusing shared ancestry results.
 - Avoid rebuilding graph-wide topology caches during virtual scrolling and zooming; rebuild them
   only when a new scene state arrives.
+- Avoid regenerating full minimap markup and reapplying search highlights during virtual viewport
+  commits; scrolling retains the lightweight minimap viewport update.
 
 ## 1.6.2 - 2026-08-01
 

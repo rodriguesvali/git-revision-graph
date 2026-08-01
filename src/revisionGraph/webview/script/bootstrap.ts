@@ -1379,8 +1379,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         },
         refreshRenderedElementCaches: refreshRenderedGraphElementCaches,
         applyNodeLayout: () => applyNodeLayout(false, { syncMinimap: false, updateScenePlacement: false }),
-        syncSelection,
-        syncSearchHighlights
+        syncRenderedHighlights: () => syncSelection({ syncMinimap: false })
       });
     }
 

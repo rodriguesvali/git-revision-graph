@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.3-virtual-scene-minimap-refresh.md`: virtual viewport commits update rendered highlights once
+  without regenerating full minimap content.
 - `1.6.3-virtual-scene-topology-cache.md`: scene-owned topology caches kept outside virtual viewport
   frames so scrolling and zooming do not repeat adjacency and HEAD-distance construction.
 - `1.6.3-focus-descendants-performance.md`: scope-bounded, memoized edge projection and non-root

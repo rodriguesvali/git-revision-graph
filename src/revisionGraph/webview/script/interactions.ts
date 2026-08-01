@@ -64,7 +64,7 @@
       }
     }
 
-    function syncSelection() {
+    function syncSelection(options: { readonly syncMinimap?: boolean } = {}) {
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
       syncRevisionGraphWebviewSelectionHighlightsUi(
@@ -78,7 +78,7 @@
       );
       syncRelationshipHighlights();
       syncSearchHighlights();
-      syncMinimap();
+      options.syncMinimap !== false && syncMinimap();
     }
 
     function setSearchQuery(nextQuery: string) {
