@@ -2677,6 +2677,41 @@ test('coordinates revision graph scene rendering through the typed lifecycle', (
   assert.deepEqual(emptyEvents, ['geometry', 'clear', 'dom-caches', 'canvas']);
 });
 
+test('refreshes rendered element caches once during the first ready scene render', () => {
+  const runtime = createWebviewRuntime();
+  let sceneLifecycleRefreshes = 0;
+  let virtualCommitRefreshes = 0;
+
+  runtime.context.runRevisionGraphWebviewSceneRenderLifecycle({
+    isReady: true,
+    shouldPrecenterViewport: false,
+    prepareGeometry: () => undefined,
+    clearScene: () => undefined,
+    refreshRenderedElementCaches: () => {
+      sceneLifecycleRefreshes += 1;
+    },
+    syncCanvasAndPlacement: () => undefined,
+    prepareIndexes: () => undefined,
+    precenterViewport: () => undefined,
+    renderVirtualScene: () => {
+      runtime.context.completeRevisionGraphWebviewVirtualSceneCommit({
+        sceneKey: 'initial',
+        setSceneKey: () => undefined,
+        refreshRenderedElementCaches: () => {
+          virtualCommitRefreshes += 1;
+        },
+        applyNodeLayout: () => undefined,
+        syncRenderedHighlights: () => undefined
+      });
+    },
+    bindSceneEventHandlers: () => undefined
+  });
+
+  assert.equal(sceneLifecycleRefreshes, 0);
+  assert.equal(virtualCommitRefreshes, 1);
+  assert.equal(sceneLifecycleRefreshes + virtualCommitRefreshes, 1);
+});
+
 test('applies revision graph scene geometry through the typed DOM adapter', () => {
   const runtime = createWebviewRuntime();
   const canvas = runtime.elements.get('canvas');

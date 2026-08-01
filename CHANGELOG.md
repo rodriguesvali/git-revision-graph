@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
   only when a new scene state arrives.
 - Avoid regenerating full minimap markup and reapplying search highlights during virtual viewport
   commits; scrolling retains the lightweight minimap viewport update.
+- Collect rendered DOM element caches once during the first ready scene render, after the virtual
+  commit, without repeating the scan in the outer scene lifecycle.
 
 ## 1.6.2 - 2026-08-01
 
