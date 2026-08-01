@@ -1,4 +1,7 @@
-import { validateShowLogWebviewMessage } from './messageValidation';
+import {
+  validateShowLogWebviewMessage,
+  type ShowLogWebviewMessage
+} from './messageValidation';
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -20,6 +23,8 @@ export interface ShowLogMessageHandlers {
   readonly compareCommits: (baseCommitHash: string, compareCommitHash: string) => MaybePromise<void>;
   readonly compareCommitWithWorktree: (commitHash: string) => MaybePromise<void>;
   readonly cherryPickCommits: (commitHashes: readonly string[]) => MaybePromise<void>;
+  readonly checkoutCommit: (commitHash: string) => MaybePromise<void>;
+  readonly createTagFromCommit: (commitHash: string) => MaybePromise<void>;
   readonly resetToCommit: (commitHash: string) => MaybePromise<void>;
 }
 
@@ -32,12 +37,13 @@ export async function dispatchShowLogWebviewMessage(
     return false;
   }
 
+  if (await dispatchShowLogCommitAction(message, handlers)) {
+    return true;
+  }
+
   switch (message.type) {
     case 'ready':
       await handlers.ready();
-      return true;
-    case 'toggleCommit':
-      await handlers.toggleCommit(message.commitHash);
       return true;
     case 'toggleShowAllBranches':
       await handlers.toggleShowAllBranches(message.value);
@@ -63,11 +69,27 @@ export async function dispatchShowLogWebviewMessage(
     case 'copyFullPath':
       await handlers.copyFullPath(message.commitHash, message.changeId);
       return true;
-    case 'copyCommitHash':
-      await handlers.copyCommitHash(message.commitHash);
-      return true;
     case 'copyReferenceName':
       await handlers.copyReferenceName(message.commitHash, message.refName);
+      return true;
+    case 'compareCommits':
+      await handlers.compareCommits(message.baseCommitHash, message.compareCommitHash);
+      return true;
+    case 'cherryPickCommits':
+      await handlers.cherryPickCommits(message.commitHashes);
+      return true;
+  }
+
+  return false;
+}
+
+async function dispatchShowLogCommitAction(
+  message: ShowLogWebviewMessage,
+  handlers: ShowLogMessageHandlers
+): Promise<boolean> {
+  switch (message.type) {
+    case 'toggleCommit':
+      await handlers.toggleCommit(message.commitHash);
       return true;
     case 'openCommitOnRemote':
       await handlers.openCommitOnRemote(message.commitHash);
@@ -75,17 +97,22 @@ export async function dispatchShowLogWebviewMessage(
     case 'openCommitDetails':
       await handlers.openCommitDetails(message.commitHash);
       return true;
-    case 'compareCommits':
-      await handlers.compareCommits(message.baseCommitHash, message.compareCommitHash);
-      return true;
     case 'compareCommitWithWorktree':
       await handlers.compareCommitWithWorktree(message.commitHash);
       return true;
-    case 'cherryPickCommits':
-      await handlers.cherryPickCommits(message.commitHashes);
+    case 'copyCommitHash':
+      await handlers.copyCommitHash(message.commitHash);
+      return true;
+    case 'checkoutCommit':
+      await handlers.checkoutCommit(message.commitHash);
+      return true;
+    case 'createTagFromCommit':
+      await handlers.createTagFromCommit(message.commitHash);
       return true;
     case 'resetToCommit':
       await handlers.resetToCommit(message.commitHash);
       return true;
+    default:
+      return false;
   }
 }

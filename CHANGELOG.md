@@ -16,6 +16,11 @@ All notable changes to this project will be documented in this file.
   toward simple language, cohesive ideas, and logical organization while retaining existing factual
   and safety guardrails.
 
+### Show Log
+
+- Check out an exact loaded commit or create a validated local tag from it through the single-commit
+  context menu, using the existing guarded Git workflows.
+
 ### Revision Graph
 
 - Delay custom reference and Show Log commit tooltips by 500 ms, cancel pending tooltips when the

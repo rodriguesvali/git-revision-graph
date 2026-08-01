@@ -835,6 +835,8 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + '<button class="context-menu-item" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="checkoutCommit">Checkout to this</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="createTagFromCommit">Create Tag</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="resetToCommit">Reset to this</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="copyCommitHash">Copy Hash</button>'
@@ -1354,6 +1356,12 @@ export function renderShowLogWebviewHtml(): string {
         }
         if (action === 'cherryPickCommits') {
           vscode.postMessage({ type: 'cherryPickCommits', commitHashes: state.commitHashes || [state.commitHash] });
+        }
+        if (action === 'checkoutCommit') {
+          vscode.postMessage({ type: 'checkoutCommit', commitHash: state.commitHash });
+        }
+        if (action === 'createTagFromCommit') {
+          vscode.postMessage({ type: 'createTagFromCommit', commitHash: state.commitHash });
         }
         if (action === 'resetToCommit') {
           vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });

@@ -26,6 +26,10 @@ import {
 } from './showLog/clipboardActions';
 import { cherryPickShowLogCommits } from './showLog/cherryPickAction';
 import {
+  runShowLogCommitRefAction,
+  type ShowLogCommitRefAction
+} from './showLog/commitRefActions';
+import {
   dispatchShowLogWebviewMessage,
   type ShowLogMessageHandlers
 } from './showLog/messageHandler';
@@ -102,6 +106,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
     compareCommitWithWorktree: (commitHash) => this.compareCommitWithWorktree(commitHash),
     cherryPickCommits: (commitHashes) => this.cherryPickCommits(commitHashes),
+    checkoutCommit: (commitHash) => this.runCommitRefAction(commitHash, 'checkout'),
+    createTagFromCommit: (commitHash) => this.runCommitRefAction(commitHash, 'create-tag'),
     resetToCommit: (commitHash) => this.resetToCommit(commitHash)
   };
 
@@ -652,6 +658,20 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         commitHash,
         createMutationGuardedRefActionServices(services, lease)
       )
+    );
+    await this.reportRejectedMutation(outcome.status);
+  }
+
+  private async runCommitRefAction(
+    commitHash: string,
+    action: ShowLogCommitRefAction
+  ): Promise<void> {
+    const outcome = await runShowLogCommitRefAction(
+      this.state,
+      commitHash,
+      action,
+      this.getRefActionServices(),
+      this.mutationCoordinator
     );
     await this.reportRejectedMutation(outcome.status);
   }

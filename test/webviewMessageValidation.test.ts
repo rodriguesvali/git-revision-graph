@@ -1672,6 +1672,20 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   );
   assert.equal(
     validateShowLogWebviewMessage({
+      type: 'checkoutCommit',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
+      type: 'createTagFromCommit',
+      commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
+    }),
+    undefined
+  );
+  assert.equal(
+    validateShowLogWebviewMessage({
       type: 'copyCommitHash',
       commitHash: 'a'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)
     }),
@@ -1747,6 +1761,14 @@ test('validateShowLogWebviewMessage rejects malformed show log messages', () => 
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'resetToCommit', commitHash: 'abc123' }),
     { type: 'resetToCommit', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'checkoutCommit', commitHash: 'abc123' }),
+    { type: 'checkoutCommit', commitHash: 'abc123' }
+  );
+  assert.deepEqual(
+    validateShowLogWebviewMessage({ type: 'createTagFromCommit', commitHash: 'abc123' }),
+    { type: 'createTagFromCommit', commitHash: 'abc123' }
   );
   assert.deepEqual(
     validateShowLogWebviewMessage({ type: 'copyCommitHash', commitHash: 'abc123' }),

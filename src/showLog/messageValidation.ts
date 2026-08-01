@@ -18,11 +18,40 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'copyReferenceName'; readonly commitHash: string; readonly refName: string }
   | { readonly type: 'cherryPickCommits'; readonly commitHashes: readonly string[] }
   | { readonly type: 'openCommitOnRemote'; readonly commitHash: string }
+  | { readonly type: 'checkoutCommit'; readonly commitHash: string }
+  | { readonly type: 'createTagFromCommit'; readonly commitHash: string }
   | { readonly type: 'resetToCommit'; readonly commitHash: string };
+
+type ShowLogCommitHashMessageType =
+  | 'toggleCommit'
+  | 'compareCommitWithWorktree'
+  | 'openCommitDetails'
+  | 'copyCommitHash'
+  | 'openCommitOnRemote'
+  | 'checkoutCommit'
+  | 'createTagFromCommit'
+  | 'resetToCommit';
+
+const SHOW_LOG_COMMIT_HASH_MESSAGE_TYPES: readonly ShowLogCommitHashMessageType[] = [
+  'toggleCommit',
+  'compareCommitWithWorktree',
+  'openCommitDetails',
+  'copyCommitHash',
+  'openCommitOnRemote',
+  'checkoutCommit',
+  'createTagFromCommit',
+  'resetToCommit'
+];
 
 export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {
     return undefined;
+  }
+
+  if (isShowLogCommitHashMessageType(message.type)) {
+    return isBoundedNonEmptyString(message.commitHash)
+      ? { type: message.type, commitHash: message.commitHash }
+      : undefined;
   }
 
   switch (message.type) {
@@ -36,15 +65,6 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     case 'setFilterText':
       return isBoundedString(message.value) && isBoundedString(message.sourceToken)
         ? { type: 'setFilterText', value: message.value, sourceToken: message.sourceToken }
-        : undefined;
-    case 'toggleCommit':
-    case 'compareCommitWithWorktree':
-    case 'openCommitDetails':
-    case 'copyCommitHash':
-    case 'openCommitOnRemote':
-    case 'resetToCommit':
-      return isBoundedNonEmptyString(message.commitHash)
-        ? { type: message.type, commitHash: message.commitHash }
         : undefined;
     case 'compareCommits':
       return isBoundedNonEmptyString(message.baseCommitHash) && isBoundedNonEmptyString(message.compareCommitHash)
@@ -71,4 +91,8 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
   }
 
   return undefined;
+}
+
+function isShowLogCommitHashMessageType(value: string): value is ShowLogCommitHashMessageType {
+  return SHOW_LOG_COMMIT_HASH_MESSAGE_TYPES.includes(value as ShowLogCommitHashMessageType);
 }

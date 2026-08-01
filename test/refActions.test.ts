@@ -453,6 +453,27 @@ test('checkoutResolvedReference uses the destination branch name in the confirma
   });
 });
 
+test('checkoutResolvedReference checks out an unreferenced commit after confirmation', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main')
+  });
+  const harness = createServices();
+
+  await checkoutResolvedReference(
+    repository,
+    { refName: 'abcdef123456', label: 'abc123', kind: 'commit' },
+    harness.services
+  );
+
+  assert.deepEqual(harness.confirmRequests[0], {
+    message: 'Check out abc123?',
+    confirmLabel: 'Checkout to: abc123'
+  });
+  assert.deepEqual(repository.calls.checkout, ['abcdef123456']);
+  assert.equal(harness.infoMessages[0], 'Checkout completed for abc123.');
+});
+
 test('checkoutResolvedReference resolves remote HEAD to a concrete upstream branch', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

@@ -52,6 +52,8 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'compareCommits', baseCommitHash: 'abc123', compareCommitHash: 'def456' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'compareCommitWithWorktree', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'cherryPickCommits', commitHashes: ['abc123', 'def456'] }, handlers), true);
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'checkoutCommit', commitHash: 'abc123' }, handlers), true);
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'createTagFromCommit', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'resetToCommit', commitHash: 'abc123' }, handlers), true);
 
   assert.deepEqual(calls, [
@@ -67,6 +69,8 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
     'compareCommits:abc123:def456',
     'compareCommitWithWorktree:abc123',
     'cherryPickCommits:abc123,def456',
+    'checkoutCommit:abc123',
+    'createTagFromCommit:abc123',
     'resetToCommit:abc123'
   ]);
 });
@@ -123,6 +127,12 @@ function createHandlers(calls: string[]): ShowLogMessageHandlers {
     },
     cherryPickCommits(commitHashes) {
       calls.push(`cherryPickCommits:${commitHashes.join(',')}`);
+    },
+    checkoutCommit(commitHash) {
+      calls.push(`checkoutCommit:${commitHash}`);
+    },
+    createTagFromCommit(commitHash) {
+      calls.push(`createTagFromCommit:${commitHash}`);
     },
     resetToCommit(commitHash) {
       calls.push(`resetToCommit:${commitHash}`);
