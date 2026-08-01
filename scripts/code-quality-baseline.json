@@ -7,7 +7,7 @@
     "src/compareResultsWebview.ts": 717,
     "src/revisionGraph/controller.ts": 766,
     "src/revisionGraph/panel/state.ts": 695,
-    "src/revisionGraph/webview/script/bootstrap.ts": 1806,
+    "src/revisionGraph/webview/script/bootstrap.ts": 1801,
     "src/revisionGraph/webview/script/interactions.ts": 1021,
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 1251,

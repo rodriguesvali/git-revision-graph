@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
   commits; scrolling retains the lightweight minimap viewport update.
 - Collect rendered DOM element caches once during the first ready scene render, after the virtual
   commit, without repeating the scan in the outer scene lifecycle.
+- Index virtual nodes and edges by balanced vertical intervals so long edges are stored once instead
+  of being copied into every intermediate viewport bucket.
 
 ## 1.6.2 - 2026-08-01
 

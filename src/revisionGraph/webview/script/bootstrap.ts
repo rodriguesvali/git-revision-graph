@@ -136,11 +136,10 @@ const VIEWPORT_PADDING_LEFT = 18;
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
-    const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;
     let pendingVirtualSceneRenderFrame = 0;
     let lastVirtualSceneKey = '';
-    let virtualNodeIndex = new Map<number, RevisionGraphWebviewLegacyNodeLayout[]>();
-    let virtualEdgeIndex = new Map<number, RevisionGraphWebviewLegacyEdge[]>();
+    let virtualNodeIndex = createEmptyRevisionGraphWebviewVirtualIndex<RevisionGraphWebviewLegacyNodeLayout>();
+    let virtualEdgeIndex = createEmptyRevisionGraphWebviewVirtualIndex<RevisionGraphWebviewLegacyEdge>();
     let reloadCacheMenu: HTMLDivElement | null = null;
     let pushModeMenu: HTMLDivElement | null = null;
     window.addEventListener('message', (event) => {
@@ -1430,14 +1429,13 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function resetVirtualSceneIndexes() {
-      virtualNodeIndex = new Map();
-      virtualEdgeIndex = new Map();
+      virtualNodeIndex = createEmptyRevisionGraphWebviewVirtualIndex();
+      virtualEdgeIndex = createEmptyRevisionGraphWebviewVirtualIndex();
     }
 
     function buildVirtualNodeIndex(layouts: readonly RevisionGraphWebviewLegacyNodeLayout[]) {
       return buildRevisionGraphWebviewVirtualIndex(
         layouts,
-        VIRTUAL_RENDER_BUCKET_SIZE_PX,
         (layout) => ({
           top: layout.defaultTop,
           bottom: layout.defaultTop + layout.height
@@ -1448,7 +1446,6 @@ const VIEWPORT_PADDING_LEFT = 18;
     function buildVirtualEdgeIndex(edges: readonly RevisionGraphWebviewLegacyEdge[]) {
       return buildRevisionGraphWebviewVirtualIndex(
         edges,
-        VIRTUAL_RENDER_BUCKET_SIZE_PX,
         getEdgeVerticalBounds
       );
     }
@@ -1461,7 +1458,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       return collectRevisionGraphWebviewVirtualIndexCandidates(
         virtualNodeIndex,
         bounds,
-        VIRTUAL_RENDER_BUCKET_SIZE_PX,
         (layout) => layout.hash
       );
     }
@@ -1470,7 +1466,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       return collectRevisionGraphWebviewVirtualIndexCandidates(
         virtualEdgeIndex,
         bounds,
-        VIRTUAL_RENDER_BUCKET_SIZE_PX,
         getVirtualEdgeKey
       );
     }

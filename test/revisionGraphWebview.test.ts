@@ -1103,7 +1103,7 @@ test('omits incremental revision graph patch handlers', () => {
   assert.doesNotMatch(html, /renderVirtualScene\(\{ force: true, reason: 'metadata-patch' \}\);/);
   assert.match(html, /function renderVirtualScene\(options = \{\}\)/);
   assert.match(html, /function rebuildVirtualSceneIndexes\(\)/);
-  assert.match(html, /const VIRTUAL_RENDER_BUCKET_SIZE_PX = 1200;/);
+  assert.doesNotMatch(html, /VIRTUAL_RENDER_BUCKET_SIZE_PX/);
   assert.match(html, /selectRevisionGraphWebviewVirtualScene\(\{\s*nodeCandidates: collectVirtualNodeCandidates\(viewportBounds\)/s);
   assert.match(html, /edgeCandidates: collectVirtualEdgeCandidates\(viewportBounds\)/);
   assert.doesNotMatch(html, /visibleLayouts = graphNodes\.filter/);
@@ -2316,29 +2316,61 @@ test('calculates revision graph virtual viewport visibility through the typed mo
 test('builds and queries the revision graph virtual candidate index through the typed module', () => {
   const runtime = createWebviewRuntime();
   const entries = [
-    { id: 'spanning', top: 0, bottom: 1_200 },
-    { id: 'second-bucket', top: 1_800, bottom: 1_810 },
+    { id: 'spanning', top: 0, bottom: 1_200_000 },
+    { id: 'near-start', top: 1_800, bottom: 1_810 },
+    { id: 'middle', top: 600_000, bottom: 600_010 },
+    { id: 'near-end', top: 1_199_000, bottom: 1_199_010 },
     { id: 'invalid', top: Number.NaN, bottom: 10 }
   ];
   const index = runtime.context.buildRevisionGraphWebviewVirtualIndex(
     entries,
-    1_200,
     (entry: { top: number; bottom: number }) => ({ top: entry.top, bottom: entry.bottom })
   );
-  assert.deepEqual([...index.keys()], [0, 1]);
+  assert.equal(index.size, 4);
+  const countStoredEntries = (node: {
+    overlappingByTop: readonly unknown[];
+    left: unknown;
+    right: unknown;
+  } | null): number => node
+    ? node.overlappingByTop.length
+      + countStoredEntries(node.left as typeof node)
+      + countStoredEntries(node.right as typeof node)
+    : 0;
+  assert.equal(countStoredEntries(index.root), 4);
   assert.deepEqual(
     (Array.from(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
       index,
       { top: 1_000, bottom: 1_900 },
-      1_200,
       (entry: { id: string }) => entry.id
     )) as Array<{ id: string }>).map((entry) => entry.id),
-    ['spanning', 'second-bucket']
+    ['spanning', 'near-start']
   );
-  assert.equal(
-    runtime.context.getRevisionGraphWebviewVirtualBucketRange(Number.NaN, 10, 1_200),
-    null
+  assert.deepEqual(
+    (Array.from(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+      index,
+      { top: 599_900, bottom: 600_100 },
+      (entry: { id: string }) => entry.id
+    )) as Array<{ id: string }>).map((entry) => entry.id),
+    ['spanning', 'middle']
   );
+  assert.deepEqual(
+    (Array.from(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+      index,
+      { top: 1_198_900, bottom: 1_199_100 },
+      (entry: { id: string }) => entry.id
+    )) as Array<{ id: string }>).map((entry) => entry.id),
+    ['spanning', 'near-end']
+  );
+  assert.deepEqual(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+    index,
+    { top: 1_200_100, bottom: 1_200_200 },
+    (entry: { id: string }) => entry.id
+  ), []);
+  assert.deepEqual(runtime.context.collectRevisionGraphWebviewVirtualIndexCandidates(
+    index,
+    { top: Number.NaN, bottom: 10 },
+    (entry: { id: string }) => entry.id
+  ), []);
 });
 
 test('calculates revision graph virtual scene bounds and keys through the typed module', () => {
