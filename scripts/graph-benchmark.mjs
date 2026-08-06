@@ -10,6 +10,9 @@ const {
   parseRevisionGraphLog,
   projectMajorOperationsGraph
 } = require('../out/revisionGraphData.js');
+const {
+  layoutProjectedGraphWithRoutes
+} = require('../out/revisionGraph/layout/layeredLayout.js');
 
 const GENERATOR_VERSION = 2;
 const SEED = 0x15_00_20_26;
@@ -54,6 +57,9 @@ const projectionMs = performance.now() - projectionStartedAt;
 const layoutStartedAt = performance.now();
 const scene = await buildRevisionGraphScene(graph, projection);
 const layoutMs = performance.now() - layoutStartedAt;
+const layoutCacheHitStartedAt = performance.now();
+const cachedLayout = await layoutProjectedGraphWithRoutes(projection);
+const layoutCacheHitMs = performance.now() - layoutCacheHitStartedAt;
 
 const descendantFocusAnchorIndex = Math.floor(tier.commits / 4);
 const descendantFocusProjectionStartedAt = performance.now();
@@ -77,6 +83,12 @@ if (commits.length !== tier.commits || generated.mergeCount !== tier.merges) {
 if (visibleNodeCount !== projection.nodes.length) {
   throw new Error('Visible-node count does not match the projected graph.');
 }
+if (
+  cachedLayout.positions.size !== projection.nodes.length ||
+  cachedLayout.edgeRoutes.size !== projection.edges.length
+) {
+  throw new Error('Cached layout does not match the projected graph.');
+}
 if (!descendantFocusProjection.nodes.some((node) => node.hash === toHash(descendantFocusAnchorIndex))) {
   throw new Error('Descendant focus benchmark did not retain its non-root anchor.');
 }
@@ -97,6 +109,7 @@ process.stdout.write(`${JSON.stringify({
     visibleNodeCount,
     projectionMs: round(projectionMs),
     layoutMs: round(layoutMs),
+    layoutCacheHitMs: round(layoutCacheHitMs),
     projectedNodes: projection.nodes.length,
     projectedEdges: projection.edges.length,
     sceneNodes: scene.nodes.length,

@@ -28,8 +28,7 @@ const projectedGraphLayoutCacheChangeListeners = new Set<() => void>();
 
 interface ProjectedGraphLayoutCacheEntry {
   promise: Promise<ProjectedGraphLayoutResult>;
-  positions?: Map<string, ProjectedGraphLayoutPosition>;
-  edgeRoutes?: Map<string, D3DagSugiyamaEdgeRoute>;
+  result?: ProjectedGraphLayoutResult;
 }
 
 export interface SerializedProjectedGraphLayoutCacheEntry {
@@ -53,14 +52,14 @@ export interface ProjectedGraphLayoutPosition {
 }
 
 export interface ProjectedGraphLayoutResult {
-  readonly positions: Map<string, ProjectedGraphLayoutPosition>;
-  readonly edgeRoutes: Map<string, D3DagSugiyamaEdgeRoute>;
+  readonly positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>;
+  readonly edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>;
 }
 
 export async function layoutProjectedGraph(
   projection: ProjectedGraph,
   signal?: AbortSignal
-): Promise<Map<string, ProjectedGraphLayoutPosition>> {
+): Promise<ReadonlyMap<string, ProjectedGraphLayoutPosition>> {
   return (await layoutProjectedGraphWithRoutes(projection, signal)).positions;
 }
 
@@ -83,7 +82,7 @@ export async function layoutProjectedGraphWithRoutes(
     projectedGraphLayoutCache.set(cacheKey, cachedLayoutEntry);
     projectedGraphLayoutCacheHits += 1;
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
-    return cloneLayoutResult(await cachedLayoutEntry.promise);
+    return cachedLayoutEntry.promise;
   }
 
   projectedGraphLayoutCacheMisses += 1;
@@ -92,10 +91,10 @@ export async function layoutProjectedGraphWithRoutes(
   };
   cacheEntry.promise = cacheEntry.promise
     .then((result) => {
-      cacheEntry.positions = cloneLayoutPositions(result.positions);
-      cacheEntry.edgeRoutes = cloneLayoutEdgeRoutes(result.edgeRoutes);
+      const immutableResult = createImmutableLayoutResult(result.positions, result.edgeRoutes);
+      cacheEntry.result = immutableResult;
       notifyProjectedGraphLayoutCacheChanged();
-      return result;
+      return immutableResult;
     })
     .catch((error) => {
       projectedGraphLayoutCache.delete(cacheKey);
@@ -104,7 +103,7 @@ export async function layoutProjectedGraphWithRoutes(
   projectedGraphLayoutCache.set(cacheKey, cacheEntry);
   pruneProjectedGraphLayoutCache();
 
-  return cloneLayoutResult(await cacheEntry.promise);
+  return cacheEntry.promise;
 }
 
 export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): string {
@@ -161,12 +160,12 @@ export function clearProjectedGraphLayoutCache(): void {
 
 export function serializeProjectedGraphLayoutCache(): SerializedProjectedGraphLayoutCacheEntry[] {
   return [...projectedGraphLayoutCache.entries()]
-    .flatMap(([key, entry]) => entry.positions && entry.positions.size <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS
+    .flatMap(([key, entry]) => entry.result && entry.result.positions.size <= PROJECTED_GRAPH_LAYOUT_CACHE_PERSIST_MAX_POSITIONS
       ? [{
           key,
-          positions: [...entry.positions.entries()],
-          edgeRoutes: shouldPersistLayoutEdgeRoutes(entry.edgeRoutes)
-            ? [...entry.edgeRoutes.entries()]
+          positions: [...entry.result.positions.entries()],
+          edgeRoutes: shouldPersistLayoutEdgeRoutes(entry.result.edgeRoutes)
+            ? [...entry.result.edgeRoutes.entries()]
             : undefined
         }]
       : []
@@ -185,15 +184,23 @@ export function restoreProjectedGraphLayoutCache(
       continue;
     }
 
-    const positions = new Map(entry.positions);
-    const edgeRoutes = new Map(entry.edgeRoutes ?? []);
+    const result = createImmutableLayoutResult(
+      new Map(entry.positions.map(([hash, position]) => [
+        hash,
+        { x: position.x, y: position.y }
+      ])),
+      new Map((entry.edgeRoutes ?? []).map(([key, route]) => [
+        key,
+        {
+          from: route.from,
+          to: route.to,
+          points: route.points.map((point) => ({ x: point.x, y: point.y }))
+        }
+      ]))
+    );
     projectedGraphLayoutCache.set(entry.key, {
-      positions,
-      edgeRoutes,
-      promise: Promise.resolve({
-        positions: cloneLayoutPositions(positions),
-        edgeRoutes: cloneLayoutEdgeRoutes(edgeRoutes)
-      })
+      result,
+      promise: Promise.resolve(result)
     });
     pruneProjectedGraphLayoutCache();
   }
@@ -214,7 +221,7 @@ async function calculateProjectedGraphLayout(
 ): Promise<ProjectedGraphLayoutResult> {
   const layoutInput = createD3DagSugiyamaLayoutInput(projection);
   try {
-    return toProjectedGraphLayoutResult(await calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal));
+    return calculateD3DagSugiyamaLayoutInWorker(layoutInput, signal);
   } catch (error) {
     if (isAbortError(error)) {
       throw error;
@@ -222,7 +229,7 @@ async function calculateProjectedGraphLayout(
 
     throwIfAborted(signal, 'The d3-dag layout was aborted.');
     return shouldUseSynchronousD3DagFallback(projection)
-      ? toProjectedGraphLayoutResult(calculateD3DagSugiyamaLayout(layoutInput))
+      ? calculateD3DagSugiyamaLayout(layoutInput)
       : calculateLinearProjectedGraphFallback(projection);
   }
 }
@@ -296,42 +303,69 @@ function compareLayoutCacheRefs(
     left.name.localeCompare(right.name);
 }
 
-function cloneLayoutPositions(
-  positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>
-): Map<string, ProjectedGraphLayoutPosition> {
-  return new Map(positions);
-}
-
-function cloneLayoutEdgeRoutes(
+function createImmutableLayoutResult(
+  positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>,
   edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>
-): Map<string, D3DagSugiyamaEdgeRoute> {
-  return new Map(
-    [...edgeRoutes.entries()].map(([key, route]) => [
-      key,
-      {
-        from: route.from,
-        to: route.to,
-        points: route.points.map((point) => ({ x: point.x, y: point.y }))
-      }
-    ])
-  );
+): ProjectedGraphLayoutResult {
+  for (const position of positions.values()) {
+    Object.freeze(position);
+  }
+  for (const route of edgeRoutes.values()) {
+    for (const point of route.points) {
+      Object.freeze(point);
+    }
+    Object.freeze(route.points);
+    Object.freeze(route);
+  }
+
+  return Object.freeze({
+    positions: new ImmutableReadonlyMap(positions),
+    edgeRoutes: new ImmutableReadonlyMap(edgeRoutes)
+  });
 }
 
-function cloneLayoutResult(result: ProjectedGraphLayoutResult): ProjectedGraphLayoutResult {
-  return {
-    positions: cloneLayoutPositions(result.positions),
-    edgeRoutes: cloneLayoutEdgeRoutes(result.edgeRoutes)
-  };
-}
+class ImmutableReadonlyMap<Key, Value> implements ReadonlyMap<Key, Value> {
+  readonly #entriesByKey: ReadonlyMap<Key, Value>;
 
-function toProjectedGraphLayoutResult(result: {
-  readonly positions: ReadonlyMap<string, ProjectedGraphLayoutPosition>;
-  readonly edgeRoutes: ReadonlyMap<string, D3DagSugiyamaEdgeRoute>;
-}): ProjectedGraphLayoutResult {
-  return {
-    positions: cloneLayoutPositions(result.positions),
-    edgeRoutes: cloneLayoutEdgeRoutes(result.edgeRoutes)
-  };
+  constructor(entriesByKey: ReadonlyMap<Key, Value>) {
+    this.#entriesByKey = entriesByKey;
+    Object.freeze(this);
+  }
+
+  get size(): number {
+    return this.#entriesByKey.size;
+  }
+
+  get(key: Key): Value | undefined {
+    return this.#entriesByKey.get(key);
+  }
+
+  has(key: Key): boolean {
+    return this.#entriesByKey.has(key);
+  }
+
+  entries(): MapIterator<[Key, Value]> {
+    return this.#entriesByKey.entries();
+  }
+
+  keys(): MapIterator<Key> {
+    return this.#entriesByKey.keys();
+  }
+
+  values(): MapIterator<Value> {
+    return this.#entriesByKey.values();
+  }
+
+  [Symbol.iterator](): MapIterator<[Key, Value]> {
+    return this.#entriesByKey[Symbol.iterator]();
+  }
+
+  forEach(
+    callbackfn: (value: Value, key: Key, map: ReadonlyMap<Key, Value>) => void,
+    thisArg?: unknown
+  ): void {
+    this.#entriesByKey.forEach((value, key) => callbackfn.call(thisArg, value, key, this));
+  }
 }
 
 function shouldPersistLayoutEdgeRoutes(

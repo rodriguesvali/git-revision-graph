@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
   and push state refresh without resending or rebuilding the graph scene.
 - Count visible nodes for adaptive history limits without constructing and discarding a complete
   projected graph with filtered node payloads, compressed edges, and hidden-path routes.
+- Reuse one runtime-protected canonical layout snapshot across cache hits instead of repeatedly
+  cloning every position, route, and route point, while retaining a defensive copy when restoring
+  persisted cache data.
 
 ### Release Preparation
 

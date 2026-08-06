@@ -736,6 +736,46 @@ test('reuses cached d3-dag layout positions for the same projected graph topolog
   assert.equal(afterSecondLayout.hits, 1);
 });
 
+test('shares an immutable canonical layout result across cache hits', async () => {
+  clearProjectedGraphLayoutCache();
+  const projection = projectMajorOperationsGraph(buildCommitGraph([
+    {
+      hash: 'head1',
+      parents: ['base1'],
+      author: 'Ada',
+      date: '2026-08-06',
+      subject: 'Feature',
+      refs: [{ name: 'main', kind: 'head' }]
+    },
+    {
+      hash: 'base1',
+      parents: [],
+      author: 'Ada',
+      date: '2026-08-05',
+      subject: 'Base',
+      refs: [{ name: 'origin/main', kind: 'remote' }]
+    }
+  ]));
+
+  const first = await layoutProjectedGraphWithRoutes(projection);
+  const second = await layoutProjectedGraphWithRoutes(projection);
+  const position = first.positions.get('head1');
+  const route = first.edgeRoutes.get('head1->base1');
+
+  assert.strictEqual(second, first);
+  assert.equal((first.positions as unknown as { set?: unknown }).set, undefined);
+  assert.equal((first.edgeRoutes as unknown as { clear?: unknown }).clear, undefined);
+  assert.deepEqual(Object.getOwnPropertyNames(first.positions), []);
+  assert.ok(position);
+  assert.ok(route);
+  assert.equal(Object.isFrozen(position), true);
+  assert.equal(Object.isFrozen(route), true);
+  assert.equal(Object.isFrozen(route?.points), true);
+  assert.equal(Object.isFrozen(route?.points[0]), true);
+  assert.equal(Reflect.set(position as object, 'x', -1), false);
+  assert.equal(Reflect.set(route?.points[0] as object, 'y', -1), false);
+});
+
 test('uses the d3-dag layout cache namespace', () => {
   const graph = buildCommitGraph([
     {
@@ -970,6 +1010,38 @@ test('restores serialized d3-dag layout cache entries across extension sessions'
   assert.deepEqual(restoredScene.edges, firstScene.edges);
   assert.equal(afterRestoredLayout.hits, 1);
   assert.equal(afterRestoredLayout.misses, 0);
+});
+
+test('copies mutable persisted layout data once at the cache restoration boundary', async () => {
+  clearProjectedGraphLayoutCache();
+  const projection = createLinearProjectedGraph(2);
+  const headPosition = { x: 10, y: 20 };
+  const basePosition = { x: 30, y: 40 };
+  const firstPoint = { x: 10, y: 20 };
+  const secondPoint = { x: 30, y: 40 };
+
+  restoreProjectedGraphLayoutCache([{
+    key: buildProjectedGraphLayoutCacheKey(projection),
+    positions: [
+      ['linear-1', headPosition],
+      ['linear-0', basePosition]
+    ],
+    edgeRoutes: [[
+      'linear-1->linear-0',
+      {
+        from: 'linear-1',
+        to: 'linear-0',
+        points: [firstPoint, secondPoint]
+      }
+    ]]
+  }]);
+
+  headPosition.x = 999;
+  firstPoint.y = 999;
+  const restored = await layoutProjectedGraphWithRoutes(projection);
+
+  assert.deepEqual(restored.positions.get('linear-1'), { x: 10, y: 20 });
+  assert.deepEqual(restored.edgeRoutes.get('linear-1->linear-0')?.points[0], { x: 10, y: 20 });
 });
 
 test('ignores oversized serialized layout cache entries', () => {

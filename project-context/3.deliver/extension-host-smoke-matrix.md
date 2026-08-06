@@ -9,7 +9,7 @@ risking user work.
 
 ## 1.6.4 Planned Release Evidence
 
-- Result: automated items 1 through 4 verification passed; manual smoke remains pending.
+- Result: automated items 1 through 5 verification passed; manual smoke remains pending.
 - Source baseline: repository tag `1.6.3` at `c620e35`.
 - Scope: measured, staged revision-graph loading performance improvements defined in
   `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`.
@@ -31,6 +31,10 @@ risking user work.
   visible major-operation nodes than the configured adaptive threshold. Confirm the graph deepens
   only when expected and remains identical across ref scopes, hidden tag/remote/stash options,
   merge visibility, revision ranges, and descendant focus.
+- Item 5 focus: repeat warm refreshes and projection toggles that return to a prior topology, then
+  compare nodes, routed edges, minimap, selection, and viewport behavior with an empty-cache load.
+  Confirm restored layouts remain identical after reloading the Extension Development Host and no
+  prior scene can alter a later cached result.
 - Operator, VS Code versions, platforms, fixtures, candidate commit, and results: pending.
 - Packaging and Marketplace evidence remain outside this matrix and require explicit maintainer
   approval.
