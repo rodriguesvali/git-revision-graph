@@ -19,7 +19,6 @@ import type {
 import { findCommitHashesByRef } from '../model/commitGraphQueries';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import { RevisionGraphSnapshotLoadContext } from '../backendServices/snapshot';
-import { loadGitBranchDescriptions } from '../repository/branchDescriptions';
 import {
   RevisionGraphViewReference,
   RevisionGraphViewState
@@ -33,7 +32,8 @@ import {
 } from '../webview/shared';
 import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
-import { FlowGovernanceSettings, loadFlowGovernanceViewState } from '../flow';
+import type { FlowGovernanceSettings } from '../flow';
+import { loadRevisionGraphReadyStateMetadata } from './readyMetadata';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
 
@@ -363,30 +363,20 @@ async function buildReadyRevisionGraphViewStateFromParts(
   const partsStartedAt = nowMs();
   const nodeLayouts = buildNodeLayouts(scene);
   const references = buildViewReferences(scene);
-  const mergeBlockedStartedAt = nowMs();
-  const mergeBlockedTargets = await backend.getMergeBlockedTargets(
+  const {
+    mergeBlockedTargets,
+    flowGovernance,
+    branchDescriptions
+  } = await loadRevisionGraphReadyStateMetadata(
     repository,
+    backend,
     snapshot,
-    repository.state.HEAD?.name,
     references,
-    signal
+    signal,
+    trace,
+    context
   );
-  traceDuration(trace, 'state.mergeBlockedTargets', mergeBlockedStartedAt, `references=${references.length}; blocked=${mergeBlockedTargets.length}`);
-  throwIfAborted(signal, 'The revision graph load was aborted.');
-  const branchRefNames = references
-    .filter((ref) => ref.kind === 'head' || ref.kind === 'branch')
-    .map((ref) => ref.name);
-  const flowGovernance = await loadFlowGovernanceViewState(
-    repository.rootUri.fsPath,
-    branchRefNames,
-    context?.flowGovernanceSettings,
-    signal
-  );
-  const branchDescriptionsStartedAt = nowMs();
-  const branchDescriptions = context?.branchDescriptions
-    ?? await loadGitBranchDescriptions(repository.rootUri.fsPath, signal);
   const describedReferences = applyBranchDescriptions(references, branchDescriptions);
-  traceDuration(trace, 'state.branchDescriptions', branchDescriptionsStartedAt, `described=${describedReferences.filter((reference) => reference.description).length}`);
   const baseCanvasWidth = Math.max(
     880,
     nodeLayouts.reduce((max, node) => Math.max(max, node.defaultLeft + node.width + NODE_PADDING_X), 0)

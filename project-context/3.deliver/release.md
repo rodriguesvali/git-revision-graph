@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.4` opened; implementation and verification pending
+Status: `1.6.4` in progress; ready-state metadata critical-path slice verified
 Last consolidated: 2026-08-06
 
 ## Current State
@@ -10,8 +10,9 @@ Last consolidated: 2026-08-06
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was opened on 2026-08-06 as a patch release focused on measured,
-  staged revision-graph loading performance improvements. Implementation, validation, packaging,
-  and publication are pending.
+  staged revision-graph loading performance improvements. The first slice now parallelizes
+  independent ready-state metadata and skips unnecessary Flow Governance Git metadata while Flow
+  is disabled. Remaining implementation, final validation, packaging, and publication are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -42,7 +43,7 @@ Target version: `1.6.4`
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
 | Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Opening passed; feature pending | On 2026-08-06, the version consistency assertion, `npm run build`, `graphify update .`, and `git diff --check` passed. Validate each implementation slice with focused tests and benchmarks, then run the full release gates. |
+| Automated verification           | Item 1 passed; feature pending | On 2026-08-06, `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check` passed. The deterministic CI fixture measured 5.71 ms projection and 123.02 ms layout. Validate the remaining implementation slices, then run the final release gates. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
@@ -57,6 +58,16 @@ Opening record:
   startup, projection and copy costs, status-only updates, and duplicate webview work.
 - No runtime implementation, dependency change, VSIX package, publication command, or Marketplace
   action occurred while opening the cycle.
+
+Implementation record:
+
+- Ready-state merge analysis, Flow Governance state, and branch-description metadata now load
+  concurrently behind one cancelable join before state delivery.
+- Disabled or invalid Flow Governance no longer invokes branch-target or Pull Request readiness Git
+  metadata, while repository-configured disabled state retains its classified references for
+  reactivation.
+- Trace output now reports `state.flowGovernance` independently alongside merge-blocked target and
+  branch-description durations. No webview protocol or graph/layout output changed.
 
 Focused build artifacts:
 

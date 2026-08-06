@@ -42,6 +42,7 @@ import {
   FLOW_PATTERN_MAX_LENGTH,
   loadFlowPullRequestRemoteBranchCommit,
   loadFlowPullRequestTargets,
+  loadFlowGovernanceViewState,
   normalizeFlowConfig,
   parseFlowBranchTargets,
   parseFlowEqualizationTargets,
@@ -89,6 +90,49 @@ test('Flow Governance remote fetch loading always clears after success and failu
     'failure',
     'hide'
   ]);
+});
+
+test('disabled Flow Governance skips branch-target and Pull Request Git metadata', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-disabled-load-'));
+  let branchTargetLoads = 0;
+  let pullRequestTargetLoads = 0;
+  const services = {
+    async loadBranchTargets() {
+      branchTargetLoads += 1;
+      return new Map<string, string>();
+    },
+    async loadPullRequestTargets() {
+      pullRequestTargetLoads += 1;
+      return [];
+    }
+  };
+
+  const fallbackState = await loadFlowGovernanceViewState(
+    root,
+    ['main', 'feature/demo'],
+    { enabled: false },
+    undefined,
+    services
+  );
+  assert.equal(fallbackState, undefined);
+
+  await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
+    schemaVersion: 1,
+    enabled: false
+  }));
+  const repositoryState = await loadFlowGovernanceViewState(
+    root,
+    ['main', 'feature/demo'],
+    undefined,
+    undefined,
+    services
+  );
+
+  assert.equal(repositoryState?.enabled, false);
+  assert.equal(repositoryState?.configSource, 'repository');
+  assert.deepEqual(repositoryState?.pullRequestTargets, []);
+  assert.equal(branchTargetLoads, 0);
+  assert.equal(pullRequestTargetLoads, 0);
 });
 
 test('Flow Governance suggests local sync branch names for release and feature equalization', () => {

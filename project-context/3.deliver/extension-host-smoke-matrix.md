@@ -9,13 +9,16 @@ risking user work.
 
 ## 1.6.4 Planned Release Evidence
 
-- Result: pending; the release cycle is open and implementation has not started.
+- Result: automated item 1 verification passed; manual smoke remains pending.
 - Source baseline: repository tag `1.6.3` at `c620e35`.
 - Scope: measured, staged revision-graph loading performance improvements defined in
   `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`.
 - Required manual focus: cold and warm graph opening, normal and empty-cache refresh, repository
   switching, projection-only changes, status-only changes, Flow Governance enabled and disabled,
   and post-load selection, search, minimap, scrolling, and zoom behavior.
+- Item 1 focus: compare trace phases for merge analysis, Flow Governance, and branch descriptions;
+  verify the ready graph remains identical with Flow Governance enabled, disabled through fallback
+  settings, disabled through repository config, and invalid through repository config.
 - Operator, VS Code versions, platforms, fixtures, candidate commit, and results: pending.
 - Packaging and Marketplace evidence remain outside this matrix and require explicit maintainer
   approval.

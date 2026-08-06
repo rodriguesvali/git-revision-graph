@@ -24,6 +24,21 @@ const LIMIT_POLICY: RevisionGraphLimitPolicy = {
   graphCommandTimeoutMs: 60000
 };
 
+function createDeferred<T>(): {
+  readonly promise: Promise<T>;
+  resolve(value: T): void;
+} {
+  let resolvePromise!: (value: T) => void;
+  return {
+    promise: new Promise<T>((resolve) => {
+      resolvePromise = resolve;
+    }),
+    resolve(value: T) {
+      resolvePromise(value);
+    }
+  };
+}
+
 test('builds a serializable ready state for the persistent webview shell', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -87,6 +102,58 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.match(state.sceneLayoutKey, /^fanout-balance-v1:[A-Za-z0-9_-]+$/);
   assert.equal(state.loading, false);
   assert.equal(state.errorMessage, undefined);
+});
+
+test('loads independent ready-state metadata without serializing behind merge analysis', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    head: createHead('main', 0, 0),
+    refs: [createRef({ type: RefType.Head, name: 'main' })]
+  });
+  const graph = buildCommitGraph([{
+    hash: 'head1',
+    parents: [],
+    author: 'Ada',
+    date: '2026-08-06',
+    subject: 'Concurrent metadata',
+    refs: [{ name: 'main', kind: 'head' }]
+  }]);
+  const mergeAnalysisStarted = createDeferred<void>();
+  const mergeBlockedTargets = createDeferred<string[]>();
+  const traceEvents: Array<{ readonly phase: string; readonly detail?: string }> = [];
+  const backend: RevisionGraphStateBackend = {
+    async loadGraphSnapshot() {
+      return { graph, loadedAt: Date.now(), requestedLimit: 6000 };
+    },
+    async getMergeBlockedTargets() {
+      mergeAnalysisStarted.resolve(undefined);
+      return mergeBlockedTargets.promise;
+    }
+  };
+
+  const statePromise = buildReadyRevisionGraphViewState(
+    repository,
+    createDefaultRevisionGraphProjectionOptions(),
+    backend,
+    LIMIT_POLICY,
+    undefined,
+    (event) => traceEvents.push(event),
+    { branchDescriptions: new Map([['main', 'Primary branch']]) }
+  );
+
+  await mergeAnalysisStarted.promise;
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.ok(traceEvents.some((event) =>
+    event.phase === 'state.branchDescriptions'
+    && event.detail === 'entries=1'
+  ));
+
+  mergeBlockedTargets.resolve([]);
+  const state = await statePromise;
+
+  assert.equal(state.references[0]?.description, 'Primary branch');
+  assert.ok(traceEvents.some((event) => event.phase === 'state.mergeBlockedTargets'));
+  assert.ok(traceEvents.some((event) => event.phase === 'state.flowGovernance'));
 });
 
 test('attaches Flow Governance metadata from fallback settings without changing graph refs', async () => {

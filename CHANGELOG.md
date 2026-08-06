@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## 1.6.4 - Unreleased
 
+### Performance
+
+- Load merge analysis, Flow Governance state, and local branch descriptions concurrently while
+  assembling the ready revision-graph state.
+- Skip branch-target and Pull Request readiness Git queries when Flow Governance is disabled.
+
 ### Release Preparation
 
 - Opened the `1.6.4` patch cycle for revision-graph loading performance work and aligned package
