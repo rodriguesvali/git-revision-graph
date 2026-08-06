@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; performance items 1-5 verified
+Status: `1.6.4` in progress; performance items 1-5 and d3-dag 1.2.2 maintenance verified
 Last consolidated: 2026-08-06
 
 ## Current State
@@ -17,7 +17,8 @@ Last consolidated: 2026-08-06
   status-only changes as scene-bound deltas without structural webview rebuilding. The fourth uses
   count-only projection analysis for adaptive snapshot limits instead of constructing discarded
   projected nodes and edges. The fifth shares one runtime-protected canonical layout result across
-  cache hits instead of cloning positions, routes, and route points repeatedly. Remaining
+  cache hits instead of cloning positions, routes, and route points repeatedly. The existing
+  `d3-dag` dependency is now `1.2.2`; layout-quality changes remain deferred. Remaining
   implementation, final validation, packaging, and publication are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
@@ -50,6 +51,7 @@ Target version: `1.6.4`
 | Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
 | Automated verification           | Items 1-5 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Item 5 passed focused cache coverage (4 tests), quality (263 files, 2,556 functions), tests (870), platform tests (39), and the CI benchmark; its maximum persisted-cache probe reduced average cache-hit duration from 12.29 ms to 9.36 ms. Platform tests were not repeated for items 3-4 because neither changes Git process execution, filesystem behavior, repository mutation, or the worker host. Validate the remaining slices, then run the final release gates. |
+| Dependency maintenance           | Complete   | `d3-dag` `1.2.2` passed quality (263 files, 2,556 functions), `npm test` (870 tests), platform tests (39), the CI benchmark (`107.66 ms` initial layout, `2.13 ms` cache hit, `18.17 ms` descendant-focus layout), and `npm audit --omit=dev` (0 production vulnerabilities). Existing operators, profiles, worker bootstrap, and layout cache identity are unchanged. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
@@ -92,6 +94,9 @@ Implementation record:
   input is defensively copied once during restore. A 2,500-position/5,000-route probe reduced the
   post-warm-up hit average from `12.29 ms` to `9.36 ms` (`23.8%`), while the CI benchmark recorded
   `2.15 ms` for its 192-node/195-edge cache hit and verifies exact result counts.
+- The existing `d3-dag` runtime dependency was updated from `1.2.1` to `1.2.2` with maintainer
+  approval. Current Sugiyama operators, adaptive profiles, worker bootstrap, and layout cache
+  identity remain unchanged; layout-quality experimentation is explicitly deferred.
 
 Focused build artifacts:
 

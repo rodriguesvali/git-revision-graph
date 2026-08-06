@@ -230,7 +230,7 @@ export function disposeD3DagSugiyamaLayoutWorkerHost(): void {
 
 function createDefaultWorker(): D3DagSugiyamaLayoutWorkerLike {
   return new Worker(join(__dirname, 'd3DagSugiyamaLayoutWorker.js'), {
-    // d3-dag 1.2.1 loads a bundled web-worker shim that destructures workerData in worker threads.
+    // d3-dag 1.2.2 still loads a bundled web-worker shim that destructures workerData in worker threads.
     workerData: {}
   });
 }

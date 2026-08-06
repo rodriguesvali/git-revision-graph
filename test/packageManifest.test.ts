@@ -268,7 +268,7 @@ test('package manifest keeps runtime dependencies limited to shipped code depend
   const manifest = loadPackageManifest();
 
   assert.deepEqual(manifest.dependencies, {
-    'd3-dag': '^1.2.1'
+    'd3-dag': '^1.2.2'
   });
 });
 
