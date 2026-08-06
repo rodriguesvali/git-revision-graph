@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.6.3 - Unreleased
+## 1.6.4 - Unreleased
+
+### Release Preparation
+
+- Opened the `1.6.4` patch cycle for revision-graph loading performance work and aligned package
+  and lockfile version metadata with the new target version.
+
+## 1.6.3 - 2026-08-01
 
 ### Flow Governance
 

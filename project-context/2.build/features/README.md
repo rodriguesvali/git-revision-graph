@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-01
+Last consolidated: 2026-08-06
 
 Use this directory only for active or next-release feature work.
 
@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.4-revision-graph-load-performance.md`: staged optimization of the revision graph's initial
+  and refresh loading paths, with end-to-end measurement and regression protection.
 - `1.6.3-show-log-all-branches-default.md`: target histories open with `Show All Branches` enabled
   while retaining the existing scope toggle.
 - `1.6.3-show-log-expanded-file-spacing.md`: fixed continuation-row sizing prevents expanded Show
