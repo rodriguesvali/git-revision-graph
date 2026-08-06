@@ -236,6 +236,56 @@ test('reuses graph snapshot cache entries when ref names change on the same comm
   );
 });
 
+test('uses the count-only projection path when deciding whether to deepen a graph snapshot', async () => {
+  await withFakeGitScript(
+    createFakeGitProgram([
+      "const maxCount = Number(args.find((arg) => arg.startsWith('--max-count='))?.split('=')[1] || 0);",
+      "const records = [",
+      "  'head1\\x1fmid1\\x1fAda\\x1f2026-05-03\\x1fHead\\x1fHEAD -> main\\x1e',",
+      "  'mid1\\x1froot1\\x1fAda\\x1f2026-05-02\\x1fMiddle\\x1f\\x1e',",
+      "  'root1\\x1f\\x1fAda\\x1f2026-05-01\\x1fRoot\\x1f\\x1e'",
+      "];",
+      "process.stdout.write(records.slice(0, maxCount).join(''));"
+    ].join('\n')),
+    async (repositoryPath, callsPath) => {
+      const backend = new DefaultRevisionGraphBackend();
+      const repository = createRepository({
+        root: repositoryPath,
+        head: createBranch({ type: RefType.Head, name: 'main', commit: 'head1' }),
+        refs: [
+          createRef({ type: RefType.Head, name: 'main', commit: 'head1' })
+        ]
+      });
+      const events: RevisionGraphLoadTraceEvent[] = [];
+
+      const snapshot = await backend.loadGraphSnapshot(
+        repository,
+        createDefaultRevisionGraphProjectionOptions(),
+        {
+          initialLimit: 2,
+          steppedLimits: [2, 4],
+          minVisibleNodes: 3,
+          graphCommandTimeoutMs: 60000
+        },
+        undefined,
+        (event) => events.push(event)
+      );
+
+      assert.deepEqual(snapshot.graph.orderedCommits.map((commit) => commit.hash), [
+        'head1',
+        'mid1',
+        'root1'
+      ]);
+      const calls = await fs.readFile(callsPath, 'utf8');
+      assert.equal(calls.trim().split('\n').length, 2);
+      assert.ok(events.some((event) =>
+        event.phase === 'snapshot.countVisibleNodes'
+        && event.detail === 'nodes=2; threshold=3'
+      ));
+    }
+  );
+});
+
 test('graph snapshot loading uses request-scoped refs when provided', async () => {
   await withFakeGitScript(
     createFakeGitProgram(

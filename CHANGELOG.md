@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
   per-request ownership, cancellation, timeout recovery, and extension-host disposal.
 - Deliver repository status-only changes as a small scene-bound delta so worktree, conflict, pull,
   and push state refresh without resending or rebuilding the graph scene.
+- Count visible nodes for adaptive history limits without constructing and discarding a complete
+  projected graph with filtered node payloads, compressed edges, and hidden-path routes.
 
 ### Release Preparation
 

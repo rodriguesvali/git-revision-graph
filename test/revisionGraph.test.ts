@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
+  countMajorOperationsVisibleNodes,
   parseDecorationRefs,
   parseRevisionGraphLog,
   projectMajorOperationsGraph
@@ -38,7 +39,7 @@ import {
 } from '../src/revisionGraph/layout/layeredLayout';
 import { calculateD3DagSugiyamaLayoutInWorker } from '../src/revisionGraph/layout/d3DagSugiyamaLayoutWorkerHost';
 import { selectD3DagSugiyamaLayoutProfile } from '../src/revisionGraph/layout/d3DagSugiyamaLayout';
-import { ProjectedGraph } from '../src/revisionGraph/model/commitGraphTypes';
+import { ProjectedGraph, RevisionGraphProjectionOptions } from '../src/revisionGraph/model/commitGraphTypes';
 import { createDefaultRevisionGraphProjectionOptions } from '../src/revisionGraphTypes';
 import { projectCommitGraph } from '../src/revisionGraph/projection/graphProjection';
 
@@ -387,6 +388,63 @@ test('shows merge commits when the merge commit view option is enabled', () => {
   });
 
   assert.deepEqual(projection.nodes.map((node) => node.hash), ['head1', 'merge1', 'topic1', 'base1']);
+});
+
+test('counts projected nodes without resolving projection edges', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: ['merge1'], author: 'Ada', date: '2026-05-08', subject: 'Head tip', refs: [{ name: 'main', kind: 'head' }, { name: 'origin/main', kind: 'remote' }] },
+    { hash: 'merge1', parents: ['main1', 'topic1'], author: 'Ada', date: '2026-05-07', subject: 'Merge topic', refs: [] },
+    { hash: 'main1', parents: ['base1'], author: 'Ada', date: '2026-05-06', subject: 'Mainline', refs: [] },
+    { hash: 'topic1', parents: ['base1'], author: 'Ada', date: '2026-05-05', subject: 'Topic tip', refs: [{ name: 'feature/topic', kind: 'branch' }] },
+    { hash: 'remote1', parents: ['base1'], author: 'Ada', date: '2026-05-04', subject: 'Remote tip', refs: [{ name: 'origin/remote', kind: 'remote' }] },
+    { hash: 'stash1', parents: ['base1'], author: 'Ada', date: '2026-05-03', subject: 'Stash tip', refs: [{ name: 'stash', kind: 'stash' }] },
+    { hash: 'base1', parents: ['root1'], author: 'Ada', date: '2026-05-02', subject: 'Base tag', refs: [{ name: 'v1.0.0', kind: 'tag' }] },
+    { hash: 'root1', parents: [], author: 'Ada', date: '2026-05-01', subject: 'Root', refs: [] }
+  ]);
+  const defaults = createDefaultRevisionGraphProjectionOptions();
+  const optionVariants: readonly RevisionGraphProjectionOptions[] = [
+    defaults,
+    { ...defaults, showMergeCommits: true },
+    { ...defaults, showTags: false, showRemoteBranches: false, showStashes: false },
+    { ...defaults, refScope: 'current' },
+    { ...defaults, refScope: 'remoteHead' },
+    { ...defaults, refScope: 'local' },
+    {
+      ...defaults,
+      revisionRange: {
+        baseRevision: 'base1',
+        baseLabel: 'base1',
+        compareRevision: 'head1',
+        compareLabel: 'head1'
+      }
+    },
+    {
+      ...defaults,
+      descendantFocus: {
+        anchorRevision: 'base1',
+        anchorLabel: 'base1'
+      }
+    }
+  ];
+
+  for (const options of optionVariants) {
+    assert.equal(
+      countMajorOperationsVisibleNodes(graph, options),
+      projectMajorOperationsGraph(graph, options).nodes.length
+    );
+  }
+
+  const commitAccessCounts = new Map<string, number>();
+  const countingGraph = {
+    ...graph,
+    commitsByHash: new CountingMap(graph.commitsByHash, commitAccessCounts)
+  };
+  const visibleNodeCount = countMajorOperationsVisibleNodes(countingGraph, defaults);
+  assert.equal(visibleNodeCount, projectMajorOperationsGraph(graph, defaults).nodes.length);
+  assert.equal(commitAccessCounts.size, 0);
+
+  projectMajorOperationsGraph(countingGraph, defaults);
+  assert.ok([...commitAccessCounts.values()].some((count) => count > 0));
 });
 
 test('keeps sync merges in git-simplified major-operations graphs when merge commits are shown', () => {

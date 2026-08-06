@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; performance items 1-3 verified
+Status: `1.6.4` in progress; performance items 1-4 verified
 Last consolidated: 2026-08-06
 
 ## Current State
@@ -14,8 +14,10 @@ Last consolidated: 2026-08-06
   independent ready-state metadata and skips unnecessary Flow Governance Git metadata while Flow
   is disabled. The second slice reuses one healthy idle layout worker across sequential cache
   misses while preserving concurrent isolation and failure disposal. The third sends repository
-  status-only changes as scene-bound deltas without structural webview rebuilding. Remaining
-  implementation, final validation, packaging, and publication are pending.
+  status-only changes as scene-bound deltas without structural webview rebuilding. The fourth uses
+  count-only projection analysis for adaptive snapshot limits instead of constructing discarded
+  projected nodes and edges. Remaining implementation, final validation, packaging, and publication
+  are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -46,7 +48,7 @@ Target version: `1.6.4`
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
 | Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Items 1-3 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark on 2026-08-06; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Platform tests were not repeated because item 3 changes neither Git execution nor the worker host. Validate the remaining slices, then run the final release gates. |
+| Automated verification           | Items 1-4 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Platform tests were not repeated for items 3-4 because neither changes Git process execution, filesystem behavior, repository mutation, or the worker host. Validate the remaining slices, then run the final release gates. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
@@ -80,6 +82,10 @@ Implementation record:
   rebuilding graph DOM, topology, virtual indexes, minimap, search, selection, or viewport state.
   A synthetic 1,200-node serialization probe reduced the message from `548,373` to `294` bytes
   (`99.95%`); deterministic tests cover malformed and stale deltas plus the no-render boundary.
+- Adaptive snapshot limits now count visible major-operation nodes through the projection's shared
+  selection rules without constructing projected node payloads, compressed edges, or hidden-path
+  routes. The benchmark asserts exact count equivalence and reports the count phase independently;
+  the CI gate measured `2.10 ms` count-only versus `5.31 ms` full projection for `192` nodes.
 
 Focused build artifacts:
 

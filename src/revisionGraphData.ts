@@ -12,6 +12,7 @@ import type {
   RevisionGraphScene
 } from './revisionGraph/model/sceneTypes';
 import {
+  countMajorOperationsVisibleNodes,
   projectMajorOperationsGraph
 } from './revisionGraph/projection/graphProjection';
 import {
@@ -45,7 +46,7 @@ export type {
   RevisionGraphScene
 } from './revisionGraph/model/sceneTypes';
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
-export { projectMajorOperationsGraph };
+export { countMajorOperationsVisibleNodes, projectMajorOperationsGraph };
 
 interface CommitLaneLayout {
   readonly hash: string;

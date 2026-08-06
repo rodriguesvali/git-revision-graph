@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 const {
   buildCommitGraph,
   buildRevisionGraphScene,
+  countMajorOperationsVisibleNodes,
   parseRevisionGraphLog,
   projectMajorOperationsGraph
 } = require('../out/revisionGraphData.js');
@@ -39,11 +40,15 @@ const baseProjectionOptions = {
   showStashes: true,
   showCurrentBranchDescendants: false
 };
-const projectionStartedAt = performance.now();
-const projection = projectMajorOperationsGraph(graph, {
+const projectionOptions = {
   ...baseProjectionOptions,
-  showMergeCommits: true,
-});
+  showMergeCommits: true
+};
+const visibleNodeCountStartedAt = performance.now();
+const visibleNodeCount = countMajorOperationsVisibleNodes(graph, projectionOptions);
+const visibleNodeCountMs = performance.now() - visibleNodeCountStartedAt;
+const projectionStartedAt = performance.now();
+const projection = projectMajorOperationsGraph(graph, projectionOptions);
 const projectionMs = performance.now() - projectionStartedAt;
 
 const layoutStartedAt = performance.now();
@@ -69,6 +74,9 @@ const descendantFocusLayoutMs = performance.now() - descendantFocusLayoutStarted
 if (commits.length !== tier.commits || generated.mergeCount !== tier.merges) {
   throw new Error('Generated benchmark counts do not match the selected manifest.');
 }
+if (visibleNodeCount !== projection.nodes.length) {
+  throw new Error('Visible-node count does not match the projected graph.');
+}
 if (!descendantFocusProjection.nodes.some((node) => node.hash === toHash(descendantFocusAnchorIndex))) {
   throw new Error('Descendant focus benchmark did not retain its non-root anchor.');
 }
@@ -85,6 +93,8 @@ process.stdout.write(`${JSON.stringify({
   },
   measurements: {
     parseMs: round(parseMs),
+    visibleNodeCountMs: round(visibleNodeCountMs),
+    visibleNodeCount,
     projectionMs: round(projectionMs),
     layoutMs: round(layoutMs),
     projectedNodes: projection.nodes.length,

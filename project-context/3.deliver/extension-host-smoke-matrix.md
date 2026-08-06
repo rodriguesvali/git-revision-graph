@@ -9,7 +9,7 @@ risking user work.
 
 ## 1.6.4 Planned Release Evidence
 
-- Result: automated items 1 through 3 verification passed; manual smoke remains pending.
+- Result: automated items 1 through 4 verification passed; manual smoke remains pending.
 - Source baseline: repository tag `1.6.3` at `c620e35`.
 - Scope: measured, staged revision-graph loading performance improvements defined in
   `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`.
@@ -27,6 +27,10 @@ risking user work.
   merge-conflict state. Confirm toolbar actions update without graph flicker or loss of viewport,
   selection, search, highlights, minimap state, tooltips, or node offsets; repeat after switching
   repositories to confirm stale status does not cross scenes.
+- Item 4 focus: open repositories where the initial bounded history produces both fewer and more
+  visible major-operation nodes than the configured adaptive threshold. Confirm the graph deepens
+  only when expected and remains identical across ref scopes, hidden tag/remote/stash options,
+  merge visibility, revision ranges, and descendant focus.
 - Operator, VS Code versions, platforms, fixtures, candidate commit, and results: pending.
 - Packaging and Marketplace evidence remain outside this matrix and require explicit maintainer
   approval.

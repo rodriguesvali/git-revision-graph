@@ -1,8 +1,8 @@
 import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Ref, Repository } from '../../git';
-import { CommitGraph, RevisionGraphProjectionOptions } from '../model/commitGraphTypes';
-import { projectMajorOperationsGraph } from '../projection/graphProjection';
+import { RevisionGraphProjectionOptions } from '../model/commitGraphTypes';
+import { countMajorOperationsVisibleNodes } from '../projection/graphProjection';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';
 import { RevisionGraphSnapshot } from '../source/graphSnapshot';
 import {
@@ -141,7 +141,15 @@ async function loadGraphSnapshotInternal(
       break;
     }
 
-    if (countVisibleNodes(snapshot.graph, options) >= limitPolicy.minVisibleNodes) {
+    const countStartedAt = nowMs();
+    const visibleNodeCount = countMajorOperationsVisibleNodes(snapshot.graph, options);
+    traceDuration(
+      trace,
+      'snapshot.countVisibleNodes',
+      countStartedAt,
+      `nodes=${visibleNodeCount}; threshold=${limitPolicy.minVisibleNodes}`
+    );
+    if (visibleNodeCount >= limitPolicy.minVisibleNodes) {
       break;
     }
   }
@@ -159,10 +167,6 @@ async function loadGraphSnapshotInternal(
   }
 
   return selectedSnapshot;
-}
-
-function countVisibleNodes(graph: CommitGraph, options: RevisionGraphProjectionOptions): number {
-  return projectMajorOperationsGraph(graph, options).nodes.length;
 }
 
 function buildSnapshotCacheKey(

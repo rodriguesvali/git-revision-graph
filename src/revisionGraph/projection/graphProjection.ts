@@ -30,6 +30,21 @@ export function projectMajorOperationsGraph(
   return projectCommitGraph(graph, visibleHashes, options, scopeHashes);
 }
 
+export function countMajorOperationsVisibleNodes(
+  graph: CommitGraph,
+  options: RevisionGraphProjectionOptions = DEFAULT_PROJECTION_OPTIONS
+): number {
+  const scopeHashes = getScopeHashes(graph, options);
+  const visibility = buildMajorOperationsVisibility(graph, scopeHashes);
+  let count = 0;
+  for (const commit of visibility.candidateCommits) {
+    if (isMajorOperationsCommitVisible(commit, visibility, options)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 export function projectCommitGraph(
   graph: CommitGraph,
   visibleHashes: ReadonlySet<string>,
@@ -201,6 +216,26 @@ function buildMajorOperationsVisibleHashes(
   candidateHashes: ReadonlySet<string>,
   options: RevisionGraphProjectionOptions
 ): Set<string> {
+  const visibility = buildMajorOperationsVisibility(graph, candidateHashes);
+  const visibleHashes = new Set<string>();
+  for (const commit of visibility.candidateCommits) {
+    if (isMajorOperationsCommitVisible(commit, visibility, options)) {
+      visibleHashes.add(commit.hash);
+    }
+  }
+  return visibleHashes;
+}
+
+interface MajorOperationsVisibility {
+  readonly candidateCommits: ReadonlyArray<CommitGraph['orderedCommits'][number]>;
+  readonly candidateHashSet: ReadonlySet<string>;
+  readonly childCountByHash: ReadonlyMap<string, number>;
+}
+
+function buildMajorOperationsVisibility(
+  graph: CommitGraph,
+  candidateHashes: ReadonlySet<string>
+): MajorOperationsVisibility {
   const candidateCommits = graph.orderedCommits.filter((commit) =>
     candidateHashes.has(commit.hash) && !commit.isBoundary
   );
@@ -217,22 +252,29 @@ function buildMajorOperationsVisibleHashes(
     }
   }
 
-  return new Set(
-    candidateCommits
-      .filter((commit) => {
-        const parentCount = commit.parents.filter((parentHash) => candidateHashSet.has(parentHash)).length;
-        const childCount = childCountByHash.get(commit.hash) ?? 0;
-        const hasVisibleRef = filterRefs(commit.refs, options).length > 0 ||
-          (options.refScope === 'remoteHead' && commit.refs.some(isDefaultRemoteHeadRef));
-        const isMerge = parentCount > 1;
-        const isFork = childCount > 1;
-        const isRoot = parentCount === 0;
-        const isUnreferencedTip = childCount === 0 && commit.refs.length === 0;
+  return { candidateCommits, candidateHashSet, childCountByHash };
+}
 
-        return hasVisibleRef || (isMerge && options.showMergeCommits) || isFork || isRoot || isUnreferencedTip;
-      })
-      .map((commit) => commit.hash)
-  );
+function isMajorOperationsCommitVisible(
+  commit: CommitGraph['orderedCommits'][number],
+  visibility: MajorOperationsVisibility,
+  options: RevisionGraphProjectionOptions
+): boolean {
+  let parentCount = 0;
+  for (const parentHash of commit.parents) {
+    if (visibility.candidateHashSet.has(parentHash)) {
+      parentCount += 1;
+    }
+  }
+  const childCount = visibility.childCountByHash.get(commit.hash) ?? 0;
+  const hasVisibleRef = commit.refs.some((ref) => isProjectionRefVisible(ref, options)) ||
+    (options.refScope === 'remoteHead' && commit.refs.some(isDefaultRemoteHeadRef));
+  const isMerge = parentCount > 1;
+  const isFork = childCount > 1;
+  const isRoot = parentCount === 0;
+  const isUnreferencedTip = childCount === 0 && commit.refs.length === 0;
+
+  return hasVisibleRef || (isMerge && options.showMergeCommits) || isFork || isRoot || isUnreferencedTip;
 }
 
 function isDefaultRemoteHeadRef(ref: RevisionGraphRef): boolean {
@@ -243,19 +285,16 @@ function filterRefs(
   refs: readonly RevisionGraphRef[],
   options: RevisionGraphProjectionOptions
 ): RevisionGraphRef[] {
-  return refs.filter((ref) => {
-    if (ref.kind === 'tag' && !options.showTags) {
-      return false;
-    }
-    if (ref.kind === 'remote' && !options.showRemoteBranches) {
-      return false;
-    }
-    if (ref.kind === 'stash' && !options.showStashes) {
-      return false;
-    }
+  return refs.filter((ref) => isProjectionRefVisible(ref, options));
+}
 
-    return true;
-  });
+function isProjectionRefVisible(
+  ref: RevisionGraphRef,
+  options: RevisionGraphProjectionOptions
+): boolean {
+  return (ref.kind !== 'tag' || options.showTags)
+    && (ref.kind !== 'remote' || options.showRemoteBranches)
+    && (ref.kind !== 'stash' || options.showStashes);
 }
 
 interface ProjectedTarget {
