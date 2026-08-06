@@ -44,7 +44,7 @@ import { openShowLogCommitOnRemote } from '../showLog/remoteCommitAction';
 import {
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
-  createRevisionGraphLoadingMessage,
+  createRevisionGraphLoadingMessage, createRevisionGraphRepositoryStatusUpdateMessage,
   createRevisionGraphUpdateStateMessage
 } from './hostMessages';
 import {
@@ -683,7 +683,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
       this.currentState = result.state;
-      this.postHostMessage(createRevisionGraphUpdateStateMessage(this.currentState));
+      this.postHostMessage(createRevisionGraphRepositoryStatusUpdateMessage(repository.rootUri.fsPath, this.currentState));
     }
     return true;
   }

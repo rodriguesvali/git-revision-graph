@@ -205,6 +205,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /vscode\.postMessage\(createRevisionGraphWebviewReadyMessage\(\)\);/);
   assert.match(html, /case 'init-state'/);
   assert.match(html, /case 'update-state'/);
+  assert.match(html, /case 'update-repository-status'/);
   assert.doesNotMatch(html, /case 'patch-metadata'/);
   assert.doesNotMatch(html, /case 'patch-workspace-state'/);
   assert.match(html, /function applyTracedHostMessage\(message, phase, apply\)/);
@@ -1125,6 +1126,84 @@ test('omits incremental revision graph patch handlers', () => {
   assert.doesNotMatch(html, /function applyReferenceMetadataPatch\(patch\)[\s\S]*?edgeLayer\.innerHTML[\s\S]*?function applyWorkspaceStatePatch/);
 });
 
+test('updates repository status without rebuilding revision graph structure', () => {
+  const html = renderRevisionGraphShellHtml();
+  const statusUpdateStart = html.indexOf('function applyRepositoryStatusUpdate');
+  const statusUpdateEnd = html.indexOf('function setZoom', statusUpdateStart);
+  assert.ok(statusUpdateStart >= 0 && statusUpdateEnd > statusUpdateStart);
+  const statusUpdateSource = html.slice(statusUpdateStart, statusUpdateEnd);
+  assert.doesNotMatch(
+    statusUpdateSource,
+    /renderScene|rebuildVirtualSceneIndexes|syncSelection|syncSearch|requestAnimationFrame|innerHTML/
+  );
+
+  const runtime = createWebviewRuntime();
+  const state = createReadyGraphState();
+  runtime.context.handleHostMessage({ type: 'update-state', state });
+  const nodeLayer = runtime.elements.get('nodeLayer');
+  const edgeLayer = runtime.elements.get('edgeLayer');
+  const minimapNodeLayer = runtime.elements.get('minimapNodeLayer');
+  const pullButton = runtime.elements.get('pullButton');
+  assert.ok(nodeLayer && edgeLayer && minimapNodeLayer && pullButton);
+  const structuralMarkup = {
+    nodes: nodeLayer.innerHTML,
+    edges: edgeLayer.innerHTML,
+    minimap: minimapNodeLayer.innerHTML
+  };
+  assert.equal(pullButton.disabled, false);
+
+  runtime.context.handleHostMessage({
+    type: 'update-repository-status',
+    status: {
+      repositoryPath: '/workspace/repo',
+      sceneLayoutKey: state.sceneLayoutKey,
+      currentHeadName: 'main',
+      currentHeadUpstreamName: undefined,
+      publishedLocalBranchNames: [],
+      isWorkspaceDirty: true,
+      hasMergeConflicts: false,
+      hasConflictedMerge: false
+    }
+  });
+
+  assert.deepEqual({
+    nodes: nodeLayer.innerHTML,
+    edges: edgeLayer.innerHTML,
+    minimap: minimapNodeLayer.innerHTML
+  }, structuralMarkup);
+  assert.equal(pullButton.disabled, true);
+
+  runtime.context.handleHostMessage({
+    type: 'update-repository-status',
+    status: {
+      repositoryPath: '/workspace/other',
+      sceneLayoutKey: state.sceneLayoutKey,
+      currentHeadName: 'main',
+      currentHeadUpstreamName: 'origin/main',
+      publishedLocalBranchNames: ['main'],
+      isWorkspaceDirty: false,
+      hasMergeConflicts: false,
+      hasConflictedMerge: false
+    }
+  });
+  assert.equal(pullButton.disabled, true);
+
+  runtime.context.handleHostMessage({
+    type: 'update-repository-status',
+    status: {
+      repositoryPath: '/workspace/repo',
+      sceneLayoutKey: `${state.sceneLayoutKey}:stale`,
+      currentHeadName: 'main',
+      currentHeadUpstreamName: 'origin/main',
+      publishedLocalBranchNames: ['main'],
+      isWorkspaceDirty: false,
+      hasMergeConflicts: false,
+      hasConflictedMerge: false
+    }
+  });
+  assert.equal(pullButton.disabled, true);
+});
+
 test('keeps graph topology cache rebuilding out of virtual viewport frames', () => {
   const html = renderRevisionGraphShellHtml();
   const virtualRenderStart = html.indexOf('function renderVirtualScene');
@@ -1725,6 +1804,24 @@ test('rejects malformed host state before applying it to the webview runtime', (
   };
 
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(validMessage), true);
+  const validStatusMessage = {
+    type: 'update-repository-status',
+    status: {
+      repositoryPath: '/workspace/repo',
+      sceneLayoutKey: 'layout',
+      currentHeadName: 'main',
+      currentHeadUpstreamName: 'origin/main',
+      publishedLocalBranchNames: ['main'],
+      isWorkspaceDirty: true,
+      hasMergeConflicts: false,
+      hasConflictedMerge: false
+    }
+  };
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(validStatusMessage), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+    ...validStatusMessage,
+    status: { ...validStatusMessage.status, isWorkspaceDirty: 'yes' }
+  }), false);
   assert.equal(
     runtime.context.isRevisionGraphWebviewHostMessage({
       ...validMessage,

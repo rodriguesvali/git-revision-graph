@@ -61,6 +61,17 @@ interface RevisionGraphWebviewHostState extends Record<string, unknown> {
   readonly errorMessage?: string;
 }
 
+interface RevisionGraphWebviewRepositoryStatusUpdate extends Record<string, unknown> {
+  readonly repositoryPath: string;
+  readonly sceneLayoutKey: string;
+  readonly currentHeadName?: string;
+  readonly currentHeadUpstreamName?: string;
+  readonly publishedLocalBranchNames: readonly string[];
+  readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
+}
+
 type RevisionGraphWebviewMessage = RevisionGraphProtocol.Message;
 
 type RevisionGraphWebviewMessageOf<
@@ -69,6 +80,7 @@ type RevisionGraphWebviewMessageOf<
 
 type RevisionGraphWebviewHostMessage =
   | { readonly type: 'init-state' | 'update-state'; readonly state: RevisionGraphWebviewHostState; readonly trace?: Record<string, unknown> }
+  | { readonly type: 'update-repository-status'; readonly status: RevisionGraphWebviewRepositoryStatusUpdate; readonly trace?: Record<string, unknown> }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: string }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: Record<string, unknown> | null }
   | { readonly type: 'show-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string; readonly title: string; readonly description: string }

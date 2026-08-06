@@ -8,6 +8,7 @@ import {
   createRevisionGraphLoadingMessage,
   createRevisionGraphFlowAiTextResultMessage,
   createRevisionGraphRemoteTagStateMessage,
+  createRevisionGraphRepositoryStatusUpdateMessage,
   createRevisionGraphShowFlowBranchFormMessage,
   createRevisionGraphUpdateStateMessage
 } from '../src/revisionGraph/hostMessages';
@@ -23,6 +24,19 @@ test('builds revision graph host state messages with stable payloads', () => {
   assert.deepEqual(createRevisionGraphUpdateStateMessage(state), {
     type: 'update-state',
     state
+  });
+  assert.deepEqual(createRevisionGraphRepositoryStatusUpdateMessage('/workspace/repo', state), {
+    type: 'update-repository-status',
+    status: {
+      repositoryPath: '/workspace/repo',
+      sceneLayoutKey: 'empty',
+      currentHeadName: 'main',
+      currentHeadUpstreamName: 'origin/main',
+      publishedLocalBranchNames: ['main'],
+      isWorkspaceDirty: false,
+      hasMergeConflicts: false,
+      hasConflictedMerge: false
+    }
   });
 });
 

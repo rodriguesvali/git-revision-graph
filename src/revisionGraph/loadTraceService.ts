@@ -42,6 +42,7 @@ export class RevisionGraphLoadTraceService implements vscode.Disposable {
     switch (message.type) {
       case 'init-state':
       case 'update-state':
+      case 'update-repository-status':
         return {
           ...message,
           trace: {

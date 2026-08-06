@@ -50,14 +50,14 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly references?: readonly RevisionGraphWebviewLegacyFlowReference[];
       readonly pullRequestTargets?: readonly RevisionGraphWebviewFlowPullRequestTarget[];
     };
-    type RevisionGraphWebviewStateHostMessage = Extract<
+    type RevisionGraphWebviewTraceableHostMessage = Extract<
       RevisionGraphWebviewHostMessage,
-      { readonly type: 'init-state' | 'update-state' }
+      { readonly type: 'init-state' | 'update-state' | 'update-repository-status' }
     >;
     type RevisionGraphWebviewTraceContext = {
       readonly trace: { readonly requestId: number; readonly sentAtMs: number };
     };
-    type RevisionGraphWebviewTracedStateHostMessage = RevisionGraphWebviewStateHostMessage & RevisionGraphWebviewTraceContext;
+    type RevisionGraphWebviewTracedHostMessage = RevisionGraphWebviewTraceableHostMessage & RevisionGraphWebviewTraceContext;
     type RevisionGraphWebviewSelectionTarget = RevisionGraphWebviewTarget & { readonly id: string };
     type RevisionGraphWebviewSelectionSnapshotEntry = Pick<
       RevisionGraphWebviewSelectionTarget,
@@ -132,7 +132,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
     let sceneEventHandlersBound = false;
-    let activeWebviewTraceMessage: RevisionGraphWebviewStateHostMessage | null = null;
+    let activeWebviewTraceMessage: RevisionGraphWebviewTraceableHostMessage | null = null;
     let viewportClientWidth = 0;
     let viewportClientHeight = 0;
     const VIRTUAL_RENDER_OVERSCAN_PX = 900;
@@ -714,6 +714,11 @@ const VIEWPORT_PADDING_LEFT = 18;
             applyState(message.state, false, { invalidateRemoteTagState: true });
           });
           return;
+        case 'update-repository-status':
+          applyTracedHostMessage(message, 'webview.apply.update-repository-status', () => {
+            applyRepositoryStatusUpdate(message.status);
+          });
+          return;
         case 'set-remote-tag-state':
           setRemoteTagState(message.tagName, message.state);
           return;
@@ -734,7 +739,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function applyTracedHostMessage(
-      message: RevisionGraphWebviewStateHostMessage,
+      message: RevisionGraphWebviewTraceableHostMessage,
       phase: string,
       apply: () => void
     ) {
@@ -754,7 +759,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function traceWebviewPhaseForMessage<Result>(
-      traceMessage: RevisionGraphWebviewStateHostMessage | null,
+      traceMessage: RevisionGraphWebviewTraceableHostMessage | null,
       phase: string,
       work: () => Result,
       detail = ''
@@ -772,7 +777,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function postWebviewLoadTrace(
-      message: RevisionGraphWebviewStateHostMessage,
+      message: RevisionGraphWebviewTraceableHostMessage,
       phase: string,
       startedAt: number,
       options: { readonly includeDelivery?: boolean; readonly detail?: string } = {}
@@ -793,8 +798,8 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function hasWebviewTraceContext(
-      message: RevisionGraphWebviewStateHostMessage | null
-    ): message is RevisionGraphWebviewTracedStateHostMessage {
+      message: RevisionGraphWebviewTraceableHostMessage | null
+    ): message is RevisionGraphWebviewTracedHostMessage {
       if (!message || !('trace' in message)) {
         return false;
       }
@@ -803,31 +808,6 @@ const VIEWPORT_PADDING_LEFT = 18;
         && typeof trace === 'object'
         && typeof (trace as Record<string, unknown>).requestId === 'number'
         && typeof (trace as Record<string, unknown>).sentAtMs === 'number';
-    }
-
-    function buildWebviewLoadTraceDetail(
-      message: RevisionGraphWebviewTracedStateHostMessage,
-      deliveryMs: number | null,
-      extraDetail: string
-    ) {
-      const details = [
-        'message=' + message.type
-      ];
-      if (deliveryMs !== null) {
-        details.push('deliveryMs=' + Math.round(deliveryMs));
-      }
-      const payload = message.state;
-      if (payload && payload.scene) {
-        details.push('nodes=' + ((payload.scene.nodes && payload.scene.nodes.length) || 0));
-        details.push('edges=' + ((payload.scene.edges && payload.scene.edges.length) || 0));
-      }
-      if (payload && payload.references) {
-        details.push('refs=' + payload.references.length);
-      }
-      if (extraDetail) {
-        details.push(extraDetail);
-      }
-      return details.join('; ');
     }
 
     function getTraceNow() {

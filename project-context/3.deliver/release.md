@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; ready-state metadata and layout-worker slices verified
+Status: `1.6.4` in progress; performance items 1-3 verified
 Last consolidated: 2026-08-06
 
 ## Current State
@@ -13,8 +13,9 @@ Last consolidated: 2026-08-06
   staged revision-graph loading performance improvements. The first slice parallelizes
   independent ready-state metadata and skips unnecessary Flow Governance Git metadata while Flow
   is disabled. The second slice reuses one healthy idle layout worker across sequential cache
-  misses while preserving concurrent isolation and failure disposal. Remaining implementation,
-  final validation, packaging, and publication are pending.
+  misses while preserving concurrent isolation and failure disposal. The third sends repository
+  status-only changes as scene-bound deltas without structural webview rebuilding. Remaining
+  implementation, final validation, packaging, and publication are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -45,7 +46,7 @@ Target version: `1.6.4`
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
 | Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Items 1-2 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark on 2026-08-06. The item 2 deterministic fixture measured 6.30 ms projection, 103.95 ms first layout, and 21.35 ms descendant-focus warm-worker layout. Validate the remaining slices, then run the final release gates. |
+| Automated verification           | Items 1-3 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark on 2026-08-06; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Platform tests were not repeated because item 3 changes neither Git execution nor the worker host. Validate the remaining slices, then run the final release gates. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
@@ -74,6 +75,11 @@ Implementation record:
   request-ID protocol. Concurrent calculations still use separate workers; abort, timeout, fatal
   failure, and disposal terminate affected workers. A direct two-node startup probe changed from a
   `49.55 ms` one-shot average to `55.54 ms` cold and `0.86 ms` warm average in this environment.
+- Repository status-only events now send a typed delta bound to the active repository path and
+  scene layout key. The webview updates HEAD/worktree/conflict state and toolbar chrome without
+  rebuilding graph DOM, topology, virtual indexes, minimap, search, selection, or viewport state.
+  A synthetic 1,200-node serialization probe reduced the message from `548,373` to `294` bytes
+  (`99.95%`); deterministic tests cover malformed and stale deltas plus the no-render boundary.
 
 Focused build artifacts:
 

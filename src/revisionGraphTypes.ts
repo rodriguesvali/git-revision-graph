@@ -66,6 +66,17 @@ export interface RevisionGraphHostTraceContext {
   readonly sentAtMs: number;
 }
 
+export interface RevisionGraphRepositoryStatusUpdate {
+  readonly repositoryPath: string;
+  readonly sceneLayoutKey: string;
+  readonly currentHeadName: string | undefined;
+  readonly currentHeadUpstreamName: string | undefined;
+  readonly publishedLocalBranchNames: readonly string[];
+  readonly isWorkspaceDirty: boolean;
+  readonly hasMergeConflicts: boolean;
+  readonly hasConflictedMerge: boolean;
+}
+
 export type RevisionGraphFlowAiTextSurface =
   | 'pull-request'
   | 'release'
@@ -78,6 +89,11 @@ export type RevisionGraphFlowAiTextField = 'title' | 'description';
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
+  | {
+    readonly type: 'update-repository-status';
+    readonly status: RevisionGraphRepositoryStatusUpdate;
+    readonly trace?: RevisionGraphHostTraceContext;
+  }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: RemoteTagPublicationState }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: RevisionGraphCommitShortStat | null }
   | {

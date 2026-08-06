@@ -71,6 +71,7 @@
     "src/revisionGraph/webview/runtime/flowAiTextInteractions.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",
     "src/revisionGraph/webview/script/bootstrap.ts",
+    "src/revisionGraph/webview/script/hostStateUpdates.ts",
     "src/revisionGraph/webview/script/interactions.ts",
     "src/revisionGraph/webview/script/graph.ts",
     "src/revisionGraph/webview/script/layout.ts"

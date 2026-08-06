@@ -14,6 +14,9 @@ function isRevisionGraphWebviewStateHostMessage(value: Record<string, unknown>):
     case 'update-state':
       return isRevisionGraphWebviewHostState(value.state)
         && (value.trace === undefined || isRevisionGraphWebviewRecord(value.trace));
+    case 'update-repository-status':
+      return isRevisionGraphWebviewRepositoryStatusUpdate(value.status)
+        && (value.trace === undefined || isRevisionGraphWebviewRecord(value.trace));
     case 'set-remote-tag-state':
       return typeof value.tagName === 'string' && typeof value.state === 'string';
     case 'set-commit-short-stat':
@@ -22,6 +25,20 @@ function isRevisionGraphWebviewStateHostMessage(value: Record<string, unknown>):
     default:
       return false;
   }
+}
+
+function isRevisionGraphWebviewRepositoryStatusUpdate(
+  value: unknown
+): value is RevisionGraphWebviewRepositoryStatusUpdate {
+  return isRevisionGraphWebviewRecord(value)
+    && typeof value.repositoryPath === 'string'
+    && typeof value.sceneLayoutKey === 'string'
+    && isOptionalString(value.currentHeadName)
+    && isOptionalString(value.currentHeadUpstreamName)
+    && isStringArray(value.publishedLocalBranchNames)
+    && typeof value.isWorkspaceDirty === 'boolean'
+    && typeof value.hasMergeConflicts === 'boolean'
+    && typeof value.hasConflictedMerge === 'boolean';
 }
 
 function isRevisionGraphWebviewActionHostMessage(value: Record<string, unknown>): boolean {

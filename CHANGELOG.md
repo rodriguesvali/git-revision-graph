@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - Skip branch-target and Pull Request readiness Git queries when Flow Governance is disabled.
 - Reuse one idle layout worker across sequential cache misses while preserving parallel workers,
   per-request ownership, cancellation, timeout recovery, and extension-host disposal.
+- Deliver repository status-only changes as a small scene-bound delta so worktree, conflict, pull,
+  and push state refresh without resending or rebuilding the graph scene.
 
 ### Release Preparation
 

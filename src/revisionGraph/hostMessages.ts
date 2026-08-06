@@ -3,6 +3,7 @@ import {
   RevisionGraphCommitShortStat,
   RevisionGraphFlowAiTextField,
   RevisionGraphFlowAiTextSurface,
+  RevisionGraphRepositoryStatusUpdate,
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
@@ -27,6 +28,26 @@ export function createRevisionGraphUpdateStateMessage(
   return {
     type: 'update-state',
     state
+  };
+}
+
+export function createRevisionGraphRepositoryStatusUpdateMessage(
+  repositoryPath: string,
+  state: RevisionGraphViewState
+): RevisionGraphViewHostMessage {
+  const status: RevisionGraphRepositoryStatusUpdate = {
+    repositoryPath,
+    sceneLayoutKey: state.sceneLayoutKey,
+    currentHeadName: state.currentHeadName,
+    currentHeadUpstreamName: state.currentHeadUpstreamName,
+    publishedLocalBranchNames: state.publishedLocalBranchNames,
+    isWorkspaceDirty: state.isWorkspaceDirty,
+    hasMergeConflicts: state.hasMergeConflicts,
+    hasConflictedMerge: state.hasConflictedMerge
+  };
+  return {
+    type: 'update-repository-status',
+    status
   };
 }
 
