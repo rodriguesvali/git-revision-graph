@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; ready-state metadata critical-path slice verified
+Status: `1.6.4` in progress; ready-state metadata and layout-worker slices verified
 Last consolidated: 2026-08-06
 
 ## Current State
@@ -10,9 +10,11 @@ Last consolidated: 2026-08-06
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was opened on 2026-08-06 as a patch release focused on measured,
-  staged revision-graph loading performance improvements. The first slice now parallelizes
+  staged revision-graph loading performance improvements. The first slice parallelizes
   independent ready-state metadata and skips unnecessary Flow Governance Git metadata while Flow
-  is disabled. Remaining implementation, final validation, packaging, and publication are pending.
+  is disabled. The second slice reuses one healthy idle layout worker across sequential cache
+  misses while preserving concurrent isolation and failure disposal. Remaining implementation,
+  final validation, packaging, and publication are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -43,7 +45,7 @@ Target version: `1.6.4`
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
 | Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Item 1 passed; feature pending | On 2026-08-06, `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check` passed. The deterministic CI fixture measured 5.71 ms projection and 123.02 ms layout. Validate the remaining implementation slices, then run the final release gates. |
+| Automated verification           | Items 1-2 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark on 2026-08-06. The item 2 deterministic fixture measured 6.30 ms projection, 103.95 ms first layout, and 21.35 ms descendant-focus warm-worker layout. Validate the remaining slices, then run the final release gates. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
 | Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
@@ -68,6 +70,10 @@ Implementation record:
   reactivation.
 - Trace output now reports `state.flowGovernance` independently alongside merge-blocked target and
   branch-description durations. No webview protocol or graph/layout output changed.
+- Sequential layout cache misses now reuse at most one healthy idle worker through an explicit
+  request-ID protocol. Concurrent calculations still use separate workers; abort, timeout, fatal
+  failure, and disposal terminate affected workers. A direct two-node startup probe changed from a
+  `49.55 ms` one-shot average to `55.54 ms` cold and `0.86 ms` warm average in this environment.
 
 Focused build artifacts:
 

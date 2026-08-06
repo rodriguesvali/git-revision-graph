@@ -9,7 +9,7 @@ risking user work.
 
 ## 1.6.4 Planned Release Evidence
 
-- Result: automated item 1 verification passed; manual smoke remains pending.
+- Result: automated items 1 and 2 verification passed; manual smoke remains pending.
 - Source baseline: repository tag `1.6.3` at `c620e35`.
 - Scope: measured, staged revision-graph loading performance improvements defined in
   `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`.
@@ -19,6 +19,10 @@ risking user work.
 - Item 1 focus: compare trace phases for merge analysis, Flow Governance, and branch descriptions;
   verify the ready graph remains identical with Flow Governance enabled, disabled through fallback
   settings, disabled through repository config, and invalid through repository config.
+- Item 2 focus: repeat empty-cache refreshes and projection changes in one panel session, then switch
+  repositories and close/reopen the panel. Confirm layout remains identical, canceled refreshes do
+  not surface stale results, concurrent/superseded requests recover, and extension-host shutdown
+  does not retain a worker process.
 - Operator, VS Code versions, platforms, fixtures, candidate commit, and results: pending.
 - Packaging and Marketplace evidence remain outside this matrix and require explicit maintainer
   approval.

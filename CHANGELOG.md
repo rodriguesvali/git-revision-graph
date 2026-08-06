@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - Load merge analysis, Flow Governance state, and local branch descriptions concurrently while
   assembling the ready revision-graph state.
 - Skip branch-target and Pull Request readiness Git queries when Flow Governance is disabled.
+- Reuse one idle layout worker across sequential cache misses while preserving parallel workers,
+  per-request ownership, cancellation, timeout recovery, and extension-host disposal.
 
 ### Release Preparation
 

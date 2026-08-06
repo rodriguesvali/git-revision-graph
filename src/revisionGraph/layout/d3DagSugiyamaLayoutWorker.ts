@@ -1,22 +1,33 @@
-import { parentPort, workerData } from 'node:worker_threads';
+import { parentPort } from 'node:worker_threads';
 
-import {
-  calculateD3DagSugiyamaLayout,
-  D3DagSugiyamaLayoutInput
-} from './d3DagSugiyamaLayout';
+import { calculateD3DagSugiyamaLayout } from './d3DagSugiyamaLayout';
+import type { D3DagSugiyamaLayoutWorkerRequest } from './d3DagSugiyamaLayoutWorkerProtocol';
 
-try {
-  const result = calculateD3DagSugiyamaLayout(workerData as D3DagSugiyamaLayoutInput);
-  parentPort?.postMessage({
-    type: 'result',
-    positions: [...result.positions.entries()],
-    edgeRoutes: [...result.edgeRoutes.entries()],
-    profile: result.profile
-  });
-} catch (error) {
-  parentPort?.postMessage({
-    type: 'error',
-    message: error instanceof Error ? error.message : String(error),
-    stack: error instanceof Error ? error.stack : undefined
-  });
+if (!parentPort) {
+  throw new Error('The d3-dag layout worker requires a parent port.');
 }
+const layoutWorkerParentPort = parentPort;
+
+layoutWorkerParentPort.on('message', (request: D3DagSugiyamaLayoutWorkerRequest) => {
+  if (request.type !== 'calculate') {
+    return;
+  }
+
+  try {
+    const result = calculateD3DagSugiyamaLayout(request.projection);
+    layoutWorkerParentPort.postMessage({
+      type: 'result',
+      requestId: request.requestId,
+      positions: [...result.positions.entries()],
+      edgeRoutes: [...result.edgeRoutes.entries()],
+      profile: result.profile
+    });
+  } catch (error) {
+    layoutWorkerParentPort.postMessage({
+      type: 'error',
+      requestId: request.requestId,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
+  }
+});

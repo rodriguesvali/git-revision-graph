@@ -18,6 +18,7 @@ import { inspectRepositoryConfigPath } from './revisionGraph/flow/flowConfigPath
 import {
   onProjectedGraphLayoutCacheDidChange
 } from './revisionGraph/layout/layeredLayout';
+import { disposeD3DagSugiyamaLayoutWorkerHost } from './revisionGraph/layout/d3DagSugiyamaLayoutWorkerHost';
 import { ProjectedGraphLayoutCachePersistence } from './revisionGraph/layout/cachePersistence';
 import { RevisionGraphEditorPanel } from './revisionGraphPanel';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
@@ -92,6 +93,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     showLogProvider,
     revisionGraphEditorPanel,
     layoutCachePersistence,
+    { dispose: disposeD3DagSugiyamaLayoutWorkerHost },
     { dispose: () => mutationCoordinator.dispose() },
     onProjectedGraphLayoutCacheDidChange(() => layoutCachePersistence.schedulePersist()),
     git.onDidCloseRepository((repository) => {
