@@ -658,6 +658,60 @@ test('Flow Pull Request workflow owns context clipboard orchestration', async (t
   assert.deepEqual(harness.clipboardWrites, ['Merge feature/demo into main']);
 });
 
+test('Flow Pull Request workflow reports when VS Code cannot open the browser', async (t) => {
+  const harness = installVscodePanelMock(t, { openExternalResult: false });
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const informationMessages: string[] = [];
+  const workflow = new RevisionGraphFlowPullRequestWorkflow({
+    actionServices: createFlowPullRequestTestServices({
+      async showInformationMessage(message: string) {
+        informationMessages.push(message);
+      },
+      showWarningMessage: () => assert.fail('No warning expected.'),
+      showErrorMessage: () => assert.fail('No error expected.')
+    }),
+    mutationCoordinator: new RepositoryMutationCoordinator(),
+    getCurrentRepository: () => repository,
+    getCurrentState: () => ({}) as never,
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
+    postHostMessage: () => undefined
+  }, {
+    async checkTarget(_path, sourceRefName, targetRefName) {
+      return { sourceRefName, targetRefName, status: 'ahead' };
+    },
+    async checkSourcePublication(_repository, remoteName, sourceRefName) {
+      return { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+    },
+    async loadRemoteBranchCommit() {
+      return { status: 'missing' };
+    },
+    isMergeInProgress: () => false
+  });
+
+  await workflow.openUrl('feature/demo', 'main');
+
+  assert.deepEqual(harness.openedExternalUris, [
+    'https://github.com/example/repository/compare/main...feature%2Fdemo?' +
+      'quick_pull=1&title=Merge+feature%2Fdemo+into+main&body=Source%3A+feature%2Fdemo%0A' +
+      'Target%3A+main%0A%0AFlow+Governance+requires+final+integration+through+a+Pull+Request.'
+  ]);
+  assert.deepEqual(informationMessages, [
+    'Could not open the Pull Request in your browser. Try again or open the repository remote manually.'
+  ]);
+});
+
 test('Flow AI workflow keeps improved Pull Request text in host-owned transient context', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowAiTextWorkflow } = loadFresh(
@@ -1509,11 +1563,15 @@ interface TestPanel {
 
 function installVscodePanelMock(
   t: test.TestContext,
-  options: { readonly flowGovernanceEnabled?: boolean } = {}
+  options: {
+    readonly flowGovernanceEnabled?: boolean;
+    readonly openExternalResult?: boolean;
+  } = {}
 ): {
   readonly extensionUri: never;
   readonly panels: TestPanel[];
   readonly clipboardWrites: string[];
+  readonly openedExternalUris: string[];
   createPanel(): TestPanel;
 } {
   const moduleLoader = require('node:module') as {
@@ -1522,6 +1580,7 @@ function installVscodePanelMock(
   const originalLoad = moduleLoader._load;
   const panels: TestPanel[] = [];
   const clipboardWrites: string[] = [];
+  const openedExternalUris: string[] = [];
   const createPanel = (): TestPanel => {
     const disposeListeners = new Set<() => void>();
     const messageListeners = new Set<(message: unknown) => void>();
@@ -1567,6 +1626,7 @@ function installVscodePanelMock(
       })
     },
     Uri: {
+      parse: (value: string) => ({ toString: () => value }),
       joinPath: (base: { path?: string }, ...parts: string[]) => ({
         path: [base.path ?? '', ...parts].join('/'),
         fsPath: [base.path ?? '', ...parts].join('/'),
@@ -1621,7 +1681,10 @@ function installVscodePanelMock(
     commands: { executeCommand: async () => undefined },
     env: {
       clipboard: { writeText: async (value: string) => { clipboardWrites.push(value); } },
-      openExternal: async () => true
+      openExternal: async (uri: { toString(): string }) => {
+        openedExternalUris.push(uri.toString());
+        return options.openExternalResult ?? true;
+      }
     }
   };
 
@@ -1630,7 +1693,7 @@ function installVscodePanelMock(
     return originalLoad.call(this, request, parent, isMain);
   };
   t.after(() => { moduleLoader._load = originalLoad; });
-  return { extensionUri: extensionUri as never, panels, clipboardWrites, createPanel };
+  return { extensionUri: extensionUri as never, panels, clipboardWrites, openedExternalUris, createPanel };
 }
 
 function createFlowAiTestState(

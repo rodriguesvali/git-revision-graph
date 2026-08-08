@@ -18,8 +18,10 @@ Last consolidated: 2026-08-06
   count-only projection analysis for adaptive snapshot limits instead of constructing discarded
   projected nodes and edges. The fifth shares one runtime-protected canonical layout result across
   cache hits instead of cloning positions, routes, and route points repeatedly. The existing
-  `d3-dag` dependency is now `1.2.2`; layout-quality changes remain deferred. Remaining
-  implementation, final validation, packaging, and publication are pending.
+  `d3-dag` dependency is now `1.2.2`; layout-quality changes remain deferred. The cycle also
+  corrects Azure DevOps Services Pull Request portal deep links to use short branch names and
+  reports a failed external browser launch. Remaining implementation, final validation, packaging,
+  and publication are pending.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -48,9 +50,9 @@ Target version: `1.6.4`
 | Gate                             | Status     | Evidence / next action |
 | -------------------------------- | ---------- | ---------------------- |
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
-| Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`. |
+| Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`, plus the Azure DevOps Services portal handoff correction in `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md`. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Items 1-5 passed; feature pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Item 5 passed focused cache coverage (4 tests), quality (263 files, 2,556 functions), tests (870), platform tests (39), and the CI benchmark; its maximum persisted-cache probe reduced average cache-hit duration from 12.29 ms to 9.36 ms. Platform tests were not repeated for items 3-4 because neither changes Git process execution, filesystem behavior, repository mutation, or the worker host. Validate the remaining slices, then run the final release gates. |
+| Automated verification           | Items 1-5 and Azure correction passed; manual smoke pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Item 5 passed focused cache coverage (4 tests), quality (263 files, 2,556 functions), tests (870), platform tests (39), and the CI benchmark; its maximum persisted-cache probe reduced average cache-hit duration from 12.29 ms to 9.36 ms. The Azure correction passed a focused URL/browser-failure regression, quality (263 files, 2,558 functions), `npm test` (871 tests), `graphify update .`, and `git diff --check` on 2026-08-08. Platform tests were not repeated because this change does not affect Git process execution, filesystem behavior, repository mutation, or the worker host. Validate the remaining slices, then run the final release gates. |
 | Dependency maintenance           | Complete   | `d3-dag` `1.2.2` passed quality (263 files, 2,556 functions), `npm test` (870 tests), platform tests (39), the CI benchmark (`107.66 ms` initial layout, `2.13 ms` cache hit, `18.17 ms` descendant-focus layout), and `npm audit --omit=dev` (0 production vulnerabilities). Existing operators, profiles, worker bootstrap, and layout cache identity are unchanged. |
 | Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
 | VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
@@ -100,9 +102,14 @@ Implementation record:
 - The existing `d3-dag` runtime dependency was updated from `1.2.1` to `1.2.2` with maintainer
   approval. Current Sugiyama operators, adaptive profiles, worker bootstrap, and layout cache
   identity remain unchanged; layout-quality experimentation is explicitly deferred.
+- Azure DevOps Services Pull Request portal links now send encoded short source and target branch
+  names instead of Azure DevOps REST `refs/heads/*` values. Flow Governance retains all existing
+  target, source-publication, remote-identity, and no-force-push guards. If VS Code returns `false`
+  from `vscode.env.openExternal`, the user receives a concise retry/manual-navigation message.
 
 Focused build artifacts:
 
+- `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md`
 - `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`
 
 ## Tagged Source Release: 1.6.3

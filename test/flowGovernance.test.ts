@@ -963,7 +963,7 @@ test('Flow Governance builds Azure DevOps Pull Request deep links', () => {
       'release/2.0.0'
     ),
     'https://dev.azure.com/fabrikam/Project%20One/_git/My%20Repo/pullrequestcreate?' +
-      'sourceRef=refs%2Fheads%2Ffeature%2Fpayment+summary&targetRef=refs%2Fheads%2Frelease%2F2.0.0'
+      'sourceRef=feature%2Fpayment+summary&targetRef=release%2F2.0.0'
   );
   assert.equal(
     buildFlowPullRequestUrlFromRemoteUrl(
@@ -972,7 +972,7 @@ test('Flow Governance builds Azure DevOps Pull Request deep links', () => {
       'main'
     ),
     'https://fabrikam.visualstudio.com/Project/_git/Repo/pullrequestcreate?' +
-      'sourceRef=refs%2Fheads%2Ffeature%2Fdemo&targetRef=refs%2Fheads%2Fmain'
+      'sourceRef=feature%2Fdemo&targetRef=main'
   );
 });
 
@@ -1049,7 +1049,7 @@ test('Flow Governance accepts equivalent legacy fetch and current SSH push URLs'
   assert.equal(
     buildFlowPullRequestUrl(repository, 'feature/demo', 'main'),
     'https://fabrikam.visualstudio.com/Project/_git/Repo/pullrequestcreate?' +
-      'sourceRef=refs%2Fheads%2Ffeature%2Fdemo&targetRef=refs%2Fheads%2Fmain'
+      'sourceRef=feature%2Fdemo&targetRef=main'
   );
 });
 

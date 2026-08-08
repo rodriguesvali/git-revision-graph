@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.4-azure-devops-pr-handoff.md`: Azure DevOps Services Pull Request portal links use short
+  branch names and report a failed external browser launch.
 - `1.6.4-revision-graph-load-performance.md`: staged optimization of the revision graph's initial
   and refresh loading paths, with end-to-end measurement and regression protection.
 - `1.6.3-show-log-all-branches-default.md`: target histories open with `Show All Branches` enabled

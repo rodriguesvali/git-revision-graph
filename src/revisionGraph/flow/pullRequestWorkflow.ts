@@ -108,7 +108,11 @@ export class RevisionGraphFlowPullRequestWorkflow {
       targetRefName,
       contextOverride
     );
-    if (url) await vscode.env.openExternal(vscode.Uri.parse(url));
+    if (url && !await vscode.env.openExternal(vscode.Uri.parse(url))) {
+      await this.host.actionServices.ui.showInformationMessage(
+        'Could not open the Pull Request in your browser. Try again or open the repository remote manually.'
+      );
+    }
   }
 
   private async ensureTargetEligible(

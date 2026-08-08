@@ -9,10 +9,13 @@ risking user work.
 
 ## 1.6.4 Planned Release Evidence
 
-- Result: automated items 1 through 5 verification passed; manual smoke remains pending.
+- Result: automated items 1 through 5 and the Azure DevOps portal handoff correction passed;
+  manual smoke remains pending.
 - Source baseline: repository tag `1.6.3` at `c620e35`.
 - Scope: measured, staged revision-graph loading performance improvements defined in
-  `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`.
+  `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`, plus the Azure
+  DevOps Services portal handoff correction in
+  `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md`.
 - Required manual focus: cold and warm graph opening, normal and empty-cache refresh, repository
   switching, projection-only changes, status-only changes, Flow Governance enabled and disabled,
   and post-load selection, search, minimap, scrolling, and zoom behavior.
@@ -142,7 +145,7 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | GitHub PR handoff | Use a governed source/target pair on a supported GitHub remote and select `Open Pull Request`. | Existing source publication/preflight guards run and the GitHub creation page opens for the selected branches. |
 | AI PR context | Open eligible Promotion PR Context, manually edit title and description, improve each field individually, then use `Open Pull Request`. Confirm the source branch changes enough approved documentation to exceed a small model's input window, when such a model is available. Repeat while closing the form, changing target, and switching repository during generation. | Both fields remain editable. Each AI action changes only its matching field; description summarizes documented delivery changes with Summary, Key changes, and Verification sections. Oversized optional documentation is reduced automatically instead of blocking generation, while form values remain present. Supported provider URLs use the displayed reviewed text, while canceled or stale responses never update a closed or changed form. |
 | AI unavailable/denied | Deny model consent or repeat with no available Copilot model. | The form stays open with its current text, the AI action becomes available again, and concise native feedback is shown without any Git operation. |
-| Azure DevOps PR handoff | Use a governed source/target pair on a supported Azure DevOps Services remote and select `Open Pull Request`. | Existing source publication/preflight guards run and the Azure DevOps creation page opens with the selected source and target refs. |
+| Azure DevOps PR handoff | Use a governed source/target pair on a supported Azure DevOps Services remote and select `Open Pull Request`. Repeat with current HTTPS or SSH and legacy `visualstudio.com` remotes where available. | Existing source publication/preflight guards run and the Azure DevOps creation page opens with the selected short source and target branch names. If VS Code cannot open a browser, it shows retry/manual-navigation guidance. |
 | GitLab.com Merge Request handoff | Use a governed source/target pair on a supported GitLab.com remote and select `Open Pull Request`. | Existing guards run and GitLab opens a Merge Request form with source, target, title, and description. |
 | AWS CodeCommit PR handoff | Use a governed source/target pair on a regional CodeCommit remote and select `Open Pull Request`. | Existing guards run and the repository Pull Requests area opens in the matching AWS region; branch selection remains manual. |
 | Secure Source Manager PR handoff | Use a governed source/target pair on a default `sourcemanager.dev` HTTPS or SSH remote and select `Open Pull Request`. | Existing guards run and the documented HTML repository page opens; navigate through Pull Requests and select branches manually. |
