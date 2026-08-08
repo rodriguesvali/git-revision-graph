@@ -1,6 +1,7 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; performance items 1-5 and d3-dag 1.2.2 maintenance verified
+Status: `1.6.4` in progress; performance items 1-5, d3-dag 1.2.2 maintenance, Azure DevOps Pull
+Request handoff, and CI reliability corrections verified locally
 Last consolidated: 2026-08-08
 
 ## Current State

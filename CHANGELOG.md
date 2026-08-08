@@ -19,6 +19,11 @@ All notable changes to this project will be documented in this file.
   cloning every position, route, and route point, while retaining a defensive copy when restoring
   persisted cache data.
 
+### Flow Governance
+
+- Fix Azure DevOps Services Pull Request handoff to use short source and target branch names so the
+  portal preselects the intended branches, and show guidance when VS Code cannot open the browser.
+
 ### Maintenance
 
 - Update `d3-dag` from `1.2.1` to `1.2.2` for upstream graph and layout correctness fixes while
