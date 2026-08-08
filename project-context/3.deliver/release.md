@@ -1,16 +1,16 @@
 # Release Readiness
 
-Status: `1.6.4` in progress; performance items 1-5, d3-dag 1.2.2 maintenance, Azure DevOps Pull
-Request handoff, and CI reliability corrections verified locally
+Status: `1.6.4` published by maintainer confirmation; post-publication evidence reconciliation pending
 Last consolidated: 2026-08-08
 
 ## Current State
 
 - Current package version: `1.6.4` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.2`, by maintainer confirmation on 2026-08-01.
+- Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
-- Release cycle status: `1.6.4` was opened on 2026-08-06 as a patch release focused on measured,
+- Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
+  patch release focused on measured,
   staged revision-graph loading performance improvements. The first slice parallelizes
   independent ready-state metadata and skips unnecessary Flow Governance Git metadata while Flow
   is disabled. The second slice reuses one healthy idle layout worker across sequential cache
@@ -22,8 +22,9 @@ Last consolidated: 2026-08-08
   `d3-dag` dependency is now `1.2.2`; layout-quality changes remain deferred. The cycle also
   corrects Azure DevOps Services Pull Request portal deep links to use short branch names and
   reports a failed external browser launch. It also stabilizes shared-modal-warning contracts used
-  by CI and remediates the development-only `js-yaml` audit finding. Remaining implementation,
-  final validation, packaging, and publication are pending.
+  by CI and remediates the development-only `js-yaml` audit finding. Exact Marketplace timestamp,
+  tagged-source, VSIX inspection, clean-profile installation, hosted rerun, and manual-smoke
+  evidence were not supplied and are intentionally not inferred.
 - The preceding `1.6.3` cycle scope was package
   creation from synchronized feature branches with exact package-to-feature Pull Request targeting,
   `Focus Descendants` projection and virtual-scene rendering performance corrections for large
@@ -32,18 +33,19 @@ Last consolidated: 2026-08-08
   also exposes guarded local-branch checkout from exact commits, local tag creation, compact
   expanded file lists, and all-branch target histories by default. Packaging and publication remain
   subject to maintainer approval.
-- Publication evidence reconciliation for `1.6.4`: packaging, clean-profile installation,
-  hosted validation, and Marketplace publication have not started and require explicit maintainer
-  approval.
+- Publication evidence reconciliation for `1.6.4`: Marketplace publication was confirmed by the
+  maintainer. Exact publication timestamp, installed-version, tagged-source, VSIX inspection,
+  clean-profile installation, hosted validation, and manual-smoke evidence remain unrecorded.
 - Published-baseline reconciliation: the exact `1.6.2` Marketplace timestamp, installed-version
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Release Preparation: 1.6.4
+## Published Release: 1.6.4
 
-Status: Open; implementation and verification pending
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-08-06
+Published: 2026-08-08 (maintainer confirmation)
 Source baseline version: `1.6.3`
 Target version: `1.6.4`
 
@@ -52,14 +54,14 @@ Target version: `1.6.4`
 | Gate                             | Status     | Evidence / next action |
 | -------------------------------- | ---------- | ---------------------- |
 | Source baseline                  | Complete   | Repository tag `1.6.3` resolves to `c620e35`. Marketplace publication is not inferred from the source tag. |
-| Release scope                    | Defined    | The initial scope is staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`, plus the Azure DevOps Services portal handoff correction in `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md` and CI reliability correction in `project-context/2.build/features/1.6.4-ci-verification-reliability.md`. |
+| Release scope                    | Complete   | The release includes staged revision-graph loading performance work in `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`, the Azure DevOps Services portal handoff correction in `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md`, and the CI reliability correction in `project-context/2.build/features/1.6.4-ci-verification-reliability.md`. Further changes require a new release version. |
 | Package metadata                 | Complete   | `package.json` and the root `package-lock.json` declare `1.6.4`. |
-| Automated verification           | Local gates passed; hosted matrix rerun pending | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Item 5 passed focused cache coverage (4 tests), quality (263 files, 2,556 functions), tests (870), platform tests (39), and the CI benchmark; its maximum persisted-cache probe reduced average cache-hit duration from 12.29 ms to 9.36 ms. The Azure correction passed a focused URL/browser-failure regression, quality (263 files, 2,558 functions), `npm test` (871 tests), `graphify update .`, and `git diff --check` on 2026-08-08. The CI correction passed its focused warning contracts twenty consecutive times, both audits with zero findings, quality (263 files, 2,558 functions), unit tests, platform tests, the CI benchmark, graph update, and whitespace check on 2026-08-08. GitHub Actions must rerun against a commit containing this correction. Validate the remaining slices, then run the final release gates. |
+| Automated verification           | Local gates passed; hosted rerun evidence not recorded | Item 1 passed `npm run quality:check` (261 files, 2,531 functions), `npm test` (860 tests), `npm run test:platform` (34 tests), `npm run benchmark:ci`, `graphify update .`, and `git diff --check`. Item 2 passed quality (262 files, 2,543 functions), tests (865), platform tests (39), and the CI benchmark. Item 3 passed focused coverage (100 tests), quality (263 files, 2,547 functions), tests (866), and the CI benchmark; its synthetic 1,200-node serialization probe reduced the status message from 548,373 to 294 bytes. Item 4 passed focused coverage (87 tests), quality (263 files, 2,548 functions), tests (868), and the CI benchmark on 2026-08-06; count-only visibility took 2.10 ms versus 5.31 ms for full projection in that gate. Item 5 passed focused cache coverage (4 tests), quality (263 files, 2,556 functions), tests (870), platform tests (39), and the CI benchmark; its maximum persisted-cache probe reduced average cache-hit duration from 12.29 ms to 9.36 ms. The Azure correction passed a focused URL/browser-failure regression, quality (263 files, 2,558 functions), `npm test` (871 tests), `graphify update .`, and `git diff --check` on 2026-08-08. The CI correction passed its focused warning contracts twenty consecutive times, both audits with zero findings, quality (263 files, 2,558 functions), unit tests, platform tests, the CI benchmark, graph update, and whitespace check on 2026-08-08. A hosted rerun for the correction was not supplied before publication confirmation. |
 | Dependency maintenance           | Complete   | `d3-dag` `1.2.2` passed quality (263 files, 2,556 functions), `npm test` (870 tests), platform tests (39), the CI benchmark (`107.66 ms` initial layout, `2.13 ms` cache hit, `18.17 ms` descendant-focus layout), and `npm audit --omit=dev` (0 production vulnerabilities). Existing operators, profiles, worker bootstrap, and layout cache identity are unchanged. |
-| Extension Development Host smoke | Pending    | Execute the `1.6.4` scenarios in `extension-host-smoke-matrix.md` after implementation. |
-| VSIX package inspection          | Not started | Requires explicit maintainer approval to run `npm run package:vsix`. |
-| Marketplace publication          | Not started | Requires separate explicit maintainer authorization. |
-| Rollback readiness               | Documented | Before publication, revert the scoped `1.6.4` changes and metadata if needed; after publication, correct through a new patch or a maintainer-approved Marketplace action. |
+| Extension Development Host smoke | Evidence not recorded | Operator, VS Code version, platform, fixture details, and final result were not supplied and are not inferred. |
+| VSIX package inspection          | Evidence not recorded | VSIX filename, SHA-256 checksum, size, embedded version, runtime-asset inspection, and clean-profile installation result were not supplied. |
+| Marketplace publication          | Complete by maintainer confirmation | Publication was reported complete on 2026-08-08. The exact Marketplace timestamp and installed-version evidence were not supplied. |
+| Rollback readiness               | Documented | Never reuse `1.6.4`; correct published behavior through a new patch or a maintainer-approved Marketplace action. |
 
 Opening record:
 
@@ -118,6 +120,16 @@ Focused build artifacts:
 - `project-context/2.build/features/1.6.4-azure-devops-pr-handoff.md`
 - `project-context/2.build/features/1.6.4-ci-verification-reliability.md`
 - `project-context/2.build/features/1.6.4-revision-graph-load-performance.md`
+
+Publication closure:
+
+- The maintainer reported Marketplace publication of `1.6.4` complete on 2026-08-08. No packaging
+  or publication command was run by Codex for this reconciliation.
+- `CHANGELOG.md` is dated 2026-08-08 and this release record is closed as published.
+- Exact Marketplace timestamp, installed-version, tagged-source, VSIX inspection, clean-profile,
+  hosted-verification, and final manual-smoke evidence was not supplied and remains intentionally
+  unrecorded.
+- Future source or Marketplace corrections require a new version; never reuse `1.6.4`.
 
 ## Tagged Source Release: 1.6.3
 

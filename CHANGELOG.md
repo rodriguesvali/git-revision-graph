@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.6.4 - Unreleased
+## 1.6.4 - 2026-08-08
 
 ### Performance
 
@@ -29,11 +29,6 @@ All notable changes to this project will be documented in this file.
 - Update `d3-dag` from `1.2.1` to `1.2.2` for upstream graph and layout correctness fixes while
   preserving the existing Sugiyama operators, adaptive profiles, worker bootstrap, and layout cache
   identity.
-
-### Release Preparation
-
-- Opened the `1.6.4` patch cycle for revision-graph loading performance work and aligned package
-  and lockfile version metadata with the new target version.
 
 ## 1.6.3 - 2026-08-01
 
