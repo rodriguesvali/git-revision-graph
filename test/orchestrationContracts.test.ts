@@ -1385,6 +1385,7 @@ test('Flow Governance awaits the shared modal warning when a repository mutation
 
   const operation = workflow.prepareEqualization('release/2.0.0', 'main', 'Equalize release');
 
+  await warning.waitForRequest();
   assert.equal(await getPromiseState(operation), 'pending');
   assert.deepEqual(warning.requests, [{
     message: CONCURRENT_REPOSITORY_MUTATION_MESSAGE,
@@ -1429,6 +1430,7 @@ test('Flow Pull Request preflight awaits the shared modal warning when a reposit
 
   const operation = workflow.copyContext('release/2.0.0', 'main');
 
+  await warning.waitForRequest();
   assert.equal(await getPromiseState(operation), 'pending');
   assert.deepEqual(warning.requests, [{
     message: CONCURRENT_REPOSITORY_MUTATION_MESSAGE,
@@ -1484,6 +1486,7 @@ function createBlockingWarningHarness(): {
     readonly message: string;
     readonly options: { readonly modal?: boolean } | undefined;
   }>;
+  waitForRequest(): Promise<void>;
   dismiss(): void;
 } {
   const requests: Array<{
@@ -1491,16 +1494,24 @@ function createBlockingWarningHarness(): {
     readonly options: { readonly modal?: boolean } | undefined;
   }> = [];
   let dismissWarning: (() => void) | undefined;
+  let resolveRequest: (() => void) | undefined;
+  const requestReceived = new Promise<void>((resolve) => {
+    resolveRequest = resolve;
+  });
   return {
     ui: {
       async showWarningMessage(message, options) {
         requests.push({ message, options });
+        resolveRequest?.();
         await new Promise<void>((resolve) => {
           dismissWarning = resolve;
         });
       }
     },
     requests,
+    waitForRequest() {
+      return requestReceived;
+    },
     dismiss() {
       dismissWarning?.();
     }

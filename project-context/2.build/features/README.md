@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-06
+Last consolidated: 2026-08-08
 
 Use this directory only for active or next-release feature work.
 
@@ -9,6 +9,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.4-ci-verification-reliability.md`: deterministic shared-modal-warning contract tests and a
+  development-only audit remediation for the GitHub Actions verification matrix.
 - `1.6.4-azure-devops-pr-handoff.md`: Azure DevOps Services Pull Request portal links use short
   branch names and report a failed external browser launch.
 - `1.6.4-revision-graph-load-performance.md`: staged optimization of the revision graph's initial
