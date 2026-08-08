@@ -69,6 +69,9 @@ Opening record:
 
 Implementation record:
 
+- Flow Governance task, bug, and hotfix forms now reject Git-invalid Short name values before
+  submitting branch creation. The extension-host configured-pattern and Git branch validation remain
+  the final safety boundary; no webview protocol or Git mutation behavior changed.
 - Ready-state merge analysis, Flow Governance state, and branch-description metadata now load
   concurrently behind one cancelable join before state delivery.
 - Disabled or invalid Flow Governance no longer invokes branch-target or Pull Request readiness Git

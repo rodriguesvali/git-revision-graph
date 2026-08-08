@@ -1643,6 +1643,42 @@ test('keeps Flow Governance dialog rules in pure runtime helpers', () => {
     { message: 'Dev Task must be a number.', input: 'taskDevInput' }
   );
   assert.deepEqual(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError(
+      'task',
+      '123456',
+      'Task 123456',
+      '123456-Task 123456',
+      'Description'
+    ),
+    {
+      message: 'Short name must be valid in a Git branch name and cannot contain spaces or Git ref characters.',
+      input: 'shortNameInput'
+    }
+  );
+  assert.deepEqual(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError(
+      'bug',
+      'BUG-123',
+      'fix.lock',
+      'BUG-123-fix.lock',
+      'Description'
+    ),
+    {
+      message: 'Short name must be valid in a Git branch name and cannot contain spaces or Git ref characters.',
+      input: 'shortNameInput'
+    }
+  );
+  assert.equal(
+    runtime.context.getRevisionGraphWebviewFlowBranchValidationError(
+      'task',
+      '123456',
+      'task-123456',
+      '123456-task-123456',
+      'Description'
+    ),
+    null
+  );
+  assert.deepEqual(
     runtime.context.getRevisionGraphWebviewFlowBranchValidationError('feature', '', '', 'feature-name', 'Description'),
     null
   );

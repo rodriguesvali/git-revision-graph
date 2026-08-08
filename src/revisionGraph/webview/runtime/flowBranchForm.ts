@@ -95,6 +95,12 @@ function getRevisionGraphWebviewFlowBranchValidationError(
   if (usesStructuredName && !shortName) {
     return { message: 'Short name is required.', input: 'shortNameInput' };
   }
+  if (usesStructuredName && !isRevisionGraphWebviewValidFlowBranchNameSuffix(name)) {
+    return {
+      message: 'Short name must be valid in a Git branch name and cannot contain spaces or Git ref characters.',
+      input: 'shortNameInput'
+    };
+  }
   if (!usesStructuredName && !name) {
     return { message: 'Name is required.', input: 'nameInput' };
   }
@@ -393,6 +399,19 @@ function createRevisionGraphWebviewFlowBranchTextField(
 
 function isRevisionGraphWebviewStructuredFlowBranchKind(branchKind: RevisionGraphWebviewFlowBranchKind): boolean {
   return branchKind === 'task' || branchKind === 'bug' || branchKind === 'hotfix';
+}
+
+function isRevisionGraphWebviewValidFlowBranchNameSuffix(name: string): boolean {
+  return !name.startsWith('-')
+    && name !== '@'
+    && !name.startsWith('/')
+    && !name.endsWith('/')
+    && !name.includes('//')
+    && !name.includes('..')
+    && !name.includes('@{')
+    && !name.endsWith('.')
+    && !name.split('/').some((part) => part.startsWith('.') || part.toLowerCase().endsWith('.lock'))
+    && !/[\x00-\x20\x7f~^:?*[\\]/.test(name);
 }
 
 function isRevisionGraphWebviewFlowAiBranchKind(
