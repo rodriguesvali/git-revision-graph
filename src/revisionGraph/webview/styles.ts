@@ -656,9 +656,9 @@ export function renderRevisionGraphStyles(): string {
       font-size: 12px;
       line-height: 1.45;
     }
-    .flow-pr-context-warning[hidden] {
-      display: none;
-    }
+    .flow-pr-context-warning[hidden] { display: none; }
+    .flow-pr-handoff { margin: 0 0 12px; }
+
     .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
     .flow-form-error {
       margin: 0 0 12px;

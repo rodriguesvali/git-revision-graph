@@ -16,6 +16,7 @@ interface RevisionGraphWebviewFlowPullRequestDialogDependencies {
     title: string,
     description: string
   ) => void;
+  readonly copyReferences: (sourceRefName: string, targetRefName: string) => void;
 }
 
 interface RevisionGraphWebviewFlowPullRequestDialogController {
@@ -39,6 +40,8 @@ interface RevisionGraphWebviewFlowPullRequestDialogElements {
   readonly titleAiButton: HTMLButtonElement;
   readonly descriptionAiButton: HTMLButtonElement;
   readonly warning: HTMLElement;
+  readonly handoff: HTMLElement;
+  readonly copyReferencesButton: HTMLButtonElement;
   readonly openButton: HTMLButtonElement;
 }
 
@@ -70,6 +73,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
   let sourceRefName = '';
   let targetRefName = '';
   let contextReady = false;
+  let opening = false;
   const pendingRequestIds: Partial<Record<'title' | 'description', number>> = {};
 
   function open(target: RevisionGraphWebviewTarget): void {
@@ -81,10 +85,10 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     const targets = dependencies.getTargets(sourceRefName);
     initializeRevisionGraphWebviewFlowPullRequestTargetSelect(dialog.targetSelect, targets);
     dialog.targetLabel.hidden = false;
-    dialog.flow.textContent = sourceRefName + ' -> select a release';
     dialog.titleInput.value = '';
     dialog.descriptionInput.value = '';
-    setWarning(targets.length > 0 ? '' : 'No release branch is available as a Pull Request target.');
+    dialog.flow.textContent = sourceRefName + ' -> select a target branch';
+    setWarning(targets.length > 0 ? '' : 'No target branch is available for this Pull Request.');
     setActionsEnabled(false);
     dialog.backdrop.hidden = false;
     document.body.classList.add('flow-dialog-open');
@@ -115,6 +119,10 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     }
     dialog.titleInput.value = context.title;
     dialog.descriptionInput.value = context.description;
+    opening = false;
+    dialog.handoff.textContent = `${context.handoff.providerLabel}: ${context.handoff.description}`;
+    dialog.copyReferencesButton.hidden = context.handoff.mode !== 'manual';
+    dialog.openButton.textContent = context.handoff.actionLabel;
     setWarning('');
     setActionsEnabled(true);
   }
@@ -145,6 +153,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     sourceRefName = '';
     targetRefName = '';
     contextReady = false;
+    opening = false;
     document.body.classList.remove('flow-dialog-open');
   }
 
@@ -158,11 +167,11 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     dialog.targetSelect.value = targetRefName;
     dialog.flow.textContent = targetRefName
       ? sourceRefName + ' -> ' + targetRefName
-      : sourceRefName + ' -> no release available';
+      : sourceRefName + ' -> no target branch available';
     dialog.titleInput.value = '';
     dialog.descriptionInput.value = '';
     if (!candidate) {
-      setWarning('No release branch is available as a Pull Request target.');
+      setWarning('No target branch is available for this Pull Request.');
       setActionsEnabled(false);
       return;
     }
@@ -238,7 +247,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       hasTitle && hasDescription,
       pendingRequestIds.description !== undefined
     );
-    dialog.openButton.disabled = !hasTitle || !hasDescription;
+    dialog.openButton.disabled = opening || !hasTitle || !hasDescription;
   }
 
   function ensureDialog(): RevisionGraphWebviewFlowPullRequestDialogElements {
@@ -259,7 +268,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     const heading = document.createElement('h2');
     heading.id = 'flowPullRequestContextDialogTitle';
     heading.className = 'flow-dialog-title';
-    heading.textContent = 'Promotion Pull Request Context';
+    heading.textContent = 'Review Promotion';
     dialog.appendChild(heading);
 
     const introduction = document.createElement('p');
@@ -272,7 +281,7 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     targetLabel.setAttribute('for', 'flowPullRequestTargetSelect');
     const targetText = document.createElement('span');
     targetText.className = 'flow-form-label';
-    targetText.textContent = 'Target release';
+    targetText.textContent = 'Target branch';
     const targetSelect = document.createElement('select');
     targetSelect.id = 'flowPullRequestTargetSelect';
     targetSelect.className = 'flow-form-input';
@@ -307,6 +316,10 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     warning.hidden = true;
     dialog.appendChild(warning);
 
+    const handoff = document.createElement('p');
+    handoff.className = 'flow-dialog-description flow-pr-handoff';
+    dialog.appendChild(handoff);
+
     const actions = document.createElement('div');
     actions.className = 'flow-dialog-actions';
     const closeButton = document.createElement('button');
@@ -317,7 +330,12 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     openButton.className = 'flow-dialog-button primary';
     openButton.type = 'button';
     openButton.textContent = 'Open Pull Request';
-    actions.append(closeButton, openButton);
+    const copyReferencesButton = document.createElement('button');
+    copyReferencesButton.className = 'flow-dialog-button';
+    copyReferencesButton.type = 'button';
+    copyReferencesButton.textContent = 'Copy source and target';
+    copyReferencesButton.hidden = true;
+    actions.append(copyReferencesButton, closeButton, openButton);
     dialog.appendChild(actions);
     backdrop.appendChild(dialog);
     document.body.appendChild(backdrop);
@@ -332,6 +350,8 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       titleAiButton: titleField.aiButton,
       descriptionAiButton: descriptionField.aiButton,
       warning,
+      handoff,
+      copyReferencesButton,
       openButton
     };
     titleField.aiButton.addEventListener('click', () => toggleFieldImprovement('title'));
@@ -343,7 +363,21 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       if (sourceRefName && targetRefName) {
         const title = elements?.titleInput.value.trim();
         const description = elements?.descriptionInput.value.trim();
-        if (title && description) dependencies.openUrl(sourceRefName, targetRefName, title, description);
+        if (title && description) {
+          opening = true;
+          openButton.textContent = 'Opening…';
+          syncActions();
+          dependencies.openUrl(sourceRefName, targetRefName, title, description);
+          window.setTimeout(() => {
+            opening = false;
+            syncActions();
+          }, 2000);
+        }
+      }
+    });
+    copyReferencesButton.addEventListener('click', () => {
+      if (sourceRefName && targetRefName) {
+        dependencies.copyReferences(sourceRefName, targetRefName);
       }
     });
     closeButton.addEventListener('click', close);

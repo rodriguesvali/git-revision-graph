@@ -17,6 +17,7 @@ import {
   checkFlowPullRequestSourcePublication,
   checkFlowPullRequestTarget,
   createFlowPullRequestContext,
+  resolveFlowPullRequestHandoffPresentation,
   type FlowPullRequestContext,
   loadFlowPullRequestRemoteBranchCommit,
   resolveFlowPullRequestRemote
@@ -70,7 +71,8 @@ export class RevisionGraphFlowPullRequestWorkflow {
       context.sourceRefName,
       context.targetRefName,
       context.title,
-      context.body
+      context.body,
+      resolveFlowPullRequestHandoffPresentation(repository)
     ));
     return context;
   }

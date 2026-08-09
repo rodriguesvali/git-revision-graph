@@ -1222,6 +1222,10 @@ Completed scope:
 
 Recorded verification:
 
+- Pull Request handoff usability issue #10 now uses destination-neutral wording, target readiness
+  labels, provider-aware guidance, source/target copy for manual providers, and duplicate-open
+  protection. `npm run build`, `npm test`, `npm run quality:check`, and `git diff --check` passed on
+  2026-08-09; Extension Development Host smoke and a final graph refresh remain pending.
 - Flow Governance issue #9 completed the governed Pull Request handoff for release-origin package
   and task branches on 2026-08-09. It preserves the exact persisted release target, authorizes the
   PR handoff end to end, and requires target remote synchronization for all package promotions.

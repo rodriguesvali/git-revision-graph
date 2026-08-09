@@ -7,6 +7,7 @@ import {
   RevisionGraphViewHostMessage,
   RevisionGraphViewState
 } from '../revisionGraphTypes';
+import type { FlowPullRequestHandoffPresentation } from './flow/flowPullRequestContext';
 
 export type RevisionGraphLoadingMode = Extract<
   RevisionGraphViewHostMessage,
@@ -77,14 +78,16 @@ export function createRevisionGraphFlowPullRequestContextMessage(
   sourceRefName: string,
   targetRefName: string,
   title: string,
-  description: string
+  description: string,
+  handoff: FlowPullRequestHandoffPresentation
 ): RevisionGraphViewHostMessage {
   return {
     type: 'show-flow-pr-context',
     sourceRefName,
     targetRefName,
     title,
-    description
+    description,
+    handoff
   };
 }
 

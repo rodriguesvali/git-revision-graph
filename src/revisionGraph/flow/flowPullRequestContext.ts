@@ -14,6 +14,27 @@ export interface FlowPullRequestContext {
   readonly text: string;
 }
 
+export interface FlowPullRequestHandoffPresentation {
+  readonly providerLabel: string;
+  readonly mode: 'prefilled' | 'manual' | 'unavailable';
+  readonly actionLabel: string;
+  readonly description: string;
+}
+
+export function resolveFlowPullRequestHandoffPresentation(repository: Repository): FlowPullRequestHandoffPresentation {
+  const remote = resolveFlowPullRequestRemote(repository);
+  if (!remote) {
+    return { providerLabel: 'Git provider', mode: 'unavailable', actionLabel: 'Configure a supported remote', description: 'Configure a supported Git hosting remote before opening this review.' };
+  }
+  if (remote.provider === 'aws-codecommit') {
+    return { providerLabel: remote.providerLabel, mode: 'manual', actionLabel: 'Open Pull Requests', description: 'AWS CodeCommit opens its Pull Requests area. Select the source and target branches manually.' };
+  }
+  if (remote.provider === 'google-secure-source-manager') {
+    return { providerLabel: remote.providerLabel, mode: 'manual', actionLabel: 'Open repository', description: 'Google Secure Source Manager opens the repository. Navigate to Pull Requests and select the branches manually.' };
+  }
+  return { providerLabel: remote.providerLabel, mode: 'prefilled', actionLabel: remote.provider === 'gitlab' ? 'Open Merge Request' : 'Open Pull Request', description: `${remote.providerLabel} will open a prefilled review form with the selected branches and text.` };
+}
+
 export function createFlowPullRequestContext(sourceRefName: string, targetRefName: string): FlowPullRequestContext {
   const title = `Merge ${sourceRefName} into ${targetRefName}`;
   const body = [

@@ -102,6 +102,7 @@ export type RevisionGraphViewHostMessage =
     readonly targetRefName: string;
     readonly title: string;
     readonly description: string;
+    readonly handoff: import('./revisionGraph/flow/flowPullRequestContext').FlowPullRequestHandoffPresentation;
   }
   | {
     readonly type: 'show-flow-branch-form';

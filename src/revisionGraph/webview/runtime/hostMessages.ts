@@ -79,7 +79,12 @@ function isRevisionGraphWebviewFlowPullRequestContextMessage(value: Record<strin
   return typeof value.sourceRefName === 'string'
     && typeof value.targetRefName === 'string'
     && typeof value.title === 'string'
-    && typeof value.description === 'string';
+    && typeof value.description === 'string'
+    && isRevisionGraphWebviewRecord(value.handoff)
+    && typeof value.handoff.providerLabel === 'string'
+    && (value.handoff.mode === 'prefilled' || value.handoff.mode === 'manual' || value.handoff.mode === 'unavailable')
+    && typeof value.handoff.actionLabel === 'string'
+    && typeof value.handoff.description === 'string';
 }
 
 function isRevisionGraphWebviewFlowBranchFormMessage(value: Record<string, unknown>): boolean {

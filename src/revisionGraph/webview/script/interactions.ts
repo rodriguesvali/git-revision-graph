@@ -548,19 +548,19 @@
     }
 
     const flowPullRequestDialogController = createRevisionGraphWebviewFlowPullRequestDialogController({
+
       closeContextMenu,
       getTargets: getFlowPullRequestTargets,
       requestContext: postCopyFlowPullRequestContext,
+      copyReferences(sourceRefName, targetRefName) {
+        vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, 'title', `Source: ${sourceRefName}\nTarget: ${targetRefName}`));
+      },
       ...flowAiTextInteractions.pullRequestDependencies
     });
 
-    function openFlowPullRequestContextForm(target: RevisionGraphWebviewTarget) {
-      flowPullRequestDialogController.open(target);
-    }
+    function openFlowPullRequestContextForm(target: RevisionGraphWebviewTarget) { flowPullRequestDialogController.open(target); }
 
-    function showFlowPullRequestContextForm(context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>) {
-      flowPullRequestDialogController.showContext(context);
-    }
+    function showFlowPullRequestContextForm(context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>) { flowPullRequestDialogController.showContext(context); }
 
     function getFlowEqualizationOrigins(targetRefName: string): string[] {
       return getRevisionGraphWebviewFlowEqualizationOrigins(
