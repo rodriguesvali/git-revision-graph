@@ -2,6 +2,7 @@ import type { Remote, Repository } from './git';
 import {
   getHostedGitProviderAdapter,
   hostedGitProviderAdapters,
+  isCodeCommitRemoteHelperUrl,
   type HostedGitProvider,
   type HostedGitProviderMatch,
   type HostedGitRepository,
@@ -26,6 +27,18 @@ export interface ParsedHostedGitRemote extends HostedGitProviderMatch {
 
 export function resolveHostedGitRemote(repository: Repository): HostedGitRemote | undefined {
   return resolveHostedGitRemoteWithCapability(repository, () => true);
+}
+
+export function getHostedRemoteConfigurationMessage(
+  repository: Repository,
+  destination: 'commit link' | 'Pull Request context'
+): string | undefined {
+  const usesCodeCommitHelper = repository.state.remotes.some((remote) =>
+    isCodeCommitRemoteHelperUrl(remote.fetchUrl) || isCodeCommitRemoteHelperUrl(remote.pushUrl)
+  );
+  return usesCodeCommitHelper
+    ? `CodeCommit git-remote-codecommit remotes do not include an AWS Region. Configure a regional HTTPS or SSH CodeCommit remote to open ${destination}.`
+    : undefined;
 }
 
 export function resolveHostedPullRequestRemote(repository: Repository): HostedGitRemote | undefined {

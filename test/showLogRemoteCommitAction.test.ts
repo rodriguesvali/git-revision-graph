@@ -83,6 +83,23 @@ test('openShowLogCommitOnRemote reports when no supported remote is configured',
   assert.deepEqual(messages, ['No supported Git hosting remote is configured for this repository.']);
 });
 
+test('openShowLogCommitOnRemote explains CodeCommit helper remotes without a region', async () => {
+  const messages: string[] = [];
+  const opened = await openShowLogCommitOnRemote(
+    createRepository({
+      root: '/workspace/repo',
+      remotes: [{ name: 'origin', fetchUrl: 'codecommit://profile@MyRepo', pushUrl: undefined, isReadOnly: false }]
+    }),
+    'abc123',
+    createServices({ async showInformationMessage(message) { messages.push(message); } })
+  );
+
+  assert.equal(opened, false);
+  assert.deepEqual(messages, [
+    'CodeCommit git-remote-codecommit remotes do not include an AWS Region. Configure a regional HTTPS or SSH CodeCommit remote to open commit link.'
+  ]);
+});
+
 test('openShowLogCommitOnRemote reports a supported provider without a verified commit route', async () => {
   const messages: string[] = [];
   const opened = await openShowLogCommitOnRemote(

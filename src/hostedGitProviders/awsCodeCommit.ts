@@ -9,6 +9,11 @@ import type { HostedGitProviderAdapter } from './types';
 
 const AWS_HOST_PATTERN = /^(?:git-)?codecommit(-fips)?\.([a-z0-9-]+)\.(amazonaws\.com(?:\.cn)?)$/i;
 
+export function isCodeCommitRemoteHelperUrl(remoteUrl: string | undefined): boolean {
+  const parsed = remoteUrl ? parseRemoteUrl(remoteUrl) : undefined;
+  return parsed?.protocol.toLowerCase() === 'codecommit:' && Boolean(parsed.hostname);
+}
+
 export const awsCodeCommitAdapter: HostedGitProviderAdapter = {
   id: 'aws-codecommit',
   label: 'AWS CodeCommit',

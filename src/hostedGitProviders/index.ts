@@ -1,4 +1,4 @@
-import { awsCodeCommitAdapter } from './awsCodeCommit';
+import { awsCodeCommitAdapter, isCodeCommitRemoteHelperUrl } from './awsCodeCommit';
 import { azureDevOpsAdapter } from './azureDevOps';
 import { githubAdapter } from './github';
 import { gitlabAdapter } from './gitlab';
@@ -20,6 +20,8 @@ export const hostedGitProviderAdapters: readonly HostedGitProviderAdapter[] = [
   awsCodeCommitAdapter,
   googleSecureSourceManagerAdapter
 ];
+
+export { isCodeCommitRemoteHelperUrl };
 
 export function getHostedGitProviderAdapter(provider: HostedGitProvider): HostedGitProviderAdapter {
   const adapter = hostedGitProviderAdapters.find((candidate) => candidate.id === provider);

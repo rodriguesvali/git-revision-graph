@@ -21,6 +21,7 @@ import {
   loadFlowPullRequestRemoteBranchCommit,
   resolveFlowPullRequestRemote
 } from './index';
+import { getHostedRemoteConfigurationMessage } from '../../hostedGitRemote';
 import {
   FlowRemoteFetchLoadingHost,
   withFlowRemoteFetchLoading
@@ -95,7 +96,8 @@ export class RevisionGraphFlowPullRequestWorkflow {
     const remote = resolveFlowPullRequestRemote(repository);
     if (!remote) {
       this.host.actionServices.ui.showInformationMessage(
-        'No supported Git hosting remote is configured for this repository.'
+        getHostedRemoteConfigurationMessage(repository, 'Pull Request context')
+          ?? 'No supported Git hosting remote is configured for this repository.'
       );
       return;
     }
