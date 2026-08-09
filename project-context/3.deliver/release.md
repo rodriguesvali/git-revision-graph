@@ -1,12 +1,15 @@
 # Release Readiness
 
-Status: `1.6.4` published by maintainer confirmation; post-publication evidence reconciliation pending
+Status: `1.6.5` open; implementation and release evidence pending
 Last consolidated: 2026-08-08
 
 ## Current State
 
-- Current package version: `1.6.4` in `package.json` and the root `package-lock.json`.
+- Current package version: `1.6.5` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
+- Release cycle status: `1.6.5` is open for hosted-Git provider compatibility work tracked in
+  issues #4, #5, and #6. No implementation, VSIX package, tag, or Marketplace publication is
+  implied by opening the cycle.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
@@ -40,6 +43,32 @@ Last consolidated: 2026-08-08
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Open Release: 1.6.5
+
+Status: Open
+Opened: 2026-08-09
+Published baseline version: `1.6.4`
+Target version: `1.6.5`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
+| Release scope | Open | Hosted-provider compatibility: GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), and a credential-safe `codecommit://` experience (#6). |
+| Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
+| Automated verification | Baseline passed | `npm test` passed before opening this release; rerun targeted and full gates after implementation. |
+| Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
+| VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
+| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.5` on 2026-08-09.
+- The focused feature artifact is `project-context/2.build/features/1.6.5-hosted-git-provider-compatibility.md`.
+- No implementation, VSIX package, release tag, or Marketplace publication occurred while opening the cycle.
 
 ## Published Release: 1.6.4
 
