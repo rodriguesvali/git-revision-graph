@@ -1227,6 +1227,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
     ),
     true
   );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'task', sourceRefName: 'release/1.0.0' },
+      governedFlowState
+    ),
+    true
+  );
   for (const sourceRefName of ['release/1.0.0', 'feature/demo']) {
     assert.equal(
       isRevisionGraphMessageAllowedForState(
@@ -1280,6 +1287,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'feature/demo', name: '4312-adjust-timeout', description: 'Adjust request timeout' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'start-flow-branch', branchKind: 'task', sourceRefName: 'release/1.0.0', name: '4312-adjust-timeout', description: 'Adjust release validation' },
       governedFlowState
     ),
     true

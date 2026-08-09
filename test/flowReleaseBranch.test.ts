@@ -929,6 +929,33 @@ test('Flow Governance starts a local task branch from its feature', async () => 
   assert.match(informationMessages[0] ?? '', /Task branch task\/4312-adjust-timeout was created/);
 });
 
+test('Flow Governance starts a local task branch from its release and persists the target', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const targets: Array<{ readonly branchName: string; readonly targetRefName: string }> = [];
+
+  await startFlowBranch(repository, {
+    kind: 'task',
+    sourceBranch: 'release/2.0.0',
+    name: '4312-validate-release',
+    description: 'Validate the release before promotion',
+    config: DEFAULT_FLOW_CONFIG
+  }, createReleaseServices({}), {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    }
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'task/4312-validate-release',
+    checkout: true,
+    ref: 'release/2.0.0'
+  }]);
+  assert.deepEqual(targets, [{
+    branchName: 'task/4312-validate-release',
+    targetRefName: 'release/2.0.0'
+  }]);
+});
+
 test('Flow Governance stops task setup before publication when its feature target cannot be persisted', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const errors: string[] = [];

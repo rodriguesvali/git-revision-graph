@@ -302,7 +302,7 @@ function isAllowedFlowStartSourceKind(
   sourceKind: NonNullable<RevisionGraphViewState['flowGovernance']>['references'][number]['kind']
 ): boolean {
   if (branchKind === 'task') {
-    return sourceKind === 'feature';
+    return sourceKind === 'feature' || sourceKind === 'release';
   }
   if (branchKind === 'package') {
     return sourceKind === 'feature' || sourceKind === 'release';

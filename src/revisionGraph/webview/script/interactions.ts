@@ -340,7 +340,7 @@
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
-        entries.push({ label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) }, { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) }, { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) });
+        entries.push({ label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) }, { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) }, { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) }, { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
         if (productionBranchName) {
           entries.push(
