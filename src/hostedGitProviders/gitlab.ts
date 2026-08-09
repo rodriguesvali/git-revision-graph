@@ -10,18 +10,24 @@ import {
 import type { HostedGitProviderAdapter, HostedGitProviderMatch } from './types';
 
 const GITLAB_REMOTE_PROTOCOLS = new Set(['git:', 'http:', 'https:', 'ssh:']);
+const GITLAB_HOSTNAME = 'gitlab.com';
 
 export const gitlabAdapter: HostedGitProviderAdapter = {
   id: 'gitlab',
   label: 'GitLab',
   parseRemoteUrl(remoteUrl) {
-    const scpMatch = /^git@gitlab\.com:([^\s]+)$/i.exec(remoteUrl);
-    if (scpMatch) {
-      const parts = decodeRemoteComponents(scpMatch[1].split('/'));
+    const scpMatch = /^git@([^:\s]+):([^\s]+)$/i.exec(remoteUrl);
+    if (scpMatch && isGitLabSshHost(scpMatch[1])) {
+      const parts = decodeRemoteComponents(scpMatch[2].split('/'));
       return parts ? createGitLabMatch(parts) : undefined;
     }
     const parsed = parseRemoteUrl(remoteUrl);
-    if (!parsed || parsed.hostname.toLowerCase() !== 'gitlab.com' || !GITLAB_REMOTE_PROTOCOLS.has(parsed.protocol.toLowerCase())) {
+    if (!parsed || !GITLAB_REMOTE_PROTOCOLS.has(parsed.protocol.toLowerCase())) {
+      return undefined;
+    }
+    const protocol = parsed.protocol.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname !== GITLAB_HOSTNAME && (protocol !== 'ssh:' || !isGitLabSshHost(hostname))) {
       return undefined;
     }
     const parts = parsePathParts(parsed.pathname);
@@ -40,6 +46,11 @@ export const gitlabAdapter: HostedGitProviderAdapter = {
     return `${remote.repositoryWebUrl}/-/merge_requests/new?${query.toString()}`;
   }
 };
+
+function isGitLabSshHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return normalized === GITLAB_HOSTNAME || normalized.endsWith(`.${GITLAB_HOSTNAME}`);
+}
 
 function createGitLabMatch(pathParts: readonly string[]): HostedGitProviderMatch | undefined {
   if (pathParts.length < 2) {

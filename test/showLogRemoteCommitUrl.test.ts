@@ -72,6 +72,22 @@ test('buildRemoteCommitUrlFromRemoteUrl supports GitLab.com nested namespaces', 
   );
 });
 
+test('buildRemoteCommitUrlFromRemoteUrl supports documented GitLab.com SSH host aliases', () => {
+  const expected = 'https://gitlab.com/platform/payments/service/-/commit/abc123';
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl('git@work.gitlab.com:platform/payments/service.git', 'abc123'),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl('ssh://git@work.gitlab.com/platform/payments/service.git', 'abc123'),
+    expected
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl('https://work.gitlab.com/platform/payments/service.git', 'abc123'),
+    undefined
+  );
+});
+
 test('buildRemoteCommitUrlFromRemoteUrl supports regional AWS CodeCommit remotes', () => {
   const expected = 'https://us-east-2.console.aws.amazon.com/codesuite/codecommit/repositories/MyRepo/' +
     'commit/abc123?region=us-east-2';

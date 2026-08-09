@@ -992,6 +992,22 @@ test('Flow Governance builds GitLab.com Merge Request deep links', () => {
   );
 });
 
+test('Flow Governance builds GitLab.com Merge Request deep links from SSH host aliases', () => {
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
+      'git@work.gitlab.com:platform/payments/service.git',
+      'feature/demo',
+      'main'
+    ),
+    'https://gitlab.com/platform/payments/service/-/merge_requests/new?' +
+      'merge_request%5Bsource_branch%5D=feature%2Fdemo&' +
+      'merge_request%5Btarget_branch%5D=main&' +
+      'merge_request%5Btitle%5D=Merge+feature%2Fdemo+into+main&' +
+      'merge_request%5Bdescription%5D=Source%3A+feature%2Fdemo%0ATarget%3A+main%0A%0A' +
+      'Flow+Governance+requires+final+integration+through+a+Pull+Request.'
+  );
+});
+
 test('Flow Governance uses conservative AWS and Google Pull Request handoffs', () => {
   assert.equal(
     buildFlowPullRequestUrlFromRemoteUrl(

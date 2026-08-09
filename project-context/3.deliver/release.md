@@ -56,9 +56,9 @@ Target version: `1.6.5`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Open | Hosted-provider compatibility: GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), and a credential-safe `codecommit://` experience (#6). |
+| Release scope | In progress | GitLab SSH aliases (#4) are implemented pending verification; CodeCommit GovCloud console URLs (#5) and a credential-safe `codecommit://` experience (#6) remain open. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
-| Automated verification | Baseline passed | `npm test` passed before opening this release; rerun targeted and full gates after implementation. |
+| Automated verification | Local gates passed for #4 | #4 passed `npm run quality:check` (263 files, 2,559 functions), `npm test`, focused hosted-provider coverage (73 tests), `graphify update .`, and `git diff --check`; rerun applicable gates after #5 and #6. |
 | Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
 | VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -69,6 +69,13 @@ Opening record:
 - Version metadata was aligned to `1.6.5` on 2026-08-09.
 - The focused feature artifact is `project-context/2.build/features/1.6.5-hosted-git-provider-compatibility.md`.
 - No implementation, VSIX package, release tag, or Marketplace publication occurred while opening the cycle.
+
+Implementation record:
+
+- #4 now normalizes documented GitLab.com SSH host aliases to canonical GitLab.com commit and
+  Merge Request URLs. HTTPS remains restricted to the literal hosted domain; GitLab Self-Managed
+  and arbitrary SSH hosts remain unsupported. Local quality, full test, focused URL, graph-update,
+  and whitespace gates passed; manual Extension Development Host validation remains pending.
 
 ## Published Release: 1.6.4
 
