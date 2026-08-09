@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.5 - 2026-08-09
+
+### Flow Governance
+
+- Add GitLab.com SSH alias support, CodeCommit GovCloud browser destinations, and safe guidance for
+  regionless `codecommit://` helper remotes.
+- Allow package and task branches to start from a classified release and return through a guarded
+  Pull Request to that exact persisted release target.
+- Require synchronized remote targets for every package promotion.
+- Improve Pull Request handoff with destination-neutral wording, readiness labels, provider-aware
+  instructions, manual-provider source/target copying, and duplicate-open protection.
+
 ## 1.6.4 - 2026-08-08
 
 ### Performance

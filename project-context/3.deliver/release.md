@@ -1,15 +1,15 @@
 # Release Readiness
 
-Status: `1.6.5` open; implementation and release evidence pending
-Last consolidated: 2026-08-08
+Status: `1.6.5` open; release validation pending
+Last consolidated: 2026-08-09
 
 ## Current State
 
 - Current package version: `1.6.5` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
-- Release cycle status: `1.6.5` is open for hosted-Git provider compatibility work tracked in
-  issues #4, #5, and #6. No implementation, VSIX package, tag, or Marketplace publication is
-  implied by opening the cycle.
+- Release cycle status: `1.6.5` includes hosted-Git provider compatibility, release-origin
+  package/task promotions, and Pull Request handoff usability work tracked in issues #4 through
+  #10. No VSIX package, tag, or Marketplace publication is implied by implementation.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
@@ -56,9 +56,9 @@ Target version: `1.6.5`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), a credential-safe `codecommit://` fallback (#6), release-origin package/task starts (#7/#8), and their PR completion (#9) are implemented. |
+| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), safe `codecommit://` guidance (#6), release-origin package/task starts (#7/#8), their PR completion (#9), and provider-aware Pull Request usability (#10) are implemented. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
-| Automated verification | Local gates passed for #4, #5, #6, #7, and #8 | #8 passed `npm run build`, `npm run quality:check` (263 files, 2,565 functions), `npm test` (876 tests), focused Flow Governance coverage (141 tests), `graphify update .`, and `git diff --check`. |
+| Automated verification | Local gates passed; final graph refresh pending | #9 passed build, quality, focused flow coverage, full tests, and whitespace validation. #10 passed build, quality, full tests, and whitespace validation. Run one final `graphify update .` after the consolidated documentation update. |
 | Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
 | VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -95,7 +95,12 @@ Implementation record:
   whitespace verification passed; manual Extension Development Host validation remains pending.
 - #9 completes Pull Request handoff for release-origin package and task branches. Their persisted
   release is now a governed target, and package promotions require the same remote target
-  synchronization as other guarded non-production promotions. Verification is in progress.
+  synchronization as other guarded non-production promotions. Build, quality, full tests, focused
+  flow coverage, and whitespace verification passed; the issue is closed.
+- #10 makes Pull Request handoff destination-neutral and provider-aware. The dialog identifies
+  prefilled versus manual provider paths, shows target readiness, copies source/target references
+  for manual paths, and prevents duplicate opens. Build, quality, full tests, and whitespace
+  verification passed; manual Extension Development Host smoke remains pending.
 
 ## Published Release: 1.6.4
 
