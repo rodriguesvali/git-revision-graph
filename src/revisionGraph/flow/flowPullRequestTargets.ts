@@ -95,7 +95,7 @@ function appendMappedPromotionCandidates(
     const target = references.find((reference) =>
       reference.refName === source.promotionTargetRefName
       && (source.kind === 'package' || source.kind === 'task'
-        ? reference.kind === 'feature'
+        ? reference.kind === 'feature' || reference.kind === 'release'
         : reference.kind === 'release' || reference.kind === 'feature')
     );
     if (!target || source.refName === target.refName) continue;

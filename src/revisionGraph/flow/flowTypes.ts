@@ -118,7 +118,9 @@ export type FlowDirectMergeAction = 'allow' | 'warn' | 'block';
 export type FlowTransitionRuleId =
   | 'release-to-main'
   | 'task-to-feature'
+  | 'task-to-release'
   | 'package-to-feature'
+  | 'package-to-release'
   | 'hotfix-to-main'
   | 'feature-to-release'
   | 'bug-to-main'

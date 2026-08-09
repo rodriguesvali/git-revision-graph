@@ -446,7 +446,9 @@ test('Flow Governance transition policy marks governed integrations as PR-requir
   const governedPairs = [
     ['release', 'main', 'release-to-main'],
     ['task', 'feature', 'task-to-feature'],
+    ['task', 'release', 'task-to-release'],
     ['package', 'feature', 'package-to-feature'],
+    ['package', 'release', 'package-to-release'],
     ['hotfix', 'main', 'hotfix-to-main'],
     ['feature', 'release', 'feature-to-release'],
     ['bug', 'main', 'bug-to-main'],
@@ -603,7 +605,7 @@ test('Flow Governance does not invent a Pull Request target for an unmapped pack
   assert.equal(targets.some((target) => target.sourceRefName === 'package/payment-validation'), false);
 });
 
-test('Flow Governance rejects a mapped package target that is not a feature', async () => {
+test('Flow Governance resolves mapped package and task targets to their persisted releases', async () => {
   const targets = await loadFlowPullRequestTargets('/workspace/repo', [
     { refName: 'release/2.0.0', kind: 'release', isEphemeral: false, diagnostics: [] },
     {
@@ -612,10 +614,20 @@ test('Flow Governance rejects a mapped package target that is not a feature', as
       isEphemeral: false,
       diagnostics: [],
       promotionTargetRefName: 'release/2.0.0'
+    },
+    {
+      refName: 'task/4312-release-validation',
+      kind: 'task',
+      isEphemeral: false,
+      diagnostics: [],
+      promotionTargetRefName: 'release/2.0.0'
     }
   ], undefined, async () => ({ stdout: '1\n', stderr: '' }));
 
-  assert.equal(targets.some((target) => target.sourceRefName === 'package/payment-validation'), false);
+  assert.deepEqual(targets.map((target) => [target.sourceRefName, target.targetRefName]), [
+    ['package/payment-validation', 'release/2.0.0'],
+    ['task/4312-release-validation', 'release/2.0.0']
+  ]);
 });
 
 test('Flow Governance does not invent a Pull Request target for an unmapped task branch', async () => {

@@ -131,6 +131,8 @@ test('Flow AI prompt policy selects context from trusted branch kinds', () => {
     promptKind: 'delivery',
     contextSource: 'project-document-diff'
   });
+  assert.equal(resolveFlowAiPullRequestPromptProfile('task', 'release')?.transition, 'task-to-release');
+  assert.equal(resolveFlowAiPullRequestPromptProfile('package', 'release')?.transition, 'package-to-release');
   assert.equal(resolveFlowAiPullRequestPromptProfile('bug', 'release')?.promptKind, 'defect');
   assert.equal(resolveFlowAiPullRequestPromptProfile('bug', 'release')?.contextSource, 'code-diff');
   assert.equal(resolveFlowAiPullRequestPromptProfile('hotfix', 'main')?.promptKind, 'hotfix');

@@ -1220,6 +1220,83 @@ test('Task Pull Request preflight verifies its mapped feature and pushes committ
   assert.equal(hostMessages.length, 1);
 });
 
+test('Package and release-origin task Pull Request preflight requires a synchronized remote target', async (t) => {
+  installVscodePanelMock(t);
+  const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/pullRequestWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/pullRequestWorkflow');
+  const repository = createRepository({
+    root: '/workspace/repo',
+    remotes: [{
+      name: 'origin',
+      fetchUrl: 'https://github.com/example/repository.git',
+      pushUrl: 'https://github.com/example/repository.git',
+      isReadOnly: false
+    }]
+  });
+  const scenarios = [
+    { sourceRefName: 'package/payment-validation', sourceKind: 'package' as const, targetRefName: 'feature/payment', targetKind: 'feature' as const },
+    { sourceRefName: 'package/release-validation', sourceKind: 'package' as const, targetRefName: 'release/2.0.0', targetKind: 'release' as const },
+    { sourceRefName: 'task/4312-release-validation', sourceKind: 'task' as const, targetRefName: 'release/2.0.0', targetKind: 'release' as const }
+  ];
+
+  for (const scenario of scenarios) {
+    const calls: string[] = [];
+    const hostMessages: unknown[] = [];
+    const workflow = new RevisionGraphFlowPullRequestWorkflow({
+      actionServices: createFlowPullRequestTestServices({
+        showWarningMessage: () => assert.fail('No warning expected.'),
+        showInformationMessage: () => undefined
+      }),
+      mutationCoordinator: new RepositoryMutationCoordinator(),
+      getCurrentRepository: () => repository,
+      getCurrentState: () => ({
+        flowGovernance: {
+          references: [
+            { refName: scenario.sourceRefName, kind: scenario.sourceKind },
+            { refName: scenario.targetRefName, kind: scenario.targetKind }
+          ]
+        }
+      }) as never,
+      postActionLoading: (label) => calls.push(`loading:${label}`),
+      postCurrentState: () => calls.push('loading:done'),
+      postHostMessage: (message) => hostMessages.push(message)
+    }, {
+      async loadRemoteBranchCommit(_repository, remoteName, branchName) {
+        calls.push(`remote:${remoteName}/${branchName}`);
+        return { status: 'found', commit: 'remote-target-commit' };
+      },
+      async checkTarget(_path, sourceRefName, targetRefName, options) {
+        calls.push(`target:${targetRefName}..${sourceRefName}`);
+        assert.deepEqual(options, {
+          requireTargetAncestor: false,
+          requireTargetSynchronized: true,
+          targetCommitish: 'remote-target-commit'
+        });
+        return { sourceRefName, targetRefName, status: 'ahead' };
+      },
+      async checkSourcePublication(_repository, remoteName, sourceRefName) {
+        calls.push(`source:${remoteName}/${sourceRefName}`);
+        return { status: 'ready', remoteName, sourceRefName, localAhead: 0, remoteAhead: 0 };
+      },
+      isMergeInProgress: () => false
+    });
+
+    await workflow.copyContext(scenario.sourceRefName, scenario.targetRefName);
+
+    assert.deepEqual(calls, [
+      'loading:Fetching remotes...',
+      `remote:origin/${scenario.targetRefName}`,
+      'loading:done',
+      `target:${scenario.targetRefName}..${scenario.sourceRefName}`,
+      'loading:Fetching remotes...',
+      `source:origin/${scenario.sourceRefName}`,
+      'loading:done'
+    ]);
+    assert.equal(hostMessages.length, 1);
+  }
+});
+
 test('Feature Pull Request preflight blocks behind, ahead, and divergent local releases', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowPullRequestWorkflow } = loadFresh(

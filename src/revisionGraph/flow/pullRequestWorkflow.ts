@@ -345,17 +345,23 @@ function resolveFlowPullRequestTargetPolicy(
 ): FlowPullRequestTargetPolicy {
   const sourceKind = references.find((reference) => reference.refName === sourceRefName)?.kind;
   const targetKind = references.find((reference) => reference.refName === targetRefName)?.kind;
-  const isProductionPromotion = (sourceKind === 'release' || sourceKind === 'hotfix') && targetKind === 'main';
+  const isProductionPromotion = isFlowKind(sourceKind, ['release', 'hotfix']) && targetKind === 'main';
   const isFeaturePromotion = sourceKind === 'feature' && targetKind === 'release';
-  const isTaskPromotion = sourceKind === 'task' && targetKind === 'feature';
-  const isBugPromotion = sourceKind === 'bug' && (targetKind === 'release' || targetKind === 'feature');
-  const isSyncPromotion = sourceKind === 'sync' && (targetKind === 'release' || targetKind === 'feature');
+  const isMappedPromotion = isFlowKind(sourceKind, ['package', 'task', 'bug', 'sync'])
+    && isFlowKind(targetKind, ['feature', 'release']);
   return {
     isProductionPromotion,
     requiresRemoteSynchronization: isProductionPromotion || isFeaturePromotion
-      || isTaskPromotion || isBugPromotion || isSyncPromotion,
+      || isMappedPromotion,
     requiresTargetAncestry: isProductionPromotion
   };
+}
+
+function isFlowKind(
+  value: string | undefined,
+  kinds: readonly string[]
+): boolean {
+  return value !== undefined && kinds.includes(value);
 }
 
 function createMissingTargetRemoteMessage(

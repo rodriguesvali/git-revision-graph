@@ -18,7 +18,9 @@ export const DEFAULT_FLOW_DIRECT_MERGE_POLICY: FlowDirectMergePolicy = 'warn';
 export const FLOW_GOVERNED_TRANSITION_RULES: readonly FlowTransitionRule[] = [
   { id: 'release-to-main', sourceKind: 'release', targetKind: 'main' },
   { id: 'task-to-feature', sourceKind: 'task', targetKind: 'feature' },
+  { id: 'task-to-release', sourceKind: 'task', targetKind: 'release' },
   { id: 'package-to-feature', sourceKind: 'package', targetKind: 'feature' },
+  { id: 'package-to-release', sourceKind: 'package', targetKind: 'release' },
   { id: 'hotfix-to-main', sourceKind: 'hotfix', targetKind: 'main' },
   { id: 'feature-to-release', sourceKind: 'feature', targetKind: 'release' },
   { id: 'bug-to-main', sourceKind: 'bug', targetKind: 'main' },

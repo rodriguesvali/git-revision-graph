@@ -961,7 +961,9 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
       { id: 'feature1::branch::feature/demo', hash: 'feature1', name: 'feature/demo', kind: 'branch', title: 'feature/demo' },
       { id: 'feature2::branch::feature/other', hash: 'feature2', name: 'feature/other', kind: 'branch', title: 'feature/other' },
       { id: 'package1::branch::package/payment-validation', hash: 'package1', name: 'package/payment-validation', kind: 'branch', title: 'package/payment-validation' },
+      { id: 'package2::branch::package/release-validation', hash: 'package2', name: 'package/release-validation', kind: 'branch', title: 'package/release-validation' },
       { id: 'task1::branch::task/4312-adjust-timeout', hash: 'task1', name: 'task/4312-adjust-timeout', kind: 'branch', title: 'task/4312-adjust-timeout' },
+      { id: 'task2::branch::task/4313-release-validation', hash: 'task2', name: 'task/4313-release-validation', kind: 'branch', title: 'task/4313-release-validation' },
       { id: 'bug1::branch::bug/BUG-731-payment-rounding', hash: 'bug1', name: 'bug/BUG-731-payment-rounding', kind: 'branch', title: 'bug/BUG-731-payment-rounding' },
       { id: 'sync1::branch::sync/demo', hash: 'sync1', name: 'sync/demo', kind: 'branch', title: 'sync/demo' }
     ],
@@ -984,11 +986,25 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
           promotionTargetRefName: 'feature/demo'
         },
         {
+          refName: 'package/release-validation',
+          kind: 'package',
+          isEphemeral: false,
+          diagnostics: [],
+          promotionTargetRefName: 'release/1.0.0'
+        },
+        {
           refName: 'task/4312-adjust-timeout',
           kind: 'task',
           isEphemeral: false,
           diagnostics: [],
           promotionTargetRefName: 'feature/demo'
+        },
+        {
+          refName: 'task/4313-release-validation',
+          kind: 'task',
+          isEphemeral: false,
+          diagnostics: [],
+          promotionTargetRefName: 'release/1.0.0'
         },
         {
           refName: 'bug/BUG-731-payment-rounding',
@@ -1009,7 +1025,9 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
         { sourceRefName: 'release/1.0.0', targetRefName: 'main', status: 'ahead' },
         { sourceRefName: 'feature/demo', targetRefName: 'release/2.0.0', status: 'ahead' },
         { sourceRefName: 'package/payment-validation', targetRefName: 'feature/demo', status: 'ahead' },
+        { sourceRefName: 'package/release-validation', targetRefName: 'release/1.0.0', status: 'ahead' },
         { sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/demo', status: 'ahead' },
+        { sourceRefName: 'task/4313-release-validation', targetRefName: 'release/1.0.0', status: 'ahead' },
         { sourceRefName: 'bug/BUG-731-payment-rounding', targetRefName: 'release/2.0.0', status: 'ahead' },
         { sourceRefName: 'sync/demo', targetRefName: 'feature/demo', status: 'ahead' }
       ]
@@ -1041,6 +1059,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   );
   assert.equal(
     isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'package/release-validation', targetRefName: 'release/1.0.0' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
       { type: 'copy-flow-pr-context', sourceRefName: 'package/payment-validation', targetRefName: 'feature/other' },
       governedFlowState
     ),
@@ -1049,6 +1074,13 @@ test('isRevisionGraphMessageAllowedForState restricts graph actions to known ref
   assert.equal(
     isRevisionGraphMessageAllowedForState(
       { type: 'copy-flow-pr-context', sourceRefName: 'task/4312-adjust-timeout', targetRefName: 'feature/demo' },
+      governedFlowState
+    ),
+    true
+  );
+  assert.equal(
+    isRevisionGraphMessageAllowedForState(
+      { type: 'copy-flow-pr-context', sourceRefName: 'task/4313-release-validation', targetRefName: 'release/1.0.0' },
       governedFlowState
     ),
     true

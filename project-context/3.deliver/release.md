@@ -56,7 +56,7 @@ Target version: `1.6.5`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), a credential-safe `codecommit://` fallback (#6), release-origin package starts (#7), and release-origin task starts (#8) are implemented. |
+| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), a credential-safe `codecommit://` fallback (#6), release-origin package/task starts (#7/#8), and their PR completion (#9) are implemented. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
 | Automated verification | Local gates passed for #4, #5, #6, #7, and #8 | #8 passed `npm run build`, `npm run quality:check` (263 files, 2,565 functions), `npm test` (876 tests), focused Flow Governance coverage (141 tests), `graphify update .`, and `git diff --check`. |
 | Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
@@ -93,6 +93,9 @@ Implementation record:
   existing synchronization, naming, collision, mutation, publication, refresh, and source-target
   guards. Build, quality, full tests, focused Flow Governance coverage, graph refresh, and
   whitespace verification passed; manual Extension Development Host validation remains pending.
+- #9 completes Pull Request handoff for release-origin package and task branches. Their persisted
+  release is now a governed target, and package promotions require the same remote target
+  synchronization as other guarded non-production promotions. Verification is in progress.
 
 ## Published Release: 1.6.4
 
@@ -1219,6 +1222,12 @@ Completed scope:
 
 Recorded verification:
 
+- Flow Governance issue #9 completed the governed Pull Request handoff for release-origin package
+  and task branches on 2026-08-09. It preserves the exact persisted release target, authorizes the
+  PR handoff end to end, and requires target remote synchronization for all package promotions.
+- `npm run quality:check`, `npm run build`, focused flow tests, `npm test`, `graphify update .`, and
+  `git diff --check` passed on 2026-08-09 for issue #9. Extension Development Host smoke remains
+  pending.
 - `npm run build` passed on 2026-07-01 after repository lifecycle extraction.
 - Focused webview message validation/dispatcher tests passed on 2026-07-01.
 - Focused repository lifecycle, repository state-change, and repository selection tests passed on
