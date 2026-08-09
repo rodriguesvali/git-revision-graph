@@ -632,7 +632,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?flowBranch\.kind === 'sync'[\s\S]*?flowBranch\.kind === 'package'[\s\S]*?flowBranch\.kind === 'task'[\s\S]*?flowBranch\.kind === 'bug'[\s\S]*?getFlowProductionBranchName\(\)[\s\S]*?getFlowPullRequestTargets\(target\.name\)\[0\]\?\.targetRefName[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, pullRequestTargetName\)/);
   assert.match(html, /targetText\.textContent = 'Target branch';/);
   assert.match(html, /function initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(select, targets\)/);
-  assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a release\.\.\.' : 'No release branches available';/);
+  assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a target branch\.\.\.' : 'No target branches available';/);
   assert.match(html, /placeholder\.disabled = true;\s*placeholder\.selected = true;\s*select\.appendChild\(placeholder\);/s);
   assert.match(html, /initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(dialog\.targetSelect, targets\);\s*dialog\.targetLabel\.hidden = false;/s);
   assert.match(html, /setActionsEnabled\(false\);\s*dialog\.backdrop\.hidden = false;[\s\S]*?window\.setTimeout\(\(\) => dialog\.targetSelect\.focus\(\), 0\);/s);
@@ -644,7 +644,10 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /target\.status === 'production-out-of-sync'[\s\S]*?local production branch is not synchronized/);
   assert.match(html, /target\.status === 'not-ahead'[\s\S]*?has no commits ahead of/);
   assert.match(html, /if \(!candidate\) \{[\s\S]*?return;\s*\}\s*setActionsEnabled\(false\);\s*dependencies\.requestContext\(sourceRefName, targetRefName\);\s*setWarning\(getRevisionGraphWebviewFlowPullRequestWarning\(sourceRefName, candidate\)\);/s);
-  assert.match(html, /dialog\.descriptionInput\.value = context\.description;\s*setWarning\(''\);\s*setActionsEnabled\(true\);/s);
+  assert.match(
+    html,
+    /dialog\.descriptionInput\.value = context\.description;\s*opening = false;\s*dialog\.handoff\.textContent = `\$\{context\.handoff\.providerLabel\}: \$\{context\.handoff\.description\}`;\s*dialog\.copyReferencesButton\.hidden = context\.handoff\.mode !== 'manual';\s*dialog\.openButton\.textContent = context\.handoff\.actionLabel;\s*setWarning\(''\);\s*setActionsEnabled\(true\);/s
+  );
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
