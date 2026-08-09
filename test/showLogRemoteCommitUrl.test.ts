@@ -122,6 +122,22 @@ test('buildRemoteCommitUrlFromRemoteUrl supports regional AWS CodeCommit remotes
   );
   assert.equal(
     buildRemoteCommitUrlFromRemoteUrl(
+      'ssh://key@git-codecommit.us-gov-west-1.amazonaws.com/v1/repos/MyRepo',
+      'abc123'
+    ),
+    'https://us-gov-west-1.console.amazonaws-us-gov.com/codesuite/codecommit/repositories/MyRepo/' +
+      'commit/abc123?region=us-gov-west-1'
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
+      'https://git-codecommit-fips.us-gov-east-1.amazonaws.com/v1/repos/MyRepo',
+      'abc123'
+    ),
+    'https://us-gov-east-1.console.amazonaws-us-gov.com/codesuite/codecommit/repositories/MyRepo/' +
+      'commit/abc123?region=us-gov-east-1'
+  );
+  assert.equal(
+    buildRemoteCommitUrlFromRemoteUrl(
       'https://git-codecommit.us-east-2.amazonaws.com/v1/repos/MyRepo.git',
       'abc123'
     ),

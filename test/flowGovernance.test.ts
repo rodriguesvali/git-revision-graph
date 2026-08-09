@@ -1020,6 +1020,15 @@ test('Flow Governance uses conservative AWS and Google Pull Request handoffs', (
   );
   assert.equal(
     buildFlowPullRequestUrlFromRemoteUrl(
+      'https://git-codecommit.us-gov-west-1.amazonaws.com/v1/repos/Payments',
+      'feature/demo',
+      'main'
+    ),
+    'https://us-gov-west-1.console.amazonaws-us-gov.com/codesuite/codecommit/repositories/Payments/' +
+      'pull-requests?region=us-gov-west-1'
+  );
+  assert.equal(
+    buildFlowPullRequestUrlFromRemoteUrl(
       'https://instance-123456789012-git.us-central1.sourcemanager.dev/project/repo.git',
       'feature/demo',
       'main'

@@ -33,9 +33,7 @@ export const awsCodeCommitAdapter: HostedGitProviderAdapter = {
     }
     const region = hostMatch[2].toLowerCase();
     const partition = hostMatch[3].toLowerCase();
-    const consoleHost = partition.endsWith('.cn')
-      ? `${region}.console.amazonaws.cn`
-      : `${region}.console.aws.amazon.com`;
+    const consoleHost = getConsoleHost(region, partition);
     return {
       repositoryWebUrl: `https://${consoleHost}/codesuite/codecommit/repositories/${encodePath([repository])}`,
       repositoryIdentity: createRepositoryIdentity('aws-codecommit', [partition, region, repository], true)
@@ -53,4 +51,13 @@ export const awsCodeCommitAdapter: HostedGitProviderAdapter = {
 
 function getConsoleRegion(repositoryWebUrl: string): string {
   return new URL(repositoryWebUrl).hostname.split('.')[0];
+}
+
+function getConsoleHost(region: string, partition: string): string {
+  if (partition.endsWith('.cn')) {
+    return `${region}.console.amazonaws.cn`;
+  }
+  return region.startsWith('us-gov-')
+    ? `${region}.console.amazonaws-us-gov.com`
+    : `${region}.console.aws.amazon.com`;
 }
