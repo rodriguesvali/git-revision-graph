@@ -245,7 +245,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /case 'show-flow-pr-context':\s*showFlowPullRequestContextForm\(message\);/s);
   assert.match(html, /case 'set-flow-ai-text-result':[\s\S]*?flowPullRequestDialogController\.showImprovementResult\(message\);[\s\S]*?flowBranchDialogController\.showImprovementResult\(message\);/s);
   assert.match(html, /case 'show-flow-branch-form':\s*showRevisionGraphWebviewFlowBranchForm\(message, getSelectableTargets\(\), showFlowBranchForm\);\s*return;/s);
-  assert.match(html, /heading\.textContent = 'Promotion Pull Request Context';/);
+  assert.match(html, /heading\.textContent = 'Review Promotion';/);
   assert.match(html, /introduction\.textContent = 'Review and improve the generated context before opening your Pull Request\.';/);
   assert.match(html, /flowLabel\.textContent = 'Flow';/);
   assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Title',\s*'flowPullRequestTitleInput',\s*false\s*\)/s);
@@ -630,7 +630,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Feature[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)[\s\S]*?Start New Package[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'package'\)[\s\S]*?Start New Task[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'task'\)[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /flowBranch\.kind === 'hotfix'[\s\S]*?flowBranch\.kind === 'sync'[\s\S]*?flowBranch\.kind === 'package'[\s\S]*?flowBranch\.kind === 'task'[\s\S]*?flowBranch\.kind === 'bug'[\s\S]*?getFlowProductionBranchName\(\)[\s\S]*?getFlowPullRequestTargets\(target\.name\)\[0\]\?\.targetRefName[\s\S]*?Promotion PR Context[\s\S]*?postCopyFlowPullRequestContext\(target\.name, pullRequestTargetName\)/);
-  assert.match(html, /targetText\.textContent = 'Target release';/);
+  assert.match(html, /targetText\.textContent = 'Target branch';/);
   assert.match(html, /function initializeRevisionGraphWebviewFlowPullRequestTargetSelect\(select, targets\)/);
   assert.match(html, /placeholder\.textContent = targets\.length > 0 \? 'Select a release\.\.\.' : 'No release branches available';/);
   assert.match(html, /placeholder\.disabled = true;\s*placeholder\.selected = true;\s*select\.appendChild\(placeholder\);/s);
