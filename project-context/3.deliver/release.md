@@ -56,9 +56,9 @@ Target version: `1.6.5`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), and a credential-safe `codecommit://` fallback (#6) are implemented. |
+| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), a credential-safe `codecommit://` fallback (#6), and release-origin package starts (#7) are implemented. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
-| Automated verification | Local gates passed for #4, #5, and #6 | #6 passed `npm run build`, `npm run quality:check` (263 files, 2,563 functions), `npm test`, focused remote-action coverage (5 tests), `graphify update .`, and `git diff --check`. |
+| Automated verification | Local gates passed for #4, #5, #6, and #7 | #7 passed `npm run build`, `npm run quality:check` (263 files, 2,564 functions), `npm test` (875 tests), focused Flow Governance coverage (140 tests), `graphify update .`, and `git diff --check`. |
 | Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
 | VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -84,6 +84,11 @@ Implementation record:
   Region, so a regional HTTPS or SSH remote is required for browser links. It does not read AWS
   credentials or profiles, infer a region, or add settings/dependencies. Build, quality, and full
   test gates passed; graph refresh and final whitespace verification are pending.
+- #7 allows `Flow Governance > Start New Package` from a classified release. The existing
+  exact-sync preflight, configured naming, collision protection, guarded mutation, optional
+  publication, refresh, and persisted source target are reused. Build, quality, full tests,
+  focused Flow Governance coverage, graph refresh, and whitespace verification passed; manual
+  Extension Development Host validation remains pending.
 
 ## Published Release: 1.6.4
 

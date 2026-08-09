@@ -684,6 +684,34 @@ test('Flow Governance starts a local package branch from its feature and persist
   assert.match(informationMessages[0] ?? '', /Package branch package\/payment-validation was created/);
 });
 
+test('Flow Governance starts a local package branch from its release and persists the PR target', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const targets: Array<{ readonly branchName: string; readonly targetRefName: string }> = [];
+  const services = createReleaseServices({});
+
+  await startFlowBranch(repository, {
+    kind: 'package',
+    sourceBranch: 'release/2.0.0',
+    name: 'release-validation',
+    description: 'Validate the release package before promotion',
+    config: DEFAULT_FLOW_CONFIG
+  }, services, {
+    async setTarget(_repositoryPath, branchName, targetRefName) {
+      targets.push({ branchName, targetRefName });
+    }
+  });
+
+  assert.deepEqual(repository.calls.createBranch, [{
+    name: 'package/release-validation',
+    checkout: true,
+    ref: 'release/2.0.0'
+  }]);
+  assert.deepEqual(targets, [{
+    branchName: 'package/release-validation',
+    targetRefName: 'release/2.0.0'
+  }]);
+});
+
 test('Flow Governance stops package setup before publication when its feature target cannot be persisted', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const errors: string[] = [];

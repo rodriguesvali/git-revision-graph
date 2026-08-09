@@ -305,7 +305,7 @@ function isAllowedFlowStartSourceKind(
     return sourceKind === 'feature';
   }
   if (branchKind === 'package') {
-    return sourceKind === 'feature';
+    return sourceKind === 'feature' || sourceKind === 'release';
   }
   if (branchKind === 'bug') {
     return sourceKind === 'release' || sourceKind === 'feature';
