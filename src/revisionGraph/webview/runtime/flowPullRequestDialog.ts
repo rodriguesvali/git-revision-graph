@@ -17,6 +17,12 @@ interface RevisionGraphWebviewFlowPullRequestDialogDependencies {
     description: string
   ) => void;
   readonly copyReferences: (sourceRefName: string, targetRefName: string) => void;
+  readonly copyField: (
+    sourceRefName: string,
+    targetRefName: string,
+    field: 'title' | 'description',
+    text: string
+  ) => void;
 }
 
 interface RevisionGraphWebviewFlowPullRequestDialogController {
@@ -42,6 +48,8 @@ interface RevisionGraphWebviewFlowPullRequestDialogElements {
   readonly warning: HTMLElement;
   readonly handoff: HTMLElement;
   readonly copyReferencesButton: HTMLButtonElement;
+  readonly copyTitleButton: HTMLButtonElement;
+  readonly copyDescriptionButton: HTMLButtonElement;
   readonly openButton: HTMLButtonElement;
 }
 
@@ -335,7 +343,15 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     copyReferencesButton.type = 'button';
     copyReferencesButton.textContent = 'Copy source and target';
     copyReferencesButton.hidden = true;
-    actions.append(copyReferencesButton, closeButton, openButton);
+    const copyTitleButton = document.createElement('button');
+    copyTitleButton.className = 'flow-dialog-button';
+    copyTitleButton.type = 'button';
+    copyTitleButton.textContent = 'Copy title';
+    const copyDescriptionButton = document.createElement('button');
+    copyDescriptionButton.className = 'flow-dialog-button';
+    copyDescriptionButton.type = 'button';
+    copyDescriptionButton.textContent = 'Copy description';
+    actions.append(copyReferencesButton, copyTitleButton, copyDescriptionButton, closeButton, openButton);
     dialog.appendChild(actions);
     backdrop.appendChild(dialog);
     document.body.appendChild(backdrop);
@@ -352,6 +368,8 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
       warning,
       handoff,
       copyReferencesButton,
+      copyTitleButton,
+      copyDescriptionButton,
       openButton
     };
     titleField.aiButton.addEventListener('click', () => toggleFieldImprovement('title'));
@@ -378,6 +396,16 @@ function createRevisionGraphWebviewFlowPullRequestDialogController(
     copyReferencesButton.addEventListener('click', () => {
       if (sourceRefName && targetRefName) {
         dependencies.copyReferences(sourceRefName, targetRefName);
+      }
+    });
+    copyTitleButton.addEventListener('click', () => {
+      if (sourceRefName && targetRefName && elements?.titleInput.value.trim()) {
+        dependencies.copyField(sourceRefName, targetRefName, 'title', elements.titleInput.value.trim());
+      }
+    });
+    copyDescriptionButton.addEventListener('click', () => {
+      if (sourceRefName && targetRefName && elements?.descriptionInput.value.trim()) {
+        dependencies.copyField(sourceRefName, targetRefName, 'description', elements.descriptionInput.value.trim());
       }
     });
     closeButton.addEventListener('click', close);

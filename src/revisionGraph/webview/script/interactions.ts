@@ -548,13 +548,13 @@
     }
 
     const flowPullRequestDialogController = createRevisionGraphWebviewFlowPullRequestDialogController({
-
       closeContextMenu,
       getTargets: getFlowPullRequestTargets,
       requestContext: postCopyFlowPullRequestContext,
       copyReferences(sourceRefName, targetRefName) {
         vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, 'title', `Source: ${sourceRefName}\nTarget: ${targetRefName}`));
       },
+      copyField(sourceRefName, targetRefName, field, text) { vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, field, text)); },
       ...flowAiTextInteractions.pullRequestDependencies
     });
 

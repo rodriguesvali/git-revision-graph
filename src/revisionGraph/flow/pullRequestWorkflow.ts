@@ -103,8 +103,6 @@ export class RevisionGraphFlowPullRequestWorkflow {
       );
       return;
     }
-    if (!await this.ensureTargetEligible(repository, sourceRefName, targetRefName, remote)) return;
-    if (!await this.ensureSourceReady(repository, sourceRefName, remote)) return;
 
     const url = buildFlowPullRequestUrlForRemote(
       remote,

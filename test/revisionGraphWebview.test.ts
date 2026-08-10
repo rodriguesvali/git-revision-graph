@@ -252,7 +252,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /createRevisionGraphWebviewFlowPullRequestContextField\(\s*'Description',\s*'flowPullRequestDescriptionInput',\s*true\s*\)/s);
   assert.doesNotMatch(html, /input\.readOnly = true;/);
   assert.match(html, /input\.maxLength = multiline \? 2048 : 240;/);
-  assert.doesNotMatch(html, /flow-pr-context-copy|copyButton\.setAttribute\('aria-label', 'Copy '/);
+  assert.match(html, /copyTitleButton\.textContent = 'Copy title';/);
+  assert.match(html, /copyDescriptionButton\.textContent = 'Copy description';/);
   assert.match(html, /createRevisionGraphWebviewFlowAiTextButton\('Improve with AI'\)/);
   assert.match(html, /descriptionAiButton\.hidden = !isRevisionGraphWebviewFlowAiBranchKind\(nextBranchKind\);/);
   assert.match(html, /button\.setAttribute\('aria-label', label\);/);

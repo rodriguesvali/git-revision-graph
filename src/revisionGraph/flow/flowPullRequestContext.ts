@@ -32,6 +32,9 @@ export function resolveFlowPullRequestHandoffPresentation(repository: Repository
   if (remote.provider === 'google-secure-source-manager') {
     return { providerLabel: remote.providerLabel, mode: 'manual', actionLabel: 'Open repository', description: 'Google Secure Source Manager opens the repository. Navigate to Pull Requests and select the branches manually.' };
   }
+  if (remote.provider === 'azure-devops') {
+    return { providerLabel: remote.providerLabel, mode: 'prefilled', actionLabel: 'Open Pull Request', description: 'Azure DevOps will preselect the branches. Copy the title and description into its review form.' };
+  }
   return { providerLabel: remote.providerLabel, mode: 'prefilled', actionLabel: remote.provider === 'gitlab' ? 'Open Merge Request' : 'Open Pull Request', description: `${remote.providerLabel} will open a prefilled review form with the selected branches and text.` };
 }
 
