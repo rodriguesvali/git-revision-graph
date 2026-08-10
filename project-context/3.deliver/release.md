@@ -1,11 +1,11 @@
 # Release Readiness
 
-Status: `1.6.5` open; release validation pending
-Last consolidated: 2026-08-09
+Status: `1.6.6` open; release validation pending
+Last consolidated: 2026-08-10
 
 ## Current State
 
-- Current package version: `1.6.5` in `package.json` and the root `package-lock.json`.
+- Current package version: `1.6.6` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
 - Release cycle status: `1.6.5` includes hosted-Git provider compatibility, release-origin
   package/task promotions, and Pull Request handoff usability work tracked in issues #4 through
@@ -44,30 +44,30 @@ Last consolidated: 2026-08-09
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release: 1.6.5
+## Open Release: 1.6.6
 
 Status: Open
-Opened: 2026-08-09
+Opened: 2026-08-10
 Published baseline version: `1.6.4`
-Target version: `1.6.5`
+Target version: `1.6.6`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Implemented pending release validation | GitLab SSH aliases (#4), CodeCommit GovCloud console URLs (#5), safe `codecommit://` guidance (#6), release-origin package/task starts (#7/#8), their PR completion (#9), and provider-aware Pull Request usability (#10) are implemented. |
-| Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.5`. |
-| Automated verification | Local gates passed; final graph refresh pending | #9 passed build, quality, focused flow coverage, full tests, and whitespace validation. #10 passed build, quality, full tests, and whitespace validation. Run one final `graphify update .` after the consolidated documentation update. |
-| Extension Development Host smoke | Pending | Select provider-handoff paths after implementation. |
+| Release scope | Not yet defined | Add the approved `1.6.6` changes before release validation. |
+| Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.6`. |
+| Automated verification | Pending | Run the applicable local gates after the release scope is implemented. |
+| Extension Development Host smoke | Pending | Define and run smoke coverage once the release scope is established. |
 | VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
 
 Opening record:
 
-- Version metadata was aligned to `1.6.5` on 2026-08-09.
-- The focused feature artifact is `project-context/2.build/features/1.6.5-hosted-git-provider-compatibility.md`.
+- Version metadata was aligned to `1.6.6` on 2026-08-10.
+- Release scope has not yet been defined.
 - No implementation, VSIX package, release tag, or Marketplace publication occurred while opening the cycle.
 
 Implementation record:
