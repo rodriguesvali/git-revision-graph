@@ -1,7 +1,6 @@
     const TOOLTIP_SHOW_DELAY_MS = 500;
-    let referenceTooltipShowTimer = 0;
-    let pendingReferenceTooltipElement: HTMLElement | null = null;
-    let referenceTooltipHideTimer = 0;
+    const referenceTooltipShowScheduler = createRevisionGraphWebviewDelayedActionScheduler<HTMLElement>(window, TOOLTIP_SHOW_DELAY_MS);
+    const referenceTooltipHideScheduler = createRevisionGraphWebviewDelayedActionScheduler<HTMLElement>(window, 180);
     let activeReferenceTooltipHash = '';
     interface RevisionGraphWebviewCommitShortStat {
       readonly files: number;
@@ -136,28 +135,12 @@
 
     function scheduleShowReferenceTooltip(refElement: HTMLElement) {
       cancelHideReferenceTooltip();
-      if (pendingReferenceTooltipElement === refElement && referenceTooltipShowTimer) {
-        return;
-      }
-
       cancelShowReferenceTooltip();
-      pendingReferenceTooltipElement = refElement;
-      referenceTooltipShowTimer = window.setTimeout(() => {
-        const pendingElement = pendingReferenceTooltipElement;
-        referenceTooltipShowTimer = 0;
-        pendingReferenceTooltipElement = null;
-        if (pendingElement) {
-          showReferenceTooltip(pendingElement);
-        }
-      }, TOOLTIP_SHOW_DELAY_MS);
+      referenceTooltipShowScheduler.schedule(refElement, () => showReferenceTooltip(refElement));
     }
 
     function cancelShowReferenceTooltip() {
-      if (referenceTooltipShowTimer) {
-        window.clearTimeout(referenceTooltipShowTimer);
-        referenceTooltipShowTimer = 0;
-      }
-      pendingReferenceTooltipElement = null;
+      referenceTooltipShowScheduler.cancel();
     }
 
     function renderReferenceTooltip(
@@ -245,14 +228,11 @@
     function scheduleHideReferenceTooltip() {
       cancelShowReferenceTooltip();
       cancelHideReferenceTooltip();
-      referenceTooltipHideTimer = window.setTimeout(hideReferenceTooltip, 180);
+      if (referenceTooltip) referenceTooltipHideScheduler.schedule(referenceTooltip, hideReferenceTooltip);
     }
 
     function cancelHideReferenceTooltip() {
-      if (referenceTooltipHideTimer) {
-        window.clearTimeout(referenceTooltipHideTimer);
-        referenceTooltipHideTimer = 0;
-      }
+      referenceTooltipHideScheduler.cancel();
     }
 
     function requestCommitShortStat(commitHash: string) {

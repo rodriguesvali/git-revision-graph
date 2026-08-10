@@ -82,6 +82,37 @@ interface RevisionGraphWebviewContextSubmenuCloseScheduler {
   cancel(group?: HTMLElement | null): void;
 }
 
+interface RevisionGraphWebviewDelayedActionScheduler<T> {
+  schedule(target: T, action: () => void): void;
+  cancel(target?: T | null): void;
+}
+
+function createRevisionGraphWebviewDelayedActionScheduler<T>(
+  timer: Pick<Window, 'setTimeout' | 'clearTimeout'> = window,
+  delayMs = 0
+): RevisionGraphWebviewDelayedActionScheduler<T> {
+  let timerId = 0;
+  let pendingTarget: T | null = null;
+  const cancel = (target: T | null = null) => {
+    if (target && pendingTarget !== target) return;
+    if (timerId) timer.clearTimeout(timerId);
+    timerId = 0;
+    pendingTarget = null;
+  };
+  return {
+    schedule(target, action) {
+      cancel();
+      pendingTarget = target;
+      timerId = timer.setTimeout(() => {
+        timerId = 0;
+        pendingTarget = null;
+        action();
+      }, delayMs);
+    },
+    cancel
+  };
+}
+
 function calculateRevisionGraphWebviewContextSubmenuPlacement(
   input: RevisionGraphWebviewContextSubmenuPlacementInput
 ): RevisionGraphWebviewContextSubmenuPlacement {
@@ -108,30 +139,7 @@ function createRevisionGraphWebviewContextSubmenuCloseScheduler(
   timer: Pick<Window, 'setTimeout' | 'clearTimeout'> = window,
   delayMs = 120
 ): RevisionGraphWebviewContextSubmenuCloseScheduler {
-  let closeTimer = 0;
-  let pendingGroup: HTMLElement | null = null;
-  const cancel = (group: HTMLElement | null = null) => {
-    if (group && pendingGroup !== group) {
-      return;
-    }
-    if (closeTimer) {
-      timer.clearTimeout(closeTimer);
-      closeTimer = 0;
-    }
-    pendingGroup = null;
-  };
-  return {
-    schedule(group, close) {
-      cancel();
-      pendingGroup = group;
-      closeTimer = timer.setTimeout(() => {
-        closeTimer = 0;
-        pendingGroup = null;
-        close();
-      }, delayMs);
-    },
-    cancel
-  };
+  return createRevisionGraphWebviewDelayedActionScheduler(timer, delayMs);
 }
 
 function getRevisionGraphWebviewContextMenuComparisonTargets(
