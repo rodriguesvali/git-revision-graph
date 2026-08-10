@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.6 - 2026-08-10
+
+### Flow Governance
+
+- Keep Pull Request remote validation before opening the form and avoid repeating it when opening
+  the browser handoff.
+- Clarify that Azure DevOps preselects branches only, and provide explicit copying of the generated
+  Pull Request title and description.
+- Centralize delayed hover actions used by reference tooltips and Flow Governance submenus while
+  retaining their established opening and closing delays.
+
+### Compare Results
+
+- Remove the redundant Actions column and per-row action button; all item operations remain
+  available through the existing keyboard-accessible context menu.
+
 ## 1.6.5 - 2026-08-09
 
 ### Flow Governance

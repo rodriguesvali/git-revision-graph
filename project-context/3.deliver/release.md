@@ -7,9 +7,9 @@ Last consolidated: 2026-08-10
 
 - Current package version: `1.6.6` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
-- Release cycle status: `1.6.5` includes hosted-Git provider compatibility, release-origin
-  package/task promotions, and Pull Request handoff usability work tracked in issues #4 through
-  #10. No VSIX package, tag, or Marketplace publication is implied by implementation.
+- Release cycle status: `1.6.6` includes Azure DevOps Pull Request handoff refinement (#12), a
+  denser Compare Results layout (#13), and shared hover-intent scheduling (#14). No VSIX package,
+  tag, or Marketplace publication is implied by implementation.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
@@ -56,10 +56,10 @@ Target version: `1.6.6`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.4` was published by maintainer confirmation on 2026-08-08. |
-| Release scope | Not yet defined | Add the approved `1.6.6` changes before release validation. |
+| Release scope | Implemented | #12 refines Azure DevOps browser handoff; #13 removes the redundant Compare Results Actions column; #14 centralizes tooltip/submenu hover scheduling. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.6`. |
-| Automated verification | Pending | Run the applicable local gates after the release scope is implemented. |
-| Extension Development Host smoke | Pending | Define and run smoke coverage once the release scope is established. |
+| Automated verification | Local gates passed; final release run pending | #12 and #13 passed quality, full tests, graph refresh, and whitespace validation. #14 passed quality; run one consolidated full test and graph refresh before packaging. |
+| Extension Development Host smoke | Pending | Validate Azure DevOps title/description copy, Compare Results context-menu actions, and tooltip/submenu hover transitions. |
 | VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
@@ -67,10 +67,21 @@ Target version: `1.6.6`
 Opening record:
 
 - Version metadata was aligned to `1.6.6` on 2026-08-10.
-- Release scope has not yet been defined.
+- The focused feature artifacts are `project-context/2.build/features/1.6.6-azure-devops-pr-handoff.md`, `project-context/2.build/features/1.6.6-compare-results-actions-column.md`, and `project-context/2.build/features/1.6.6-hover-intent-policy.md`.
 - No implementation, VSIX package, release tag, or Marketplace publication occurred while opening the cycle.
 
 Implementation record:
+
+- #12 keeps remote eligibility checks before presenting Pull Request context, removes repeated
+  remote validation during browser handoff, and makes Azure DevOps title/description transfer
+  explicit through copy actions. Build, quality, full tests, graph refresh, and whitespace
+  validation passed; Extension Development Host smoke remains pending.
+- #13 removes the Compare Results Actions column and its per-row overflow button. The existing
+  mouse and keyboard context menu remains the single action surface. Quality, full tests, graph
+  refresh, and whitespace validation passed; manual layout/accessibility smoke remains pending.
+- #14 extracts shared delayed-action scheduling for reference tooltips and Flow Governance
+  submenus while preserving their established delay values and focus cancellation behavior.
+  Quality passed; final full-test and graph-refresh evidence is pending.
 
 - #4 now normalizes documented GitLab.com SSH host aliases to canonical GitLab.com commit and
   Merge Request URLs. HTTPS remains restricted to the literal hosted domain; GitLab Self-Managed
