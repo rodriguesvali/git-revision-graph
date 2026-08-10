@@ -63,25 +63,24 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /No files match/);
 });
 
-test('renders a dense compare review list with visible and contextual actions', () => {
+test('renders a dense compare review list with contextual actions', () => {
   const html = renderCompareResultsWebviewHtml();
 
   assert.match(html, /class="list-header"/);
   assert.match(html, /--compare-row-hover: color-mix\(\s*in srgb,\s*var\(--vscode-list-hoverBackground, var\(--vscode-editorHoverWidget-background\)\) 86%,\s*var\(--vscode-list-inactiveSelectionBackground, transparent\)\s*\);/s);
   assert.match(html, /--compare-row-hover-accent: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 44%, transparent\);/);
   assert.match(html, /--compare-menu-item-hover: color-mix\(in srgb, var\(--vscode-focusBorder, #3794ff\) 12%, transparent\);/);
-  assert.match(html, /grid-template-columns: 88px minmax\(180px, 1\.4fr\) minmax\(120px, 0\.8fr\) 116px;/);
+  assert.match(html, /grid-template-columns: 88px minmax\(180px, 1\.4fr\) minmax\(120px, 0\.8fr\);/);
   assert.match(html, /class="status-badge"/);
   assert.match(html, /class="status-dot"/);
   assert.match(html, /class="file-name"/);
   assert.match(html, /class="folder-cell"/);
   assert.match(html, /class="rename-path"/);
   assert.match(html, /item\.originalPath \+ ' → ' \+ item\.path/);
-  assert.match(html, /data-row-action="menu"/);
-  assert.doesNotMatch(html, /data-row-action="base"/);
-  assert.match(html, /class="actions-column">Actions<\/div>/);
-  assert.match(html, /\.actions-cell \{[\s\S]*?justify-content: center;/);
-  assert.match(html, /\.actions-column \{\s*text-align: center;/);
+  assert.doesNotMatch(html, /data-row-action=/);
+  assert.doesNotMatch(html, /class="actions-column">Actions<\/div>/);
+  assert.doesNotMatch(html, /\.actions-cell \{/);
+  assert.doesNotMatch(html, /\.actions-column \{/);
   assert.match(html, /content\.addEventListener\('click'/);
   assert.match(html, /unifiedDiffButton\.addEventListener\('click'/);
   assert.match(html, /message\.type === 'unifiedDiffProgress'/);

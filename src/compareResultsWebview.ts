@@ -158,27 +158,6 @@ export function renderCompareResultsWebviewHtml(): string {
     });
 
     content.addEventListener('click', (event) => {
-      const actionButton = event.target?.closest?.('[data-row-action]');
-      const action = actionButton?.getAttribute('data-row-action');
-      const actionItemId = actionButton?.getAttribute('data-item-id');
-      if (action && actionItemId) {
-        event.preventDefault();
-        event.stopPropagation();
-        resetDoubleClickTracking();
-        if (action === 'menu') {
-          const item = getItemById(actionItemId);
-          if (item) {
-            selectedItemIds = [actionItemId];
-            selectionAnchorItemId = actionItemId;
-            render();
-            openContextMenu([item], event.clientX, event.clientY);
-          }
-          return;
-        }
-        postSingleAction(action, actionItemId);
-        return;
-      }
-
       const target = event.target?.closest?.('[data-item-id]');
       const itemId = target?.getAttribute('data-item-id');
       if (!itemId) {
@@ -390,7 +369,6 @@ export function renderCompareResultsWebviewHtml(): string {
         + '  <div>Status</div>'
         + '  <div>File</div>'
         + '  <div class="folder-column">Folder</div>'
-        + '  <div class="actions-column">Actions</div>'
         + '</div>'
         + '<div class="list" role="listbox" aria-multiselectable="true">' + filteredItems.map((item) => {
         const isSelected = selectedItemIds.includes(item.id);
@@ -418,9 +396,6 @@ export function renderCompareResultsWebviewHtml(): string {
           + renameLabel
           + '  </div>'
           + '  <div class="folder-cell" title="' + escapeHtml(item.directory || '.') + '">' + escapeHtml(item.directory || '.') + '</div>'
-          + '  <div class="actions-cell">'
-          + '    <button class="row-action more" type="button" data-row-action="menu" data-item-id="' + escapeHtml(item.id) + '" title="More actions" aria-label="More actions">…</button>'
-          + '  </div>'
           + '</div>';
       }).join('') + '</div>';
     }

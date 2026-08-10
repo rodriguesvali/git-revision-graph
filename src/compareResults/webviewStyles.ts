@@ -192,7 +192,7 @@ export function renderCompareResultsWebviewStyles(): string {
     .list-header,
     .row {
       display: grid;
-      grid-template-columns: 88px minmax(180px, 1.4fr) minmax(120px, 0.8fr) 116px;
+      grid-template-columns: 88px minmax(180px, 1.4fr) minmax(120px, 0.8fr);
       gap: 10px;
       align-items: center;
       min-width: 0;
@@ -262,8 +262,7 @@ export function renderCompareResultsWebviewStyles(): string {
     }
     .status-cell,
     .file-cell,
-    .folder-cell,
-    .actions-cell {
+    .folder-cell {
       min-width: 0;
     }
     .status-badge {
@@ -314,37 +313,6 @@ export function renderCompareResultsWebviewStyles(): string {
       font-size: 10.5px;
       color: var(--vscode-descriptionForeground);
     }
-    .actions-cell {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .actions-column {
-      text-align: center;
-    }
-    .row-action {
-      min-height: 24px;
-      padding: 3px 7px;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      color: var(--vscode-foreground);
-      background: transparent;
-      font: inherit;
-      font-size: 10.5px;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .row-action:hover,
-    .row-action:focus-visible {
-      outline: none;
-      border-color: var(--vscode-focusBorder);
-      background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
-    }
-    .row-action.more {
-      width: 24px;
-      padding: 0;
-      font-size: 15px;
-    }
     .empty-state {
       padding: 22px 16px 18px;
       color: var(--vscode-descriptionForeground);
@@ -380,7 +348,7 @@ export function renderCompareResultsWebviewStyles(): string {
       }
       .list-header,
       .row {
-        grid-template-columns: 78px minmax(150px, 1fr) 100px;
+        grid-template-columns: 78px minmax(150px, 1fr);
       }
       .list-header .folder-column,
       .folder-cell {
