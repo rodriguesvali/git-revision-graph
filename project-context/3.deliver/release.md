@@ -1,12 +1,12 @@
 # Release Readiness
 
-Status: `1.6.6` open; release validation pending
+Status: `1.6.6` published by maintainer confirmation; post-publication evidence reconciliation pending
 Last consolidated: 2026-08-10
 
 ## Current State
 
 - Current package version: `1.6.6` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.4`, by maintainer confirmation on 2026-08-08.
+- Latest recorded Marketplace-published release: `1.6.6`, by maintainer confirmation on 2026-08-10.
 - Release cycle status: `1.6.6` includes Azure DevOps Pull Request handoff refinement (#12), a
   denser Compare Results layout (#13), and shared hover-intent scheduling (#14). No VSIX package,
   tag, or Marketplace publication is implied by implementation.
@@ -44,10 +44,11 @@ Last consolidated: 2026-08-10
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release: 1.6.6
+## Published Release: 1.6.6
 
-Status: Open
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-08-10
+Published: 2026-08-10 (maintainer confirmation)
 Published baseline version: `1.6.4`
 Target version: `1.6.6`
 
@@ -60,15 +61,15 @@ Target version: `1.6.6`
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.6`. |
 | Automated verification | Local gates passed; final release run pending | #12 and #13 passed quality, full tests, graph refresh, and whitespace validation. #14 passed quality; run one consolidated full test and graph refresh before packaging. |
 | Extension Development Host smoke | Pending | Validate Azure DevOps title/description copy, Compare Results context-menu actions, and tooltip/submenu hover transitions. |
-| VSIX package inspection | Pending | Requires separate maintainer approval before `npm run package:vsix`. |
-| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| VSIX package inspection | Evidence not recorded | VSIX filename, checksum, size, embedded-version inspection, and clean-profile installation evidence were not supplied. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-08-10; exact timestamp and installed-version evidence were not supplied. |
 | Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
 
 Opening record:
 
 - Version metadata was aligned to `1.6.6` on 2026-08-10.
 - The focused feature artifacts are `project-context/2.build/features/1.6.6-azure-devops-pr-handoff.md`, `project-context/2.build/features/1.6.6-compare-results-actions-column.md`, and `project-context/2.build/features/1.6.6-hover-intent-policy.md`.
-- No implementation, VSIX package, release tag, or Marketplace publication occurred while opening the cycle.
+- Marketplace publication was confirmed by the maintainer on 2026-08-10. Exact tag, VSIX, checksum, installation, and timestamp evidence remain unrecorded.
 
 Implementation record:
 
