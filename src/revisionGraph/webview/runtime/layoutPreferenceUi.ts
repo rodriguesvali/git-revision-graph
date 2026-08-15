@@ -20,7 +20,22 @@ function bindRevisionGraphLayoutPreferenceSelect(
 
 function syncRevisionGraphLayoutPreferenceSelect(
   select: HTMLSelectElement,
-  layoutPreference: RevisionGraphWebviewProjectionOptions['layoutPreference']
+  automaticOption: HTMLOptionElement,
+  layoutPreference: RevisionGraphWebviewProjectionOptions['layoutPreference'],
+  automaticLayoutProfile: RevisionGraphWebviewHostState['automaticLayoutProfile']
 ): void {
+  const automaticProfileLabel = automaticLayoutProfile === 'fast-two-layer'
+    ? 'Faster'
+    : automaticLayoutProfile === 'dfs-wide'
+      ? 'Wide Graph'
+      : automaticLayoutProfile === 'balanced'
+        ? 'Balanced'
+        : '';
+  automaticOption.textContent = automaticProfileLabel
+    ? `Automatic (${automaticProfileLabel})`
+    : 'Automatic';
+  select.title = automaticProfileLabel
+    ? `Automatic currently selects ${automaticProfileLabel}`
+    : 'Choose how commit lanes are arranged';
   select.value = layoutPreference || 'auto';
 }

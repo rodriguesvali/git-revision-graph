@@ -94,6 +94,7 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.equal(state.currentHeadUpstreamName, 'origin/main');
   assert.deepEqual(state.publishedLocalBranchNames, ['main']);
   assert.equal(state.scene.nodes.length, 1);
+  assert.equal(state.automaticLayoutProfile, 'balanced');
   assert.equal(state.references.length, 2);
   assert.equal(state.flowGovernance?.enabled, false);
   assert.equal(state.flowGovernance?.configSource, 'defaults');

@@ -56,9 +56,9 @@ Target version: `1.6.7`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
-| Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow and added the repository-file-backed Flow Governance toggle; see `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md` and `project-context/2.build/features/1.6.7-flow-governance-file-toggle.md`. |
+| Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow, added the repository-file-backed Flow Governance toggle, a selectable revision-graph layout strategy, and compact keyboard-accessible graph search. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
-| Automated verification | Complete for implementation | `npm test` passed 828 tests, including repository-file toggle creation/state coverage plus retained Flow Governance, branch-start, equalization, orchestration, message-boundary, webview behavior, hosted-provider API removal, and superseded-feature governance; build and quality checks passed. |
+| Automated verification | Complete for implementation | `npm test` passed 835 tests, including compact graph search, automatic layout-profile presentation, repository-file toggle creation/state coverage, retained Flow Governance, orchestration, message boundaries, and webview behavior; build, quality, whitespace, and CI graph benchmark gates passed. |
 | Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
 | VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
 | Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |
@@ -73,6 +73,9 @@ Opening record:
 - The deconstruction also removes the unused Pull Request URL contract and implementations from hosted Git provider adapters while retaining remote parsing and verified commit links.
 - Flow Governance now exposes an always-visible repository-file-backed checkbox. Missing config is
   treated as disabled; enabling creates the default file, and existing files persist `enabled`.
+- Revision Graph search now opens from an icon-only toolbar action or `Ctrl+F`/`Cmd+F` in a floating
+  panel, preserving active queries while recovering horizontal toolbar space. Automatic layout mode
+  identifies the adaptive profile selected for the current projection.
 
 ## Published Release: 1.6.6
 

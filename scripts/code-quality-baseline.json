@@ -6,11 +6,11 @@
   "files": {
     "src/compareResultsWebview.ts": 692,
     "src/revisionGraph/controller.ts": 756,
-    "src/revisionGraph/panel/state.ts": 685,
-    "src/revisionGraph/webview/script/bootstrap.ts": 1776,
-    "src/revisionGraph/webview/script/interactions.ts": 978,
+    "src/revisionGraph/panel/state.ts": 690,
+    "src/revisionGraph/webview/script/bootstrap.ts": 1759,
+    "src/revisionGraph/webview/script/interactions.ts": 983,
     "src/revisionGraph/webview/script/layout.ts": 510,
-    "src/revisionGraph/webview/styles.ts": 1228,
+    "src/revisionGraph/webview/styles.ts": 1178,
     "src/showLog/webviewStyles.ts": 882,
     "src/showLogView.ts": 786,
     "src/showLogWebview.ts": 1472
@@ -22,8 +22,7 @@
     "src/revisionGraph/layout/d3DagSugiyamaLayout.ts::estimateMaxLayerNodeCount#1": 16,
     "src/revisionGraph/webview/runtime/hostState.ts::isRevisionGraphWebviewHostState#1": 28,
     "src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts::syncRevisionGraphWebviewRelationshipHighlightsUi#1": 18,
-    "src/revisionGraph/webview/script/bootstrap.ts::<callback>#39": 22,
-    "src/revisionGraph/webview/script/bootstrap.ts::<callback>#40": 24,
+    "src/revisionGraph/webview/script/bootstrap.ts::<callback>#35": 22,
     "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 19,
     "src/revisionGraph/webview/shared.ts::buildDynamicVerticalGapByRow#1": 25,
     "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 29

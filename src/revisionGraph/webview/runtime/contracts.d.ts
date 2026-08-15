@@ -40,6 +40,7 @@ interface RevisionGraphWebviewHostState extends Record<string, unknown> {
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphWebviewProjectionOptions;
+  readonly automaticLayoutProfile?: Exclude<NonNullable<RevisionGraphWebviewProjectionOptions['layoutPreference']>, 'auto'>;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorNextByHash: Readonly<Record<string, string>>;
   readonly scene: RevisionGraphWebviewHostScene;

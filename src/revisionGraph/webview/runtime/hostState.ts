@@ -12,7 +12,7 @@ function isRevisionGraphWebviewHostState(value: unknown): value is RevisionGraph
     && typeof value.isWorkspaceDirty === 'boolean'
     && typeof value.hasMergeConflicts === 'boolean'
     && typeof value.hasConflictedMerge === 'boolean'
-    && isRevisionGraphWebviewRecord(value.projectionOptions)
+    && isRevisionGraphWebviewProjectionState(value.projectionOptions, value.automaticLayoutProfile)
     && isStringArray(value.mergeBlockedTargets)
     && isStringRecord(value.primaryAncestorNextByHash)
     && isRevisionGraphWebviewHostScene(value.scene)
@@ -26,6 +26,14 @@ function isRevisionGraphWebviewHostState(value: unknown): value is RevisionGraph
     && typeof value.loading === 'boolean'
     && isOptionalString(value.loadingLabel)
     && isOptionalString(value.errorMessage);
+}
+
+function isRevisionGraphWebviewProjectionState(options: unknown, automaticProfile: unknown): boolean {
+  return isRevisionGraphWebviewRecord(options) && isOptionalRevisionGraphLayoutProfile(automaticProfile);
+}
+
+function isOptionalRevisionGraphLayoutProfile(value: unknown): boolean {
+  return value === undefined || value === 'balanced' || value === 'fast-two-layer' || value === 'dfs-wide';
 }
 
 function isRevisionGraphWebviewHostScene(value: unknown): value is RevisionGraphWebviewHostScene {

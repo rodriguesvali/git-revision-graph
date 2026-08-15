@@ -29,6 +29,7 @@ interface RevisionGraphWebviewDom {
   readonly syncButton: HTMLButtonElement;
   readonly scopeSelect: HTMLSelectElement;
   readonly layoutSelect: HTMLSelectElement;
+  readonly layoutAutomaticOption: HTMLOptionElement;
   readonly viewOptionsButton: HTMLButtonElement;
   readonly viewOptionsMenu: HTMLDivElement;
   readonly showTagsToggle: HTMLInputElement;
@@ -38,11 +39,14 @@ interface RevisionGraphWebviewDom {
   readonly showMinimapToggle: HTMLInputElement;
   readonly flowGovernanceOptions: HTMLDivElement;
   readonly flowGovernanceEnabledToggle: HTMLInputElement;
+  readonly searchButton: HTMLButtonElement;
+  readonly searchButtonBadge: HTMLSpanElement;
+  readonly searchPanel: HTMLDivElement;
   readonly searchInput: HTMLInputElement;
   readonly searchResultBadge: HTMLSpanElement;
   readonly searchPrevButton: HTMLButtonElement;
   readonly searchNextButton: HTMLButtonElement;
-  readonly searchClearButton: HTMLButtonElement;
+  readonly searchCloseButton: HTMLButtonElement;
   readonly rangeFilter: HTMLDivElement;
   readonly rangeFilterLabel: HTMLSpanElement;
   readonly rangeFilterClearButton: HTMLButtonElement;
@@ -87,6 +91,7 @@ function createRevisionGraphWebviewDom(): RevisionGraphWebviewDom {
     syncButton: requireRevisionGraphElement<HTMLButtonElement>('syncButton'),
     scopeSelect: requireRevisionGraphElement<HTMLSelectElement>('scopeSelect'),
     layoutSelect: requireRevisionGraphElement<HTMLSelectElement>('layoutSelect'),
+    layoutAutomaticOption: requireRevisionGraphElement<HTMLOptionElement>('layoutAutomaticOption'),
     viewOptionsButton: requireRevisionGraphElement<HTMLButtonElement>('viewOptionsButton'),
     viewOptionsMenu: requireRevisionGraphElement<HTMLDivElement>('viewOptionsMenu'),
     showTagsToggle: requireRevisionGraphElement<HTMLInputElement>('showTagsToggle'),
@@ -96,11 +101,14 @@ function createRevisionGraphWebviewDom(): RevisionGraphWebviewDom {
     showMinimapToggle: requireRevisionGraphElement<HTMLInputElement>('showMinimapToggle'),
     flowGovernanceOptions: requireRevisionGraphElement<HTMLDivElement>('flowGovernanceOptions'),
     flowGovernanceEnabledToggle: requireRevisionGraphElement<HTMLInputElement>('flowGovernanceEnabledToggle'),
+    searchButton: requireRevisionGraphElement<HTMLButtonElement>('searchButton'),
+    searchButtonBadge: requireRevisionGraphElement<HTMLSpanElement>('searchButtonBadge'),
+    searchPanel: requireRevisionGraphElement<HTMLDivElement>('searchPanel'),
     searchInput: requireRevisionGraphElement<HTMLInputElement>('searchInput'),
     searchResultBadge: requireRevisionGraphElement<HTMLSpanElement>('searchResultBadge'),
     searchPrevButton: requireRevisionGraphElement<HTMLButtonElement>('searchPrevButton'),
     searchNextButton: requireRevisionGraphElement<HTMLButtonElement>('searchNextButton'),
-    searchClearButton: requireRevisionGraphElement<HTMLButtonElement>('searchClearButton'),
+    searchCloseButton: requireRevisionGraphElement<HTMLButtonElement>('searchCloseButton'),
     rangeFilter: requireRevisionGraphElement<HTMLDivElement>('rangeFilter'),
     rangeFilterLabel: requireRevisionGraphElement<HTMLSpanElement>('rangeFilterLabel'),
     rangeFilterClearButton: requireRevisionGraphElement<HTMLButtonElement>('rangeFilterClearButton'),

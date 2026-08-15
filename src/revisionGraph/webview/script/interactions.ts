@@ -134,13 +134,17 @@
       const normalizedQuery = getNormalizedSearchQuery();
       syncRevisionGraphWebviewSearchUi(
         {
+          button: searchButton,
+          buttonBadge: searchButtonBadge,
+          panel: searchPanel,
           input: searchInput,
           resultBadge: searchResultBadge,
           previousButton: searchPrevButton,
           nextButton: searchNextButton,
-          clearButton: searchClearButton
+          closeButton: searchCloseButton
         },
         {
+          isPanelOpen: searchPanelController.isOpen(),
           query: searchQuery,
           isQueryActive: normalizedQuery.length > 0,
           resultCount: searchResultHashes.length,
@@ -880,10 +884,11 @@
         showStashesToggle,
         showMergeCommitsToggle,
         flowGovernanceEnabledToggle,
+        searchButton,
         searchInput,
         searchPrevButton,
         searchNextButton,
-        searchClearButton,
+        searchCloseButton,
         rangeFilterClearButton,
         descendantFilterClearButton,
         reloadButton,

@@ -10,11 +10,12 @@ const VIEWPORT_PADDING_LEFT = 18;
       graphMinimap, minimapSvg, minimapEdgeLayer, minimapNodeLayer, minimapViewport,
       minimapZoomOutButton, minimapZoomResetButton, minimapZoomInButton,
       loadingOverlay, loadingMessage, reloadButton, reloadMenuButton, fetchAllButton,
-      pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, layoutSelect, viewOptionsButton,
+      pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, layoutSelect, layoutAutomaticOption, viewOptionsButton,
       viewOptionsMenu, showTagsToggle, showRemoteBranchesToggle, showStashesToggle,
       showMergeCommitsToggle, showMinimapToggle, flowGovernanceOptions,
-      flowGovernanceEnabledToggle, searchInput, searchResultBadge, searchPrevButton,
-      searchNextButton, searchClearButton, rangeFilter, rangeFilterLabel,
+      flowGovernanceEnabledToggle, searchButton, searchButtonBadge, searchPanel,
+      searchInput, searchResultBadge, searchPrevButton,
+      searchNextButton, searchCloseButton, rangeFilter, rangeFilterLabel,
       rangeFilterClearButton, descendantFilter, descendantFilterLabel,
       descendantFilterClearButton, centerHeadButton, zoomOutButton, zoomResetButton, zoomInButton
     } = createRevisionGraphWebviewDom();
@@ -117,6 +118,9 @@ const VIEWPORT_PADDING_LEFT = 18;
     let searchQuery = '';
     let searchResultHashes: string[] = [];
     let activeSearchResultIndex = -1;
+    const searchPanelController = createRevisionGraphSearchPanelController(
+      searchButton, searchInput, syncSearchUi
+    );
     let toolbarBusy = false;
     let remoteTagPublicationState = new Map<string, string>();
     let pendingRemoteTagStateRequests = new Set<string>();
@@ -239,26 +243,12 @@ const VIEWPORT_PADDING_LEFT = 18;
         updateFlowGovernanceOptions({ enabled: flowGovernanceEnabledToggle.checked });
       });
     }
-    if (searchInput) {
-      searchInput.addEventListener('input', () => {
-        setSearchQuery(searchInput.value);
-      });
-    }
-    if (searchPrevButton) {
-      searchPrevButton.addEventListener('click', () => {
-        focusPreviousSearchResult();
-      });
-    }
-    if (searchNextButton) {
-      searchNextButton.addEventListener('click', () => {
-        focusNextSearchResult();
-      });
-    }
-    if (searchClearButton) {
-      searchClearButton.addEventListener('click', () => {
-        clearSearchQuery(true);
-      });
-    }
+    bindRevisionGraphSearchPanelEvents({
+      button: searchButton, input: searchInput, previousButton: searchPrevButton,
+      nextButton: searchNextButton, closeButton: searchCloseButton,
+      controller: searchPanelController, setQuery: setSearchQuery,
+      focusPrevious: focusPreviousSearchResult, focusNext: focusNextSearchResult
+    });
     if (rangeFilterClearButton) {
       rangeFilterClearButton.addEventListener('click', () => {
         postMessageWithLoading(
@@ -439,6 +429,9 @@ const VIEWPORT_PADDING_LEFT = 18;
       if (!contextMenu.contains(target)) {
         closeContextMenu();
       }
+      closeRevisionGraphSearchPanelAfterOutsideClick(
+        target, searchPanel, searchButton, searchPanelController, getNormalizedSearchQuery().length > 0
+      );
       if (
         viewOptionsMenu &&
         !viewOptionsMenu.hidden &&
@@ -470,30 +463,15 @@ const VIEWPORT_PADDING_LEFT = 18;
     window.addEventListener('blur', closePushModeMenu);
     window.addEventListener('keydown', (event) => {
       const isSearchInputFocused = document.activeElement === searchInput;
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f') {
-        event.preventDefault();
-        focusSearchInput(true);
+      if (handleRevisionGraphSearchKeyboardEvent(event, {
+        isInputFocused: isSearchInputFocused,
+        hasQuery: getNormalizedSearchQuery().length > 0,
+        controller: searchPanelController,
+        focusPrevious: focusPreviousSearchResult,
+        focusNext: focusNextSearchResult,
+        clearQuery: () => clearSearchQuery(true)
+      })) {
         return;
-      }
-      if (isSearchInputFocused) {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          if (event.shiftKey) {
-            focusPreviousSearchResult();
-          } else {
-            focusNextSearchResult();
-          }
-          return;
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          if (getNormalizedSearchQuery().length > 0) {
-            clearSearchQuery(true);
-          } else {
-            searchInput.blur();
-          }
-          return;
-        }
       }
       if (event.altKey && !event.ctrlKey && !event.metaKey) {
         if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') {
@@ -1109,7 +1087,12 @@ const VIEWPORT_PADDING_LEFT = 18;
       if (scopeSelect) {
         scopeSelect.value = state.projectionOptions.refScope || 'all';
       }
-      syncRevisionGraphLayoutPreferenceSelect(layoutSelect, state.projectionOptions.layoutPreference);
+      syncRevisionGraphLayoutPreferenceSelect(
+        layoutSelect,
+        layoutAutomaticOption,
+        state.projectionOptions.layoutPreference,
+        state.automaticLayoutProfile
+      );
       if (showTagsToggle) {
         showTagsToggle.checked = !!state.projectionOptions.showTags;
       }

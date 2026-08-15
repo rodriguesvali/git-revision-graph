@@ -47,6 +47,7 @@ export type {
 } from './revisionGraph/model/sceneTypes';
 export { buildCommitGraph, getRevisionGraphGitFormat, parseDecorationRefs, parseRevisionGraphLog };
 export { countMajorOperationsVisibleNodes, projectMajorOperationsGraph };
+export { getProjectedGraphLayoutProfile };
 
 interface CommitLaneLayout {
   readonly hash: string;

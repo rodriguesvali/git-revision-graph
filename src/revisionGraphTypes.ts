@@ -38,6 +38,7 @@ export interface RevisionGraphViewState {
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
+  readonly automaticLayoutProfile?: Exclude<RevisionGraphProjectionOptions['layoutPreference'], 'auto'>;
   readonly mergeBlockedTargets: readonly string[];
   readonly primaryAncestorNextByHash: Readonly<Record<string, string>>;
   readonly scene: RevisionGraphScene;

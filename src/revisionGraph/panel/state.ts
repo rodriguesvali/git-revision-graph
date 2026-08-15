@@ -8,6 +8,7 @@ import {
   buildPrimaryAncestorNextByHash,
   buildRevisionGraphScene,
   CommitGraph,
+  getProjectedGraphLayoutProfile,
   projectMajorOperationsGraph,
   RevisionGraphRef
 } from '../../revisionGraphData';
@@ -156,6 +157,7 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
 ): Promise<RevisionGraphViewState> {
   const projectionStartedAt = nowMs();
   const projection = projectMajorOperationsGraph(snapshot.graph, projectionOptions);
+  const automaticLayoutProfile = projectionOptions.layoutPreference === 'auto' ? getProjectedGraphLayoutProfile(projection) : undefined;
   traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
   const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace, signal);
   const ancestorsStartedAt = nowMs();
@@ -172,6 +174,7 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
     backend,
     snapshot,
     scene,
+    automaticLayoutProfile,
     primaryAncestorNextByHash,
     signal,
     trace,
@@ -354,6 +357,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
   backend: RevisionGraphStateBackend,
   snapshot: RevisionGraphSnapshot,
   scene: RevisionGraphScene,
+  automaticLayoutProfile: RevisionGraphViewState['automaticLayoutProfile'],
   primaryAncestorNextByHash: NonNullable<RevisionGraphViewState['primaryAncestorNextByHash']>,
   signal?: AbortSignal,
   trace?: RevisionGraphLoadTraceSink,
@@ -399,6 +403,7 @@ async function buildReadyRevisionGraphViewStateFromParts(
     hasMergeConflicts: hasMergeConflicts(repository),
     hasConflictedMerge: hasConflictedMerge(repository),
     projectionOptions,
+    automaticLayoutProfile,
     mergeBlockedTargets,
     primaryAncestorNextByHash,
     scene,

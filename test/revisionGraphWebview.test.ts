@@ -103,7 +103,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /<option value="remoteHead">origin\/HEAD<\/option>/);
   assert.match(html, /<select id="layoutSelect"[^>]*>/);
-  assert.match(html, /<option value="auto">Automatic<\/option>/);
+  assert.match(html, /<option id="layoutAutomaticOption" value="auto">Automatic<\/option>/);
   assert.match(html, /<option value="balanced">Balanced<\/option>/);
   assert.match(html, /<option value="fast-two-layer">Faster<\/option>/);
   assert.match(html, /<option value="dfs-wide">Wide Graph<\/option>/);
@@ -133,15 +133,17 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.doesNotMatch(html, /showCurrentBranchDescendantsToggle/);
   assert.doesNotMatch(html, /Show Current Branch Descendants/);
   assert.match(html, /id="searchInput"/);
-  assert.match(html, /<div class="search-controls toolbar-action-slot" aria-label="Search the loaded revision graph">/);
+  assert.match(html, /id="searchButton"[\s\S]*?aria-controls="searchPanel"/);
+  assert.match(html, /id="searchButtonBadge"[^>]*hidden/);
+  assert.match(html, /id="searchPanel" class="search-panel" role="search"[^>]*hidden/);
   assert.match(html, /Find in graph\.\.\./);
   assert.match(html, /id="searchResultBadge"/);
   assert.match(html, /id="searchPrevButton"/);
   assert.match(html, /id="searchNextButton"/);
-  assert.match(html, /id="searchClearButton"/);
+  assert.match(html, /id="searchCloseButton"/);
   assert.match(html, /id="searchPrevButton"[\s\S]*?data-icon="arrow-up"/);
   assert.match(html, /id="searchNextButton"[\s\S]*?data-icon="arrow-down"/);
-  assert.match(html, /id="searchClearButton"[\s\S]*?data-icon="close"/);
+  assert.match(html, /id="searchCloseButton"[\s\S]*?data-icon="close"/);
   assert.match(html, /id="rangeFilter"/);
   assert.match(html, /id="rangeFilter"[\s\S]*?role="group"[\s\S]*?aria-label="Focus Range active"/);
   assert.match(html, /class="range-filter-icon"[\s\S]*?data-icon="focus-range"/);
@@ -373,7 +375,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /syncRevisionGraphWebviewBasicToolbarUi\(\s*\{ scopeSelect, viewOptionsButton, reloadButton, reloadMenuButton, fetchAllButton \}/s);
   assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarUi\(/);
-  assert.match(html, /searchClearButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
+  assert.match(html, /searchButton,\s*searchInput,\s*searchPrevButton,\s*searchNextButton,\s*searchCloseButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
   assert.match(html, /zoomOutButton,\s*zoomResetButton,\s*zoomInButton,/s);
   assert.match(html, /minimapZoomOutButton,\s*minimapZoomResetButton,\s*minimapZoomInButton,/s);
   assert.doesNotMatch(html, /TOOLBAR_LONG_PRESS_DELAY_MS/);
@@ -1206,14 +1208,12 @@ test('keeps full minimap and duplicate search refreshes out of virtual viewport 
 test('renders client-side graph search controls and runtime handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
-  assert.match(html, /searchInput\.addEventListener\('input'/);
+  assert.match(html, /bindRevisionGraphSearchPanelEvents\(\{/);
   assert.match(html, /showRemoteBranchesToggle\.addEventListener\('change'/);
   assert.match(html, /showStashesToggle\.addEventListener\('change'/);
   assert.match(html, /showMergeCommitsToggle\.addEventListener\('change'/);
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
-  assert.match(html, /searchPrevButton\.addEventListener\('click'/);
-  assert.match(html, /searchNextButton\.addEventListener\('click'/);
-  assert.match(html, /searchClearButton\.addEventListener\('click'/);
+  assert.match(html, /function handleRevisionGraphSearchKeyboardEvent\(/);
   assert.match(html, /rangeFilterClearButton\.addEventListener\('click'/);
   assert.match(html, /createRevisionGraphProjectionOptionsMessage\(\{ revisionRange: null \}\)/);
   assert.match(html, /'Exiting Focus Range\.\.\.'/);
@@ -1227,9 +1227,63 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /function focusNextSearchResult\(\)/);
   assert.match(html, /function focusPreviousSearchResult\(\)/);
   assert.match(html, /function focusSearchInput\(selectText = false\)/);
+  assert.match(html, /createRevisionGraphSearchPanelController\(/);
   assert.match(html, /event\.key\.toLowerCase\(\) === 'f'/);
   assert.match(html, /currentState\.scene\.nodes/);
   assert.match(html, /centerNodeInViewport\(activeHash\)/);
+});
+
+test('opens the floating graph search from its button and keyboard while preserving active queries', () => {
+  const runtime = createWebviewRuntime();
+  const button = runtime.elements.get('searchButton');
+  const panel = runtime.elements.get('searchPanel');
+  const input = runtime.elements.get('searchInput');
+  const closeButton = runtime.elements.get('searchCloseButton');
+  assert.ok(button && panel && input && closeButton);
+
+  button.listeners.click[0]();
+  assert.equal(panel.hidden, false);
+  assert.equal(button.getAttribute('aria-expanded'), 'true');
+
+  input.value = 'release';
+  input.listeners.input[0]();
+  closeButton.listeners.click[0]();
+  assert.equal(panel.hidden, true);
+  assert.equal(input.value, 'release');
+
+  let prevented = false;
+  runtime.windowListeners.keydown[0]({
+    key: 'f',
+    ctrlKey: true,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    preventDefault: () => { prevented = true; }
+  });
+  assert.equal(prevented, true);
+  assert.equal(panel.hidden, false);
+  assert.equal(input.value, 'release');
+
+  runtime.windowListeners.keydown[0]({
+    key: 'Escape',
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    preventDefault: () => {}
+  });
+  assert.equal(input.value, '');
+  assert.equal(panel.hidden, false);
+
+  runtime.windowListeners.keydown[0]({
+    key: 'Escape',
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    shiftKey: false,
+    preventDefault: () => {}
+  });
+  assert.equal(panel.hidden, true);
 });
 
 test('presents the active Focus Range as a descriptive toolbar state', () => {
@@ -1576,7 +1630,21 @@ test('posts Flow Governance option updates from the webview runtime', () => {
 test('posts and synchronizes revision graph layout preferences from the webview runtime', () => {
   const runtime = createWebviewRuntime();
   const layoutSelect = runtime.elements.get('layoutSelect');
-  assert.ok(layoutSelect);
+  const automaticOption = runtime.elements.get('layoutAutomaticOption');
+  assert.ok(layoutSelect && automaticOption);
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      automaticLayoutProfile: 'fast-two-layer',
+      projectionOptions: {
+        ...createReadyGraphState().projectionOptions,
+        layoutPreference: 'auto'
+      }
+    })
+  });
+  assert.equal(automaticOption.textContent, 'Automatic (Faster)');
+  assert.equal(layoutSelect.title, 'Automatic currently selects Faster');
 
   runtime.context.handleHostMessage({
     type: 'update-state',
@@ -2025,15 +2093,19 @@ test('finds visible revision graph search results through the typed query module
 test('synchronizes revision graph search controls through the typed DOM adapter', () => {
   const runtime = createWebviewRuntime();
   const input = runtime.elements.get('searchInput');
+  const button = runtime.elements.get('searchButton');
+  const buttonBadge = runtime.elements.get('searchButtonBadge');
+  const panel = runtime.elements.get('searchPanel');
   const resultBadge = runtime.elements.get('searchResultBadge');
   const previousButton = runtime.elements.get('searchPrevButton');
   const nextButton = runtime.elements.get('searchNextButton');
-  const clearButton = runtime.elements.get('searchClearButton');
-  assert.ok(input && resultBadge && previousButton && nextButton && clearButton);
+  const closeButton = runtime.elements.get('searchCloseButton');
+  assert.ok(button && buttonBadge && panel && input && resultBadge && previousButton && nextButton && closeButton);
 
   runtime.context.syncRevisionGraphWebviewSearchUi(
-    { input, resultBadge, previousButton, nextButton, clearButton },
+    { button, buttonBadge, panel, input, resultBadge, previousButton, nextButton, closeButton },
     {
+      isPanelOpen: true,
       query: 'release',
       isQueryActive: true,
       resultCount: 2,
@@ -2042,15 +2114,20 @@ test('synchronizes revision graph search controls through the typed DOM adapter'
     }
   );
   assert.equal(input.value, 'release');
+  assert.equal(panel.hidden, false);
+  assert.equal(button.getAttribute('aria-expanded'), 'true');
+  assert.equal(buttonBadge.textContent, '2/2');
+  assert.equal(buttonBadge.hidden, false);
   assert.equal(resultBadge.textContent, '2/2');
   assert.equal(previousButton.disabled, false);
   assert.equal(nextButton.disabled, false);
-  assert.equal(clearButton.disabled, false);
+  assert.equal(closeButton.disabled, false);
   assert.equal(input.disabled, false);
 
   runtime.context.syncRevisionGraphWebviewSearchUi(
-    { input, resultBadge, previousButton, nextButton, clearButton },
+    { button, buttonBadge, panel, input, resultBadge, previousButton, nextButton, closeButton },
     {
+      isPanelOpen: false,
       query: '',
       isQueryActive: false,
       resultCount: 0,
@@ -2059,9 +2136,12 @@ test('synchronizes revision graph search controls through the typed DOM adapter'
     }
   );
   assert.equal(resultBadge.textContent, '0 results');
+  assert.equal(panel.hidden, true);
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+  assert.equal(buttonBadge.hidden, true);
   assert.equal(previousButton.disabled, true);
   assert.equal(nextButton.disabled, true);
-  assert.equal(clearButton.disabled, true);
+  assert.equal(closeButton.disabled, true);
   assert.equal(input.disabled, true);
 });
 
@@ -3235,9 +3315,15 @@ function createWebviewRuntime() {
       return false;
     }
 
-    focus(): void {}
+    focus(): void {
+      (document as any).activeElement = this;
+    }
 
-    blur(): void {}
+    blur(): void {
+      if ((document as any).activeElement === this) {
+        (document as any).activeElement = null;
+      }
+    }
 
     select(): void {}
 
@@ -3290,6 +3376,7 @@ function createWebviewRuntime() {
     'syncButton',
     'scopeSelect',
     'layoutSelect',
+    'layoutAutomaticOption',
     'viewOptions',
     'viewOptionsButton',
     'viewOptionsMenu',
@@ -3300,11 +3387,14 @@ function createWebviewRuntime() {
     'showMinimapToggle',
     'flowGovernanceOptions',
     'flowGovernanceEnabledToggle',
+    'searchButton',
+    'searchButtonBadge',
+    'searchPanel',
     'searchInput',
     'searchResultBadge',
     'searchPrevButton',
     'searchNextButton',
-    'searchClearButton',
+    'searchCloseButton',
     'rangeFilter',
     'rangeFilterLabel',
     'rangeFilterClearButton',
@@ -3338,8 +3428,14 @@ function createWebviewRuntime() {
       return new MockElement(tagName);
     }
   };
+  const windowListeners: Record<string, Array<(...args: any[]) => unknown>> = {};
   const windowObject = {
-    addEventListener: () => {}
+    addEventListener(type: string, listener: (...args: any[]) => unknown) {
+      if (!windowListeners[type]) {
+        windowListeners[type] = [];
+      }
+      windowListeners[type].push(listener);
+    }
   };
   const vscodeState: Record<string, unknown> = {};
   const postedMessages: any[] = [];
@@ -3374,6 +3470,7 @@ function createWebviewRuntime() {
   return {
     context: runtimeApi,
     elements,
-    postedMessages
+    postedMessages,
+    windowListeners
   };
 }

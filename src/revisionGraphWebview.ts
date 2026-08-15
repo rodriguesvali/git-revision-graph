@@ -105,6 +105,13 @@ function renderToolbarIcon(iconName: ToolbarIconName): string {
   }
 }
 
+function renderSearchToolbarIcon(): string {
+  return `<svg class="toolbar-icon" data-icon="search" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <circle cx="6.8" cy="6.8" r="3.8"></circle>
+      <path d="m9.7 9.7 3.1 3.1"></path>
+    </svg>`;
+}
+
 export interface RevisionGraphWebviewAssets {
   readonly runtimeUri: string;
   readonly scriptSource: string;
@@ -141,7 +148,7 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
     <label for="layoutSelect">
       <span class="control-caption">Layout</span>
       <select id="layoutSelect" title="Choose how commit lanes are arranged">
-        <option value="auto">Automatic</option>
+        <option id="layoutAutomaticOption" value="auto">Automatic</option>
         <option value="balanced">Balanced</option>
         <option value="fast-two-layer">Faster</option>
         <option value="dfs-wide">Wide Graph</option>
@@ -189,9 +196,20 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
         </div>
       </div>
     </div>
-    <div class="search-controls toolbar-action-slot" aria-label="Search the loaded revision graph">
+    <button
+      id="searchButton"
+      class="toolbar-button icon-only search-button"
+      type="button"
+      title="Find in Graph (Ctrl+F)"
+      aria-label="Find in Graph"
+      aria-expanded="false"
+      aria-controls="searchPanel"
+    >
+      ${renderSearchToolbarIcon()}
+      <span id="searchButtonBadge" class="search-button-badge" aria-hidden="true" hidden></span>
+    </button>
+    <div id="searchPanel" class="search-panel" role="search" aria-label="Search the loaded revision graph" hidden>
       <label class="search-field" for="searchInput">
-        <span class="control-caption">Find</span>
         <input
           id="searchInput"
           class="search-input"
@@ -219,11 +237,11 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
         aria-label="Next Search Result"
       >${renderToolbarIcon('arrow-down')}</button>
       <button
-        id="searchClearButton"
+        id="searchCloseButton"
         class="toolbar-button icon-only"
         type="button"
-        title="Clear Search"
-        aria-label="Clear Search"
+        title="Close Search (Escape)"
+        aria-label="Close Search"
       >${renderToolbarIcon('close')}</button>
     </div>
     <div class="toolbar-actions" aria-label="Graph actions">
