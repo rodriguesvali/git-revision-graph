@@ -116,10 +116,12 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - Enables graph loading diagnostics in the `Git Revision Graph` output channel.
 - `gitRevisionGraph.graphCommandTimeoutMs`
   - Controls the timeout for the revision graph `git log` command. The default is `60000` ms, with supported values from `5000` to `300000` ms.
-- `gitRevisionGraph.flowGovernance.enabled`
-  - Enables Flow Governance metadata and Flow View defaults when a repository flow file is not present. The default is `false`.
 - `gitRevisionGraph.flowGovernance.configPath`
   - Repository-relative path for the Flow Governance configuration file. The default is `.git-revision-graph-flow.json`.
+
+The graph's `View` menu always shows `Flow Governance`. Its checkbox reflects the repository flow
+file: a missing file is disabled, while a present valid file uses its `enabled` value. Enabling the
+checkbox creates the default file when needed; subsequent toggles persist `enabled` in that file.
 
 From a branch classified as `feature`, Flow Governance offers `Start New Package`. The package is
 created from an exactly synchronized feature and can then consolidate and validate its task

@@ -22,7 +22,6 @@ export interface FlowConfigV1 {
 }
 
 export interface FlowGovernanceSettings {
-  readonly enabled?: boolean;
   readonly configPath?: string;
 }
 

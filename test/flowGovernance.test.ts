@@ -482,9 +482,7 @@ test('Flow Governance resolves repository file before fallback settings', async 
     mainBranches: ['production']
   }));
 
-  const result = await resolveFlowConfigForRepository(root, {
-    enabled: false
-  });
+  const result = await resolveFlowConfigForRepository(root);
 
   assert.equal(result.ok, true);
   assert.equal(result.source, 'repository');
@@ -827,24 +825,40 @@ test('Flow Governance rejects symbolic-link configuration ancestors without modi
   }
 });
 
-test('Flow Governance uses fallback settings when repository file is missing', async () => {
+test('Flow Governance is disabled when the repository file is missing', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
 
   const result = await resolveFlowConfigForRepository(root, {
-    enabled: true,
     configPath: '.missing-flow.json'
   });
 
   assert.equal(result.ok, true);
   assert.equal(result.source, 'workspace');
-  assert.equal(result.config.enabled, true);
+  assert.equal(result.config.enabled, false);
+});
+
+test('enabling Flow Governance creates the default repository config when missing', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-create-'));
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+
+  try {
+    const result = await updateRepositoryFlowConfigOptions(root, undefined, { enabled: true });
+
+    assert.equal(result.ok, true);
+    const persisted = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
+    assert.equal(persisted.schemaVersion, 1);
+    assert.equal(persisted.enabled, true);
+    assert.deepEqual(persisted.mainBranches, ['main', 'master']);
+    assert.equal(typeof persisted.patterns, 'object');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test('Flow Governance rejects config paths outside the repository', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-'));
 
   const result = await resolveFlowConfigForRepository(root, {
-    enabled: true,
     configPath: '../outside.json'
   });
 

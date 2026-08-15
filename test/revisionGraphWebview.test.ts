@@ -1440,7 +1440,7 @@ test('renders Flow Governance badges without hiding branch refs in the webview',
   assert.match(nodeLayer.innerHTML, /sync\/generated/);
 });
 
-test('hides Flow Governance controls when repository config is invalid', () => {
+test('keeps Flow Governance controls visible when repository config is invalid', () => {
   const runtime = createWebviewRuntime();
 
   runtime.context.handleHostMessage({
@@ -1465,7 +1465,10 @@ test('hides Flow Governance controls when repository config is invalid', () => {
   const flowOptions = runtime.elements.get('flowGovernanceOptions');
   assert.ok(flowOptions);
 
-  assert.equal(flowOptions.hidden, true);
+  const flowGovernanceEnabledToggle = runtime.elements.get('flowGovernanceEnabledToggle');
+  assert.ok(flowGovernanceEnabledToggle);
+  assert.equal(flowOptions.hidden, false);
+  assert.equal(flowGovernanceEnabledToggle.checked, false);
 });
 
 test('keeps Flow Governance toggle visible when disabled from the webview', () => {

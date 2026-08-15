@@ -1159,16 +1159,13 @@ const VIEWPORT_PADDING_LEFT = 18;
       flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
     ) {
       const isActive = isFlowGovernanceActive(flowGovernance);
-      const canShowControls = hasFlowGovernanceState(flowGovernance) && flowGovernance.configSource !== 'invalid';
       if (flowGovernanceOptions) {
-        flowGovernanceOptions.hidden = !canShowControls;
-      }
-      if (!canShowControls) {
-        return;
+        flowGovernanceOptions.hidden = false;
       }
 
       if (flowGovernanceEnabledToggle) {
-        flowGovernanceEnabledToggle.checked = flowGovernance.enabled === true;
+        flowGovernanceEnabledToggle.checked = flowGovernance?.enabled === true;
+        flowGovernanceEnabledToggle.disabled = !hasFlowGovernanceState(flowGovernance);
       }
     }
 

@@ -17,6 +17,7 @@ import {
 } from './flowTypes';
 import { inspectRepositoryConfigPath } from './flowConfigPathSafety';
 import {
+  createRepositoryFlowConfigForSafeUpdate,
   getFlowConfigUpdatePathIssue,
   openRepositoryFlowConfigForSafeUpdate,
   persistRepositoryFlowConfigHandle,
@@ -109,9 +110,7 @@ export function normalizeFlowSettings(
     }
   }
 
-  const config = createDefaultFlowConfig({
-    enabled: settings.enabled ?? DEFAULT_FLOW_CONFIG.enabled
-  });
+  const config = createDefaultFlowConfig({ enabled: false });
 
   return issues.length > 0 ? invalid(issues, config) : { ok: true, source, config, issues: [] };
 }
@@ -148,7 +147,10 @@ export async function resolveFlowConfigForRepository(
       : normalizeFlowConfig(rawConfig.value, 'repository');
   }
 
-  return normalizeFlowSettings(settings, settings ? 'workspace' : 'defaults');
+  return normalizeFlowSettings(
+    settings ? { configPath: settings.configPath } : undefined,
+    settings?.configPath ? 'workspace' : 'defaults'
+  );
 }
 
 export async function updateRepositoryFlowConfigOptions(
@@ -170,10 +172,15 @@ export async function updateRepositoryFlowConfigOptions(
     return { ok: false, issue: { path: 'configPath', message: inspectedConfigPath.message } };
   }
   if (!inspectedConfigPath.exists) {
-    return {
-      ok: false,
-      issue: { path: '$', message: 'Could not read Flow Governance config: configuration file does not exist.' }
-    };
+    if (update.enabled !== true) {
+      return { ok: true, path: inspectedConfigPath.path };
+    }
+    return createRepositoryFlowConfigForSafeUpdate(
+      repositoryRootPath,
+      configPath,
+      inspectedConfigPath.path,
+      services
+    );
   }
 
   let handle: FileHandle | undefined;

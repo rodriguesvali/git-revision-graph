@@ -84,7 +84,6 @@ export class RevisionGraphFlowGovernanceWorkflow {
   resolveSettings(repository: Repository): FlowGovernanceSettings {
     const config = vscode.workspace.getConfiguration('gitRevisionGraph.flowGovernance', repository.rootUri);
     return {
-      enabled: config.get<boolean>('enabled'),
       configPath: config.get<string>('configPath')
     };
   }
@@ -106,7 +105,6 @@ export class RevisionGraphFlowGovernanceWorkflow {
 
     if (
       !repository
-      || flowGovernance.configSource !== 'repository'
       || options.enabled === undefined
     ) {
       return;

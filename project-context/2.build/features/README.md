@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.7-flow-governance-file-toggle.md`: always-visible repository-file-backed Flow Governance
+  toggle that creates the default config when activated from a missing-file state.
 - `1.6.7-remove-promotion-pr-context.md`: removal of the Promotion PR Context UI, protocol,
   provider handoff, Pull Request-specific AI context, target metadata, and obsolete documentation.
 - `1.6.4-ci-verification-reliability.md`: deterministic shared-modal-warning contract tests and a

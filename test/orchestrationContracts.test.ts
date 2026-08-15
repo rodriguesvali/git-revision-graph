@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 
 import {
   createApi,
@@ -677,11 +680,17 @@ test('Flow AI workflow improves Bug branch descriptions without Pull Request con
 });
 
 test('Flow Governance awaits the shared modal warning when a repository mutation is rejected', async (t) => {
-  installVscodePanelMock(t, { flowGovernanceEnabled: true });
+  installVscodePanelMock(t);
   const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
     '../src/revisionGraph/flow/governanceWorkflow'
   ) as typeof import('../src/revisionGraph/flow/governanceWorkflow');
-  const repository = createRepository({ root: '/workspace/repo' });
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-orchestration-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({
+    schemaVersion: 1,
+    enabled: true
+  }));
+  const repository = createRepository({ root });
   const warning = createBlockingWarningHarness();
   const workflow = new RevisionGraphFlowGovernanceWorkflow({
     actionServices: { ui: warning.ui } as never,
@@ -829,7 +838,6 @@ interface TestPanel {
 function installVscodePanelMock(
   t: test.TestContext,
   options: {
-    readonly flowGovernanceEnabled?: boolean;
     readonly openExternalResult?: boolean;
   } = {}
 ): {
@@ -937,10 +945,7 @@ function installVscodePanelMock(
     workspace: {
       asRelativePath: (value: { fsPath?: string } | string) => typeof value === 'string' ? value : value.fsPath ?? '',
       getConfiguration: () => ({
-        get: <T>(key: string, fallback?: T) =>
-          key === 'enabled' && options.flowGovernanceEnabled !== undefined
-            ? options.flowGovernanceEnabled as T
-            : fallback
+        get: <T>(_key: string, fallback?: T) => fallback
       })
     },
     commands: { executeCommand: async () => undefined },

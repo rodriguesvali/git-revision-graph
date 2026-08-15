@@ -100,11 +100,6 @@
           "maximum": 300000,
           "description": "Maximum time in milliseconds allowed for the revision graph Git log command."
         },
-        "gitRevisionGraph.flowGovernance.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable Flow Governance metadata and Flow View defaults for repositories without a valid repository flow file."
-        },
         "gitRevisionGraph.flowGovernance.configPath": {
           "type": "string",
           "default": ".git-revision-graph-flow.json",

@@ -120,6 +120,7 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Area | Steps | Expected Result |
 | --- | --- | --- |
 | Config bootstrap | Run `Create Flow Governance Config` from the Command Palette in a disposable Git repository and confirm creation. | `.git-revision-graph-flow.json` is created at the configured repository-relative path, opened in the editor, and contains only Phase 1 fields. |
+| Always-visible Flow toggle | Remove the configured repository flow file and open the graph `View` menu. Enable `Flow Governance`, then disable and re-enable it. | The checkbox is visible and initially unchecked; enabling creates the default file with `enabled: true`, and later toggles persist the matching boolean without hiding the control. |
 | Existing config | Run `Create Flow Governance Config` again in the same repository. | The existing file opens without overwrite and no duplicate prompt writes a file. |
 | Multi-repository bootstrap | Open a workspace with two repositories and run `Create Flow Governance Config`. | Repository selection appears and the file is created/opened only in the selected repository. |
 | Enabled Flow View | Set `enabled` to `true` in the repository flow file and open or refresh `View Git Revision Graph`. | Flow Governance controls appear in the graph `View` menu and branch-kind badges render from host-provided metadata. |

@@ -1,6 +1,7 @@
 import { constants } from 'node:fs';
 import { FileHandle, open } from 'node:fs/promises';
 
+import { createDefaultFlowConfigFile } from './flowDefaults';
 import {
   inspectRepositoryConfigPath,
   RepositoryConfigFileIdentity
@@ -10,6 +11,48 @@ import { FlowConfigValidationIssue } from './flowTypes';
 export interface RepositoryFlowConfigUpdateServices {
   readonly openFile?: (configPath: string, flags: number) => Promise<FileHandle>;
   readonly persistFile?: (handle: FileHandle, content: string) => Promise<void>;
+}
+
+export async function createRepositoryFlowConfigForSafeUpdate(
+  repositoryRootPath: string,
+  configPath: string,
+  expectedPath: string,
+  services: RepositoryFlowConfigUpdateServices
+): Promise<
+  | { readonly ok: true; readonly path: string }
+  | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
+> {
+  let handle: FileHandle | undefined;
+  try {
+    const reinspection = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
+    if (!reinspection.ok || reinspection.exists || reinspection.path !== expectedPath) {
+      return unsafeCreationResult(reinspection.ok
+        ? 'Flow Governance config path changed before it could be safely created.'
+        : reinspection.message);
+    }
+    const flags = constants.O_CREAT | constants.O_EXCL | constants.O_RDWR
+      | (process.platform === 'win32' ? 0 : constants.O_NOFOLLOW);
+    handle = await (services.openFile ?? open)(expectedPath, flags);
+    await persistRepositoryFlowConfigHandle(handle, createDefaultFlowConfigFile(), services);
+    await handle.close();
+    handle = undefined;
+
+    const finalized = await inspectRepositoryConfigPath(repositoryRootPath, configPath);
+    if (!finalized.ok || !finalized.exists || finalized.path !== expectedPath
+      || finalized.identity?.hardLinkCount !== 1n) {
+      return unsafeCreationResult(finalized.ok
+        ? 'Flow Governance config file changed before creation completed.'
+        : finalized.message);
+    }
+    return { ok: true, path: expectedPath };
+  } catch (error) {
+    return {
+      ok: false,
+      issue: { path: '$', message: `Could not create Flow Governance config: ${getErrorMessage(error)}` }
+    };
+  } finally {
+    await handle?.close();
+  }
 }
 
 export async function openRepositoryFlowConfigForSafeUpdate(
@@ -82,6 +125,17 @@ export async function persistRepositoryFlowConfigHandle(
 function getFlowConfigUpdateOpenFlags(): number {
   return constants.O_RDWR
     | (process.platform === 'win32' ? 0 : constants.O_NOFOLLOW);
+}
+
+function unsafeCreationResult(message: string): {
+  readonly ok: false;
+  readonly issue: FlowConfigValidationIssue;
+} {
+  return { ok: false, issue: { path: 'configPath', message } };
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 async function getOpenFlowConfigIdentityIssue(

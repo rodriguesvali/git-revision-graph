@@ -95,7 +95,12 @@ test('builds a serializable ready state for the persistent webview shell', async
   assert.deepEqual(state.publishedLocalBranchNames, ['main']);
   assert.equal(state.scene.nodes.length, 1);
   assert.equal(state.references.length, 2);
-  assert.equal(state.flowGovernance, undefined);
+  assert.equal(state.flowGovernance?.enabled, false);
+  assert.equal(state.flowGovernance?.configSource, 'defaults');
+  assert.deepEqual(
+    state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind]),
+    [['main', 'main']]
+  );
   assert.equal(state.references.find((ref) => ref.name === 'main')?.description, 'Primary integration branch');
   assert.equal(state.references.find((ref) => ref.name === 'origin/main')?.description, undefined);
   assert.deepEqual(state.primaryAncestorNextByHash, {});
@@ -204,7 +209,6 @@ test('attaches Flow Governance metadata from fallback settings without changing 
     undefined,
     {
       flowGovernanceSettings: {
-        enabled: true,
         configPath: '.missing-flow.json'
       },
       branchDescriptions: new Map([
@@ -213,7 +217,7 @@ test('attaches Flow Governance metadata from fallback settings without changing 
     }
   );
 
-  assert.equal(state.flowGovernance?.enabled, true);
+  assert.equal(state.flowGovernance?.enabled, false);
   assert.equal(state.flowGovernance?.configSource, 'workspace');
   assert.deepEqual(
     state.flowGovernance?.references.map((ref) => [ref.refName, ref.kind, ref.isEphemeral]),
@@ -287,7 +291,7 @@ test('attaches invalid Flow Governance diagnostics from repository config withou
     LIMIT_POLICY,
     undefined,
     undefined,
-    { flowGovernanceSettings: { enabled: false } }
+    undefined
   );
 
   assert.equal(state.viewMode, 'ready');

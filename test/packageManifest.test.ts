@@ -251,12 +251,11 @@ test('package manifest contributes graph git command timeout configuration', () 
   assert.equal(timeout?.maximum, 300000);
 });
 
-test('package manifest contributes Flow Governance Phase 1 fallback settings', () => {
+test('package manifest contributes only the Flow Governance repository config path', () => {
   const manifest = loadPackageManifest();
   const properties = manifest.contributes.configuration?.properties ?? {};
 
-  assert.equal(properties['gitRevisionGraph.flowGovernance.enabled']?.type, 'boolean');
-  assert.equal(properties['gitRevisionGraph.flowGovernance.enabled']?.default, false);
+  assert.equal(properties['gitRevisionGraph.flowGovernance.enabled'], undefined);
   assert.equal(properties['gitRevisionGraph.flowGovernance.configPath']?.type, 'string');
   assert.equal(properties['gitRevisionGraph.flowGovernance.configPath']?.default, '.git-revision-graph-flow.json');
   assert.equal(properties['gitRevisionGraph.flowGovernance.hideSyncBranchesByDefault'], undefined);
