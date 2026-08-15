@@ -1,15 +1,16 @@
 # Release Readiness
 
-Status: `1.6.7` opened for development; scope and release evidence pending
+Status: `1.6.7` published by maintainer confirmation; post-publication evidence reconciliation pending
 Last consolidated: 2026-08-15
 
 ## Current State
 
 - Current package version: `1.6.7` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.6`, by maintainer confirmation on 2026-08-10.
-- Release cycle status: `1.6.7` is open for development. Scope, focused feature artifacts,
-  verification evidence, VSIX inspection, and Marketplace publication remain pending. No VSIX
-  package, tag, or Marketplace publication is implied by opening the cycle.
+- Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
+- Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
+  Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
+  are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
+  installation, source tag, and installed-version evidence were not supplied and are not inferred.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
@@ -44,10 +45,11 @@ Last consolidated: 2026-08-15
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Planned Release: 1.6.7
+## Published Release: 1.6.7
 
-Status: Open for development
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-08-15
+Published: 2026-08-15 (maintainer confirmation)
 Published baseline version: `1.6.6`
 Target version: `1.6.7`
 
@@ -56,18 +58,19 @@ Target version: `1.6.7`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
-| Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow, added the repository-file-backed Flow Governance toggle, a selectable revision-graph layout strategy, and compact keyboard-accessible graph search. |
+| Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow; added repository-file-backed Flow Governance state, selectable revision-graph layouts, compact keyboard-accessible graph search, and Show Log marker refinements. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
 | Automated verification | Complete for implementation | `npm test` passed 835 tests, including compact graph search, automatic layout-profile presentation, repository-file toggle creation/state coverage, retained Flow Governance, orchestration, message boundaries, and webview behavior; build, quality, whitespace, and CI graph benchmark gates passed. |
-| Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
-| VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
-| Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |
+| Extension Development Host smoke | Complete | Passed by maintainer confirmation on 2026-08-15 for Flow config creation/editor reveal, retained governance menus, absence of Promotion PR Context, layout strategies, compact search, and Show Log markers. Platform, VS Code version, fixture, and per-scenario evidence were not supplied and are not inferred. |
+| VSIX package inspection | Evidence not recorded | Publication implies a package was produced, but its filename, checksum, size, embedded-version inspection, runtime-asset inspection, and clean-profile installation result were not supplied. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-08-15. The exact Marketplace timestamp and installed-version evidence were not supplied. |
 | Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
 
 Opening record:
 
 - Version metadata was aligned to `1.6.7` on 2026-08-15 to start the development cycle.
-- No release scope, dependency change, VSIX package, Git tag, publication command, or Marketplace action has been performed.
+- At cycle opening, no release scope, dependency change, VSIX package, Git tag, publication command,
+  or Marketplace action had been performed.
 - The published `1.6.6` baseline and its outstanding post-publication evidence remain recorded below.
 - `Promotion PR Context` was removed after user feedback that its review, preflight, and provider-handoff flow causes more friction than value. No replacement Pull Request workflow was introduced.
 - The deconstruction also removes the unused Pull Request URL contract and implementations from hosted Git provider adapters while retaining remote parsing and verified commit links.
@@ -76,6 +79,45 @@ Opening record:
 - Revision Graph search now opens from an icon-only toolbar action or `Ctrl+F`/`Cmd+F` in a floating
   panel, preserving active queries while recovering horizontal toolbar space. Automatic layout mode
   identifies the adaptive profile selected for the current projection.
+
+### Candidate Release Notes
+
+- Flow Governance is now always visible and follows the repository configuration file. Enabling it
+  without a file creates the safe default and opens the file for review.
+- The low-value `Promotion PR Context` dialog and provider handoff were removed. Existing branch,
+  equalization, description, hosted-commit, and repository-native Pull Request workflows remain.
+- Revision Graph adds user-selectable layout strategies. Automatic mode explains which adaptive
+  profile it selected without changing the existing default behavior.
+- Find moves into a compact floating panel available from the toolbar or `Ctrl+F`/`Cmd+F`, leaving
+  more horizontal space for graph controls while preserving active results.
+- Show Log commit markers now distinguish outgoing, regular, and merge commits more consistently,
+  with centered and symmetric hover states.
+
+### Implementation And Verification Record
+
+- The final review against baseline `2c8eab8fa266832d57257205e93771de69058a57` found no functional
+  or release-blocking source issues. The worktree and whitespace validation were clean.
+- `npm test` passed all `835` tests. `npm run build` and `npm run quality:check` passed; the quality
+  gate covered 252 production files and 2,406 functions.
+- `npm run benchmark:ci` passed with the deterministic 1,200-commit fixture: 192 projected nodes,
+  `121.33 ms` initial layout, `3.39 ms` cache hit, and `24.09 ms` descendant-focus layout in the
+  recorded environment.
+- `graphify update .` refreshed the architectural graph after the final source changes.
+- The final Extension Development Host smoke was confirmed complete by the maintainer on
+  2026-08-15. Platform, VS Code version, fixture, and granular scenario evidence were not supplied
+  and are not inferred.
+- Marketplace publication was confirmed complete by the maintainer on 2026-08-15. Exact
+  publication timestamp, VSIX identity and inspection, clean-profile installation, source tag, and
+  installed-version evidence were not supplied and are not inferred.
+- No runtime dependency, VS Code engine, activation, or package version changed as part of final
+  documentation preparation.
+
+### Rollback Notes
+
+- Before publication, revert each focused 1.6.7 slice with its tests and documentation. The Flow
+  Governance rollback must not delete repository-owned configuration files created by users.
+- After publication, correct behavior through a later patch or an explicitly approved Marketplace
+  action; never reuse the published `1.6.7` version.
 
 ## Published Release: 1.6.6
 

@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.7 - 2026-08-15
+
+- Marketplace publication was confirmed complete by the maintainer on 2026-08-15. Exact
+  publication timestamp, VSIX inspection, clean-profile installation, and installed-version
+  evidence were not supplied.
+
+### Flow Governance
+
+- Keep the `Flow Governance` option visible and derive its state exclusively from the configured
+  repository file. A missing file now means disabled; enabling creates the default configuration
+  and opens it in the editor for review.
+- Preserve supported and future configuration fields when updating an existing file, while
+  retaining path-escape, symbolic-link, hard-link, replacement-race, size, and JSON safeguards.
+- Remove `Promotion PR Context`, its review dialog, generated Pull Request content, provider browser
+  handoff, and Pull Request-only AI context. Branch creation, descriptions, equalization, hosted
+  commit links, and repository-native Pull Request workflows remain available.
+
+### Revision Graph
+
+- Add a `Layout` selector with `Automatic`, `Balanced`, `Faster`, and `Wide Graph` strategies.
+  Automatic mode identifies its selected adaptive profile, while manual changes reuse the loaded
+  Git snapshot and maintain separate layout-cache identities.
+- Replace the persistent Find field with a compact, floating search panel opened from the toolbar
+  or with `Ctrl+F`/`Cmd+F`. Active queries and result position remain available when the panel is
+  closed, reducing toolbar wrapping in narrow editors.
+
+### Show Log
+
+- Refine commit markers so the first outgoing commit is hollow at rest, regular commits gain a
+  centered outer ring on hover, and merge commits use a centered highlighted core with symmetric
+  hover expansion.
+
 ## 1.6.6 - 2026-08-10
 
 ### Flow Governance

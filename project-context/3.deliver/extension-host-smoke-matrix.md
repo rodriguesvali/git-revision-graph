@@ -1,11 +1,24 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-08-06
+Last updated: 2026-08-15
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.6.7 Release Evidence
+
+- Result: passed by maintainer confirmation on 2026-08-15.
+- Scope: final Extension Development Host smoke for repository-file-backed Flow Governance,
+  removal of Promotion PR Context, selectable graph layout strategies, compact keyboard-accessible
+  search, narrow-width and theme behavior, and Show Log outgoing, regular, and merge markers.
+- Operator: maintainer; name not recorded.
+- VS Code version, platform, fixture, and per-scenario results: not recorded and not inferred.
+- Packaging was not covered by the smoke confirmation. Marketplace publication was subsequently
+  confirmed complete by the maintainer on 2026-08-15, but VSIX filename, checksum, size,
+  embedded-version inspection, clean-profile installation, exact Marketplace timestamp, and
+  installed-version evidence were not supplied and are not inferred.
 
 ## 1.6.4 Planned Release Evidence
 
