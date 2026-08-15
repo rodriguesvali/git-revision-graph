@@ -269,7 +269,8 @@ expands them.
 - `README.md`
 - `.codex/skills/vscode-extension-developer/references/project-map.md`
 - `project-context/1.define/prd.md`
-- `project-context/docs/git-revision-graph-flow-governance-frd.md`
+- `project-context/docs/git-revision-graph-flow-governance-frd.md` (historical requirements;
+  Pull Request authoring and handoff superseded by the 1.6.7 removal artifact)
 - `project-context/2.build/features/1.5.6-architecture-risk-reduction.md`
 - `project-context/docs/product-evolution-roadmap.md`
 - `project-context/docs/revision-graph-parity-plan.md`

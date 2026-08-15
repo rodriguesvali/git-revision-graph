@@ -1,18 +1,20 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-08
+Last consolidated: 2026-08-15
 
-Use this directory only for active or next-release feature work.
+Use the `Current Active Features` list below as the authoritative index for active or next-release
+work. Older artifacts may remain in this directory to preserve release links and implementation
+history, but they are not current scope unless listed below.
 
 Completed feature artifacts are archived in `project-context/archive/features/`. Do not treat an archived feature artifact as current scope unless it is explicitly reopened and copied or moved back here.
 
 ## Current Active Features
 
+- `1.6.7-remove-promotion-pr-context.md`: removal of the Promotion PR Context UI, protocol,
+  provider handoff, Pull Request-specific AI context, target metadata, and obsolete documentation.
 - `1.6.4-ci-verification-reliability.md`: deterministic shared-modal-warning contract tests and a
   development-only audit remediation for the GitHub Actions verification matrix.
-- `1.6.4-azure-devops-pr-handoff.md`: Azure DevOps Services Pull Request portal links use short
-  branch names and report a failed external browser launch.
 - `1.6.4-revision-graph-load-performance.md`: staged optimization of the revision graph's initial
   and refresh loading paths, with end-to-end measurement and regression protection.
 - `1.6.3-show-log-all-branches-default.md`: target histories open with `Show All Branches` enabled
@@ -35,8 +37,6 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   frames so scrolling and zooming do not repeat adjacency and HEAD-distance construction.
 - `1.6.3-focus-descendants-performance.md`: scope-bounded, memoized edge projection and non-root
   merge-heavy benchmark coverage for responsive `Focus Descendants` behavior.
-- `1.6.3-package-start-from-feature.md`: governed package creation from a synchronized feature with
-  durable `package -> feature` Pull Request targeting for consolidated task delivery.
 - `1.6.2-flow-pattern-canonicalization.md`: ordered ASCII case-pair semantics for deterministic,
   cross-platform Flow Governance branch creation and equalization.
 - `1.6.2-feature-start-from-release.md`: governed feature creation from classified release branches.
@@ -45,17 +45,12 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   process termination.
 - `1.6.0-package-hygiene.md`: clean VSCE prepublish builds and deterministic exclusion of
   development-only package content.
-- `flow-governance-2.0.0.md`: operational Flow Governance release scope.
 - `1.6.0-modal-error-and-warning-policy.md`: modal presentation policy for errors and warnings
   whose workflows continue.
 - `1.6.0-flow-governance-submenu-hover.md`: stable pointer access to Flow Governance context-menu
   subitems.
-- `1.6.0-feature-pr-target-preflight.md`: fetch-first synchronization gate for selected
-  `feature -> release` Pull Request targets without local branch mutation.
 - `1.6.0-remote-fetch-loading-feedback.md`: blocking `Fetching remotes...` feedback for automatic
   Flow Governance remote probes and fetches.
-- `1.6.0-sync-promotion-pr-context.md`: durable equalization target mapping and guarded
-  `sync -> original target` Pull Request handoff after merge completion.
 
 ## Published Baseline Retained For Integration
 

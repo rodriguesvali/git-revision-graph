@@ -89,3 +89,23 @@ test('Flow Governance state loading does not retain Pull Request target loader p
     /settings: FlowGovernanceSettings \| undefined\s*\)\s*:\s*Promise<FlowGovernanceViewState \| undefined>/
   );
 });
+
+test('feature governance marks removed Pull Request scope as historical', () => {
+  const featureIndex = readFileSync(
+    join(repositoryRoot, 'project-context/2.build/features/README.md'),
+    'utf8'
+  );
+  const frd = readFileSync(
+    join(repositoryRoot, 'project-context/docs/git-revision-graph-flow-governance-frd.md'),
+    'utf8'
+  );
+  const currentFeatures = featureIndex.split('## Current Active Features')[1]
+    ?.split('## Published Baseline Retained For Integration')[0] ?? '';
+
+  assert.match(currentFeatures, /1\.6\.7-remove-promotion-pr-context\.md/);
+  assert.doesNotMatch(currentFeatures, /1\.6\.4-azure-devops-pr-handoff/);
+  assert.doesNotMatch(currentFeatures, /1\.6\.0-feature-pr-target-preflight/);
+  assert.doesNotMatch(currentFeatures, /1\.6\.0-sync-promotion-pr-context/);
+  assert.match(frd, /Feature status:\*\* Historical requirements baseline/);
+  assert.match(frd, /References below to PR[\s>]+creation or handoff are historical/);
+});

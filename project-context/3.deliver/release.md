@@ -58,7 +58,7 @@ Target version: `1.6.7`
 | Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
 | Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow end-to-end; see `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md`. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
-| Automated verification | Complete for implementation | `npm test` passed 826 tests, including restored coverage for retained Flow Governance, branch-start, equalization, orchestration, message-boundary, webview behavior, hosted-provider API removal, current smoke documentation, stale UI/AI/README removal, and the simplified Flow state-loader contract; build, quality check, graph refresh, and whitespace validation also passed. |
+| Automated verification | Complete for implementation | `npm test` passed 827 tests, including restored coverage for retained Flow Governance, branch-start, equalization, orchestration, message-boundary, webview behavior, hosted-provider API removal, current smoke documentation, stale UI/AI/README removal, the simplified Flow state-loader contract, and superseded-feature governance; build, quality check, graph refresh, and whitespace validation also passed. |
 | Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
 | VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
 | Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |

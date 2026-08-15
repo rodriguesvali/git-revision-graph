@@ -1,8 +1,12 @@
 # Flow Governance 1.6.0
 
-Status: Build complete - manual validation pending
-Last updated: 2026-07-13
+Status: Historical implementation record; Pull Request workflow superseded by `1.6.7`
+Last updated: 2026-08-15
 Baseline: `1.5.8` plus completed Flow Governance Phase 1 foundation
+
+Supersession: this artifact records the 1.6.0 implementation history. Its Pull Request context,
+target metadata, AI authoring, and hosted-provider handoff sections are not active requirements.
+See `1.6.7-remove-promotion-pr-context.md` and `project-context/1.define/sad.md` for current scope.
 
 ## Goal
 

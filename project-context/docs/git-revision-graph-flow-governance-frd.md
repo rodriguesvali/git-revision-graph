@@ -4,10 +4,17 @@
 - **Target extension:** Git Revision Graph (`rodriguesvali.git-revision-graph`)
 - **Repository:** `rodriguesvali/git-revision-graph`
 - **Project status:** Existing published VS Code extension
-- **Feature status:** Approved product proposal; Phase 1 foundation implemented, 1.6.0 scope now targets operational governance value
+- **Feature status:** Historical requirements baseline; Pull Request authoring and handoff superseded by the `1.6.7` deconstruction
 - **Package baseline at review:** `package.json` version `1.5.6` on 2026-07-01
 - **Document version:** 3.1 - 1.6.0 operational governance alignment
 - **Language:** English
+
+> Supersession notice (2026-08-15): this document preserves the requirements and phased plan that
+> led to Flow Governance 1.6.0. It is not the current source of truth for Pull Request authoring,
+> context, targets, provider URLs, or handoff. Those capabilities were removed in 1.6.7. Current
+> behavior is defined by `project-context/1.define/sad.md` and
+> `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md`. References below to PR
+> creation or handoff are historical and must not be used as active implementation or release scope.
 
 ---
 
