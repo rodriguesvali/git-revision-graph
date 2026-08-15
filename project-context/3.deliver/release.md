@@ -1,15 +1,15 @@
 # Release Readiness
 
-Status: `1.6.6` published by maintainer confirmation; post-publication evidence reconciliation pending
-Last consolidated: 2026-08-10
+Status: `1.6.7` opened for development; scope and release evidence pending
+Last consolidated: 2026-08-15
 
 ## Current State
 
-- Current package version: `1.6.6` in `package.json` and the root `package-lock.json`.
+- Current package version: `1.6.7` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.6`, by maintainer confirmation on 2026-08-10.
-- Release cycle status: `1.6.6` includes Azure DevOps Pull Request handoff refinement (#12), a
-  denser Compare Results layout (#13), and shared hover-intent scheduling (#14). No VSIX package,
-  tag, or Marketplace publication is implied by implementation.
+- Release cycle status: `1.6.7` is open for development. Scope, focused feature artifacts,
+  verification evidence, VSIX inspection, and Marketplace publication remain pending. No VSIX
+  package, tag, or Marketplace publication is implied by opening the cycle.
 - Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
   publication evidence for that tag was not supplied and is not inferred.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
@@ -43,6 +43,32 @@ Last consolidated: 2026-08-10
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Planned Release: 1.6.7
+
+Status: Open for development
+Opened: 2026-08-15
+Published baseline version: `1.6.6`
+Target version: `1.6.7`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
+| Release scope | Pending | Define approved scope and create or update a focused artifact under `project-context/2.build/features/` for each user-visible or substantial change. |
+| Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
+| Automated verification | Pending | Run focused tests while implementing; complete the required release gates before packaging. |
+| Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
+| VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
+| Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |
+| Rollback readiness | Documented | Before publication, revert scoped source and metadata changes; after publication, correct through a later patch or maintainer-approved Marketplace action. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.7` on 2026-08-15 to start the development cycle.
+- No release scope, dependency change, VSIX package, Git tag, publication command, or Marketplace action has been performed.
+- The published `1.6.6` baseline and its outstanding post-publication evidence remain recorded below.
 
 ## Published Release: 1.6.6
 
