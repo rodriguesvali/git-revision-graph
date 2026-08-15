@@ -62,8 +62,7 @@ export async function loadRevisionGraphReadyStateMetadata(
     () => loadFlowGovernanceViewState(
       repository.rootUri.fsPath,
       branchRefNames,
-      context?.flowGovernanceSettings,
-      signal
+      context?.flowGovernanceSettings
     ),
     (flowGovernance) =>
       `enabled=${flowGovernance?.enabled === true}; source=${flowGovernance?.configSource ?? 'disabled'}`

@@ -76,3 +76,16 @@ test('active UI styles, AI consent, and README omit removed Promotion PR Context
   assert.doesNotMatch(aiAdapter, /Pull Request or release form/);
   assert.doesNotMatch(readme, /promotion target/);
 });
+
+test('Flow Governance state loading does not retain Pull Request target loader parameters', () => {
+  const stateLoader = readFileSync(
+    join(repositoryRoot, 'src/revisionGraph/flow/flowViewState.ts'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(stateLoader, /_signal|_services|loadPullRequestTargets|loadBranchTargets/);
+  assert.match(
+    stateLoader,
+    /settings: FlowGovernanceSettings \| undefined\s*\)\s*:\s*Promise<FlowGovernanceViewState \| undefined>/
+  );
+});
