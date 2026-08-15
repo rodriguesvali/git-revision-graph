@@ -83,7 +83,6 @@ type RevisionGraphWebviewHostMessage =
   | { readonly type: 'update-repository-status'; readonly status: RevisionGraphWebviewRepositoryStatusUpdate; readonly trace?: Record<string, unknown> }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: string }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: Record<string, unknown> | null }
-  | { readonly type: 'show-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string; readonly title: string; readonly description: string; readonly handoff: { readonly providerLabel: string; readonly mode: 'prefilled' | 'manual' | 'unavailable'; readonly actionLabel: string; readonly description: string } }
   | { readonly type: 'show-flow-branch-form'; readonly branchKind: RevisionGraphWebviewFlowBranchKind; readonly sourceRefName: string }
   | {
     readonly type: 'set-flow-ai-text-result';

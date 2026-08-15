@@ -43,8 +43,6 @@ function isRevisionGraphWebviewRepositoryStatusUpdate(
 
 function isRevisionGraphWebviewActionHostMessage(value: Record<string, unknown>): boolean {
   switch (value.type) {
-    case 'show-flow-pr-context':
-      return isRevisionGraphWebviewFlowPullRequestContextMessage(value);
     case 'show-flow-branch-form':
       return isRevisionGraphWebviewFlowBranchFormMessage(value);
     case 'set-loading':
@@ -73,18 +71,6 @@ function isRevisionGraphWebviewFlowAiTextResultMessage(value: Record<string, unk
 function isRevisionGraphWebviewFlowAiTextSurface(value: unknown): boolean {
   return value === 'pull-request' || value === 'release' || value === 'feature'
     || value === 'task' || value === 'bug' || value === 'hotfix';
-}
-
-function isRevisionGraphWebviewFlowPullRequestContextMessage(value: Record<string, unknown>): boolean {
-  return typeof value.sourceRefName === 'string'
-    && typeof value.targetRefName === 'string'
-    && typeof value.title === 'string'
-    && typeof value.description === 'string'
-    && isRevisionGraphWebviewRecord(value.handoff)
-    && typeof value.handoff.providerLabel === 'string'
-    && (value.handoff.mode === 'prefilled' || value.handoff.mode === 'manual' || value.handoff.mode === 'unavailable')
-    && typeof value.handoff.actionLabel === 'string'
-    && typeof value.handoff.description === 'string';
 }
 
 function isRevisionGraphWebviewFlowBranchFormMessage(value: Record<string, unknown>): boolean {

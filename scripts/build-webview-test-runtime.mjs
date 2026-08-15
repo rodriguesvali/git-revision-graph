@@ -52,7 +52,6 @@ const exportedNames = [
   'getRevisionGraphWebviewFlowAiBranchName',
   'getRevisionGraphWebviewFlowBranchValidationError',
   'getRevisionGraphWebviewFlowEqualizationOrigins',
-  'getRevisionGraphWebviewFlowPullRequestWarning',
   'getRevisionGraphWebviewContextMenuComparisonTargets',
   'getRevisionGraphWebviewActiveSearchResultHash',
   'getRevisionGraphWebviewFlowKindLabel',

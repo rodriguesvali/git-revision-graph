@@ -49,19 +49,6 @@ export interface RevisionGraphMessageHandlerHost
     description: string
   ): Promise<void>;
   prepareFlowEqualization(targetRefName: string, originRefName: string, description: string): Promise<void>;
-  copyFlowPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void>;
-  copyFlowPullRequestContextField(
-    sourceRefName: string,
-    targetRefName: string,
-    field: 'title' | 'description',
-    text: string
-  ): Promise<void>;
-  openFlowPullRequestUrl(
-    sourceRefName: string,
-    targetRefName: string,
-    title: string,
-    description: string
-  ): Promise<void>;
   improveFlowText(requestId: number, input: FlowAiTextImprovementInput): Promise<void>;
   cancelFlowAiText(
     requestId: number,
@@ -135,35 +122,6 @@ export class RevisionGraphMessageHandler {
           message.originRefName,
           message.description
         );
-      },
-      'copy-flow-pr-context': async (message) => {
-        await this.host.copyFlowPullRequestContext(message.sourceRefName, message.targetRefName);
-      },
-      'copy-flow-pr-context-field': async (message) => {
-        await this.host.copyFlowPullRequestContextField(
-          message.sourceRefName,
-          message.targetRefName,
-          message.field,
-          message.text
-        );
-      },
-      'open-flow-pr-url': async (message) => {
-        await this.host.openFlowPullRequestUrl(
-          message.sourceRefName,
-          message.targetRefName,
-          message.title,
-          message.description
-        );
-      },
-      'improve-flow-pr-text': async (message) => {
-        await this.host.improveFlowText(message.requestId, {
-          surface: 'pull-request',
-          field: message.field,
-          sourceRefName: message.sourceRefName,
-          targetRefName: message.targetRefName,
-          title: message.title,
-          description: message.description
-        });
       },
       'improve-flow-branch-text': async (message) => {
         await this.host.improveFlowText(message.requestId, {

@@ -73,8 +73,6 @@ export interface FlowBranchInfo {
   readonly kind: FlowBranchKind;
   readonly isEphemeral: boolean;
   readonly diagnostics: readonly FlowDiagnostic[];
-  readonly equalizationTargetRefName?: string;
-  readonly promotionTargetRefName?: string;
 }
 
 export interface FlowGovernanceViewState {
@@ -83,21 +81,6 @@ export interface FlowGovernanceViewState {
   readonly diagnostics: readonly FlowDiagnostic[];
   readonly branchKinds: readonly FlowBranchKind[];
   readonly references: readonly FlowBranchInfo[];
-  readonly pullRequestTargets?: readonly FlowPullRequestTargetInfo[];
-}
-
-export interface FlowPullRequestTargetInfo {
-  readonly sourceRefName: string;
-  readonly targetRefName: string;
-  readonly status:
-    | 'ahead'
-    | 'not-ahead'
-    | 'production-not-ancestor'
-    | 'production-out-of-sync'
-    | 'unknown';
-  readonly targetLocalAhead?: number;
-  readonly targetRemoteAhead?: number;
-  readonly detail?: string;
 }
 
 export type FlowGovernanceOptionsUpdate = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;

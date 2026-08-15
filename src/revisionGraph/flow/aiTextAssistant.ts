@@ -40,11 +40,7 @@ export function normalizeFlowAiTextImprovementOutput(
   value: string
 ): string {
   const trimmed = value.trim();
-  const normalized = field === 'title'
-    ? trimmed.replace(/\s+/g, ' ')
-    : trimmed;
-  const maxLength = field === 'title'
-    ? FLOW_AI_TITLE_MAX_LENGTH
-    : FLOW_AI_DESCRIPTION_MAX_LENGTH;
+  const normalized = field === 'title' ? trimmed.replace(/\s+/g, ' ') : trimmed;
+  const maxLength = field === 'title' ? FLOW_AI_TITLE_MAX_LENGTH : FLOW_AI_DESCRIPTION_MAX_LENGTH;
   return normalized.slice(0, maxLength).trim();
 }

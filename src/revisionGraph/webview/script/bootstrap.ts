@@ -48,7 +48,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly configSource?: string;
       readonly branchKinds?: readonly unknown[];
       readonly references?: readonly RevisionGraphWebviewLegacyFlowReference[];
-      readonly pullRequestTargets?: readonly RevisionGraphWebviewFlowPullRequestTarget[];
     };
     type RevisionGraphWebviewTraceableHostMessage = Extract<
       RevisionGraphWebviewHostMessage,
@@ -725,9 +724,8 @@ const VIEWPORT_PADDING_LEFT = 18;
         case 'set-commit-short-stat':
           setCommitShortStat(message.commitHash, message.shortStat);
           return;
-        case 'show-flow-pr-context': showFlowPullRequestContextForm(message); return;
         case 'set-flow-ai-text-result':
-          flowPullRequestDialogController.showImprovementResult(message); flowBranchDialogController.showImprovementResult(message); return;
+          flowBranchDialogController.showImprovementResult(message); return;
         case 'show-flow-branch-form': showRevisionGraphWebviewFlowBranchForm(message, getSelectableTargets(), showFlowBranchForm); return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');

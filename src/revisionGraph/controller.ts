@@ -63,7 +63,6 @@ import {
 } from '../repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
 import { RevisionGraphFlowGovernanceWorkflow, type FlowAiTextImprover } from './flow/governanceWorkflow';
-import { createFlowAiTextContextProvider } from './flow/aiTextContext';
 import { RevisionGraphRemoteTagStatePublisher } from './remoteTagStatePublisher';
 const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
 const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
@@ -241,7 +240,7 @@ export class RevisionGraphController implements vscode.Disposable {
       postActionLoading: (label) => this.postActionLoading(label),
       postCurrentState: () => this.postCurrentState(),
       postHostMessage: (message) => this.postHostMessage(message)
-    }, flowAiTextImprover, createFlowAiTextContextProvider(this.backend));
+    }, flowAiTextImprover);
     this.remoteTagStatePublisher = new RevisionGraphRemoteTagStatePublisher({
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
@@ -290,15 +289,6 @@ export class RevisionGraphController implements vscode.Disposable {
         this.flowGovernanceWorkflow.startBranch(branchKind, sourceRefName, name, description),
       prepareFlowEqualization: async (targetRefName, originRefName, description) => {
         await this.flowGovernanceWorkflow.prepareEqualization(targetRefName, originRefName, description);
-      },
-      copyFlowPullRequestContext: async (sourceRefName, targetRefName) => {
-        await this.flowGovernanceWorkflow.copyPullRequestContext(sourceRefName, targetRefName);
-      },
-      copyFlowPullRequestContextField: async (sourceRefName, targetRefName, field, text) => {
-        await this.flowGovernanceWorkflow.copyPullRequestContextField(sourceRefName, targetRefName, field, text);
-      },
-      openFlowPullRequestUrl: async (sourceRefName, targetRefName, title, description) => {
-        await this.flowGovernanceWorkflow.openPullRequestUrl(sourceRefName, targetRefName, title, description);
       },
       improveFlowText: (requestId, input) => this.flowGovernanceWorkflow.improveText(requestId, input),
       cancelFlowAiText: (requestId, surface, field) =>

@@ -85,29 +85,6 @@
       return { type: 'prepare-flow-equalization', targetRefName, originRefName, description };
     }
 
-    function createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName: string, targetRefName: string): RevisionGraphWebviewMessageOf<'copy-flow-pr-context'> {
-      return { type: 'copy-flow-pr-context', sourceRefName, targetRefName };
-    }
-
-    function createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName: string, targetRefName: string, field: 'title' | 'description', text: string): RevisionGraphWebviewMessageOf<'copy-flow-pr-context-field'> {
-      return { type: 'copy-flow-pr-context-field', sourceRefName, targetRefName, field, text };
-    }
-
-    function createRevisionGraphOpenFlowPullRequestUrlMessage(sourceRefName: string, targetRefName: string, title: string, description: string): RevisionGraphWebviewMessageOf<'open-flow-pr-url'> {
-      return { type: 'open-flow-pr-url', sourceRefName, targetRefName, title, description };
-    }
-
-    function createRevisionGraphImproveFlowPullRequestTextMessage(
-      requestId: number,
-      sourceRefName: string,
-      targetRefName: string,
-      field: 'title' | 'description',
-      title: string,
-      description: string
-    ): RevisionGraphWebviewMessageOf<'improve-flow-pr-text'> {
-      return { type: 'improve-flow-pr-text', requestId, sourceRefName, targetRefName, field, title, description };
-    }
-
     function createRevisionGraphImproveFlowBranchTextMessage(
       requestId: number,
       sourceRefName: string,
@@ -120,8 +97,8 @@
 
     function createRevisionGraphCancelFlowAiTextMessage(
       requestId: number,
-      surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
-      field: 'title' | 'description'
+      surface: 'release' | 'feature' | 'task' | 'bug' | 'hotfix',
+      field: 'description'
     ): RevisionGraphWebviewMessageOf<'cancel-flow-ai-text'> {
       return { type: 'cancel-flow-ai-text', requestId, surface, field };
     }

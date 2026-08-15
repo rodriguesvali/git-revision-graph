@@ -8,15 +8,12 @@ import type {
 } from '../../revisionGraphTypes';
 import { showModalErrorMessage } from '../../workbenchMessages';
 import { createRevisionGraphFlowAiTextResultMessage } from '../hostMessages';
-import type { FlowPullRequestContext } from './flowPullRequestContext';
 import type {
   FlowAiTextField,
   FlowAiTextImprover,
   FlowAiTextImprovementInput,
   FlowAiTextSurface
 } from './aiTextAssistant';
-import { resolveFlowAiPullRequestPromptProfile } from './aiPrompts/policy';
-import type { FlowAiTextContextProvider } from './aiTextContext';
 
 export interface RevisionGraphFlowAiTextWorkflowHost {
   getCurrentRepository(): Repository | undefined;
@@ -26,12 +23,10 @@ export interface RevisionGraphFlowAiTextWorkflowHost {
 
 export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
   private readonly requests = new Map<string, FlowAiTextRequest>();
-  private pullRequestContext: FlowPullRequestContext | undefined;
 
   constructor(
     private readonly host: RevisionGraphFlowAiTextWorkflowHost,
-    private readonly improver: FlowAiTextImprover | undefined,
-    private readonly contextProvider?: FlowAiTextContextProvider
+    private readonly improver: FlowAiTextImprover | undefined
   ) {}
 
   dispose(): void {
@@ -44,22 +39,6 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
       request.tokenSource.dispose();
     }
     this.requests.clear();
-    this.pullRequestContext = undefined;
-  }
-
-  setPullRequestContext(context: FlowPullRequestContext): void {
-    this.cancelSurface('pull-request');
-    this.pullRequestContext = context;
-  }
-
-  getPullRequestContext(
-    sourceRefName: string,
-    targetRefName: string
-  ): FlowPullRequestContext | undefined {
-    const context = this.pullRequestContext;
-    return context?.sourceRefName === sourceRefName && context.targetRefName === targetRefName
-      ? context
-      : undefined;
   }
 
   cancel(surface: FlowAiTextSurface, field: FlowAiTextField, requestId: number): void {
@@ -72,9 +51,12 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
   }
 
   async improve(requestId: number, input: FlowAiTextImprovementInput): Promise<void> {
+    if (input.surface === 'pull-request') {
+      return;
+    }
     const repository = this.host.getCurrentRepository();
     const improver = this.improver;
-    if (!repository || !improver || !this.isCurrentForm(input)) {
+    if (!repository || !improver) {
       this.postUnavailable(requestId, input, 'AI text improvement is not available for this form.');
       return;
     }
@@ -90,7 +72,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
     this.requests.set(key, request);
 
     try {
-      const preparedInput = await this.withPromptContext(repository, input, request);
+      const preparedInput = input;
       if (!this.isCurrentRequest(key, request)) return;
       const result = await improver.improve(preparedInput, request.tokenSource.token);
       if (!this.isCurrentRequest(key, request) || result.status === 'cancelled') return;
@@ -99,9 +81,6 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
         return;
       }
 
-      if (preparedInput.surface === 'pull-request') {
-        this.applyPullRequestImprovement(preparedInput, result.content);
-      }
       this.host.postHostMessage(createRevisionGraphFlowAiTextResultMessage(
         requestId,
         input.surface,
@@ -127,74 +106,6 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
     }
   }
 
-  private isCurrentForm(input: FlowAiTextImprovementInput): boolean {
-    if (input.surface !== 'pull-request') return true;
-    return !!this.getPullRequestContext(input.sourceRefName, input.targetRefName);
-  }
-
-  private applyPullRequestImprovement(
-    input: Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>,
-    content: string
-  ): void {
-    if (!this.getPullRequestContext(input.sourceRefName, input.targetRefName)) return;
-    this.pullRequestContext = input.field === 'title'
-      ? createFlowPullRequestContext(input, content, input.description)
-      : createFlowPullRequestContext(input, input.title, content);
-  }
-
-  private async withPromptContext(
-    repository: Repository,
-    input: FlowAiTextImprovementInput,
-    request: FlowAiTextRequest
-  ): Promise<FlowAiTextImprovementInput> {
-    if (input.surface !== 'pull-request') {
-      return input;
-    }
-    const contextualInput = this.addPullRequestPromptProfile(input);
-    if (contextualInput.field !== 'description' || !this.contextProvider) {
-      return contextualInput;
-    }
-    const content = await this.contextProvider.load(
-      repository,
-      contextualInput,
-      request.tokenSource.token
-    );
-    return content && contextualInput.promptContext
-      ? {
-        ...contextualInput,
-        promptContext: { ...contextualInput.promptContext, content }
-      }
-      : contextualInput;
-  }
-
-  private addPullRequestPromptProfile(
-    input: Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>
-  ): Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }> {
-    const state = this.host.getCurrentState();
-    const source = state.flowGovernance?.references.find((reference) =>
-      reference.refName === input.sourceRefName
-    );
-    const target = state.flowGovernance?.references.find((reference) =>
-      reference.refName === input.targetRefName
-    );
-    if (!source || !target) return input;
-
-    const profile = resolveFlowAiPullRequestPromptProfile(source.kind, target.kind);
-    if (!profile) return input;
-    const sourceDescription = state.references
-      .find((reference) => reference.name === input.sourceRefName)
-      ?.description
-      ?.trim()
-      .slice(0, 2048);
-    return {
-      ...input,
-      promptContext: {
-        ...profile,
-        ...(sourceDescription ? { sourceDescription } : {})
-      }
-    };
-  }
-
   private isCurrentRequest(key: string, request: FlowAiTextRequest): boolean {
     return this.requests.get(key) === request
       && this.host.getCurrentRepository()?.rootUri.fsPath === request.repositoryPath;
@@ -202,7 +113,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
 
   private postUnavailable(
     requestId: number,
-    input: FlowAiTextImprovementInput,
+    input: Exclude<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>,
     message: string
   ): void {
     this.host.postHostMessage(createRevisionGraphFlowAiTextResultMessage(
@@ -212,12 +123,6 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
       'unavailable'
     ));
     void vscode.window.showInformationMessage(message);
-  }
-
-  private cancelSurface(surface: FlowAiTextSurface): void {
-    for (const [key, request] of this.requests) {
-      if (request.input.surface === surface) this.cancelByKey(key);
-    }
   }
 
   private cancelByKey(key: string): void {
@@ -238,22 +143,4 @@ interface FlowAiTextRequest {
 
 function createFlowAiTextRequestKey(surface: FlowAiTextSurface, field: FlowAiTextField): string {
   return `${surface}:${field}`;
-}
-
-function createFlowPullRequestContext(
-  input: Extract<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>,
-  title: string,
-  body: string
-): FlowPullRequestContext {
-  return {
-    sourceRefName: input.sourceRefName,
-    targetRefName: input.targetRefName,
-    title,
-    body,
-    text: createFlowPullRequestText(title, body)
-  };
-}
-
-function createFlowPullRequestText(title: string, body: string): string {
-  return [`Title: ${title}`, '', body].join('\n');
 }

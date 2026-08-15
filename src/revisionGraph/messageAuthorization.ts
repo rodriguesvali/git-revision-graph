@@ -1,6 +1,6 @@
 import type { RevisionGraphRef } from './model/commitGraphTypes';
 import type { RevisionGraphMergeRefKind, RevisionGraphMessage, RevisionGraphViewState, RevisionLogSource } from '../revisionGraphTypes';
-import { FlowBranchKind, isFlowGovernedTransition } from './flow';
+import { FlowBranchKind } from './flow';
 
 type RevisionGraphMessageType = RevisionGraphProtocol.MessageType;
 type RevisionGraphMessageOf<Type extends RevisionGraphMessageType> = RevisionGraphProtocol.MessageOf<Type>;
@@ -28,10 +28,6 @@ const REVISION_GRAPH_MESSAGE_AUTHORIZATION_POLICIES: RevisionGraphMessageAuthori
   'set-flow-governance-options': { repositoryScoped: true, isAllowed: authorizeFlowGovernanceOptions },
   'start-flow-branch': { repositoryScoped: true, isAllowed: authorizeFlowBranchStart },
   'prepare-flow-equalization': { repositoryScoped: true, isAllowed: authorizeFlowEqualization },
-  'copy-flow-pr-context': { repositoryScoped: true, isAllowed: authorizeFlowPullRequestContext },
-  'copy-flow-pr-context-field': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
-  'open-flow-pr-url': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
-  'improve-flow-pr-text': { repositoryScoped: true, isAllowed: authorizeEligibleFlowPullRequestTarget },
   'improve-flow-branch-text': { repositoryScoped: true, isAllowed: authorizeFlowBranchText },
   'cancel-flow-ai-text': { repositoryScoped: true, isAllowed: authorizeFlowAiTextCancellation },
   'compare-selected': { repositoryScoped: true, isAllowed: authorizeCompareSelected },
@@ -142,37 +138,6 @@ function authorizeFlowEqualization(
     && message.targetRefName !== message.originRefName
     && isKnownFlowKind(state, message.targetRefName, 'release', 'feature')
     && isKnownFlowKind(state, message.originRefName, 'main', 'release');
-}
-
-function authorizeFlowPullRequestContext(
-  message: RevisionGraphMessageOf<'copy-flow-pr-context'>,
-  state: RevisionGraphViewState
-): boolean {
-  return isFlowPullRequestTargetKnown(message, state)
-    && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName);
-}
-
-function authorizeEligibleFlowPullRequestTarget(
-  message: RevisionGraphMessageOf<'copy-flow-pr-context-field' | 'open-flow-pr-url' | 'improve-flow-pr-text'>,
-  state: RevisionGraphViewState
-): boolean {
-  return isFlowPullRequestTargetKnown(message, state)
-    && isKnownGovernedFlowTransition(state, message.sourceRefName, message.targetRefName)
-    && state.flowGovernance?.pullRequestTargets?.some((target) =>
-      target.sourceRefName === message.sourceRefName
-        && target.targetRefName === message.targetRefName
-        && target.status === 'ahead'
-    ) === true;
-}
-
-function isFlowPullRequestTargetKnown(
-  message: RevisionGraphMessageOf<'copy-flow-pr-context' | 'copy-flow-pr-context-field' | 'open-flow-pr-url' | 'improve-flow-pr-text'>,
-  state: RevisionGraphViewState
-): boolean {
-  return state.viewMode === 'ready'
-    && state.flowGovernance?.enabled === true
-    && hasKnownReferenceName(state, message.sourceRefName)
-    && hasKnownReferenceName(state, message.targetRefName);
 }
 
 function authorizeFlowBranchText(
@@ -345,21 +310,6 @@ function hasKnownCommitHash(state: RevisionGraphViewState, hash: string): boolea
 
 function hasKnownReferenceName(state: RevisionGraphViewState, refName: string): boolean {
   return state.viewMode === 'ready' && state.references.some((ref) => ref.name === refName);
-}
-
-function isKnownGovernedFlowTransition(
-  state: RevisionGraphViewState,
-  sourceRefName: string,
-  targetRefName: string
-): boolean {
-  const source = state.flowGovernance?.references.find((ref) => ref.refName === sourceRefName);
-  const target = state.flowGovernance?.references.find((ref) => ref.refName === targetRefName);
-  if (!source || !target || !isFlowGovernedTransition(source.kind, target.kind)) {
-    return false;
-  }
-  return (source.kind !== 'sync' && source.kind !== 'package' && source.kind !== 'task' && source.kind !== 'bug') || state.flowGovernance?.pullRequestTargets?.some((candidate) =>
-    candidate.sourceRefName === sourceRefName && candidate.targetRefName === targetRefName
-  ) === true;
 }
 
 function hasKnownReference(

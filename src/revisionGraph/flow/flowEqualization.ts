@@ -17,7 +17,6 @@ import { resolveFlowEqualizationBranchName } from './flowEqualizationNaming';
 import {
   prepareFlowEqualizationSources
 } from './flowEqualizationPreflight';
-import { setFlowEqualizationTarget } from './flowEqualizationTarget';
 import type { FlowBranchStartPreflightDependencies } from './flowBranchStartPreflight';
 import type { NormalizedFlowConfig } from './flowTypes';
 
@@ -30,7 +29,6 @@ export interface PrepareFlowEqualizationOptions {
 
 export interface FlowEqualizationDependencies {
   readonly setDescription?: typeof setFlowBranchDescription;
-  readonly setTarget?: typeof setFlowEqualizationTarget;
   readonly prepareSources?: typeof prepareFlowEqualizationSources;
   readonly sourcePreflight?: FlowBranchStartPreflightDependencies;
 }
@@ -77,11 +75,6 @@ export async function prepareFlowEqualizationBranch(
   try {
     await repository.createBranch(branchName, true, branchBaseRefName);
     branchCreated = true;
-    await (dependencies.setTarget ?? setFlowEqualizationTarget)(
-      repository.rootUri.fsPath,
-      branchName,
-      targetBranch
-    );
     try {
       await (dependencies.setDescription ?? setFlowBranchDescription)(
         repository.rootUri.fsPath,

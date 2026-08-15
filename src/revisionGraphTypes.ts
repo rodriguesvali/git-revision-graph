@@ -78,13 +78,12 @@ export interface RevisionGraphRepositoryStatusUpdate {
 }
 
 export type RevisionGraphFlowAiTextSurface =
-  | 'pull-request'
   | 'release'
   | 'feature'
   | 'task'
   | 'bug'
   | 'hotfix';
-export type RevisionGraphFlowAiTextField = 'title' | 'description';
+export type RevisionGraphFlowAiTextField = 'description';
 
 export type RevisionGraphViewHostMessage =
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
@@ -96,14 +95,6 @@ export type RevisionGraphViewHostMessage =
   }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: RemoteTagPublicationState }
   | { readonly type: 'set-commit-short-stat'; readonly commitHash: string; readonly shortStat: RevisionGraphCommitShortStat | null }
-  | {
-    readonly type: 'show-flow-pr-context';
-    readonly sourceRefName: string;
-    readonly targetRefName: string;
-    readonly title: string;
-    readonly description: string;
-    readonly handoff: import('./revisionGraph/flow/flowPullRequestContext').FlowPullRequestHandoffPresentation;
-  }
   | {
     readonly type: 'show-flow-branch-form';
     readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';

@@ -5,7 +5,6 @@ import { isBoundedNonEmptyString, isBoundedString, isRecord, isString } from '..
 import { validateFlowGovernanceOptions, validateProjectionOptions } from './messageValidationOptions';
 import {
   validateCancelFlowAiTextMessage,
-  validateImproveFlowPullRequestTextMessage,
   validateImproveFlowBranchTextMessage
 } from './messageValidationFlowAi';
 
@@ -48,10 +47,6 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'set-flow-governance-options': validateSetFlowGovernanceOptionsMessage,
   'start-flow-branch': validateStartFlowBranchMessage,
   'prepare-flow-equalization': validatePrepareFlowEqualizationMessage,
-  'copy-flow-pr-context': validateCopyFlowPullRequestContextMessage,
-  'copy-flow-pr-context-field': validateCopyFlowPullRequestContextFieldMessage,
-  'open-flow-pr-url': validateOpenFlowPullRequestUrlMessage,
-  'improve-flow-pr-text': validateImproveFlowPullRequestTextMessage,
   'improve-flow-branch-text': validateImproveFlowBranchTextMessage,
   'cancel-flow-ai-text': validateCancelFlowAiTextMessage,
   'compare-selected': validateCompareSelectedMessage,
@@ -163,53 +158,6 @@ function validatePrepareFlowEqualizationMessage(
       description: message.description
     }
     : undefined;
-}
-
-function validateCopyFlowPullRequestContextMessage(
-  message: RawRevisionGraphMessage
-): RevisionGraphProtocol.MessageOf<'copy-flow-pr-context'> | undefined {
-  return validateFlowPullRequestTarget(message)
-    ? { type: 'copy-flow-pr-context', sourceRefName: message.sourceRefName, targetRefName: message.targetRefName }
-    : undefined;
-}
-
-function validateOpenFlowPullRequestUrlMessage(
-  message: RawRevisionGraphMessage
-): RevisionGraphProtocol.MessageOf<'open-flow-pr-url'> | undefined {
-  return validateFlowPullRequestTarget(message)
-    && isBoundedNonEmptyString(message.title, 240)
-    && isBoundedNonEmptyString(message.description, 2048)
-    ? {
-      type: 'open-flow-pr-url',
-      sourceRefName: message.sourceRefName,
-      targetRefName: message.targetRefName,
-      title: message.title,
-      description: message.description
-    }
-    : undefined;
-}
-
-function validateCopyFlowPullRequestContextFieldMessage(
-  message: RawRevisionGraphMessage
-): RevisionGraphProtocol.MessageOf<'copy-flow-pr-context-field'> | undefined {
-  const field = message.field;
-  return validateFlowPullRequestTarget(message)
-    && (field === 'title' || field === 'description')
-    && isBoundedNonEmptyString(message.text, field === 'title' ? 240 : 2048)
-    ? {
-      type: 'copy-flow-pr-context-field',
-      sourceRefName: message.sourceRefName,
-      targetRefName: message.targetRefName,
-      field,
-      text: message.text
-    }
-    : undefined;
-}
-
-function validateFlowPullRequestTarget(
-  message: RawRevisionGraphMessage
-): message is RawRevisionGraphMessage & { readonly sourceRefName: string; readonly targetRefName: string } {
-  return isBoundedNonEmptyString(message.sourceRefName) && isBoundedNonEmptyString(message.targetRefName);
 }
 
 function validateCompareSelectedMessage(

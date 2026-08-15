@@ -17,9 +17,7 @@ import { FlowConfigPersistenceCoordinator } from './flowConfigPersistenceCoordin
 import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning';
 import { prepareFlowBranchStart } from './flowBranchStartPreflight';
 import { prepareFlowEqualizationBranch } from './flowEqualization';
-import { RevisionGraphFlowPullRequestWorkflow } from './pullRequestWorkflow';
 import { RevisionGraphFlowAiTextWorkflow } from './aiTextWorkflow';
-import type { FlowAiTextContextProvider } from './aiTextContext';
 import type {
   FlowAiTextField,
   FlowAiTextImprover,
@@ -51,19 +49,15 @@ export interface RevisionGraphFlowGovernanceWorkflowHost extends FlowRemoteFetch
 
 export class RevisionGraphFlowGovernanceWorkflow {
   private readonly configPersistence = new FlowConfigPersistenceCoordinator();
-  private readonly pullRequestWorkflow: RevisionGraphFlowPullRequestWorkflow;
   private readonly aiTextWorkflow: RevisionGraphFlowAiTextWorkflow;
 
   constructor(
     private readonly host: RevisionGraphFlowGovernanceWorkflowHost,
-    aiTextImprover?: FlowAiTextImprover,
-    aiTextContextProvider?: FlowAiTextContextProvider
+    aiTextImprover?: FlowAiTextImprover
   ) {
-    this.pullRequestWorkflow = new RevisionGraphFlowPullRequestWorkflow(host);
     this.aiTextWorkflow = new RevisionGraphFlowAiTextWorkflow(
       host,
-      aiTextImprover,
-      aiTextContextProvider
+      aiTextImprover
     );
   }
 
@@ -258,35 +252,4 @@ export class RevisionGraphFlowGovernanceWorkflow {
     }
   }
 
-  async copyPullRequestContext(sourceRefName: string, targetRefName: string): Promise<void> {
-    const context = await this.pullRequestWorkflow.copyContext(sourceRefName, targetRefName);
-    if (context) this.aiTextWorkflow.setPullRequestContext(context);
-  }
-
-  async copyPullRequestContextField(
-    sourceRefName: string,
-    targetRefName: string,
-    field: 'title' | 'description',
-    text: string
-  ): Promise<void> {
-    await this.pullRequestWorkflow.copyContextField(
-      sourceRefName,
-      targetRefName,
-      field,
-      text
-    );
-  }
-
-  async openPullRequestUrl(
-    sourceRefName: string,
-    targetRefName: string,
-    title: string,
-    description: string
-  ): Promise<void> {
-    await this.pullRequestWorkflow.openUrl(
-      sourceRefName,
-      targetRefName,
-      { title, body: description }
-    );
-  }
 }

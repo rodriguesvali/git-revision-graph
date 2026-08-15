@@ -82,30 +82,6 @@ declare namespace RevisionGraphProtocol {
       readonly originRefName: string;
       readonly description: string;
     }
-    | { readonly type: 'copy-flow-pr-context'; readonly sourceRefName: string; readonly targetRefName: string }
-    | {
-      readonly type: 'copy-flow-pr-context-field';
-      readonly sourceRefName: string;
-      readonly targetRefName: string;
-      readonly field: 'title' | 'description';
-      readonly text: string;
-    }
-    | {
-      readonly type: 'open-flow-pr-url';
-      readonly sourceRefName: string;
-      readonly targetRefName: string;
-      readonly title: string;
-      readonly description: string;
-    }
-    | {
-      readonly type: 'improve-flow-pr-text';
-      readonly requestId: number;
-      readonly sourceRefName: string;
-      readonly targetRefName: string;
-      readonly field: 'title' | 'description';
-      readonly title: string;
-      readonly description: string;
-    }
     | {
       readonly type: 'improve-flow-branch-text';
       readonly requestId: number;
@@ -117,8 +93,8 @@ declare namespace RevisionGraphProtocol {
     | {
       readonly type: 'cancel-flow-ai-text';
       readonly requestId: number;
-      readonly surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
-      readonly field: 'title' | 'description';
+      readonly surface: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+      readonly field: 'description';
     }
     | {
       readonly type: 'compare-selected';

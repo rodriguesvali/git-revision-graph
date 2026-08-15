@@ -335,27 +335,12 @@
           { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) },
           { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) },
           { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) },
-          { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) },
-          { label: 'Promotion PR Context', onClick: () => openFlowPullRequestContextForm(target) }
+          { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) }
         );
       } else if (flowBranch.kind === 'release') {
         const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) }, { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) }, { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) }, { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
-        if (productionBranchName) {
-          entries.push(
-            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, productionBranchName) }
-          );
-        }
-      } else if (flowBranch.kind === 'hotfix' || flowBranch.kind === 'sync' || flowBranch.kind === 'package'
-        || flowBranch.kind === 'task' || flowBranch.kind === 'bug') {
-        const pullRequestTargetName = flowBranch.kind === 'hotfix' ? getFlowProductionBranchName()
-          : getFlowPullRequestTargets(target.name)[0]?.targetRefName;
-        if (pullRequestTargetName) {
-          entries.push(
-            { label: 'Promotion PR Context', onClick: () => postCopyFlowPullRequestContext(target.name, pullRequestTargetName) }
-          );
-        }
       }
 
       if (entries.length > 0) {
@@ -538,30 +523,6 @@
       flowBranchDialogController.show(target, branchKind);
     }
 
-    function getFlowPullRequestTargets(sourceRefName: string): RevisionGraphWebviewFlowPullRequestTarget[] {
-      if (!currentFlowGovernance || !Array.isArray(currentFlowGovernance.pullRequestTargets)) {
-        return [];
-      }
-      return currentFlowGovernance.pullRequestTargets.filter((target) =>
-        target && target.sourceRefName === sourceRefName
-      );
-    }
-
-    const flowPullRequestDialogController = createRevisionGraphWebviewFlowPullRequestDialogController({
-      closeContextMenu,
-      getTargets: getFlowPullRequestTargets,
-      requestContext: postCopyFlowPullRequestContext,
-      copyReferences(sourceRefName, targetRefName) {
-        vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, 'title', `Source: ${sourceRefName}\nTarget: ${targetRefName}`));
-      },
-      copyField(sourceRefName, targetRefName, field, text) { vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextFieldMessage(sourceRefName, targetRefName, field, text)); },
-      ...flowAiTextInteractions.pullRequestDependencies
-    });
-
-    function openFlowPullRequestContextForm(target: RevisionGraphWebviewTarget) { flowPullRequestDialogController.open(target); }
-
-    function showFlowPullRequestContextForm(context: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'show-flow-pr-context' }>) { flowPullRequestDialogController.showContext(context); }
-
     function getFlowEqualizationOrigins(targetRefName: string): string[] {
       return getRevisionGraphWebviewFlowEqualizationOrigins(
         isFlowGovernanceActive(),
@@ -678,10 +639,6 @@
         createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description),
         'Preparing equalization...'
       );
-    }
-
-    function postCopyFlowPullRequestContext(sourceRefName: string, targetRefName: string) {
-      vscode.postMessage(createRevisionGraphCopyFlowPullRequestContextMessage(sourceRefName, targetRefName));
     }
 
     function getFlowProductionBranchName() {
