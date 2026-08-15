@@ -11,9 +11,9 @@
     "src/revisionGraph/webview/script/interactions.ts": 978,
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 1228,
-    "src/showLog/webviewStyles.ts": 900,
+    "src/showLog/webviewStyles.ts": 882,
     "src/showLogView.ts": 786,
-    "src/showLogWebview.ts": 1474
+    "src/showLogWebview.ts": 1472
   },
   "functions": {
     "src/refActions/branches.ts::createBranchFromResolvedReference#1": 21,

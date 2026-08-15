@@ -374,16 +374,14 @@ export function renderShowLogWebviewHtml(): string {
       }
 
       const nodeColor = getLaneColor(topology.colorByLane[topology.nodeLane]);
-      const nodeX = laneX(topology.nodeLane, laneSpacing);
+      const nodeX = laneX(topology.nodeLane, laneSpacing); let fixedNode = '';
       if (isMerge) {
-        lineParts.push('<circle class="graph-node-merge-ring" cx="' + nodeX + '" cy="' + centerY + '" r="5.1" stroke="' + nodeColor + '" />');
-        lineParts.push('<circle class="graph-node-ring" cx="' + nodeX + '" cy="' + centerY + '" r="3.05" stroke="' + nodeColor + '" />');
-        lineParts.push('<circle class="graph-node-merge-core" cx="' + nodeX + '" cy="' + centerY + '" r="1.85" fill="' + nodeColor + '" />');
+        fixedNode = '<span class="graph-node-marker graph-node-merge" style="left: ' + nodeX + 'px; --show-log-node-color: ' + nodeColor + ';" aria-hidden="true"></span>';
       } else {
-        lineParts.push('<circle class="graph-node-solid" cx="' + nodeX + '" cy="' + centerY + '" r="3.85" fill="' + nodeColor + '" stroke="' + nodeColor + '" />');
+        fixedNode = '<span class="graph-node-marker' + (isFirstVisible ? ' graph-node-outgoing' : '') + '" style="left: ' + nodeX + 'px; --show-log-node-color: ' + nodeColor + ';" aria-hidden="true"></span>';
       }
 
-      return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>';
+      return '<svg class="graph-svg" width="' + width + '" style="width: ' + width + 'px;" viewBox="0 -2 ' + width + ' ' + height + '" preserveAspectRatio="none" aria-hidden="true">' + lineParts.join('') + '</svg>' + fixedNode;
     }
 
     function getMainGraphHeight(commit) {

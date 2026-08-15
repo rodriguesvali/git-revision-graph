@@ -1,5 +1,4 @@
-export function renderShowLogWebviewStyles(): string {
-  return `
+export function renderShowLogWebviewStyles(): string { return `
     :root {
       color-scheme: var(--vscode-color-scheme);
       --show-log-row-hover: color-mix(
@@ -349,7 +348,7 @@ export function renderShowLogWebviewStyles(): string {
       height: 100%;
       min-height: 30px;
     }
-    .graph-main {
+    .graph-main { position: relative;
       display: flex;
       min-height: var(--show-log-main-graph-height, 30px);
       overflow: hidden;
@@ -391,24 +390,7 @@ export function renderShowLogWebviewStyles(): string {
       stroke-linejoin: round;
       opacity: 0.88;
     }
-    .graph-node-ring {
-      fill: var(--vscode-sideBar-background);
-      stroke-width: 1.35;
-    }
-    .graph-node-solid {
-      stroke-width: 1.2;
-    }
-    .graph-node-core {
-      fill: var(--vscode-sideBar-background);
-      opacity: 0.92;
-    }
-    .graph-node-merge-ring {
-      fill: var(--vscode-sideBar-background);
-      stroke-width: 2;
-    }
-    .graph-node-merge-core {
-      opacity: 0.96;
-    }
+    .graph-node-marker { position: absolute; top: 15px; width: 7px; height: 7px; border-radius: 50%; background: var(--show-log-node-color); transform: translate(-50%, -50%); } .graph-node-outgoing, .graph-node-merge { width: 11px; height: 11px; border: 2px solid var(--show-log-node-color); background: var(--vscode-sideBar-background); } .graph-node-merge { display: grid; place-items: center; } .commit-row:hover .graph-node-marker:not(.graph-node-outgoing, .graph-node-merge) { box-shadow: 0 0 0 2px var(--show-log-node-color); } .commit-row:hover .graph-node-outgoing { background: var(--show-log-node-color); } .graph-node-merge::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--show-log-node-color) 55%, var(--vscode-charts-yellow, #cca700) 45%); transition: width 90ms ease, height 90ms ease; } .commit-row:hover .graph-node-merge::after { position: absolute; inset: -1px; width: auto; height: auto; }
     .subject-cell,
     .author-cell,
     .date-cell {
