@@ -845,6 +845,7 @@ test('enabling Flow Governance creates the default repository config when missin
     const result = await updateRepositoryFlowConfigOptions(root, undefined, { enabled: true });
 
     assert.equal(result.ok, true);
+    assert.equal(result.created, true);
     const persisted = JSON.parse(await readFile(configPath, 'utf8')) as Record<string, unknown>;
     assert.equal(persisted.schemaVersion, 1);
     assert.equal(persisted.enabled, true);

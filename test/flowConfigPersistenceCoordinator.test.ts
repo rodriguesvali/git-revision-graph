@@ -17,7 +17,7 @@ test('Flow config persistence serializes updates for the same repository', async
     if (started.length === 1) {
       await firstWrite.promise;
     }
-    return { ok: true, path: '/workspace/repository/.git-revision-graph-flow.json' };
+    return { ok: true, path: '/workspace/repository/.git-revision-graph-flow.json', created: false };
   });
 
   const first = coordinator.enqueue('/workspace/repository', undefined, { enabled: true });
@@ -42,7 +42,7 @@ test('Flow config persistence keeps different repositories independent', async (
       writesStarted.resolve();
     }
     await releases[index].promise;
-    return { ok: true, path: path.join(root, '.git-revision-graph-flow.json') };
+    return { ok: true, path: path.join(root, '.git-revision-graph-flow.json'), created: false };
   });
 
   const first = coordinator.enqueue('/workspace/repository-a', undefined, { enabled: true });
@@ -62,7 +62,7 @@ test('Flow config persistence continues the queue after a failed write', async (
     if (calls.length === 1) {
       throw new Error('filesystem failure');
     }
-    return { ok: true, path: '/workspace/repository/.git-revision-graph-flow.json' };
+    return { ok: true, path: '/workspace/repository/.git-revision-graph-flow.json', created: false };
   };
   const coordinator = new FlowConfigPersistenceCoordinator(persister);
 

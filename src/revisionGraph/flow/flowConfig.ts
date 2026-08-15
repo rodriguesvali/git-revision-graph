@@ -159,7 +159,7 @@ export async function updateRepositoryFlowConfigOptions(
   update: RepositoryFlowConfigOptionsUpdate,
   services: RepositoryFlowConfigUpdateServices = {}
 ): Promise<
-  | { readonly ok: true; readonly path: string }
+  | { readonly ok: true; readonly path: string; readonly created: boolean }
   | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
 > {
   const configPath = settings?.configPath ?? DEFAULT_FLOW_CONFIG_PATH;
@@ -173,7 +173,7 @@ export async function updateRepositoryFlowConfigOptions(
   }
   if (!inspectedConfigPath.exists) {
     if (update.enabled !== true) {
-      return { ok: true, path: inspectedConfigPath.path };
+      return { ok: true, path: inspectedConfigPath.path, created: false };
     }
     return createRepositoryFlowConfigForSafeUpdate(
       repositoryRootPath,
@@ -257,7 +257,7 @@ export async function updateRepositoryFlowConfigOptions(
     await handle?.close();
   }
 
-  return { ok: true, path: inspectedConfigPath.path };
+  return { ok: true, path: inspectedConfigPath.path, created: false };
 }
 
 function createUpdatedFlowConfig(

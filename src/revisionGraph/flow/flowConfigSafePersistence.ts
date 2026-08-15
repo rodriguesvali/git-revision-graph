@@ -19,7 +19,7 @@ export async function createRepositoryFlowConfigForSafeUpdate(
   expectedPath: string,
   services: RepositoryFlowConfigUpdateServices
 ): Promise<
-  | { readonly ok: true; readonly path: string }
+  | { readonly ok: true; readonly path: string; readonly created: true }
   | { readonly ok: false; readonly issue: FlowConfigValidationIssue }
 > {
   let handle: FileHandle | undefined;
@@ -44,7 +44,7 @@ export async function createRepositoryFlowConfigForSafeUpdate(
         ? 'Flow Governance config file changed before creation completed.'
         : finalized.message);
     }
-    return { ok: true, path: expectedPath };
+    return { ok: true, path: expectedPath, created: true };
   } catch (error) {
     return {
       ok: false,

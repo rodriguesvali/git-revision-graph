@@ -119,6 +119,17 @@ export class RevisionGraphFlowGovernanceWorkflow {
       void vscode.window.showWarningMessage(
         `Could not update Flow Governance config: ${result.issue.message}`
       );
+      return;
+    }
+    if (result.created) {
+      try {
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(result.path));
+        await vscode.window.showTextDocument(document, { preview: false });
+      } catch (error) {
+        void vscode.window.showWarningMessage(
+          `Flow Governance config was created but could not be opened: ${getErrorMessage(error)}`
+        );
+      }
     }
   }
 
@@ -250,4 +261,8 @@ export class RevisionGraphFlowGovernanceWorkflow {
     }
   }
 
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

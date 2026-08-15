@@ -716,6 +716,42 @@ test('Flow Governance awaits the shared modal warning when a repository mutation
   await operation;
 });
 
+test('Flow Governance opens a configuration created by enabling the file-backed toggle', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
+    '../src/revisionGraph/flow/governanceWorkflow'
+  ) as typeof import('../src/revisionGraph/flow/governanceWorkflow');
+  const root = await mkdtemp(path.join(os.tmpdir(), 'flow-governance-orchestration-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const repository = createRepository({ root });
+  let state = {
+    viewMode: 'ready',
+    flowGovernance: {
+      enabled: false,
+      configSource: 'defaults',
+      diagnostics: [],
+      branchKinds: [],
+      references: []
+    }
+  } as never;
+  const workflow = new RevisionGraphFlowGovernanceWorkflow({
+    actionServices: {} as never,
+    mutationCoordinator: {} as never,
+    getCurrentRepository: () => repository,
+    getCurrentState: () => state,
+    setCurrentState: (nextState) => { state = nextState as never; },
+    postActionLoading: () => undefined,
+    postCurrentState: () => undefined,
+    postHostMessage: () => undefined
+  });
+
+  await workflow.updateOptions({ enabled: true });
+
+  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  assert.deepEqual(harness.openedTextDocuments, [configPath]);
+  assert.deepEqual(harness.shownTextDocuments, [{ fsPath: configPath }]);
+});
+
 function createRejectedMutationCoordinator(): never {
   return {
     async run() {
@@ -845,6 +881,8 @@ function installVscodePanelMock(
   readonly panels: TestPanel[];
   readonly clipboardWrites: string[];
   readonly openedExternalUris: string[];
+  readonly openedTextDocuments: string[];
+  readonly shownTextDocuments: unknown[];
   createPanel(): TestPanel;
 } {
   const moduleLoader = require('node:module') as {
@@ -854,6 +892,8 @@ function installVscodePanelMock(
   const panels: TestPanel[] = [];
   const clipboardWrites: string[] = [];
   const openedExternalUris: string[] = [];
+  const openedTextDocuments: string[] = [];
+  const shownTextDocuments: unknown[] = [];
   const createPanel = (): TestPanel => {
     const disposeListeners = new Set<() => void>();
     const messageListeners = new Set<(message: unknown) => void>();
@@ -899,6 +939,7 @@ function installVscodePanelMock(
       })
     },
     Uri: {
+      file: (fsPath: string) => ({ fsPath }),
       parse: (value: string) => ({ toString: () => value }),
       joinPath: (base: { path?: string }, ...parts: string[]) => ({
         path: [base.path ?? '', ...parts].join('/'),
@@ -940,9 +981,14 @@ function installVscodePanelMock(
       showWarningMessage: async () => undefined,
       showErrorMessage: async () => undefined,
       showQuickPick: async () => undefined,
+      showTextDocument: async (document: unknown) => { shownTextDocuments.push(document); },
       createOutputChannel: () => ({ appendLine() {}, dispose() {} })
     },
     workspace: {
+      openTextDocument: async (uri: { fsPath: string }) => {
+        openedTextDocuments.push(uri.fsPath);
+        return uri;
+      },
       asRelativePath: (value: { fsPath?: string } | string) => typeof value === 'string' ? value : value.fsPath ?? '',
       getConfiguration: () => ({
         get: <T>(_key: string, fallback?: T) => fallback
@@ -963,7 +1009,15 @@ function installVscodePanelMock(
     return originalLoad.call(this, request, parent, isMain);
   };
   t.after(() => { moduleLoader._load = originalLoad; });
-  return { extensionUri: extensionUri as never, panels, clipboardWrites, openedExternalUris, createPanel };
+  return {
+    extensionUri: extensionUri as never,
+    panels,
+    clipboardWrites,
+    openedExternalUris,
+    openedTextDocuments,
+    shownTextDocuments,
+    createPanel
+  };
 }
 
 async function waitForAsyncHandlers(): Promise<void> {
