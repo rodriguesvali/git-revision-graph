@@ -1,26 +1,26 @@
 # Hosted Git Provider Adapters
 
-Status: Implemented; live provider smoke pending
-Last updated: 2026-07-13
+Status: Commit-link capabilities retained; review-request handoff removed in `1.6.7`
+Last updated: 2026-08-15
 Baseline: `1.6.0`
 
 ## Goal
 
-Make hosted Git URL handoff extensible beyond GitHub and Azure DevOps, then add a conservative
-URL-only integration for GitLab.com, AWS CodeCommit, and Google Cloud Secure Source Manager.
+Keep hosted Git remote recognition and verified commit links extensible across GitHub, Azure
+DevOps, GitLab.com, AWS CodeCommit, and Google Cloud Secure Source Manager.
 
 The extension remains a Git client and browser handoff. It does not acquire provider credentials,
 call hosting APIs, create review requests automatically, or add runtime dependencies.
 
 ## Provider Capability Matrix
 
-| Provider | Remote formats | Commit destination | Review-request destination |
-| --- | --- | --- | --- |
-| GitHub | Hosted HTTPS/SSH/git | Exact commit | Prefilled compare/Pull Request page |
-| Azure DevOps Services | Current and recognized legacy HTTPS/SSH | Exact commit | Prefilled Pull Request page |
-| GitLab.com | HTTPS/SSH with nested namespaces | Exact commit | Prefilled Merge Request page |
-| AWS CodeCommit | Regional HTTPS/SSH, including FIPS and China endpoints | Exact commit | Repository Pull Requests area; branches remain manual |
-| Google Secure Source Manager | Default `sourcemanager.dev` HTTPS/SSH hosts | Deferred until a documented exact route exists | Repository page; Pull Request navigation and branches remain manual |
+| Provider | Remote formats | Commit destination |
+| --- | --- | --- |
+| GitHub | Hosted HTTPS/SSH/git | Exact commit |
+| Azure DevOps Services | Current and recognized legacy HTTPS/SSH | Exact commit |
+| GitLab.com | HTTPS/SSH with nested namespaces | Exact commit |
+| AWS CodeCommit | Regional HTTPS/SSH, including FIPS and China endpoints | Exact commit |
+| Google Secure Source Manager | Default `sourcemanager.dev` HTTPS/SSH hosts | Deferred until a documented exact route exists |
 
 GitLab Self-Managed, Secure Source Manager custom domains, Cloud Source Repositories, CodeCommit's
 `codecommit://` remote helper, and authenticated provider APIs remain deferred. Arbitrary hosts must
@@ -34,8 +34,7 @@ Each adapter owns:
 - recognition of its trusted clone hosts and URL shapes;
 - canonical, credential-free repository web URL construction;
 - logical repository identity for fetch/push equivalence;
-- exact commit URL construction when verified;
-- review-request handoff construction and its supported prefill level.
+- exact commit URL construction when verified.
 
 The generic resolver continues to own origin-first selection, fetch/push identity validation,
 read-only state, branch/hash normalization, and capability-aware dispatch. Controllers, webviews,
@@ -50,18 +49,16 @@ Show Log, and Flow Governance remain provider-neutral.
   components.
 - Treat the AWS region and partition as part of repository identity.
 - Treat the Secure Source Manager instance host, project, and repository as identity components.
-- Fail closed when fetch and push URLs identify different repositories or providers.
-- Do not invent undocumented commit or review-request query routes. A provider adapter may expose
-  only the capabilities supported by verified destinations.
+- Do not invent undocumented commit routes. A provider adapter may expose only verified
+  destinations.
 
 ## Acceptance Criteria
 
-- Existing GitHub and Azure DevOps tests and behavior remain unchanged.
-- GitLab.com HTTPS/SSH remotes with nested groups open exact commits and a prefilled Merge Request.
-- CodeCommit regional HTTPS/SSH remotes open exact commits and the repository Pull Requests area.
-- Secure Source Manager default HTTPS/SSH remotes normalize to the documented HTML repository URL
-  and participate in Pull Request handoff without claiming an exact commit deep link.
-- Mixed fetch/push providers, repositories, regions, partitions, or SSM instances fail closed.
+- Existing GitHub and Azure DevOps commit-link behavior remains unchanged.
+- GitLab.com HTTPS/SSH remotes with nested groups open exact commits.
+- CodeCommit regional HTTPS/SSH remotes open exact commits.
+- Secure Source Manager default HTTPS/SSH remotes are recognized without claiming an exact commit
+  deep link.
 - Provider-specific capabilities are implemented through adapters rather than a growing provider
   conditional in the shared resolver.
 - README, changelog, smoke matrix, SAD, and release notes describe the actual capability levels.
@@ -69,12 +66,9 @@ Show Log, and Flow Governance remain provider-neutral.
 
 ## Manual Validation
 
-- GitLab.com: open a commit from Revision Graph and Show Log; open a governed Merge Request and
-  verify source, target, title, and description.
-- CodeCommit: open a commit in the correct AWS region; verify the Pull Requests area opens only
-  after the existing Flow Governance preflight.
-- Secure Source Manager: verify HTTPS and SSH remotes resolve to the HTML repository, then navigate
-  through the Pull Requests tab using the copied Flow Governance context.
+- GitLab.com: open a commit from Revision Graph and Show Log.
+- CodeCommit: open a commit in the correct AWS region.
+- Secure Source Manager: verify HTTPS and SSH remotes produce the unsupported exact-commit message.
 - For every provider, verify credentials and clone URL queries/fragments never reach the browser.
 
 ## Sources
@@ -107,7 +101,7 @@ and fetch/push mismatch rejection.
 
 ## Handoff Notes
 
-Live Extension Development Host smoke remains pending for the three newly added providers. Secure
-Source Manager exact commit linking remains deliberately deferred, and CodeCommit/Secure Source
-Manager Pull Request destinations deliberately do not claim branch prefill. Packaging, version
-changes, and Marketplace publication remain unauthorized.
+Live Extension Development Host commit-link smoke remains pending for the three providers added by
+this slice. Secure Source Manager exact commit linking remains deliberately deferred. The `1.6.7`
+deconstruction removed all review-request URL capabilities from the adapters. Packaging and
+Marketplace publication remain unauthorized.

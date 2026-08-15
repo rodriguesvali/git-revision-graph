@@ -87,8 +87,7 @@ risking user work.
 - For Flow Governance checks, use a disposable repository where creating or editing
   `.git-revision-graph-flow.json` is acceptable.
 - For remote-host checks, use accessible GitHub, Azure DevOps Services, GitLab.com, AWS CodeCommit,
-  and Google Secure Source Manager repositories where available, with a disposable source branch
-  suitable for Pull Request handoff.
+  and Google Secure Source Manager repositories where available.
 
 ## Automated Extension Host Baseline
 
@@ -142,12 +141,6 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Invalid config | Temporarily make the flow file invalid JSON or use an invalid regex, then reload the graph. | The graph still loads, Flow Governance controls are hidden for that state, and normal graph actions remain usable. |
 | Disabled behavior | Set Flow Governance off through settings or config and refresh. | Existing graph behavior remains unchanged and no Flow Governance controls are shown unless metadata is present. |
 | Zero repository | Run `Create Flow Governance Config` from an empty non-Git workspace. | A concise no-repository information message appears and no file is written. |
-| GitHub PR handoff | Use a governed source/target pair on a supported GitHub remote and select `Open Pull Request`. | Existing source publication/preflight guards run and the GitHub creation page opens for the selected branches. |
-| AI unavailable/denied | Deny model consent or repeat with no available Copilot model. | The form stays open with its current text, the AI action becomes available again, and concise native feedback is shown without any Git operation. |
-| Azure DevOps PR handoff | Use a governed source/target pair on a supported Azure DevOps Services remote and select `Open Pull Request`. Repeat with current HTTPS or SSH and legacy `visualstudio.com` remotes where available. | Existing source publication/preflight guards run and the Azure DevOps creation page opens with the selected short source and target branch names. If VS Code cannot open a browser, it shows retry/manual-navigation guidance. |
-| GitLab.com Merge Request handoff | Use a governed source/target pair on a supported GitLab.com remote and select `Open Pull Request`. | Existing guards run and GitLab opens a Merge Request form with source, target, title, and description. |
-| AWS CodeCommit PR handoff | Use a governed source/target pair on a regional CodeCommit remote and select `Open Pull Request`. | Existing guards run and the repository Pull Requests area opens in the matching AWS region; branch selection remains manual. |
-| Secure Source Manager PR handoff | Use a governed source/target pair on a default `sourcemanager.dev` HTTPS or SSH remote and select `Open Pull Request`. | Existing guards run and the documented HTML repository page opens; navigate through Pull Requests and select branches manually. |
 
 ## Review Workflows
 

@@ -204,15 +204,10 @@ expands them.
 - Transition policy and release readiness must be deterministic host-side logic with unit coverage before webview wiring.
 - The webview may display diagnostics and dispatch explicit user intents, but it must not evaluate branch policy, read configuration, call provider APIs, or perform Git operations.
 - Release readiness may use targeted Git ancestry checks where the public Git API is insufficient, and must report missing refs or command errors as inconclusive rather than ready or blocked.
-- PR handoff should work without provider authentication first by copying PR context or opening recognized compare/PR URLs.
-- Optional AI text improvement must start only from a field-level user action. The webview sends bounded
-  visible field values, while the host derives the governed transition and selects a typed prompt/context
-  policy. Delivery and release PRs may load only allowlisted project-document changes; bug, hotfix, and
-  synchronization PRs may load a bounded code diff only after changed paths are filtered for sensitive
-  files. The workbench language-model adapter accepts the resulting bounded prompt. Only the matching
-  current form may accept the result; PR copy and provider URL handoff consume the validated, reviewed
-  context.
-- PR handoff must verify that the selected source exists at the same commit on the handoff remote. Missing or locally-ahead sources may be published/pushed only after explicit confirmation; remote-ahead and divergent sources fail closed, and force push is never offered.
+- Optional AI text improvement must start only from a field-level user action. The webview sends the
+  bounded visible branch description, and only the matching current branch form may accept the result.
+- Branch-start preflight may publish an untracked source only after explicit confirmation. Remote-ahead
+  and divergent sources fail closed, and force push is never offered.
 - Equalization may create a local `sync/*` branch and merge production only after explicit confirmation and only when existing clean-worktree/conflict guards pass. It must never push automatically and must never perform the final governed merge into `release/*`.
 
 ## Architectural Constraints
@@ -236,14 +231,14 @@ expands them.
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.
 - Flow Governance Phase 1 is a metadata overlay over the loaded graph. It must not hide branch refs or change Git data, commit ancestry, projection edge semantics, or existing Git workflows.
-- Flow Governance 1.6.0 is not releasable as badges alone; it should add PR-required diagnostics, release readiness, PR handoff, and safe equalization guidance before publication.
-- AI-assisted PR/release authoring is advisory and transient: deterministic defaults remain available,
-  model output never performs Git operations, and closing/changing forms or repositories cancels it.
-- Promotion PR handoff from a release or hotfix to the configured production branch must fail closed unless the local production ref exactly matches the current remote production tip and that tip is an ancestor of the source. These guards are rechecked before opening the provider URL so stale local governance state or incompatible promotion sources cannot bypass current production.
+- Flow Governance retains PR-required diagnostics as policy guidance, plus branch-start preflight and
+  safe equalization; it does not provide Pull Request authoring or provider handoff.
+- AI-assisted branch-description authoring is advisory and transient: deterministic user input remains
+  available, model output never performs Git operations, and closing/changing forms or repositories
+  cancels it.
 - Governed branch creation may offer immediate publication only after the local branch and its metadata are successfully created. Publication requires explicit confirmation, uses a normal Git API push with upstream tracking, and must leave the local branch intact when declined, canceled, unavailable, or failed.
-- Governed package creation starts only from an exactly synchronized feature, persists that feature
-  as local branch-target metadata, and reuses the mapped `package -> feature` Pull Request handoff so
-  consolidated task deliveries return through one explicit PR without target inference.
+- Governed package creation starts only from an exactly synchronized feature. Pull Request target
+  metadata and package-to-feature handoff are no longer part of the active architecture.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 
 ## Quality Attributes

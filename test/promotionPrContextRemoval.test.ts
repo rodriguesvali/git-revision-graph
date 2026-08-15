@@ -49,3 +49,14 @@ test('hosted Git adapters do not retain Pull Request URL capabilities', () => {
   assert.doesNotMatch(productionSources, /resolveHostedPullRequestRemote/);
   assert.doesNotMatch(productionSources, /buildHostedPullRequestUrl/);
 });
+
+test('the active Extension Host smoke matrix does not require removed Pull Request handoff', () => {
+  const smokeMatrix = readFileSync(
+    join(repositoryRoot, 'project-context/3.deliver/extension-host-smoke-matrix.md'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(smokeMatrix, /Open Pull Request/);
+  assert.doesNotMatch(smokeMatrix, /PR handoff/);
+  assert.doesNotMatch(smokeMatrix, /Pull Request handoff/);
+});
