@@ -51,9 +51,6 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
   }
 
   async improve(requestId: number, input: FlowAiTextImprovementInput): Promise<void> {
-    if (input.surface === 'pull-request') {
-      return;
-    }
     const repository = this.host.getCurrentRepository();
     const improver = this.improver;
     if (!repository || !improver) {
@@ -113,7 +110,7 @@ export class RevisionGraphFlowAiTextWorkflow implements vscode.Disposable {
 
   private postUnavailable(
     requestId: number,
-    input: Exclude<FlowAiTextImprovementInput, { readonly surface: 'pull-request' }>,
+    input: FlowAiTextImprovementInput,
     message: string
   ): void {
     this.host.postHostMessage(createRevisionGraphFlowAiTextResultMessage(

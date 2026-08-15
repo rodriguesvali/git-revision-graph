@@ -179,7 +179,7 @@ Manual Extension Development Host smoke for Phase 1 must cover graph load, repos
 
 ## Flow Governance 1.6.0 Architecture Direction
 
-Flow Governance 1.6.0 should build on the completed Phase 1 metadata overlay and add operational governance value before release. The target architecture keeps classification, policy, diagnostics, promotion checks, PR handoff, and sync planning in focused flow modules while preserving the existing revision graph controller, repository lifecycle, backend, and native workbench action boundaries.
+Flow Governance builds on the completed Phase 1 metadata overlay and keeps classification, policy, diagnostics, branch-start preflight, and sync planning in focused flow modules while preserving the existing revision graph controller, repository lifecycle, backend, and native workbench action boundaries. The former Promotion PR Context workflow, provider handoff, and Pull Request-specific AI context are not part of the active architecture.
 
 1.6.0 must not reintroduce branch visibility filters, branch-type visibility checkboxes, hidden `sync/*` treatment, or webview-side branch governance inference. All branch refs included by the current graph projection remain visible. Flow Governance adds classification, diagnostics, readiness results, and guided actions over the graph.
 
@@ -188,15 +188,12 @@ Flow Governance 1.6.0 should build on the completed Phase 1 metadata overlay and
 - `flowTransitionPolicy.ts`: pure governed source/target transition matching and direct-merge policy outcomes.
 - `flowPromotionChecks.ts`: release promotion ancestry validation with `ready`, `blocked`, and `inconclusive` results.
 - `flowDiagnostics.ts`: expanded governance diagnostics built from host-side classification, transition policy, and readiness results.
-- `flowPullRequestContext.ts`: provider-neutral PR title/body/context and recognized hosted-provider
-  URL generation without requiring authentication, backed by `hostedGitRemote.ts` and the focused
-  provider adapter registry.
-- `flowPullRequestPreflight.ts`: provider-aligned remote-source existence and exact-tip verification before PR handoff, with fail-closed publication states.
+- `flowBranchStartPreflight.ts`: remote-source existence, publication, and synchronization checks
+  required before a governed branch-start or equalization action; failures remain fail-closed.
 - `flowSyncPlan.ts`: production-to-release equalization planning, sync branch naming, precondition checks, and no-push handoff metadata.
-- `aiTextAssistant.ts`, `aiPrompts/*`, `aiTextContext.ts`, `aiTextPromptFitting.ts`, and
-  `aiTextWorkflow.ts`: bounded context-specific prompt/output policy, allowlisted project-document or
-  sensitive-path-filtered code-diff context, per-model token fitting, explicit request lifecycle,
-  transient host-owned PR context, cancellation, and stale-response rejection for PR/release text.
+- `aiTextAssistant.ts`, `aiPrompts/*`, `aiTextPromptFitting.ts`, and `aiTextWorkflow.ts`: bounded
+  branch-description prompt/output policy, per-model token fitting, explicit request lifecycle,
+  cancellation, and stale-response rejection.
 
 Provider API PR creation, cleanup candidates, provider authentication, and persistent diagnostics
 panels remain outside the initial 1.6.0 architecture unless a focused feature artifact explicitly

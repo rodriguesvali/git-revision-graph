@@ -62,14 +62,14 @@ test('builds the host request that opens a prepared Flow Governance branch form'
 
 test('builds Flow AI text results with explicit ready and unavailable states', () => {
   assert.deepEqual(
-    createRevisionGraphFlowAiTextResultMessage(4, 'pull-request', 'title', 'ready', 'Release 2.0.0'),
+    createRevisionGraphFlowAiTextResultMessage(4, 'feature', 'description', 'ready', 'Payment validation'),
     {
       type: 'set-flow-ai-text-result',
       requestId: 4,
-      surface: 'pull-request',
-      field: 'title',
+      surface: 'feature',
+      field: 'description',
       status: 'ready',
-      content: 'Release 2.0.0'
+      content: 'Payment validation'
     }
   );
   assert.deepEqual(

@@ -56,9 +56,9 @@ Target version: `1.6.7`
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
-| Release scope | In progress | Remove the low-value `Promotion PR Context` workflow end-to-end; see `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md`. |
+| Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow end-to-end; see `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md`. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
-| Automated verification | In progress | Build, quality check, graph refresh, and whitespace validation passed for removal of `Promotion PR Context`. Update obsolete webview expectations and rerun the full suite before packaging. |
+| Automated verification | Complete for implementation | `npm test` passed 606 tests; build, quality check, graph refresh, and whitespace validation also passed. |
 | Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
 | VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
 | Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |
@@ -69,7 +69,7 @@ Opening record:
 - Version metadata was aligned to `1.6.7` on 2026-08-15 to start the development cycle.
 - No release scope, dependency change, VSIX package, Git tag, publication command, or Marketplace action has been performed.
 - The published `1.6.6` baseline and its outstanding post-publication evidence remain recorded below.
-- `Promotion PR Context` is being removed after user feedback that its review, preflight, and provider-handoff flow causes more friction than value. No replacement Pull Request workflow is introduced.
+- `Promotion PR Context` was removed after user feedback that its review, preflight, and provider-handoff flow causes more friction than value. No replacement Pull Request workflow was introduced.
 
 ## Published Release: 1.6.6
 

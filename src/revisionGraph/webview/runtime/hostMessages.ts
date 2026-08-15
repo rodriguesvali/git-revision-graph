@@ -60,8 +60,7 @@ function isRevisionGraphWebviewFlowAiTextResultMessage(value: Record<string, unk
     && Number.isFinite(value.requestId)
     && value.requestId >= 0
     && isRevisionGraphWebviewFlowAiTextSurface(value.surface)
-    && (value.field === 'title' || value.field === 'description')
-    && !(value.surface !== 'pull-request' && value.field !== 'description')
+    && value.field === 'description'
     && (value.status === 'ready' || value.status === 'unavailable')
     && (value.status === 'ready'
       ? typeof value.content === 'string'
@@ -69,7 +68,7 @@ function isRevisionGraphWebviewFlowAiTextResultMessage(value: Record<string, unk
 }
 
 function isRevisionGraphWebviewFlowAiTextSurface(value: unknown): boolean {
-  return value === 'pull-request' || value === 'release' || value === 'feature'
+  return value === 'release' || value === 'feature'
     || value === 'task' || value === 'bug' || value === 'hotfix';
 }
 

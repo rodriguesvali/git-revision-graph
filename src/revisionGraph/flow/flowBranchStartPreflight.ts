@@ -5,9 +5,9 @@ import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
 import { prepareFullRebuildRefresh } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import {
-  checkFlowPullRequestSourcePublication,
-  type FlowPullRequestSourcePublication
-} from './flowPullRequestPreflight';
+  checkFlowBranchPublication,
+  type FlowBranchPublication
+} from './flowBranchPublicationPreflight';
 import type { FlowStartBranchKind } from './flowTypes';
 
 export type FlowBranchStartSyncPolicy = 'exact-sync' | 'not-behind';
@@ -26,12 +26,12 @@ export interface PrepareFlowBranchSourceOptions {
 
 export interface FlowBranchStartPreflightDependencies {
   runWithRemoteFetchLoading<T>(operation: () => Promise<T>): Promise<T>;
-  readonly checkSourcePublication?: typeof checkFlowPullRequestSourcePublication;
+  readonly checkSourcePublication?: typeof checkFlowBranchPublication;
 }
 
 const DEFAULT_DEPENDENCIES: FlowBranchStartPreflightDependencies = {
   runWithRemoteFetchLoading: (operation) => operation(),
-  checkSourcePublication: checkFlowPullRequestSourcePublication
+  checkSourcePublication: checkFlowBranchPublication
 };
 
 export function getFlowBranchStartSyncPolicy(kind: FlowStartBranchKind): FlowBranchStartSyncPolicy {
@@ -163,7 +163,7 @@ async function prepareUntrackedFlowBranchSource(
       return false;
     }
 
-    const checkSourcePublication = dependencies.checkSourcePublication ?? checkFlowPullRequestSourcePublication;
+    const checkSourcePublication = dependencies.checkSourcePublication ?? checkFlowBranchPublication;
     let publication = await dependencies.runWithRemoteFetchLoading(() => checkSourcePublication(
       repository,
       remoteName,
@@ -215,7 +215,7 @@ async function prepareUntrackedFlowBranchSource(
 }
 
 async function canPublishUntrackedFlowBranch(
-  publication: FlowPullRequestSourcePublication,
+  publication: FlowBranchPublication,
   repository: Repository,
   options: PrepareFlowBranchSourceOptions,
   services: RefActionServices

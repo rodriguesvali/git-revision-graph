@@ -9,7 +9,7 @@ export * from './flowDiagnostics';
 export * from './flowEqualization';
 export * from './flowEqualizationNaming';
 export * from './flowEqualizationPreflight';
-export * from './flowPullRequestPreflight';
+export * from './flowBranchPublicationPreflight';
 export * from './flowPatternSafety';
 export * from './flowPatternCanonicalization';
 export * from './flowReleaseBranch';

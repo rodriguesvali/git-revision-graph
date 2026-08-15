@@ -8,9 +8,6 @@ import type {
 
 export type {
   FlowAiBranchTextSurface,
-  FlowAiPromptContextSource,
-  FlowAiPullRequestPromptContext,
-  FlowAiPullRequestPromptKind,
   FlowAiTextField,
   FlowAiTextImprovementInput,
   FlowAiTextSurface
@@ -28,7 +25,6 @@ export interface FlowAiTextImprover {
   ): Promise<FlowAiTextImprovementResult>;
 }
 
-export const FLOW_AI_TITLE_MAX_LENGTH = 240;
 export const FLOW_AI_DESCRIPTION_MAX_LENGTH = 2048;
 
 export function buildFlowAiTextImprovementPrompt(input: FlowAiTextImprovementInput): string {
@@ -36,11 +32,9 @@ export function buildFlowAiTextImprovementPrompt(input: FlowAiTextImprovementInp
 }
 
 export function normalizeFlowAiTextImprovementOutput(
-  field: FlowAiTextField,
+  _field: FlowAiTextField,
   value: string
 ): string {
   const trimmed = value.trim();
-  const normalized = field === 'title' ? trimmed.replace(/\s+/g, ' ') : trimmed;
-  const maxLength = field === 'title' ? FLOW_AI_TITLE_MAX_LENGTH : FLOW_AI_DESCRIPTION_MAX_LENGTH;
-  return normalized.slice(0, maxLength).trim();
+  return trimmed.slice(0, FLOW_AI_DESCRIPTION_MAX_LENGTH).trim();
 }

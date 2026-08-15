@@ -14,12 +14,6 @@ interface RevisionGraphWebviewTarget {
   readonly kind: RevisionGraphWebviewTargetKind;
 }
 
-interface RevisionGraphWebviewFlowPullRequestTarget {
-  readonly sourceRefName: string;
-  readonly targetRefName: string;
-  readonly status?: 'eligible' | 'production-not-ancestor' | 'production-out-of-sync' | 'not-ahead' | 'unknown';
-}
-
 type RevisionGraphWebviewProjectionOptions = RevisionGraphProtocol.ProjectionOptionsUpdate;
 type RevisionGraphWebviewFlowGovernanceOptions = RevisionGraphProtocol.FlowGovernanceOptionsUpdate;
 
@@ -87,8 +81,8 @@ type RevisionGraphWebviewHostMessage =
   | {
     readonly type: 'set-flow-ai-text-result';
     readonly requestId: number;
-    readonly surface: 'pull-request' | 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
-    readonly field: 'title' | 'description';
+    readonly surface: 'release' | 'feature' | 'task' | 'bug' | 'hotfix';
+    readonly field: 'description';
     readonly status: 'ready' | 'unavailable';
     readonly content?: string;
   }
