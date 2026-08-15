@@ -25,6 +25,7 @@ export interface CommitGraph {
 
 export interface RevisionGraphProjectionOptions {
   readonly refScope: 'all' | 'current' | 'remoteHead' | 'local';
+  readonly layoutPreference: 'auto' | 'balanced' | 'fast-two-layer' | 'dfs-wide';
   readonly showTags: boolean;
   readonly showRemoteBranches: boolean;
   readonly showStashes: boolean;
@@ -66,4 +67,5 @@ export interface ProjectedGraph {
   readonly nodes: readonly ProjectedGraphNode[];
   readonly edges: readonly ProjectedGraphEdge[];
   readonly visibleHashes: ReadonlySet<string>;
+  readonly layoutPreference?: RevisionGraphProjectionOptions['layoutPreference'];
 }

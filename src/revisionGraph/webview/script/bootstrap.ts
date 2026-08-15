@@ -1,9 +1,7 @@
-const EDGE_VERTICAL_INSET = 6;
-const VIEWPORT_PADDING_TOP = 18;
+const EDGE_VERTICAL_INSET = 6; const VIEWPORT_PADDING_TOP = 18;
 const VIEWPORT_PADDING_RIGHT = 0;
 const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
-
     const vscode = acquireRevisionGraphWebviewApi();
     const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
     const {
@@ -12,7 +10,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       graphMinimap, minimapSvg, minimapEdgeLayer, minimapNodeLayer, minimapViewport,
       minimapZoomOutButton, minimapZoomResetButton, minimapZoomInButton,
       loadingOverlay, loadingMessage, reloadButton, reloadMenuButton, fetchAllButton,
-      pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, viewOptionsButton,
+      pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, layoutSelect, viewOptionsButton,
       viewOptionsMenu, showTagsToggle, showRemoteBranchesToggle, showStashesToggle,
       showMergeCommitsToggle, showMinimapToggle, flowGovernanceOptions,
       flowGovernanceEnabledToggle, searchInput, searchResultBadge, searchPrevButton,
@@ -204,6 +202,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage(options), 'Updating graph scope...', scopeSelect);
       });
     }
+    bindRevisionGraphLayoutPreferenceSelect(layoutSelect, postMessageWithLoading);
     if (viewOptionsButton) {
       viewOptionsButton.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -1110,6 +1109,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       if (scopeSelect) {
         scopeSelect.value = state.projectionOptions.refScope || 'all';
       }
+      syncRevisionGraphLayoutPreferenceSelect(layoutSelect, state.projectionOptions.layoutPreference);
       if (showTagsToggle) {
         showTagsToggle.checked = !!state.projectionOptions.showTags;
       }

@@ -140,6 +140,9 @@ export function buildProjectedGraphLayoutCacheKey(projection: ProjectedGraph): s
 }
 
 export function getProjectedGraphLayoutProfile(projection: ProjectedGraph): D3DagSugiyamaLayoutProfile {
+  if (projection.layoutPreference && projection.layoutPreference !== 'auto') {
+    return projection.layoutPreference;
+  }
   return selectD3DagSugiyamaLayoutProfile(createD3DagSugiyamaLayoutInput(projection));
 }
 
@@ -291,7 +294,10 @@ export function calculateLinearProjectedGraphFallback(
 function createD3DagSugiyamaLayoutInput(projection: ProjectedGraph): D3DagSugiyamaLayoutInput {
   return {
     nodes: projection.nodes,
-    edges: projection.edges
+    edges: projection.edges,
+    profile: projection.layoutPreference && projection.layoutPreference !== 'auto'
+      ? projection.layoutPreference
+      : undefined
   };
 }
 

@@ -73,6 +73,25 @@ test('RevisionGraphViewStateWorkflow normalizes projection options and schedules
   assert.deepEqual(refreshes, ['projection-only']);
 });
 
+test('RevisionGraphViewStateWorkflow applies a layout preference with a projection-only refresh', async () => {
+  let projectionOptions = createReadyRevisionGraphState().projectionOptions;
+  const refreshes: unknown[] = [];
+  const workflow = new RevisionGraphViewStateWorkflow(createHost({
+    getProjectionOptions: () => projectionOptions,
+    setProjectionOptions(options) {
+      projectionOptions = options;
+    },
+    async refresh(request) {
+      refreshes.push(request);
+    }
+  }));
+
+  await workflow.setProjectionOptions({ layoutPreference: 'fast-two-layer' });
+
+  assert.equal(projectionOptions.layoutPreference, 'fast-two-layer');
+  assert.deepEqual(refreshes, ['projection-only']);
+});
+
 test('RevisionGraphViewStateWorkflow keeps graph focus modes mutually exclusive', async () => {
   let projectionOptions: RevisionGraphViewState['projectionOptions'] = {
     ...createReadyRevisionGraphState().projectionOptions,
@@ -213,6 +232,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     hasConflictedMerge: false,
     projectionOptions: {
       refScope: 'all',
+      layoutPreference: 'auto',
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,

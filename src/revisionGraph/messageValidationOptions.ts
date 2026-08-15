@@ -19,12 +19,27 @@ export function validateProjectionOptions(value: unknown): RevisionGraphProtocol
   }
   const options: MutableProjectionOptions = {};
   return validateProjectionRefScope(value, options)
+    && validateProjectionLayoutPreference(value, options)
     && validateProjectionBooleanOptions(value, options)
     && validateProjectionRevisionRange(value, options)
     && validateProjectionDescendantFocus(value, options)
     && !(options.revisionRange && options.descendantFocus)
     ? options
     : undefined;
+}
+
+function validateProjectionLayoutPreference(value: RawOptions, options: MutableProjectionOptions): boolean {
+  if (value.layoutPreference === undefined) {
+    return true;
+  }
+  if (value.layoutPreference !== 'auto'
+    && value.layoutPreference !== 'balanced'
+    && value.layoutPreference !== 'fast-two-layer'
+    && value.layoutPreference !== 'dfs-wide') {
+    return false;
+  }
+  options.layoutPreference = value.layoutPreference;
+  return true;
 }
 
 function validateProjectionRefScope(value: RawOptions, options: MutableProjectionOptions): boolean {

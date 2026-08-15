@@ -10,6 +10,7 @@ import { collectAncestorHashes, collectDescendantHashes } from '../model/commitG
 
 const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   refScope: 'all',
+  layoutPreference: 'auto',
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
@@ -97,7 +98,8 @@ export function projectCommitGraph(
     sourceGraph: graph,
     nodes,
     edges,
-    visibleHashes
+    visibleHashes,
+    layoutPreference: options.layoutPreference
   };
 }
 

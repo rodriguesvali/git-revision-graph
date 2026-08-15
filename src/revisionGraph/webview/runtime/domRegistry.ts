@@ -28,6 +28,7 @@ interface RevisionGraphWebviewDom {
   readonly pushMenuButton: HTMLButtonElement;
   readonly syncButton: HTMLButtonElement;
   readonly scopeSelect: HTMLSelectElement;
+  readonly layoutSelect: HTMLSelectElement;
   readonly viewOptionsButton: HTMLButtonElement;
   readonly viewOptionsMenu: HTMLDivElement;
   readonly showTagsToggle: HTMLInputElement;
@@ -85,6 +86,7 @@ function createRevisionGraphWebviewDom(): RevisionGraphWebviewDom {
     pushMenuButton: requireRevisionGraphElement<HTMLButtonElement>('pushMenuButton'),
     syncButton: requireRevisionGraphElement<HTMLButtonElement>('syncButton'),
     scopeSelect: requireRevisionGraphElement<HTMLSelectElement>('scopeSelect'),
+    layoutSelect: requireRevisionGraphElement<HTMLSelectElement>('layoutSelect'),
     viewOptionsButton: requireRevisionGraphElement<HTMLButtonElement>('viewOptionsButton'),
     viewOptionsMenu: requireRevisionGraphElement<HTMLDivElement>('viewOptionsMenu'),
     showTagsToggle: requireRevisionGraphElement<HTMLInputElement>('showTagsToggle'),

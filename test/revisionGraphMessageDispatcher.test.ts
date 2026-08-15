@@ -144,6 +144,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     hasConflictedMerge: false,
     projectionOptions: {
       refScope: 'all',
+      layoutPreference: 'auto',
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,

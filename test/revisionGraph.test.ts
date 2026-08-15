@@ -119,6 +119,7 @@ test('builds git log args that exclude tags and scope to local branches', () => 
   assert.deepEqual(
     buildRevisionGraphGitLogArgs(12000, {
       refScope: 'local',
+      layoutPreference: 'auto',
       showTags: false,
       showRemoteBranches: false,
       showStashes: false,
@@ -583,6 +584,38 @@ test('selects adaptive d3-dag Sugiyama layout profiles by projected graph shape'
   assert.equal(selectD3DagSugiyamaLayoutProfile(smallProjection), 'balanced');
   assert.equal(selectD3DagSugiyamaLayoutProfile(largeProjection), 'fast-two-layer');
   assert.equal(selectD3DagSugiyamaLayoutProfile(wideProjection), 'dfs-wide');
+});
+
+test('honors manual d3-dag layout profiles and separates their cache entries', () => {
+  const automaticProjection = createLinearProjectedGraph(12);
+  const balancedProjection = { ...automaticProjection, layoutPreference: 'balanced' as const };
+  const fasterProjection = { ...automaticProjection, layoutPreference: 'fast-two-layer' as const };
+  const wideProjection = { ...automaticProjection, layoutPreference: 'dfs-wide' as const };
+
+  assert.equal(getProjectedGraphLayoutProfile(automaticProjection), 'balanced');
+  assert.equal(getProjectedGraphLayoutProfile(balancedProjection), 'balanced');
+  assert.equal(getProjectedGraphLayoutProfile(fasterProjection), 'fast-two-layer');
+  assert.equal(getProjectedGraphLayoutProfile(wideProjection), 'dfs-wide');
+  assert.equal(
+    buildProjectedGraphLayoutCacheKey(automaticProjection),
+    buildProjectedGraphLayoutCacheKey(balancedProjection)
+  );
+  assert.notEqual(
+    buildProjectedGraphLayoutCacheKey(balancedProjection),
+    buildProjectedGraphLayoutCacheKey(fasterProjection)
+  );
+});
+
+test('passes the requested layout preference through graph projection', () => {
+  const graph = buildCommitGraph([
+    { hash: 'head1', parents: [], author: 'Ada', date: '2026-08-15', subject: 'Head', refs: [] }
+  ]);
+  const projection = projectMajorOperationsGraph(graph, {
+    ...createDefaultRevisionGraphProjectionOptions(),
+    layoutPreference: 'dfs-wide'
+  });
+
+  assert.equal(projection.layoutPreference, 'dfs-wide');
 });
 
 test('bounds synchronous d3-dag failure fallback and provides deterministic linear layout', () => {

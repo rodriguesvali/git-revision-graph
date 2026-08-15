@@ -36,9 +36,11 @@ export interface D3DagSugiyamaEdgeRoute {
   readonly points: readonly D3DagSugiyamaLayoutPoint[];
 }
 
-export type D3DagSugiyamaLayoutInput = Pick<ProjectedGraph, 'nodes' | 'edges'>;
-
 export type D3DagSugiyamaLayoutProfile = 'balanced' | 'fast-two-layer' | 'dfs-wide';
+
+export interface D3DagSugiyamaLayoutInput extends Pick<ProjectedGraph, 'nodes' | 'edges'> {
+  readonly profile?: D3DagSugiyamaLayoutProfile;
+}
 
 export interface D3DagSugiyamaLayoutResult {
   readonly positions: Map<string, D3DagSugiyamaLayoutPosition>;
@@ -49,7 +51,7 @@ export interface D3DagSugiyamaLayoutResult {
 export function calculateD3DagSugiyamaLayout(
   projection: D3DagSugiyamaLayoutInput
 ): D3DagSugiyamaLayoutResult {
-  const profile = selectD3DagSugiyamaLayoutProfile(projection);
+  const profile = projection.profile ?? selectD3DagSugiyamaLayoutProfile(projection);
 
   if (projection.nodes.length === 0) {
     return {

@@ -138,6 +138,15 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
         <option value="local">Local Branches</option>
       </select>
     </label>
+    <label for="layoutSelect">
+      <span class="control-caption">Layout</span>
+      <select id="layoutSelect" title="Choose how commit lanes are arranged">
+        <option value="auto">Automatic</option>
+        <option value="balanced">Balanced</option>
+        <option value="fast-two-layer">Faster</option>
+        <option value="dfs-wide">Wide Graph</option>
+      </select>
+    </label>
     <div class="view-options" id="viewOptions">
       <button
         id="viewOptionsButton"

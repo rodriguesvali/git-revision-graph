@@ -20,6 +20,7 @@ declare namespace RevisionGraphProtocol {
 
   interface ProjectionOptionsUpdate {
     readonly refScope?: 'all' | 'current' | 'remoteHead' | 'local';
+    readonly layoutPreference?: 'auto' | 'balanced' | 'fast-two-layer' | 'dfs-wide';
     readonly showTags?: boolean;
     readonly showRemoteBranches?: boolean;
     readonly showStashes?: boolean;

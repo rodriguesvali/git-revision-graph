@@ -102,6 +102,11 @@ test('renders a persistent shell for the revision graph webview', () => {
 
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /<option value="remoteHead">origin\/HEAD<\/option>/);
+  assert.match(html, /<select id="layoutSelect"[^>]*>/);
+  assert.match(html, /<option value="auto">Automatic<\/option>/);
+  assert.match(html, /<option value="balanced">Balanced<\/option>/);
+  assert.match(html, /<option value="fast-two-layer">Faster<\/option>/);
+  assert.match(html, /<option value="dfs-wide">Wide Graph<\/option>/);
   assert.match(html, /id="viewOptionsButton"/);
   assert.match(html, /id="viewOptionsMenu"/);
   assert.doesNotMatch(html, /Show Branchings &amp; Merges/);
@@ -1566,6 +1571,31 @@ test('posts Flow Governance option updates from the webview runtime', () => {
   const lastMessage = runtime.postedMessages.at(-1);
   assert.equal(lastMessage.type, 'set-flow-governance-options');
   assert.deepEqual(lastMessage.options, { enabled: false });
+});
+
+test('posts and synchronizes revision graph layout preferences from the webview runtime', () => {
+  const runtime = createWebviewRuntime();
+  const layoutSelect = runtime.elements.get('layoutSelect');
+  assert.ok(layoutSelect);
+
+  runtime.context.handleHostMessage({
+    type: 'update-state',
+    state: createReadyGraphState({
+      projectionOptions: {
+        ...createReadyGraphState().projectionOptions,
+        layoutPreference: 'dfs-wide'
+      }
+    })
+  });
+  assert.equal(layoutSelect.value, 'dfs-wide');
+
+  layoutSelect.value = 'fast-two-layer';
+  layoutSelect.listeners.change[0]();
+
+  assert.deepEqual(runtime.postedMessages.at(-1), {
+    type: 'set-projection-options',
+    options: { layoutPreference: 'fast-two-layer' }
+  });
 });
 
 test('lists main and other active releases as equalization origins', () => {
@@ -3259,6 +3289,7 @@ function createWebviewRuntime() {
     'pushMenuButton',
     'syncButton',
     'scopeSelect',
+    'layoutSelect',
     'viewOptions',
     'viewOptionsButton',
     'viewOptionsMenu',

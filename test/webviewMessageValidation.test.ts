@@ -34,6 +34,7 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     undefined
   );
   assert.equal(validateRevisionGraphMessage({ type: 'set-projection-options', options: { showTags: 'yes' } }), undefined);
+  assert.equal(validateRevisionGraphMessage({ type: 'set-projection-options', options: { layoutPreference: 'random' } }), undefined);
   assert.equal(
     validateRevisionGraphMessage({
       type: 'copy-commit-hash',
@@ -251,6 +252,18 @@ test('validateRevisionGraphMessage rejects malformed graph messages', () => {
     }),
     undefined
   );
+});
+
+test('validateRevisionGraphMessage accepts every revision graph layout preference', () => {
+  for (const layoutPreference of ['auto', 'balanced', 'fast-two-layer', 'dfs-wide'] as const) {
+    assert.deepEqual(validateRevisionGraphMessage({
+      type: 'set-projection-options',
+      options: { layoutPreference }
+    }), {
+      type: 'set-projection-options',
+      options: { layoutPreference }
+    });
+  }
 });
 
 test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => {
@@ -1635,6 +1648,7 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     hasConflictedMerge: false,
     projectionOptions: {
       refScope: 'all',
+      layoutPreference: 'auto',
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
