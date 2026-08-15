@@ -30,11 +30,6 @@ export const githubAdapter: HostedGitProviderAdapter = {
   },
   buildCommitUrl(remote, commitHash) {
     return `${remote.repositoryWebUrl}/commit/${encodeURIComponent(commitHash)}`;
-  },
-  buildPullRequestUrl(remote, context) {
-    const compare = `${encodeURIComponent(context.targetRefName)}...${encodeURIComponent(context.sourceRefName)}`;
-    const query = new URLSearchParams({ quick_pull: '1', title: context.title, body: context.body });
-    return `${remote.repositoryWebUrl}/compare/${compare}?${query.toString()}`;
   }
 };
 

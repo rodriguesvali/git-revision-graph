@@ -31,3 +31,21 @@ test('the webview protocol rejects removed Promotion PR Context messages', async
     targetRefName: 'develop'
   }), undefined);
 });
+
+test('hosted Git adapters do not retain Pull Request URL capabilities', () => {
+  const productionSources = [
+    'src/hostedGitRemote.ts',
+    'src/hostedGitProviders/types.ts',
+    'src/hostedGitProviders/index.ts',
+    'src/hostedGitProviders/github.ts',
+    'src/hostedGitProviders/azureDevOps.ts',
+    'src/hostedGitProviders/gitlab.ts',
+    'src/hostedGitProviders/awsCodeCommit.ts',
+    'src/hostedGitProviders/googleSecureSourceManager.ts'
+  ].map((path) => readFileSync(join(repositoryRoot, path), 'utf8')).join('\n');
+
+  assert.doesNotMatch(productionSources, /HostedGitPullRequestContext/);
+  assert.doesNotMatch(productionSources, /buildPullRequestUrl/);
+  assert.doesNotMatch(productionSources, /resolveHostedPullRequestRemote/);
+  assert.doesNotMatch(productionSources, /buildHostedPullRequestUrl/);
+});

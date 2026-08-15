@@ -44,13 +44,6 @@ export const azureDevOpsAdapter: HostedGitProviderAdapter = {
   },
   buildCommitUrl(remote, commitHash) {
     return `${remote.repositoryWebUrl}/commit/${encodeURIComponent(commitHash)}`;
-  },
-  buildPullRequestUrl(remote, context) {
-    const query = new URLSearchParams({
-      sourceRef: context.sourceRefName,
-      targetRef: context.targetRefName
-    });
-    return `${remote.repositoryWebUrl}/pullrequestcreate?${query.toString()}`;
   }
 };
 

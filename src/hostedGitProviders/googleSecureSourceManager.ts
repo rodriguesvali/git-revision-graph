@@ -36,9 +36,6 @@ export const googleSecureSourceManagerAdapter: HostedGitProviderAdapter = {
     }
     const parts = parsePathParts(parsed.pathname);
     return parts ? createSecureSourceManagerMatch(hostMatch[1], hostMatch[3], parts) : undefined;
-  },
-  buildPullRequestUrl(remote) {
-    return remote.repositoryWebUrl;
   }
 };
 

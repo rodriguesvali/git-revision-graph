@@ -5,8 +5,7 @@ import {
   isCodeCommitRemoteHelperUrl,
   type HostedGitProvider,
   type HostedGitProviderMatch,
-  type HostedGitRepository,
-  type HostedGitPullRequestContext
+  type HostedGitRepository
 } from './hostedGitProviders';
 import { normalizeValue } from './hostedGitProviders/shared';
 
@@ -30,33 +29,14 @@ export function resolveHostedGitRemote(repository: Repository): HostedGitRemote 
 }
 
 export function getHostedRemoteConfigurationMessage(
-  repository: Repository,
-  destination: 'commit link' | 'Pull Request context'
+  repository: Repository
 ): string | undefined {
   const usesCodeCommitHelper = repository.state.remotes.some((remote) =>
     isCodeCommitRemoteHelperUrl(remote.fetchUrl) || isCodeCommitRemoteHelperUrl(remote.pushUrl)
   );
   return usesCodeCommitHelper
-    ? `CodeCommit git-remote-codecommit remotes do not include an AWS Region. Configure a regional HTTPS or SSH CodeCommit remote to open ${destination}.`
+    ? 'CodeCommit git-remote-codecommit remotes do not include an AWS Region. Configure a regional HTTPS or SSH CodeCommit remote to open commit link.'
     : undefined;
-}
-
-export function resolveHostedPullRequestRemote(repository: Repository): HostedGitRemote | undefined {
-  for (const remote of getPreferredRemotes(repository.state.remotes)) {
-    const fetchRemote = parseHostedGitRemoteUrl(remote.fetchUrl);
-    if (!fetchRemote || !getHostedGitProviderAdapter(fetchRemote.provider).buildPullRequestUrl) {
-      continue;
-    }
-    const pushUrl = remote.pushUrl?.trim();
-    if (pushUrl) {
-      const pushRemote = parseHostedGitRemoteUrl(pushUrl);
-      if (!pushRemote || !isSameHostedRepository(fetchRemote, pushRemote)) {
-        continue;
-      }
-    }
-    return withRemoteState(fetchRemote, remote);
-  }
-  return undefined;
 }
 
 export function parseHostedGitRemoteUrl(remoteUrl: string | undefined): ParsedHostedGitRemote | undefined {
@@ -104,41 +84,6 @@ export function buildHostedCommitUrlForRemote(
     : undefined;
 }
 
-export function buildHostedPullRequestUrlFromRemoteUrl(
-  remoteUrl: string | undefined,
-  sourceRefName: string,
-  targetRefName: string,
-  title: string,
-  body: string
-): string | undefined {
-  const remote = parseHostedGitRemoteUrl(remoteUrl);
-  return remote
-    ? buildHostedPullRequestUrlForRemote(remote, sourceRefName, targetRefName, title, body)
-    : undefined;
-}
-
-export function buildHostedPullRequestUrlForRemote(
-  remote: Pick<HostedGitRemote, 'provider' | 'repositoryWebUrl'>,
-  sourceRefName: string,
-  targetRefName: string,
-  title: string,
-  body: string
-): string | undefined {
-  const source = normalizeValue(sourceRefName);
-  const target = normalizeValue(targetRefName);
-  const adapter = getHostedGitProviderAdapter(remote.provider);
-  if (!source || !target || !adapter.buildPullRequestUrl) {
-    return undefined;
-  }
-  const context: HostedGitPullRequestContext = {
-    sourceRefName: source,
-    targetRefName: target,
-    title,
-    body
-  };
-  return adapter.buildPullRequestUrl(toHostedRepository(remote), context);
-}
-
 function resolveHostedGitRemoteWithCapability(
   repository: Repository,
   supports: (provider: HostedGitProvider) => boolean
@@ -177,8 +122,4 @@ function withRemoteState(parsed: ParsedHostedGitRemote, remote: Remote): HostedG
     name: remote.name,
     isReadOnly: remote.isReadOnly
   };
-}
-
-function isSameHostedRepository(left: ParsedHostedGitRemote, right: ParsedHostedGitRemote): boolean {
-  return left.repositoryIdentity === right.repositoryIdentity;
 }

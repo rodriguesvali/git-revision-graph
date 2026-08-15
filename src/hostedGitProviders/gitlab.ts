@@ -35,15 +35,6 @@ export const gitlabAdapter: HostedGitProviderAdapter = {
   },
   buildCommitUrl(remote, commitHash) {
     return `${remote.repositoryWebUrl}/-/commit/${encodeURIComponent(commitHash)}`;
-  },
-  buildPullRequestUrl(remote, context) {
-    const query = new URLSearchParams({
-      'merge_request[source_branch]': context.sourceRefName,
-      'merge_request[target_branch]': context.targetRefName,
-      'merge_request[title]': context.title,
-      'merge_request[description]': context.body
-    });
-    return `${remote.repositoryWebUrl}/-/merge_requests/new?${query.toString()}`;
   }
 };
 

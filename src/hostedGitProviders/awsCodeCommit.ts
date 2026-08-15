@@ -47,10 +47,6 @@ export const awsCodeCommitAdapter: HostedGitProviderAdapter = {
   buildCommitUrl(remote, commitHash) {
     const region = getConsoleRegion(remote.repositoryWebUrl);
     return `${remote.repositoryWebUrl}/commit/${encodeURIComponent(commitHash)}?region=${encodeURIComponent(region)}`;
-  },
-  buildPullRequestUrl(remote) {
-    const region = getConsoleRegion(remote.repositoryWebUrl);
-    return `${remote.repositoryWebUrl}/pull-requests?region=${encodeURIComponent(region)}`;
   }
 };
 

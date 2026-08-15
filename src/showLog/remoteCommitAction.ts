@@ -18,7 +18,7 @@ export async function openShowLogCommitOnRemote(
     const remote = resolveHostedGitRemote(repository);
     const message = remote
       ? `${remote.providerLabel} does not expose a verified commit link for this remote.`
-      : getHostedRemoteConfigurationMessage(repository, 'commit link')
+      : getHostedRemoteConfigurationMessage(repository)
         ?? 'No supported Git hosting remote is configured for this repository.';
     await remoteServices.showInformationMessage(message);
     return false;

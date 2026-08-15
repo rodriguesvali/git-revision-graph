@@ -58,7 +58,7 @@ Target version: `1.6.7`
 | Published baseline | Complete | `1.6.6` was published by maintainer confirmation on 2026-08-10. |
 | Release scope | Implemented | Removed the low-value `Promotion PR Context` workflow end-to-end; see `project-context/2.build/features/1.6.7-remove-promotion-pr-context.md`. |
 | Package metadata | Complete | `package.json` and root `package-lock.json` declare `1.6.7`. |
-| Automated verification | Complete for implementation | `npm test` passed 822 tests, including restored coverage for retained Flow Governance, branch-start, equalization, orchestration, message-boundary, and webview behavior; build, quality check, graph refresh, and whitespace validation also passed. |
+| Automated verification | Complete for implementation | `npm test` passed 823 tests, including restored coverage for retained Flow Governance, branch-start, equalization, orchestration, message-boundary, webview behavior, and removal of hosted-provider Pull Request URL capabilities; build, quality check, graph refresh, and whitespace validation also passed. |
 | Extension Development Host smoke | Pending | Record the applicable manual scenarios once scope is known. |
 | VSIX package inspection | Pending | Do not package until a maintainer explicitly authorizes it; then record artifact and clean-profile evidence. |
 | Marketplace publication | Pending | Requires explicit maintainer approval; no publication action has been taken. |
@@ -70,6 +70,7 @@ Opening record:
 - No release scope, dependency change, VSIX package, Git tag, publication command, or Marketplace action has been performed.
 - The published `1.6.6` baseline and its outstanding post-publication evidence remain recorded below.
 - `Promotion PR Context` was removed after user feedback that its review, preflight, and provider-handoff flow causes more friction than value. No replacement Pull Request workflow was introduced.
+- The deconstruction also removes the unused Pull Request URL contract and implementations from hosted Git provider adapters while retaining remote parsing and verified commit links.
 
 ## Published Release: 1.6.6
 

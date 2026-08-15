@@ -9,8 +9,7 @@ export type {
   HostedGitProvider,
   HostedGitProviderAdapter,
   HostedGitProviderMatch,
-  HostedGitRepository,
-  HostedGitPullRequestContext
+  HostedGitRepository
 } from './types';
 
 export const hostedGitProviderAdapters: readonly HostedGitProviderAdapter[] = [
