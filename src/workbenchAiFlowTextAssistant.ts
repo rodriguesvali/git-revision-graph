@@ -31,7 +31,7 @@ export function createWorkbenchAiFlowTextImprover(): FlowAiTextImprover {
 
         const response = await fitted.model.sendRequest(
           [vscode.LanguageModelChatMessage.User(fitted.prompt)],
-          { justification: 'Improve user-selected Pull Request or release form text.' },
+          { justification: 'Improve a user-selected Flow branch description.' },
           token
         );
         let content = '';

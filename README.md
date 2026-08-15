@@ -122,8 +122,8 @@ This approach keeps the extension lightweight for reference workflows. The revis
   - Repository-relative path for the Flow Governance configuration file. The default is `.git-revision-graph-flow.json`.
 
 From a branch classified as `feature`, Flow Governance offers `Start New Package`. The package is
-created from an exactly synchronized feature, retains that feature as its promotion target, and can
-then consolidate and validate its task deliveries using the normal repository workflow.
+created from an exactly synchronized feature and can then consolidate and validate its task
+deliveries using the normal repository workflow.
 
 Flow Governance repository configuration is deliberately bounded so a malformed repository cannot
 stall the extension host. The JSON file may be at most 64 KiB and 32 levels deep, with at most 64

@@ -605,17 +605,6 @@ export function renderRevisionGraphStyles(): string {
       min-height: 76px;
       resize: vertical;
     }
-    .flow-pr-context-dialog {
-      width: min(728px, calc(100vw - 40px));
-    }
-    .flow-pr-context-flow {
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      background: color-mix(in srgb, var(--panel) 78%, transparent);
-      color: var(--text);
-      padding: 7px 8px;
-      font-family: var(--vscode-editor-font-family, monospace);
-    }
     .flow-ai-field-row {
       display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: start; gap: 4px;
     }
@@ -647,18 +636,6 @@ export function renderRevisionGraphStyles(): string {
       fill: currentColor;
     }
     .flow-ai-field-row .flow-form-textarea { min-height: 96px; }
-    .flow-pr-context-warning {
-      margin: 0 0 12px;
-      border-left: 2px solid var(--vscode-editorWarning-foreground, #cca700);
-      background: color-mix(in srgb, var(--vscode-editorWarning-foreground, #cca700) 8%, transparent);
-      color: var(--text);
-      padding: 8px 10px;
-      font-size: 12px;
-      line-height: 1.45;
-    }
-    .flow-pr-context-warning[hidden] { display: none; }
-    .flow-pr-handoff { margin: 0 0 12px; }
-
     .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
     .flow-form-error {
       margin: 0 0 12px;

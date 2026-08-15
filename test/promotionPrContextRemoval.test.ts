@@ -60,3 +60,19 @@ test('the active Extension Host smoke matrix does not require removed Pull Reque
   assert.doesNotMatch(smokeMatrix, /PR handoff/);
   assert.doesNotMatch(smokeMatrix, /Pull Request handoff/);
 });
+
+test('active UI styles, AI consent, and README omit removed Promotion PR Context concepts', () => {
+  const styles = readFileSync(
+    join(repositoryRoot, 'src/revisionGraph/webview/styles.ts'),
+    'utf8'
+  );
+  const aiAdapter = readFileSync(
+    join(repositoryRoot, 'src/workbenchAiFlowTextAssistant.ts'),
+    'utf8'
+  );
+  const readme = readFileSync(join(repositoryRoot, 'README.md'), 'utf8');
+
+  assert.doesNotMatch(styles, /flow-pr-context|flow-pr-handoff/);
+  assert.doesNotMatch(aiAdapter, /Pull Request or release form/);
+  assert.doesNotMatch(readme, /promotion target/);
+});
