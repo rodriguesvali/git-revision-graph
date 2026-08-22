@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-15
+Last consolidated: 2026-08-22
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
+  functional scope is being defined.
 - `1.6.7-flow-governance-file-toggle.md`: always-visible repository-file-backed Flow Governance
   toggle that creates the default config when activated from a missing-file state.
 - `1.6.7-remove-promotion-pr-context.md`: removal of the Promotion PR Context UI, protocol,

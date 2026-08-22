@@ -1,12 +1,15 @@
 # Release Readiness
 
-Status: `1.6.7` published by maintainer confirmation; post-publication evidence reconciliation pending
-Last consolidated: 2026-08-15
+Status: `1.6.8` development cycle open; functional scope pending
+Last consolidated: 2026-08-22
 
 ## Current State
 
-- Current package version: `1.6.7` in `package.json` and the root `package-lock.json`.
+- Current package version: `1.6.8` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
+- Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22.
+  Functional scope, implementation, release notes, automated verification, Extension Development
+  Host smoke, packaging, and Marketplace publication remain pending.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
@@ -44,6 +47,63 @@ Last consolidated: 2026-08-15
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Planned Release: 1.6.8
+
+Status: Development cycle open; functional scope pending
+Opened: 2026-08-22
+Published baseline version: `1.6.7`
+Target version: `1.6.8`
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.6.8-release-cycle-opening.md`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
+| Release scope | Pending | Define approved `1.6.8` feature slices and acceptance criteria before implementation. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
+| Automated verification | Complete for cycle opening | Manifest consistency, `npm run build`, and `git diff --check` passed on 2026-08-22; feature-proportional verification remains pending until behavior changes land. |
+| Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
+| VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
+| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Rollback readiness | Documented | Before publication, revert the metadata and scoped feature changes; after publication, use a later patch or maintainer-approved Marketplace action. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.8` on 2026-08-22 to start the development cycle.
+- Manifest consistency, `npm run build`, and `git diff --check` passed; `graphify update .`
+  refreshed the repository knowledge graph.
+- No runtime source, dependency, contribution point, release note, VSIX package, Git tag,
+  publication command, or Marketplace action was included in the cycle opening.
+- `1.7.0` is not implied; any larger scope or version change requires maintainer approval.
+
+### Release Constraints And Risks
+
+- Preserve the published extension architecture and the `1.6.7` behavior until focused scope is
+  approved.
+- Keep package metadata synchronized and do not present the open cycle as release-ready.
+- Do not add dependencies, package a VSIX, create a release tag, or publish without explicit
+  maintainer approval.
+
+### Planned Verification
+
+- `npm run build` for the package-surface change.
+- Feature-proportional focused tests and `npm test` when behavior changes land.
+- `git diff --check` before each implementation handoff and release-candidate packaging.
+- Extension Development Host smoke selected from the standard matrix for approved user-visible
+  changes.
+
+### Marketplace Impact And Rollback
+
+- There is no Marketplace-facing behavior or copy change at cycle opening.
+- Before publication, rollback is a focused revert of the `1.6.8` metadata and any separately
+  approved feature slices.
+- After publication, never reuse `1.6.8`; correct issues through a later patch or an explicitly
+  approved Marketplace action.
 
 ## Published Release: 1.6.7
 
