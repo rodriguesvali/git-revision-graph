@@ -143,7 +143,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       sourceToken: this.createSourceToken(),
       repository,
       source,
-      showAllBranches: true,
+      showAllBranches: false,
       filterText: '',
       entries: [],
       hasMore: false,

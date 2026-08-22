@@ -1,15 +1,16 @@
 # Release Readiness
 
-Status: `1.6.8` development cycle open; functional scope pending
+Status: `1.6.8` development in progress; first Show Log fix implemented
 Last consolidated: 2026-08-22
 
 ## Current State
 
 - Current package version: `1.6.8` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
-- Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22.
-  Functional scope, implementation, release notes, automated verification, Extension Development
-  Host smoke, packaging, and Marketplace publication remain pending.
+- Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. The
+  first fix scopes Show Log to the branch selected in the graph until the user explicitly enables
+  `Show All Branches`. Automated verification is complete for the current scope; Extension
+  Development Host smoke, packaging, and Marketplace publication remain pending.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
@@ -50,7 +51,7 @@ Last consolidated: 2026-08-22
 
 ## Planned Release: 1.6.8
 
-Status: Development cycle open; functional scope pending
+Status: Development in progress
 Opened: 2026-08-22
 Published baseline version: `1.6.7`
 Target version: `1.6.8`
@@ -58,15 +59,16 @@ Target version: `1.6.8`
 Focused build artifact:
 
 - `project-context/2.build/features/1.6.8-release-cycle-opening.md`
+- `project-context/2.build/features/1.6.8-show-log-target-scope.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
-| Release scope | Pending | Define approved `1.6.8` feature slices and acceptance criteria before implementation. |
+| Release scope | In progress | First approved slice scopes graph context-menu Show Log to the selected branch; further `1.6.8` scope remains open. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
-| Automated verification | Complete for cycle opening | Manifest consistency, `npm run build`, and `git diff --check` passed on 2026-08-22; feature-proportional verification remains pending until behavior changes land. |
+| Automated verification | Complete for current scope | The Show Log regression and all 835 tests passed; build and quality gates passed, and Graphify was refreshed on 2026-08-22. |
 | Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
 | VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -80,6 +82,22 @@ Opening record:
 - No runtime source, dependency, contribution point, release note, VSIX package, Git tag,
   publication command, or Marketplace action was included in the cycle opening.
 - `1.7.0` is not implied; any larger scope or version change requires maintainer approval.
+
+Implemented scope:
+
+- Show Log invoked from a graph branch reference now starts with `Show All Branches` disabled, so
+  the initial Git log remains scoped to the exact selected reference. The existing toggle remains
+  available for explicit expansion to all branches.
+
+Verification record:
+
+- `npm test` passed all 835 tests, including the regression that preserves the exact
+  `feature/demo` target, initially loads it with `showAllBranches: false`, and reloads only after
+  explicit opt-in with `showAllBranches: true`.
+- `npm run build` passed as part of the full test gate.
+- `npm run quality:check` passed for 252 production files and 2,406 functions.
+- `graphify update .` refreshed the repository knowledge graph.
+- `git diff --check` passed.
 
 ### Release Constraints And Risks
 
@@ -97,9 +115,15 @@ Opening record:
 - Extension Development Host smoke selected from the standard matrix for approved user-visible
   changes.
 
+### Candidate Release Notes
+
+- Show Log now opens on the branch selected in the revision graph instead of initially mixing in
+  other branch histories. `Show All Branches` remains available as an explicit option.
+
 ### Marketplace Impact And Rollback
 
-- There is no Marketplace-facing behavior or copy change at cycle opening.
+- The current Marketplace impact is limited to correcting the initial Show Log branch scope; no
+  command, setting, contribution point, or dependency changed.
 - Before publication, rollback is a focused revert of the `1.6.8` metadata and any separately
   approved feature slices.
 - After publication, never reuse `1.6.8`; correct issues through a later patch or an explicitly

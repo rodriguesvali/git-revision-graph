@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-show-log-target-scope.md`: ensure graph context-menu Show Log opens on the exact selected
+  branch and only expands to all branches after explicit user opt-in.
 - `1.6.8-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
   functional scope is being defined.
 - `1.6.7-flow-governance-file-toggle.md`: always-visible repository-file-backed Flow Governance
@@ -21,8 +23,6 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   development-only audit remediation for the GitHub Actions verification matrix.
 - `1.6.4-revision-graph-load-performance.md`: staged optimization of the revision graph's initial
   and refresh loading paths, with end-to-end measurement and regression protection.
-- `1.6.3-show-log-all-branches-default.md`: target histories open with `Show All Branches` enabled
-  while retaining the existing scope toggle.
 - `1.6.3-show-log-expanded-file-spacing.md`: fixed continuation-row sizing prevents expanded Show
   Log commits from adding intrinsic SVG height for every changed file.
 - `1.6.3-show-log-commit-checkout-tag.md`: editable local branch checkout and local tag creation from

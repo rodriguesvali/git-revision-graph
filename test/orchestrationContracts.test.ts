@@ -379,18 +379,20 @@ test('Show Log reuses, disposes, and recreates its editor panel', async (t) => {
   provider.dispose();
 });
 
-test('Show Log enables all branches by default for target sources', async (t) => {
+test('Show Log scopes target sources until all branches is explicitly enabled', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
   const showAllBranchesValues: boolean[] = [];
+  const loadedSources: unknown[] = [];
   const backend = {
     async loadRevisionLog(
       _repository: unknown,
-      _source: unknown,
+      source: unknown,
       _limit: number,
       _skip: number,
       showAllBranches: boolean
     ) {
+      loadedSources.push(source);
       showAllBranchesValues.push(showAllBranches);
       return { entries: [], hasMore: false, searchTruncated: false };
     }
@@ -399,14 +401,28 @@ test('Show Log enables all branches by default for target sources', async (t) =>
 
   await provider.showSource(
     createRepository({ root: '/workspace/repo' }),
-    { kind: 'target', revision: 'main', label: 'main' }
+    { kind: 'target', revision: 'feature/demo', label: 'feature/demo' }
   );
 
-  const visibleState = harness.panels[0].postedMessages
+  let visibleState = harness.panels[0].postedMessages
     .map((message) => (message as { readonly state?: { readonly showAllBranches?: boolean } }).state)
     .filter((state) => !!state)
     .at(-1);
-  assert.deepEqual(showAllBranchesValues, [true]);
+
+  assert.deepEqual(loadedSources, [
+    { kind: 'target', revision: 'feature/demo', label: 'feature/demo' }
+  ]);
+  assert.deepEqual(showAllBranchesValues, [false]);
+  assert.equal(visibleState?.showAllBranches, false);
+
+  harness.panels[0].receiveMessage({ type: 'toggleShowAllBranches', value: true });
+  await waitForAsyncHandlers();
+
+  visibleState = harness.panels[0].postedMessages
+    .map((message) => (message as { readonly state?: { readonly showAllBranches?: boolean } }).state)
+    .filter((state) => !!state)
+    .at(-1);
+  assert.deepEqual(showAllBranchesValues, [false, true]);
   assert.equal(visibleState?.showAllBranches, true);
   provider.dispose();
 });
