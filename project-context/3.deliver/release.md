@@ -9,7 +9,8 @@ Last consolidated: 2026-08-23
 - Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
-  refresh, readable long reference badges in commit tooltips, and compact Show Log commit rows.
+  refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
+  rebranded Marketplace Overview with approved video and screenshot media.
   Local verification and GitHub Actions Verify run `#211` are complete; Extension Development Host
   smoke, packaging, clean-profile installation, and Marketplace publication remain pending.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
@@ -65,13 +66,14 @@ Focused build artifact:
 - `project-context/2.build/features/1.6.8-show-log-reference-badge-readability.md`
 - `project-context/2.build/features/1.6.8-show-log-compact-commit-rows.md`
 - `project-context/2.build/features/1.6.8-ci-cross-platform-path-reliability.md`
+- `project-context/2.build/features/1.6.8-marketplace-overview-rebrand.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
-| Release scope | Complete for candidate | Exact-branch Show Log opening, nonblocking Fetch/Pull/Push refresh, long-reference tooltip readability, and compact commit rows are implemented. |
+| Release scope | Complete for candidate | Exact-branch Show Log opening, nonblocking Fetch/Pull/Push refresh, long-reference tooltip readability, compact commit rows, and the Marketplace Overview rebrand are implemented. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
 | Release notes | Complete | `CHANGELOG.md` and the candidate notes below describe the reviewed user-visible `1.6.8` scope. |
 | Automated verification | Complete | All 838 tests and all 39 platform tests passed locally. GitHub Actions Verify run `#211` passed on Ubuntu, Windows, macOS, VS Code `1.90.0`, and VS Code stable. Quality, build, audit, benchmark, whitespace, and Graphify gates are recorded. |
@@ -103,6 +105,10 @@ Implemented scope:
   references use a compact single line, while the existing tooltip retains the full statistics.
 - The Flow Governance configuration-opening contract now compares canonical filesystem paths, so
   Windows 8.3 aliases and the macOS `/var` symlink no longer fail the hosted verification matrix.
+- The Marketplace Overview now leads with a concise value proposition and approved VP8/WebM demo,
+  then presents Revision Graph, Compare Results, Show Log, Git actions, Flow Governance, safety,
+  and current boundaries in grouped sections. Contributor setup and validation moved to
+  `CONTRIBUTING.md`, and externally hosted Marketplace media remains outside the VSIX.
 
 Verification record:
 
@@ -137,6 +143,13 @@ Verification record:
   `npm audit --omit=dev`, and `npm audit` passed. `npx vsce ls` confirmed that `CHANGELOG.md` is in
   the package surface and `.codex` development configuration is excluded; `git diff --check`
   passed. No VSIX was created.
+- For the Marketplace Overview rebrand on 2026-08-23, the three 1600x900 screenshots, branded
+  poster, and 41.68-second VP8/WebM demo passed local format and full-decoding checks.
+  `npm test` passed all 838 tests, including the active README regression contract, and its build
+  stage completed successfully. `npx vsce ls` confirmed that the README and extension icon remain
+  in the package while externally hosted Marketplace media, `CONTRIBUTING.md`, and
+  `project-context/**` remain excluded. A hosted Marketplace and VS Code Extensions preview remains
+  pending until the candidate assets are pushed. No VSIX was created.
 - `graphify update .` refreshed the code knowledge graph after the compact-row change, with the
   existing zero-node and stale-community-label warnings recorded in the focused artifact.
 
@@ -166,12 +179,15 @@ Verification record:
   widening commit rows.
 - Show Log uses compact single-line rows for commits without references; file, insertion, and
   deletion totals remain available in the commit tooltip.
+- The Marketplace Overview adds a short product demo, branded poster, focused screenshots, and a
+  concise tour of the extension's graph, review, Git workflow, and Flow Governance capabilities.
 
 ### Marketplace Impact And Rollback
 
 - The current Marketplace impact corrects initial Show Log branch scope, improves long-reference
-  readability and commit-row density, and improves remote-action loading/refresh behavior; no
-  command, setting, contribution point, or dependency changed.
+  readability and commit-row density, improves remote-action loading/refresh behavior, and replaces
+  the documentation-heavy Overview with a media-led product narrative; no command, setting,
+  contribution point, or dependency changed.
 - Before publication, rollback is a focused revert of the `1.6.8` metadata and any separately
   approved feature slices.
 - After publication, never reuse `1.6.8`; correct issues through a later patch or an explicitly

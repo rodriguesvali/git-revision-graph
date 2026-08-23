@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## 1.6.8 - 2026-08-23
 
+### Marketplace
+
+- Redesign the Marketplace Overview around a concise product narrative, an inline VP8/WebM demo,
+  branded poster, and focused screenshots for Revision Graph, Compare Results, and Show Log. Move
+  contributor setup and verification guidance to `CONTRIBUTING.md`.
+
 ### Revision Graph
 
 - Keep the graph interactive while Fetch, Pull, and Push run and refresh repository state. Fetch

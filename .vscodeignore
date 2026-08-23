@@ -7,8 +7,10 @@
 .vscode/**
 AGENTS.md
 CHECKLIST.md
+CONTRIBUTING.md
 coverage/**
 project-context/**
+media/marketplace/**
 out-e2e/**
 out-test/**
 src/**

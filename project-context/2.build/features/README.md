@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-22
+Last consolidated: 2026-08-23
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,6 +11,9 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-marketplace-overview-rebrand.md`: replace the documentation-heavy Marketplace Overview
+  with a concise product narrative, approved video/poster media, focused screenshots, and linked
+  contributor documentation.
 - `1.6.8-show-log-compact-commit-rows.md`: remove file-change statistics from commit rows while
   retaining them in the commit tooltip, so commits without references use a compact single line.
 - `1.6.8-show-log-reference-badge-readability.md`: preserve compact reference badges in Show Log
