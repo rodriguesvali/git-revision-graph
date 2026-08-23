@@ -63,6 +63,7 @@ Focused build artifact:
 - `project-context/2.build/features/1.6.8-nonblocking-remote-refresh.md`
 - `project-context/2.build/features/1.6.8-show-log-reference-badge-readability.md`
 - `project-context/2.build/features/1.6.8-show-log-compact-commit-rows.md`
+- `project-context/2.build/features/1.6.8-ci-cross-platform-path-reliability.md`
 
 ### Release Gate Summary
 
@@ -71,7 +72,7 @@ Focused build artifact:
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
 | Release scope | In progress | Show Log target scoping/reference readability and nonblocking Fetch/Pull/Push refresh behavior are implemented; further `1.6.8` scope remains open. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
-| Automated verification | Complete for current scope | All 838 tests passed after the 2026-08-23 compact Show Log row slice; build, quality, prior CI graph benchmark, and Graphify gates passed. |
+| Automated verification | Local gates complete; hosted rerun pending | All 838 tests and all 39 platform tests passed after the cross-platform canonical-path contract correction; build, quality, prior CI graph benchmark, and Graphify gates passed. The GitHub matrix must rerun after the fix is pushed. |
 | Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
 | VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -98,6 +99,8 @@ Implemented scope:
   unbroken names, while the commit-row badges retain their compact ellipsis behavior.
 - Show Log commit rows no longer repeat file-change totals beneath the subject. Commits without
   references use a compact single line, while the existing tooltip retains the full statistics.
+- The Flow Governance configuration-opening contract now compares canonical filesystem paths, so
+  Windows 8.3 aliases and the macOS `/var` symlink no longer fail the hosted verification matrix.
 
 Verification record:
 
@@ -120,6 +123,10 @@ Verification record:
   files and 2,410 functions; `npm run build` and all 838 tests passed after the 26 px compact height
   was propagated through row, SVG, and marker geometry. The reduced-file line-count quality
   ratchets were aligned to their reviewed values.
+- For the cross-platform Flow Governance path contract correction on 2026-08-23, `npm test`
+  passed all 838 tests and `npm run test:platform` passed all 39 tests. The expected editor path is
+  now resolved with `realpath()`, matching the production safety boundary on Linux, Windows, and
+  macOS without changing runtime behavior. A hosted matrix rerun remains pending.
 - `graphify update .` refreshed the code knowledge graph after the compact-row change, with the
   existing zero-node and stale-community-label warnings recorded in the focused artifact.
 

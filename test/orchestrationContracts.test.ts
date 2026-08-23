@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -763,7 +763,7 @@ test('Flow Governance opens a configuration created by enabling the file-backed 
 
   await workflow.updateOptions({ enabled: true });
 
-  const configPath = path.join(root, '.git-revision-graph-flow.json');
+  const configPath = await realpath(path.join(root, '.git-revision-graph-flow.json'));
   assert.deepEqual(harness.openedTextDocuments, [configPath]);
   assert.deepEqual(harness.shownTextDocuments, [{ fsPath: configPath }]);
 });
