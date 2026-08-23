@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-show-log-compact-commit-rows.md`: remove file-change statistics from commit rows while
+  retaining them in the commit tooltip, so commits without references use a compact single line.
 - `1.6.8-show-log-reference-badge-readability.md`: preserve compact reference badges in Show Log
   rows while revealing complete, safely wrapped names in the commit tooltip.
 - `1.6.8-nonblocking-remote-refresh.md`: keep Fetch, Pull, and Push feedback visible without

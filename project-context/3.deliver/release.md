@@ -62,6 +62,7 @@ Focused build artifact:
 - `project-context/2.build/features/1.6.8-show-log-target-scope.md`
 - `project-context/2.build/features/1.6.8-nonblocking-remote-refresh.md`
 - `project-context/2.build/features/1.6.8-show-log-reference-badge-readability.md`
+- `project-context/2.build/features/1.6.8-show-log-compact-commit-rows.md`
 
 ### Release Gate Summary
 
@@ -70,7 +71,7 @@ Focused build artifact:
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
 | Release scope | In progress | Show Log target scoping/reference readability and nonblocking Fetch/Pull/Push refresh behavior are implemented; further `1.6.8` scope remains open. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
-| Automated verification | Complete for current scope | All 838 tests passed after the 2026-08-23 Show Log readability slice; build, quality, prior CI graph benchmark, and Graphify gates passed. |
+| Automated verification | Complete for current scope | All 838 tests passed after the 2026-08-23 compact Show Log row slice; build, quality, prior CI graph benchmark, and Graphify gates passed. |
 | Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
 | VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -95,6 +96,8 @@ Implemented scope:
   a full topology rebuild; Push uses snapshot-backed projection refresh with safe full fallback.
 - Show Log commit tooltips now let reference badges use the available tooltip width and wrap long
   unbroken names, while the commit-row badges retain their compact ellipsis behavior.
+- Show Log commit rows no longer repeat file-change totals beneath the subject. Commits without
+  references use a compact single line, while the existing tooltip retains the full statistics.
 
 Verification record:
 
@@ -113,6 +116,12 @@ Verification record:
 - For Show Log reference readability on 2026-08-23, `npm run quality:check` passed for 252
   production files and 2,410 functions; `npm run build` and all 838 tests passed.
 - `graphify update .` refreshed the code knowledge graph after the Show Log style change.
+- For compact Show Log commit rows on 2026-08-23, `npm run quality:check` passed for 252 production
+  files and 2,410 functions; `npm run build` and all 838 tests passed after the 26 px compact height
+  was propagated through row, SVG, and marker geometry. The reduced-file line-count quality
+  ratchets were aligned to their reviewed values.
+- `graphify update .` refreshed the code knowledge graph after the compact-row change, with the
+  existing zero-node and stale-community-label warnings recorded in the focused artifact.
 
 ### Release Constraints And Risks
 
@@ -137,12 +146,14 @@ Verification record:
 - Fetch, Pull, and Push now keep the graph interactive while remote work and graph updates run.
   Fetch avoids a redundant rebuild, while Push reuses the current graph snapshot when safe.
 - Show Log commit tooltips now reveal complete long reference names without widening commit rows.
+- Show Log uses compact single-line rows when a commit has no references; file-change totals remain
+  available in the commit tooltip.
 
 ### Marketplace Impact And Rollback
 
 - The current Marketplace impact corrects initial Show Log branch scope, improves long-reference
-  readability, and improves remote-action loading/refresh behavior; no command, setting,
-  contribution point, or dependency changed.
+  readability and commit-row density, and improves remote-action loading/refresh behavior; no
+  command, setting, contribution point, or dependency changed.
 - Before publication, rollback is a focused revert of the `1.6.8` metadata and any separately
   approved feature slices.
 - After publication, never reuse `1.6.8`; correct issues through a later patch or an explicitly

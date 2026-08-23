@@ -284,7 +284,7 @@ export function renderShowLogWebviewStyles(): string { return `
         'graph files files files';
       gap: 0;
       align-items: stretch;
-      min-height: 30px;
+      min-height: var(--show-log-main-graph-height, 30px);
       padding: 0 12px;
       cursor: pointer;
       user-select: none;
@@ -346,7 +346,7 @@ export function renderShowLogWebviewStyles(): string { return `
       flex-direction: column;
       width: 100%;
       height: 100%;
-      min-height: 30px;
+      min-height: var(--show-log-main-graph-height, 30px);
     }
     .graph-main { position: relative;
       display: flex;
@@ -379,7 +379,7 @@ export function renderShowLogWebviewStyles(): string { return `
       flex: none;
       width: auto;
       height: 100%;
-      min-height: 30px;
+      min-height: var(--show-log-main-graph-height, 30px);
       display: block;
       overflow: visible;
     }
@@ -390,7 +390,7 @@ export function renderShowLogWebviewStyles(): string { return `
       stroke-linejoin: round;
       opacity: 0.88;
     }
-    .graph-node-marker { position: absolute; top: 15px; width: 7px; height: 7px; border-radius: 50%; background: var(--show-log-node-color); transform: translate(-50%, -50%); } .graph-node-outgoing, .graph-node-merge { width: 11px; height: 11px; border: 2px solid var(--show-log-node-color); background: var(--vscode-sideBar-background); } .graph-node-merge { display: grid; place-items: center; } .commit-row:hover .graph-node-marker:not(.graph-node-outgoing, .graph-node-merge) { box-shadow: 0 0 0 2px var(--show-log-node-color); } .commit-row:hover .graph-node-outgoing { background: var(--show-log-node-color); } .graph-node-merge::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--show-log-node-color) 55%, var(--vscode-charts-yellow, #cca700) 45%); transition: width 90ms ease, height 90ms ease; } .commit-row:hover .graph-node-merge::after { position: absolute; inset: -1px; width: auto; height: auto; }
+    .graph-node-marker { position: absolute; top: 50%; width: 7px; height: 7px; border-radius: 50%; background: var(--show-log-node-color); transform: translate(-50%, -50%); } .graph-node-outgoing, .graph-node-merge { width: 11px; height: 11px; border: 2px solid var(--show-log-node-color); background: var(--vscode-sideBar-background); } .graph-node-merge { display: grid; place-items: center; } .commit-row:hover .graph-node-marker:not(.graph-node-outgoing, .graph-node-merge) { box-shadow: 0 0 0 2px var(--show-log-node-color); } .commit-row:hover .graph-node-outgoing { background: var(--show-log-node-color); } .graph-node-merge::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--show-log-node-color) 55%, var(--vscode-charts-yellow, #cca700) 45%); transition: width 90ms ease, height 90ms ease; } .commit-row:hover .graph-node-merge::after { position: absolute; inset: -1px; width: auto; height: auto; }
     .subject-cell,
     .author-cell,
     .date-cell {
@@ -542,11 +542,6 @@ export function renderShowLogWebviewStyles(): string { return `
     .ref-badge[data-ref-kind="stash"] {
       --show-log-ref-color: var(--show-log-ref-stash);
       color: white;
-    }
-    .stats {
-      flex: 0 0 auto;
-      white-space: nowrap;
-      opacity: 0.88;
     }
     .commit-files {
       grid-area: files;

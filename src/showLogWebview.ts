@@ -60,6 +60,7 @@ export function renderShowLogWebviewHtml(): string {
     const GRAPH_LANE_SPACING = 10;
     const GRAPH_LEFT_INSET = 8;
     const GRAPH_RIGHT_PADDING = 6;
+    const GRAPH_MAIN_COMPACT_HEIGHT = 26;
     const GRAPH_MAIN_HEIGHT = 34;
     const GRAPH_MAIN_META_HEIGHT = 42;
     const TOOLTIP_SHOW_DELAY_MS = 500;
@@ -257,14 +258,12 @@ export function renderShowLogWebviewHtml(): string {
 
     function renderCommit(commit, index) {
       const mainGraphHeight = getMainGraphHeight(commit);
-      const mainGraphHeightStyle = mainGraphHeight === GRAPH_MAIN_HEIGHT
-        ? ''
-        : ' style="--show-log-main-graph-height: ' + mainGraphHeight + 'px;"';
+      const mainGraphHeightStyle = ' style="--show-log-main-graph-height: ' + mainGraphHeight + 'px;"';
       return ''
-        + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '">'
+        + '<div class="commit-row" tabindex="0" data-commit-hash="' + escapeHtml(commit.hash) + '" data-expanded="' + (commit.expanded ? 'true' : 'false') + '"' + mainGraphHeightStyle + '>'
         + '  <div class="graph-cell">'
         + '    <div class="graph-stack">'
-        + '      <div class="graph-main"' + mainGraphHeightStyle + '>' + renderTopology(commit.topology, commit.isMerge, index === 0, mainGraphHeight) + '</div>'
+        + '      <div class="graph-main">' + renderTopology(commit.topology, commit.isMerge, index === 0, mainGraphHeight) + '</div>'
         + (commit.expanded
           ? '      <div class="graph-continuation">' + renderContinuationRows(commit) + '</div>'
           : '')
@@ -276,12 +275,9 @@ export function renderShowLogWebviewHtml(): string {
         + '        <span class="commit-hash">' + escapeHtml(commit.shortHash) + '</span>'
         + '        <span class="commit-subject">' + escapeHtml(commit.subject) + '</span>'
         + '      </div>'
-        + ((commit.refs.length > 0 || commit.stats)
+        + (commit.refs.length > 0
           ? '      <div class="subject-meta">'
-            + (commit.refs.length > 0
-              ? '        <div class="refs">' + commit.refs.map(renderRefBadge).join('') + '</div>'
-              : '')
-            + (commit.stats ? '        <span class="stats">' + escapeHtml(commit.stats) + '</span>' : '')
+            + '        <div class="refs">' + commit.refs.map(renderRefBadge).join('') + '</div>'
             + '      </div>'
           : '')
         + '    </div>'
@@ -345,7 +341,7 @@ export function renderShowLogWebviewHtml(): string {
     function renderTopology(topology, isMerge, isFirstVisible, height) {
       const laneSpacing = GRAPH_LANE_SPACING;
       const width = getGraphContentWidth(topology.laneCount, laneSpacing);
-      const centerY = 15;
+      const centerY = (height / 2) - 2;
       const topY = -2;
       const bottomY = height - 2;
       const lineParts = [];
@@ -385,11 +381,14 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function getMainGraphHeight(commit) {
-      return commit.expanded && hasCommitMeta(commit) ? GRAPH_MAIN_META_HEIGHT : GRAPH_MAIN_HEIGHT;
+      if (!hasCommitReferences(commit)) {
+        return GRAPH_MAIN_COMPACT_HEIGHT;
+      }
+      return commit.expanded ? GRAPH_MAIN_META_HEIGHT : GRAPH_MAIN_HEIGHT;
     }
 
-    function hasCommitMeta(commit) {
-      return (commit.refs && commit.refs.length > 0) || !!commit.stats;
+    function hasCommitReferences(commit) {
+      return !!(commit.refs && commit.refs.length > 0);
     }
 
     function renderContinuationTopology(topology) {
