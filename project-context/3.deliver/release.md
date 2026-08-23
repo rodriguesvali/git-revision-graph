@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.8` release candidate preparation; automated matrix complete
+Status: `1.6.8` release candidate packaged; Marketplace publication pending authorization
 Last consolidated: 2026-08-23
 
 ## Current State
@@ -11,8 +11,9 @@ Last consolidated: 2026-08-23
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
   rebranded Marketplace Overview with approved video and screenshot media.
-  Local verification and GitHub Actions Verify run `#211` are complete; Extension Development Host
-  smoke, packaging, clean-profile installation, and Marketplace publication remain pending.
+  Local verification, GitHub Actions Verify run `#211`, Extension Development Host smoke by
+  maintainer confirmation, VSIX packaging and isolated installation are complete. Hosted media
+  preview and Marketplace publication remain pending.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
@@ -53,7 +54,7 @@ Last consolidated: 2026-08-23
 
 ## Planned Release: 1.6.8
 
-Status: Release candidate preparation in progress
+Status: Release candidate packaged; Marketplace publication pending authorization
 Opened: 2026-08-22
 Published baseline version: `1.6.7`
 Target version: `1.6.8`
@@ -77,8 +78,9 @@ Focused build artifact:
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
 | Release notes | Complete | `CHANGELOG.md` and the candidate notes below describe the reviewed user-visible `1.6.8` scope. |
 | Automated verification | Complete | All 838 tests and all 39 platform tests passed locally. GitHub Actions Verify run `#211` passed on Ubuntu, Windows, macOS, VS Code `1.90.0`, and VS Code stable. Quality, build, audit, benchmark, whitespace, and Graphify gates are recorded. |
-| Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
-| VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
+| Extension Development Host smoke | Complete by maintainer confirmation | The maintainer confirmed completion on 2026-08-23. Exact VS Code version, platform, operator identity, and scenario-level results were not supplied and are not inferred. |
+| VSIX package inspection | Complete | `git-revision-graph-1.6.8.vsix` contains 651 files (1,119,436 bytes); ZIP integrity, embedded identity/version, required runtime assets, and expected exclusions passed. SHA-256: `1b5eb3b75b47d76a1e119022057a8d1c7bed3d316401cf2308a88cf577a5a1ac`. |
+| Clean-profile installation | Complete | VS Code Server `1.129.0` installed the package in isolated temporary data and extension directories and listed `rodriguesvali.git-revision-graph@1.6.8`; the installed manifest retained `./out/extension.js`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, revert the metadata and scoped feature changes; after publication, use a later patch or maintainer-approved Marketplace action. |
 
@@ -150,6 +152,21 @@ Verification record:
   in the package while externally hosted Marketplace media, `CONTRIBUTING.md`, and
   `project-context/**` remain excluded. A hosted Marketplace and VS Code Extensions preview remains
   pending until the candidate assets are pushed. No VSIX was created.
+- The maintainer confirmed the Extension Development Host smoke complete on 2026-08-23. Exact VS
+  Code version, platform, operator identity, and scenario-level evidence were not supplied and are
+  intentionally not inferred.
+- For final candidate packaging on 2026-08-23, `npm ci` completed with zero vulnerabilities and
+  `npm test` passed all 838 tests before `npm run package:vsix` created
+  `git-revision-graph-1.6.8.vsix`. The package contains 651 files and is 1,119,436 bytes
+  (approximately 1.1 MiB), with SHA-256
+  `1b5eb3b75b47d76a1e119022057a8d1c7bed3d316401cf2308a88cf577a5a1ac`. ZIP integrity passed;
+  the embedded VSIX and extension manifests identify publisher `rodriguesvali`, extension
+  `git-revision-graph`, version `1.6.8`, VS Code engine `^1.90.0`, and entrypoint
+  `./out/extension.js`. README, changelog, license, icon, extension entrypoint, and revision-graph
+  webview runtime are present. Marketplace media, `CONTRIBUTING.md`, `project-context/**`, source,
+  tests, source maps, and `.env` files are excluded as intended. VS Code Server `1.129.0` then
+  installed and listed `rodriguesvali.git-revision-graph@1.6.8` from isolated temporary data and
+  extension directories. No Git tag or Marketplace publication was performed.
 - `graphify update .` refreshed the code knowledge graph after the compact-row change, with the
   existing zero-node and stale-community-label warnings recorded in the focused artifact.
 
@@ -158,8 +175,7 @@ Verification record:
 - Preserve the published extension architecture and the `1.6.7` behavior until focused scope is
   approved.
 - Keep package metadata synchronized and do not present the open cycle as release-ready.
-- Do not add dependencies, package a VSIX, create a release tag, or publish without explicit
-  maintainer approval.
+- Do not add dependencies, create a release tag, or publish without explicit maintainer approval.
 
 ### Planned Verification
 
