@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.8 - 2026-08-23
+
+### Revision Graph
+
+- Keep the graph interactive while Fetch, Pull, and Push run and refresh repository state. Fetch
+  avoids a competing rebuild, while Push reuses the loaded graph snapshot when safe and retains
+  the existing full-refresh fallback.
+
+### Show Log
+
+- Open Show Log on the exact branch selected in the revision graph instead of initially mixing in
+  other branch histories. `Show All Branches` remains available as an explicit option.
+- Reveal complete long branch, tag, and remote-reference names in the commit tooltip while keeping
+  reference badges compact in the commit list.
+- Use compact single-line rows for commits without references. File, insertion, and deletion totals
+  remain available in the commit tooltip.
+
 ## 1.6.7 - 2026-08-15
 
 - Marketplace publication was confirmed complete by the maintainer on 2026-08-15. Exact

@@ -1,16 +1,17 @@
 # Release Readiness
 
-Status: `1.6.8` development in progress; Show Log and remote-refresh improvements implemented
+Status: `1.6.8` release candidate preparation; automated matrix complete
 Last consolidated: 2026-08-23
 
 ## Current State
 
 - Current package version: `1.6.8` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
-- Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. The
-  first fix scopes Show Log to the branch selected in the graph until the user explicitly enables
-  `Show All Branches`. Automated verification is complete for the current scope; Extension
-  Development Host smoke, packaging, and Marketplace publication remain pending.
+- Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
+  candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
+  refresh, readable long reference badges in commit tooltips, and compact Show Log commit rows.
+  Local verification and GitHub Actions Verify run `#211` are complete; Extension Development Host
+  smoke, packaging, clean-profile installation, and Marketplace publication remain pending.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
@@ -51,7 +52,7 @@ Last consolidated: 2026-08-23
 
 ## Planned Release: 1.6.8
 
-Status: Development in progress
+Status: Release candidate preparation in progress
 Opened: 2026-08-22
 Published baseline version: `1.6.7`
 Target version: `1.6.8`
@@ -70,9 +71,10 @@ Focused build artifact:
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
-| Release scope | In progress | Show Log target scoping/reference readability and nonblocking Fetch/Pull/Push refresh behavior are implemented; further `1.6.8` scope remains open. |
+| Release scope | Complete for candidate | Exact-branch Show Log opening, nonblocking Fetch/Pull/Push refresh, long-reference tooltip readability, and compact commit rows are implemented. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
-| Automated verification | Local gates complete; hosted rerun pending | All 838 tests and all 39 platform tests passed after the cross-platform canonical-path contract correction; build, quality, prior CI graph benchmark, and Graphify gates passed. The GitHub matrix must rerun after the fix is pushed. |
+| Release notes | Complete | `CHANGELOG.md` and the candidate notes below describe the reviewed user-visible `1.6.8` scope. |
+| Automated verification | Complete | All 838 tests and all 39 platform tests passed locally. GitHub Actions Verify run `#211` passed on Ubuntu, Windows, macOS, VS Code `1.90.0`, and VS Code stable. Quality, build, audit, benchmark, whitespace, and Graphify gates are recorded. |
 | Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
 | VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -126,7 +128,15 @@ Verification record:
 - For the cross-platform Flow Governance path contract correction on 2026-08-23, `npm test`
   passed all 838 tests and `npm run test:platform` passed all 39 tests. The expected editor path is
   now resolved with `realpath()`, matching the production safety boundary on Linux, Windows, and
-  macOS without changing runtime behavior. A hosted matrix rerun remains pending.
+  macOS without changing runtime behavior.
+- GitHub Actions Verify run `#211` completed successfully on commit `4c8f34d`: the Node 24 jobs on
+  Ubuntu, Windows, and macOS passed, as did the Extension Host E2E jobs on VS Code `1.90.0` and
+  VS Code stable. The hosted jobs also completed the configured quality, build, unit, platform,
+  benchmark, whitespace, and dependency-audit gates.
+- During publication-artifact review on 2026-08-23, `npm run quality:check`, `npm test`,
+  `npm audit --omit=dev`, and `npm audit` passed. `npx vsce ls` confirmed that `CHANGELOG.md` is in
+  the package surface and `.codex` development configuration is excluded; `git diff --check`
+  passed. No VSIX was created.
 - `graphify update .` refreshed the code knowledge graph after the compact-row change, with the
   existing zero-node and stale-community-label warnings recorded in the focused artifact.
 
@@ -148,13 +158,14 @@ Verification record:
 
 ### Candidate Release Notes
 
-- Show Log now opens on the branch selected in the revision graph instead of initially mixing in
+- Show Log opens on the exact branch selected in the revision graph instead of initially mixing in
   other branch histories. `Show All Branches` remains available as an explicit option.
-- Fetch, Pull, and Push now keep the graph interactive while remote work and graph updates run.
-  Fetch avoids a redundant rebuild, while Push reuses the current graph snapshot when safe.
-- Show Log commit tooltips now reveal complete long reference names without widening commit rows.
-- Show Log uses compact single-line rows when a commit has no references; file-change totals remain
-  available in the commit tooltip.
+- Fetch, Pull, and Push keep the graph interactive while remote work and graph updates run. Fetch
+  avoids a competing rebuild, while Push reuses the loaded graph snapshot when safe.
+- Show Log commit tooltips reveal complete long branch, tag, and remote-reference names without
+  widening commit rows.
+- Show Log uses compact single-line rows for commits without references; file, insertion, and
+  deletion totals remain available in the commit tooltip.
 
 ### Marketplace Impact And Rollback
 
