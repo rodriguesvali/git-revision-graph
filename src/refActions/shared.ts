@@ -133,12 +133,33 @@ export function shouldRevealSourceControlAfterWorkspaceConflict(error: unknown, 
 
 export function prepareFullRebuildRefresh(
   repository: Repository,
+  services: RefreshPreparationServices,
+  options: { readonly loadingMode?: 'blocking' | 'subtle' } = {}
+): {
+  readonly request: ReturnType<typeof createActionRefreshRequest>;
+  readonly cancel: () => void;
+} {
+  const request = createActionRefreshRequest('full-rebuild', repository.rootUri.toString(), options);
+  const preparedRefresh = services.refreshController.prepare(request);
+
+  return {
+    request,
+    cancel: () => preparedRefresh?.cancel()
+  };
+}
+
+export function preparePushRefresh(
+  repository: Repository,
   services: RefreshPreparationServices
 ): {
   readonly request: ReturnType<typeof createActionRefreshRequest>;
   readonly cancel: () => void;
 } {
-  const request = createActionRefreshRequest('full-rebuild', repository.rootUri.toString());
+  const request = createActionRefreshRequest('projection-only', repository.rootUri.toString(), {
+    followUpEvents: ['state'],
+    clearSnapshotCache: false,
+    loadingMode: 'subtle'
+  });
   const preparedRefresh = services.refreshController.prepare(request);
 
   return {

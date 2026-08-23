@@ -172,7 +172,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
     if (pullButton) {
       pullButton.addEventListener('click', () => {
-        postMessageWithLoading(createRevisionGraphPullCurrentHeadMessage(), 'Pulling current branch...', pullButton);
+        postMessageWithLoading(createRevisionGraphPullCurrentHeadMessage(), 'Pulling current branch...', pullButton, 'subtle');
       });
     }
     if (pushButton) {
@@ -580,7 +580,7 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function pushCurrentHead(mode: 'normal' | 'force-with-lease' | 'force') {
       closePushModeMenu();
-      vscode.postMessage(createRevisionGraphPushCurrentHeadMessage(mode));
+      postMessageWithLoading(createRevisionGraphPushCurrentHeadMessage(mode), 'Pushing current branch...', mode === 'normal' ? pushButton : pushMenuButton, 'subtle');
     }
 
     function showPushModeMenu() {

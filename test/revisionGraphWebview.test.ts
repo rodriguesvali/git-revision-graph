@@ -355,7 +355,10 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /\.reload-cache-menu/);
   assert.match(html, /fetchAllButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphFetchCurrentRepositoryMessage\(\)\);/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
-  assert.match(html, /postMessageWithLoading\(createRevisionGraphPullCurrentHeadMessage\(\), 'Pulling current branch\.\.\.', pullButton\);/);
+  assert.match(
+    html,
+    /postMessageWithLoading\(\s*createRevisionGraphPullCurrentHeadMessage\(\),\s*'Pulling current branch\.\.\.',\s*pullButton,\s*'subtle'\s*\);/s
+  );
   assert.match(
     html,
     /pushButton\.addEventListener\('click', \(\) => \{\s*pushCurrentHead\('normal'\);\s*\}\);/s
@@ -371,7 +374,10 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /pushMenuButton\.setAttribute\('aria-expanded', 'false'\);/);
   assert.match(html, /const buttonRect = pushMenuButton\.getBoundingClientRect\(\);/);
   assert.match(html, /pushModeMenu\.style\.top = Math\.max\(8, buttonRect\.bottom \+ 6\) \+ 'px';/);
-  assert.match(html, /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(mode\)\);/s);
+  assert.match(
+    html,
+    /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*postMessageWithLoading\(\s*createRevisionGraphPushCurrentHeadMessage\(mode\),\s*'Pushing current branch\.\.\.',\s*mode === 'normal' \? pushButton : pushMenuButton,\s*'subtle'\s*\);/s
+  );
   assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
   assert.match(html, /syncRevisionGraphWebviewBasicToolbarUi\(\s*\{ scopeSelect, viewOptionsButton, reloadButton, reloadMenuButton, fetchAllButton \}/s);
   assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarUi\(/);

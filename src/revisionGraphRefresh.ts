@@ -9,6 +9,7 @@ export interface RevisionGraphRefreshRequest {
   readonly repositoryPath?: string;
   readonly followUpEvents?: readonly RevisionGraphRepositoryEventKind[];
   readonly clearSnapshotCache?: boolean;
+  readonly loadingMode?: 'blocking' | 'subtle';
 }
 
 export type RevisionGraphRefreshRequestLike =
@@ -56,13 +57,19 @@ export function normalizeRefreshRequest(
 
 export function createActionRefreshRequest(
   intent: RevisionGraphRefreshIntent,
-  repositoryPath: string
+  repositoryPath: string,
+  options: {
+    readonly followUpEvents?: readonly RevisionGraphRepositoryEventKind[];
+    readonly clearSnapshotCache?: boolean;
+    readonly loadingMode?: 'blocking' | 'subtle';
+  } = {}
 ): RevisionGraphRefreshRequest {
   return {
     intent,
     repositoryPath,
-    followUpEvents: getDefaultFollowUpEventsForIntent(intent),
-    clearSnapshotCache: true
+    followUpEvents: options.followUpEvents ?? getDefaultFollowUpEventsForIntent(intent),
+    clearSnapshotCache: options.clearSnapshotCache ?? true,
+    ...(options.loadingMode ? { loadingMode: options.loadingMode } : {})
   };
 }
 

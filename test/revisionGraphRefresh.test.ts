@@ -32,6 +32,23 @@ test('createActionRefreshRequest attaches the default follow-up repository event
   assert.deepEqual(getDefaultFollowUpEventsForIntent('projection-only'), []);
 });
 
+test('createActionRefreshRequest accepts action-specific loading and cache behavior', () => {
+  assert.deepEqual(
+    createActionRefreshRequest('projection-only', '/workspace/repo', {
+      followUpEvents: ['state'],
+      clearSnapshotCache: false,
+      loadingMode: 'subtle'
+    }),
+    {
+      intent: 'projection-only',
+      repositoryPath: '/workspace/repo',
+      followUpEvents: ['state'],
+      clearSnapshotCache: false,
+      loadingMode: 'subtle'
+    }
+  );
+});
+
 test('createRepositoryRefreshRequest attaches follow-up suppression only when a repository path is available', () => {
   assert.deepEqual(
     createRepositoryRefreshRequest('full-rebuild', '/workspace/repo'),

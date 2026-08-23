@@ -12,6 +12,7 @@ import {
   getCurrentHeadSyncState,
   pickRemote,
   prepareFullRebuildRefresh,
+  preparePushRefresh,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './shared';
 import { CurrentBranchPushMode, RefActionServices, RefActionTarget } from './types';
@@ -200,7 +201,7 @@ export async function pullCurrentBranchFromUpstream(
       return false;
     }
 
-    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    const preparedRefresh = prepareFullRebuildRefresh(repository, services, { loadingMode: 'subtle' });
     try {
       await repository.pull();
     } catch (error) {
@@ -278,7 +279,7 @@ export async function pushCurrentBranchToUpstream(
       }
     }
 
-    const preparedRefresh = prepareFullRebuildRefresh(repository, services);
+    const preparedRefresh = preparePushRefresh(repository, services);
     try {
       const didPush = await services.referenceManager.pushCurrentBranch(
         repository,

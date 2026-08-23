@@ -10,6 +10,7 @@ import type { RevisionGraphViewState } from '../../revisionGraphTypes';
 import {
   cancelPendingFollowUpRefresh,
   consumePendingFollowUpRefresh,
+  createActionRefreshRequest,
   createRepositoryRefreshRequest,
   normalizeRefreshRequest,
   registerPendingFollowUpRefresh,
@@ -125,6 +126,16 @@ export class RevisionGraphRepositoryLifecycle implements vscode.Disposable {
 
   createCurrentRepositoryRefreshRequest(intent: RevisionGraphRefreshIntent): RevisionGraphRefreshRequest {
     return createRepositoryRefreshRequest(intent, this.currentRepository?.rootUri.toString());
+  }
+
+  createCurrentRepositoryActionRefreshRequest(
+    intent: RevisionGraphRefreshIntent,
+    loadingMode: 'blocking' | 'subtle'
+  ): RevisionGraphRefreshRequest {
+    const repositoryPath = this.currentRepository?.rootUri.toString();
+    return repositoryPath
+      ? createActionRefreshRequest(intent, repositoryPath, { loadingMode })
+      : { intent, loadingMode };
   }
 
   resolveRefreshRequest(requestLike: RevisionGraphRefreshRequestLike): RevisionGraphRefreshRequest {

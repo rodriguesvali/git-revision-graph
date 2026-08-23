@@ -23,6 +23,7 @@ export interface RevisionGraphFetchWorkflowHost {
   postActionLoading(label: string, mode?: 'blocking' | 'subtle'): void;
   postCurrentState(): void;
   refresh(request?: RevisionGraphRefreshRequestLike): Promise<void>;
+  prepareRefresh(request?: RevisionGraphRefreshRequestLike): { cancel(): void } | undefined;
   createCurrentRepositoryRefreshRequest(): RevisionGraphRefreshRequestLike;
   getCurrentRepositoryLabel(): string;
   assertMutationCurrent?(): void;
@@ -47,7 +48,9 @@ export async function runRevisionGraphFetchWorkflow(
 
   host.assertMutationCurrent?.();
 
-  host.postActionLoading('Fetching remotes...');
+  const refreshRequest = host.createCurrentRepositoryRefreshRequest();
+  const preparedRefresh = host.prepareRefresh(refreshRequest);
+  host.postActionLoading('Fetching remotes...', 'subtle');
 
   try {
     if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
@@ -66,8 +69,9 @@ export async function runRevisionGraphFetchWorkflow(
     host.ui.showInformationMessage(
       formatRevisionGraphFetchSuccessMessage(host.getCurrentRepositoryLabel(), selectedOptions)
     );
-    await host.refresh(host.createCurrentRepositoryRefreshRequest());
+    await host.refresh(refreshRequest);
   } catch (error) {
+    preparedRefresh?.cancel();
     if (isAbortError(error)) {
       throw error;
     }

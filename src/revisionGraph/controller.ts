@@ -122,7 +122,7 @@ export class RevisionGraphController implements vscode.Disposable {
   private readonly messageHandler: RevisionGraphMessageHandler;
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphRenderResult>(
     (label) => {
-      const nextLoadingMode = getRefreshLoadingMode(this.latestRefreshIntent);
+      const nextLoadingMode = this.currentLoadingMode ?? 'blocking';
       const shouldPostLoading =
         !this.currentState.loading
         || this.currentLoadingLabel !== label
@@ -169,7 +169,6 @@ export class RevisionGraphController implements vscode.Disposable {
   );
   private readonly loadTrace = new RevisionGraphLoadTraceService(() => this.renderCoordinator.getCurrentRequestId());
   private currentState: RevisionGraphViewState;
-  private latestRefreshIntent: RevisionGraphRefreshIntent = 'full-rebuild';
   private reusableGraphSnapshot: ReusableRevisionGraphSnapshot | undefined;
   private commitShortStatAbortController = new AbortController();
   private readonly mutationCoordinator: RepositoryMutationCoordinator;
@@ -435,7 +434,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.reusableGraphSnapshot = undefined;
     }
     const renderIntent = this.resolveEffectiveRefreshIntent(request.intent);
-    this.latestRefreshIntent = renderIntent;
+    this.currentLoadingMode = request.loadingMode ?? getRefreshLoadingMode(renderIntent);
 
     const outcome = await this.renderCoordinator.schedule(
       getRefreshLoadingLabel(renderIntent),
@@ -592,7 +591,8 @@ export class RevisionGraphController implements vscode.Disposable {
       refresh: async (request) => {
         await this.refresh(request);
       },
-      createCurrentRepositoryRefreshRequest: () => this.createCurrentRepositoryRefreshRequest('full-rebuild'),
+      prepareRefresh: (request) => this.prepareRefresh(request),
+      createCurrentRepositoryRefreshRequest: () => this.repositoryLifecycle.createCurrentRepositoryActionRefreshRequest('full-rebuild', 'subtle'),
       getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel(),
       assertMutationCurrent,
       signal

@@ -2536,10 +2536,11 @@ test('pushCurrentBranchToUpstream pushes the current branch to its upstream', as
   assert.deepEqual(harness.currentBranchPushes, [{ remoteName: 'origin', branchName: 'main', mode: 'normal' }]);
   assert.deepEqual(harness.confirmRequests, []);
   assert.deepEqual(harness.refreshRequests[0], {
-    intent: 'full-rebuild',
+    intent: 'projection-only',
     repositoryPath: '/workspace/repo',
-    followUpEvents: ['state', 'checkout'],
-    clearSnapshotCache: true
+    followUpEvents: ['state'],
+    clearSnapshotCache: false,
+    loadingMode: 'subtle'
   });
   assert.equal(harness.infoMessages[0], 'main was pushed to origin/main.');
 });
@@ -2725,7 +2726,8 @@ test('pullCurrentBranchFromUpstream pulls the current branch from its upstream',
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
     followUpEvents: ['state', 'checkout'],
-    clearSnapshotCache: true
+    clearSnapshotCache: true,
+    loadingMode: 'subtle'
   });
   assert.equal(harness.infoMessages[0], 'main was pulled from origin/main.');
 });

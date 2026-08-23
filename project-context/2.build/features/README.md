@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-nonblocking-remote-refresh.md`: keep Fetch, Pull, and Push feedback visible without
+  blocking the graph, suppress duplicate Fetch refreshes, and reuse the loaded snapshot after Push.
 - `1.6.8-show-log-target-scope.md`: ensure graph context-menu Show Log opens on the exact selected
   branch and only expands to all branches after explicit user opt-in.
 - `1.6.8-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
