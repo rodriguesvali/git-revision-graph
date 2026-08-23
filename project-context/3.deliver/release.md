@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: `1.6.8` development in progress; Show Log and remote-refresh improvements implemented
-Last consolidated: 2026-08-22
+Last consolidated: 2026-08-23
 
 ## Current State
 
@@ -61,15 +61,16 @@ Focused build artifact:
 - `project-context/2.build/features/1.6.8-release-cycle-opening.md`
 - `project-context/2.build/features/1.6.8-show-log-target-scope.md`
 - `project-context/2.build/features/1.6.8-nonblocking-remote-refresh.md`
+- `project-context/2.build/features/1.6.8-show-log-reference-badge-readability.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.7` was published by maintainer confirmation on 2026-08-15. |
-| Release scope | In progress | Show Log target scoping and nonblocking Fetch/Pull/Push refresh behavior are implemented; further `1.6.8` scope remains open. |
+| Release scope | In progress | Show Log target scoping/reference readability and nonblocking Fetch/Pull/Push refresh behavior are implemented; further `1.6.8` scope remains open. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.8`. |
-| Automated verification | Complete for current scope | All 838 tests passed; build, quality, CI graph benchmark, and Graphify gates passed on 2026-08-22. |
+| Automated verification | Complete for current scope | All 838 tests passed after the 2026-08-23 Show Log readability slice; build, quality, prior CI graph benchmark, and Graphify gates passed. |
 | Extension Development Host smoke | Pending | Select and record scenarios when user-visible scope is approved. |
 | VSIX package inspection | Not started | Requires separate maintainer approval after release-candidate gates pass. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -92,6 +93,8 @@ Implemented scope:
 - Fetch, Pull, and Push now use subtle progress so the graph is not covered by a pointer-blocking
   overlay. Fetch prepares event suppression before Git to avoid a competing rebuild; Pull retains
   a full topology rebuild; Push uses snapshot-backed projection refresh with safe full fallback.
+- Show Log commit tooltips now let reference badges use the available tooltip width and wrap long
+  unbroken names, while the commit-row badges retain their compact ellipsis behavior.
 
 Verification record:
 
@@ -107,6 +110,9 @@ Verification record:
 - `npm run benchmark:ci` passed with 192 projected nodes, 112.01 ms initial layout, 2.49 ms cache
   hit, and 21.41 ms descendant-focus layout in the recorded environment.
 - `graphify update .` refreshed the code knowledge graph after the remote-refresh source changes.
+- For Show Log reference readability on 2026-08-23, `npm run quality:check` passed for 252
+  production files and 2,410 functions; `npm run build` and all 838 tests passed.
+- `graphify update .` refreshed the code knowledge graph after the Show Log style change.
 
 ### Release Constraints And Risks
 
@@ -130,11 +136,13 @@ Verification record:
   other branch histories. `Show All Branches` remains available as an explicit option.
 - Fetch, Pull, and Push now keep the graph interactive while remote work and graph updates run.
   Fetch avoids a redundant rebuild, while Push reuses the current graph snapshot when safe.
+- Show Log commit tooltips now reveal complete long reference names without widening commit rows.
 
 ### Marketplace Impact And Rollback
 
-- The current Marketplace impact corrects initial Show Log branch scope and improves remote-action
-  loading/refresh behavior; no command, setting, contribution point, or dependency changed.
+- The current Marketplace impact corrects initial Show Log branch scope, improves long-reference
+  readability, and improves remote-action loading/refresh behavior; no command, setting,
+  contribution point, or dependency changed.
 - Before publication, rollback is a focused revert of the `1.6.8` metadata and any separately
   approved feature slices.
 - After publication, never reuse `1.6.8`; correct issues through a later patch or an explicitly

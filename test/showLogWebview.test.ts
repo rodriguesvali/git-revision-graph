@@ -104,6 +104,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\.commit-tooltip \{/);
   assert.match(html, /var\(--vscode-editorHoverWidget-background/);
   assert.match(html, /function renderCommitTooltip\(commit\)/);
+  assert.match(html, /max-width: var\(--show-log-ref-max-width, 180px\);/);
+  assert.match(html, /white-space: var\(--show-log-ref-white-space, nowrap\); overflow-wrap: var\(--show-log-ref-overflow-wrap, normal\);/);
+  assert.match(html, /\.commit-tooltip-refs \{[\s\S]*?--show-log-ref-max-width: 100%; --show-log-ref-white-space: normal; --show-log-ref-overflow-wrap: anywhere;/);
   assert.match(html, /formatWebviewTooltipDate\(commit\.date, 'unknown date'\)/);
   assert.match(html, /function formatWebviewTooltipDate\(value, fallbackText\)/);
   assert.match(html, /new Intl\.DateTimeFormat\('en-US', options\)\.format\(date\)/);

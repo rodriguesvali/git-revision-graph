@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.6.8-show-log-reference-badge-readability.md`: preserve compact reference badges in Show Log
+  rows while revealing complete, safely wrapped names in the commit tooltip.
 - `1.6.8-nonblocking-remote-refresh.md`: keep Fetch, Pull, and Push feedback visible without
   blocking the graph, suppress duplicate Fetch refreshes, and reuse the loaded snapshot after Push.
 - `1.6.8-show-log-target-scope.md`: ensure graph context-menu Show Log opens on the exact selected

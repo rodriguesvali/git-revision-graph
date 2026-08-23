@@ -498,7 +498,7 @@ export function renderShowLogWebviewStyles(): string { return `
       align-items: center;
       gap: 3px;
       min-width: 0;
-      max-width: 180px;
+      max-width: var(--show-log-ref-max-width, 180px);
       min-height: 17px;
       padding: 1px 6px;
       border-radius: 999px;
@@ -524,7 +524,7 @@ export function renderShowLogWebviewStyles(): string { return `
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: var(--show-log-ref-white-space, nowrap); overflow-wrap: var(--show-log-ref-overflow-wrap, normal);
     }
     .ref-badge[data-ref-kind="head"] {
       --show-log-ref-color: var(--show-log-ref-head);
@@ -834,7 +834,7 @@ export function renderShowLogWebviewStyles(): string { return `
       display: flex;
       flex-wrap: wrap;
       gap: 4px;
-      margin: 8px 0;
+      margin: 8px 0; --show-log-ref-max-width: 100%; --show-log-ref-white-space: normal; --show-log-ref-overflow-wrap: anywhere;
     }
     .commit-tooltip-footer {
       display: flex;
