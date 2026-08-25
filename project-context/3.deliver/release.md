@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.9` release notes and maintainer smoke complete; approved packaging in progress
+Status: `1.6.9` VSIX packaged, inspected, and clean-profile installed; publication pending
 Last consolidated: 2026-08-25
 
 ## Current State
@@ -8,9 +8,9 @@ Last consolidated: 2026-08-25
 - Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.8`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
-  Development Host smoke by maintainer confirmation, and reviewed release notes are complete.
-  Approved VSIX packaging and inspection, clean-profile installation, tagging, and Marketplace
-  publication remain pending.
+  Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
+  packaging, package inspection, and clean-profile installation are complete. Tagging and
+  Marketplace publication remain pending.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
@@ -58,7 +58,7 @@ Last consolidated: 2026-08-25
 
 ## Planned Release: 1.6.9
 
-Status: Release notes and maintainer smoke complete; approved packaging in progress
+Status: VSIX packaged, inspected, and clean-profile installed; publication pending
 Opened: 2026-08-25
 Published baseline version: `1.6.8`
 Target version: `1.6.9`
@@ -80,7 +80,8 @@ Focused build artifact:
 | Release notes | Complete | `CHANGELOG.md` describes the reviewed remote-tag progress, responsive toolbar, and reference context-menu scope. |
 | Automated verification | Complete for implemented scope | `npm test` passed all 840 tests after the responsive-height correction; build, quality, and whitespace gates passed. |
 | Extension Development Host smoke | Complete by maintainer confirmation | Final smoke, including the responsive-height correction, was confirmed on 2026-08-25. Exact environment and per-scenario details were not supplied. |
-| VSIX package inspection | Pending | Requires a separately authorized release-candidate package. |
+| VSIX package inspection | Complete | `git-revision-graph-1.6.9.vsix`: 1,120,432 bytes; SHA-256 `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`; embedded version and identity verified. |
+| Clean-profile installation | Complete | Local VS Code Electron CLI `1.132.0` installed the VSIX into isolated temporary user-data and extension directories, listed `rodriguesvali.git-revision-graph@1.6.9`, and retained `./out/extension.js` with engine `^1.90.0`. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, revert metadata and approved scoped changes; after publication, use a later patch or maintainer-approved Marketplace action. |
 
@@ -130,6 +131,22 @@ Verification record:
   for 253 files and 2,420 functions, and `git diff --check` passed. The maintainer confirmed the
   post-correction Extension Development Host smoke on the same date; exact environment details were
   not supplied and are not inferred.
+- Under maintainer approval, `npm ci` completed with 337 packages audited and zero vulnerabilities;
+  `npm test` then passed all 840 tests from the clean dependency installation. `npm run package:vsix`
+  completed its production prepublish build and generated `git-revision-graph-1.6.9.vsix` with 651
+  files and 1,120,432 bytes. Its SHA-256 is
+  `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`.
+- Package inspection confirmed publisher `rodriguesvali`, extension id `git-revision-graph`, embedded
+  version `1.6.9`, engine `^1.90.0`, `out/extension.js`, `out/webview/revisionGraph.js`, the PNG icon,
+  and the `1.6.9` changelog. Source, tests, scripts, project context, Graphify output, source maps,
+  lockfile, and nested VSIX files were absent as intended.
+- VS Code remote CLI `1.134.0` installed and listed
+  `rodriguesvali.git-revision-graph@1.6.9` in the current Dev Container. It explicitly ignored
+  `--user-data-dir` and `--extensions-dir`, so this first check proved package installability but not
+  isolation. A subsequent local VS Code Electron CLI `1.132.0` run, with remote-CLI delegation
+  disabled only for that process, installed the VSIX into isolated temporary user-data and extension
+  directories. It listed `rodriguesvali.git-revision-graph@1.6.9`; the installed manifest retained
+  `./out/extension.js` and engine `^1.90.0`. No Marketplace publication command was run.
 
 ### Release Constraints And Risks
 
@@ -140,8 +157,9 @@ Verification record:
 
 ### Remaining Verification
 
-- Under the maintainer's packaging approval, package and inspect the VSIX, record its identity, and install
-  it in a clean VS Code profile before Marketplace publication.
+- Obtain separate explicit maintainer authorization before running the Marketplace publication
+  command.
+- Create and record the `1.6.9` source tag only if approved by the maintainer's release process.
 
 ## Published Release: 1.6.8
 
