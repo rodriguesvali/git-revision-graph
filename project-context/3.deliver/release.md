@@ -67,16 +67,17 @@ Focused build artifact:
 - `project-context/2.build/features/1.6.9-release-cycle-opening.md`
 - `project-context/2.build/features/1.6.9-push-tag-refresh-parity.md`
 - `project-context/2.build/features/1.6.9-responsive-toolbar-action-groups.md`
+- `project-context/2.build/features/1.6.9-reference-context-menu-accessibility.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
-| Release scope | Implemented | Remote tag mutations now show subtle progress without reloading the graph, and responsive toolbar action groups are independently wrapped; Extension Development Host smoke remains pending. |
+| Release scope | Implemented | Remote tag mutations now show subtle progress without reloading the graph; responsive toolbar action groups are independently wrapped; dense reference context menus are viewport-scrollable and use focused Copy/Create submenus. Extension Development Host smoke remains pending. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
 | Release notes | Pending | Add only after user-visible scope is approved and delivered. |
-| Automated verification | Pending | Run feature-proportional checks after implementation. |
+| Automated verification | Complete for implemented scope | `npm test` passed all 839 tests; manual Extension Development Host smoke remains pending. |
 | Extension Development Host smoke | Pending | Select scenarios once user-visible scope is approved. |
 | VSIX package inspection | Pending | Requires a separately authorized release-candidate package. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
@@ -99,6 +100,9 @@ Implemented scope:
   tag remains visible in the graph; the remote-publication state is updated after success.
 - Repository actions and zoom controls are now independent toolbar flex items. At constrained
   widths, the complete zoom group moves to a later row without being coupled to repository actions.
+- Reference context menus now remain reachable in short panels through contained viewport scrolling.
+  `Copy` and `Create` submenus reduce routine menu height; `Clear Selection` remains available for
+  two-reference comparison and is omitted for a single reference, which a second click deselects.
 
 Verification record:
 
@@ -110,6 +114,10 @@ Verification record:
   generated-webview checks confirm independent repository and zoom wrappers. `git diff --check`
   passed and `graphify update .` refreshed the graph; the styles file-size quality baseline was
   ratcheted from 1178 to 1177 after the layout simplification.
+- Reference-context-menu contracts and `npm test` passed all 839 tests on 2026-08-25. The menu
+  policy checks cover `Copy`/`Create` grouping, comparison-only `Clear Selection`, and bounded
+  menu scrolling. `git diff --check` passed and `graphify update .` refreshed the graph. The
+  reviewed code-quality size baselines are 1002 lines for interactions and 1183 for styles.
 
 ### Release Constraints And Risks
 

@@ -260,8 +260,7 @@
           : null,
         focusDescendantsActionLabel: comparisonTargets
           ? null
-          : getFocusDescendantsActionLabel(target),
-        hasSelection: selected.length > 0
+          : getFocusDescendantsActionLabel(target)
       });
       const actionHandlers = createContextMenuActionHandlers(target, comparisonTargets);
 
@@ -269,8 +268,28 @@
       if (!comparisonTargets && isFlowGovernanceActive() && target.kind !== 'commit') {
         appendFlowGovernanceActions(getFlowBranchInfo(target.name), target);
       }
-      for (const item of plan.items) {
+      for (let itemIndex = 0; itemIndex < plan.items.length; itemIndex += 1) {
+        const item = plan.items[itemIndex];
         appendMenuSection(item.section);
+        if (item.submenu) {
+          const entries: RevisionGraphWebviewMenuEntry[] = [];
+          const submenu = item.submenu;
+          while (
+            itemIndex < plan.items.length
+            && plan.items[itemIndex].section === item.section
+            && plan.items[itemIndex].submenu === submenu
+          ) {
+            const submenuItem = plan.items[itemIndex];
+            entries.push({
+              label: submenuItem.label,
+              onClick: actionHandlers[submenuItem.action]
+            });
+            itemIndex += 1;
+          }
+          appendMenuSubmenu(submenu, entries);
+          itemIndex -= 1;
+          continue;
+        }
         appendMenuItem(item.label, actionHandlers[item.action], item);
       }
       if (plan.shouldRequestRemoteTagState) {

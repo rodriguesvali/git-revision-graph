@@ -17,6 +17,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   while preserving the existing no-refresh graph lifecycle.
 - `1.6.9-responsive-toolbar-action-groups.md`: keep repository actions and zoom controls as
   independent responsive toolbar groups.
+- `1.6.9-reference-context-menu-accessibility.md`: keep dense reference context menus reachable
+  in short graph panels and group lower-frequency clipboard and creation actions.
 
 ## Recently Completed Release Artifacts
 

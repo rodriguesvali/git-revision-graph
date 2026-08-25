@@ -30,6 +30,7 @@ interface RevisionGraphWebviewContextMenuItem {
   readonly section: string;
   readonly label: string;
   readonly action: RevisionGraphWebviewContextMenuAction;
+  readonly submenu?: 'Copy' | 'Create';
   readonly primary?: boolean;
   readonly destructive?: boolean;
   readonly disabled?: boolean;
@@ -52,7 +53,6 @@ interface RevisionGraphWebviewContextMenuPlanInput {
   readonly remoteTagState?: string;
   readonly focusRangeActionLabel: string | null;
   readonly focusDescendantsActionLabel: string | null;
-  readonly hasSelection: boolean;
 }
 
 interface RevisionGraphWebviewContextMenuPlan {
@@ -206,9 +206,6 @@ function createRevisionGraphWebviewTargetContextMenuPlan(
   addRevisionGraphWebviewCreationItems(items, input);
   const shouldRequestRemoteTagState = addRevisionGraphWebviewRemoteTagItems(items, input);
   addRevisionGraphWebviewReferenceMutationItems(items, input);
-  if (input.hasSelection) {
-    addRevisionGraphWebviewContextMenuItem(items, 'Selection', 'Clear Selection', 'clear-selection');
-  }
   return { items, shouldRequestRemoteTagState };
 }
 
@@ -220,9 +217,17 @@ function addRevisionGraphWebviewInspectionItems(
   if (includeTargetLog) {
     addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Show Log', 'show-log-target');
   }
-  addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Copy Hash', 'copy-hash');
+  addRevisionGraphWebviewContextMenuItem(
+    items,
+    'Inspect',
+    'Copy Hash',
+    'copy-hash',
+    target.kind === 'commit' ? {} : { submenu: 'Copy' }
+  );
   if (target.kind !== 'commit') {
-    addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Copy Ref Name', 'copy-ref-name');
+    addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Copy Ref Name', 'copy-ref-name', {
+      submenu: 'Copy'
+    });
   }
 }
 
@@ -322,9 +327,16 @@ function addRevisionGraphWebviewCreationItems(
       items,
       'Create And Publish',
       'Create New Branch',
-      'create-branch'
+      'create-branch',
+      { submenu: 'Create' }
     );
-    addRevisionGraphWebviewContextMenuItem(items, 'Create And Publish', 'Create Tag', 'create-tag');
+    addRevisionGraphWebviewContextMenuItem(
+      items,
+      'Create And Publish',
+      'Create Tag',
+      'create-tag',
+      { submenu: 'Create' }
+    );
   }
 }
 
@@ -404,7 +416,10 @@ function addRevisionGraphWebviewContextMenuItem(
   section: string,
   label: string,
   action: RevisionGraphWebviewContextMenuAction,
-  options: Pick<RevisionGraphWebviewContextMenuItem, 'primary' | 'destructive' | 'disabled'> = {}
+  options: Pick<
+    RevisionGraphWebviewContextMenuItem,
+    'primary' | 'destructive' | 'disabled' | 'submenu'
+  > = {}
 ): void {
   items.push({ section, label, action, ...options });
 }

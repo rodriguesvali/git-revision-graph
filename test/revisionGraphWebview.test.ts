@@ -58,7 +58,6 @@ function createContextMenuPlan(
     remoteTagState: undefined,
     focusRangeActionLabel: null,
     focusDescendantsActionLabel: 'Focus Descendants',
-    hasSelection: false,
     ...overrides
   });
 }
@@ -680,6 +679,30 @@ test('builds context menu policies for branches, stashes, and remote tags', () =
     ),
     [true, true, true, true]
   );
+  assert.deepEqual(
+    branchPlan.items
+      .filter((item: any) => item.submenu === 'Copy')
+      .map((item: any) => item.action),
+    ['copy-hash', 'copy-ref-name']
+  );
+  assert.deepEqual(
+    branchPlan.items
+      .filter((item: any) => item.submenu === 'Create')
+      .map((item: any) => item.action),
+    ['create-branch', 'create-tag']
+  );
+  assert.equal(
+    createContextMenuPlan(runtime, branch, { hasSelection: true }).items.some(
+      (item: any) => item.action === 'clear-selection'
+    ),
+    false
+  );
+  assert.equal(
+    createContextMenuPlan(runtime, createContextMenuTarget('commit', 'abc123')).items.find(
+      (item: any) => item.action === 'copy-hash'
+    )?.submenu,
+    undefined
+  );
   assert.equal(
     protectedBranchPlan.items.some((item: any) => item.action === 'publish-branch'),
     false
@@ -778,8 +801,7 @@ test('renders grouped graph context menus', () => {
   const comparisonPlan = createContextMenuPlan(runtime, compare, {
     comparisonTargets,
     focusRangeActionLabel: 'Focus Range',
-    focusDescendantsActionLabel: null,
-    hasSelection: true
+    focusDescendantsActionLabel: null
   });
 
   assert.deepEqual(
@@ -858,6 +880,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog"/);
   assert.match(html, /const nodeTitle = visibleReferences\.length === 0/);
   assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
+  assert.match(html, /\.context-menu, \.context-submenu \{[^}]*max-height: calc\(100vh - 16px\);[^}]*overflow-y: auto;[^}]*overscroll-behavior: contain;/s);
   assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
   assert.match(html, /\.context-menu-item:not\(:disabled\):hover,[\s\S]*?background: color-mix\(in srgb, var\(--accent\) 12%, transparent\);/);
   assert.match(html, /\.context-menu-submenu \{\s*position: relative;\s*\}/s);
@@ -879,6 +902,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /context-submenu/);
   assert.match(html, /context-menu-chevron/);
   assert.match(html, /function appendMenuSection\(label\)/);
+  assert.match(html, /const submenu = item\.submenu;[\s\S]*?appendMenuSubmenu\(submenu, entries\);/);
   assert.match(html, /appendMenuSection\('Flow Governance'\);\s*appendMenuSubmenu\('Flow Governance', entries\);/s);
   assert.match(html, /function openContextSubmenu\(group\)/);
   assert.match(html, /function placeContextSubmenu\(group, submenu\)/);

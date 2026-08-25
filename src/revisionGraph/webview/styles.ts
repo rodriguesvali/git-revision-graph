@@ -435,6 +435,12 @@ export function renderRevisionGraphStyles(): string {
       background: color-mix(in srgb, var(--accent) 14%, transparent);
       color: var(--vscode-textLink-activeForeground, var(--text));
     }
+    .context-menu, .context-submenu {
+      max-height: calc(100vh - 16px);
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     .context-menu {
       position: fixed;
       z-index: 60;
