@@ -112,6 +112,31 @@ test('RevisionGraphRemoteTagWorkflow skips remote tag actions without a current 
   assert.equal(pushCount, 0);
 });
 
+test('RevisionGraphRemoteTagWorkflow posts subtle progress around remote tag deletion', async () => {
+  const repository = createRepository('/repo');
+  const posts: PostedRemoteTagState[] = [];
+  const progressEvents: string[] = [];
+  const workflow = new RevisionGraphRemoteTagWorkflow(
+    createHost({ repository, posts, progressEvents }),
+    {
+      async deleteRemoteTagResolvedReference(_repository, _target, _services, progress) {
+        progress?.start();
+        progress?.stop();
+        return true;
+      }
+    }
+  );
+
+  await workflow.deleteRemoteTag('v1.0.0', 'v1.0.0', 'tag');
+
+  assert.deepEqual(progressEvents, ['show:Deleting remote tag v1.0.0...:subtle', 'hide']);
+  assert.deepEqual(posts, [{
+    contextRepositoryPath: '/repo',
+    tagName: 'v1.0.0',
+    state: 'unpublished'
+  }]);
+});
+
 interface PostedRemoteTagState {
   readonly contextRepositoryPath: string | undefined;
   readonly tagName: string;

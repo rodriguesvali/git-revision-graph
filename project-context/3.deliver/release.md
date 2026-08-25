@@ -72,7 +72,7 @@ Focused build artifact:
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
-| Release scope | Implemented | Remote tag pushes now show subtle progress without reloading the graph; Extension Development Host smoke remains pending. |
+| Release scope | Implemented | Remote tag pushes and deletions now show subtle progress without reloading the graph; Extension Development Host smoke remains pending. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
 | Release notes | Pending | Add only after user-visible scope is approved and delivered. |
 | Automated verification | Pending | Run feature-proportional checks after implementation. |
@@ -93,16 +93,16 @@ Opening record:
 
 Implemented scope:
 
-- `Push Tag to Remote` now shows subtle task progress only while the confirmed remote push runs.
-  It preserves the baseline no-refresh behavior because the local tag is already visible in the
-  graph; the remote-publication state is updated after success.
+- `Push Tag to Remote` and `Delete Remote Tag` now show subtle task progress only while the
+  confirmed remote action runs. They preserve the baseline no-refresh behavior because the local
+  tag remains visible in the graph; the remote-publication state is updated after success.
 
 Verification record:
 
-- Focused tag-push tests and `npm test` passed all 838 tests on 2026-08-25; the full test gate
-  also completed `npm run build`. `git diff --check` passed and `graphify update .` refreshed the
-  repository knowledge graph. The controller file-size quality baseline was ratcheted from 756 to
-  755 lines after adapter compaction, and the code-quality gate passed.
+- Focused remote-tag mutation tests and `npm test` passed all 839 tests on 2026-08-25; the full
+  test gate also completed `npm run build`. `git diff --check` passed and `graphify update .`
+  refreshed the repository knowledge graph. The controller file-size quality baseline was ratcheted
+  from 756 to 755 lines after adapter compaction, and the code-quality gate passed.
 
 ### Release Constraints And Risks
 

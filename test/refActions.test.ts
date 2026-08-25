@@ -1481,11 +1481,16 @@ test('deleteRemoteTagResolvedReference deletes a tag from the only configured re
     head: createHead('main')
   });
   const harness = createServices();
+  const progressEvents: string[] = [];
 
   await deleteRemoteTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services
+    harness.services,
+    {
+      start() { progressEvents.push('start'); },
+      stop() { progressEvents.push('stop'); }
+    }
   );
 
   assert.deepEqual(harness.confirmRequests, [
@@ -1498,7 +1503,8 @@ test('deleteRemoteTagResolvedReference deletes a tag from the only configured re
     { remoteName: 'origin', tagName: 'v1.2.0' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was deleted from origin.');
-  assert.equal(harness.refreshCalls, 0);
+  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.refreshRequests, []);
 });
 
 test('deleteRemoteTagResolvedReference lets users choose when multiple remotes exist', async () => {
@@ -1614,6 +1620,7 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
     head: createHead('main')
   });
   const harness = createServices();
+  const progressEvents: string[] = [];
   harness.services.referenceManager.deleteRemoteTag = async () => {
     throw createGitError({
       stderr: 'remote ref does not exist'
@@ -1623,10 +1630,16 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
   await deleteRemoteTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services
+    harness.services,
+    {
+      start() { progressEvents.push('start'); },
+      stop() { progressEvents.push('stop'); }
+    }
   );
 
   assert.deepEqual(harness.deletedRemoteTags, []);
+  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.refreshRequests, []);
   assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. remote ref does not exist');
 });
 

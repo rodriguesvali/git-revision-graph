@@ -10,7 +10,7 @@ import { pickRemote, prepareFullRebuildRefresh } from './shared';
 import { validateGitTagName } from './tagValidation';
 import { RefActionServices, RefActionTarget } from './types';
 
-export interface TagPushProgress {
+export interface RemoteTagProgress {
   start(): void;
   stop(): void;
 }
@@ -71,7 +71,7 @@ export async function pushTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
   services: RefActionServices,
-  progress?: TagPushProgress
+  progress?: RemoteTagProgress
 ): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
@@ -129,7 +129,8 @@ export async function pushTagResolvedReference(
 export async function deleteRemoteTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices
+  services: RefActionServices,
+  progress?: RemoteTagProgress
 ): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
@@ -159,7 +160,12 @@ export async function deleteRemoteTagResolvedReference(
       return false;
     }
 
-    await services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName);
+    progress?.start();
+    try {
+      await services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName);
+    } finally {
+      progress?.stop();
+    }
     services.ui.showInformationMessage(`Tag ${target.label} was deleted from ${remoteName}.`);
     return true;
   } catch (error) {
