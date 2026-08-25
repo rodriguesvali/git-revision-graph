@@ -1,11 +1,25 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-08-15
+Last updated: 2026-08-25
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.6.9 Release Evidence
+
+- Result: passed by maintainer confirmation on 2026-08-25, including the last-minute responsive
+  toolbar-height correction.
+- Scope: final Extension Development Host smoke for remote-tag mutation progress, independent
+  repository and zoom toolbar wrapping, dynamically aligned graph/search/progress surfaces, and
+  viewport-reachable grouped reference context menus.
+- Operator: maintainer; name not recorded.
+- VS Code version, platform, fixture, candidate commit, and per-scenario results: not recorded and
+  not inferred.
+- Packaging was not covered by the smoke confirmation. VSIX filename, checksum, size,
+  embedded-version inspection, clean-profile installation, Marketplace timestamp, and
+  installed-version evidence remain pending.
 
 ## 1.6.7 Release Evidence
 

@@ -1,15 +1,16 @@
 # Release Readiness
 
-Status: `1.6.9` development cycle opened; functional scope pending
+Status: `1.6.9` implementation and maintainer smoke complete; release notes and packaging pending
 Last consolidated: 2026-08-25
 
 ## Current State
 
 - Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.8`, by maintainer confirmation on 2026-08-25.
-- Release cycle status: `1.6.9` was opened from the published `1.6.8` baseline on 2026-08-25.
-  No functional scope, verification, packaging, tag, or Marketplace action is implied by this
-  opening.
+- Release cycle status: `1.6.9` implementation, local automated verification, and Extension
+  Development Host smoke by maintainer confirmation are complete. Release notes, approved VSIX
+  packaging and inspection, clean-profile installation, tagging, and Marketplace publication remain
+  pending.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
@@ -57,7 +58,7 @@ Last consolidated: 2026-08-25
 
 ## Planned Release: 1.6.9
 
-Status: Cycle opened; functional scope pending
+Status: Implementation and maintainer smoke complete; release notes and packaging pending
 Opened: 2026-08-25
 Published baseline version: `1.6.8`
 Target version: `1.6.9`
@@ -74,11 +75,11 @@ Focused build artifact:
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
-| Release scope | Implemented | Remote tag mutations now show subtle progress without reloading the graph; responsive toolbar action groups are independently wrapped; dense reference context menus are viewport-scrollable and use focused Copy/Create submenus. Extension Development Host smoke remains pending. |
+| Release scope | Implemented | Remote tag mutations show subtle progress without reloading the graph; responsive toolbar groups wrap independently and use their measured height for aligned graph surfaces; dense reference context menus are viewport-scrollable and use focused Copy/Create submenus. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
 | Release notes | Pending | Add only after user-visible scope is approved and delivered. |
-| Automated verification | Complete for implemented scope | `npm test` passed all 839 tests; manual Extension Development Host smoke remains pending. |
-| Extension Development Host smoke | Pending | Select scenarios once user-visible scope is approved. |
+| Automated verification | Complete for implemented scope | `npm test` passed all 840 tests after the responsive-height correction; build, quality, and whitespace gates passed. |
+| Extension Development Host smoke | Complete by maintainer confirmation | Final smoke, including the responsive-height correction, was confirmed on 2026-08-25. Exact environment and per-scenario details were not supplied. |
 | VSIX package inspection | Pending | Requires a separately authorized release-candidate package. |
 | Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
 | Rollback readiness | Documented | Before publication, revert metadata and approved scoped changes; after publication, use a later patch or maintainer-approved Marketplace action. |
@@ -100,7 +101,8 @@ Implemented scope:
   tag remains visible in the graph; the remote-publication state is updated after success.
 - Repository actions and zoom controls are now independent toolbar flex items. At constrained
   widths, the complete zoom group moves to a later row without being coupled to repository actions;
-  its reset glyph uses the supplied theme-aware SVG.
+  its reset glyph uses the supplied theme-aware SVG. The graph viewport, floating search, and subtle
+  progress offsets now use the toolbar's measured height instead of fixed width-based estimates.
 - Reference context menus now remain reachable in short panels through contained viewport scrolling.
   `Copy` and `Create` submenus reduce routine menu height; `Clear Selection` remains available for
   two-reference comparison and is omitted for a single reference, which a second click deselects.
@@ -122,18 +124,25 @@ Verification record:
 - The supplied reset-zoom SVG contract and the full `npm test` suite passed again with 839 tests
   on 2026-08-25; it is rendered inline so `currentColor` inherits the toolbar theme. `git diff
   --check` and `graphify update .` also passed.
+- The last-minute responsive-height correction removed the obsolete 96 px and 120 px toolbar
+  estimates and added a focused typed `ResizeObserver` adapter. Focused tests and `npm test` passed
+  all 840 tests on 2026-08-25; the test gate included a clean build. `npm run quality:check` passed
+  for 253 files and 2,420 functions, and `git diff --check` passed. The maintainer confirmed the
+  post-correction Extension Development Host smoke on the same date; exact environment details were
+  not supplied and are not inferred.
 
 ### Release Constraints And Risks
 
 - Preserve the published extension architecture and `1.6.8` behavior until focused scope is approved.
-- Keep package metadata synchronized and do not present the open cycle as release-ready.
+- Keep package metadata synchronized and do not present the candidate as publication-ready until
+  release notes, approved VSIX inspection, and clean-profile installation are complete.
 - Do not add dependencies, create a release tag, or publish without explicit maintainer approval.
 
-### Planned Verification
+### Remaining Verification
 
-- `npm run build` for the package-surface change.
-- `git diff --check` before the cycle-opening handoff.
-- Feature-proportional tests and Extension Development Host smoke after scope approval.
+- Add and review the `1.6.9` release notes.
+- After separate maintainer approval, package and inspect the VSIX, record its identity, and install
+  it in a clean VS Code profile before Marketplace publication.
 
 ## Published Release: 1.6.8
 
