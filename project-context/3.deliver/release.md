@@ -1,19 +1,22 @@
 # Release Readiness
 
-Status: `1.6.8` release candidate packaged; Marketplace publication pending authorization
-Last consolidated: 2026-08-23
+Status: `1.6.9` development cycle opened; functional scope pending
+Last consolidated: 2026-08-25
 
 ## Current State
 
-- Current package version: `1.6.8` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.7`, by maintainer confirmation on 2026-08-15.
+- Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
+- Latest recorded Marketplace-published release: `1.6.8`, by maintainer confirmation on 2026-08-25.
+- Release cycle status: `1.6.9` was opened from the published `1.6.8` baseline on 2026-08-25.
+  No functional scope, verification, packaging, tag, or Marketplace action is implied by this
+  opening.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
   rebranded Marketplace Overview with approved video and screenshot media.
   Local verification, GitHub Actions Verify run `#211`, Extension Development Host smoke by
-  maintainer confirmation, VSIX packaging and isolated installation are complete. Hosted media
-  preview and Marketplace publication remain pending.
+  maintainer confirmation, VSIX packaging, isolated installation, and Marketplace publication are
+  complete. Hosted media preview evidence remains unrecorded.
 - Release cycle status: `1.6.7` implementation, local automated verification, Extension Development
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
@@ -52,9 +55,55 @@ Last consolidated: 2026-08-23
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Planned Release: 1.6.8
+## Planned Release: 1.6.9
 
-Status: Release candidate packaged; Marketplace publication pending authorization
+Status: Cycle opened; functional scope pending
+Opened: 2026-08-25
+Published baseline version: `1.6.8`
+Target version: `1.6.9`
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.6.9-release-cycle-opening.md`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
+| Release scope | Pending | Define and approve focused feature artifacts before implementation. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
+| Release notes | Pending | Add only after user-visible scope is approved and delivered. |
+| Automated verification | Pending | Run feature-proportional checks after implementation. |
+| Extension Development Host smoke | Pending | Select scenarios once user-visible scope is approved. |
+| VSIX package inspection | Pending | Requires a separately authorized release-candidate package. |
+| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Rollback readiness | Documented | Before publication, revert metadata and approved scoped changes; after publication, use a later patch or maintainer-approved Marketplace action. |
+
+Opening record:
+
+- Version metadata was aligned to `1.6.9` on 2026-08-25 to start the development cycle.
+- The published `1.6.8` baseline was confirmed by the maintainer on 2026-08-25; exact publication
+  timestamp, tag, VSIX identity, and installed-version evidence were not supplied and are not
+  inferred.
+- No runtime source, dependency, contribution point, release note, VSIX package, Git tag,
+  publication command, or Marketplace action was included in the cycle opening.
+
+### Release Constraints And Risks
+
+- Preserve the published extension architecture and `1.6.8` behavior until focused scope is approved.
+- Keep package metadata synchronized and do not present the open cycle as release-ready.
+- Do not add dependencies, create a release tag, or publish without explicit maintainer approval.
+
+### Planned Verification
+
+- `npm run build` for the package-surface change.
+- `git diff --check` before the cycle-opening handoff.
+- Feature-proportional tests and Extension Development Host smoke after scope approval.
+
+## Published Release: 1.6.8
+
+Status: Published by maintainer confirmation; post-publication evidence reconciliation pending
 Opened: 2026-08-22
 Published baseline version: `1.6.7`
 Target version: `1.6.8`
@@ -81,7 +130,7 @@ Focused build artifact:
 | Extension Development Host smoke | Complete by maintainer confirmation | The maintainer confirmed completion on 2026-08-23. Exact VS Code version, platform, operator identity, and scenario-level results were not supplied and are not inferred. |
 | VSIX package inspection | Complete | `git-revision-graph-1.6.8.vsix` contains 651 files (1,119,436 bytes); ZIP integrity, embedded identity/version, required runtime assets, and expected exclusions passed. SHA-256: `1b5eb3b75b47d76a1e119022057a8d1c7bed3d316401cf2308a88cf577a5a1ac`. |
 | Clean-profile installation | Complete | VS Code Server `1.129.0` installed the package in isolated temporary data and extension directories and listed `rodriguesvali.git-revision-graph@1.6.8`; the installed manifest retained `./out/extension.js`. |
-| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Marketplace publication | Complete by maintainer confirmation | Publication was reported complete on 2026-08-25. Exact Marketplace timestamp and installed-version evidence were not supplied. |
 | Rollback readiness | Documented | Before publication, revert the metadata and scoped feature changes; after publication, use a later patch or maintainer-approved Marketplace action. |
 
 Opening record:

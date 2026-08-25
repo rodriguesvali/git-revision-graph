@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-23
+Last consolidated: 2026-08-25
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -10,6 +10,11 @@ history, but they are not current scope unless listed below.
 Completed feature artifacts are archived in `project-context/archive/features/`. Do not treat an archived feature artifact as current scope unless it is explicitly reopened and copied or moved back here.
 
 ## Current Active Features
+
+- `1.6.9-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
+  functional scope is being defined.
+
+## Recently Completed Release Artifacts
 
 - `1.6.8-marketplace-overview-rebrand.md`: replace the documentation-heavy Marketplace Overview
   with a concise product narrative, approved video/poster media, focused screenshots, and linked
@@ -22,8 +27,6 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   blocking the graph, suppress duplicate Fetch refreshes, and reuse the loaded snapshot after Push.
 - `1.6.8-show-log-target-scope.md`: ensure graph context-menu Show Log opens on the exact selected
   branch and only expands to all branches after explicit user opt-in.
-- `1.6.8-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
-  functional scope is being defined.
 - `1.6.7-flow-governance-file-toggle.md`: always-visible repository-file-backed Flow Governance
   toggle that creates the default config when activated from a missing-file state.
 - `1.6.7-remove-promotion-pr-context.md`: removal of the Promotion PR Context UI, protocol,
