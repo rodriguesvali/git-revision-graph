@@ -1,16 +1,19 @@
 # Release Readiness
 
-Status: `1.6.9` VSIX packaged, inspected, and clean-profile installed; publication pending
+Status: `1.6.9` published and independently verified in the Marketplace; source-tag decision pending
 Last consolidated: 2026-08-25
 
 ## Current State
 
 - Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.8`, by maintainer confirmation on 2026-08-25.
+- Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
-  packaging, package inspection, and clean-profile installation are complete. Tagging and
-  Marketplace publication remain pending.
+  packaging, package inspection, clean-profile installation, and Marketplace publication by
+  maintainer confirmation are complete. The first local publication attempt failed because the
+  available Marketplace credential was rejected; the maintainer subsequently confirmed successful
+  publication through a separately authenticated flow. The public Marketplace catalog now confirms
+  version `1.6.9` and the reviewed VSIX checksum; only the source-tag decision remains pending.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
@@ -56,9 +59,9 @@ Last consolidated: 2026-08-25
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Planned Release: 1.6.9
+## Published Release: 1.6.9
 
-Status: VSIX packaged, inspected, and clean-profile installed; publication pending
+Status: Published and independently verified in the Marketplace; source-tag decision pending
 Opened: 2026-08-25
 Published baseline version: `1.6.8`
 Target version: `1.6.9`
@@ -82,7 +85,7 @@ Focused build artifact:
 | Extension Development Host smoke | Complete by maintainer confirmation | Final smoke, including the responsive-height correction, was confirmed on 2026-08-25. Exact environment and per-scenario details were not supplied. |
 | VSIX package inspection | Complete | `git-revision-graph-1.6.9.vsix`: 1,120,432 bytes; SHA-256 `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`; embedded version and identity verified. |
 | Clean-profile installation | Complete | Local VS Code Electron CLI `1.132.0` installed the VSIX into isolated temporary user-data and extension directories, listed `rodriguesvali.git-revision-graph@1.6.9`, and retained `./out/extension.js` with engine `^1.90.0`. |
-| Marketplace publication | Not started | Requires separate explicit maintainer authorization. |
+| Marketplace publication | Complete and independently verified | The first authorized local attempt failed PAT verification with `TF400813` at `2026-08-25T12:24:05Z`. The maintainer subsequently confirmed successful publication through a separately authenticated flow. At `2026-08-25T13:31:58Z`, the public Marketplace catalog returned version `1.6.9`, Marketplace update timestamp `2026-08-25T13:29:52.140Z`, and VSIX SHA-256 `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`, matching the inspected local package. |
 | Rollback readiness | Documented | Before publication, revert metadata and approved scoped changes; after publication, use a later patch or maintainer-approved Marketplace action. |
 
 Opening record:
@@ -147,6 +150,20 @@ Verification record:
   disabled only for that process, installed the VSIX into isolated temporary user-data and extension
   directories. It listed `rodriguesvali.git-revision-graph@1.6.9`; the installed manifest retained
   `./out/extension.js` and engine `^1.90.0`. No Marketplace publication command was run.
+- With separate maintainer authorization, `npm run publish:current` was attempted on 2026-08-25.
+  The production prepublish build completed, but Marketplace PAT verification failed with
+  `TF400813` at `2026-08-25T12:24:05Z`; `VSCE_PAT` was not set and `/root/.vsce` contained no stored
+  credential. The command exited with status 1, so `1.6.9` was not published. Version metadata and
+  Git tags were not changed.
+- The maintainer subsequently confirmed successful Marketplace publication of `1.6.9` on
+  2026-08-25 through a separately authenticated flow. The exact publication timestamp and command
+  output were not supplied. A read-only public `vsce show rodriguesvali.git-revision-graph --json`
+  query at `2026-08-25T13:22:23Z` still reported `1.6.8`, which is retained as pending propagation
+  evidence rather than treated as a contradiction of the maintainer confirmation.
+- A repeated public Marketplace query at `2026-08-25T13:31:58Z` confirmed propagation of version
+  `1.6.9`, with Marketplace update timestamp `2026-08-25T13:29:52.140Z`. The published VSIX SHA-256
+  is `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`, exactly matching the
+  inspected local release package.
 
 ### Release Constraints And Risks
 
@@ -157,8 +174,6 @@ Verification record:
 
 ### Remaining Verification
 
-- Obtain separate explicit maintainer authorization before running the Marketplace publication
-  command.
 - Create and record the `1.6.9` source tag only if approved by the maintainer's release process.
 
 ## Published Release: 1.6.8
