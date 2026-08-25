@@ -945,7 +945,6 @@ export function renderRevisionGraphStyles(): string {
       gap: 6px;
       flex: 0 0 auto;
       max-width: 100%;
-      flex-wrap: wrap;
       justify-content: flex-start;
     }
     .view-controls .toolbar-action-slot {

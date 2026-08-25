@@ -15,6 +15,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   functional scope is being defined.
 - `1.6.9-push-tag-refresh-parity.md`: show subtle progress for remote tag pushes and deletions
   while preserving the existing no-refresh graph lifecycle.
+- `1.6.9-responsive-toolbar-action-groups.md`: keep repository actions and zoom controls as
+  independent responsive toolbar groups.
 
 ## Recently Completed Release Artifacts
 

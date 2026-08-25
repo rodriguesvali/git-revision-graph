@@ -244,7 +244,7 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
         aria-label="Close Search"
       >${renderToolbarIcon('close')}</button>
     </div>
-    <div class="toolbar-actions" aria-label="Graph actions">
+    <div class="toolbar-actions repository-toolbar-actions" aria-label="Repository actions">
       <div class="toolbar-action-slot" aria-label="Repository actions">
         <button
           id="centerHeadButton"
@@ -313,7 +313,9 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
           >${renderToolbarIcon('chevron-down')}</button>
         </span>
       </div>
-      <div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">
+    </div>
+    <div class="toolbar-actions zoom-toolbar-actions" aria-label="Zoom controls">
+      <div class="toolbar-action-slot zoom-action-slot">
         <button
           id="zoomOutButton"
           class="toolbar-button icon-only"

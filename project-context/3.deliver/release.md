@@ -66,13 +66,14 @@ Focused build artifact:
 
 - `project-context/2.build/features/1.6.9-release-cycle-opening.md`
 - `project-context/2.build/features/1.6.9-push-tag-refresh-parity.md`
+- `project-context/2.build/features/1.6.9-responsive-toolbar-action-groups.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
-| Release scope | Implemented | Remote tag pushes and deletions now show subtle progress without reloading the graph; Extension Development Host smoke remains pending. |
+| Release scope | Implemented | Remote tag mutations now show subtle progress without reloading the graph, and responsive toolbar action groups are independently wrapped; Extension Development Host smoke remains pending. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
 | Release notes | Pending | Add only after user-visible scope is approved and delivered. |
 | Automated verification | Pending | Run feature-proportional checks after implementation. |
@@ -96,6 +97,8 @@ Implemented scope:
 - `Push Tag to Remote` and `Delete Remote Tag` now show subtle task progress only while the
   confirmed remote action runs. They preserve the baseline no-refresh behavior because the local
   tag remains visible in the graph; the remote-publication state is updated after success.
+- Repository actions and zoom controls are now independent toolbar flex items. At constrained
+  widths, the complete zoom group moves to a later row without being coupled to repository actions.
 
 Verification record:
 
@@ -103,6 +106,10 @@ Verification record:
   test gate also completed `npm run build`. `git diff --check` passed and `graphify update .`
   refreshed the repository knowledge graph. The controller file-size quality baseline was ratcheted
   from 756 to 755 lines after adapter compaction, and the code-quality gate passed.
+- Responsive-toolbar regression checks and `npm test` passed all 839 tests on 2026-08-25. The
+  generated-webview checks confirm independent repository and zoom wrappers. `git diff --check`
+  passed and `graphify update .` refreshed the graph; the styles file-size quality baseline was
+  ratcheted from 1178 to 1177 after the layout simplification.
 
 ### Release Constraints And Risks
 

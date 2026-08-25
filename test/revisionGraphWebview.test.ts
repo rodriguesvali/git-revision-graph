@@ -181,12 +181,12 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /\.view-controls \.toolbar-icon \{\s*position: static;\s*inset: auto;/);
   assert.doesNotMatch(html, /workspace-led/);
   assert.doesNotMatch(html, /id="workspaceLed"/);
-  assert.match(html, /<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="pushMenuButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"[\s\S]*?id="reloadMenuButton"/);
+  assert.match(html, /<div class="toolbar-actions repository-toolbar-actions" aria-label="Repository actions">[\s\S]*?<div class="toolbar-action-slot" aria-label="Repository actions">[\s\S]*?id="centerHeadButton"[\s\S]*?id="syncButton"[\s\S]*?id="pullButton"[\s\S]*?id="pushButton"[\s\S]*?id="pushMenuButton"[\s\S]*?id="fetchAllButton"[\s\S]*?id="reloadButton"[\s\S]*?id="reloadMenuButton"/);
   assert.doesNotMatch(html, /id="abortMergeButton"/);
   assert.match(html, /id="zoomOutButton"/);
   assert.match(html, /id="zoomResetButton"/);
   assert.match(html, /id="zoomInButton"/);
-  assert.match(html, /<div class="toolbar-action-slot zoom-action-slot" aria-label="Zoom controls">[\s\S]*?id="zoomOutButton"[\s\S]*?id="zoomResetButton"[\s\S]*?id="zoomInButton"/);
+  assert.match(html, /<div class="toolbar-actions zoom-toolbar-actions" aria-label="Zoom controls">[\s\S]*?<div class="toolbar-action-slot zoom-action-slot">[\s\S]*?id="zoomOutButton"[\s\S]*?id="zoomResetButton"[\s\S]*?id="zoomInButton"/);
   assert.match(html, /id="zoomOutButton"[\s\S]*?data-icon="minus"/);
   assert.match(html, /id="zoomResetButton"[\s\S]*?data-icon="reset"/);
   assert.match(html, /data-icon="reset"[\s\S]*?<path d="M3\.2 5\.4 4\.8 4v8"><\/path>[\s\S]*?<circle cx="7\.8" cy="6\.2" r="0\.45"><\/circle>[\s\S]*?<circle cx="7\.8" cy="9\.8" r="0\.45"><\/circle>[\s\S]*?<path d="M10\.2 5\.4 11\.8 4v8"><\/path>/);
@@ -265,6 +265,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /--graph-top-offset: calc\(var\(--toolbar-safe-height\) \+ 1px\)/);
   assert.match(html, /\.view-controls \{\s*position: fixed;\s*top: var\(--toolbar-top-offset\);\s*left: 0;\s*right: 0;[\s\S]*?border-radius: 0;[\s\S]*?box-shadow: none;/);
   assert.match(html, /\.view-controls \.toolbar-actions \{\s*display: flex;[\s\S]*?justify-content: flex-start;/);
+  assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?flex-wrap: wrap;[\s\S]*?\}/);
   assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?margin-left: auto;[\s\S]*?\}/);
   assert.match(html, /\.view-controls \.toolbar-button \{[\s\S]*?border-radius: 0;/);
   assert.match(html, /\.flow-badge \{/);
