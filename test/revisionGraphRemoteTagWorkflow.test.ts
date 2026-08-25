@@ -70,12 +70,15 @@ test('RevisionGraphRemoteTagWorkflow posts published after a successful tag push
   const repository = createRepository('/repo');
   const posts: PostedRemoteTagState[] = [];
   const pushedTargets: Array<{ readonly refName: string; readonly label: string; readonly kind: string }> = [];
+  const progressEvents: string[] = [];
   const workflow = new RevisionGraphRemoteTagWorkflow(
-    createHost({ repository, posts }),
+    createHost({ repository, posts, progressEvents }),
     {
-      async pushTagResolvedReference(currentRepository, target) {
+      async pushTagResolvedReference(currentRepository, target, _services, progress) {
         assert.equal(currentRepository, repository);
         pushedTargets.push(target);
+        progress?.start();
+        progress?.stop();
         return true;
       }
     }
@@ -84,6 +87,7 @@ test('RevisionGraphRemoteTagWorkflow posts published after a successful tag push
   await workflow.pushTag('v1.0.0', 'v1.0.0', 'tag');
 
   assert.deepEqual(pushedTargets, [{ refName: 'v1.0.0', label: 'v1.0.0', kind: 'tag' }]);
+  assert.deepEqual(progressEvents, ['show:Pushing tag v1.0.0...:subtle', 'hide']);
   assert.deepEqual(posts, [{
     contextRepositoryPath: '/repo',
     tagName: 'v1.0.0',
@@ -117,6 +121,7 @@ interface PostedRemoteTagState {
 function createHost(options: {
   readonly repository?: Repository;
   readonly posts?: PostedRemoteTagState[];
+  readonly progressEvents?: string[];
 } = {}): RevisionGraphRemoteTagWorkflowHost {
   const actionServices = {} as RefActionServices;
   return {
@@ -124,7 +129,12 @@ function createHost(options: {
     getCurrentRepository() {
       return options.repository;
     },
-    postCurrentState() {},
+    postActionLoading(label, mode) {
+      options.progressEvents?.push(`show:${label}:${mode}`);
+    },
+    postCurrentState() {
+      options.progressEvents?.push('hide');
+    },
     createRemoteTagPublicationRequestContext(repository): RemoteTagPublicationRequestContext {
       return {
         repositoryPath: repository.rootUri.fsPath,

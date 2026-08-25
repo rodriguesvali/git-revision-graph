@@ -277,9 +277,8 @@ export class RevisionGraphController implements vscode.Disposable {
       postHostMessage: (message) => {
         this.postHostMessage(message);
       },
-      postCurrentState: () => {
-        this.postCurrentState();
-      },
+      postCurrentState: () => this.postCurrentState(),
+      postActionLoading: (label, mode) => this.postActionLoading(label, mode),
       updateFlowGovernanceOptions: async (options) => {
         await this.flowGovernanceWorkflow.updateOptions(options);
       },

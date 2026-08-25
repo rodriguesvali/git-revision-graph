@@ -10,6 +10,11 @@ import { pickRemote, prepareFullRebuildRefresh } from './shared';
 import { validateGitTagName } from './tagValidation';
 import { RefActionServices, RefActionTarget } from './types';
 
+export interface TagPushProgress {
+  start(): void;
+  stop(): void;
+}
+
 export async function createTagFromResolvedReference(
   repository: Repository,
   target: RefActionTarget,
@@ -65,7 +70,8 @@ async function getLocalTagNames(repository: Repository): Promise<readonly string
 export async function pushTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices
+  services: RefActionServices,
+  progress?: TagPushProgress
 ): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
@@ -95,7 +101,12 @@ export async function pushTagResolvedReference(
       return false;
     }
 
-    await services.referenceManager.pushTag(repository, remoteName, target.refName);
+    progress?.start();
+    try {
+      await services.referenceManager.pushTag(repository, remoteName, target.refName);
+    } finally {
+      progress?.stop();
+    }
     services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
     return true;
   } catch (error) {

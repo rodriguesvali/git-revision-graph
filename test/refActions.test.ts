@@ -1262,10 +1262,15 @@ test('pushTagResolvedReference pushes a local tag to the only configured remote'
   });
   const harness = createServices();
 
+  const progressEvents: string[] = [];
   await pushTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services
+    harness.services,
+    {
+      start() { progressEvents.push('start'); },
+      stop() { progressEvents.push('stop'); }
+    }
   );
 
   assert.deepEqual(harness.confirmRequests, [
@@ -1275,7 +1280,8 @@ test('pushTagResolvedReference pushes a local tag to the only configured remote'
     { remoteName: 'origin', tagName: 'v1.2.0' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was pushed to origin.');
-  assert.equal(harness.refreshCalls, 0);
+  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.refreshRequests, []);
 });
 
 test('pushTagResolvedReference lets users choose when multiple remotes exist', async () => {
@@ -1302,6 +1308,7 @@ test('pushTagResolvedReference lets users choose when multiple remotes exist', a
     { remoteName: 'upstream', tagName: 'v1.2.0' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was pushed to upstream.');
+  assert.deepEqual(harness.refreshRequests, []);
 });
 
 test('pushTagResolvedReference does nothing when remote selection is canceled', async () => {
@@ -1391,6 +1398,7 @@ test('pushTagResolvedReference surfaces push failures', async () => {
     head: createHead('main')
   });
   const harness = createServices();
+  const progressEvents: string[] = [];
   harness.services.referenceManager.pushTag = async () => {
     throw createGitError({
       stderr: 'remote rejected'
@@ -1400,10 +1408,16 @@ test('pushTagResolvedReference surfaces push failures', async () => {
   await pushTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services
+    harness.services,
+    {
+      start() { progressEvents.push('start'); },
+      stop() { progressEvents.push('stop'); }
+    }
   );
 
   assert.deepEqual(harness.pushedTags, []);
+  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.refreshRequests, []);
   assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
 });
 

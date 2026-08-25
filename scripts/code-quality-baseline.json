@@ -5,7 +5,7 @@
   },
   "files": {
     "src/compareResultsWebview.ts": 692,
-    "src/revisionGraph/controller.ts": 756,
+    "src/revisionGraph/controller.ts": 755,
     "src/revisionGraph/panel/state.ts": 690,
     "src/revisionGraph/webview/script/bootstrap.ts": 1759,
     "src/revisionGraph/webview/script/interactions.ts": 983,

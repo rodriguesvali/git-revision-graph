@@ -3,7 +3,8 @@ import {
   deleteRemoteTagResolvedReference,
   pushTagResolvedReference,
   RefActionKind,
-  RefActionServices
+  RefActionServices,
+  TagPushProgress
 } from '../refActions';
 import { getRepositoryRemoteNames } from '../refActions/shared';
 import { RemoteTagPublicationState } from '../revisionGraphTypes';
@@ -17,6 +18,7 @@ import { withCurrentStateBeforeBlockingMessage } from './blockingMessageState';
 export interface RevisionGraphRemoteTagWorkflowHost extends Partial<RepositoryMutationRunner> {
   readonly actionServices: RefActionServices;
   getCurrentRepository(): Repository | undefined;
+  postActionLoading(label: string, mode?: 'blocking' | 'subtle'): void;
   postCurrentState(): void;
   createRemoteTagPublicationRequestContext(repository: Repository): RemoteTagPublicationRequestContext;
   postRemoteTagStateIfCurrent(
@@ -36,7 +38,8 @@ export interface RevisionGraphRemoteTagWorkflowDependencies {
   pushTagResolvedReference?(
     repository: Repository,
     target: { readonly refName: string; readonly label: string; readonly kind: RefActionKind },
-    services: RefActionServices
+    services: RefActionServices,
+    progress?: TagPushProgress
   ): Promise<boolean>;
   deleteRemoteTagResolvedReference?(
     repository: Repository,
@@ -98,12 +101,14 @@ export class RevisionGraphRemoteTagWorkflow {
         this.pushTagResolvedReference(
           guardedRepository,
           { refName, label, kind: refKind },
-          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState())
+          withCurrentStateBeforeBlockingMessage(services, () => this.host.postCurrentState()),
+          this.createPushTagProgress(label)
         ))
       : await this.pushTagResolvedReference(
         repository,
         { refName, label, kind: refKind },
-        withCurrentStateBeforeBlockingMessage(this.host.actionServices, () => this.host.postCurrentState())
+        withCurrentStateBeforeBlockingMessage(this.host.actionServices, () => this.host.postCurrentState()),
+        this.createPushTagProgress(label)
       );
     if (pushed) {
       this.host.postRemoteTagStateIfCurrent(requestContext, refName, 'published');
@@ -152,5 +157,12 @@ export class RevisionGraphRemoteTagWorkflow {
     } catch {
       return 'unknown';
     }
+  }
+
+  private createPushTagProgress(label: string): TagPushProgress {
+    return {
+      start: () => this.host.postActionLoading(`Pushing tag ${label}...`, 'subtle'),
+      stop: () => this.host.postCurrentState()
+    };
   }
 }

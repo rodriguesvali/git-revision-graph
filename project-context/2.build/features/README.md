@@ -13,6 +13,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 - `1.6.9-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
   functional scope is being defined.
+- `1.6.9-push-tag-refresh-parity.md`: show subtle progress for remote tag pushes while preserving
+  the existing no-refresh graph lifecycle.
 
 ## Recently Completed Release Artifacts
 

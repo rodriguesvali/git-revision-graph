@@ -45,7 +45,8 @@ export {
 export {
   createTagFromResolvedReference,
   deleteRemoteTagResolvedReference,
-  pushTagResolvedReference
+  pushTagResolvedReference,
+  type TagPushProgress
 } from './refActions/tags';
 export {
   applyStashResolvedReference,
