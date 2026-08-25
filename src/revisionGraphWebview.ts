@@ -58,10 +58,14 @@ function renderToolbarIcon(iconName: ToolbarIconName): string {
         </svg>`;
     case 'reset':
       return `<svg class="toolbar-icon" data-icon="reset" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-          <path d="M3.2 5.4 4.8 4v8"></path>
-          <circle cx="7.8" cy="6.2" r="0.45"></circle>
-          <circle cx="7.8" cy="9.8" r="0.45"></circle>
-          <path d="M10.2 5.4 11.8 4v8"></path>
+          <g stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.1 5.2 4.25 4.3V11.7"></path>
+            <path d="M3.25 11.7h2"></path>
+            <path d="M7.85 6.35h.01"></path>
+            <path d="M7.85 9.65h.01"></path>
+            <path d="M10.6 5.2 11.75 4.3V11.7"></path>
+            <path d="M10.75 11.7h2"></path>
+          </g>
         </svg>`;
     case 'target':
       return `<svg class="toolbar-icon" data-icon="target" viewBox="0 0 16 16" aria-hidden="true" focusable="false">

@@ -99,7 +99,8 @@ Implemented scope:
   confirmed remote action runs. They preserve the baseline no-refresh behavior because the local
   tag remains visible in the graph; the remote-publication state is updated after success.
 - Repository actions and zoom controls are now independent toolbar flex items. At constrained
-  widths, the complete zoom group moves to a later row without being coupled to repository actions.
+  widths, the complete zoom group moves to a later row without being coupled to repository actions;
+  its reset glyph uses the supplied theme-aware SVG.
 - Reference context menus now remain reachable in short panels through contained viewport scrolling.
   `Copy` and `Create` submenus reduce routine menu height; `Clear Selection` remains available for
   two-reference comparison and is omitted for a single reference, which a second click deselects.
@@ -118,6 +119,9 @@ Verification record:
   policy checks cover `Copy`/`Create` grouping, comparison-only `Clear Selection`, and bounded
   menu scrolling. `git diff --check` passed and `graphify update .` refreshed the graph. The
   reviewed code-quality size baselines are 1002 lines for interactions and 1183 for styles.
+- The supplied reset-zoom SVG contract and the full `npm test` suite passed again with 839 tests
+  on 2026-08-25; it is rendered inline so `currentColor` inherits the toolbar theme. `git diff
+  --check` and `graphify update .` also passed.
 
 ### Release Constraints And Risks
 
