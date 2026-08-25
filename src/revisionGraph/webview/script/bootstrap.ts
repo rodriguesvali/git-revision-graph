@@ -360,7 +360,6 @@ const VIEWPORT_PADDING_LEFT = 18;
     viewport.addEventListener('scroll', closeContextMenu);
     viewport.addEventListener('scroll', hideReferenceTooltip);
     window.addEventListener('resize', () => {
-      syncRevisionGraphWebviewToolbarSafeHeight(document.documentElement, viewControls);
       readViewportLayoutSize();
       syncCanvasSize();
       updateScenePlacement();
@@ -503,7 +502,6 @@ const VIEWPORT_PADDING_LEFT = 18;
         endMinimapDrag();
       }
     });
-
     syncMinimapPreference();
     observeRevisionGraphWebviewToolbarSafeHeight(document.documentElement, viewControls, () => { readViewportLayoutSize(); syncCanvasSize(); updateScenePlacement(); scheduleVirtualSceneRender('toolbar-resize', true); syncMinimap(); });
     readViewportLayoutSize();

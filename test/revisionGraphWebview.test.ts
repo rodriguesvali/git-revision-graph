@@ -274,7 +274,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /right: 0;/);
   assert.match(html, /bottom: 0;/);
   assert.match(html, /left: 0;/);
-  assert.match(html, /syncRevisionGraphWebviewToolbarSafeHeight\(document\.documentElement, viewControls\)/);
+  assert.match(html, /syncRevisionGraphWebviewToolbarSafeHeight\(root, toolbar\)/);
   assert.match(html, /observeRevisionGraphWebviewToolbarSafeHeight\([\s\S]*?scheduleVirtualSceneRender\('toolbar-resize', true\)/);
   assert.match(html, /window\.addEventListener\('pagehide', \(\) => observer\.disconnect\(\), \{ once: true \}\)/);
 });
