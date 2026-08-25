@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.9` published and independently verified in the Marketplace; source-tag decision pending
+Status: `1.6.9` publication complete; Marketplace package and remote source tag independently verified
 Last consolidated: 2026-08-25
 
 ## Current State
@@ -13,7 +13,8 @@ Last consolidated: 2026-08-25
   maintainer confirmation are complete. The first local publication attempt failed because the
   available Marketplace credential was rejected; the maintainer subsequently confirmed successful
   publication through a separately authenticated flow. The public Marketplace catalog now confirms
-  version `1.6.9` and the reviewed VSIX checksum; only the source-tag decision remains pending.
+  version `1.6.9` and the reviewed VSIX checksum. The local and remote `1.6.9` source tags resolve
+  to the published `main` commit, completing the release cycle.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
@@ -25,8 +26,8 @@ Last consolidated: 2026-08-25
   Host smoke, and Marketplace publication are complete. Focused feature artifacts and release notes
   are synchronized. Exact publication timestamp, VSIX identity and inspection, clean-profile
   installation, source tag, and installed-version evidence were not supplied and are not inferred.
-- Latest tagged source baseline: `1.6.3` at `c620e35` on 2026-08-01. VSIX and Marketplace
-  publication evidence for that tag was not supplied and is not inferred.
+- Latest tagged source baseline: `1.6.9` at `755081522c55f751cd13195c775f54681b8a94de`
+  on 2026-08-25. The local tag, `origin` tag, and public GitHub tag resolve to the same commit.
 - Release cycle status: `1.6.4` was published on 2026-08-08 by maintainer confirmation after a
   patch release focused on measured,
   staged revision-graph loading performance improvements. The first slice parallelizes
@@ -61,7 +62,7 @@ Last consolidated: 2026-08-25
 
 ## Published Release: 1.6.9
 
-Status: Published and independently verified in the Marketplace; source-tag decision pending
+Status: Publication complete; Marketplace package and remote source tag independently verified
 Opened: 2026-08-25
 Published baseline version: `1.6.8`
 Target version: `1.6.9`
@@ -86,6 +87,7 @@ Focused build artifact:
 | VSIX package inspection | Complete | `git-revision-graph-1.6.9.vsix`: 1,120,432 bytes; SHA-256 `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`; embedded version and identity verified. |
 | Clean-profile installation | Complete | Local VS Code Electron CLI `1.132.0` installed the VSIX into isolated temporary user-data and extension directories, listed `rodriguesvali.git-revision-graph@1.6.9`, and retained `./out/extension.js` with engine `^1.90.0`. |
 | Marketplace publication | Complete and independently verified | The first authorized local attempt failed PAT verification with `TF400813` at `2026-08-25T12:24:05Z`. The maintainer subsequently confirmed successful publication through a separately authenticated flow. At `2026-08-25T13:31:58Z`, the public Marketplace catalog returned version `1.6.9`, Marketplace update timestamp `2026-08-25T13:29:52.140Z`, and VSIX SHA-256 `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`, matching the inspected local package. |
+| Source tag | Complete and independently verified | Lightweight tag `1.6.9` resolves locally and on `origin` to `755081522c55f751cd13195c775f54681b8a94de`; the public GitHub tag page exposes the same `7550815` commit. Remote verification completed at `2026-08-25T13:36:07Z`. |
 | Rollback readiness | Documented | Before publication, revert metadata and approved scoped changes; after publication, use a later patch or maintainer-approved Marketplace action. |
 
 Opening record:
@@ -164,17 +166,23 @@ Verification record:
   `1.6.9`, with Marketplace update timestamp `2026-08-25T13:29:52.140Z`. The published VSIX SHA-256
   is `be03eff9f13f5e3ae5b0d416837e6c4a9865622b4c81b0dba4d66e25d8c78250`, exactly matching the
   inspected local release package.
+- Lightweight source tag `1.6.9` was created at
+  `755081522c55f751cd13195c775f54681b8a94de`, the synchronized `main` and `origin/main` commit. The
+  first automated HTTPS push could not authenticate in the noninteractive process; the maintainer
+  subsequently propagated the tag. At `2026-08-25T13:36:07Z`, `git ls-remote` and the public GitHub
+  tag page confirmed that remote `refs/tags/1.6.9` resolves to the same commit.
 
 ### Release Constraints And Risks
 
-- Preserve the published extension architecture and `1.6.8` behavior until focused scope is approved.
-- Keep package metadata synchronized and do not present the candidate as publication-ready until
-  approved VSIX inspection and clean-profile installation are complete.
-- Do not add dependencies, create a release tag, or publish without explicit maintainer approval.
+- Preserve the published `1.6.9` behavior; deliver any correction through a separately approved
+  follow-up release or Marketplace action.
+- Keep package metadata synchronized when the next release cycle is opened.
+- Do not add dependencies, open a later version, create another release tag, or publish again without
+  explicit maintainer approval.
 
-### Remaining Verification
+### Release Closure
 
-- Create and record the `1.6.9` source tag only if approved by the maintainer's release process.
+- No release gates remain open for `1.6.9`.
 
 ## Published Release: 1.6.8
 
