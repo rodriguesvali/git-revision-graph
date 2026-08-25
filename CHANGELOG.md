@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.6.9 - 2026-08-25
+
+### Revision Graph
+
+- Show subtle progress while `Push Tag to Remote` and `Delete Remote Tag` run, including native
+  confirmation and error dialogs, without reloading the graph or hiding the local tag.
+- Keep repository actions and zoom controls as independent responsive groups. Align the graph,
+  floating search, and subtle progress surfaces with the toolbar's measured height as its rows wrap,
+  and render the reset-zoom glyph with the active workbench theme color.
+- Keep reference context-menu actions reachable in short editor panels through contained scrolling.
+  Group clipboard and creation actions under focused `Copy` and `Create` submenus, and show
+  `Clear Selection` only for an active two-reference comparison.
+
 ## 1.6.8 - 2026-08-23
 
 ### Marketplace

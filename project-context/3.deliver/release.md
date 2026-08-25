@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.6.9` implementation and maintainer smoke complete; release notes and packaging pending
+Status: `1.6.9` release notes and maintainer smoke complete; approved packaging in progress
 Last consolidated: 2026-08-25
 
 ## Current State
@@ -8,9 +8,9 @@ Last consolidated: 2026-08-25
 - Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.8`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
-  Development Host smoke by maintainer confirmation are complete. Release notes, approved VSIX
-  packaging and inspection, clean-profile installation, tagging, and Marketplace publication remain
-  pending.
+  Development Host smoke by maintainer confirmation, and reviewed release notes are complete.
+  Approved VSIX packaging and inspection, clean-profile installation, tagging, and Marketplace
+  publication remain pending.
 - Release cycle status: `1.6.8` was opened from the published `1.6.7` baseline on 2026-08-22. Its
   candidate scope contains exact-branch Show Log opening, nonblocking Fetch/Pull/Push feedback and
   refresh, readable long reference badges in commit tooltips, compact Show Log commit rows, and a
@@ -58,7 +58,7 @@ Last consolidated: 2026-08-25
 
 ## Planned Release: 1.6.9
 
-Status: Implementation and maintainer smoke complete; release notes and packaging pending
+Status: Release notes and maintainer smoke complete; approved packaging in progress
 Opened: 2026-08-25
 Published baseline version: `1.6.8`
 Target version: `1.6.9`
@@ -77,7 +77,7 @@ Focused build artifact:
 | Published baseline | Complete | `1.6.8` was published by maintainer confirmation on 2026-08-25. |
 | Release scope | Implemented | Remote tag mutations show subtle progress without reloading the graph; responsive toolbar groups wrap independently and use their measured height for aligned graph surfaces; dense reference context menus are viewport-scrollable and use focused Copy/Create submenus. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.6.9`. |
-| Release notes | Pending | Add only after user-visible scope is approved and delivered. |
+| Release notes | Complete | `CHANGELOG.md` describes the reviewed remote-tag progress, responsive toolbar, and reference context-menu scope. |
 | Automated verification | Complete for implemented scope | `npm test` passed all 840 tests after the responsive-height correction; build, quality, and whitespace gates passed. |
 | Extension Development Host smoke | Complete by maintainer confirmation | Final smoke, including the responsive-height correction, was confirmed on 2026-08-25. Exact environment and per-scenario details were not supplied. |
 | VSIX package inspection | Pending | Requires a separately authorized release-candidate package. |
@@ -135,13 +135,12 @@ Verification record:
 
 - Preserve the published extension architecture and `1.6.8` behavior until focused scope is approved.
 - Keep package metadata synchronized and do not present the candidate as publication-ready until
-  release notes, approved VSIX inspection, and clean-profile installation are complete.
+  approved VSIX inspection and clean-profile installation are complete.
 - Do not add dependencies, create a release tag, or publish without explicit maintainer approval.
 
 ### Remaining Verification
 
-- Add and review the `1.6.9` release notes.
-- After separate maintainer approval, package and inspect the VSIX, record its identity, and install
+- Under the maintainer's packaging approval, package and inspect the VSIX, record its identity, and install
   it in a clean VS Code profile before Marketplace publication.
 
 ## Published Release: 1.6.8
