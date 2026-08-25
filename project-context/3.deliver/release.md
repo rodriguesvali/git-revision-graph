@@ -83,6 +83,7 @@ Focused build artifact:
 Opening record:
 
 - Version metadata was aligned to `1.6.9` on 2026-08-25 to start the development cycle.
+- Manifest consistency, `npm run build`, and `git diff --check` passed for the cycle opening.
 - The published `1.6.8` baseline was confirmed by the maintainer on 2026-08-25; exact publication
   timestamp, tag, VSIX identity, and installed-version evidence were not supplied and are not
   inferred.
