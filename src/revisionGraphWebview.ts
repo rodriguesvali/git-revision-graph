@@ -139,7 +139,7 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
   ${renderRevisionGraphStyles()}
 </head>
 <body class="loading" aria-busy="true">
-  <div class="view-controls" aria-label="Revision graph view controls">
+  <div id="viewControls" class="view-controls" aria-label="Revision graph view controls">
     <label for="scopeSelect">
       <span class="control-caption">Scope</span>
       <select id="scopeSelect">

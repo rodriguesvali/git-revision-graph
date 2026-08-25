@@ -1,4 +1,5 @@
 interface RevisionGraphWebviewDom {
+  readonly viewControls: HTMLDivElement;
   readonly viewport: HTMLDivElement;
   readonly canvas: HTMLDivElement;
   readonly sceneLayer: HTMLDivElement;
@@ -61,6 +62,7 @@ interface RevisionGraphWebviewDom {
 
 function createRevisionGraphWebviewDom(): RevisionGraphWebviewDom {
   return {
+    viewControls: requireRevisionGraphElement<HTMLDivElement>('viewControls'),
     viewport: requireRevisionGraphElement<HTMLDivElement>('viewport'),
     canvas: requireRevisionGraphElement<HTMLDivElement>('canvas'),
     sceneLayer: requireRevisionGraphElement<HTMLDivElement>('sceneLayer'),

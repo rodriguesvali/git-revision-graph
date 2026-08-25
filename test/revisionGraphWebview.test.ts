@@ -99,6 +99,7 @@ test('does not publish revision graph runtime internals on the global object', (
 test('renders a persistent shell for the revision graph webview', () => {
   const html = renderRevisionGraphShellHtml();
 
+  assert.match(html, /id="viewControls" class="view-controls"/);
   assert.match(html, /<select id="scopeSelect">/);
   assert.match(html, /<option value="remoteHead">origin\/HEAD<\/option>/);
   assert.match(html, /<select id="layoutSelect"[^>]*>/);
@@ -261,6 +262,7 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /--toolbar-top-offset: 0px/);
   assert.match(html, /--toolbar-safe-height: 56px/);
   assert.match(html, /--graph-top-offset: calc\(var\(--toolbar-safe-height\) \+ 1px\)/);
+  assert.doesNotMatch(html, /--toolbar-safe-height: (?:96|120)px/);
   assert.match(html, /\.view-controls \{\s*position: fixed;\s*top: var\(--toolbar-top-offset\);\s*left: 0;\s*right: 0;[\s\S]*?border-radius: 0;[\s\S]*?box-shadow: none;/);
   assert.match(html, /\.view-controls \.toolbar-actions \{\s*display: flex;[\s\S]*?justify-content: flex-start;/);
   assert.doesNotMatch(html, /\.view-controls \.toolbar-actions \{[\s\S]*?flex-wrap: wrap;[\s\S]*?\}/);
@@ -272,6 +274,28 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /right: 0;/);
   assert.match(html, /bottom: 0;/);
   assert.match(html, /left: 0;/);
+  assert.match(html, /syncRevisionGraphWebviewToolbarSafeHeight\(document\.documentElement, viewControls\)/);
+  assert.match(html, /observeRevisionGraphWebviewToolbarSafeHeight\([\s\S]*?scheduleVirtualSceneRender\('toolbar-resize', true\)/);
+  assert.match(html, /window\.addEventListener\('pagehide', \(\) => observer\.disconnect\(\), \{ once: true \}\)/);
+});
+
+test('synchronizes the toolbar safe height from its rendered border box', () => {
+  const runtime = createWebviewRuntime();
+  const toolbar = runtime.elements.get('viewControls')!;
+
+  toolbar.clientHeight = 95.2;
+  assert.equal(runtime.context.calculateRevisionGraphWebviewToolbarSafeHeight(95.2), 96);
+  assert.equal(runtime.context.calculateRevisionGraphWebviewToolbarSafeHeight(0), null);
+  assert.equal(runtime.context.calculateRevisionGraphWebviewToolbarSafeHeight(Number.NaN), null);
+  assert.equal(
+    runtime.context.syncRevisionGraphWebviewToolbarSafeHeight(runtime.documentElement, toolbar),
+    true
+  );
+  assert.equal(runtime.documentElement.style.getPropertyValue('--toolbar-safe-height'), '96px');
+  assert.equal(
+    runtime.context.syncRevisionGraphWebviewToolbarSafeHeight(runtime.documentElement, toolbar),
+    false
+  );
 });
 
 test('rehydrates the webview after the shell is recreated', () => {
@@ -3297,7 +3321,16 @@ function createWebviewRuntime() {
 
   class MockElement {
     readonly listeners: Record<string, Array<(...args: any[]) => unknown>> = {};
-    readonly style = { width: '', height: '', left: '', top: '', transform: '' };
+    readonly styleProperties = new Map<string, string>();
+    readonly style = {
+      width: '',
+      height: '',
+      left: '',
+      top: '',
+      transform: '',
+      setProperty: (name: string, value: string) => this.styleProperties.set(name, value),
+      getPropertyValue: (name: string) => this.styleProperties.get(name) ?? ''
+    };
     readonly dataset: Record<string, string> = {};
     readonly classList = {
       add: () => {},
@@ -3376,6 +3409,7 @@ function createWebviewRuntime() {
   }
 
   const ids = [
+    'viewControls',
     'viewport',
     'canvas',
     'sceneLayer',
@@ -3437,7 +3471,10 @@ function createWebviewRuntime() {
     'zoomInButton'
   ] as const;
   const elements = new Map<string, MockElement>(ids.map((id) => [id, new MockElement(id)]));
+  elements.get('viewControls')!.clientHeight = 56;
+  const documentElement = new MockElement('documentElement');
   const document = {
+    documentElement,
     body: {
       classList: {
         add: () => {},
@@ -3499,6 +3536,7 @@ function createWebviewRuntime() {
 
   return {
     context: runtimeApi,
+    documentElement,
     elements,
     postedMessages,
     windowListeners

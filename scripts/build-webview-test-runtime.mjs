@@ -13,6 +13,7 @@ const exportedNames = [
   'buildRevisionGraphWebviewDistanceMap',
   'buildRevisionGraphWebviewVirtualIndex',
   'calculateRevisionGraphWebviewCanvasSize',
+  'calculateRevisionGraphWebviewToolbarSafeHeight',
   'calculateRevisionGraphWebviewContextSubmenuPlacement',
   'calculateRevisionGraphWebviewNodeDragOffset',
   'calculateRevisionGraphWebviewNodeLeft',
@@ -95,6 +96,7 @@ const exportedNames = [
   'syncRevisionGraphWebviewSearchHighlights',
   'syncRevisionGraphWebviewSearchUi',
   'syncRevisionGraphWebviewSelectionHighlightsUi',
+  'syncRevisionGraphWebviewToolbarSafeHeight',
   'traceRevisionGraphWebviewPrimaryPath',
   'updateFlowGovernanceOptions'
 ];

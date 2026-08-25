@@ -1116,20 +1116,10 @@ export function renderRevisionGraphStyles(): string {
       stroke-width: 1.5;
       vector-effect: non-scaling-stroke;
     }
-    @media (max-width: 1100px) {
-      :root {
-        --toolbar-safe-height: 96px;
-      }
-    }
     @media (max-width: 620px) {
       .graph-minimap {
         width: 140px;
         height: 184px;
-      }
-    }
-    @media (max-width: 820px) {
-      :root {
-        --toolbar-safe-height: 120px;
       }
     }
     .node-summary {

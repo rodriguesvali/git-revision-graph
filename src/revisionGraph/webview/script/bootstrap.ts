@@ -5,7 +5,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     const vscode = acquireRevisionGraphWebviewApi();
     const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
     const {
-      viewport, canvas, sceneLayer, graphSvg, edgeLayer, nodeLayer,
+      viewControls, viewport, canvas, sceneLayer, graphSvg, edgeLayer, nodeLayer,
       statusCard, statusMessage, statusActionButton, contextMenu, referenceTooltip,
       graphMinimap, minimapSvg, minimapEdgeLayer, minimapNodeLayer, minimapViewport,
       minimapZoomOutButton, minimapZoomResetButton, minimapZoomInButton,
@@ -360,6 +360,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     viewport.addEventListener('scroll', closeContextMenu);
     viewport.addEventListener('scroll', hideReferenceTooltip);
     window.addEventListener('resize', () => {
+      syncRevisionGraphWebviewToolbarSafeHeight(document.documentElement, viewControls);
       readViewportLayoutSize();
       syncCanvasSize();
       updateScenePlacement();
@@ -504,6 +505,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     });
 
     syncMinimapPreference();
+    observeRevisionGraphWebviewToolbarSafeHeight(document.documentElement, viewControls, () => { readViewportLayoutSize(); syncCanvasSize(); updateScenePlacement(); scheduleVirtualSceneRender('toolbar-resize', true); syncMinimap(); });
     readViewportLayoutSize();
     setZoom(1, { preserveViewport: false });
     syncCanvasSize();
