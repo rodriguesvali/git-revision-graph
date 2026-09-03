@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-08-25
+Last consolidated: 2026-09-03
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,17 +11,17 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-- `1.6.9-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
+- `1.7.0-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
   functional scope is being defined.
+
+## Recently Completed Release Artifacts
+
 - `1.6.9-push-tag-refresh-parity.md`: show subtle progress for remote tag pushes and deletions
   while preserving the existing no-refresh graph lifecycle.
 - `1.6.9-responsive-toolbar-action-groups.md`: keep repository actions and zoom controls as
   independent responsive toolbar groups.
 - `1.6.9-reference-context-menu-accessibility.md`: keep dense reference context menus reachable
   in short graph panels and group lower-frequency clipboard and creation actions.
-
-## Recently Completed Release Artifacts
-
 - `1.6.8-marketplace-overview-rebrand.md`: replace the documentation-heavy Marketplace Overview
   with a concise product narrative, approved video/poster media, focused screenshots, and linked
   contributor documentation.

@@ -1,12 +1,15 @@
 # Release Readiness
 
-Status: `1.6.9` publication complete; Marketplace package and remote source tag independently verified
-Last consolidated: 2026-08-25
+Status: `1.7.0` cycle open; functional scope pending
+Last consolidated: 2026-09-03
 
 ## Current State
 
-- Current package version: `1.6.9` in `package.json` and the root `package-lock.json`.
+- Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
+- Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
+  Functional scope, implementation, release notes, Extension Development Host smoke, packaging,
+  tagging, and publication remain pending.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
   packaging, package inspection, clean-profile installation, and Marketplace publication by
@@ -59,6 +62,41 @@ Last consolidated: 2026-08-25
   evidence, final smoke record, and VSIX inspection record have not yet been supplied for that
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
+
+## Open Release: 1.7.0
+
+Status: Cycle opened; functional scope pending
+Opened: 2026-09-03
+Published baseline version: `1.6.9`
+Target version: `1.7.0`
+
+Focused build artifact:
+
+- `project-context/2.build/features/1.7.0-release-cycle-opening.md`
+
+### Release Gate Summary
+
+| Gate | Status | Evidence / next action |
+| --- | --- | --- |
+| Published baseline | Complete | `1.6.9` publication and source tag were independently verified on 2026-08-25. |
+| Release scope | Pending | Define and approve focused `1.7.0` feature artifacts before implementation. |
+| Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.7.0`. |
+| Release notes | Pending | Add notes only after user-visible scope is approved and implemented. |
+| Automated verification | Complete for cycle opening | Manifest consistency, `npm run build`, and `git diff --check` passed on 2026-09-03; feature-specific gates remain pending scope. |
+| Extension Development Host smoke | Pending | Select scenarios after functional scope is approved. |
+| VSIX package inspection | Not authorized | Requires explicit maintainer approval after release-candidate gates pass. |
+| Clean-profile installation | Not authorized | Run only against an approved VSIX candidate. |
+| Marketplace publication | Not authorized | Requires separate explicit maintainer approval. |
+| Source tag | Not authorized | Create only for the approved release commit. |
+| Rollback readiness | Pending scoped behavior | Define rollback notes in each focused feature artifact. |
+
+Opening record:
+
+- Version metadata was aligned to `1.7.0` on 2026-09-03 to start the development cycle.
+- Manifest consistency, `npm run build`, and `git diff --check` passed for the cycle opening.
+- `1.6.9` remains the latest published Marketplace and tagged source baseline.
+- No runtime source, dependency, contribution point, release note, VSIX package, Git tag,
+  publication command, or Marketplace action was included in the cycle opening.
 
 ## Published Release: 1.6.9
 
