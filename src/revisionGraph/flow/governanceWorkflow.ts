@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 import type { Repository } from '../../git';
 import type { RefActionServices } from '../../refActions';
+import { runWithRefActionProgress } from '../../refActions/shared';
 import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
@@ -25,10 +26,7 @@ import type {
   FlowAiTextSurface
 } from './aiTextAssistant';
 export type { FlowAiTextImprover } from './aiTextAssistant';
-import {
-  FlowRemoteFetchLoadingHost,
-  withFlowRemoteFetchLoading
-} from './remoteFetchLoading';
+import { withFlowRemoteFetchLoading } from './remoteFetchLoading';
 import { startFlowBranch } from './flowReleaseBranch';
 import { applyFlowGovernanceOptionsUpdate } from './flowState';
 import type {
@@ -37,7 +35,7 @@ import type {
   FlowStartBranchKind
 } from './flowTypes';
 
-export interface RevisionGraphFlowGovernanceWorkflowHost extends FlowRemoteFetchLoadingHost {
+export interface RevisionGraphFlowGovernanceWorkflowHost {
   readonly actionServices: RefActionServices;
   readonly mutationCoordinator: RepositoryMutationCoordinator;
   getCurrentRepository(): Repository | undefined;
@@ -201,7 +199,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
         { kind: branchKind, sourceBranch: sourceRefName },
         services,
         {
-          runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(this.host, operation)
+          runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(services, operation)
         }
       )
     );
@@ -240,20 +238,25 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.host.mutationCoordinator,
       repository,
       this.host.actionServices,
-      (guardedRepository, services) => prepareFlowEqualizationBranch(
-        guardedRepository,
-        {
-          targetBranch: targetRefName,
-          originBranch: originRefName,
-          description,
-          config: flowConfig.config
-        },
+      (guardedRepository, services) => runWithRefActionProgress(
         services,
-        {
-          sourcePreflight: {
-            runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(this.host, operation)
+        'Preparing equalization...',
+        'blocking',
+        () => prepareFlowEqualizationBranch(
+          guardedRepository,
+          {
+            targetBranch: targetRefName,
+            originBranch: originRefName,
+            description,
+            config: flowConfig.config
+          },
+          services,
+          {
+            sourcePreflight: {
+              runWithRemoteFetchLoading: (operation) => operation()
+            }
           }
-        }
+        )
       )
     );
     if (outcome.status === 'rejected') {

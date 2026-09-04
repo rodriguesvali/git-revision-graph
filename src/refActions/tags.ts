@@ -6,14 +6,9 @@ import {
 } from '../errorDetail';
 import { RefType, Repository } from '../git';
 import { hasMergeConflicts } from '../gitState';
-import { pickRemote, prepareFullRebuildRefresh } from './shared';
+import { pickRemote, prepareFullRebuildRefresh, runWithRefActionProgress } from './shared';
 import { validateGitTagName } from './tagValidation';
 import { RefActionServices, RefActionTarget } from './types';
-
-export interface RemoteTagProgress {
-  start(): void;
-  stop(): void;
-}
 
 export async function createTagFromResolvedReference(
   repository: Repository,
@@ -70,8 +65,7 @@ async function getLocalTagNames(repository: Repository): Promise<readonly string
 export async function pushTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices,
-  progress?: RemoteTagProgress
+  services: RefActionServices
 ): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
@@ -101,12 +95,12 @@ export async function pushTagResolvedReference(
       return false;
     }
 
-    progress?.start();
-    try {
-      await services.referenceManager.pushTag(repository, remoteName, target.refName);
-    } finally {
-      progress?.stop();
-    }
+    await runWithRefActionProgress(
+      services,
+      `Pushing tag ${target.label}...`,
+      'subtle',
+      () => services.referenceManager.pushTag(repository, remoteName, target.refName)
+    );
     services.ui.showInformationMessage(`Tag ${target.label} was pushed to ${remoteName}.`);
     return true;
   } catch (error) {
@@ -129,8 +123,7 @@ export async function pushTagResolvedReference(
 export async function deleteRemoteTagResolvedReference(
   repository: Repository,
   target: RefActionTarget,
-  services: RefActionServices,
-  progress?: RemoteTagProgress
+  services: RefActionServices
 ): Promise<boolean> {
   try {
     if (target.kind !== 'tag') {
@@ -160,12 +153,12 @@ export async function deleteRemoteTagResolvedReference(
       return false;
     }
 
-    progress?.start();
-    try {
-      await services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName);
-    } finally {
-      progress?.stop();
-    }
+    await runWithRefActionProgress(
+      services,
+      `Deleting remote tag ${target.label}...`,
+      'subtle',
+      () => services.referenceManager.deleteRemoteTag(repository, remoteName, target.refName)
+    );
     services.ui.showInformationMessage(`Tag ${target.label} was deleted from ${remoteName}.`);
     return true;
   } catch (error) {

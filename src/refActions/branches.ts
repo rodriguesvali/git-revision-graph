@@ -3,12 +3,13 @@ import { Repository } from '../git';
 import {
   ensureWorkspaceReadyForMutation,
   getSuggestedNewBranchName,
-  resolveRemoteCheckoutTarget
+  resolveRemoteCheckoutTarget,
+  runWithRefActionProgress
 } from './shared';
 import { validateGitBranchName } from './branchValidation';
 import { BranchCreationTarget, RefActionServices, RefActionTarget } from './types';
 
-type BranchRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager'>;
+type BranchRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager' | 'progress'>;
 
 export async function checkoutResolvedReference(
   repository: Repository,
@@ -38,7 +39,12 @@ export async function checkoutResolvedReference(
       return;
     }
 
-    await repository.checkout(target.refName);
+    await runWithRefActionProgress(
+      services,
+      `Checking out ${target.label}...`,
+      'blocking',
+      () => repository.checkout(target.refName)
+    );
     services.ui.showInformationMessage(`Checkout completed for ${target.label}.`);
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not check out the reference.', error));
@@ -91,7 +97,12 @@ export async function createBranchFromResolvedReference(
           return;
         }
 
-        await repository.checkout(normalizedBranchName);
+        await runWithRefActionProgress(
+          services,
+          `Checking out ${normalizedBranchName}...`,
+          'blocking',
+          () => repository.checkout(normalizedBranchName)
+        );
         services.ui.showInformationMessage(`Branch ${normalizedBranchName} was checked out without overwriting it.`);
         return;
       }
@@ -108,16 +119,23 @@ export async function createBranchFromResolvedReference(
         return;
       }
 
-      if (didOverwriteCurrentBranch) {
-        await services.referenceManager.resetCurrentBranch(repository, branchCreation.startPointRefName);
-      } else {
-        await services.referenceManager.resetBranch(repository, normalizedBranchName, branchCreation.startPointRefName);
-        await repository.checkout(normalizedBranchName);
-      }
+      await runWithRefActionProgress(
+        services,
+        `Overwriting branch ${normalizedBranchName}...`,
+        'blocking',
+        async () => {
+          if (didOverwriteCurrentBranch) {
+            await services.referenceManager.resetCurrentBranch(repository, branchCreation.startPointRefName);
+          } else {
+            await services.referenceManager.resetBranch(repository, normalizedBranchName, branchCreation.startPointRefName);
+            await repository.checkout(normalizedBranchName);
+          }
 
-      if (branchCreation.upstreamRefName) {
-        await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
-      }
+          if (branchCreation.upstreamRefName) {
+            await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
+          }
+        }
+      );
 
       services.ui.showInformationMessage(
         didOverwriteCurrentBranch && branchCreation.upstreamRefName
@@ -128,13 +146,19 @@ export async function createBranchFromResolvedReference(
       );
       return;
     } else {
-      await repository.createBranch(normalizedBranchName, true, branchCreation.startPointRefName);
-    }
-
-    if (branchCreation.upstreamRefName) {
-      await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
-    } else {
-      await services.referenceManager.unsetBranchUpstream(repository, normalizedBranchName);
+      await runWithRefActionProgress(
+        services,
+        `Creating branch ${normalizedBranchName}...`,
+        'blocking',
+        async () => {
+          await repository.createBranch(normalizedBranchName, true, branchCreation.startPointRefName);
+          if (branchCreation.upstreamRefName) {
+            await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
+          } else {
+            await services.referenceManager.unsetBranchUpstream(repository, normalizedBranchName);
+          }
+        }
+      );
     }
 
     services.ui.showInformationMessage(

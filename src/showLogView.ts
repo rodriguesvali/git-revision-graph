@@ -37,6 +37,7 @@ import {
   ShowLogLoadRequests
 } from './showLog/loadRequests';
 import { openShowLogCommitOnRemote } from './showLog/remoteCommitAction';
+import { withShowLogProcessingFeedback } from './showLog/processingFeedback';
 import { refreshVisibleShowLog } from './showLog/refresh';
 import { resetShowLogCommit } from './showLog/resetAction';
 import {
@@ -149,6 +150,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       hasMore: false,
       searchTruncated: false,
       loading: true,
+      loadingLabel: undefined,
       loadingMore: false,
       errorMessage: undefined,
       expandedCommitHash: undefined,
@@ -621,7 +623,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     const loadedCommitHashes = new Set(this.state.entries.map((entry) => entry.hash));
     const selectedLoadedHashes = commitHashes.filter((hash) => loadedCommitHashes.has(hash));
     const repository = this.state.repository;
-    const services = this.getRefActionServices();
+    const services = this.getProcessingRefActionServices(repository, this.state.sourceToken);
     if (!this.mutationCoordinator || !services) {
       await cherryPickShowLogCommits(repository, selectedLoadedHashes, services);
       return;
@@ -645,7 +647,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     }
 
     const repository = this.state.repository;
-    const services = this.getRefActionServices();
+    const services = this.getProcessingRefActionServices(repository, this.state.sourceToken);
     if (!this.mutationCoordinator || !services) {
       await resetShowLogCommit(repository, this.state.entries, commitHash, services);
       return;
@@ -664,8 +666,10 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   private async runCommitRefAction(commitHash: string, action: ShowLogCommitRefAction): Promise<void> {
     const sourceToken = this.state.kind === 'visible' ? this.state.sourceToken : undefined;
+    const repository = this.state.kind === 'visible' ? this.state.repository : undefined;
+    const services = this.getProcessingRefActionServices(repository, sourceToken);
     const outcome = await runShowLogCommitRefAction(
-      this.state, commitHash, action, this.getRefActionServices(), this.mutationCoordinator);
+      this.state, commitHash, action, services, this.mutationCoordinator);
     if (outcome.refreshRequested && sourceToken) {
       await refreshVisibleShowLog({
         sourceToken, pageSize: SHOW_LOG_PAGE_SIZE, backend: this.backend,
@@ -680,6 +684,21 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     if (status === 'rejected') {
       await showConcurrentRepositoryMutationWarning(vscode.window);
     }
+  }
+
+  private getProcessingRefActionServices(
+    repository: Repository | undefined,
+    sourceToken: string | undefined
+  ): RefActionServices | undefined {
+    const services = this.getRefActionServices();
+    if (!services || !repository || !sourceToken) {
+      return services;
+    }
+
+    return withShowLogProcessingFeedback(services, {
+      repository, sourceToken, getState: () => this.state,
+      applyState: (state) => { this.state = state; this.postState(); }
+    });
   }
 
   private postState(): void {

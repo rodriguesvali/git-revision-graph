@@ -2,11 +2,15 @@ import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
 import {
   ensureWorkspaceReadyForMutation,
-  prepareFullRebuildRefresh
+  prepareFullRebuildRefresh,
+  runWithRefActionProgress
 } from './shared';
 import { RefActionServices } from './types';
 
-type ResetRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager' | 'refreshController'>;
+type ResetRefActionServices = Pick<
+  RefActionServices,
+  'ui' | 'referenceManager' | 'refreshController' | 'progress'
+>;
 
 export async function resetCurrentBranchToCommit(
   repository: Repository,
@@ -43,7 +47,12 @@ export async function resetCurrentBranchToCommit(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await services.referenceManager.resetCurrentBranch(repository, commitHash);
+      await runWithRefActionProgress(
+        services,
+        `Resetting ${currentBranch} to ${commitLabel}...`,
+        'blocking',
+        () => services.referenceManager.resetCurrentBranch(repository, commitHash)
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;

@@ -10,7 +10,8 @@ import {
   buildForceDeleteBranchMessage,
   getLocalBranchForDeletion,
   parseRemoteReferenceTarget,
-  prepareFullRebuildRefresh
+  prepareFullRebuildRefresh,
+  runWithRefActionProgress
 } from './shared';
 import { RefActionServices, RefActionTarget } from './types';
 
@@ -60,7 +61,16 @@ async function deleteRemoteReference(
 
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   try {
-    await services.referenceManager.deleteRemoteBranch(repository, remoteTarget.remoteName, remoteTarget.branchName);
+    await runWithRefActionProgress(
+      services,
+      `Deleting remote branch ${target.label}...`,
+      'subtle',
+      () => services.referenceManager.deleteRemoteBranch(
+        repository,
+        remoteTarget.remoteName,
+        remoteTarget.branchName
+      )
+    );
   } catch (error) {
     preparedRefresh.cancel();
     throw error;

@@ -177,7 +177,7 @@ export function renderShowLogWebviewHtml(): string {
       summary.textContent = state.summary || 'Show Log';
       summaryCount.textContent = state.summaryCount || '';
       loadingChip.dataset.visible = state.loading ? 'true' : 'false';
-      loadingChip.textContent = 'Loading';
+      loadingChip.textContent = state.loadingLabel || 'Loading';
 
       if (filterInput instanceof HTMLInputElement) {
         const nextFilterText = state.filterText || '';

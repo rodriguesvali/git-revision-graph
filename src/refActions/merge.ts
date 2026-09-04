@@ -4,6 +4,7 @@ import { hasMergeConflicts } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
   prepareFullRebuildRefresh,
+  runWithRefActionProgress,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './shared';
 import { MergeRefSelection, RefActionServices } from './types';
@@ -44,7 +45,12 @@ export async function mergeResolvedReference(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await repository.merge(qualifiedRefName);
+      await runWithRefActionProgress(
+        services,
+        `Merging ${target.label} into ${currentBranch}...`,
+        'blocking',
+        () => repository.merge(qualifiedRefName)
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -109,7 +115,12 @@ export async function abortCurrentMerge(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await services.referenceManager.abortMerge(repository);
+      await runWithRefActionProgress(
+        services,
+        'Aborting merge...',
+        'blocking',
+        () => services.referenceManager.abortMerge(repository)
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;

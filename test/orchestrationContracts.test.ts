@@ -714,7 +714,6 @@ test('Flow Governance awaits the shared modal warning when a repository mutation
     getCurrentRepository: () => repository,
     getCurrentState: () => ({}) as never,
     setCurrentState: () => undefined,
-    postActionLoading: () => undefined,
     postCurrentState: () => undefined,
     postHostMessage: () => undefined
   });
@@ -756,7 +755,6 @@ test('Flow Governance opens a configuration created by enabling the file-backed 
     getCurrentRepository: () => repository,
     getCurrentState: () => state,
     setCurrentState: (nextState) => { state = nextState as never; },
-    postActionLoading: () => undefined,
     postCurrentState: () => undefined,
     postHostMessage: () => undefined
   });

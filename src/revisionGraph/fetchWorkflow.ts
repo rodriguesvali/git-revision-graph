@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { toErrorDetail } from '../errorDetail';
 import { execGitWithResult } from '../gitExec';
 import { Repository } from '../git';
-import { RefActionUi } from '../refActions';
+import { RefActionProgress, RefActionUi } from '../refActions/types';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
 import { isAbortError } from '../errors';
 import {
@@ -20,7 +20,7 @@ const FETCH_WITH_TAGS_TIMEOUT_MS = 120000;
 
 export interface RevisionGraphFetchWorkflowHost {
   readonly ui: Pick<RefActionUi, 'showInformationMessage' | 'showErrorMessage'>;
-  postActionLoading(label: string, mode?: 'blocking' | 'subtle'): void;
+  readonly progress: RefActionProgress;
   postCurrentState(): void;
   refresh(request?: RevisionGraphRefreshRequestLike): Promise<void>;
   prepareRefresh(request?: RevisionGraphRefreshRequestLike): { cancel(): void } | undefined;
@@ -50,22 +50,23 @@ export async function runRevisionGraphFetchWorkflow(
 
   const refreshRequest = host.createCurrentRepositoryRefreshRequest();
   const preparedRefresh = host.prepareRefresh(refreshRequest);
-  host.postActionLoading('Fetching remotes...', 'subtle');
 
   try {
-    if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
-      await execGitWithResult(
-        repository.rootUri.fsPath,
-        buildRevisionGraphFetchArgs(selectedOptions),
-        {
-          maxOutputBytes: FETCH_WITH_TAGS_MAX_OUTPUT_BYTES,
-          timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS,
-          signal: host.signal
-        }
-      );
-    } else {
-      await repository.fetch(buildRevisionGraphFetchOptions(selectedOptions));
-    }
+    await host.progress.run('Fetching remotes...', 'subtle', async () => {
+      if (shouldUseGitCliForRevisionGraphFetch(selectedOptions)) {
+        await execGitWithResult(
+          repository.rootUri.fsPath,
+          buildRevisionGraphFetchArgs(selectedOptions),
+          {
+            maxOutputBytes: FETCH_WITH_TAGS_MAX_OUTPUT_BYTES,
+            timeoutMs: FETCH_WITH_TAGS_TIMEOUT_MS,
+            signal: host.signal
+          }
+        );
+      } else {
+        await repository.fetch(buildRevisionGraphFetchOptions(selectedOptions));
+      }
+    });
     host.ui.showInformationMessage(
       formatRevisionGraphFetchSuccessMessage(host.getCurrentRepositoryLabel(), selectedOptions)
     );
@@ -76,7 +77,6 @@ export async function runRevisionGraphFetchWorkflow(
       throw error;
     }
     await host.ui.showErrorMessage(`Could not fetch the current repository. ${toErrorDetail(error)}`);
-    host.postCurrentState();
   }
 }
 

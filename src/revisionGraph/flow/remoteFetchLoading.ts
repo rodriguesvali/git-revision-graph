@@ -1,18 +1,16 @@
+import type { RefActionServices } from '../../refActions';
+import { runWithRefActionProgress } from '../../refActions/shared';
+
 export const FLOW_REMOTE_FETCH_LOADING_LABEL = 'Fetching remotes...';
 
-export interface FlowRemoteFetchLoadingHost {
-  postActionLoading(label: string): void;
-  postCurrentState(): void;
-}
-
 export async function withFlowRemoteFetchLoading<T>(
-  host: FlowRemoteFetchLoadingHost,
+  services: Pick<RefActionServices, 'progress'>,
   operation: () => Promise<T>
 ): Promise<T> {
-  host.postActionLoading(FLOW_REMOTE_FETCH_LOADING_LABEL);
-  try {
-    return await operation();
-  } finally {
-    host.postCurrentState();
-  }
+  return runWithRefActionProgress(
+    services,
+    FLOW_REMOTE_FETCH_LOADING_LABEL,
+    'blocking',
+    operation
+  );
 }

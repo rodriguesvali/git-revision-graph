@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.7.0 - Unreleased
+
+### Revision Graph
+
+- Show operation-specific processing feedback after confirmation while publishing, pulling, pushing,
+  synchronizing, checking out, creating or overwriting branches, merging, resetting, managing
+  workspace-affecting stashes, and deleting remote branches. Fast local-only deletions and stash
+  drops remain immediate without a processing overlay.
+- Use the same host-owned processing lifecycle for remote tag actions, repository Fetch, Flow
+  Governance remote checks, and equalization preparation, replacing their separate legacy adapters.
+
+### Show Log
+
+- Show processing feedback while checkout, branch creation or overwrite, reset, merge, and
+  cherry-pick operations run, and always clear it after success or failure.
+
 ## 1.6.9 - 2026-08-25
 
 ### Revision Graph

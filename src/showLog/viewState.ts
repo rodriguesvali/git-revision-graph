@@ -39,6 +39,7 @@ export interface ShowLogWebviewState {
   readonly kind: 'hidden' | 'visible';
   readonly sourceToken: string;
   readonly loading: boolean;
+  readonly loadingLabel?: string;
   readonly loadingMore: boolean;
   readonly summary: string;
   readonly summaryCount: string;
@@ -117,6 +118,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
       kind: 'hidden',
       sourceToken: '',
       loading: false,
+      loadingLabel: undefined,
       loadingMore: false,
       summary: '',
       summaryCount: '',
@@ -137,6 +139,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     kind: 'visible',
     sourceToken: state.sourceToken,
     loading: state.loading,
+    loadingLabel: state.loadingLabel,
     loadingMore: state.loadingMore,
     summary: getShowLogSourceLabel(state.source),
     summaryCount: buildShowLogCommitLabel(state.entries.length, state.hasMore),

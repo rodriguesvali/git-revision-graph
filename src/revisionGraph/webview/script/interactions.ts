@@ -658,9 +658,8 @@
     }
 
     function postPrepareFlowEqualization(targetRefName: string, originRefName: string, description: string) {
-      postMessageWithLoading(
-        createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description),
-        'Preparing equalization...'
+      vscode.postMessage(
+        createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description)
       );
     }
 
@@ -787,7 +786,7 @@
     }
 
     function postStashSave() {
-      postMessageWithLoading(createRevisionGraphStashSaveMessage(), 'Saving workspace changes to stash...');
+      vscode.postMessage(createRevisionGraphStashSaveMessage());
     }
 
     function postStashApply(target: RevisionGraphWebviewTarget) {
@@ -854,7 +853,7 @@
     }
 
     function postAbortMerge() {
-      postMessageWithLoading(createRevisionGraphAbortMergeMessage(), 'Aborting merge...');
+      vscode.postMessage(createRevisionGraphAbortMergeMessage());
     }
 
     function syncToolbarActions() {

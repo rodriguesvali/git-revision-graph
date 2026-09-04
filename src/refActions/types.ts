@@ -98,6 +98,16 @@ export interface PreparedRefreshHandle {
   cancel(): void;
 }
 
+export type RefActionProgressMode = 'blocking' | 'subtle';
+
+export interface RefActionProgress {
+  run<T>(
+    label: string,
+    mode: RefActionProgressMode,
+    operation: () => Promise<T>
+  ): Promise<T>;
+}
+
 export interface RefreshController {
   prepare(request?: RevisionGraphRefreshRequestLike): PreparedRefreshHandle | undefined;
   refresh(request?: RevisionGraphRefreshRequestLike): void;
@@ -132,6 +142,7 @@ export interface RefActionServices {
   readonly referenceManager: ReferenceManager;
   readonly ancestryInspector: AncestryInspector;
   readonly formatPath: (fsPath: string) => string;
+  readonly progress?: RefActionProgress;
 }
 
 export interface HeadSyncState {

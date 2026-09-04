@@ -4,6 +4,7 @@ import { hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
   prepareFullRebuildRefresh,
+  runWithRefActionProgress,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './shared';
 import { RefActionServices, RefActionTarget } from './types';
@@ -29,7 +30,12 @@ export async function saveCurrentWorkspaceToStash(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await services.referenceManager.stashSave(repository);
+      await runWithRefActionProgress(
+        services,
+        'Saving workspace changes to stash...',
+        'blocking',
+        () => services.referenceManager.stashSave(repository)
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -52,6 +58,7 @@ export async function applyStashResolvedReference(
     operationDescription: 'applying a stash',
     confirmationMessage: `Apply ${target.label} to the workspace?`,
     confirmationLabel: 'Stash Apply',
+    progressLabel: `Applying ${target.label}...`,
     action: (stashRefName) => services.referenceManager.stashApply(repository, stashRefName),
     successMessage: `${target.label} was applied to the workspace.`,
     errorMessage: 'Could not apply the stash.'
@@ -67,6 +74,7 @@ export async function popStashResolvedReference(
     operationDescription: 'popping a stash',
     confirmationMessage: `Pop ${target.label} into the workspace?\n\nThe stash entry is removed if it applies cleanly.`,
     confirmationLabel: 'Stash Pop',
+    progressLabel: `Popping ${target.label}...`,
     action: (stashRefName) => services.referenceManager.stashPop(repository, stashRefName),
     successMessage: `${target.label} was popped into the workspace.`,
     errorMessage: 'Could not pop the stash.'
@@ -97,6 +105,7 @@ async function runStashMutation(
     readonly operationDescription: string;
     readonly confirmationMessage: string;
     readonly confirmationLabel: string;
+    readonly progressLabel?: string;
     readonly allowWorkspaceChanges?: boolean;
     readonly action: (stashRefName: string) => Promise<void>;
     readonly successMessage: string;
@@ -131,7 +140,16 @@ async function runStashMutation(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await options.action(target.refName);
+      if (options.progressLabel) {
+        await runWithRefActionProgress(
+          services,
+          options.progressLabel,
+          'blocking',
+          () => options.action(target.refName)
+        );
+      } else {
+        await options.action(target.refName);
+      }
     } catch (error) {
       preparedRefresh.cancel();
       throw error;

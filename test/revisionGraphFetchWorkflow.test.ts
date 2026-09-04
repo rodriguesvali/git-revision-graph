@@ -30,6 +30,7 @@ test('Fetch prepares one subtle full refresh before mutating repository state', 
     'prepare-refresh',
     'loading:Fetching remotes...:subtle',
     'fetch:true',
+    'current-state',
     'info:Fetch completed for repo (Prune).',
     'refresh'
   ]);
@@ -52,9 +53,9 @@ test('Fetch cancels its prepared refresh and restores state when Git fails', asy
     'create-refresh',
     'prepare-refresh',
     'loading:Fetching remotes...:subtle',
+    'current-state',
     'cancel-refresh',
-    'error:Could not fetch the current repository. network unavailable',
-    'current-state'
+    'error:Could not fetch the current repository. network unavailable'
   ]);
 });
 
@@ -72,8 +73,15 @@ function createHost(
         events.push(`error:${message}`);
       }
     },
-    postActionLoading(label, mode) {
-      events.push(`loading:${label}:${String(mode)}`);
+    progress: {
+      async run(label, mode, operation) {
+        events.push(`loading:${label}:${String(mode)}`);
+        try {
+          return await operation();
+        } finally {
+          events.push('current-state');
+        }
+      }
     },
     postCurrentState() {
       events.push('current-state');

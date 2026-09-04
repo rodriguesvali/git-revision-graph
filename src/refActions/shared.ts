@@ -3,13 +3,29 @@ import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges } from '../
 import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
 import { formatShortCommitHash } from '../commitHash';
 import { createActionRefreshRequest } from '../revisionGraphRefresh';
-import { HeadSyncState, RefActionKind, RefActionServices } from './types';
+import {
+  HeadSyncState,
+  RefActionKind,
+  RefActionProgressMode,
+  RefActionServices
+} from './types';
 
 export { isMissingUpstreamConfigurationError } from '../errorDetail';
 
 export type MutationReadinessServices = Pick<RefActionServices, 'ui'>;
 export type RefreshPreparationServices = Pick<RefActionServices, 'refreshController'>;
 export type RemotePickerServices = Pick<RefActionServices, 'ui' | 'referenceManager'>;
+
+export async function runWithRefActionProgress<T>(
+  services: Pick<RefActionServices, 'progress'>,
+  label: string,
+  mode: RefActionProgressMode,
+  operation: () => Promise<T>
+): Promise<T> {
+  return services.progress
+    ? services.progress.run(label, mode, operation)
+    : operation();
+}
 
 export function parseRemoteReferenceTarget(refName: string): { remoteName: string; branchName: string } | undefined {
   const firstSlash = refName.indexOf('/');

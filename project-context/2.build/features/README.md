@@ -13,6 +13,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 - `1.7.0-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
   functional scope is being defined.
+- `1.7.0-operation-processing-feedback.md`: host-timed, operation-specific feedback for remote and
+  workspace-changing Git mutations in Revision Graph and Show Log.
 
 ## Recently Completed Release Artifacts
 

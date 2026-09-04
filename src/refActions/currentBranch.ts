@@ -13,6 +13,7 @@ import {
   pickRemote,
   prepareFullRebuildRefresh,
   preparePushRefresh,
+  runWithRefActionProgress,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from './shared';
 import { CurrentBranchPushMode, RefActionServices, RefActionTarget } from './types';
@@ -63,7 +64,12 @@ export async function publishLocalBranchResolvedReference(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await repository.push(remoteName, target.refName, true);
+      await runWithRefActionProgress(
+        services,
+        `Publishing branch ${target.label}...`,
+        'subtle',
+        () => repository.push(remoteName, target.refName, true)
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -142,13 +148,20 @@ export async function syncCurrentHeadWithUpstream(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      if (syncState.behind > 0) {
-        await repository.pull();
-      }
+      await runWithRefActionProgress(
+        services,
+        `Synchronizing branch ${syncState.branchName}...`,
+        'blocking',
+        async () => {
+          if (syncState.behind > 0) {
+            await repository.pull();
+          }
 
-      if (syncState.ahead > 0) {
-        await repository.push();
-      }
+          if (syncState.ahead > 0) {
+            await repository.push();
+          }
+        }
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -203,7 +216,12 @@ export async function pullCurrentBranchFromUpstream(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services, { loadingMode: 'subtle' });
     try {
-      await repository.pull();
+      await runWithRefActionProgress(
+        services,
+        `Pulling branch ${currentBranch}...`,
+        'subtle',
+        () => repository.pull()
+      );
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
@@ -281,11 +299,16 @@ export async function pushCurrentBranchToUpstream(
 
     const preparedRefresh = preparePushRefresh(repository, services);
     try {
-      const didPush = await services.referenceManager.pushCurrentBranch(
-        repository,
-        upstream.remote,
-        getUpstreamBranchName(upstream.remote, upstream.name),
-        pushMode
+      const didPush = await runWithRefActionProgress(
+        services,
+        `Pushing branch ${currentBranch}...`,
+        'subtle',
+        () => services.referenceManager.pushCurrentBranch(
+          repository,
+          upstream.remote,
+          getUpstreamBranchName(upstream.remote, upstream.name),
+          pushMode
+        )
       );
       if (!didPush) {
         preparedRefresh.cancel();

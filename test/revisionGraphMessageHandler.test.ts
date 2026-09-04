@@ -456,7 +456,6 @@ function createHost(
     async clearLayoutCache() {},
     async runFetchCurrentRepository() {},
     postHostMessage() {},
-    postActionLoading() {},
     postCurrentState() {},
     async updateFlowGovernanceOptions() {},
     async prepareFlowBranchStart() {},

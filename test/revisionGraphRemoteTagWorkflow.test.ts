@@ -74,11 +74,10 @@ test('RevisionGraphRemoteTagWorkflow posts published after a successful tag push
   const workflow = new RevisionGraphRemoteTagWorkflow(
     createHost({ repository, posts, progressEvents }),
     {
-      async pushTagResolvedReference(currentRepository, target, _services, progress) {
+      async pushTagResolvedReference(currentRepository, target, services) {
         assert.equal(currentRepository, repository);
         pushedTargets.push(target);
-        progress?.start();
-        progress?.stop();
+        await services.progress?.run('Pushing tag v1.0.0...', 'subtle', async () => {});
         return true;
       }
     }
@@ -119,9 +118,8 @@ test('RevisionGraphRemoteTagWorkflow posts subtle progress around remote tag del
   const workflow = new RevisionGraphRemoteTagWorkflow(
     createHost({ repository, posts, progressEvents }),
     {
-      async deleteRemoteTagResolvedReference(_repository, _target, _services, progress) {
-        progress?.start();
-        progress?.stop();
+      async deleteRemoteTagResolvedReference(_repository, _target, services) {
+        await services.progress?.run('Deleting remote tag v1.0.0...', 'subtle', async () => {});
         return true;
       }
     }
@@ -148,17 +146,24 @@ function createHost(options: {
   readonly posts?: PostedRemoteTagState[];
   readonly progressEvents?: string[];
 } = {}): RevisionGraphRemoteTagWorkflowHost {
-  const actionServices = {} as RefActionServices;
+  const actionServices = {
+    progress: {
+      async run<T>(label: string, mode: 'blocking' | 'subtle', operation: () => Promise<T>): Promise<T> {
+        options.progressEvents?.push(`show:${label}:${mode}`);
+        try {
+          return await operation();
+        } finally {
+          options.progressEvents?.push('hide');
+        }
+      }
+    }
+  } as RefActionServices;
   return {
     actionServices,
     getCurrentRepository() {
       return options.repository;
     },
-    postActionLoading(label, mode) {
-      options.progressEvents?.push(`show:${label}:${mode}`);
-    },
     postCurrentState() {
-      options.progressEvents?.push('hide');
     },
     createRemoteTagPublicationRequestContext(repository): RemoteTagPublicationRequestContext {
       return {

@@ -78,6 +78,11 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   readonly upstreamClears: string[];
   readonly prepareRequests: readonly RevisionGraphRefreshRequest[];
   readonly canceledPrepareRequests: readonly RevisionGraphRefreshRequest[];
+  readonly progressEvents: Array<{
+    readonly phase: 'start' | 'stop';
+    readonly label: string;
+    readonly mode: 'blocking' | 'subtle';
+  }>;
   readonly refreshCalls: number;
   readonly refreshIntents: readonly RevisionGraphRefreshIntent[];
   readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
@@ -119,10 +124,25 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const prepareRequests: RevisionGraphRefreshRequest[] = [];
   const canceledPrepareRequests: RevisionGraphRefreshRequest[] = [];
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
+  const progressEvents: Array<{
+    phase: 'start' | 'stop';
+    label: string;
+    mode: 'blocking' | 'subtle';
+  }> = [];
   let sourceControlOpens = 0;
   const overrideConfirm = overrides.confirm;
 
   const services: RefActionServices = {
+    progress: {
+      async run(label, mode, operation) {
+        progressEvents.push({ phase: 'start', label, mode });
+        try {
+          return await operation();
+        } finally {
+          progressEvents.push({ phase: 'stop', label, mode });
+        }
+      }
+    },
     ui: {
       async pickChange(items) {
         return items[0];
@@ -310,6 +330,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
     upstreamClears,
     prepareRequests,
     canceledPrepareRequests,
+    progressEvents,
     refreshRequests,
     get refreshIntents() {
       return refreshRequests.map((request) => request.intent);
@@ -318,6 +339,13 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
       return refreshRequests.length;
     }
   };
+}
+
+function completedProgress(label: string, mode: 'blocking' | 'subtle') {
+  return [
+    { phase: 'start', label, mode },
+    { phase: 'stop', label, mode }
+  ];
 }
 
 test('compareResolvedRefs uses the shared compare workflow and labels', async () => {
@@ -1261,16 +1289,10 @@ test('pushTagResolvedReference pushes a local tag to the only configured remote'
     head: createHead('main')
   });
   const harness = createServices();
-
-  const progressEvents: string[] = [];
   await pushTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services,
-    {
-      start() { progressEvents.push('start'); },
-      stop() { progressEvents.push('stop'); }
-    }
+    harness.services
   );
 
   assert.deepEqual(harness.confirmRequests, [
@@ -1280,7 +1302,7 @@ test('pushTagResolvedReference pushes a local tag to the only configured remote'
     { remoteName: 'origin', tagName: 'v1.2.0' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was pushed to origin.');
-  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.progressEvents, completedProgress('Pushing tag v1.2.0...', 'subtle'));
   assert.deepEqual(harness.refreshRequests, []);
 });
 
@@ -1398,7 +1420,6 @@ test('pushTagResolvedReference surfaces push failures', async () => {
     head: createHead('main')
   });
   const harness = createServices();
-  const progressEvents: string[] = [];
   harness.services.referenceManager.pushTag = async () => {
     throw createGitError({
       stderr: 'remote rejected'
@@ -1408,15 +1429,11 @@ test('pushTagResolvedReference surfaces push failures', async () => {
   await pushTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services,
-    {
-      start() { progressEvents.push('start'); },
-      stop() { progressEvents.push('stop'); }
-    }
+    harness.services
   );
 
   assert.deepEqual(harness.pushedTags, []);
-  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(harness.progressEvents, completedProgress('Pushing tag v1.2.0...', 'subtle'));
   assert.deepEqual(harness.refreshRequests, []);
   assert.equal(harness.errorMessages[0], 'Could not push the tag. remote rejected');
 });
@@ -1481,16 +1498,11 @@ test('deleteRemoteTagResolvedReference deletes a tag from the only configured re
     head: createHead('main')
   });
   const harness = createServices();
-  const progressEvents: string[] = [];
 
   await deleteRemoteTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services,
-    {
-      start() { progressEvents.push('start'); },
-      stop() { progressEvents.push('stop'); }
-    }
+    harness.services
   );
 
   assert.deepEqual(harness.confirmRequests, [
@@ -1503,7 +1515,10 @@ test('deleteRemoteTagResolvedReference deletes a tag from the only configured re
     { remoteName: 'origin', tagName: 'v1.2.0' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was deleted from origin.');
-  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(
+    harness.progressEvents,
+    completedProgress('Deleting remote tag v1.2.0...', 'subtle')
+  );
   assert.deepEqual(harness.refreshRequests, []);
 });
 
@@ -1620,7 +1635,6 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
     head: createHead('main')
   });
   const harness = createServices();
-  const progressEvents: string[] = [];
   harness.services.referenceManager.deleteRemoteTag = async () => {
     throw createGitError({
       stderr: 'remote ref does not exist'
@@ -1630,15 +1644,14 @@ test('deleteRemoteTagResolvedReference surfaces remote tag deletion failures', a
   await deleteRemoteTagResolvedReference(
     repository,
     { refName: 'v1.2.0', label: 'v1.2.0', kind: 'tag' },
-    harness.services,
-    {
-      start() { progressEvents.push('start'); },
-      stop() { progressEvents.push('stop'); }
-    }
+    harness.services
   );
 
   assert.deepEqual(harness.deletedRemoteTags, []);
-  assert.deepEqual(progressEvents, ['start', 'stop']);
+  assert.deepEqual(
+    harness.progressEvents,
+    completedProgress('Deleting remote tag v1.2.0...', 'subtle')
+  );
   assert.deepEqual(harness.refreshRequests, []);
   assert.equal(harness.errorMessages[0], 'Could not delete the remote tag. remote ref does not exist');
 });
@@ -1689,6 +1702,7 @@ test('publishLocalBranchResolvedReference publishes the current branch and sets 
     { remoteName: 'origin', branchName: 'feature/demo', setUpstream: true }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was published to origin/feature/demo.');
+  assert.deepEqual(harness.progressEvents, completedProgress('Publishing branch feature/demo...', 'subtle'));
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
 
@@ -1892,6 +1906,7 @@ test('syncCurrentHeadWithUpstream pulls and pushes when the current branch is di
     { remoteName: undefined, branchName: undefined, setUpstream: undefined }
   ]);
   assert.equal(harness.infoMessages[0], 'main was synchronized with origin/main.');
+  assert.deepEqual(harness.progressEvents, completedProgress('Synchronizing branch main...', 'blocking'));
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
   assert.deepEqual(harness.refreshRequests[0], {
@@ -2392,6 +2407,7 @@ test('applyStashResolvedReference applies a stash after confirmation', async () 
     { message: 'Apply stash to the workspace?', confirmLabel: 'Stash Apply' }
   ]);
   assert.equal(harness.infoMessages[0], 'stash was applied to the workspace.');
+  assert.deepEqual(harness.progressEvents, completedProgress('Applying stash...', 'blocking'));
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',
@@ -2472,6 +2488,7 @@ test('popStashResolvedReference pops a stash after confirmation', async () => {
     }
   ]);
   assert.equal(harness.infoMessages[0], 'stash was popped into the workspace.');
+  assert.deepEqual(harness.progressEvents, completedProgress('Popping stash...', 'blocking'));
 });
 
 test('dropStashResolvedReference removes a stash even when the workspace is dirty', async () => {
@@ -2488,6 +2505,7 @@ test('dropStashResolvedReference removes a stash even when the workspace is dirt
   );
 
   assert.deepEqual(harness.stashDrops, ['stash']);
+  assert.deepEqual(harness.progressEvents, []);
   assert.deepEqual(harness.confirmRequests, [
     {
       message: 'Remove stash?\n\nThis deletes the stash entry from the repository.',
@@ -2527,6 +2545,7 @@ test('resetCurrentBranchToCommit resets a clean current branch and refreshes the
     clearSnapshotCache: true
   });
   assert.equal(harness.infoMessages[0], 'main was reset to abc123.');
+  assert.deepEqual(harness.progressEvents, completedProgress('Resetting main to abc123...', 'blocking'));
 });
 
 test('resetCurrentBranchToCommit requires a clean workspace', async () => {
@@ -2837,6 +2856,10 @@ test('deleteResolvedReference deletes remote branches through the shared referen
     { remoteName: 'origin', branchName: 'feature/demo' }
   ]);
   assert.equal(harness.infoMessages[0], 'Remote branch origin/feature/demo was deleted from origin.');
+  assert.deepEqual(
+    harness.progressEvents,
+    completedProgress('Deleting remote branch origin/feature/demo...', 'subtle')
+  );
   assert.equal(harness.refreshCalls, 1);
   assert.deepEqual(harness.refreshIntents, ['full-rebuild']);
 });
@@ -2900,6 +2923,7 @@ test('deleteResolvedReference explains that deleting a tracked local branch leav
   assert.equal(harness.confirmRequests[0]?.confirmLabel, 'Delete Branch: feature/demo');
   assert.deepEqual(repository.calls.deleteBranch, [{ name: 'feature/demo', force: false }]);
   assert.equal(harness.infoMessages[0], 'Branch feature/demo was deleted.');
+  assert.deepEqual(harness.progressEvents, []);
   assert.deepEqual(harness.refreshRequests[0], {
     intent: 'full-rebuild',
     repositoryPath: '/workspace/repo',

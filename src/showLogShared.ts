@@ -14,6 +14,7 @@ export interface ShowLogState {
   readonly hasMore: boolean;
   readonly searchTruncated: boolean;
   readonly loading: boolean;
+  readonly loadingLabel?: string;
   readonly loadingMore: boolean;
   readonly errorMessage: string | undefined;
   readonly expandedCommitHash: string | undefined;
@@ -34,6 +35,7 @@ export function createHiddenShowLogState(): ShowLogState {
     hasMore: false,
     searchTruncated: false,
     loading: false,
+    loadingLabel: undefined,
     loadingMore: false,
     errorMessage: undefined,
     expandedCommitHash: undefined,

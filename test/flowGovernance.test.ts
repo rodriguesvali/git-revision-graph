@@ -45,21 +45,25 @@ import {
 
 test('Flow Governance remote fetch loading always clears after success and failure', async () => {
   const events: string[] = [];
-  const host = {
-    postActionLoading(label: string) {
-      events.push(`show:${label}`);
-    },
-    postCurrentState() {
-      events.push('hide');
+  const services = {
+    progress: {
+      async run<T>(label: string, mode: 'blocking' | 'subtle', operation: () => Promise<T>): Promise<T> {
+        events.push(`show:${label}:${mode}`);
+        try {
+          return await operation();
+        } finally {
+          events.push('hide');
+        }
+      }
     }
   };
 
-  const result = await withFlowRemoteFetchLoading(host, async () => {
+  const result = await withFlowRemoteFetchLoading(services, async () => {
     events.push('success');
     return 42;
   });
   await assert.rejects(
-    withFlowRemoteFetchLoading(host, async () => {
+    withFlowRemoteFetchLoading(services, async () => {
       events.push('failure');
       throw new Error('fetch failed');
     }),
@@ -68,10 +72,10 @@ test('Flow Governance remote fetch loading always clears after success and failu
 
   assert.equal(result, 42);
   assert.deepEqual(events, [
-    `show:${FLOW_REMOTE_FETCH_LOADING_LABEL}`,
+    `show:${FLOW_REMOTE_FETCH_LOADING_LABEL}:blocking`,
     'success',
     'hide',
-    `show:${FLOW_REMOTE_FETCH_LOADING_LABEL}`,
+    `show:${FLOW_REMOTE_FETCH_LOADING_LABEL}:blocking`,
     'failure',
     'hide'
   ]);

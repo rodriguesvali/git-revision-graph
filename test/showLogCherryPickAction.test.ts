@@ -56,6 +56,10 @@ test('cherryPickShowLogCommits cherry-picks unique selected commits and refreshe
   assert.deepEqual(harness.infoMessages, ['Cherry-picked 2 commits into the current branch.']);
   assert.equal(harness.warningMessages.length, 0);
   assert.equal(harness.errorMessages.length, 0);
+  assert.deepEqual(harness.progressEvents, [
+    { phase: 'start', label: 'Cherry-picking commits...', mode: 'blocking' },
+    { phase: 'stop', label: 'Cherry-picking commits...', mode: 'blocking' }
+  ]);
   assert.equal(harness.refreshRequests.length, 1);
   assert.equal(harness.refreshRequests[0].intent, 'full-rebuild');
 });
@@ -271,6 +275,11 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
   readonly sourceControlOpens: number;
   readonly canceledPrepareRequests: readonly RevisionGraphRefreshRequest[];
   readonly refreshRequests: readonly RevisionGraphRefreshRequest[];
+  readonly progressEvents: Array<{
+    readonly phase: 'start' | 'stop';
+    readonly label: string;
+    readonly mode: 'blocking' | 'subtle';
+  }>;
 } {
   const infoMessages: string[] = [];
   const warningMessages: string[] = [];
@@ -278,11 +287,26 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
   const confirmRequests: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const canceledPrepareRequests: RevisionGraphRefreshRequest[] = [];
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
+  const progressEvents: Array<{
+    phase: 'start' | 'stop';
+    label: string;
+    mode: 'blocking' | 'subtle';
+  }> = [];
   let sourceControlOpens = 0;
   let confirmIndex = 0;
 
   return {
     services: {
+      progress: {
+        async run(label, mode, operation) {
+          progressEvents.push({ phase: 'start', label, mode });
+          try {
+            return await operation();
+          } finally {
+            progressEvents.push({ phase: 'stop', label, mode });
+          }
+        }
+      },
       ui: {
         async pickChange(items) {
           return items[0];
@@ -377,7 +401,8 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
       return sourceControlOpens;
     },
     canceledPrepareRequests,
-    refreshRequests
+    refreshRequests,
+    progressEvents
   };
 }
 

@@ -380,7 +380,7 @@ test('reloads the graph from the webview toolbar', () => {
   assert.doesNotMatch(html, /postMessageWithLoading\(\{ type: 'fetch-current-repository' \}/);
   assert.match(
     html,
-    /postMessageWithLoading\(\s*createRevisionGraphPullCurrentHeadMessage\(\),\s*'Pulling current branch\.\.\.',\s*pullButton,\s*'subtle'\s*\);/s
+    /pullButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphPullCurrentHeadMessage\(\)\);/s
   );
   assert.match(
     html,
@@ -399,9 +399,9 @@ test('reloads the graph from the webview toolbar', () => {
   assert.match(html, /pushModeMenu\.style\.top = Math\.max\(8, buttonRect\.bottom \+ 6\) \+ 'px';/);
   assert.match(
     html,
-    /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*postMessageWithLoading\(\s*createRevisionGraphPushCurrentHeadMessage\(mode\),\s*'Pushing current branch\.\.\.',\s*mode === 'normal' \? pushButton : pushMenuButton,\s*'subtle'\s*\);/s
+    /function pushCurrentHead\(mode\) \{\s*closePushModeMenu\(\);\s*vscode\.postMessage\(createRevisionGraphPushCurrentHeadMessage\(mode\)\);/s
   );
-  assert.match(html, /postMessageWithLoading\(createRevisionGraphSyncCurrentHeadMessage\(\), 'Synchronizing current branch\.\.\.', syncButton\);/);
+  assert.match(html, /syncButton\.addEventListener\('click', \(\) => \{\s*vscode\.postMessage\(createRevisionGraphSyncCurrentHeadMessage\(\)\);/s);
   assert.match(html, /syncRevisionGraphWebviewBasicToolbarUi\(\s*\{ scopeSelect, viewOptionsButton, reloadButton, reloadMenuButton, fetchAllButton \}/s);
   assert.match(html, /function syncRevisionGraphWebviewRemoteToolbarUi\(/);
   assert.match(html, /searchButton,\s*searchInput,\s*searchPrevButton,\s*searchNextButton,\s*searchCloseButton,\s*rangeFilterClearButton,\s*descendantFilterClearButton,\s*reloadButton,\s*reloadMenuButton,\s*fetchAllButton,\s*pullButton,\s*pushButton,\s*pushMenuButton,\s*syncButton,\s*centerHeadButton,/s);
@@ -627,7 +627,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function createRevisionGraphStashApplyMessage\(target\) \{\s*return \{ type: 'stash-apply', refName: target\.name \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStashPopMessage\(target\) \{\s*return \{ type: 'stash-pop', refName: target\.name \};\s*\}/s);
   assert.match(html, /function createRevisionGraphStashDropMessage\(target\) \{\s*return \{ type: 'stash-drop', refName: target\.name \};\s*\}/s);
-  assert.match(html, /function postStashSave\(\) \{\s*postMessageWithLoading\(createRevisionGraphStashSaveMessage\(\), 'Saving workspace changes to stash\.\.\.'\);/s);
+  assert.match(html, /function postStashSave\(\) \{\s*vscode\.postMessage\(createRevisionGraphStashSaveMessage\(\)\);/s);
   assert.match(html, /function postStashApply\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashApplyMessage\(target\)\);/s);
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
@@ -956,7 +956,8 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /reference\.kind === 'main' \|\| reference\.kind === 'release'/);
   assert.match(html, /reference\.refName !== targetRefName/);
   assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\)/);
-  assert.match(html, /'Preparing equalization\.\.\.'/);
+  assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\) \{\s*vscode\.postMessage\(/s);
+  assert.doesNotMatch(html, /postMessageWithLoading\(\s*createRevisionGraphPrepareFlowEqualizationMessage/s);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
   assert.match(html, /function createRevisionGraphFocusDescendantsMessage\(target\)/);
@@ -1495,7 +1496,7 @@ test('renders merge abort as a HEAD context menu action only for conflicted merg
   );
   assert.equal(cleanHeadPlan.items.some((item: any) => item.action === 'abort-merge'), false);
   assert.equal(conflictedBranchPlan.items.some((item: any) => item.action === 'abort-merge'), false);
-  assert.match(html, /function postAbortMerge\(\) \{\s*postMessageWithLoading\(createRevisionGraphAbortMergeMessage\(\), 'Aborting merge\.\.\.'\);/s);
+  assert.match(html, /function postAbortMerge\(\) \{\s*vscode\.postMessage\(createRevisionGraphAbortMergeMessage\(\)\);/s);
   assert.doesNotMatch(html, /\.view-controls \.toolbar-button\.destructive/);
   assert.doesNotMatch(html, /open-source-control/);
 });

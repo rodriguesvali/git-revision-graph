@@ -8,6 +8,7 @@ import {
   CompareResultsPresenter,
   RefActionServices
 } from '../refActions';
+import { createRefActionProgress } from '../refActions/progress';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
 import { showModalErrorMessage } from '../workbenchMessages';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
@@ -218,7 +219,7 @@ export class RevisionGraphController implements vscode.Disposable {
         );
       }
     });
-    this.actionServices = createWorkbenchRefActionServices(
+    const workbenchActionServices = createWorkbenchRefActionServices(
       (request) => {
         this.runControllerTask(
           () => this.refresh(request),
@@ -230,13 +231,19 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       compareResultsPresenter
     );
+    this.actionServices = {
+      ...workbenchActionServices,
+      progress: createRefActionProgress(
+        (label, mode) => this.postActionLoading(label, mode),
+        () => this.postCurrentState()
+      )
+    };
     this.flowGovernanceWorkflow = new RevisionGraphFlowGovernanceWorkflow({
       actionServices: this.actionServices,
       mutationCoordinator: this.mutationCoordinator,
       getCurrentRepository: () => this.currentRepository,
       getCurrentState: () => this.currentState,
       setCurrentState: (state) => { this.currentState = state; },
-      postActionLoading: (label) => this.postActionLoading(label),
       postCurrentState: () => this.postCurrentState(),
       postHostMessage: (message) => this.postHostMessage(message)
     }, flowAiTextImprover);
@@ -278,7 +285,6 @@ export class RevisionGraphController implements vscode.Disposable {
         this.postHostMessage(message);
       },
       postCurrentState: () => this.postCurrentState(),
-      postActionLoading: (label, mode) => this.postActionLoading(label, mode),
       updateFlowGovernanceOptions: async (options) => {
         await this.flowGovernanceWorkflow.updateOptions(options);
       },
@@ -581,9 +587,7 @@ export class RevisionGraphController implements vscode.Disposable {
   ): RevisionGraphFetchWorkflowHost {
     return {
       ui: this.actionServices.ui,
-      postActionLoading: (label, mode) => {
-        this.postActionLoading(label, mode);
-      },
+      progress: this.actionServices.progress!,
       postCurrentState: () => {
         this.postCurrentState();
       },

@@ -4,7 +4,8 @@ import { execGitWithResult } from '../gitExec';
 import { isCherryPickInProgress } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
-  prepareFullRebuildRefresh
+  prepareFullRebuildRefresh,
+  runWithRefActionProgress
 } from '../refActions/shared';
 import type { RefActionServices } from '../refActions/types';
 
@@ -40,7 +41,12 @@ export async function cherryPickShowLogCommits(
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   try {
     assertMutationCurrent();
-    await executeGit(repository.rootUri.fsPath, ['cherry-pick', '--no-edit', ...uniqueCommitHashes]);
+    await runWithRefActionProgress(
+      services,
+      uniqueCommitHashes.length === 1 ? 'Cherry-picking commit...' : 'Cherry-picking commits...',
+      'blocking',
+      () => executeGit(repository.rootUri.fsPath, ['cherry-pick', '--no-edit', ...uniqueCommitHashes])
+    );
   } catch (error) {
     preparedRefresh.cancel();
     if (isEmptyCherryPickError(error)) {
@@ -109,7 +115,12 @@ async function handleEmptyCherryPick(
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
       assertMutationCurrent();
-      await executeGit(repository.rootUri.fsPath, ['cherry-pick', '--skip']);
+      await runWithRefActionProgress(
+        services,
+        'Continuing cherry-pick...',
+        'blocking',
+        () => executeGit(repository.rootUri.fsPath, ['cherry-pick', '--skip'])
+      );
     } catch (error) {
       preparedRefresh.cancel();
       await services.ui.showErrorMessage(toOperationError('Could not skip the empty cherry-pick.', error));
@@ -143,7 +154,12 @@ async function abortCurrentCherryPick(
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   try {
     assertMutationCurrent();
-    await executeGit(repository.rootUri.fsPath, ['cherry-pick', '--abort']);
+    await runWithRefActionProgress(
+      services,
+      'Aborting cherry-pick...',
+      'blocking',
+      () => executeGit(repository.rootUri.fsPath, ['cherry-pick', '--abort'])
+    );
   } catch (error) {
     preparedRefresh.cancel();
     await services.ui.showErrorMessage(toOperationError('Could not abort the current cherry-pick.', error));

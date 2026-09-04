@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.7.0` cycle open; functional scope pending
+Status: `1.7.0` implementation in progress; manual smoke pending
 Last consolidated: 2026-09-03
 
 ## Current State
@@ -8,8 +8,8 @@ Last consolidated: 2026-09-03
 - Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
-  Functional scope, implementation, release notes, Extension Development Host smoke, packaging,
-  tagging, and publication remain pending.
+  Operation-processing feedback is implemented and documented; Extension Development Host smoke,
+  packaging, tagging, and publication remain pending.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
   packaging, package inspection, clean-profile installation, and Marketplace publication by
@@ -65,7 +65,7 @@ Last consolidated: 2026-09-03
 
 ## Open Release: 1.7.0
 
-Status: Cycle opened; functional scope pending
+Status: First scoped improvement implemented; manual smoke pending
 Opened: 2026-09-03
 Published baseline version: `1.6.9`
 Target version: `1.7.0`
@@ -73,17 +73,18 @@ Target version: `1.7.0`
 Focused build artifact:
 
 - `project-context/2.build/features/1.7.0-release-cycle-opening.md`
+- `project-context/2.build/features/1.7.0-operation-processing-feedback.md`
 
 ### Release Gate Summary
 
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.9` publication and source tag were independently verified on 2026-08-25. |
-| Release scope | Pending | Define and approve focused `1.7.0` feature artifacts before implementation. |
+| Release scope | In progress | Operation-processing feedback is implemented; later `1.7.0` scope may be added through focused artifacts. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.7.0`. |
-| Release notes | Pending | Add notes only after user-visible scope is approved and implemented. |
-| Automated verification | Complete for cycle opening | Manifest consistency, `npm run build`, and `git diff --check` passed on 2026-09-03; feature-specific gates remain pending scope. |
-| Extension Development Host smoke | Pending | Select scenarios after functional scope is approved. |
+| Release notes | In progress | `CHANGELOG.md` records the implemented processing-feedback scope. |
+| Automated verification | Complete for implemented scope | `npm test` passed all 841 tests; build and quality gates passed, and Graphify was refreshed on 2026-09-04. |
+| Extension Development Host smoke | Pending | Validate representative blocking/subtle operations, cancellation, and remote failure. |
 | VSIX package inspection | Not authorized | Requires explicit maintainer approval after release-candidate gates pass. |
 | Clean-profile installation | Not authorized | Run only against an approved VSIX candidate. |
 | Marketplace publication | Not authorized | Requires separate explicit maintainer approval. |
@@ -97,6 +98,23 @@ Opening record:
 - `1.6.9` remains the latest published Marketplace and tagged source baseline.
 - No runtime source, dependency, contribution point, release note, VSIX package, Git tag,
   publication command, or Marketplace action was included in the cycle opening.
+
+Implemented scope:
+
+- Confirmed remote and workspace-changing ref actions now own their processing lifecycle in the
+  extension host. Revision Graph uses blocking or subtle feedback according to operation impact;
+  Show Log reuses its loading chip with the same action-specific labels. Feedback begins after the
+  last native prompt and clears on success or failure. Fast local-only deletion and stash-drop
+  actions remain unchanged.
+- Preexisting Remote Tag, Fetch, Flow Governance remote-fetch, and equalization feedback now use the
+  same `RefActionProgress` contract. Browser-owned loading remains limited to graph projection,
+  focus, reload, and view transitions.
+
+Verification record:
+
+- `npm test` passed all 841 tests on 2026-09-04, including production build and compiled webview
+  contracts. `npm run quality:check` passed for 255 files and 2,446 functions, and `graphify update
+  .` refreshed the repository knowledge graph. Extension Development Host smoke remains pending.
 
 ## Published Release: 1.6.9
 
