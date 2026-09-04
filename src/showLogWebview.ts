@@ -272,7 +272,6 @@ export function renderShowLogWebviewHtml(): string {
         + '  <div class="subject-cell">'
         + '    <div class="subject-stack">'
         + '      <div class="subject-line">'
-        + '        <span class="commit-hash">' + escapeHtml(commit.shortHash) + '</span>'
         + '        <span class="commit-subject">' + escapeHtml(commit.subject) + '</span>'
         + '      </div>'
         + (commit.refs.length > 0

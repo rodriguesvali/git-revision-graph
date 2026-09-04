@@ -45,6 +45,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /\.graph-continuation-row\.status \{\s*--show-log-continuation-height: 34px;/);
   assert.match(html, /\.graph-continuation-row\.search \{\s*--show-log-continuation-height: 36px;/);
   assert.match(html, /\.graph-continuation-row \.commit-files-graph \.graph-svg \{\s*height: var\(--show-log-continuation-height\);\s*min-height: var\(--show-log-continuation-height\);/);
+  assert.match(html, /\.commit-files-list \{[\s\S]*?padding: 0 0 0 12px;/);
+  assert.doesNotMatch(html, /\.commit-files-list \{[\s\S]*?padding: 0 0 5px 12px;/);
   assert.match(html, /--show-log-ref-base-branch: #19d60f;/);
   assert.match(html, /--show-log-ref-base-head: #d62828;/);
   assert.match(html, /--show-log-ref-base-tag: #f7f300;/);
@@ -79,6 +81,10 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /const GRAPH_MAIN_HEIGHT = 34;/);
   assert.match(html, /const GRAPH_MAIN_META_HEIGHT = 42;/);
   assert.match(html, /\.commit-row \{[\s\S]*?min-height: var\(--show-log-main-graph-height, 30px\);/);
+  assert.match(
+    html,
+    /\.commit-row:not\(\[data-expanded="true"\]\) \{ grid-template-rows: var\(--show-log-main-graph-height, 30px\) 0; \}/
+  );
   assert.match(html, /\.graph-stack \{[\s\S]*?min-height: var\(--show-log-main-graph-height, 30px\);/);
   assert.match(html, /\.graph-svg \{[\s\S]*?min-height: var\(--show-log-main-graph-height, 30px\);/);
   assert.match(html, /function getMainGraphHeight\(commit\)/);
@@ -96,6 +102,9 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function restorePendingCommitFileFilterFocus\(\)/);
   assert.match(html, /data-merge="' \+ \(commit\.isMerge \? 'true' : 'false'\)/);
   assert.match(html, /renderCommit\(commit, index\)/);
+  assert.doesNotMatch(html, /class="commit-hash"/);
+  assert.match(html, /class="commit-subject">' \+ escapeHtml\(commit\.subject\)/);
+  assert.match(html, /class="commit-tooltip-hash">' \+ escapeHtml\(commit\.shortHash\)/);
   assert.match(html, /formatWebviewShortDate\(commit\.date\)/);
   assert.match(html, /renderTopology\(commit\.topology, commit\.isMerge, index === 0, mainGraphHeight\)/);
   assert.match(html, /const centerY = \(height \/ 2\) - 2;/);

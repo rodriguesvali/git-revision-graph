@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file.
 
 - Show processing feedback while checkout, branch creation or overwrite, reset, merge, and
   cherry-pick operations run, and always clear it after success or failure.
+- Vertically center commit text in compact rows by reserving the secondary grid track only for
+  expanded file details, while keeping expanded graph lines continuous through the final file row.
+- Lead commit rows directly with the message by removing the short-hash prefix; hash details and
+  copy actions remain available from the tooltip and context actions.
 
 ## 1.6.9 - 2026-08-25
 

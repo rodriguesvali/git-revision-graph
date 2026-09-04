@@ -15,6 +15,10 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
   functional scope is being defined.
 - `1.7.0-operation-processing-feedback.md`: host-timed, operation-specific feedback for remote and
   workspace-changing Git mutations in Revision Graph and Show Log.
+- `1.7.0-show-log-row-vertical-alignment.md`: balanced primary commit-row content without reserving
+  height for an empty file-details grid track.
+- `1.7.0-show-log-message-without-hash.md`: commit rows lead with their subject while hash details
+  and copy actions remain available on demand.
 
 ## Recently Completed Release Artifacts
 

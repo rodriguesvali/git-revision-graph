@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: `1.7.0` implementation in progress; manual smoke pending
-Last consolidated: 2026-09-03
+Last consolidated: 2026-09-04
 
 ## Current State
 
@@ -74,6 +74,8 @@ Focused build artifact:
 
 - `project-context/2.build/features/1.7.0-release-cycle-opening.md`
 - `project-context/2.build/features/1.7.0-operation-processing-feedback.md`
+- `project-context/2.build/features/1.7.0-show-log-row-vertical-alignment.md`
+- `project-context/2.build/features/1.7.0-show-log-message-without-hash.md`
 
 ### Release Gate Summary
 
@@ -109,12 +111,23 @@ Implemented scope:
 - Preexisting Remote Tag, Fetch, Flow Governance remote-fetch, and equalization feedback now use the
   same `RefActionProgress` contract. Browser-owned loading remains limited to graph projection,
   focus, reload, and view transitions.
+- Show Log fixes its primary grid track to the calculated row height, preventing an empty file-detail
+  track from shifting compact commit text upward. Expanded file lists no longer add an unmatched
+  5 px footer, keeping graph continuations connected to the following row.
+- Show Log commit rows omit the short-hash prefix and lead directly with the subject; tooltip,
+  clipboard, comparison, reset, remote, and internal identity workflows retain commit hashes.
 
 Verification record:
 
 - `npm test` passed all 841 tests on 2026-09-04, including production build and compiled webview
   contracts. `npm run quality:check` passed for 255 files and 2,446 functions, and `graphify update
   .` refreshed the repository knowledge graph. Extension Development Host smoke remains pending.
+- The Show Log vertical-alignment correction passed its focused generated-CSS regression and the
+  full 841-test suite on 2026-09-04. Quality and whitespace gates passed, and Graphify was refreshed;
+  visual Extension Development Host smoke remains pending. The follow-up removing the residual 5 px
+  expanded-row footer mismatch passed the same gates, including the 2 focused Show Log tests.
+- The Show Log short-hash removal passed the full 841-test suite, the 2 focused Show Log tests,
+  quality and whitespace gates on 2026-09-04; Graphify was refreshed with the combined source state.
 
 ## Published Release: 1.6.9
 

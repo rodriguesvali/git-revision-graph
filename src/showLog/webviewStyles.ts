@@ -290,6 +290,7 @@ export function renderShowLogWebviewStyles(): string { return `
       user-select: none;
       transition: background 90ms ease, box-shadow 90ms ease;
     }
+    .commit-row:not([data-expanded="true"]) { grid-template-rows: var(--show-log-main-graph-height, 30px) 0; }
     .commit-entry + .commit-entry .commit-row::before {
       content: '';
       position: absolute;
@@ -449,17 +450,8 @@ export function renderShowLogWebviewStyles(): string { return `
     .subject-line {
       display: flex;
       align-items: baseline;
-      gap: 6px;
       min-width: 0;
       white-space: nowrap;
-    }
-    .commit-hash {
-      flex-shrink: 0;
-      font-family: var(--vscode-editor-font-family, monospace);
-      font-size: 9.5px;
-      letter-spacing: 0.03em;
-      color: var(--vscode-descriptionForeground);
-      opacity: 0.7;
     }
     .commit-subject {
       min-width: 0;
@@ -564,7 +556,7 @@ export function renderShowLogWebviewStyles(): string { return `
       display: flex;
       flex-direction: column;
       gap: 0;
-      padding: 0 0 5px 12px;
+      padding: 0 0 0 12px;
       border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 42%, transparent);
     }
     .commit-file-search-row {
