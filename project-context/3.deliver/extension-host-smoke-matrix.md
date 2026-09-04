@@ -7,10 +7,10 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
-## 1.7.0 Release Handoff
+## 1.7.0 Release Evidence
 
-- Result: source delivery complete on 2026-09-04; final Extension Development Host evidence was not
-  supplied and is not inferred.
+- Result: Marketplace publication complete and independently verified on 2026-09-04; final
+  Extension Development Host evidence was not supplied and is not inferred.
 - Candidate scope: operation-specific processing feedback across Revision Graph and Show Log,
   latest-owner progress coordination, vertically centered compact Show Log rows, continuous graph
   lines after expanded reference-bearing commits, and commit messages without an inline short hash.
@@ -18,8 +18,9 @@ risking user work.
   final native prompt; verify cancellation and remote failure cleanup; verify compact, referenced,
   selected, and expanded Show Log rows in light and dark themes; retrieve the commit hash through
   tooltip and context actions.
-- Packaging, clean-profile installation, source tagging, publication, and final evidence recording
-  are owned by the maintainer.
+- The published Marketplace VSIX is byte-identical to the inspected local package. Clean-profile
+  installation, source synchronization/tagging, and final manual evidence remain with the
+  maintainer.
 
 ## 1.6.9 Release Evidence
 

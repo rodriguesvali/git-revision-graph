@@ -26,7 +26,7 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Release Handoff: 1.7.0
+## Published Release: 1.7.0
 
 - Source delivery was finalized on 2026-09-04 from the published `1.6.9` baseline.
 - `package.json`, `package-lock.json`, and the lockfile root package declare `1.7.0`.
@@ -35,12 +35,16 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 - `npm audit` is an explicit temporary exception because registry audit connectivity is currently
   unreliable. Development-only transitive findings under `@vscode/vsce` remain follow-up work and
   are not part of the packaged extension runtime dependency tree.
-- The maintainer owns VSIX packaging and inspection, clean-profile installation, source tagging,
-  Marketplace publication, and final evidence reconciliation.
-- Before publication, record the exact candidate commit and inspect the VSIX filename, size,
-  SHA-256, embedded publisher/name/version, `out/extension.js`, and `out/webview/revisionGraph.js`.
-- After publication, verify `rodriguesvali.git-revision-graph@1.7.0` from the Marketplace and record
-  the exact publication timestamp. Never reuse `1.7.0`; corrections require a later patch.
+- Marketplace publication was confirmed by the maintainer and independently verified on the public
+  catalog at 2026-09-04 12:04:33 UTC.
+- Local and Marketplace VSIX packages are byte-identical: 1,122,685 bytes, SHA-256
+  `29a5db00c69a7702885293da6b782554b29e74e27237ba6a81eb61b3cbd0aa86`, with embedded identity
+  `rodriguesvali.git-revision-graph@1.7.0` and the extension/webview runtime assets present.
+- Clean-profile installation and final manual smoke evidence were not supplied and are not inferred.
+- Local `HEAD` is `c95f0b8`; public `origin/main` remains at `f880b4e`, and no local or public
+  `1.7.0` source tag exists. Main synchronization and source-tag verification remain with the
+  maintainer.
+- Never reuse `1.7.0`; corrections require a later patch.
 
 ## Published Baseline: 1.6.9
 

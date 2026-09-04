@@ -11,17 +11,19 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-- `1.7.0-release-cycle-opening.md`: development-cycle baseline and release guardrails while the
-  functional scope is being defined.
+None. Version `1.7.0` was published on 2026-09-04; define the next release cycle before starting new
+feature work.
+
+## Recently Completed Release Artifacts
+
+- `1.7.0-release-cycle-opening.md`: `1.7.0` package metadata, published-baseline record, and release
+  guardrails.
 - `1.7.0-operation-processing-feedback.md`: host-timed, operation-specific feedback for remote and
   workspace-changing Git mutations in Revision Graph and Show Log.
 - `1.7.0-show-log-row-vertical-alignment.md`: balanced primary commit-row content without reserving
   height for an empty file-details grid track.
 - `1.7.0-show-log-message-without-hash.md`: commit rows lead with their subject while hash details
   and copy actions remain available on demand.
-
-## Recently Completed Release Artifacts
-
 - `1.6.9-push-tag-refresh-parity.md`: show subtle progress for remote tag pushes and deletions
   while preserving the existing no-refresh graph lifecycle.
 - `1.6.9-responsive-toolbar-action-groups.md`: keep repository actions and zoom controls as

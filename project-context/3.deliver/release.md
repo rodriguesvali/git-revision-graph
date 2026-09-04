@@ -1,17 +1,19 @@
 # Release Readiness
 
-Status: `1.7.0` source delivery complete; maintainer packaging and publication pending
+Status: `1.7.0` Marketplace publication complete and independently verified; source tag pending
 Last consolidated: 2026-09-04
 
 ## Current State
 
 - Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
+- Latest recorded Marketplace-published release: `1.7.0`, confirmed by the maintainer and
+  independently verified in the public catalog on 2026-09-04 at 12:04:33 UTC.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
   Its scoped operation-processing feedback and Show Log row refinements are implemented,
-  documented, and locally verified. The source delivery was finalized on 2026-09-04;
-  Extension Development Host smoke evidence was not supplied, while packaging, clean-profile
-  installation, tagging, and publication remain with the maintainer.
+  documented, and locally verified. The source delivery was finalized and the Marketplace package
+  was published on 2026-09-04. The public package is byte-identical to the inspected local VSIX.
+  Extension Development Host and clean-profile installation evidence were not supplied; `main`
+  synchronization and source tag `1.7.0` remain pending.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
   packaging, package inspection, clean-profile installation, and Marketplace publication by
@@ -65,11 +67,12 @@ Last consolidated: 2026-09-04
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Release Candidate: 1.7.0
+## Published Release: 1.7.0
 
-Status: Source delivery complete; maintainer packaging and publication pending
+Status: Marketplace publication complete and independently verified; source tag pending
 Opened: 2026-09-03
 Source delivery finalized: 2026-09-04
+Marketplace published: 2026-09-04 at 12:04:33 UTC
 Published baseline version: `1.6.9`
 Target version: `1.7.0`
 
@@ -89,13 +92,13 @@ Focused build artifact:
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.7.0`. |
 | Release notes | Complete | `CHANGELOG.md` dates `1.7.0` and records processing feedback, row alignment, continuous expanded graph lines, and short-hash removal. |
 | Automated source verification | Complete with audit exception | On 2026-09-04, quality passed for 255 files and 2,451 functions; the build and all 844 tests passed; all 39 platform tests passed; the CI benchmark passed; version consistency and whitespace checks passed. `npm audit` was intentionally not used as a final gate because npm registry audit connectivity is currently unreliable. |
-| Package-content preview | Complete | `vsce ls` identified `git-revision-graph-1.7.0.vsix`, listed 651 included files, and exposed no source, test, project-context, Graphify, or E2E build entries. This is a file-list preview, not a created VSIX or installation result. |
+| VSIX package inspection | Complete | Local `git-revision-graph-1.7.0.vsix`: 1,122,685 bytes; SHA-256 `29a5db00c69a7702885293da6b782554b29e74e27237ba6a81eb61b3cbd0aa86`; 653 archive entries and 3,630,784 uncompressed bytes. Embedded identity is `rodriguesvali.git-revision-graph@1.7.0`, engine `^1.90.0`, with `out/extension.js` and `out/webview/revisionGraph.js` present. The package downloaded from the Marketplace is byte-identical. |
 | Extension Development Host smoke | Evidence not recorded | The maintainer should validate representative blocking/subtle operations, cancellation, remote failure, compact/reference/expanded Show Log rows, and hash retrieval before or after packaging as appropriate. |
-| VSIX package and inspection | Pending maintainer | Record filename, size, SHA-256 checksum, embedded identity/version, and runtime assets. |
-| Clean-profile installation | Pending maintainer | Install the approved VSIX in isolated user-data and extension directories and verify `rodriguesvali.git-revision-graph@1.7.0`. |
-| Marketplace publication | Pending maintainer | Record the exact publication timestamp and independently confirm the installed Marketplace version. |
-| Source tag | Pending maintainer | Create and verify tag `1.7.0` only against the exact published source commit. |
-| Rollback readiness | Documented for implemented scope | Each focused feature artifact defines a scoped rollback without persisted-data or dependency impact. |
+| Clean-profile installation | Evidence not recorded | An isolated installation result for the published VSIX was not supplied and is not inferred. |
+| Marketplace publication | Complete and independently verified | The public catalog exposes `rodriguesvali.git-revision-graph@1.7.0` with update timestamp 2026-09-04 12:04:33 UTC. The downloadable Marketplace VSIX matches the local inspected package byte for byte. |
+| Source synchronization | Pending maintainer | Local `HEAD` is `c95f0b8`; public `origin/main` remains at `f880b4e`, so the final source delivery commits are not yet visible on `main`. |
+| Source tag | Pending maintainer | No local or public `1.7.0` tag was found. Create and verify it only against the exact published source commit after synchronizing `main`. |
+| Rollback readiness | Documented for published release | Never reuse `1.7.0`; deliver any correction through a later patch or a maintainer-directed Marketplace action. Focused artifacts retain the source-level rollback boundaries. |
 
 Opening record:
 
@@ -151,14 +154,20 @@ Verification record:
   diagnosis also identified development-only transitive findings under `@vscode/vsce`; these do not
   enter the extension runtime package tree, but remain dependency-maintenance follow-up work.
 
-Publication handoff:
+Publication reconciliation:
 
-- The maintainer owns VSIX creation, package checksum and content inspection, isolated installation,
-  source tagging, Marketplace publication, and post-publication verification.
+- The maintainer confirmed publication. The public Marketplace page reports version `1.7.0` and
+  update timestamp 2026-09-04 12:04:33 UTC.
+- The Marketplace download and local `git-revision-graph-1.7.0.vsix` are both 1,122,685 bytes and
+  share SHA-256 `29a5db00c69a7702885293da6b782554b29e74e27237ba6a81eb61b3cbd0aa86`.
+- The embedded manifest declares `rodriguesvali.git-revision-graph@1.7.0`, engine `^1.90.0`, and
+  entry point `./out/extension.js`; the extension and webview runtime bundles are present.
+- Clean-profile installation and final Extension Development Host smoke evidence were not supplied
+  and are not inferred.
+- Local `HEAD` is `c95f0b8`, while public `origin/main` is `f880b4e`; no local or public `1.7.0` tag
+  exists. Synchronizing `main` and creating/verifying the source tag remain maintainer follow-up.
 - Keep `1.7.0` immutable after publication. Any correction after publication requires a new patch
   version; do not reuse the published version number.
-- After publication, record the exact source commit and tag, VSIX filename/size/SHA-256, installed
-  extension identity/version, Marketplace timestamp, and final smoke evidence in this section.
 
 ## Published Release: 1.6.9
 
