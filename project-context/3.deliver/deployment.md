@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-07-29
+Last consolidated: 2026-09-04
 
 ## Environment
 
@@ -26,7 +26,30 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Published Release: 1.6.1
+## Release Handoff: 1.7.0
+
+- Source delivery was finalized on 2026-09-04 from the published `1.6.9` baseline.
+- `package.json`, `package-lock.json`, and the lockfile root package declare `1.7.0`.
+- Release notes and focused build artifacts are complete. Local quality, build, unit, platform,
+  benchmark, version-consistency, whitespace, and VSCE file-list preview gates passed.
+- `npm audit` is an explicit temporary exception because registry audit connectivity is currently
+  unreliable. Development-only transitive findings under `@vscode/vsce` remain follow-up work and
+  are not part of the packaged extension runtime dependency tree.
+- The maintainer owns VSIX packaging and inspection, clean-profile installation, source tagging,
+  Marketplace publication, and final evidence reconciliation.
+- Before publication, record the exact candidate commit and inspect the VSIX filename, size,
+  SHA-256, embedded publisher/name/version, `out/extension.js`, and `out/webview/revisionGraph.js`.
+- After publication, verify `rodriguesvali.git-revision-graph@1.7.0` from the Marketplace and record
+  the exact publication timestamp. Never reuse `1.7.0`; corrections require a later patch.
+
+## Published Baseline: 1.6.9
+
+- Marketplace publication and the matching local, remote, and public source tag were independently
+  verified on 2026-08-25.
+- The reviewed VSIX identity, size, and SHA-256 are recorded in
+  `project-context/3.deliver/release.md`.
+
+## Historical Published Release: 1.6.1
 
 - `package.json` and the root `package-lock.json` both declare `1.6.1`.
 - Source implementation baseline: commit `5bf38f0` on `release/1.6.1`.

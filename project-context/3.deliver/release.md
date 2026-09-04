@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.7.0` implementation in progress; manual smoke pending
+Status: `1.7.0` source delivery complete; maintainer packaging and publication pending
 Last consolidated: 2026-09-04
 
 ## Current State
@@ -8,8 +8,10 @@ Last consolidated: 2026-09-04
 - Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
-  Operation-processing feedback and Show Log row refinements are implemented and documented;
-  Extension Development Host smoke, packaging, tagging, and publication remain pending.
+  Its scoped operation-processing feedback and Show Log row refinements are implemented,
+  documented, and locally verified. The source delivery was finalized on 2026-09-04;
+  Extension Development Host smoke evidence was not supplied, while packaging, clean-profile
+  installation, tagging, and publication remain with the maintainer.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
   packaging, package inspection, clean-profile installation, and Marketplace publication by
@@ -63,10 +65,11 @@ Last consolidated: 2026-09-04
   release artifact.
 - Historical release readiness notes are archived at `project-context/archive/releases/release-readiness-history.md`.
 
-## Open Release: 1.7.0
+## Release Candidate: 1.7.0
 
-Status: Current scoped improvements implemented; manual smoke pending
+Status: Source delivery complete; maintainer packaging and publication pending
 Opened: 2026-09-03
+Source delivery finalized: 2026-09-04
 Published baseline version: `1.6.9`
 Target version: `1.7.0`
 
@@ -82,15 +85,16 @@ Focused build artifact:
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.9` publication and source tag were independently verified on 2026-08-25. |
-| Release scope | In progress | Operation-processing feedback and the scoped Show Log refinements are implemented; later `1.7.0` scope may be added through focused artifacts. |
+| Release scope | Complete | Operation-processing feedback and the scoped Show Log refinements are implemented; the `1.7.0` source scope is closed. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.7.0`. |
-| Release notes | In progress | `CHANGELOG.md` records processing feedback, row alignment, continuous expanded graph lines, and short-hash removal. |
-| Automated verification | Complete for implemented scope | `npm test` passed all 844 tests, the 39-test platform gate passed, and build, quality, whitespace, and Graphify gates passed on 2026-09-04. |
-| Extension Development Host smoke | Pending | Validate representative blocking/subtle operations, cancellation, and remote failure. |
-| VSIX package inspection | Not authorized | Requires explicit maintainer approval after release-candidate gates pass. |
-| Clean-profile installation | Not authorized | Run only against an approved VSIX candidate. |
-| Marketplace publication | Not authorized | Requires separate explicit maintainer approval. |
-| Source tag | Not authorized | Create only for the approved release commit. |
+| Release notes | Complete | `CHANGELOG.md` dates `1.7.0` and records processing feedback, row alignment, continuous expanded graph lines, and short-hash removal. |
+| Automated source verification | Complete with audit exception | On 2026-09-04, quality passed for 255 files and 2,451 functions; the build and all 844 tests passed; all 39 platform tests passed; the CI benchmark passed; version consistency and whitespace checks passed. `npm audit` was intentionally not used as a final gate because npm registry audit connectivity is currently unreliable. |
+| Package-content preview | Complete | `vsce ls` identified `git-revision-graph-1.7.0.vsix`, listed 651 included files, and exposed no source, test, project-context, Graphify, or E2E build entries. This is a file-list preview, not a created VSIX or installation result. |
+| Extension Development Host smoke | Evidence not recorded | The maintainer should validate representative blocking/subtle operations, cancellation, remote failure, compact/reference/expanded Show Log rows, and hash retrieval before or after packaging as appropriate. |
+| VSIX package and inspection | Pending maintainer | Record filename, size, SHA-256 checksum, embedded identity/version, and runtime assets. |
+| Clean-profile installation | Pending maintainer | Install the approved VSIX in isolated user-data and extension directories and verify `rodriguesvali.git-revision-graph@1.7.0`. |
+| Marketplace publication | Pending maintainer | Record the exact publication timestamp and independently confirm the installed Marketplace version. |
+| Source tag | Pending maintainer | Create and verify tag `1.7.0` only against the exact published source commit. |
 | Rollback readiness | Documented for implemented scope | Each focused feature artifact defines a scoped rollback without persisted-data or dependency impact. |
 
 Opening record:
@@ -137,6 +141,24 @@ Verification record:
   warning timing outside the overlay, and preflight source-publication feedback. `npm run
   test:platform` passed all 39 tests, `npm run quality:check` passed for 255 files and 2,451
   functions, and `graphify update .` refreshed the code graph on 2026-09-04.
+- Final source-candidate verification on 2026-09-04 passed `npm run quality:check` for 255 files
+  and 2,451 functions, `npm test` with all 844 tests, `npm run test:platform` with all 39 tests,
+  `npm run benchmark:ci`, package/lockfile/root-entry version consistency, and `git diff --check`.
+  `vsce ls` previewed 651 included files for `git-revision-graph-1.7.0.vsix` without creating the
+  package; no development source, test, project-context, Graphify, or E2E output entry was exposed.
+- `npm audit` is not claimed as passing. The maintainer accepted a temporary release-gate exception
+  because npm audit registry connectivity is currently unreliable. The last available audit
+  diagnosis also identified development-only transitive findings under `@vscode/vsce`; these do not
+  enter the extension runtime package tree, but remain dependency-maintenance follow-up work.
+
+Publication handoff:
+
+- The maintainer owns VSIX creation, package checksum and content inspection, isolated installation,
+  source tagging, Marketplace publication, and post-publication verification.
+- Keep `1.7.0` immutable after publication. Any correction after publication requires a new patch
+  version; do not reuse the published version number.
+- After publication, record the exact source commit and tag, VSIX filename/size/SHA-256, installed
+  extension identity/version, Marketplace timestamp, and final smoke evidence in this section.
 
 ## Published Release: 1.6.9
 
