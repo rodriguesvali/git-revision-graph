@@ -8,8 +8,8 @@ Last consolidated: 2026-09-04
 - Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.6.9`, by maintainer confirmation on 2026-08-25.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
-  Operation-processing feedback is implemented and documented; Extension Development Host smoke,
-  packaging, tagging, and publication remain pending.
+  Operation-processing feedback and Show Log row refinements are implemented and documented;
+  Extension Development Host smoke, packaging, tagging, and publication remain pending.
 - Release cycle status: `1.6.9` implementation, local automated verification, and Extension
   Development Host smoke by maintainer confirmation, reviewed release notes, approved VSIX
   packaging, package inspection, clean-profile installation, and Marketplace publication by
@@ -65,7 +65,7 @@ Last consolidated: 2026-09-04
 
 ## Open Release: 1.7.0
 
-Status: First scoped improvement implemented; manual smoke pending
+Status: Current scoped improvements implemented; manual smoke pending
 Opened: 2026-09-03
 Published baseline version: `1.6.9`
 Target version: `1.7.0`
@@ -82,16 +82,16 @@ Focused build artifact:
 | Gate | Status | Evidence / next action |
 | --- | --- | --- |
 | Published baseline | Complete | `1.6.9` publication and source tag were independently verified on 2026-08-25. |
-| Release scope | In progress | Operation-processing feedback is implemented; later `1.7.0` scope may be added through focused artifacts. |
+| Release scope | In progress | Operation-processing feedback and the scoped Show Log refinements are implemented; later `1.7.0` scope may be added through focused artifacts. |
 | Package metadata | Complete | `package.json` and the root `package-lock.json` declare `1.7.0`. |
-| Release notes | In progress | `CHANGELOG.md` records the implemented processing-feedback scope. |
-| Automated verification | Complete for implemented scope | `npm test` passed all 841 tests; build and quality gates passed, and Graphify was refreshed on 2026-09-04. |
+| Release notes | In progress | `CHANGELOG.md` records processing feedback, row alignment, continuous expanded graph lines, and short-hash removal. |
+| Automated verification | Complete for implemented scope | `npm test` passed all 844 tests, the 39-test platform gate passed, and build, quality, whitespace, and Graphify gates passed on 2026-09-04. |
 | Extension Development Host smoke | Pending | Validate representative blocking/subtle operations, cancellation, and remote failure. |
 | VSIX package inspection | Not authorized | Requires explicit maintainer approval after release-candidate gates pass. |
 | Clean-profile installation | Not authorized | Run only against an approved VSIX candidate. |
 | Marketplace publication | Not authorized | Requires separate explicit maintainer approval. |
 | Source tag | Not authorized | Create only for the approved release commit. |
-| Rollback readiness | Pending scoped behavior | Define rollback notes in each focused feature artifact. |
+| Rollback readiness | Documented for implemented scope | Each focused feature artifact defines a scoped rollback without persisted-data or dependency impact. |
 
 Opening record:
 
@@ -111,6 +111,10 @@ Implemented scope:
 - Preexisting Remote Tag, Fetch, Flow Governance remote-fetch, and equalization feedback now use the
   same `RefActionProgress` contract. Browser-owned loading remains limited to graph projection,
   focus, reload, and view transitions.
+- Revision Graph progress now uses latest-owner semantics: stale operation completion cannot clear a
+  newer action, repository transition, render, status update, or error. Equalization performs its
+  validation and native preflight prompts before `Preparing equalization...`; remote checks and any
+  confirmed source publication retain their own scoped feedback.
 - Show Log fixes its primary grid track to the calculated row height, preventing an empty file-detail
   track from shifting compact commit text upward. Expanded file lists no longer add an unmatched
   5 px footer, keeping graph continuations connected to the following row.
@@ -128,6 +132,11 @@ Verification record:
   expanded-row footer mismatch passed the same gates, including the 2 focused Show Log tests.
 - The Show Log short-hash removal passed the full 841-test suite, the 2 focused Show Log tests,
   quality and whitespace gates on 2026-09-04; Graphify was refreshed with the combined source state.
+- The processing-feedback review corrections passed all 844 tests. Coverage now includes
+  out-of-order progress completion, explicit ownership invalidation, delayed equalization feedback,
+  warning timing outside the overlay, and preflight source-publication feedback. `npm run
+  test:platform` passed all 39 tests, `npm run quality:check` passed for 255 files and 2,451
+  functions, and `graphify update .` refreshed the code graph on 2026-09-04.
 
 ## Published Release: 1.6.9
 

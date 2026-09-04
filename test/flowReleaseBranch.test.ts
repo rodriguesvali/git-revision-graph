@@ -265,6 +265,7 @@ test('Flow Governance publishes an untracked source before opening the branch fo
   const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const refreshes: unknown[] = [];
   const loadingEvents: string[] = [];
+  const progressEvents: string[] = [];
   let publicationChecks = 0;
 
   const ready = await prepareFlowBranchStart(repository, {
@@ -274,7 +275,8 @@ test('Flow Governance publishes an untracked source before opening the branch fo
     confirmations,
     confirmResult: true,
     remoteNames: ['origin'],
-    refreshes
+    refreshes,
+    progressEvents
   }), {
     async runWithRemoteFetchLoading(operation) {
       loadingEvents.push('show:Fetching remotes...');
@@ -307,6 +309,10 @@ test('Flow Governance publishes an untracked source before opening the branch fo
     'hide',
     'show:Fetching remotes...',
     'hide'
+  ]);
+  assert.deepEqual(progressEvents, [
+    'start:subtle:Publishing branch feature/demo...',
+    'stop'
   ]);
   assert.equal(refreshes.length, 1);
 });
@@ -1050,6 +1056,7 @@ function createReleaseServices(options: {
   readonly remoteNames?: readonly string[];
   readonly pickedRemoteName?: string;
   readonly remotePicks?: Array<{ readonly names: readonly string[]; readonly placeHolder: string }>;
+  readonly progressEvents?: string[];
 } = {}): RefActionServices {
   return {
     ui: {
@@ -1111,6 +1118,16 @@ function createReleaseServices(options: {
     ancestryInspector: {
       async isRefAncestorOfHead() { return false; }
     },
+    progress: options.progressEvents ? {
+      async run<T>(label: string, mode: 'blocking' | 'subtle', operation: () => Promise<T>): Promise<T> {
+        options.progressEvents?.push(`start:${mode}:${label}`);
+        try {
+          return await operation();
+        } finally {
+          options.progressEvents?.push('stop');
+        }
+      }
+    } : undefined,
     formatPath(fsPath) {
       return fsPath;
     }

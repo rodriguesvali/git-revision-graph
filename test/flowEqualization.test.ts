@@ -56,6 +56,44 @@ test('Flow Governance prepares a local equalization branch without pushing', asy
   assert.match(informationMessages[0] ?? '', /equalized with release\/1\.9\.0/);
 });
 
+test('Flow Governance starts blocking equalization feedback only after preflight', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const events: string[] = [];
+  const originalCreateBranch = repository.createBranch.bind(repository);
+  const originalMerge = repository.merge.bind(repository);
+  repository.createBranch = async (name, checkout, ref) => {
+    events.push(`create:${name}`);
+    return originalCreateBranch(name, checkout, ref);
+  };
+  repository.merge = async (ref) => {
+    events.push(`merge:${ref}`);
+    return originalMerge(ref);
+  };
+
+  await prepareFlowEqualizationBranch(repository, {
+    originBranch: 'main',
+    targetBranch: 'release/2.0.0',
+    description: 'Bring production fixes into the release'
+  }, createEqualizationServices({ progressEvents: events }), {
+    async prepareSources() {
+      events.push('preflight');
+      return true;
+    },
+    async setDescription() {
+      events.push('description');
+    }
+  });
+
+  assert.deepEqual(events, [
+    'preflight',
+    'progress:start:blocking:Preparing equalization...',
+    'create:sync/2.0.0',
+    'description',
+    'merge:main',
+    'progress:stop'
+  ]);
+});
+
 test('Flow Governance prepares a local feature equalization branch', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const descriptions: string[] = [];
@@ -189,10 +227,12 @@ test('Flow Governance creates equalization branches from the selected feature ta
 test('Flow Governance shows description persistence warnings modally and continues equalization', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const warningRequests: Array<{ readonly message: string; readonly modal: boolean | undefined }> = [];
+  const events: string[] = [];
   const services = {
     ui: {
       showInformationMessage() {},
       showWarningMessage(message: string, options?: { readonly modal?: boolean }) {
+        events.push('warning');
         warningRequests.push({ message, modal: options?.modal });
       },
       async showErrorMessage() {},
@@ -201,6 +241,16 @@ test('Flow Governance shows description persistence warnings modally and continu
     refreshController: {
       prepare() { return { cancel() {} }; },
       refresh() {}
+    },
+    progress: {
+      async run(_label: string, _mode: string, operation: () => Promise<unknown>) {
+        events.push('progress:start');
+        try {
+          return await operation();
+        } finally {
+          events.push('progress:stop');
+        }
+      }
     }
   } as unknown as RefActionServices;
 
@@ -219,18 +269,14 @@ test('Flow Governance shows description persistence warnings modally and continu
   assert.match(warningRequests[0].message, /description could not be saved/);
   assert.equal(warningRequests[0].modal, true);
   assert.deepEqual(repository.calls.merge, ['main']);
+  assert.deepEqual(events, ['progress:start', 'progress:stop', 'warning']);
 });
 
 test('Flow Governance equalization requires a description', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const errors: string[] = [];
-  const services = {
-    ui: {
-      async showErrorMessage(message: string) { errors.push(message); },
-      showWarningMessage() {},
-      async showSourceControl() {}
-    }
-  } as unknown as RefActionServices;
+  const progressEvents: string[] = [];
+  const services = createEqualizationServices({ errors, progressEvents });
 
   await prepareFlowEqualizationBranch(repository, {
     originBranch: 'main',
@@ -241,6 +287,7 @@ test('Flow Governance equalization requires a description', async () => {
   assert.match(errors[0] ?? '', /Description is required/);
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.merge, []);
+  assert.deepEqual(progressEvents, []);
 });
 
 test('Flow Governance equalization rejects the target release as its own origin', async () => {
@@ -438,6 +485,7 @@ function createEqualizationServices(options: {
   readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;
   readonly confirmResult?: boolean;
   readonly warningRequests?: Array<{ readonly message: string; readonly modal: boolean | undefined }>;
+  readonly progressEvents?: string[];
 } = {}): RefActionServices {
   return {
     ui: {
@@ -459,6 +507,16 @@ function createEqualizationServices(options: {
     refreshController: {
       prepare() { return { cancel() {} }; },
       refresh() {}
-    }
+    },
+    progress: options.progressEvents ? {
+      async run<T>(label: string, mode: 'blocking' | 'subtle', operation: () => Promise<T>): Promise<T> {
+        options.progressEvents?.push(`progress:start:${mode}:${label}`);
+        try {
+          return await operation();
+        } finally {
+          options.progressEvents?.push('progress:stop');
+        }
+      }
+    } : undefined
   } as unknown as RefActionServices;
 }

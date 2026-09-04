@@ -4,6 +4,7 @@ import { validateGitBranchName } from '../../refActions/branchValidation';
 import {
   ensureWorkspaceReadyForMutation,
   prepareFullRebuildRefresh,
+  runWithRefActionProgress,
   shouldRevealSourceControlAfterWorkspaceConflict
 } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
@@ -72,22 +73,28 @@ export async function prepareFlowEqualizationBranch(
   const mergeRefName = originBranch;
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   let branchCreated = false;
+  let descriptionWarning: string | undefined;
   try {
-    await repository.createBranch(branchName, true, branchBaseRefName);
-    branchCreated = true;
-    try {
-      await (dependencies.setDescription ?? setFlowBranchDescription)(
-        repository.rootUri.fsPath,
-        branchName,
-        description
-      );
-    } catch (error) {
-      await services.ui.showWarningMessage(
-        toOperationError(`${branchName} was created, but its description could not be saved.`, error),
-        { modal: true }
-      );
+    await runWithRefActionProgress(services, 'Preparing equalization...', 'blocking', async () => {
+      await repository.createBranch(branchName, true, branchBaseRefName);
+      branchCreated = true;
+      try {
+        await (dependencies.setDescription ?? setFlowBranchDescription)(
+          repository.rootUri.fsPath,
+          branchName,
+          description
+        );
+      } catch (error) {
+        descriptionWarning = toOperationError(
+          `${branchName} was created, but its description could not be saved.`,
+          error
+        );
+      }
+      await repository.merge(mergeRefName);
+    });
+    if (descriptionWarning) {
+      await services.ui.showWarningMessage(descriptionWarning, { modal: true });
     }
-    await repository.merge(mergeRefName);
     services.refreshController.refresh(preparedRefresh.request);
     services.ui.showInformationMessage(
       `${branchName} was created locally from ${branchBaseRefName} and equalized with ${mergeRefName}. Review it, then publish and open a Pull Request when ready.`
@@ -95,8 +102,6 @@ export async function prepareFlowEqualizationBranch(
   } catch (error) {
     if (!branchCreated) {
       preparedRefresh.cancel();
-    } else {
-      services.refreshController.refresh(preparedRefresh.request);
     }
 
     const hasWorkspaceConflict = shouldRevealSourceControlAfterWorkspaceConflict(error, repository);
@@ -113,6 +118,9 @@ export async function prepareFlowEqualizationBranch(
     );
     if (hasWorkspaceConflict) {
       await services.ui.showSourceControl();
+    }
+    if (branchCreated) {
+      services.refreshController.refresh(preparedRefresh.request);
     }
   }
 }

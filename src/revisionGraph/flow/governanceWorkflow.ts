@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import type { Repository } from '../../git';
 import type { RefActionServices } from '../../refActions';
-import { runWithRefActionProgress } from '../../refActions/shared';
 import {
   RepositoryMutationCoordinator,
   runGuardedRepositoryMutation
@@ -238,25 +237,20 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.host.mutationCoordinator,
       repository,
       this.host.actionServices,
-      (guardedRepository, services) => runWithRefActionProgress(
+      (guardedRepository, services) => prepareFlowEqualizationBranch(
+        guardedRepository,
+        {
+          targetBranch: targetRefName,
+          originBranch: originRefName,
+          description,
+          config: flowConfig.config
+        },
         services,
-        'Preparing equalization...',
-        'blocking',
-        () => prepareFlowEqualizationBranch(
-          guardedRepository,
-          {
-            targetBranch: targetRefName,
-            originBranch: originRefName,
-            description,
-            config: flowConfig.config
-          },
-          services,
-          {
-            sourcePreflight: {
-              runWithRemoteFetchLoading: (operation) => operation()
-            }
+        {
+          sourcePreflight: {
+            runWithRemoteFetchLoading: (operation) => withFlowRemoteFetchLoading(services, operation)
           }
-        )
+        }
       )
     );
     if (outcome.status === 'rejected') {

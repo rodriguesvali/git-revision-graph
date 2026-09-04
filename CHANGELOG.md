@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
   drops remain immediate without a processing overlay.
 - Use the same host-owned processing lifecycle for remote tag actions, repository Fetch, Flow
   Governance remote checks, and equalization preparation, replacing their separate legacy adapters.
+  Keep that feedback owned by the latest visible operation so a stale completion cannot dismiss a
+  newer action or graph refresh; equalization prompts now finish before its mutation overlay begins.
 
 ### Show Log
 

@@ -8,7 +8,7 @@ import {
   CompareResultsPresenter,
   RefActionServices
 } from '../refActions';
-import { createRefActionProgress } from '../refActions/progress';
+import { createLatestRefActionProgress } from '../refActions/progress';
 import { createWorkbenchRefActionServices } from '../workbenchRefActionServices';
 import { showModalErrorMessage } from '../workbenchMessages';
 import { RevisionGraphBackend, RevisionGraphLimitPolicy } from './backend';
@@ -118,11 +118,16 @@ export class RevisionGraphController implements vscode.Disposable {
   private currentLoadingLabel: string | undefined;
   private currentLoadingMode: 'blocking' | 'subtle' | undefined;
   private currentErrorMessage: string | undefined;
+  private readonly actionProgress = createLatestRefActionProgress(
+    (label, mode) => this.postActionLoading(label, mode),
+    () => this.postCurrentState()
+  );
   private readonly actionServices: RefActionServices;
   private readonly messageDispatcher = new RevisionGraphMessageDispatcher();
   private readonly messageHandler: RevisionGraphMessageHandler;
   private readonly renderCoordinator = new RevisionGraphRenderCoordinator<RevisionGraphRenderResult>(
     (label) => {
+      this.actionProgress.invalidate();
       const nextLoadingMode = this.currentLoadingMode ?? 'blocking';
       const shouldPostLoading =
         !this.currentState.loading
@@ -142,7 +147,7 @@ export class RevisionGraphController implements vscode.Disposable {
       }
     },
     (result) => {
-      this.currentLoadingLabel = undefined;
+      this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
       this.currentState = result.state;
@@ -156,7 +161,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.postHostMessage(createRevisionGraphUpdateStateMessage(result.state));
     },
     (error) => {
-      this.currentLoadingLabel = undefined;
+      this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = toErrorDetail(error);
       this.currentState = {
@@ -196,7 +201,7 @@ export class RevisionGraphController implements vscode.Disposable {
     );
     this.repositoryLifecycle = new RevisionGraphRepositoryLifecycle(git, {
       onCurrentRepositoryChanging: (repository) => {
-        this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
+        this.actionProgress.invalidate(); this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
         this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
       },
       onCurrentRepositoryChanged: (repositoryChanged) => {
@@ -233,10 +238,7 @@ export class RevisionGraphController implements vscode.Disposable {
     );
     this.actionServices = {
       ...workbenchActionServices,
-      progress: createRefActionProgress(
-        (label, mode) => this.postActionLoading(label, mode),
-        () => this.postCurrentState()
-      )
+      progress: this.actionProgress.progress
     };
     this.flowGovernanceWorkflow = new RevisionGraphFlowGovernanceWorkflow({
       actionServices: this.actionServices,
@@ -324,7 +326,6 @@ export class RevisionGraphController implements vscode.Disposable {
       }
     });
   }
-
   private get currentRepository(): Repository | undefined {
     return this.repositoryLifecycle.getCurrentRepository();
   }
@@ -337,10 +338,9 @@ export class RevisionGraphController implements vscode.Disposable {
     if (this.ownsMutationCoordinator) {
       this.mutationCoordinator.dispose();
     }
-    this.renderCoordinator.cancel();
+    this.actionProgress.invalidate(); this.renderCoordinator.cancel();
     this.disposeViewDisposables();
     this.loadTrace.dispose();
-
     this.repositoryLifecycle.dispose();
   }
 
@@ -355,7 +355,7 @@ export class RevisionGraphController implements vscode.Disposable {
     this.viewDisposables.push(
       view.onDidDispose(() => {
         if (this.view === view) {
-          this.renderCoordinator.cancel();
+          this.actionProgress.invalidate(); this.renderCoordinator.cancel();
           this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
           this.view = undefined;
         }
@@ -373,7 +373,7 @@ export class RevisionGraphController implements vscode.Disposable {
           {
             onUnexpectedError: async (error) => {
               const detail = toOperationError('Could not handle the revision graph action.', error);
-              console.error(detail);
+              console.error(detail); this.actionProgress.invalidate();
               this.currentLoadingLabel = undefined;
               this.currentLoadingMode = undefined;
               this.currentErrorMessage = detail;
@@ -625,7 +625,7 @@ export class RevisionGraphController implements vscode.Disposable {
     void handleAsyncTaskSafely(task, {
       onUnexpectedError: async (error) => {
         const detail = toOperationError(failureMessage, error);
-        console.error(detail);
+        console.error(detail); this.actionProgress.invalidate();
         this.currentLoadingLabel = undefined;
         this.currentLoadingMode = undefined;
         this.currentErrorMessage = detail;
@@ -672,7 +672,7 @@ export class RevisionGraphController implements vscode.Disposable {
     }
 
     if (result.state) {
-      this.currentLoadingLabel = undefined;
+      this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
       this.currentState = result.state;
@@ -690,7 +690,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private postCurrentState(): void {
-    this.currentLoadingLabel = undefined;
+    this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
     this.currentLoadingMode = undefined;
     this.currentErrorMessage = undefined;
     this.currentState = {

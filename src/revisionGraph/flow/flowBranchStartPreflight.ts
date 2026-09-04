@@ -2,7 +2,7 @@ import { toOperationError } from '../../errorDetail';
 import type { Branch, Repository } from '../../git';
 import { formatUpstreamLabel } from '../../gitState';
 import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
-import { prepareFullRebuildRefresh } from '../../refActions/shared';
+import { prepareFullRebuildRefresh, runWithRefActionProgress } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
 import {
   checkFlowBranchPublication,
@@ -188,7 +188,12 @@ async function prepareUntrackedFlowBranchSource(
       return false;
     }
 
-    await repository.push(remoteName, options.sourceBranch, true);
+    await runWithRefActionProgress(
+      services,
+      `${isPublish ? 'Publishing' : 'Pushing'} branch ${options.sourceBranch}...`,
+      'subtle',
+      () => repository.push(remoteName, options.sourceBranch, true)
+    );
     publication = await dependencies.runWithRemoteFetchLoading(() => checkSourcePublication(
       repository,
       remoteName,
