@@ -741,6 +741,7 @@ test('Flow Governance opens a configuration created by enabling the file-backed 
   const repository = createRepository({ root });
   let state = {
     viewMode: 'ready',
+    references: [],
     flowGovernance: {
       enabled: false,
       configSource: 'defaults',
@@ -765,6 +766,67 @@ test('Flow Governance opens a configuration created by enabling the file-backed 
   assert.deepEqual(harness.openedTextDocuments, [configPath]);
   assert.deepEqual(harness.shownTextDocuments, [{ fsPath: configPath }]);
 });
+
+for (const outcome of ['failure', 'throw', 'success', 'switch', 'dispose', 'invalid'] as const) {
+  test(`Flow Governance toggle persistence: ${outcome}`, async (t) => {
+    installVscodePanelMock(t);
+    const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
+      '../src/revisionGraph/flow/governanceWorkflow'
+    ) as typeof import('../src/revisionGraph/flow/governanceWorkflow');
+    const { FlowConfigPersistenceCoordinator } = await import('../src/revisionGraph/flow/flowConfigPersistenceCoordinator');
+    const root = await mkdtemp(path.join(os.tmpdir(), 'flow-toggle-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    const configPath = path.join(root, '.git-revision-graph-flow.json');
+    await writeFile(configPath, JSON.stringify({ schemaVersion: 1, enabled: false }));
+    let repository = createRepository({ root });
+    let state = {
+      viewMode: 'ready',
+      references: [{ kind: 'branch', name: 'main' }],
+      flowGovernance: { enabled: false, configSource: 'repository', diagnostics: [], branchKinds: [], references: [] }
+    } as unknown as import('../src/revisionGraphTypes').RevisionGraphViewState;
+    const gate = createDeferred<void>();
+    let writes = 0;
+    const persistence = new FlowConfigPersistenceCoordinator(async () => {
+      writes++;
+      await gate.promise;
+      if (outcome === 'throw') throw new Error('Disk unavailable');
+      if (outcome === 'failure') return { ok: false, issue: { path: '$', message: 'Read-only file' } };
+      await writeFile(configPath, JSON.stringify({ schemaVersion: outcome === 'invalid' ? 99 : 1, enabled: true }));
+      return { ok: true, path: configPath, created: false };
+    });
+    const workflow = new RevisionGraphFlowGovernanceWorkflow({
+      actionServices: {} as never,
+      mutationCoordinator: {} as never,
+      getCurrentRepository: () => repository,
+      getCurrentState: () => state,
+      setCurrentState: (next) => { state = next; },
+      postCurrentState() {},
+      postHostMessage() {}
+    }, undefined, persistence);
+    t.after(() => workflow.dispose());
+    const operation = workflow.updateOptions({ enabled: true });
+    assert.equal(state.flowGovernance?.enabled, false);
+    assert.equal(state.flowGovernance?.saving, true);
+    await workflow.updateOptions({ enabled: true });
+    assert.equal(writes, 1, 'duplicate submission must not write twice');
+    if (outcome === 'switch') {
+      repository = createRepository({ root: '/workspace/other' });
+      state = { ...state, flowGovernance: { ...state.flowGovernance!, saving: false } };
+    }
+    if (outcome === 'dispose') workflow.dispose();
+    const beforeCompletion = state;
+    gate.resolve();
+    await operation;
+    if (outcome === 'switch' || outcome === 'dispose') {
+      assert.equal(state, beforeCompletion, 'stale completion must not change current state');
+    } else {
+      assert.equal(state.flowGovernance?.saving === true, false);
+      assert.equal(state.flowGovernance?.enabled, outcome === 'success');
+      if (outcome === 'invalid') assert.equal(state.flowGovernance?.configSource, 'invalid');
+      if (outcome === 'success') assert.equal(state.flowGovernance?.references[0]?.kind, 'main');
+    }
+  });
+}
 
 function createRejectedMutationCoordinator(): never {
   return {
@@ -1039,6 +1101,10 @@ async function waitForAsyncHandlers(): Promise<void> {
 }
 
 function loadFresh(moduleId: string): unknown {
+  if (moduleId === '../src/revisionGraph/flow/governanceWorkflow') {
+    // The composed workflow also captures the per-test VS Code mock.
+    delete require.cache[require.resolve('../src/revisionGraph/flow/optionsWorkflow')];
+  }
   const modulePath = require.resolve(moduleId);
   delete require.cache[modulePath];
   return require(moduleId) as unknown;

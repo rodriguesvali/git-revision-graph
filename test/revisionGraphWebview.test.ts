@@ -1660,6 +1660,26 @@ test('renders Flow Governance badges immediately after re-enabling without reope
   assert.match(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
 });
 
+test('Flow Governance saving disables the toggle and suppresses duplicate submissions', () => {
+  const runtime = createWebviewRuntime();
+  const flowGovernance = {
+    enabled: false, saving: true, configSource: 'repository', diagnostics: [], branchKinds: ['main'], references: []
+  };
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ flowGovernance }) });
+  const toggle = runtime.elements.get('flowGovernanceEnabledToggle');
+  assert.ok(toggle);
+  assert.equal(toggle.disabled, true);
+  assert.equal(toggle.checked, false);
+  const count = runtime.postedMessages.length;
+  runtime.context.updateFlowGovernanceOptions({ enabled: true });
+  assert.equal(runtime.postedMessages.length, count);
+  runtime.context.handleHostMessage({
+    type: 'update-state', state: createReadyGraphState({ flowGovernance: { ...flowGovernance, saving: false, enabled: true } })
+  });
+  assert.equal(toggle.disabled, false);
+  assert.equal(toggle.checked, true);
+});
+
 test('posts Flow Governance option updates from the webview runtime', () => {
   const runtime = createWebviewRuntime();
 

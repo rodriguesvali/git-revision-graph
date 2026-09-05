@@ -651,7 +651,7 @@
     }
 
     function updateFlowGovernanceOptions(options: RevisionGraphWebviewFlowGovernanceOptions) {
-      if (!hasFlowGovernanceState()) {
+      if (!hasFlowGovernanceState() || currentFlowGovernance?.saving === true) {
         return;
       }
       vscode.postMessage(createRevisionGraphFlowGovernanceOptionsMessage(options));
@@ -882,7 +882,7 @@
       syncRevisionGraphWebviewViewOptionsToolbarUi(
         { showTagsToggle, showRemoteBranchesToggle, showStashesToggle, showMergeCommitsToggle, showMinimapToggle, flowGovernanceEnabledToggle, rangeFilterClearButton, descendantFilterClearButton },
         toolbarBusy,
-        hasFlowGovernanceState()
+        hasFlowGovernanceState(), currentFlowGovernance?.saving === true
       );
       syncRevisionGraphWebviewCenterHeadToolbarUi(centerHeadButton, toolbarBusy);
       syncRevisionGraphWebviewZoomToolbarUi(

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.7.1 - Unreleased
+
+### Flow Governance
+
+- Confirm toggle activation from the saved configuration, show saving feedback, prevent duplicate
+  submissions, and recover the control after write failures. Ignore completions for another repository
+  or a disposed graph and clarify that activation is stored in the repository configuration file.
+
 ## 1.7.0 - 2026-09-04
 
 ### Revision Graph

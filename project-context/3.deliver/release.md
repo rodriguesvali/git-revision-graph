@@ -6,7 +6,10 @@ Last consolidated: 2026-09-05
 ## Current State
 
 - Development cycle `1.7.1` opened on 2026-09-05 with explicit maintainer approval.
-  This change aligns version metadata only; Flow Governance UX improvements remain proposed.
+  The first Flow Governance UX increment implements persisted toggle consistency and saving feedback.
+  See `project-context/2.build/features/1.7.1-flow-governance-toggle-consistency.md`; automated
+  verification passed (`npm test`: 851 tests, including build and quality gate; diff checks passed).
+  Graphify was updated; manual Extension Development Host checks remain pending.
   Packaging, Marketplace publication, and source tagging have not been performed for this cycle.
   Before publication, rollback is limited to reverting this metadata and cycle-opening entry.
 

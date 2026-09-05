@@ -27,7 +27,7 @@ import type {
 export type { FlowAiTextImprover } from './aiTextAssistant';
 import { withFlowRemoteFetchLoading } from './remoteFetchLoading';
 import { startFlowBranch } from './flowReleaseBranch';
-import { applyFlowGovernanceOptionsUpdate } from './flowState';
+import { FlowGovernanceOptionsWorkflow } from './optionsWorkflow';
 import type {
   FlowGovernanceOptionsUpdate,
   FlowGovernanceSettings,
@@ -45,13 +45,15 @@ export interface RevisionGraphFlowGovernanceWorkflowHost {
 }
 
 export class RevisionGraphFlowGovernanceWorkflow {
-  private readonly configPersistence = new FlowConfigPersistenceCoordinator();
+  private readonly optionsWorkflow: FlowGovernanceOptionsWorkflow;
   private readonly aiTextWorkflow: RevisionGraphFlowAiTextWorkflow;
 
   constructor(
     private readonly host: RevisionGraphFlowGovernanceWorkflowHost,
-    aiTextImprover?: FlowAiTextImprover
+    aiTextImprover?: FlowAiTextImprover,
+    configPersistence = new FlowConfigPersistenceCoordinator()
   ) {
+    this.optionsWorkflow = new FlowGovernanceOptionsWorkflow(host, (repository) => this.resolveSettings(repository), configPersistence);
     this.aiTextWorkflow = new RevisionGraphFlowAiTextWorkflow(
       host,
       aiTextImprover
@@ -59,6 +61,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
   }
 
   dispose(): void {
+    this.optionsWorkflow.dispose();
     this.aiTextWorkflow.dispose();
   }
 
@@ -85,49 +88,8 @@ export class RevisionGraphFlowGovernanceWorkflow {
     };
   }
 
-  async updateOptions(options: FlowGovernanceOptionsUpdate): Promise<void> {
-    const currentState = this.host.getCurrentState();
-    const flowGovernance = currentState.flowGovernance;
-    if (currentState.viewMode !== 'ready' || !flowGovernance) {
-      return;
-    }
-
-    const repository = this.host.getCurrentRepository();
-    const settings = repository ? this.resolveSettings(repository) : undefined;
-    this.host.setCurrentState({
-      ...currentState,
-      flowGovernance: applyFlowGovernanceOptionsUpdate(flowGovernance, options)
-    });
-    this.host.postCurrentState();
-
-    if (
-      !repository
-      || options.enabled === undefined
-    ) {
-      return;
-    }
-
-    const result = await this.configPersistence.enqueue(
-      repository.rootUri.fsPath,
-      settings,
-      options
-    );
-    if (!result.ok) {
-      void vscode.window.showWarningMessage(
-        `Could not update Flow Governance config: ${result.issue.message}`
-      );
-      return;
-    }
-    if (result.created) {
-      try {
-        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(result.path));
-        await vscode.window.showTextDocument(document, { preview: false });
-      } catch (error) {
-        void vscode.window.showWarningMessage(
-          `Flow Governance config was created but could not be opened: ${getErrorMessage(error)}`
-        );
-      }
-    }
+  updateOptions(options: FlowGovernanceOptionsUpdate): Promise<void> {
+    return this.optionsWorkflow.updateOptions(options);
   }
 
   async startBranch(
@@ -258,8 +220,4 @@ export class RevisionGraphFlowGovernanceWorkflow {
     }
   }
 
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

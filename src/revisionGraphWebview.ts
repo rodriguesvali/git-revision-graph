@@ -193,9 +193,10 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
           <span>Show Minimap</span>
         </label>
         <div class="view-options-section flow-governance-options" id="flowGovernanceOptions" hidden>
-          <label for="flowGovernanceEnabledToggle">
+          <label for="flowGovernanceEnabledToggle" title="Save Flow Governance activation in the repository configuration file.">
             <input id="flowGovernanceEnabledToggle" type="checkbox" />
             <span>Flow Governance</span>
+            <span id="flowGovernanceSaveStatus" role="status" aria-live="polite"></span>
           </label>
         </div>
       </div>

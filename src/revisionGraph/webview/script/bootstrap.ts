@@ -1141,14 +1141,14 @@ const VIEWPORT_PADDING_LEFT = 18;
     function syncFlowGovernanceControls(
       flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
     ) {
-      const isActive = isFlowGovernanceActive(flowGovernance);
       if (flowGovernanceOptions) {
         flowGovernanceOptions.hidden = false;
       }
 
       if (flowGovernanceEnabledToggle) {
         flowGovernanceEnabledToggle.checked = flowGovernance?.enabled === true;
-        flowGovernanceEnabledToggle.disabled = !hasFlowGovernanceState(flowGovernance);
+        flowGovernanceEnabledToggle.disabled = !hasFlowGovernanceState(flowGovernance) || flowGovernance?.saving === true;
+        syncRevisionGraphWebviewFlowSavingStatus(flowGovernance?.saving === true);
       }
     }
 

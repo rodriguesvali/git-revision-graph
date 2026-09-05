@@ -75,6 +75,7 @@ export interface FlowBranchInfo {
 }
 
 export interface FlowGovernanceViewState {
+  readonly saving?: boolean;
   readonly enabled: boolean;
   readonly configSource: FlowConfigSource;
   readonly diagnostics: readonly FlowDiagnostic[];

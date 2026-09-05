@@ -91,8 +91,9 @@ replacing normal Git Revision Graph behavior.
   GitHub Copilot language model.
 
 Create the repository configuration with **Create Flow Governance Config**, or enable Flow
-Governance from the graph's **View** menu. A missing or invalid configuration never blocks the
-standard graph.
+Governance from the graph's **View** menu. Activation is saved in the repository configuration file;
+the toggle shows **Saving…** and confirms the saved value when the update completes. A missing or
+invalid configuration never blocks the standard graph.
 
 ## Quick Start
 

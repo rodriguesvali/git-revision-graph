@@ -12,7 +12,8 @@ interface RevisionGraphWebviewViewOptionsToolbarControls {
 function syncRevisionGraphWebviewViewOptionsToolbarUi(
   controls: RevisionGraphWebviewViewOptionsToolbarControls,
   toolbarBusy: boolean,
-  hasFlowGovernanceState: boolean
+  hasFlowGovernanceState: boolean,
+  flowGovernanceSaving = false
 ): void {
   for (const control of [
     controls.showTagsToggle,
@@ -28,6 +29,11 @@ function syncRevisionGraphWebviewViewOptionsToolbarUi(
     }
   }
   if (controls.flowGovernanceEnabledToggle !== null) {
-    controls.flowGovernanceEnabledToggle.disabled = toolbarBusy || !hasFlowGovernanceState;
+    controls.flowGovernanceEnabledToggle.disabled = toolbarBusy || !hasFlowGovernanceState || flowGovernanceSaving;
   }
+}
+
+function syncRevisionGraphWebviewFlowSavingStatus(saving: boolean): void {
+  const status = document.getElementById('flowGovernanceSaveStatus');
+  if (status) status.textContent = saving ? 'Saving…' : '';
 }
