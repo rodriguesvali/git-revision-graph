@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Complete creation forms after repository refresh replaces the Git API wrapper, fixing stuck
+  Processing after publication cancellation. Verify upstream state before reporting publication.
+
 - Keep keyboard focus within branch and equalization dialogs, skip hidden or disabled controls,
   preserve focus during processing, and restore a usable control when closing.
 

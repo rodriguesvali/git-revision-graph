@@ -5,6 +5,13 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Maintainer-reported `1.7.1` regression: fixed Flow form completion after same-path Git API wrapper
+  replacement during refresh, including optional publication cancellation. Publication feedback now
+  checks upstream state instead of assuming a resolved push means publication succeeded.
+  See `project-context/2.build/features/1.7.1-flow-governance-publication-cancel.md`.
+  `npm test` passed 917 tests including build and quality gates; diff checks and Graphify update passed.
+  The reported Extension Development Host scenario needs retesting.
+
 - Sixth `1.7.1` increment: Flow branch/equalization dialogs contain keyboard focus, restore a usable
   control on close, and keep focus on the dialog during processing. Repeated submissions cannot
   re-enable the AI button while processing. See

@@ -1,3 +1,4 @@
+import { isSameRepositoryPath } from '../../repositorySelection';
 import type { Repository } from '../../git';
 import { runGuardedRepositoryMutation } from '../../repositoryMutationCoordinator';
 import { findKnownFlowBranchNameCollision } from './flowBranchNameCollision';
@@ -94,6 +95,6 @@ export class FlowFormWorkflow {
   }
 
   private isCurrent(repository: Repository): boolean {
-    return !this.disposed && this.host.getCurrentRepository() === repository;
+    return !this.disposed && isSameRepositoryPath(this.host.getCurrentRepository(), repository);
   }
 }

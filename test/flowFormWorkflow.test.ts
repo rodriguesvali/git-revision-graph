@@ -11,7 +11,7 @@ import { createRepository } from './fakes';
 import type { RefActionServices } from '../src/refActions';
 import type { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
-for (const scenario of ['success', 'retry', 'partial', 'switch', 'dispose', 'disabled', 'rejected'] as const) {
+for (const scenario of ['success', 'retry', 'partial', 'refresh', 'refresh-partial', 'switch', 'dispose', 'disabled', 'rejected'] as const) {
   test(`Flow form host reports ${scenario} with request identity and repository isolation`, async (t) => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'flow-form-'));
     t.after(() => rm(root, { recursive: true, force: true }));
@@ -34,10 +34,11 @@ for (const scenario of ['success', 'retry', 'partial', 'switch', 'dispose', 'dis
       equalize: prepareFlowEqualizationBranch,
       async startBranch(_repository, _options, services) {
         called = true;
+        if (scenario === 'refresh' || scenario === 'refresh-partial') repository = createRepository({ root });
         if (scenario === 'switch') repository = createRepository({ root: '/other' });
         if (scenario === 'dispose') workflow.dispose();
         if (scenario === 'retry' || scenario === 'partial') await services.ui.showErrorMessage('Keep the entered name and description');
-        return scenario === 'partial' ? 'partial' : scenario === 'retry' ? 'retry' : 'success';
+        return scenario === 'partial' || scenario === 'refresh-partial' ? 'partial' : scenario === 'retry' ? 'retry' : 'success';
       }
     });
     const request = { type: 'submit-flow-form', requestId: 7, repositoryPath: root, action: {
@@ -51,7 +52,7 @@ for (const scenario of ['success', 'retry', 'partial', 'switch', 'dispose', 'dis
       const result = results[0] as RevisionGraphProtocol.FlowFormResult;
       assert.equal(result.requestId, 7);
       assert.equal(result.repositoryPath, root);
-      assert.equal(result.status, scenario === 'success' ? 'success' : scenario === 'partial' ? 'partial' : 'retry');
+      assert.equal(result.status, scenario === 'success' || scenario === 'refresh' ? 'success' : scenario === 'partial' || scenario === 'refresh-partial' ? 'partial' : 'retry');
       if (scenario === 'partial') assert.match(result.message, /already have been created/);
       if (scenario === 'retry') assert.match(result.message, /Keep the entered name/);
     }

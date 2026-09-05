@@ -747,6 +747,9 @@ test('Flow Governance refuses any flow branch without a description before mutat
 
 test('Flow Governance offers to publish a newly created branch and sets upstream', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
+  const getBranch = repository.getBranch.bind(repository);
+  repository.getBranch = async (name) => repository.calls.push.length
+    ? createHead(name, 0, 0, { remote: 'origin', name }) : getBranch(name);
   const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
   const informationMessages: string[] = [];
   const services = createReleaseServices({
@@ -1146,4 +1149,28 @@ function createReleaseServices(options: {
       return fsPath;
     }
   };
+}
+
+for (const outcome of ['cancel-fork', 'fork', 'unknown'] as const) {
+  test(`Flow creation completes with truthful publication feedback after ${outcome}`, async () => {
+    const repository = createRepository({ root: '/workspace/repo' });
+    const getBranch = repository.getBranch.bind(repository);
+    repository.getBranch = async (name) => {
+      if (!repository.calls.push.length) return getBranch(name);
+      if (outcome === 'unknown') throw new Error('Could not read branch');
+      return outcome === 'fork' ? createHead(name, 0, 0, { remote: 'fork', name }) : createHead(name);
+    };
+    const informationMessages: string[] = [];
+    const status = await startFlowBranch(repository, {
+      kind: 'release', sourceBranch: 'main', name: '2.0', description: 'Release', config: DEFAULT_FLOW_CONFIG
+    }, createReleaseServices({ confirmResult: true, remoteNames: ['origin'], informationMessages }), {
+      async setDescription() {}
+    });
+    assert.equal(status, 'success', 'local creation is complete even if optional publication was cancelled');
+    assert.equal(repository.calls.createBranch.length, 1);
+    assert.equal(repository.calls.push.length, 1);
+    assert.deepEqual(repository.calls.deleteBranch, []);
+    assert.match(informationMessages[0], outcome === 'fork' ? /published to fork\/release\/2.0/ : /created locally.*publication was not confirmed/);
+    assert.doesNotMatch(informationMessages[0], /published to origin/);
+  });
 }

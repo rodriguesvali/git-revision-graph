@@ -200,9 +200,7 @@ async function offerFlowBranchPublication(
     }
 
     await repository.push(remoteName, branchName, true);
-    services.ui.showInformationMessage(
-      `${branchKindLabel} branch ${branchName} was created and published to ${remoteName}/${branchName}.`
-    );
+    services.ui.showInformationMessage(await describeFlowPublicationOutcome(repository, branchName, branchKindLabel));
     return true;
   } catch (error) {
     const operationMessage = `${branchKindLabel} branch ${branchName} was created locally, but could not be published.`;
@@ -256,4 +254,16 @@ function getFlowBranchKindLabel(kind: FlowStartBranchKind): string {
     return 'Task';
   }
   return kind === 'bug' ? 'Bug' : 'Hotfix';
+}
+
+async function describeFlowPublicationOutcome(repository: Repository, branchName: string, kind: string): Promise<string> {
+  // vscode.git push handlers can resolve normally after the user cancels a fork offer.
+  try {
+    const branch = await repository.getBranch(branchName);
+    if (branch.upstream && branch.ahead === 0) {
+      return `${kind} branch ${branchName} was created and published to ${branch.upstream.remote}/${branch.upstream.name}.`;
+    }
+  } catch { /* Creation succeeded; an unavailable publication check must not strand the form. */ }
+  return `${kind} branch ${branchName} was created locally. Remote publication was not confirmed. `
+    + 'Review Source Control before publishing the existing branch.';
 }
