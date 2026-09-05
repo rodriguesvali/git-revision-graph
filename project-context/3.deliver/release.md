@@ -1,11 +1,16 @@
 # Release Readiness
 
-Status: `1.7.0` Marketplace publication complete and independently verified; source tag pending
-Last consolidated: 2026-09-04
+Status: `1.7.1` development cycle opened; release verification and publication pending
+Last consolidated: 2026-09-05
 
 ## Current State
 
-- Current package version: `1.7.0` in `package.json` and the root `package-lock.json`.
+- Development cycle `1.7.1` opened on 2026-09-05 with explicit maintainer approval.
+  This change aligns version metadata only; Flow Governance UX improvements remain proposed.
+  Packaging, Marketplace publication, and source tagging have not been performed for this cycle.
+  Before publication, rollback is limited to reverting this metadata and cycle-opening entry.
+
+- Current package version: `1.7.1` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.7.0`, confirmed by the maintainer and
   independently verified in the public catalog on 2026-09-04 at 12:04:33 UTC.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
