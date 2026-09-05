@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Keep Flow previews visible while typing, update after a brief pause, and reserve stable preview
+  space so loading and validation messages do not move the form fields.
+
 - Complete creation forms after repository refresh replaces the Git API wrapper, fixing stuck
   Processing after publication cancellation. Verify upstream state before reporting publication.
 

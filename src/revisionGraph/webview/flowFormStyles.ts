@@ -11,7 +11,9 @@ export function renderRevisionGraphFlowFormStyles(): string {
     .flow-form-preview {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-      max-height: 160px;
+      height: 120px;
+      box-sizing: border-box;
+      scrollbar-gutter: stable;
       overflow-y: auto;
       padding: 10px;
       border: 1px solid var(--vscode-panel-border);

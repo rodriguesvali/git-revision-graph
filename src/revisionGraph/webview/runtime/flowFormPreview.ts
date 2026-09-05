@@ -20,6 +20,7 @@ function createRevisionGraphFlowPreviewController(
     timer = undefined;
     requestId = 0;
     key = '';
+    element?.removeAttribute('aria-busy');
     element = undefined;
   }
   return {
@@ -27,23 +28,26 @@ function createRevisionGraphFlowPreviewController(
       const nextRepository = getRepositoryPath();
       const nextKey = JSON.stringify([nextRepository, action]);
       if (key === nextKey && element === nextElement) return;
+      const retainPreview = element === nextElement && repositoryPath === nextRepository;
       reset();
       key = nextKey;
       element = nextElement;
       repositoryPath = nextRepository;
       requestId = ++nextFlowPreviewRequestId;
-      element.textContent = 'Loading operation preview…';
+      if (!retainPreview) element.textContent = 'Loading operation preview…';
+      element.setAttribute('aria-busy', 'true');
       const id = requestId;
       timer = window.setTimeout(() => {
         if (requestId === id && repositoryPath && repositoryPath === getRepositoryPath()) {
           postMessage({ type: 'preview-flow-form', requestId: id, repositoryPath, action });
         }
-      }, 150);
+      }, 350);
     },
     receive(message): void {
       if (!element || message.requestId !== requestId || message.repositoryPath !== repositoryPath
         || message.repositoryPath !== getRepositoryPath()) return;
       element.textContent = message.text;
+      element.setAttribute('aria-busy', 'false');
     },
     reset
   };

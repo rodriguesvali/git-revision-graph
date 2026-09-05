@@ -5,6 +5,12 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- `1.7.1` typing feedback correction: preserve the existing Flow preview during edits, debounce at
+  350 ms, and reserve stable preview space to prevent form movement. See
+  `project-context/2.build/features/1.7.1-flow-governance-stable-preview.md`.
+  `npm test` passed 917 tests including build and quality gates; diff checks and Graphify update passed.
+  Visual retest of the maintainer scenario remains pending.
+
 - Maintainer-reported `1.7.1` regression: fixed Flow form completion after same-path Git API wrapper
   replacement during refresh, including optional publication cancellation. Publication feedback now
   checks upstream state instead of assuming a resolved push means publication succeeded.
