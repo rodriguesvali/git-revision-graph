@@ -1106,6 +1106,8 @@ const VIEWPORT_PADDING_LEFT = 18;
         showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
       syncFlowGovernanceControls(state.flowGovernance || null);
+
+      syncRevisionGraphWebviewFlowConfigUi(state, (message) => vscode.postMessage(message));
       syncRangeFilter(state.projectionOptions.revisionRange);
       syncDescendantFilter(state.projectionOptions.descendantFocus);
       syncViewOptionsButton();
@@ -1138,9 +1140,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       return hasFlowGovernanceState(flowGovernance) && flowGovernance.enabled === true;
     }
 
-    function syncFlowGovernanceControls(
-      flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance
-    ) {
+    function syncFlowGovernanceControls(flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance) {
       if (flowGovernanceOptions) {
         flowGovernanceOptions.hidden = false;
       }

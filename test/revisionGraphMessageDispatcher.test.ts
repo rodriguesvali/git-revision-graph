@@ -4,6 +4,21 @@ import assert from 'node:assert/strict';
 import { RevisionGraphMessageDispatcher } from '../src/revisionGraph/messageDispatcher';
 import { RevisionGraphMessage, RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('configuration recovery dispatches for a disabled current flow but rejects a stale click', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const state = { ...createReadyRevisionGraphState(), flowGovernance: {
+    enabled: false, configSource: 'invalid' as const, diagnostics: [], branchKinds: [], references: []
+  } };
+  const dispatched: RevisionGraphMessage[] = [];
+  for (const repositoryPath of [state.repositoryPath, '/stale']) {
+    await dispatcher.dispatch({ type: 'open-flow-config', repositoryPath }, {
+      currentState: state, currentRepositoryPath: state.repositoryPath,
+      async handleMessage(message) { dispatched.push(message); }
+    });
+  }
+  assert.deepEqual(dispatched, [{ type: 'open-flow-config', repositoryPath: state.repositoryPath }]);
+});
+
 test('RevisionGraphMessageDispatcher dispatches only valid messages allowed for the current state and repository', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
   const dispatchedMessages: RevisionGraphMessage[] = [];

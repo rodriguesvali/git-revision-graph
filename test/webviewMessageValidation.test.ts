@@ -15,6 +15,23 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Flow configuration recovery validates and scopes the requested repository', () => {
+  for (const repositoryPath of [undefined, '', 42, 'x'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)]) {
+    assert.equal(validateRevisionGraphMessage({ type: 'open-flow-config', repositoryPath }), undefined);
+  }
+  const message = { type: 'open-flow-config' as const, repositoryPath: '/workspace/repo' };
+  assert.deepEqual(validateRevisionGraphMessage({ ...message, configPath: '/untrusted/path' }), message);
+  const state = { ...createReadyRevisionGraphState(), flowGovernance: {
+    enabled: false, configSource: 'invalid' as const, diagnostics: [], branchKinds: [], references: []
+  } };
+  assert.equal(isRevisionGraphMessageAllowedForState(message, state), true);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...message, repositoryPath: '/other' }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, flowGovernance: { ...state.flowGovernance, saving: true } }), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/other'), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, { ...state, loading: true }, state.repositoryPath), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, { ...state, viewMode: 'empty' }, state.repositoryPath), false);
+});
+
 test('validateRevisionGraphMessage rejects malformed graph messages', () => {
   assert.equal(validateRevisionGraphMessage(undefined), undefined);
   assert.equal(validateRevisionGraphMessage({}), undefined);

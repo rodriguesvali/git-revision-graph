@@ -198,6 +198,9 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
             <span>Flow Governance</span>
             <span id="flowGovernanceSaveStatus" role="status" aria-live="polite"></span>
           </label>
+          <div id="flowConfigStatus" class="flow-config-status" role="status" aria-live="polite"></div>
+          <div id="flowConfigDetails" class="flow-config-details"></div>
+          <button id="flowConfigOpenButton" class="flow-dialog-button" type="button" hidden>Open Configuration</button>
         </div>
       </div>
     </div>

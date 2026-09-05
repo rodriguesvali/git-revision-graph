@@ -1660,6 +1660,31 @@ test('renders Flow Governance badges immediately after re-enabling without reope
   assert.match(nodeLayer.innerHTML, /flow-badge flow-kind-main/);
 });
 
+test('Flow configuration diagnostics are safe text and recovery follows the displayed repository', () => {
+  const runtime = createWebviewRuntime();
+  const status = runtime.elements.get('flowConfigStatus')!;
+  const details = runtime.elements.get('flowConfigDetails')!;
+  const button = runtime.elements.get('flowConfigOpenButton')!;
+  const flow = { enabled: false, configSource: 'invalid', diagnostics: [
+    { code: 'invalid-config', message: 'patterns.task: <img src=x onerror=alert(1)>' }
+  ], branchKinds: [], references: [] };
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ repositoryPath: '/repo/a', flowGovernance: flow }) });
+  assert.match(status.textContent, /Configuration error/);
+  assert.match(details.textContent, /<img/);
+  assert.equal(details.innerHTML, '');
+  assert.equal(button.hidden, false);
+  button.onclick?.();
+  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'open-flow-config', repositoryPath: '/repo/a' });
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ repositoryPath: '/repo/b', flowGovernance: { ...flow, configSource: 'repository', diagnostics: [] } }) });
+  assert.match(status.textContent, /Disabled/);
+  assert.equal(details.textContent, '');
+  button.onclick?.();
+  assert.equal(runtime.postedMessages.at(-1).repositoryPath, '/repo/b');
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ flowGovernance: { ...flow, configSource: 'defaults', diagnostics: [] } }) });
+  assert.match(status.textContent, /No repository configuration/);
+  assert.equal(button.hidden, true);
+});
+
 test('Flow Governance saving disables the toggle and suppresses duplicate submissions', () => {
   const runtime = createWebviewRuntime();
   const flowGovernance = {
@@ -3367,6 +3392,7 @@ function createWebviewRuntime() {
     value = '';
     textContent = '';
     title = '';
+    onclick: (() => void) | null = null;
     offsetWidth = 120;
     offsetHeight = 40;
     clientWidth = 1200;
@@ -3472,6 +3498,9 @@ function createWebviewRuntime() {
     'showMinimapToggle',
     'flowGovernanceOptions',
     'flowGovernanceEnabledToggle',
+    'flowConfigStatus',
+    'flowConfigDetails',
+    'flowConfigOpenButton',
     'searchButton',
     'searchButtonBadge',
     'searchPanel',

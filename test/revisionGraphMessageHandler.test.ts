@@ -10,6 +10,15 @@ import {
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 import { RemoteTagPublicationRequestContext } from '../src/revisionGraph/remoteTagState';
 
+test('Flow configuration recovery is routed through the host with its repository identity', async () => {
+  const opened: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async openFlowConfig(repositoryPath) { opened.push(repositoryPath); }
+  }));
+  await handler.handleMessage({ type: 'open-flow-config', repositoryPath: '/workspace/repo' });
+  assert.deepEqual(opened, ['/workspace/repo']);
+});
+
 test('RevisionGraphMessageHandler rehydrates the webview for ready messages', async () => {
   let rehydrated = false;
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -457,6 +466,7 @@ function createHost(
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},
+    async openFlowConfig() {},
     async updateFlowGovernanceOptions() {},
     async prepareFlowBranchStart() {},
     async startFlowBranch() {},

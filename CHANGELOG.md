@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Show configuration status and validation details in View, offer repository-scoped Open Configuration,
+  and explain disabled or invalid configuration when a governed action is unavailable.
+
 - Confirm toggle activation from the saved configuration, show saving feedback, prevent duplicate
   submissions, and recover the control after write failures. Ignore completions for another repository
   or a disposed graph and clarify that activation is stored in the repository configuration file.

@@ -63,6 +63,7 @@ declare namespace RevisionGraphProtocol {
     | { readonly type: 'choose-repository' }
     | { readonly type: 'abort-merge' }
     | { readonly type: 'set-projection-options'; readonly options: ProjectionOptionsUpdate }
+    | { readonly type: 'open-flow-config'; readonly repositoryPath: string }
     | { readonly type: 'set-flow-governance-options'; readonly options: FlowGovernanceOptionsUpdate }
     | {
       readonly type: 'start-flow-branch';

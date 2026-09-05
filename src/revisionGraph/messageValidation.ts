@@ -44,6 +44,8 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'choose-repository': () => ({ type: 'choose-repository' }),
   'abort-merge': () => ({ type: 'abort-merge' }),
   'set-projection-options': validateSetProjectionOptionsMessage,
+  'open-flow-config': (message) => isBoundedNonEmptyString(message.repositoryPath)
+    ? { type: 'open-flow-config', repositoryPath: message.repositoryPath } : undefined,
   'set-flow-governance-options': validateSetFlowGovernanceOptionsMessage,
   'start-flow-branch': validateStartFlowBranchMessage,
   'prepare-flow-equalization': validatePrepareFlowEqualizationMessage,

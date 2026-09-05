@@ -5,6 +5,11 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Second `1.7.1` increment: Flow Governance configuration diagnostics and repository-scoped recovery
+  are implemented. See `project-context/2.build/features/1.7.1-flow-governance-config-diagnostics.md`;
+  build and automated verification passed (863 tests in the final compiled suite, quality and diff
+  checks passed). Graphify is updated; manual Extension Development Host smoke remains pending.
+
 - Development cycle `1.7.1` opened on 2026-09-05 with explicit maintainer approval.
   The first Flow Governance UX increment implements persisted toggle consistency and saving feedback.
   See `project-context/2.build/features/1.7.1-flow-governance-toggle-consistency.md`; automated

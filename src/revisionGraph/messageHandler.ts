@@ -37,6 +37,7 @@ export interface RevisionGraphMessageHandlerHost
   openCommitOnRemote(repository: Repository, commitHash: string): Promise<void>;
   runFetchCurrentRepository(): Promise<void>;
   postCurrentState(): void;
+  openFlowConfig(repositoryPath: string): Promise<void>;
   updateFlowGovernanceOptions(options: FlowGovernanceOptionsUpdate): Promise<void>;
   prepareFlowBranchStart(
     branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix',
@@ -110,6 +111,7 @@ export class RevisionGraphMessageHandler {
       'set-projection-options': async (message) => {
         await this.viewStateWorkflow.setProjectionOptions(message.options);
       },
+      'open-flow-config': async (message) => { await this.host.openFlowConfig(message.repositoryPath); },
       'set-flow-governance-options': async (message) => {
         await this.host.updateFlowGovernanceOptions(message.options);
       },

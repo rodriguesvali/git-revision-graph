@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { normalizeFlowConfig } from '../src/revisionGraph/flow/flowConfig';
 
 import {
   FLOW_GOVERNANCE_UNAVAILABLE_MESSAGE,
@@ -35,3 +36,13 @@ test('missing Flow Governance configuration blocks the action with an awaited mo
   dismissWarning?.();
   await warningPromise;
 });
+
+for (const invalid of [false, true]) {
+  test(`Flow unavailable warning explains ${invalid ? 'invalid configuration' : 'disabled activation'}`, async () => {
+    const messages: string[] = [];
+    await showFlowGovernanceUnavailableWarning({
+      async showWarningMessage(message) { messages.push(message); }
+    }, normalizeFlowConfig({ schemaVersion: invalid ? 99 : 1, enabled: false }));
+    assert.match(messages[0], invalid ? /schemaVersion.*Open Configuration/ : /disabled.*View menu/);
+  });
+}

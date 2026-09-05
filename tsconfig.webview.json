@@ -61,6 +61,7 @@
     "src/revisionGraph/webview/runtime/basicToolbarUi.ts",
     "src/revisionGraph/webview/runtime/layoutPreferenceUi.ts",
     "src/revisionGraph/webview/runtime/viewOptionsToolbarUi.ts",
+    "src/revisionGraph/webview/runtime/flowConfigUi.ts",
     "src/revisionGraph/webview/runtime/centerHeadToolbarUi.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",

@@ -93,7 +93,9 @@ replacing normal Git Revision Graph behavior.
 Create the repository configuration with **Create Flow Governance Config**, or enable Flow
 Governance from the graph's **View** menu. Activation is saved in the repository configuration file;
 the toggle shows **Saving…** and confirms the saved value when the update completes. A missing or
-invalid configuration never blocks the standard graph.
+invalid configuration never blocks the standard graph. The **View** menu shows configuration status
+and validation details; use **Open Configuration** to inspect the file, then reload the graph after
+correcting it.
 
 ## Quick Start
 

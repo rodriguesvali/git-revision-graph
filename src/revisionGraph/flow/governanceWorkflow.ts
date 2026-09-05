@@ -12,6 +12,8 @@ import type {
   RevisionGraphViewState
 } from '../../revisionGraphTypes';
 import { createRevisionGraphShowFlowBranchFormMessage } from '../hostMessages';
+import { openFlowConfigForRecovery } from './flowConfigRecovery';
+import { DEFAULT_FLOW_CONFIG_PATH } from './flowConfig';
 import { resolveFlowConfigForRepository } from './flowConfig';
 import { FlowConfigPersistenceCoordinator } from './flowConfigPersistenceCoordinator';
 import { showFlowGovernanceUnavailableWarning } from './flowAvailabilityWarning';
@@ -45,6 +47,7 @@ export interface RevisionGraphFlowGovernanceWorkflowHost {
 }
 
 export class RevisionGraphFlowGovernanceWorkflow {
+  private disposed = false;
   private readonly optionsWorkflow: FlowGovernanceOptionsWorkflow;
   private readonly aiTextWorkflow: RevisionGraphFlowAiTextWorkflow;
 
@@ -61,6 +64,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.optionsWorkflow.dispose();
     this.aiTextWorkflow.dispose();
   }
@@ -88,6 +92,20 @@ export class RevisionGraphFlowGovernanceWorkflow {
     };
   }
 
+  async openConfig(repositoryPath: string): Promise<void> {
+    const repository = this.host.getCurrentRepository();
+    if (!repository || repository.rootUri.fsPath !== repositoryPath || this.disposed) return;
+    const isCurrent = () => !this.disposed && this.host.getCurrentRepository() === repository;
+    await openFlowConfigForRecovery(repositoryPath, this.resolveSettings(repository).configPath ?? DEFAULT_FLOW_CONFIG_PATH, {
+      isCurrent,
+      warn: (message) => { void vscode.window.showWarningMessage(message); },
+      openDocument: async (filePath) => {
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+        if (isCurrent()) await vscode.window.showTextDocument(document, { preview: false });
+      }
+    });
+  }
+
   updateOptions(options: FlowGovernanceOptionsUpdate): Promise<void> {
     return this.optionsWorkflow.updateOptions(options);
   }
@@ -108,7 +126,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.resolveSettings(repository)
     );
     if (!flowConfig.ok || !flowConfig.config.enabled) {
-      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui, flowConfig);
       return;
     }
 
@@ -147,7 +165,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.resolveSettings(repository)
     );
     if (!flowConfig.ok || !flowConfig.config.enabled) {
-      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui, flowConfig);
       return;
     }
 
@@ -191,7 +209,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
       this.resolveSettings(repository)
     );
     if (!flowConfig.ok || !flowConfig.config.enabled) {
-      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui);
+      await showFlowGovernanceUnavailableWarning(this.host.actionServices.ui, flowConfig);
       return;
     }
 
