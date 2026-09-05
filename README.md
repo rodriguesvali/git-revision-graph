@@ -91,6 +91,8 @@ replacing normal Git Revision Graph behavior.
   branch or equalization forms. Names follow the repository configuration. Incomplete or invalid names
   show a compatible example or the required pattern. Previews identify conflicts with known local and
   remote-tracking branches; submission rechecks availability.
+- Navigate branch and equalization dialogs with Tab/Shift+Tab. Escape closes idle forms; closing
+  restores focus to the previous control or View when that control is no longer available.
 - Keep branch and equalization form input after a failed operation so it can be corrected and retried.
   If a branch was already created before a later step failed, review its state before starting another operation.
 - Improve branch descriptions only when the user explicitly requests assistance from an available

@@ -120,10 +120,12 @@ function createRevisionGraphWebviewFlowBranchDialogController(
   let target: RevisionGraphWebviewTarget | null = null;
   let branchKind: RevisionGraphWebviewFlowBranchKind | null = null;
   let pendingRequestId: number | undefined;
-  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close);
+  const focus = createRevisionGraphFlowDialogFocus(close);
+  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close, focus.focus);
 
   function show(nextTarget: RevisionGraphWebviewTarget, nextBranchKind: RevisionGraphWebviewFlowBranchKind): void {
     if (submission.isPending()) return;
+    focus.capture();
     dependencies.closeContextMenu();
     submission.reset();
     cancelPendingImprovement();
@@ -157,7 +159,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     dialog.backdrop.hidden = false;
     syncPreview();
     document.body.classList.add('flow-dialog-open');
-    window.setTimeout(() => (usesStructuredName ? dialog.taskDevInput : dialog.nameInput).focus(), 0);
+    focus.open(dialog.backdrop, usesStructuredName ? dialog.taskDevInput : dialog.nameInput);
   }
 
   function close(): void {
@@ -171,6 +173,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     target = null;
     branchKind = null;
     document.body.classList.remove('flow-dialog-open');
+    focus.close();
   }
 
   function showImprovementResult(
@@ -245,6 +248,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
 
   function submit(event: Event): void {
     event.preventDefault();
+    if (submission.isPending()) return;
     const dialog = ensureDialog();
     if (!target || !branchKind) {
       close();
@@ -386,17 +390,12 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     taskDev.input.addEventListener('input', handleBranchInput);
     shortName.input.addEventListener('input', handleBranchInput);
     descriptionInput.addEventListener('input', handleBranchInput);
-    form.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-      }
-    });
+    form.addEventListener('keydown', focus.keydown);
     form.addEventListener('submit', submit);
     return elements;
   }
 
-  return { show, close, reset: () => { submission.reset(); close(); }, showImprovementResult };
+  return { show, close, reset: () => { focus.discard(); submission.reset(); close(); }, showImprovementResult };
 }
 
 function createRevisionGraphWebviewFlowBranchTextField(

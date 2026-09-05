@@ -68,6 +68,7 @@
     "src/revisionGraph/webview/runtime/flowAiTextUi.ts",
     "src/revisionGraph/webview/runtime/flowFormPreview.ts",
     "src/revisionGraph/webview/runtime/flowFormSubmission.ts",
+    "src/revisionGraph/webview/runtime/flowDialogFocus.ts",
     "src/revisionGraph/webview/runtime/flowBranchForm.ts",
     "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts",
     "src/revisionGraph/webview/runtime/contextMenu.ts",

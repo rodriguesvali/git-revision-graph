@@ -37,7 +37,8 @@ interface RevisionGraphFlowSubmissionElements {
 
 function createRevisionGraphFlowSubmissionUi(
   getElements: () => RevisionGraphFlowSubmissionElements,
-  close: () => void
+  close: () => void,
+  focusWhilePending: () => void = () => {}
 ) {
   let pending = false;
   let blocked = false;
@@ -62,6 +63,7 @@ function createRevisionGraphFlowSubmissionUi(
       controls.forEach((control) => { control.disabled = true; });
       submitButton.textContent = 'Processing…';
       backdrop.setAttribute('aria-busy', 'true');
+      focusWhilePending();
       error.textContent = '';
       error.hidden = true;
       let result: RevisionGraphFlowFormResponse;

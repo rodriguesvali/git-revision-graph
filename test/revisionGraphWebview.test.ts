@@ -1699,6 +1699,8 @@ for (const kind of ['branch', 'equalization'] as const) {
       : runtime.context.createRevisionGraphWebviewFlowEqualizationDialogController({
         preview, closeContextMenu() {}, getOrigins: () => ['main'], prepare: submit
       });
+    const opener = runtime.elements.get('viewOptionsButton')!;
+    opener.focus();
     controller.show({ name: 'release/2', kind: 'branch' }, 'feature');
     const prefix = kind === 'branch' ? 'flowBranch' : 'flowEqualization';
     const backdrop = runtime.createdElements.find((element) => element.id === prefix + 'Dialog')!;
@@ -1716,6 +1718,11 @@ for (const kind of ['branch', 'equalization'] as const) {
     assert.equal(completions.length, 1);
     assert.equal(backdrop.hidden, false);
     assert.equal(description.disabled, true);
+    assert.equal((globalThis as any).document.activeElement, form);
+    let trapped = false;
+    form.listeners.keydown[0]({ key: 'Tab', preventDefault() { trapped = true; }, stopPropagation() {} });
+    assert.equal(trapped, true);
+    assert.equal((globalThis as any).document.activeElement, form);
     controller.close();
     assert.equal(backdrop.hidden, false, 'Escape/close cannot discard an in-flight form');
     completions[0]({ status: 'retry', message: 'Branch already exists' });
@@ -1727,6 +1734,61 @@ for (const kind of ['branch', 'equalization'] as const) {
     submitEvent();
     completions[1]({ status: 'success', message: '' });
     await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(backdrop.hidden, true);
+    assert.equal((globalThis as any).document.activeElement, opener);
+  });
+}
+
+for (const kind of ['branch', 'equalization'] as const) {
+  test(`Flow ${kind} traps keyboard focus, skips hidden controls, restores focus and resets safely`, () => {
+    const runtime = createWebviewRuntime();
+    const preview = { update() {}, reset() {} };
+    const controller = kind === 'branch'
+      ? runtime.context.createRevisionGraphWebviewFlowBranchDialogController({
+        preview, closeContextMenu() {}, submit: async () => ({ status: 'success' }), improveBranchText() {}, cancelImprovement() {}
+      })
+      : runtime.context.createRevisionGraphWebviewFlowEqualizationDialogController({
+        preview, closeContextMenu() {}, getOrigins: () => ['main'], prepare: async () => ({ status: 'success' })
+      });
+    const opener = runtime.elements.get('reloadButton')!;
+    const active = () => (globalThis as any).document.activeElement;
+    opener.focus();
+    controller.show({ name: 'release/2', kind: 'branch' }, 'task');
+    const backdrop = runtime.createdElements.find((element) => element.id === (kind === 'branch' ? 'flowBranchDialog' : 'flowEqualizationDialog'))!;
+    const form = backdrop.children[0];
+    const first = runtime.createdElements.find((element) => element.id === (kind === 'branch' ? 'flowBranchTaskDevInput' : 'flowEqualizationOriginInput'))!;
+    const last = form.children.at(-1)!.children.at(-1)!;
+    assert.equal(active(), first);
+    function key(key: string, shiftKey = false): boolean {
+      let prevented = false;
+      let stopped = false;
+      form.listeners.keydown[0]({ key, shiftKey, preventDefault() { prevented = true; }, stopPropagation() { stopped = true; } });
+      assert.equal(stopped, true, 'dialog keystrokes must not trigger graph shortcuts');
+      return prevented;
+    }
+    assert.equal(key('Tab', true), true);
+    assert.equal(active(), last);
+    key('Tab');
+    assert.equal(active(), first);
+    assert.equal(key('Tab'), false, 'ordinary forward traversal remains native');
+    last.disabled = true;
+    key('Tab', true);
+    assert.equal(active(), form.children.at(-1)!.children[0], 'disabled submit is excluded');
+    assert.equal(key('Enter'), false, 'normal form submission is preserved');
+    key('Escape');
+    assert.equal(backdrop.hidden, true);
+    assert.equal(active(), opener);
+    controller.show({ name: 'release/2', kind: 'branch' }, 'feature');
+    opener.isConnected = false;
+    controller.close();
+    assert.equal(active(), runtime.elements.get('viewOptionsButton'), 'removed opener falls back to View');
+    opener.isConnected = true;
+    opener.focus();
+    controller.show({ name: 'release/2', kind: 'branch' }, 'package');
+    const outside = runtime.elements.get('scopeSelect')!;
+    outside.focus();
+    controller.reset();
+    assert.equal(active(), outside, 'repository reset must not steal focus');
     assert.equal(backdrop.hidden, true);
   });
 }
@@ -3527,9 +3589,19 @@ function createWebviewRuntime() {
     scrollTop = 0;
 
     readonly children: MockElement[] = [];
-    constructor(readonly id: string) {}
-    appendChild(child: MockElement): void { this.children.push(child); }
-    append(...children: MockElement[]): void { this.children.push(...children); }
+    parentElement: MockElement | null = null;
+    isConnected = true;
+    readonly tagName: string;
+    constructor(readonly id: string) { this.tagName = id.toUpperCase(); }
+    get tabIndex(): number { return Number(this.attributes.get('tabindex') ?? (['INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'].includes(this.tagName) ? 0 : -1)); }
+    set tabIndex(value: number) { this.attributes.set('tabindex', String(value)); }
+    matches(selector: string): boolean { return selector === ':disabled' && this.disabled; }
+    getClientRects(): unknown[] {
+      if (this.hidden || (this.parentElement && this.parentElement.getClientRects().length === 0)) return [];
+      return [{}];
+    }
+    appendChild(child: MockElement): void { child.parentElement = this; this.children.push(child); }
+    append(...children: MockElement[]): void { children.forEach((child) => this.appendChild(child)); }
 
     addEventListener(type: string, listener: (...args: any[]) => unknown): void {
       if (!this.listeners[type]) {
@@ -3570,8 +3642,11 @@ function createWebviewRuntime() {
       return null;
     }
 
-    querySelectorAll(): MockElement[] {
-      return this.children.flatMap((child) => [child, ...child.querySelectorAll()]);
+    querySelectorAll(selector?: string): MockElement[] {
+      const descendants = this.children.flatMap((child) => [child, ...child.querySelectorAll()]);
+      return selector === 'button, input, select, textarea, [tabindex]'
+        ? descendants.filter((child) => ['INPUT', 'BUTTON', 'TEXTAREA', 'SELECT'].includes(child.tagName) || child.attributes.has('tabindex'))
+        : descendants;
     }
 
     getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
@@ -3692,6 +3767,7 @@ function createWebviewRuntime() {
   const postedMessages: any[] = [];
   const context = {
     console,
+    HTMLElement: MockElement,
     window: windowObject,
     document,
     requestAnimationFrame: (callback: (timestamp: number) => void) => {

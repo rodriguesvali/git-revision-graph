@@ -14,6 +14,7 @@
     "src/revisionGraph/webview/runtime/contracts.d.ts",
     "src/revisionGraph/webview/runtime/flowFormPreview.ts",
     "src/revisionGraph/webview/runtime/flowFormSubmission.ts",
+    "src/revisionGraph/webview/runtime/flowDialogFocus.ts",
     "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts"
   ]
 }

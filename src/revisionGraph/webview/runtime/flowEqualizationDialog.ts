@@ -58,10 +58,12 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
 ): RevisionGraphWebviewFlowEqualizationDialogController {
   let elements: RevisionGraphWebviewFlowEqualizationDialogElements | null = null;
   let target: RevisionGraphWebviewTarget | null = null;
-  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close);
+  const focus = createRevisionGraphFlowDialogFocus(close);
+  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close, focus.focus);
 
   function show(nextTarget: RevisionGraphWebviewTarget): void {
     if (submission.isPending()) return;
+    focus.capture();
     dependencies.closeContextMenu();
     submission.reset();
     const dialog = ensureDialog();
@@ -88,7 +90,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     dialog.backdrop.hidden = false;
     syncPreview();
     document.body.classList.add('flow-dialog-open');
-    window.setTimeout(() => dialog.originSelect.focus(), 0);
+    focus.open(dialog.backdrop, dialog.originSelect);
   }
 
   function close(): void {
@@ -100,6 +102,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     elements.backdrop.hidden = true;
     target = null;
     document.body.classList.remove('flow-dialog-open');
+    focus.close();
   }
 
   function syncPreview(): void {
@@ -115,6 +118,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
 
   function submit(event: Event): void {
     event.preventDefault();
+    if (submission.isPending()) return;
     const dialog = ensureDialog();
     const originRefName = dialog.originSelect.value;
     const description = dialog.descriptionInput.value.trim();
@@ -223,15 +227,10 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     });
     originSelect.addEventListener('change', syncPreview);
     cancelButton.addEventListener('click', close);
-    form.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-      }
-    });
+    form.addEventListener('keydown', focus.keydown);
     form.addEventListener('submit', submit);
     return elements;
   }
 
-  return { show, close, reset: () => { submission.reset(); close(); } };
+  return { show, close, reset: () => { focus.discard(); submission.reset(); close(); } };
 }

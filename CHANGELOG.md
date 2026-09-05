@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Keep keyboard focus within branch and equalization dialogs, skip hidden or disabled controls,
+  preserve focus during processing, and restore a usable control when closing.
+
 - Show branch-name conflicts against known local and remote-tracking branches before submission,
   including case-only collisions. Offer configuration-compatible examples for incomplete or invalid names.
 

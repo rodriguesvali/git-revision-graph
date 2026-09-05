@@ -5,6 +5,14 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Sixth `1.7.1` increment: Flow branch/equalization dialogs contain keyboard focus, restore a usable
+  control on close, and keep focus on the dialog during processing. Repeated submissions cannot
+  re-enable the AI button while processing. See
+  `project-context/2.build/features/1.7.1-flow-governance-dialog-focus.md`.
+  `npm test` passed 912 tests including build and quality gates; diff checks and Graphify update passed.
+  Manual Extension Development Host smoke remains pending.
+  No version, dependency, packaging or publication changes.
+
 - Fifth `1.7.1` increment: previews identify known local and remote-tracking branch-name collisions
   and show configuration-compatible naming examples. See
   `project-context/2.build/features/1.7.1-flow-governance-early-name-validation.md`.
