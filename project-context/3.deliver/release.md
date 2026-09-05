@@ -5,6 +5,11 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Third `1.7.1` increment: Flow Governance branch/equalization form recovery is implemented. See
+  `project-context/2.build/features/1.7.1-flow-governance-form-recovery.md`. Focused tests and quality
+  checks passed; final `npm test` passed 887 tests including build and quality gates. Graphify and
+  diff checks completed; manual Extension Development Host smoke remains pending.
+
 - Second `1.7.1` increment: Flow Governance configuration diagnostics and repository-scoped recovery
   are implemented. See `project-context/2.build/features/1.7.1-flow-governance-config-diagnostics.md`;
   build and automated verification passed (863 tests in the final compiled suite, quality and diff

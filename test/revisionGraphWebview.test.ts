@@ -949,14 +949,14 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /descriptionText\.textContent = 'Description \*';/);
   assert.match(html, /descriptionInput\.required = true;/);
   assert.match(html, /descriptionInput\.setAttribute\('aria-required', 'true'\);/);
-  assert.match(html, /vscode\.postMessage\(createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)\);/);
+  assert.match(html, /flowFormBridge\.submit\(createRevisionGraphStartFlowBranchMessage\(target, branchKind, name, description\)\)/);
   assert.match(html, /function showFlowEqualizationForm\(target\)/);
   assert.match(html, /originText\.textContent = 'Origin branch \*';/);
   assert.match(html, /descriptionText\.textContent = 'Description \*';/);
   assert.match(html, /reference\.kind === 'main' \|\| reference\.kind === 'release'/);
   assert.match(html, /reference\.refName !== targetRefName/);
   assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\)/);
-  assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\) \{\s*vscode\.postMessage\(/s);
+  assert.match(html, /function postPrepareFlowEqualization\(targetRefName, originRefName, description\) \{\s*return flowFormBridge\.submit\(/s);
   assert.doesNotMatch(html, /postMessageWithLoading\(\s*createRevisionGraphPrepareFlowEqualizationMessage/s);
   assert.match(html, /context-separator/);
   assert.match(html, /function createRevisionGraphFocusRangeMessage\(base, compare\)/);
@@ -1683,6 +1683,93 @@ test('Flow configuration diagnostics are safe text and recovery follows the disp
   runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ flowGovernance: { ...flow, configSource: 'defaults', diagnostics: [] } }) });
   assert.match(status.textContent, /No repository configuration/);
   assert.equal(button.hidden, true);
+});
+
+for (const kind of ['branch', 'equalization'] as const) {
+  test(`Flow ${kind} form retains fields on failure, blocks duplicates, and closes only on success`, async () => {
+    const runtime = createWebviewRuntime();
+    const completions: Array<(result: { status: string; message: string }) => void> = [];
+    const submit = () => new Promise((resolve) => completions.push(resolve));
+    const controller = kind === 'branch'
+      ? runtime.context.createRevisionGraphWebviewFlowBranchDialogController({
+        closeContextMenu() {}, submit, improveBranchText() { return 1; }, cancelImprovement() {}
+      })
+      : runtime.context.createRevisionGraphWebviewFlowEqualizationDialogController({
+        closeContextMenu() {}, getOrigins: () => ['main'], prepare: submit
+      });
+    controller.show({ name: 'release/2', kind: 'branch' }, 'feature');
+    const prefix = kind === 'branch' ? 'flowBranch' : 'flowEqualization';
+    const backdrop = runtime.createdElements.find((element) => element.id === prefix + 'Dialog')!;
+    const form = backdrop.children[0];
+    const description = runtime.createdElements.find((element) => element.id === prefix + 'DescriptionInput')!;
+    const name = runtime.createdElements.find((element) => element.id === (kind === 'branch' ? 'flowBranchNameInput' : 'flowEqualizationOriginInput'))!;
+    name.value = kind === 'branch' ? 'payment' : 'main';
+    description.value = 'Preserve this description';
+    const submitEvent = () => form.listeners.submit[0]({ preventDefault() {} });
+    submitEvent(); submitEvent();
+    assert.equal(completions.length, 1);
+    assert.equal(backdrop.hidden, false);
+    assert.equal(description.disabled, true);
+    controller.close();
+    assert.equal(backdrop.hidden, false, 'Escape/close cannot discard an in-flight form');
+    completions[0]({ status: 'retry', message: 'Branch already exists' });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(description.value, 'Preserve this description');
+    assert.equal(description.disabled, false);
+    assert.equal(backdrop.hidden, false);
+    assert.ok(runtime.createdElements.some((element) => element.textContent === 'Branch already exists'));
+    submitEvent();
+    completions[1]({ status: 'success', message: '' });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(backdrop.hidden, true);
+  });
+}
+
+test('partial Flow form completion retains data but blocks a second creation; reset ignores late results', async () => {
+  const runtime = createWebviewRuntime();
+  const error = runtime.elements.get('flowConfigDetails')!;
+  const button = runtime.elements.get('flowConfigOpenButton')!;
+  const input = { disabled: false, value: 'Keep me' };
+  const backdrop = { querySelectorAll: () => [button, input], setAttribute() {}, removeAttribute() {} };
+  let closed = false;
+  const ui = runtime.context.createRevisionGraphFlowSubmissionUi(() => ({ backdrop, submitButton: button, error }), () => { closed = true; });
+  await ui.run(async () => ({ status: 'partial', message: 'Branch created; resolve merge conflicts.' }));
+  assert.equal(button.disabled, true);
+  assert.equal(input.value, 'Keep me');
+  assert.equal(closed, false);
+  await ui.run(async () => { assert.fail('partial completion must not be retried'); });
+  ui.reset();
+  let finish!: (result: unknown) => void;
+  const pending = ui.run(() => new Promise((resolve) => { finish = resolve; }));
+  ui.reset();
+  finish({ status: 'success', message: '' });
+  await pending;
+  assert.equal(closed, false, 'late result must not close a newer form');
+});
+
+test('form result guards reject malformed status and correlation fields', () => {
+  const runtime = createWebviewRuntime();
+  const result = { type: 'flow-form-result', requestId: 1, repositoryPath: '/repo', status: 'retry', message: 'Keep draft' };
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(result), true);
+  for (const invalid of [{ ...result, requestId: 0 }, { ...result, requestId: 1.5 }, { ...result, status: 'done' }, { ...result, message: null }]) {
+    assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(invalid), false);
+  }
+});
+
+test('Flow form result bridge correlates requests and rejects stale repository results', async () => {
+  const runtime = createWebviewRuntime();
+  let repositoryPath = '/repo/a';
+  const messages: any[] = [];
+  const bridge = runtime.context.createRevisionGraphFlowFormBridge(() => repositoryPath, (message: unknown) => messages.push(message));
+  const pending = bridge.submit({ type: 'prepare-flow-equalization', targetRefName: 'release/2', originRefName: 'main', description: 'Keep me' });
+  let settled = false;
+  void pending.then(() => { settled = true; });
+  bridge.receive({ type: 'flow-form-result', requestId: messages[0].requestId, repositoryPath: '/other', status: 'success', message: '' });
+  await Promise.resolve();
+  assert.equal(settled, false);
+  repositoryPath = '/repo/b';
+  bridge.reset();
+  assert.equal((await pending).status, 'retry');
 });
 
 test('Flow Governance saving disables the toggle and suppresses duplicate submissions', () => {
@@ -3400,7 +3487,10 @@ function createWebviewRuntime() {
     scrollLeft = 0;
     scrollTop = 0;
 
+    readonly children: MockElement[] = [];
     constructor(readonly id: string) {}
+    appendChild(child: MockElement): void { this.children.push(child); }
+    append(...children: MockElement[]): void { this.children.push(...children); }
 
     addEventListener(type: string, listener: (...args: any[]) => unknown): void {
       if (!this.listeners[type]) {
@@ -3442,7 +3532,7 @@ function createWebviewRuntime() {
     }
 
     querySelectorAll(): MockElement[] {
-      return [];
+      return this.children.flatMap((child) => [child, ...child.querySelectorAll()]);
     }
 
     getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
@@ -3523,9 +3613,11 @@ function createWebviewRuntime() {
   const elements = new Map<string, MockElement>(ids.map((id) => [id, new MockElement(id)]));
   elements.get('viewControls')!.clientHeight = 56;
   const documentElement = new MockElement('documentElement');
+  const createdElements: MockElement[] = [];
   const document = {
     documentElement,
     body: {
+      appendChild() {},
       classList: {
         add: () => {},
         remove: () => {},
@@ -3542,11 +3634,14 @@ function createWebviewRuntime() {
       return [];
     },
     createElement(tagName: string) {
-      return new MockElement(tagName);
+      const element = new MockElement(tagName);
+      createdElements.push(element);
+      return element;
     }
   };
   const windowListeners: Record<string, Array<(...args: any[]) => unknown>> = {};
   const windowObject = {
+    setTimeout,
     addEventListener(type: string, listener: (...args: any[]) => unknown) {
       if (!windowListeners[type]) {
         windowListeners[type] = [];
@@ -3587,6 +3682,7 @@ function createWebviewRuntime() {
   return {
     context: runtimeApi,
     documentElement,
+    createdElements,
     elements,
     postedMessages,
     windowListeners

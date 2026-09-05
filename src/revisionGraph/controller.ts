@@ -280,13 +280,12 @@ export class RevisionGraphController implements vscode.Disposable {
       refresh: async (request) => {
         await this.refresh(request);
       },
-      runFetchCurrentRepository: async () => {
-        await this.runFetchCurrentRepository();
-      },
+      runFetchCurrentRepository: () => this.runFetchCurrentRepository(),
       postHostMessage: (message) => {
         this.postHostMessage(message);
       },
       postCurrentState: () => this.postCurrentState(),
+      submitFlowForm: (message) => this.flowGovernanceWorkflow.submitForm(message),
       openFlowConfig: (repositoryPath) => this.flowGovernanceWorkflow.openConfig(repositoryPath),
       updateFlowGovernanceOptions: (options) =>
         this.flowGovernanceWorkflow.updateOptions(options),
@@ -366,6 +365,7 @@ export class RevisionGraphController implements vscode.Disposable {
           () => this.messageDispatcher.dispatch(message, {
             currentState: this.currentState,
             currentRepositoryPath: this.currentRepository?.rootUri.fsPath,
+            rejectMessage: (message) => this.flowGovernanceWorkflow.rejectForm(message),
             handleMessage: async (validatedMessage) => {
               await this.messageHandler.handleMessage(validatedMessage);
             }

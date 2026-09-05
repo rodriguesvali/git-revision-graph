@@ -10,6 +10,16 @@ import {
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 import { RemoteTagPublicationRequestContext } from '../src/revisionGraph/remoteTagState';
 
+test('Flow form submission preserves request identity and awaits the host result', async () => {
+  const submissions: unknown[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({ async submitFlowForm(message) { submissions.push(message); } }));
+  const message = { type: 'submit-flow-form', requestId: 1, repositoryPath: '/workspace/repo', action: {
+    type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0', description: 'Release'
+  } } as const;
+  await handler.handleMessage(message);
+  assert.deepEqual(submissions, [message]);
+});
+
 test('Flow configuration recovery is routed through the host with its repository identity', async () => {
   const opened: string[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({
@@ -466,6 +476,7 @@ function createHost(
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},
+    async submitFlowForm() {},
     async openFlowConfig() {},
     async updateFlowGovernanceOptions() {},
     async prepareFlowBranchStart() {},

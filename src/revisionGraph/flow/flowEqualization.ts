@@ -39,15 +39,15 @@ export async function prepareFlowEqualizationBranch(
   options: PrepareFlowEqualizationOptions,
   services: RefActionServices,
   dependencies: FlowEqualizationDependencies = {}
-): Promise<void> {
+): Promise<RevisionGraphProtocol.FlowFormStatus> {
   const { originBranch, targetBranch } = options;
   if (!await ensureWorkspaceReadyForMutation(repository, 'preparing branch equalization', services)) {
-    return;
+    return 'retry';
   }
 
   const description = await validateEqualizationRequest(options, services);
   if (!description) {
-    return;
+    return 'retry';
   }
 
   if (!await (dependencies.prepareSources ?? prepareFlowEqualizationSources)(
@@ -56,17 +56,17 @@ export async function prepareFlowEqualizationBranch(
     services,
     dependencies.sourcePreflight
   )) {
-    return;
+    return 'retry';
   }
 
   const branchName = await resolveAvailableEqualizationBranchName(
     repository,
     targetBranch,
-    options.config ?? DEFAULT_FLOW_CONFIG,
+    options.config,
     services
   );
   if (!branchName) {
-    return;
+    return 'retry';
   }
 
   const branchBaseRefName = targetBranch;
@@ -99,6 +99,7 @@ export async function prepareFlowEqualizationBranch(
     services.ui.showInformationMessage(
       `${branchName} was created locally from ${branchBaseRefName} and equalized with ${mergeRefName}. Review it, then publish and open a Pull Request when ready.`
     );
+    return descriptionWarning ? 'partial' : 'success';
   } catch (error) {
     if (!branchCreated) {
       preparedRefresh.cancel();
@@ -122,6 +123,7 @@ export async function prepareFlowEqualizationBranch(
     if (branchCreated) {
       services.refreshController.refresh(preparedRefresh.request);
     }
+    return branchCreated ? 'partial' : 'retry';
   }
 }
 
@@ -148,10 +150,10 @@ async function validateEqualizationRequest(
 async function resolveAvailableEqualizationBranchName(
   repository: Repository,
   targetBranch: string,
-  config: Pick<NormalizedFlowConfig, 'patterns'>,
+  config: Pick<NormalizedFlowConfig, 'patterns'> | undefined,
   services: RefActionServices
 ): Promise<string | undefined> {
-  const branchNameResult = resolveFlowEqualizationBranchName(targetBranch, config);
+  const branchNameResult = resolveFlowEqualizationBranchName(targetBranch, config ?? DEFAULT_FLOW_CONFIG);
   if (!branchNameResult.ok) {
     await services.ui.showErrorMessage(
       `Could not prepare equalization. ${branchNameResult.message}`

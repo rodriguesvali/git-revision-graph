@@ -66,6 +66,7 @@
     "src/revisionGraph/webview/runtime/hostState.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/runtime/flowAiTextUi.ts",
+    "src/revisionGraph/webview/runtime/flowFormSubmission.ts",
     "src/revisionGraph/webview/runtime/flowBranchForm.ts",
     "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts",
     "src/revisionGraph/webview/runtime/contextMenu.ts",

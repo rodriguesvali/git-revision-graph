@@ -74,6 +74,7 @@ type RevisionGraphWebviewMessageOf<
 > = RevisionGraphProtocol.MessageOf<Type>;
 
 type RevisionGraphWebviewHostMessage =
+  | RevisionGraphProtocol.FlowFormResult
   | { readonly type: 'init-state' | 'update-state'; readonly state: RevisionGraphWebviewHostState; readonly trace?: Record<string, unknown> }
   | { readonly type: 'update-repository-status'; readonly status: RevisionGraphWebviewRepositoryStatusUpdate; readonly trace?: Record<string, unknown> }
   | { readonly type: 'set-remote-tag-state'; readonly tagName: string; readonly state: string }

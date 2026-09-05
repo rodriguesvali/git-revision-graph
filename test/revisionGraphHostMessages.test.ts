@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  createFlowFormResultMessage,
   createRevisionGraphCommitShortStatMessage,
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
@@ -13,6 +14,15 @@ import {
   createRevisionGraphUpdateStateMessage
 } from '../src/revisionGraph/hostMessages';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
+
+test('form result messages preserve only request identity and the reported outcome', () => {
+  const request = { type: 'submit-flow-form', requestId: 9, repositoryPath: '/repo', action: {
+    type: 'prepare-flow-equalization', targetRefName: 'release/2', originRefName: 'main', description: 'Private draft'
+  } } as const;
+  assert.deepEqual(createFlowFormResultMessage(request, 'retry', 'Name already exists'), {
+    type: 'flow-form-result', requestId: 9, repositoryPath: '/repo', status: 'retry', message: 'Name already exists'
+  });
+});
 
 test('builds revision graph host state messages with stable payloads', () => {
   const state = createReadyRevisionGraphState();

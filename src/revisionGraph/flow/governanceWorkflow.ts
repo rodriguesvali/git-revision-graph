@@ -29,6 +29,9 @@ import type {
 export type { FlowAiTextImprover } from './aiTextAssistant';
 import { withFlowRemoteFetchLoading } from './remoteFetchLoading';
 import { startFlowBranch } from './flowReleaseBranch';
+import { FlowFormWorkflow } from './formWorkflow';
+import { createFlowFormResultMessage } from '../hostMessages';
+import type { RevisionGraphMessage } from '../../revisionGraphTypes';
 import { FlowGovernanceOptionsWorkflow } from './optionsWorkflow';
 import type {
   FlowGovernanceOptionsUpdate,
@@ -48,6 +51,7 @@ export interface RevisionGraphFlowGovernanceWorkflowHost {
 
 export class RevisionGraphFlowGovernanceWorkflow {
   private disposed = false;
+  private readonly formWorkflow: FlowFormWorkflow;
   private readonly optionsWorkflow: FlowGovernanceOptionsWorkflow;
   private readonly aiTextWorkflow: RevisionGraphFlowAiTextWorkflow;
 
@@ -56,6 +60,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
     aiTextImprover?: FlowAiTextImprover,
     configPersistence = new FlowConfigPersistenceCoordinator()
   ) {
+    this.formWorkflow = new FlowFormWorkflow(host, (repository) => this.resolveSettings(repository));
     this.optionsWorkflow = new FlowGovernanceOptionsWorkflow(host, (repository) => this.resolveSettings(repository), configPersistence);
     this.aiTextWorkflow = new RevisionGraphFlowAiTextWorkflow(
       host,
@@ -65,6 +70,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
 
   dispose(): void {
     this.disposed = true;
+    this.formWorkflow.dispose();
     this.optionsWorkflow.dispose();
     this.aiTextWorkflow.dispose();
   }
@@ -90,6 +96,17 @@ export class RevisionGraphFlowGovernanceWorkflow {
     return {
       configPath: config.get<string>('configPath')
     };
+  }
+
+  submitForm(message: RevisionGraphProtocol.MessageOf<'submit-flow-form'>): Promise<void> {
+    return this.formWorkflow.submit(message);
+  }
+
+  rejectForm(message: RevisionGraphMessage): void {
+    if (message.type === 'submit-flow-form') {
+      this.host.postHostMessage(createFlowFormResultMessage(message, 'retry',
+        'The repository or available actions changed. Reload the graph and review the selected branch before trying again.'));
+    }
   }
 
   async openConfig(repositoryPath: string): Promise<void> {

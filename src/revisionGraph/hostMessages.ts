@@ -120,3 +120,11 @@ export function createRevisionGraphErrorMessage(
     message
   };
 }
+
+export function createFlowFormResultMessage(
+  request: RevisionGraphProtocol.MessageOf<'submit-flow-form'>,
+  status: RevisionGraphProtocol.FlowFormStatus,
+  message: string
+): RevisionGraphProtocol.FlowFormResult {
+  return { type: 'flow-form-result', requestId: request.requestId, repositoryPath: request.repositoryPath, status, message };
+}

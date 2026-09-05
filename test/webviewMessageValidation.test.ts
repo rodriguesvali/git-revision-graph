@@ -15,6 +15,25 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Flow form submissions reject malformed identities and preserve existing action authorization', () => {
+  const action = { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0', description: 'Release' } as const;
+  const message = { type: 'submit-flow-form', requestId: 1, repositoryPath: '/workspace/repo', action } as const;
+  assert.deepEqual(validateRevisionGraphMessage(message), message);
+  for (const requestId of [undefined, -1, 0, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(validateRevisionGraphMessage({ ...message, requestId }), undefined);
+  }
+  for (const badAction of [{ ...action, phase: 'prepare' }, { ...action, description: '' }, { type: 'submit-flow-form', action }, { type: 'checkout' }]) {
+    assert.equal(validateRevisionGraphMessage({ ...message, action: badAction }), undefined);
+  }
+  const state = { ...createReadyRevisionGraphState(), flowGovernance: {
+    enabled: true, configSource: 'repository' as const, branchKinds: ['main'] as const, diagnostics: [],
+    references: [{ refName: 'main', kind: 'main' as const, isEphemeral: false, diagnostics: [] }]
+  } };
+  assert.equal(isRevisionGraphMessageAllowedForState(message, state), true);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...message, repositoryPath: '/stale' }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...message, action: { ...action, sourceRefName: 'missing' } }, state), false);
+});
+
 test('Flow configuration recovery validates and scopes the requested repository', () => {
   for (const repositoryPath of [undefined, '', 42, 'x'.repeat(MAX_WEBVIEW_MESSAGE_STRING_LENGTH + 1)]) {
     assert.equal(validateRevisionGraphMessage({ type: 'open-flow-config', repositoryPath }), undefined);

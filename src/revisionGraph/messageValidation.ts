@@ -44,6 +44,7 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'choose-repository': () => ({ type: 'choose-repository' }),
   'abort-merge': () => ({ type: 'abort-merge' }),
   'set-projection-options': validateSetProjectionOptionsMessage,
+  'submit-flow-form': validateFlowFormSubmission,
   'open-flow-config': (message) => isBoundedNonEmptyString(message.repositoryPath)
     ? { type: 'open-flow-config', repositoryPath: message.repositoryPath } : undefined,
   'set-flow-governance-options': validateSetFlowGovernanceOptionsMessage,
@@ -439,4 +440,14 @@ function isRevisionGraphMergeRefKind(value: unknown): value is RevisionGraphMerg
 
 function isRevisionGraphTargetKind(value: unknown): value is RevisionGraphProtocol.TargetKind {
   return isString(value) && REVISION_GRAPH_TARGET_KINDS.has(value as RevisionGraphProtocol.TargetKind);
+}
+
+function validateFlowFormSubmission(message: RawRevisionGraphMessage): RevisionGraphProtocol.MessageOf<'submit-flow-form'> | undefined {
+  if (!Number.isSafeInteger(message.requestId) || (message.requestId as number) < 1
+    || !isBoundedNonEmptyString(message.repositoryPath) || !isRecord(message.action)) return undefined;
+  const action = message.action.type === 'start-flow-branch'
+    ? validateStartFlowBranchMessage(message.action)
+    : message.action.type === 'prepare-flow-equalization' ? validatePrepareFlowEqualizationMessage(message.action) : undefined;
+  if (!action || 'phase' in action) return undefined;
+  return { type: 'submit-flow-form', requestId: message.requestId as number, repositoryPath: message.repositoryPath, action };
 }

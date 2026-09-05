@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Preserve branch and equalization form input during processing and after recoverable failures. Close
+  only after success, block duplicate submissions, and prevent resubmission after partial branch creation.
+
 - Show configuration status and validation details in View, offer repository-scoped Open Configuration,
   and explain disabled or invalid configuration when a governed action is unavailable.
 

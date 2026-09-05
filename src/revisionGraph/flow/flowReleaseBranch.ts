@@ -98,22 +98,22 @@ export async function startFlowBranch(
   options: StartFlowBranchOptions,
   services: RefActionServices,
   dependencies: StartFlowBranchDependencies = {}
-): Promise<void> {
+): Promise<RevisionGraphProtocol.FlowFormStatus> {
   const branchKindLabel = getFlowBranchKindLabel(options.kind);
   const operationLabel = `starting a new ${options.kind}`;
   if (!await ensureWorkspaceReadyForMutation(repository, operationLabel, services, { allowWorkspaceChanges: true })) {
-    return;
+    return 'retry';
   }
 
   const branchNameResult = resolveFlowBranchName(options.kind, options.name, options.config);
   if (!branchNameResult.ok || !branchNameResult.branchName) {
     await services.ui.showErrorMessage(`Could not start the ${options.kind}. ${branchNameResult.message ?? `Invalid ${options.kind} name.`}`);
-    return;
+    return 'retry';
   }
 
   if (!options.description.trim()) {
     await services.ui.showErrorMessage(`Could not start the ${options.kind}. Description is required.`);
-    return;
+    return 'retry';
   }
 
   const branchName = branchNameResult.branchName;
@@ -122,11 +122,12 @@ export async function startFlowBranch(
     await services.ui.showErrorMessage(
       `Could not start the ${options.kind}. ${formatFlowBranchNameCollision(branchName, collision)}`
     );
-    return;
+    return 'retry';
   }
 
   const preparedRefresh = prepareFullRebuildRefresh(repository, services);
   let branchCreated = false;
+  let descriptionSaved = true;
   try {
     await repository.createBranch(branchName, true, options.sourceBranch);
     branchCreated = true;
@@ -139,14 +140,16 @@ export async function startFlowBranch(
         description
       );
     } catch (error) {
+      descriptionSaved = false;
       await services.ui.showWarningMessage(
         toOperationError(`${branchKindLabel} branch ${branchName} was created, but its description could not be saved.`, error),
         { modal: true }
       );
     }
 
-    await offerFlowBranchPublication(repository, branchName, branchKindLabel, options.sourceBranch, services);
+    const published = await offerFlowBranchPublication(repository, branchName, branchKindLabel, options.sourceBranch, services);
     services.refreshController.refresh(preparedRefresh.request);
+    return published && descriptionSaved ? 'success' : 'partial';
   } catch (error) {
     if (!branchCreated) {
       preparedRefresh.cancel();
@@ -155,6 +158,7 @@ export async function startFlowBranch(
     }
 
     await services.ui.showErrorMessage(toOperationError(`Could not start the ${options.kind}.`, error));
+    return branchCreated ? 'partial' : 'retry';
   }
 }
 
@@ -164,7 +168,7 @@ async function offerFlowBranchPublication(
   branchKindLabel: string,
   sourceBranch: string,
   services: RefActionServices
-): Promise<void> {
+): Promise<boolean> {
   const publishRequested = await services.ui.confirm({
     message: `${branchKindLabel} branch ${branchName} was created and checked out. Publish it to a remote now?`,
     confirmLabel: 'Publish Branch'
@@ -173,7 +177,7 @@ async function offerFlowBranchPublication(
     services.ui.showInformationMessage(
       `${branchKindLabel} branch ${branchName} was created and checked out from ${sourceBranch}.`
     );
-    return;
+    return true;
   }
 
   try {
@@ -182,7 +186,7 @@ async function offerFlowBranchPublication(
       services.ui.showInformationMessage(
         `${branchKindLabel} branch ${branchName} was created locally, but no Git remote is configured.`
       );
-      return;
+      return true;
     }
 
     const remoteName = remoteNames.length === 1
@@ -192,13 +196,14 @@ async function offerFlowBranchPublication(
       services.ui.showInformationMessage(
         `${branchKindLabel} branch ${branchName} was created locally and was not published.`
       );
-      return;
+      return true;
     }
 
     await repository.push(remoteName, branchName, true);
     services.ui.showInformationMessage(
       `${branchKindLabel} branch ${branchName} was created and published to ${remoteName}/${branchName}.`
     );
+    return true;
   } catch (error) {
     const operationMessage = `${branchKindLabel} branch ${branchName} was created locally, but could not be published.`;
     if (isNonInteractiveGitAuthenticationError(error)) {
@@ -207,13 +212,14 @@ async function offerFlowBranchPublication(
         `Open Source Control and run "Git: Publish Branch", or configure Git credentials for command-line pushes. ${toErrorDetail(error)}`
       );
       await services.ui.showSourceControl();
-      return;
+      return false;
     }
 
     await services.ui.showErrorMessage(
       toOperationError(operationMessage, error),
       isRemotePermissionDeniedError(error) ? { modal: true } : undefined
     );
+    return false;
   }
 }
 

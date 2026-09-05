@@ -480,6 +480,20 @@ test('Flow Governance blocks equalization when a source upstream cannot be fetch
   assert.deepEqual(repository.calls.merge, []);
 });
 
+for (const failure of ['none', 'preflight', 'merge'] as const) {
+  test(`Equalization result distinguishes ${failure} failure for safe form retries`, async () => {
+    const repository = createRepository({ root: '/workspace/repo' });
+    if (failure === 'merge') repository.merge = async () => { throw new Error('Merge failed'); };
+    const result = await prepareFlowEqualizationBranch(repository, {
+      originBranch: 'main', targetBranch: 'release/2.0.0', description: 'Keep this description'
+    }, createEqualizationServices(), {
+      async prepareSources() { return failure !== 'preflight'; }, async setDescription() {}
+    });
+    assert.equal(result, failure === 'none' ? 'success' : failure === 'preflight' ? 'retry' : 'partial');
+    if (failure === 'merge') assert.equal(repository.calls.createBranch.length, 1);
+  });
+}
+
 function createEqualizationServices(options: {
   readonly errors?: string[];
   readonly confirmations?: Array<{ readonly message: string; readonly confirmLabel: string }>;

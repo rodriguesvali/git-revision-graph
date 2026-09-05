@@ -1041,6 +1041,20 @@ test('Flow Governance blocks case-only local branch collisions before mutation',
   assert.match(errors[0] ?? '', /Latam\/feature\/payment.*Latam\/Feature\/payment.*letter case/);
 });
 
+for (const failure of ['none', 'create', 'upstream', 'publish', 'description'] as const) {
+  test(`Flow branch result distinguishes ${failure} failure for safe form retries`, async () => {
+    const repository = createRepository({ root: '/workspace/repo' });
+    const services = createReleaseServices({ confirmResult: failure === 'publish', remoteNames: ['origin'] });
+    if (failure === 'publish') repository.push = async () => { throw new Error('Push failed'); };
+    if (failure === 'create') repository.createBranch = async () => { throw new Error('Creation failed'); };
+    if (failure === 'upstream') services.referenceManager.unsetBranchUpstream = async () => { throw new Error('Upstream failed'); };
+    const result = await startFlowBranch(repository, {
+      kind: 'release', sourceBranch: 'main', name: '2.0.0', description: 'Keep this description', config: DEFAULT_FLOW_CONFIG
+    }, services, { async setDescription() { if (failure === 'description') throw new Error('Description failed'); } });
+    assert.equal(result, failure === 'none' ? 'success' : failure === 'create' ? 'retry' : 'partial');
+  });
+}
+
 function createReleaseServices(options: {
   readonly errors?: string[];
   readonly informationMessages?: string[];

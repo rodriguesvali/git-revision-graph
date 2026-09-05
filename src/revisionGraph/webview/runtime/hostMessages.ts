@@ -43,6 +43,10 @@ function isRevisionGraphWebviewRepositoryStatusUpdate(
 
 function isRevisionGraphWebviewActionHostMessage(value: Record<string, unknown>): boolean {
   switch (value.type) {
+    case 'flow-form-result':
+      return Number.isSafeInteger(value.requestId) && (value.requestId as number) > 0
+        && typeof value.repositoryPath === 'string' && typeof value.message === 'string'
+        && (value.status === 'success' || value.status === 'retry' || value.status === 'partial');
     case 'show-flow-branch-form':
       return isRevisionGraphWebviewFlowBranchFormMessage(value);
     case 'set-loading':

@@ -701,6 +701,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         case 'set-commit-short-stat':
           setCommitShortStat(message.commitHash, message.shortStat);
           return;
+        case 'flow-form-result': flowFormBridge.receive(message); return;
         case 'set-flow-ai-text-result':
           flowBranchDialogController.showImprovementResult(message); return;
         case 'show-flow-branch-form': showRevisionGraphWebviewFlowBranchForm(message, getSelectableTargets(), showFlowBranchForm); return;
@@ -808,6 +809,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       const viewportSnapshot = options.preserveViewport ? captureViewportSnapshot() : null;
       const previousSceneLayoutKey = sceneLayoutKey;
       if (previousRepositoryPath && previousRepositoryPath !== (nextState.repositoryPath || null)) {
+        resetRevisionGraphFlowForms(flowFormBridge, flowBranchDialogController, flowEqualizationDialogController);
         clearReferenceTooltipCommitStats();
         hideReferenceTooltip();
       }
@@ -1141,15 +1143,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function syncFlowGovernanceControls(flowGovernance: RevisionGraphWebviewLegacyFlowGovernance | null = currentFlowGovernance) {
-      if (flowGovernanceOptions) {
-        flowGovernanceOptions.hidden = false;
-      }
-
-      if (flowGovernanceEnabledToggle) {
-        flowGovernanceEnabledToggle.checked = flowGovernance?.enabled === true;
-        flowGovernanceEnabledToggle.disabled = !hasFlowGovernanceState(flowGovernance) || flowGovernance?.saving === true;
-        syncRevisionGraphWebviewFlowSavingStatus(flowGovernance?.saving === true);
-      }
+      syncRevisionGraphFlowControls(flowGovernance, flowGovernanceOptions, flowGovernanceEnabledToggle, hasFlowGovernanceState(flowGovernance));
     }
 
     function getFlowBranchInfo(refName: string): RevisionGraphWebviewLegacyFlowReference | null {

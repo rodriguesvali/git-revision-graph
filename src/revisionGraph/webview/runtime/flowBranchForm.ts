@@ -41,6 +41,7 @@ interface RevisionGraphWebviewFlowBranchDialogController {
     branchKind: RevisionGraphWebviewFlowBranchKind
   ) => void;
   readonly close: () => void;
+  readonly reset: () => void;
   readonly showImprovementResult: (
     result: Extract<RevisionGraphWebviewHostMessage, { readonly type: 'set-flow-ai-text-result' }>
   ) => void;
@@ -53,7 +54,7 @@ interface RevisionGraphWebviewFlowBranchDialogDependencies {
     branchKind: RevisionGraphWebviewFlowBranchKind,
     name: string,
     description: string
-  ) => void;
+  ) => Promise<RevisionGraphFlowFormResponse>;
   readonly improveBranchText: (
     sourceRefName: string,
     branchKind: RevisionGraphWebviewFlowAiBranchKind,
@@ -117,9 +118,12 @@ function createRevisionGraphWebviewFlowBranchDialogController(
   let target: RevisionGraphWebviewTarget | null = null;
   let branchKind: RevisionGraphWebviewFlowBranchKind | null = null;
   let pendingRequestId: number | undefined;
+  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close);
 
   function show(nextTarget: RevisionGraphWebviewTarget, nextBranchKind: RevisionGraphWebviewFlowBranchKind): void {
+    if (submission.isPending()) return;
     dependencies.closeContextMenu();
+    submission.reset();
     cancelPendingImprovement();
     const dialog = ensureDialog();
     const copy = getRevisionGraphWebviewFlowBranchDialogCopy(nextBranchKind);
@@ -154,6 +158,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
   }
 
   function close(): void {
+    if (submission.isPending()) return;
     if (!elements) {
       return;
     }
@@ -249,8 +254,11 @@ function createRevisionGraphWebviewFlowBranchDialogController(
       dialog[validationError.input].focus();
       return;
     }
-    dependencies.submit(target, branchKind, name, description);
-    close();
+    const submittedTarget = target;
+    const submittedKind = branchKind;
+    cancelPendingImprovement();
+    syncAiAction();
+    void submission.run(() => dependencies.submit(submittedTarget, submittedKind, name, description));
   }
 
   function setError(message: string): void {
@@ -371,7 +379,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     return elements;
   }
 
-  return { show, close, showImprovementResult };
+  return { show, close, reset: () => { submission.reset(); close(); }, showImprovementResult };
 }
 
 function createRevisionGraphWebviewFlowBranchTextField(

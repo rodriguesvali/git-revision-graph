@@ -4,6 +4,20 @@ import assert from 'node:assert/strict';
 import { RevisionGraphMessageDispatcher } from '../src/revisionGraph/messageDispatcher';
 import { RevisionGraphMessage, RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('rejected form submissions receive a recovery response instead of leaving the form pending', async () => {
+  const rejected: unknown[] = [];
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const request = { type: 'submit-flow-form', requestId: 1, repositoryPath: '/stale', action: {
+    type: 'prepare-flow-equalization', originRefName: 'main', targetRefName: 'release/2', description: 'Keep me'
+  } };
+  await dispatcher.dispatch(request, {
+    currentState: createReadyRevisionGraphState(), currentRepositoryPath: '/workspace/repo',
+    rejectMessage: (message) => rejected.push(message),
+    async handleMessage() { assert.fail('stale submission must not execute'); }
+  });
+  assert.deepEqual(rejected, [request]);
+});
+
 test('configuration recovery dispatches for a disabled current flow but rejects a stale click', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
   const state = { ...createReadyRevisionGraphState(), flowGovernance: {

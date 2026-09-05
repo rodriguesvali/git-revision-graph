@@ -6,16 +6,18 @@ interface RevisionGraphWebviewFlowEqualizationReference {
 interface RevisionGraphWebviewFlowEqualizationDialogDependencies {
   readonly closeContextMenu: () => void;
   readonly getOrigins: (targetRefName: string) => readonly string[];
-  readonly prepare: (targetRefName: string, originRefName: string, description: string) => void;
+  readonly prepare: (targetRefName: string, originRefName: string, description: string) => Promise<RevisionGraphFlowFormResponse>;
 }
 
 interface RevisionGraphWebviewFlowEqualizationDialogController {
   readonly show: (target: RevisionGraphWebviewTarget) => void;
   readonly close: () => void;
+  readonly reset: () => void;
 }
 
 interface RevisionGraphWebviewFlowEqualizationDialogElements {
   readonly backdrop: HTMLElement;
+  readonly submitButton: HTMLButtonElement;
   readonly originSelect: HTMLSelectElement;
   readonly descriptionInput: HTMLTextAreaElement;
   readonly error: HTMLElement;
@@ -54,9 +56,12 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
 ): RevisionGraphWebviewFlowEqualizationDialogController {
   let elements: RevisionGraphWebviewFlowEqualizationDialogElements | null = null;
   let target: RevisionGraphWebviewTarget | null = null;
+  const submission = createRevisionGraphFlowSubmissionUi(ensureDialog, close);
 
   function show(nextTarget: RevisionGraphWebviewTarget): void {
+    if (submission.isPending()) return;
     dependencies.closeContextMenu();
+    submission.reset();
     const dialog = ensureDialog();
     target = nextTarget;
     dialog.originSelect.textContent = '';
@@ -84,6 +89,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
   }
 
   function close(): void {
+    if (submission.isPending()) return;
     if (!elements) {
       return;
     }
@@ -112,8 +118,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
       return;
     }
     const targetRefName = target.name;
-    close();
-    dependencies.prepare(targetRefName, originRefName, description);
+    void submission.run(() => dependencies.prepare(targetRefName, originRefName, description));
   }
 
   function setError(message: string): void {
@@ -193,7 +198,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     backdrop.appendChild(form);
     document.body.appendChild(backdrop);
 
-    elements = { backdrop, originSelect, descriptionInput, error };
+    elements = { backdrop, submitButton, originSelect, descriptionInput, error };
     backdrop.addEventListener('click', (event) => {
       if (event.target === backdrop) {
         close();
@@ -210,5 +215,5 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     return elements;
   }
 
-  return { show, close };
+  return { show, close, reset: () => { submission.reset(); close(); } };
 }

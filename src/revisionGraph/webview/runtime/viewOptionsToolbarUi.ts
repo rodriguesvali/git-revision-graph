@@ -37,3 +37,17 @@ function syncRevisionGraphWebviewFlowSavingStatus(saving: boolean): void {
   const status = document.getElementById('flowGovernanceSaveStatus');
   if (status) status.textContent = saving ? 'Saving…' : '';
 }
+
+function syncRevisionGraphFlowControls(
+  flow: { readonly enabled?: boolean; readonly saving?: unknown } | null,
+  options: HTMLElement | null,
+  toggle: HTMLInputElement | null,
+  hasState: boolean
+): void {
+  if (options) options.hidden = false;
+  if (toggle) {
+    toggle.checked = flow?.enabled === true;
+    toggle.disabled = !hasState || flow?.saving === true;
+    syncRevisionGraphWebviewFlowSavingStatus(flow?.saving === true);
+  }
+}

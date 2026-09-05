@@ -87,6 +87,7 @@ export type RevisionGraphFlowAiTextSurface =
 export type RevisionGraphFlowAiTextField = 'description';
 
 export type RevisionGraphViewHostMessage =
+  | RevisionGraphProtocol.FlowFormResult
   | { readonly type: 'init-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | { readonly type: 'update-state'; readonly state: RevisionGraphViewState; readonly trace?: RevisionGraphHostTraceContext }
   | {

@@ -55,7 +55,7 @@
       branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix',
       name: string,
       description: string
-    ): RevisionGraphWebviewMessageOf<'start-flow-branch'> {
+    ): Extract<RevisionGraphProtocol.FlowFormAction, { type: 'start-flow-branch' }> {
       return {
         type: 'start-flow-branch',
         branchKind: branchKind,

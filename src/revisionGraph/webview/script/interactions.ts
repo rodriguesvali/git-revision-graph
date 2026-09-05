@@ -534,12 +534,12 @@
       contextMenu.appendChild(button);
     }
 
+    const flowFormBridge = createRevisionGraphFlowFormBridge(() => currentState?.repositoryPath, (message) => vscode.postMessage(message));
     const flowAiTextInteractions = createRevisionGraphWebviewFlowAiTextInteractions((message) => vscode.postMessage(message));
     const flowBranchDialogController = createRevisionGraphWebviewFlowBranchDialogController({
       closeContextMenu,
-      submit: (target, branchKind, name, description) => {
-        vscode.postMessage(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description));
-      },
+      submit: (target, branchKind, name, description) =>
+        flowFormBridge.submit(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description)),
       ...flowAiTextInteractions.branchDependencies
     });
     function showFlowBranchForm(target: RevisionGraphWebviewTarget, branchKind: RevisionGraphWebviewFlowBranchKind) {
@@ -658,9 +658,7 @@
     }
 
     function postPrepareFlowEqualization(targetRefName: string, originRefName: string, description: string) {
-      vscode.postMessage(
-        createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description)
-      );
+      return flowFormBridge.submit(createRevisionGraphPrepareFlowEqualizationMessage(targetRefName, originRefName, description));
     }
 
     function getFlowProductionBranchName() {

@@ -48,6 +48,29 @@ declare namespace RevisionGraphProtocol {
       readonly compareLabel: string;
     };
 
+  type FlowFormStatus = 'success' | 'retry' | 'partial';
+  interface FlowFormResult {
+    readonly type: 'flow-form-result';
+    readonly requestId: number;
+    readonly repositoryPath: string;
+    readonly status: FlowFormStatus;
+    readonly message: string;
+  }
+  type FlowFormAction =
+    | {
+      readonly type: 'start-flow-branch';
+      readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
+      readonly sourceRefName: string;
+      readonly name: string;
+      readonly description: string;
+    }
+    | {
+      readonly type: 'prepare-flow-equalization';
+      readonly targetRefName: string;
+      readonly originRefName: string;
+      readonly description: string;
+    };
+
   type Message =
     | { readonly type: 'webview-ready' }
     | {
@@ -71,19 +94,8 @@ declare namespace RevisionGraphProtocol {
       readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
       readonly sourceRefName: string;
     }
-    | {
-      readonly type: 'start-flow-branch';
-      readonly branchKind: 'release' | 'package' | 'feature' | 'task' | 'bug' | 'hotfix';
-      readonly sourceRefName: string;
-      readonly name: string;
-      readonly description: string;
-    }
-    | {
-      readonly type: 'prepare-flow-equalization';
-      readonly targetRefName: string;
-      readonly originRefName: string;
-      readonly description: string;
-    }
+    | FlowFormAction
+    | { readonly type: 'submit-flow-form'; readonly requestId: number; readonly repositoryPath: string; readonly action: FlowFormAction }
     | {
       readonly type: 'improve-flow-branch-text';
       readonly requestId: number;

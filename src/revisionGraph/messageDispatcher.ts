@@ -8,6 +8,7 @@ import {
 export interface RevisionGraphMessageDispatchContext {
   readonly currentState: RevisionGraphViewState;
   readonly currentRepositoryPath: string | undefined;
+  rejectMessage?(message: RevisionGraphMessage): void;
   handleMessage(message: RevisionGraphMessage): Promise<void>;
 }
 
@@ -23,6 +24,7 @@ export class RevisionGraphMessageDispatcher {
         context.currentRepositoryPath
       )
     ) {
+      if (message) context.rejectMessage?.(message);
       return;
     }
 
