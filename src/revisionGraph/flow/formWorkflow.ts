@@ -1,5 +1,6 @@
 import type { Repository } from '../../git';
 import { runGuardedRepositoryMutation } from '../../repositoryMutationCoordinator';
+import { findKnownFlowBranchNameCollision } from './flowBranchNameCollision';
 import { describeFlowFormPreview } from './flowFormPreview';
 import { createFlowFormPreviewMessage, createFlowFormResultMessage } from '../hostMessages';
 import { isRevisionGraphMessageAllowedForState } from '../messageAuthorization';
@@ -30,7 +31,8 @@ export class FlowFormWorkflow {
     try {
       const resolution = await resolveFlowConfigForRepository(request.repositoryPath, this.settings(repository));
       if (resolution.ok && resolution.config.enabled && isRevisionGraphMessageAllowedForState(request, this.host.getCurrentState())) {
-        preview = describeFlowFormPreview(request.action, resolution.config);
+        preview = describeFlowFormPreview(request.action, resolution.config,
+          (name) => findKnownFlowBranchNameCollision(repository, name));
       }
     } catch { /* A preview failure must not interrupt editing or trigger a Git operation. */ }
     if (this.isCurrent(repository)) this.host.postHostMessage(createFlowFormPreviewMessage(request, preview));

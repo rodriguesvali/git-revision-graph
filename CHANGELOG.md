@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Show branch-name conflicts against known local and remote-tracking branches before submission,
+  including case-only collisions. Offer configuration-compatible examples for incomplete or invalid names.
+
 - Preview branch creation and equalization before submission, including source, target/base, expected
   configured branch name, checkout, merge direction and publication behavior.
 

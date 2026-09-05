@@ -6,6 +6,7 @@ import * as path from 'node:path';
 import { FlowFormWorkflow } from '../src/revisionGraph/flow/formWorkflow';
 import { RepositoryMutationCoordinator } from '../src/repositoryMutationCoordinator';
 import { prepareFlowEqualizationBranch } from '../src/revisionGraph/flow/flowEqualization';
+import { RefType } from '../src/git';
 import { createRepository } from './fakes';
 import type { RefActionServices } from '../src/refActions';
 import type { RevisionGraphViewState } from '../src/revisionGraphTypes';
@@ -58,12 +59,15 @@ for (const scenario of ['success', 'retry', 'partial', 'switch', 'dispose', 'dis
   });
 }
 
-for (const scenario of ['ready', 'disabled', 'switch', 'dispose'] as const) {
+for (const scenario of ['ready', 'collision', 'disabled', 'switch', 'dispose'] as const) {
   test(`Flow preview is read-only and handles ${scenario}`, async (t) => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'flow-preview-'));
     t.after(() => rm(root, { recursive: true, force: true }));
     await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({ schemaVersion: 1, enabled: scenario !== 'disabled' }));
-    let repository = createRepository({ root });
+    let repository = createRepository({ root, refs: scenario === 'collision'
+      ? [{ name: 'release/2.0', type: RefType.Head }] : [] });
+    let branchLookups = 0;
+    repository.getBranch = async () => { branchLookups++; throw new Error('Unexpected branch lookup'); };
     const results: unknown[] = [];
     const workflow = new FlowFormWorkflow({
       actionServices: {} as RefActionServices,
@@ -90,7 +94,9 @@ for (const scenario of ['ready', 'disabled', 'switch', 'dispose'] as const) {
       assert.equal(result.repositoryPath, root);
       assert.equal(result.requestId, 4);
       if (scenario === 'ready') assert.match(result.text, /Expected branch: release\/2.0/);
+      if (scenario === 'collision') assert.match(result.text, /Branch release\/2.0 already exists/);
     }
+    assert.equal(branchLookups, 0);
     assert.deepEqual(repository.calls.createBranch, []);
     assert.deepEqual(repository.calls.fetch, []);
     workflow.dispose();

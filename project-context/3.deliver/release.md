@@ -5,6 +5,13 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Fifth `1.7.1` increment: previews identify known local and remote-tracking branch-name collisions
+  and show configuration-compatible naming examples. See
+  `project-context/2.build/features/1.7.1-flow-governance-early-name-validation.md`.
+  `npm test` passed 910 tests including build and quality gates; diff checks and Graphify update passed.
+  Preview checks remain advisory and read-only; submission retains full collision/readiness guards.
+  Manual Extension Development Host smoke remains pending. No packaging or publication performed.
+
 - Fourth `1.7.1` increment: Flow Governance operation previews are implemented. See
   `project-context/2.build/features/1.7.1-flow-governance-operation-preview.md`; `npm test` passed
   904 tests including build and quality gates, diff checks passed, and Graphify was updated.

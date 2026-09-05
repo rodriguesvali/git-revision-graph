@@ -11,15 +11,8 @@ export async function findFlowBranchNameCollision(
   repository: Repository,
   requestedBranchName: string
 ): Promise<FlowBranchNameCollision | undefined> {
-  const refs = repository.state.HEAD
-    ? [repository.state.HEAD, ...repository.state.refs]
-    : repository.state.refs;
-  for (const ref of refs) {
-    const collision = compareFlowBranchRef(ref, requestedBranchName);
-    if (collision) {
-      return collision;
-    }
-  }
+  const collision = findKnownFlowBranchNameCollision(repository, requestedBranchName);
+  if (collision) return collision;
 
   try {
     const branch = await repository.getBranch(requestedBranchName);
@@ -28,6 +21,24 @@ export async function findFlowBranchNameCollision(
     }
   } catch {
     // Missing branches are the expected outcome for a new name.
+  }
+
+  return undefined;
+}
+
+/** Checks the current local and remote-tracking snapshot without contacting remotes. */
+export function findKnownFlowBranchNameCollision(
+  repository: Repository,
+  requestedBranchName: string
+): FlowBranchNameCollision | undefined {
+  const refs = repository.state.HEAD
+    ? [repository.state.HEAD, ...repository.state.refs]
+    : repository.state.refs;
+  for (const ref of refs) {
+    const collision = compareFlowBranchRef(ref, requestedBranchName);
+    if (collision) {
+      return collision;
+    }
   }
 
   return undefined;
