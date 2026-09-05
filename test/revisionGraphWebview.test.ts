@@ -1690,12 +1690,14 @@ for (const kind of ['branch', 'equalization'] as const) {
     const runtime = createWebviewRuntime();
     const completions: Array<(result: { status: string; message: string }) => void> = [];
     const submit = () => new Promise((resolve) => completions.push(resolve));
+    const previewRequests: unknown[] = [];
+    const preview = { update(action: unknown) { previewRequests.push(action); }, reset() {} };
     const controller = kind === 'branch'
       ? runtime.context.createRevisionGraphWebviewFlowBranchDialogController({
-        closeContextMenu() {}, submit, improveBranchText() { return 1; }, cancelImprovement() {}
+        preview, closeContextMenu() {}, submit, improveBranchText() { return 1; }, cancelImprovement() {}
       })
       : runtime.context.createRevisionGraphWebviewFlowEqualizationDialogController({
-        closeContextMenu() {}, getOrigins: () => ['main'], prepare: submit
+        preview, closeContextMenu() {}, getOrigins: () => ['main'], prepare: submit
       });
     controller.show({ name: 'release/2', kind: 'branch' }, 'feature');
     const prefix = kind === 'branch' ? 'flowBranch' : 'flowEqualization';
@@ -1705,6 +1707,10 @@ for (const kind of ['branch', 'equalization'] as const) {
     const name = runtime.createdElements.find((element) => element.id === (kind === 'branch' ? 'flowBranchNameInput' : 'flowEqualizationOriginInput'))!;
     name.value = kind === 'branch' ? 'payment' : 'main';
     description.value = 'Preserve this description';
+    name.listeners[kind === 'branch' ? 'input' : 'change'][0]({});
+    assert.deepEqual(previewRequests.at(-1), kind === 'branch'
+      ? { type: 'start-flow-branch', branchKind: 'feature', sourceRefName: 'release/2', name: 'payment' }
+      : { type: 'prepare-flow-equalization', targetRefName: 'release/2', originRefName: 'main' });
     const submitEvent = () => form.listeners.submit[0]({ preventDefault() {} });
     submitEvent(); submitEvent();
     assert.equal(completions.length, 1);
@@ -1747,10 +1753,43 @@ test('partial Flow form completion retains data but blocks a second creation; re
   assert.equal(closed, false, 'late result must not close a newer form');
 });
 
+test('Flow previews debounce edits, ignore old replies and render host text safely', () => {
+  const runtime = createWebviewRuntime();
+  const timers = new Map<number, () => void>();
+  let timerId = 0;
+  const windowMock = (globalThis as unknown as { window: { setTimeout: (callback: () => void) => number; clearTimeout: (id?: number) => void } }).window;
+  windowMock.setTimeout = (callback) => { timers.set(++timerId, callback); return timerId; };
+  windowMock.clearTimeout = (id) => { if (id !== undefined) timers.delete(id); };
+  const flush = () => { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach((callback) => callback()); };
+  let repositoryPath = '/repo/a';
+  const messages: any[] = [];
+  const preview = runtime.context.createRevisionGraphFlowPreviewController(() => repositoryPath, (message: unknown) => messages.push(message));
+  const element = runtime.elements.get('flowConfigDetails')!;
+  const action = { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0' };
+  preview.update(action, element); flush();
+  preview.update({ ...action, name: '2.1' }, element);
+  preview.receive({ ...messages[0], type: 'flow-form-preview', status: 'ready', text: 'Old name' });
+  assert.equal(element.textContent, 'Loading operation preview…');
+  flush();
+  preview.receive({ type: 'flow-form-preview', requestId: messages[1].requestId, repositoryPath, status: 'ready', text: '<img src=x> release/2.1' });
+  assert.equal(element.textContent, '<img src=x> release/2.1');
+  assert.equal(element.innerHTML, '');
+  preview.update({ ...action, name: '2.1' }, element);
+  assert.equal(timers.size, 0, 'description-only changes should not request the same preview again');
+  preview.reset();
+  preview.receive({ requestId: messages[1].requestId, repositoryPath, status: 'ready', text: 'Late reply' });
+  assert.equal(element.textContent, '<img src=x> release/2.1');
+  preview.update(action, element);
+  repositoryPath = '/repo/b'; flush();
+  assert.equal(messages.length, 2, 'stale scheduled request must not cross repositories');
+});
+
 test('form result guards reject malformed status and correlation fields', () => {
   const runtime = createWebviewRuntime();
   const result = { type: 'flow-form-result', requestId: 1, repositoryPath: '/repo', status: 'retry', message: 'Keep draft' };
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(result), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...result, type: 'flow-form-preview', status: 'ready', text: 'Expected branch: release/2' }), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...result, type: 'flow-form-preview', status: 'ready', text: null }), false);
   for (const invalid of [{ ...result, requestId: 0 }, { ...result, requestId: 1.5 }, { ...result, status: 'done' }, { ...result, message: null }]) {
     assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(invalid), false);
   }
@@ -3641,7 +3680,7 @@ function createWebviewRuntime() {
   };
   const windowListeners: Record<string, Array<(...args: any[]) => unknown>> = {};
   const windowObject = {
-    setTimeout,
+    setTimeout, clearTimeout,
     addEventListener(type: string, listener: (...args: any[]) => unknown) {
       if (!windowListeners[type]) {
         windowListeners[type] = [];

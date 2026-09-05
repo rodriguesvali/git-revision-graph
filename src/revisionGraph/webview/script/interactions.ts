@@ -361,7 +361,6 @@
           { label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) }
         );
       } else if (flowBranch.kind === 'release') {
-        const productionBranchName = getFlowProductionBranchName();
         entries.push({ label: 'Start New Feature', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'feature')) }, { label: 'Start New Package', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'package')) }, { label: 'Start New Task', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'task')) }, { label: 'Start New Bug', onClick: () => vscode.postMessage(createRevisionGraphPrepareStartFlowBranchMessage(target, 'bug')) });
         entries.push({ label: 'Prepare Equalization', onClick: () => showFlowEqualizationForm(target) });
       }
@@ -534,10 +533,11 @@
       contextMenu.appendChild(button);
     }
 
+    const flowPreviews = createRevisionGraphFlowPreviews(() => currentState?.repositoryPath, (message) => vscode.postMessage(message));
     const flowFormBridge = createRevisionGraphFlowFormBridge(() => currentState?.repositoryPath, (message) => vscode.postMessage(message));
     const flowAiTextInteractions = createRevisionGraphWebviewFlowAiTextInteractions((message) => vscode.postMessage(message));
     const flowBranchDialogController = createRevisionGraphWebviewFlowBranchDialogController({
-      closeContextMenu,
+      closeContextMenu, preview: flowPreviews.branch,
       submit: (target, branchKind, name, description) =>
         flowFormBridge.submit(createRevisionGraphStartFlowBranchMessage(target, branchKind, name, description)),
       ...flowAiTextInteractions.branchDependencies
@@ -555,7 +555,7 @@
     }
 
     const flowEqualizationDialogController = createRevisionGraphWebviewFlowEqualizationDialogController({
-      closeContextMenu,
+      closeContextMenu, preview: flowPreviews.equalization,
       getOrigins: getFlowEqualizationOrigins,
       prepare: postPrepareFlowEqualization
     });

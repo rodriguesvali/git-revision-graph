@@ -55,6 +55,7 @@ export class RevisionGraphLoadTraceService implements vscode.Disposable {
       case 'set-remote-tag-state':
       case 'set-commit-short-stat':
       case 'show-flow-branch-form':
+      case 'flow-form-preview':
       case 'flow-form-result':
       case 'set-flow-ai-text-result':
         return message;

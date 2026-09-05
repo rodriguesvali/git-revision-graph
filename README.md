@@ -87,6 +87,8 @@ replacing normal Git Revision Graph behavior.
   ahead-only work, and block divergent sources for manual reconciliation.
 - Prepare local `sync/*` equalization branches without automatic push and hand governed integrations
   off to supported Pull Request workflows.
+- Preview the source, target/base, expected branch name, checkout and merge effects before submitting
+  branch or equalization forms. Names follow the repository configuration.
 - Keep branch and equalization form input after a failed operation so it can be corrected and retried.
   If a branch was already created before a later step failed, review its state before starting another operation.
 - Improve branch descriptions only when the user explicitly requests assistance from an available

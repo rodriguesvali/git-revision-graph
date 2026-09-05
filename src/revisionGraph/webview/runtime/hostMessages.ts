@@ -43,9 +43,10 @@ function isRevisionGraphWebviewRepositoryStatusUpdate(
 
 function isRevisionGraphWebviewActionHostMessage(value: Record<string, unknown>): boolean {
   switch (value.type) {
+    case 'flow-form-preview':
+      return isRevisionGraphWebviewFlowPreviewMessage(value);
     case 'flow-form-result':
-      return Number.isSafeInteger(value.requestId) && (value.requestId as number) > 0
-        && typeof value.repositoryPath === 'string' && typeof value.message === 'string'
+      return isRevisionGraphWebviewFlowCorrelationMessage(value) && typeof value.message === 'string'
         && (value.status === 'success' || value.status === 'retry' || value.status === 'partial');
     case 'show-flow-branch-form':
       return isRevisionGraphWebviewFlowBranchFormMessage(value);
@@ -84,4 +85,14 @@ function isRevisionGraphWebviewFlowBranchFormMessage(value: Record<string, unkno
       || value.branchKind === 'task'
       || value.branchKind === 'bug'
       || value.branchKind === 'hotfix');
+}
+
+function isRevisionGraphWebviewFlowCorrelationMessage(value: Record<string, unknown>): boolean {
+  return Number.isSafeInteger(value.requestId) && (value.requestId as number) > 0
+    && typeof value.repositoryPath === 'string';
+}
+
+function isRevisionGraphWebviewFlowPreviewMessage(value: Record<string, unknown>): boolean {
+  return isRevisionGraphWebviewFlowCorrelationMessage(value) && typeof value.text === 'string'
+    && (value.status === 'ready' || value.status === 'unavailable');
 }

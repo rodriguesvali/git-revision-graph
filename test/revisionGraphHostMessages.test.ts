@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   createFlowFormResultMessage,
+  createFlowFormPreviewMessage,
   createRevisionGraphCommitShortStatMessage,
   createRevisionGraphErrorMessage,
   createRevisionGraphInitStateMessage,
@@ -14,6 +15,15 @@ import {
   createRevisionGraphUpdateStateMessage
 } from '../src/revisionGraph/hostMessages';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
+
+test('form previews preserve repository and request identity without adding operation data', () => {
+  const request = { type: 'preview-flow-form', requestId: 5, repositoryPath: '/repo', action: {
+    type: 'prepare-flow-equalization', originRefName: 'main', targetRefName: 'release/2'
+  } } as const;
+  assert.deepEqual(createFlowFormPreviewMessage(request, { status: 'ready', text: 'Expected branch: sync/2' }), {
+    type: 'flow-form-preview', requestId: 5, repositoryPath: '/repo', status: 'ready', text: 'Expected branch: sync/2'
+  });
+});
 
 test('form result messages preserve only request identity and the reported outcome', () => {
   const request = { type: 'submit-flow-form', requestId: 9, repositoryPath: '/repo', action: {

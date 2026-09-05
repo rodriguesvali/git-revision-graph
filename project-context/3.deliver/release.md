@@ -5,6 +5,11 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Fourth `1.7.1` increment: Flow Governance operation previews are implemented. See
+  `project-context/2.build/features/1.7.1-flow-governance-operation-preview.md`; `npm test` passed
+  904 tests including build and quality gates, diff checks passed, and Graphify was updated.
+  Manual Extension Development Host smoke remains pending.
+
 - Third `1.7.1` increment: Flow Governance branch/equalization form recovery is implemented. See
   `project-context/2.build/features/1.7.1-flow-governance-form-recovery.md`. Focused tests and quality
   checks passed; final `npm test` passed 887 tests including build and quality gates. Graphify and

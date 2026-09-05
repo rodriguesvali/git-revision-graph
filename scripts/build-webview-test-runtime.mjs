@@ -33,6 +33,7 @@ const exportedNames = [
   'createRevisionGraphWebviewContextMenuPlan',
   'createRevisionGraphWebviewContextSubmenuCloseScheduler',
   'createRevisionGraphWebviewFlowAiTextInteractions',
+  'createRevisionGraphFlowPreviewController',
   'createRevisionGraphFlowFormBridge',
   'createRevisionGraphFlowSubmissionUi',
   'createRevisionGraphWebviewFlowBranchDialogController',

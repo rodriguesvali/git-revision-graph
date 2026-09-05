@@ -30,7 +30,7 @@ export type { FlowAiTextImprover } from './aiTextAssistant';
 import { withFlowRemoteFetchLoading } from './remoteFetchLoading';
 import { startFlowBranch } from './flowReleaseBranch';
 import { FlowFormWorkflow } from './formWorkflow';
-import { createFlowFormResultMessage } from '../hostMessages';
+import { createFlowFormPreviewMessage, createFlowFormResultMessage } from '../hostMessages';
 import type { RevisionGraphMessage } from '../../revisionGraphTypes';
 import { FlowGovernanceOptionsWorkflow } from './optionsWorkflow';
 import type {
@@ -98,11 +98,18 @@ export class RevisionGraphFlowGovernanceWorkflow {
     };
   }
 
+  previewForm(message: RevisionGraphProtocol.MessageOf<'preview-flow-form'>): Promise<void> {
+    return this.formWorkflow.preview(message);
+  }
+
   submitForm(message: RevisionGraphProtocol.MessageOf<'submit-flow-form'>): Promise<void> {
     return this.formWorkflow.submit(message);
   }
 
   rejectForm(message: RevisionGraphMessage): void {
+    if (message.type === 'preview-flow-form') {
+      this.host.postHostMessage(createFlowFormPreviewMessage(message, { status: 'unavailable', text: 'Preview unavailable. Reload the graph and review the selected branches.' }));
+    }
     if (message.type === 'submit-flow-form') {
       this.host.postHostMessage(createFlowFormResultMessage(message, 'retry',
         'The repository or available actions changed. Reload the graph and review the selected branch before trying again.'));

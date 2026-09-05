@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Preview branch creation and equalization before submission, including source, target/base, expected
+  configured branch name, checkout, merge direction and publication behavior.
+
 - Preserve branch and equalization form input during processing and after recoverable failures. Close
   only after success, block duplicate submissions, and prevent resubmission after partial branch creation.
 

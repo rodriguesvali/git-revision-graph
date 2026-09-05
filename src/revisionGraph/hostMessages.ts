@@ -128,3 +128,10 @@ export function createFlowFormResultMessage(
 ): RevisionGraphProtocol.FlowFormResult {
   return { type: 'flow-form-result', requestId: request.requestId, repositoryPath: request.repositoryPath, status, message };
 }
+
+export function createFlowFormPreviewMessage(
+  request: RevisionGraphProtocol.MessageOf<'preview-flow-form'>,
+  preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text'>
+): RevisionGraphProtocol.FlowFormPreview {
+  return { type: 'flow-form-preview', requestId: request.requestId, repositoryPath: request.repositoryPath, ...preview };
+}

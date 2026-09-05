@@ -1,6 +1,7 @@
 import type { Repository } from '../../git';
 import { runGuardedRepositoryMutation } from '../../repositoryMutationCoordinator';
-import { createFlowFormResultMessage } from '../hostMessages';
+import { describeFlowFormPreview } from './flowFormPreview';
+import { createFlowFormPreviewMessage, createFlowFormResultMessage } from '../hostMessages';
 import { isRevisionGraphMessageAllowedForState } from '../messageAuthorization';
 import type { RevisionGraphFlowGovernanceWorkflowHost } from './governanceWorkflow';
 import { resolveFlowConfigForRepository } from './flowConfig';
@@ -19,6 +20,21 @@ export class FlowFormWorkflow {
   ) {}
 
   dispose(): void { this.disposed = true; }
+
+  async preview(request: RevisionGraphProtocol.MessageOf<'preview-flow-form'>): Promise<void> {
+    const repository = this.host.getCurrentRepository();
+    if (!repository || this.disposed || repository.rootUri.fsPath !== request.repositoryPath) return;
+    let preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text'> = {
+      status: 'unavailable', text: 'Preview unavailable. Review Flow Governance configuration in View.'
+    };
+    try {
+      const resolution = await resolveFlowConfigForRepository(request.repositoryPath, this.settings(repository));
+      if (resolution.ok && resolution.config.enabled && isRevisionGraphMessageAllowedForState(request, this.host.getCurrentState())) {
+        preview = describeFlowFormPreview(request.action, resolution.config);
+      }
+    } catch { /* A preview failure must not interrupt editing or trigger a Git operation. */ }
+    if (this.isCurrent(repository)) this.host.postHostMessage(createFlowFormPreviewMessage(request, preview));
+  }
 
   async submit(request: RevisionGraphProtocol.MessageOf<'submit-flow-form'>): Promise<void> {
     const repository = this.host.getCurrentRepository();

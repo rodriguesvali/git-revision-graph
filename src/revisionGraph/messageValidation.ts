@@ -1,3 +1,4 @@
+import { validateFlowFormPreviewRequest } from './messageValidationFlowPreview';
 import type { RevisionGraphMergeRefKind, RevisionGraphMessage, RevisionLogSource } from '../revisionGraphTypes';
 import type { RevisionGraphRef } from './model/commitGraphTypes';
 import { isFlowStartBranchKind } from './flow';
@@ -44,6 +45,7 @@ const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
   'choose-repository': () => ({ type: 'choose-repository' }),
   'abort-merge': () => ({ type: 'abort-merge' }),
   'set-projection-options': validateSetProjectionOptionsMessage,
+  'preview-flow-form': validateFlowFormPreviewRequest,
   'submit-flow-form': validateFlowFormSubmission,
   'open-flow-config': (message) => isBoundedNonEmptyString(message.repositoryPath)
     ? { type: 'open-flow-config', repositoryPath: message.repositoryPath } : undefined,

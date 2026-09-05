@@ -57,3 +57,42 @@ for (const scenario of ['success', 'retry', 'partial', 'switch', 'dispose', 'dis
     workflow.dispose();
   });
 }
+
+for (const scenario of ['ready', 'disabled', 'switch', 'dispose'] as const) {
+  test(`Flow preview is read-only and handles ${scenario}`, async (t) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'flow-preview-'));
+    t.after(() => rm(root, { recursive: true, force: true }));
+    await writeFile(path.join(root, '.git-revision-graph-flow.json'), JSON.stringify({ schemaVersion: 1, enabled: scenario !== 'disabled' }));
+    let repository = createRepository({ root });
+    const results: unknown[] = [];
+    const workflow = new FlowFormWorkflow({
+      actionServices: {} as RefActionServices,
+      mutationCoordinator: { run() { assert.fail('preview must not acquire a mutation'); } } as unknown as RepositoryMutationCoordinator,
+      getCurrentRepository: () => repository,
+      getCurrentState: () => ({ viewMode: 'ready', repositoryPath: root, references: [{ name: 'main' }],
+        flowGovernance: { enabled: true, references: [{ refName: 'main', kind: 'main' }] }
+      }) as unknown as RevisionGraphViewState,
+      setCurrentState() {}, postCurrentState() {}, postHostMessage: (message) => results.push(message)
+    }, () => ({}), {
+      async startBranch() { assert.fail('preview must not create a branch'); },
+      async equalize() { assert.fail('preview must not merge'); }
+    });
+    const operation = workflow.preview({ type: 'preview-flow-form', requestId: 4, repositoryPath: root, action: {
+      type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0'
+    } });
+    if (scenario === 'switch') repository = createRepository({ root: '/other' });
+    if (scenario === 'dispose') workflow.dispose();
+    await operation;
+    if (scenario === 'switch' || scenario === 'dispose') assert.deepEqual(results, []);
+    else {
+      const result = results[0] as RevisionGraphProtocol.FlowFormPreview;
+      assert.equal(result.status, scenario === 'ready' ? 'ready' : 'unavailable');
+      assert.equal(result.repositoryPath, root);
+      assert.equal(result.requestId, 4);
+      if (scenario === 'ready') assert.match(result.text, /Expected branch: release\/2.0/);
+    }
+    assert.deepEqual(repository.calls.createBranch, []);
+    assert.deepEqual(repository.calls.fetch, []);
+    workflow.dispose();
+  });
+}

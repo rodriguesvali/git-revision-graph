@@ -22,6 +22,7 @@ interface RevisionGraphWebviewFlowBranchDialogCopy {
 interface RevisionGraphWebviewFlowBranchDialogElements {
   readonly backdrop: HTMLElement;
   readonly title: HTMLElement;
+  readonly preview: HTMLElement;
   readonly submitButton: HTMLButtonElement;
   readonly nameLabel: HTMLLabelElement;
   readonly nameInput: HTMLInputElement;
@@ -48,6 +49,7 @@ interface RevisionGraphWebviewFlowBranchDialogController {
 }
 
 interface RevisionGraphWebviewFlowBranchDialogDependencies {
+  readonly preview: RevisionGraphFlowPreviewController;
   readonly closeContextMenu: () => void;
   readonly submit: (
     target: RevisionGraphWebviewTarget,
@@ -153,6 +155,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     syncAiAction();
     setError('');
     dialog.backdrop.hidden = false;
+    syncPreview();
     document.body.classList.add('flow-dialog-open');
     window.setTimeout(() => (usesStructuredName ? dialog.taskDevInput : dialog.nameInput).focus(), 0);
   }
@@ -163,6 +166,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
       return;
     }
     cancelPendingImprovement();
+    dependencies.preview.reset();
     elements.backdrop.hidden = true;
     target = null;
     branchKind = null;
@@ -214,6 +218,16 @@ function createRevisionGraphWebviewFlowBranchDialogController(
   function handleBranchInput(): void {
     cancelPendingImprovement();
     syncAiAction();
+    syncPreview();
+  }
+
+  function syncPreview(): void {
+    if (!target || !branchKind || !elements) return;
+    const id = elements.taskDevInput.value.trim();
+    const shortName = elements.shortNameInput.value.trim();
+    const name = isRevisionGraphWebviewStructuredFlowBranchKind(branchKind)
+      ? (id && shortName ? id + '-' + shortName : '') : elements.nameInput.value.trim();
+    dependencies.preview.update({ type: 'start-flow-branch', branchKind, sourceRefName: target.name, name }, elements.preview);
   }
 
   function syncAiAction(): void {
@@ -286,6 +300,8 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     title.id = 'flowBranchDialogTitle';
     title.className = 'flow-dialog-title';
     form.appendChild(title);
+    const preview = createRevisionGraphFlowPreviewElement('flowBranchPreview');
+    form.appendChild(preview);
 
     const name = createRevisionGraphWebviewFlowBranchTextField('flowBranchNameInput', 'Name *', 240);
     name.label.id = 'flowBranchNameLabel';
@@ -346,6 +362,7 @@ function createRevisionGraphWebviewFlowBranchDialogController(
     elements = {
       backdrop,
       title,
+      preview,
       submitButton,
       nameLabel: name.label,
       nameInput: name.input,

@@ -4,6 +4,19 @@ import assert from 'node:assert/strict';
 import { RevisionGraphMessageDispatcher } from '../src/revisionGraph/messageDispatcher';
 import { RevisionGraphMessage, RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('a stale preview request receives rejection feedback without executing an action', async () => {
+  const rejected: unknown[] = [];
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const request = { type: 'preview-flow-form', requestId: 2, repositoryPath: '/stale', action: {
+    type: 'start-flow-branch', sourceRefName: 'main', branchKind: 'release', name: ''
+  } };
+  await dispatcher.dispatch(request, {
+    currentState: createReadyRevisionGraphState(), currentRepositoryPath: '/workspace/repo',
+    rejectMessage: (message) => rejected.push(message), async handleMessage() { assert.fail('stale preview'); }
+  });
+  assert.deepEqual(rejected, [request]);
+});
+
 test('rejected form submissions receive a recovery response instead of leaving the form pending', async () => {
   const rejected: unknown[] = [];
   const dispatcher = new RevisionGraphMessageDispatcher();

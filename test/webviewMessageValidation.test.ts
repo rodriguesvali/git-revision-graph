@@ -15,6 +15,23 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('preview requests allow incomplete names but reject malformed or stale input', () => {
+  const request = { type: 'preview-flow-form', requestId: 1, repositoryPath: '/workspace/repo', action: {
+    type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: ''
+  } } as const;
+  assert.deepEqual(validateRevisionGraphMessage({ ...request, action: { ...request.action, description: 'not needed' } }), request);
+  for (const requestId of [0, -1, 1.5, NaN]) assert.equal(validateRevisionGraphMessage({ ...request, requestId }), undefined);
+  assert.equal(validateRevisionGraphMessage({ ...request, action: { ...request.action, name: 'x'.repeat(241) } }), undefined);
+  const state = { ...createReadyRevisionGraphState(), flowGovernance: {
+    enabled: true, configSource: 'repository' as const, branchKinds: ['main'] as const, diagnostics: [],
+    references: [{ refName: 'main', kind: 'main' as const, isEphemeral: false, diagnostics: [] }]
+  } };
+  assert.equal(isRevisionGraphMessageAllowedForState(request, state), true);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...request, repositoryPath: '/other' }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...request, action: { ...request.action, sourceRefName: 'missing' } }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(request, { ...state, loading: true }, state.repositoryPath), false);
+});
+
 test('Flow form submissions reject malformed identities and preserve existing action authorization', () => {
   const action = { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0.0', description: 'Release' } as const;
   const message = { type: 'submit-flow-form', requestId: 1, repositoryPath: '/workspace/repo', action } as const;

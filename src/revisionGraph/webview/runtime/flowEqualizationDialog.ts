@@ -4,6 +4,7 @@ interface RevisionGraphWebviewFlowEqualizationReference {
 }
 
 interface RevisionGraphWebviewFlowEqualizationDialogDependencies {
+  readonly preview: RevisionGraphFlowPreviewController;
   readonly closeContextMenu: () => void;
   readonly getOrigins: (targetRefName: string) => readonly string[];
   readonly prepare: (targetRefName: string, originRefName: string, description: string) => Promise<RevisionGraphFlowFormResponse>;
@@ -17,6 +18,7 @@ interface RevisionGraphWebviewFlowEqualizationDialogController {
 
 interface RevisionGraphWebviewFlowEqualizationDialogElements {
   readonly backdrop: HTMLElement;
+  readonly preview: HTMLElement;
   readonly submitButton: HTMLButtonElement;
   readonly originSelect: HTMLSelectElement;
   readonly descriptionInput: HTMLTextAreaElement;
@@ -84,6 +86,7 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     dialog.descriptionInput.value = '';
     setError('');
     dialog.backdrop.hidden = false;
+    syncPreview();
     document.body.classList.add('flow-dialog-open');
     window.setTimeout(() => dialog.originSelect.focus(), 0);
   }
@@ -93,9 +96,21 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     if (!elements) {
       return;
     }
+    dependencies.preview.reset();
     elements.backdrop.hidden = true;
     target = null;
     document.body.classList.remove('flow-dialog-open');
+  }
+
+  function syncPreview(): void {
+    if (!target || !elements) return;
+    const originRefName = elements.originSelect.value;
+    if (!originRefName) {
+      dependencies.preview.reset();
+      elements.preview.textContent = 'Target / base branch: ' + target.name + '\nSelect an eligible origin to preview equalization.';
+      return;
+    }
+    dependencies.preview.update({ type: 'prepare-flow-equalization', targetRefName: target.name, originRefName }, elements.preview);
   }
 
   function submit(event: Event): void {
@@ -147,6 +162,8 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     title.className = 'flow-dialog-title';
     title.textContent = 'Prepare Equalization';
     form.appendChild(title);
+    const preview = createRevisionGraphFlowPreviewElement('flowEqualizationPreview');
+    form.appendChild(preview);
 
     const originLabel = document.createElement('label');
     originLabel.className = 'flow-form-field';
@@ -198,12 +215,13 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     backdrop.appendChild(form);
     document.body.appendChild(backdrop);
 
-    elements = { backdrop, submitButton, originSelect, descriptionInput, error };
+    elements = { backdrop, preview, submitButton, originSelect, descriptionInput, error };
     backdrop.addEventListener('click', (event) => {
       if (event.target === backdrop) {
         close();
       }
     });
+    originSelect.addEventListener('change', syncPreview);
     cancelButton.addEventListener('click', close);
     form.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {

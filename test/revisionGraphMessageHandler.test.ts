@@ -10,6 +10,18 @@ import {
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 import { RemoteTagPublicationRequestContext } from '../src/revisionGraph/remoteTagState';
 
+test('Flow preview requests are routed separately from form submission', async () => {
+  const previews: unknown[] = [];
+  const request = { type: 'preview-flow-form', requestId: 3, repositoryPath: '/repo', action: {
+    type: 'prepare-flow-equalization', targetRefName: 'release/2', originRefName: 'main'
+  } } as const;
+  const handler = new RevisionGraphMessageHandler(createHost({
+    async previewFlowForm(message) { previews.push(message); }, async submitFlowForm() { assert.fail('preview cannot submit'); }
+  }));
+  await handler.handleMessage(request);
+  assert.deepEqual(previews, [request]);
+});
+
 test('Flow form submission preserves request identity and awaits the host result', async () => {
   const submissions: unknown[] = [];
   const handler = new RevisionGraphMessageHandler(createHost({ async submitFlowForm(message) { submissions.push(message); } }));
@@ -476,6 +488,7 @@ function createHost(
     async runFetchCurrentRepository() {},
     postHostMessage() {},
     postCurrentState() {},
+    async previewFlowForm() {},
     async submitFlowForm() {},
     async openFlowConfig() {},
     async updateFlowGovernanceOptions() {},

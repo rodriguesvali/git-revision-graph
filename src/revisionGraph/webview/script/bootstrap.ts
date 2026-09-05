@@ -701,9 +701,9 @@ const VIEWPORT_PADDING_LEFT = 18;
         case 'set-commit-short-stat':
           setCommitShortStat(message.commitHash, message.shortStat);
           return;
+        case 'flow-form-preview': flowPreviews.receive(message); return;
         case 'flow-form-result': flowFormBridge.receive(message); return;
-        case 'set-flow-ai-text-result':
-          flowBranchDialogController.showImprovementResult(message); return;
+        case 'set-flow-ai-text-result': flowBranchDialogController.showImprovementResult(message); return;
         case 'show-flow-branch-form': showRevisionGraphWebviewFlowBranchForm(message, getSelectableTargets(), showFlowBranchForm); return;
         case 'set-loading':
           showLoading(message.label, null, message.mode || 'blocking');

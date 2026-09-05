@@ -8,6 +8,16 @@ export function renderRevisionGraphFlowFormStyles(): string {
       color: var(--vscode-descriptionForeground);
     }
     .flow-config-details { max-height: 160px; overflow-y: auto; }
+    .flow-form-preview {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid var(--vscode-panel-border);
+      color: var(--vscode-descriptionForeground);
+      background: var(--vscode-editor-background);
+    }
     .flow-dialog-backdrop {
       position: fixed;
       inset: 0;
@@ -23,6 +33,8 @@ export function renderRevisionGraphFlowFormStyles(): string {
     }
     .flow-dialog {
       width: min(380px, calc(100vw - 40px));
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
       padding: 16px;
       border: 1px solid var(--border);
       border-radius: 8px;

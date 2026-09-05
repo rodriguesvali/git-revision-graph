@@ -25,6 +25,8 @@ const REVISION_GRAPH_MESSAGE_AUTHORIZATION_POLICIES: RevisionGraphMessageAuthori
   'choose-repository': { repositoryScoped: false, isAllowed: allowRevisionGraphMessage },
   'abort-merge': { repositoryScoped: true, isAllowed: authorizeAbortMerge },
   'set-projection-options': { repositoryScoped: false, isAllowed: allowRevisionGraphMessage },
+  'preview-flow-form': { repositoryScoped: true, isAllowed: (message, state) =>
+    message.repositoryPath === state.repositoryPath && isRevisionGraphMessageAllowedForState({ ...message.action, description: '' }, state) },
   'submit-flow-form': { repositoryScoped: true, isAllowed: (message, state) =>
     message.repositoryPath === state.repositoryPath && isRevisionGraphMessageAllowedForState(message.action, state) },
   'open-flow-config': { repositoryScoped: true, isAllowed: (message, state) =>
