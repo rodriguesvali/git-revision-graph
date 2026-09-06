@@ -12,8 +12,11 @@ function createRevisionGraphFlowPreviewElement(id: string): HTMLElement {
   const label = document.createElement('div');
   label.className = 'flow-preview-label';
   label.textContent = 'New branch';
-  const name = document.createElement('code');
-  name.className = 'flow-preview-name';
+  const nameBox = document.createElement('code');
+  nameBox.className = 'flow-preview-name';
+  const name = document.createElement('span');
+  name.className = 'flow-preview-name-text';
+  nameBox.appendChild(name);
   const context = document.createElement('div');
   context.className = 'flow-preview-context';
   const effects = document.createElement('div');
@@ -38,7 +41,7 @@ function createRevisionGraphFlowPreviewElement(id: string): HTMLElement {
     details.hidden = !details.hidden;
     toggle.setAttribute('aria-expanded', String(!details.hidden));
   });
-  root.append(label, name, context, effects, status, toggle, details);
+  root.append(label, nameBox, context, effects, status, toggle, details);
   revisionGraphFlowPreviewParts.set(root, { name, context, effects, status, toggle, details });
   return root;
 }

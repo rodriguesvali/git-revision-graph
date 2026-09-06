@@ -3826,7 +3826,8 @@ function createWebviewRuntime() {
 test('Flow preview summary keeps hierarchy, safe full-name disclosure and a separate live validation region', () => {
   const runtime = createWebviewRuntime();
   const root = runtime.context.createRevisionGraphFlowPreviewElement('summaryTest');
-  const [label, name, context, effects, status, toggle, details] = root.children;
+  const [label, nameBox, context, effects, status, toggle, details] = root.children;
+  const name = nameBox.children[0];
   const summary = { branchName: 'hotfix/' + 'long-name-'.repeat(30) + '<img>', context: 'From: main',
     effects: 'Creates locally. Publication is optional.', validation: 'No conflicts in known branches', validationState: 'valid', details: 'Rechecked on submission.' };
   runtime.context.renderRevisionGraphFlowPreview(root, { status: 'ready', text: 'legacy', summary });

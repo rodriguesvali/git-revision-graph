@@ -17,7 +17,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       background: var(--vscode-editor-background);
     }
     .flow-preview-label { font-size: 11px; margin-bottom: 4px; }
-    .flow-preview-name, .flow-preview-context, .flow-preview-effects, .flow-preview-status {
+    .flow-preview-name-text, .flow-preview-context, .flow-preview-effects, .flow-preview-status {
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
@@ -28,11 +28,17 @@ export function renderRevisionGraphFlowFormStyles(): string {
       height: 32px;
     }
     .flow-preview-name {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      box-sizing: border-box;
+      padding: 0 4px;
       color: var(--vscode-foreground);
       font-family: var(--vscode-editor-font-family);
       font-size: 13px;
       margin-bottom: 6px;
     }
+    .flow-preview-name-text { height: auto; max-height: 32px; width: 100%; min-width: 0; }
     .flow-preview-context { margin-bottom: 4px; }
     .flow-preview-effects { -webkit-line-clamp: 3; height: 48px; margin-bottom: 6px; }
     .flow-preview-status { -webkit-line-clamp: 3; height: 48px; }
@@ -69,7 +75,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       display: none;
     }
     .flow-dialog {
-      width: min(380px, calc(100vw - 40px));
+      width: min(418px, calc(100vw - 40px));
       max-height: calc(100vh - 40px);
       overflow-y: auto;
       padding: 16px;

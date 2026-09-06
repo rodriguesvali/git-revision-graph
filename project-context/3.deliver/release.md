@@ -5,6 +5,14 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Flow dialog width increased by 10% (380 to 418 px) on maintainer request, retaining the small-screen
+  viewport cap. `npm run build`, diff checks and Graphify update passed.
+
+- Preview-name alignment adjusted on 2026-09-06: vertically center one-line names and guidance while
+  preserving the two-line box. After visual feedback, use a flex container and a separate clamped
+  text span instead of WebKit box-pack. `npm test` passed 919 tests including build and quality gates;
+  diff checks and Graphify update passed. Visual smoke pending.
+
 - `1.7.1` reviewed UX summary: Flow previews emphasize the branch name, show origin and operation
   effects, separate validation, and expose full names and validation scope through a keyboard-accessible
   disclosure. See `project-context/2.build/features/1.7.1-flow-governance-preview-summary.md`.
