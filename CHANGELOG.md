@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Present Flow previews as a structured summary with an emphasized branch name, visible origin and
+  operation effects, separate validation, and expandable full-name/validation details.
+
 - Keep Flow previews visible while typing, update after a brief pause, and reserve stable preview
   space so loading and validation messages do not move the form fields.
 

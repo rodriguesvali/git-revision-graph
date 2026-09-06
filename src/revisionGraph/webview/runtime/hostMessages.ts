@@ -94,5 +94,12 @@ function isRevisionGraphWebviewFlowCorrelationMessage(value: Record<string, unkn
 
 function isRevisionGraphWebviewFlowPreviewMessage(value: Record<string, unknown>): boolean {
   return isRevisionGraphWebviewFlowCorrelationMessage(value) && typeof value.text === 'string'
+    && (value.summary === undefined || isRevisionGraphFlowPreviewSummary(value.summary))
     && (value.status === 'ready' || value.status === 'unavailable');
+}
+
+function isRevisionGraphFlowPreviewSummary(value: unknown): boolean {
+  if (!isRevisionGraphWebviewRecord(value)) return false;
+  return ['branchName', 'context', 'effects', 'validation', 'details'].every((key) => typeof value[key] === 'string')
+    && (value.validationState === 'neutral' || value.validationState === 'valid' || value.validationState === 'invalid');
 }

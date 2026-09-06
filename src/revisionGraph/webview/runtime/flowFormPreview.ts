@@ -34,7 +34,7 @@ function createRevisionGraphFlowPreviewController(
       element = nextElement;
       repositoryPath = nextRepository;
       requestId = ++nextFlowPreviewRequestId;
-      if (!retainPreview) element.textContent = 'Loading operation preview…';
+      setRevisionGraphFlowPreviewPending(element, retainPreview);
       element.setAttribute('aria-busy', 'true');
       const id = requestId;
       timer = window.setTimeout(() => {
@@ -46,7 +46,7 @@ function createRevisionGraphFlowPreviewController(
     receive(message): void {
       if (!element || message.requestId !== requestId || message.repositoryPath !== repositoryPath
         || message.repositoryPath !== getRepositoryPath()) return;
-      element.textContent = message.text;
+      renderRevisionGraphFlowPreview(element, message);
       element.setAttribute('aria-busy', 'false');
     },
     reset
@@ -63,13 +63,4 @@ function createRevisionGraphFlowPreviews(
     branch.receive(message);
     equalization.receive(message);
   } };
-}
-
-function createRevisionGraphFlowPreviewElement(id: string): HTMLElement {
-  const element = document.createElement('div');
-  element.id = id;
-  element.className = 'flow-form-preview';
-  element.setAttribute('role', 'status');
-  element.setAttribute('aria-live', 'polite');
-  return element;
 }

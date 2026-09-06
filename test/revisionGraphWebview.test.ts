@@ -1766,10 +1766,12 @@ for (const kind of ['branch', 'equalization'] as const) {
       assert.equal(stopped, true, 'dialog keystrokes must not trigger graph shortcuts');
       return prevented;
     }
+    const disclosure = runtime.createdElements.find((element) => element.className === 'flow-preview-toggle')!;
+    disclosure.focus();
     assert.equal(key('Tab', true), true);
     assert.equal(active(), last);
     key('Tab');
-    assert.equal(active(), first);
+    assert.equal(active(), disclosure);
     assert.equal(key('Tab'), false, 'ordinary forward traversal remains native');
     last.disabled = true;
     key('Tab', true);
@@ -1860,6 +1862,11 @@ test('form result guards reject malformed status and correlation fields', () => 
   const runtime = createWebviewRuntime();
   const result = { type: 'flow-form-result', requestId: 1, repositoryPath: '/repo', status: 'retry', message: 'Keep draft' };
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(result), true);
+  const summary = { branchName: 'release/2', context: 'From: main', effects: 'Create locally', validation: 'Enter name', validationState: 'neutral', details: 'Known refs only' };
+  const preview = { ...result, type: 'flow-form-preview', status: 'ready', text: 'Preview', summary };
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(preview), true);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...preview, summary: { ...summary, branchName: null } }), false);
+  assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...preview, summary: { ...summary, validationState: 'guaranteed' } }), false);
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...result, type: 'flow-form-preview', status: 'ready', text: 'Expected branch: release/2' }), true);
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({ ...result, type: 'flow-form-preview', status: 'ready', text: null }), false);
   for (const invalid of [{ ...result, requestId: 0 }, { ...result, requestId: 1.5 }, { ...result, status: 'done' }, { ...result, message: null }]) {
@@ -3583,6 +3590,7 @@ function createWebviewRuntime() {
       contains: () => false
     };
     readonly attributes = new Map<string, string>();
+    className = '';
     innerHTML = '';
     hidden = false;
     disabled = false;
@@ -3813,3 +3821,37 @@ function createWebviewRuntime() {
     windowListeners
   };
 }
+
+
+test('Flow preview summary keeps hierarchy, safe full-name disclosure and a separate live validation region', () => {
+  const runtime = createWebviewRuntime();
+  const root = runtime.context.createRevisionGraphFlowPreviewElement('summaryTest');
+  const [label, name, context, effects, status, toggle, details] = root.children;
+  const summary = { branchName: 'hotfix/' + 'long-name-'.repeat(30) + '<img>', context: 'From: main',
+    effects: 'Creates locally. Publication is optional.', validation: 'No conflicts in known branches', validationState: 'valid', details: 'Rechecked on submission.' };
+  runtime.context.renderRevisionGraphFlowPreview(root, { status: 'ready', text: 'legacy', summary });
+  assert.equal(label.textContent, 'New branch');
+  assert.equal(name.textContent, summary.branchName);
+  assert.equal(name.innerHTML, '');
+  assert.equal(context.textContent, summary.context);
+  assert.equal(effects.textContent, summary.effects);
+  assert.equal(root.getAttribute('aria-live'), null);
+  assert.equal(status.getAttribute('role'), 'status');
+  assert.equal(status.textContent, summary.validation);
+  assert.equal(details.hidden, true);
+  toggle.listeners.click[0]();
+  assert.equal(details.hidden, false);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.ok(details.textContent.includes(summary.branchName));
+  runtime.context.setRevisionGraphFlowPreviewPending(root, true);
+  assert.equal(name.textContent, summary.branchName);
+  assert.equal(status.textContent, 'Checking updated name…');
+  assert.equal(status.dataset.state, 'neutral');
+  runtime.context.renderRevisionGraphFlowPreview(root, { status: 'unavailable', text: 'legacy', summary: { ...summary, validation: 'Branch already exists.', validationState: 'invalid' } });
+  assert.equal(status.dataset.state, 'invalid');
+  assert.equal(status.getAttribute('aria-busy'), 'false');
+  assert.equal(details.hidden, false, 'updates preserve explicit expansion');
+  runtime.context.setRevisionGraphFlowPreviewPending(root, false);
+  assert.equal(details.hidden, true);
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+});

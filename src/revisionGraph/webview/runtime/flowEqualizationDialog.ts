@@ -110,7 +110,8 @@ function createRevisionGraphWebviewFlowEqualizationDialogController(
     const originRefName = elements.originSelect.value;
     if (!originRefName) {
       dependencies.preview.reset();
-      elements.preview.textContent = 'Target / base branch: ' + target.name + '\nSelect an eligible origin to preview equalization.';
+      setRevisionGraphFlowPreviewPending(elements.preview, false);
+      renderRevisionGraphFlowPreview(elements.preview, { status: 'unavailable', text: 'Target / base branch: ' + target.name + '\nSelect an eligible origin to preview equalization.' });
       return;
     }
     dependencies.preview.update({ type: 'prepare-flow-equalization', targetRefName: target.name, originRefName }, elements.preview);

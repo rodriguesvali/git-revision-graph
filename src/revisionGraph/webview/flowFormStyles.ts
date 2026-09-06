@@ -9,16 +9,51 @@ export function renderRevisionGraphFlowFormStyles(): string {
     }
     .flow-config-details { max-height: 160px; overflow-y: auto; }
     .flow-form-preview {
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      height: 120px;
-      box-sizing: border-box;
-      scrollbar-gutter: stable;
-      overflow-y: auto;
       padding: 10px;
+      margin-bottom: 12px;
       border: 1px solid var(--vscode-panel-border);
+      border-radius: 4px;
       color: var(--vscode-descriptionForeground);
       background: var(--vscode-editor-background);
+    }
+    .flow-preview-label { font-size: 11px; margin-bottom: 4px; }
+    .flow-preview-name, .flow-preview-context, .flow-preview-effects, .flow-preview-status {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      line-height: 16px;
+      height: 32px;
+    }
+    .flow-preview-name {
+      color: var(--vscode-foreground);
+      font-family: var(--vscode-editor-font-family);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .flow-preview-context { margin-bottom: 4px; }
+    .flow-preview-effects { -webkit-line-clamp: 3; height: 48px; margin-bottom: 6px; }
+    .flow-preview-status { -webkit-line-clamp: 3; height: 48px; }
+    .flow-preview-status[data-state="invalid"] { color: var(--vscode-errorForeground); }
+    .flow-preview-toggle {
+      display: block;
+      background: none;
+      border: 0;
+      padding: 4px 0;
+      color: var(--vscode-textLink-foreground);
+      font: inherit;
+      cursor: pointer;
+    }
+    .flow-preview-toggle:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+    .flow-preview-toggle:disabled { opacity: 0.5; cursor: default; }
+    .flow-preview-details {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      margin-top: 6px;
+      height: 144px;
+      overflow-y: auto;
     }
     .flow-dialog-backdrop {
       position: fixed;

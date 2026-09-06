@@ -75,3 +75,18 @@ test('incomplete names show only examples accepted by the repository configurati
   assert.doesNotMatch(result.text, /Example branch:/);
   assert.match(result.text, /Required pattern: \^release\/special\$/);
 });
+
+
+test('structured previews distinguish guidance, conflicts and operation consequences', () => {
+  const action = { type: 'start-flow-branch', branchKind: 'hotfix', sourceRefName: 'main', name: '' } as const;
+  const incomplete = describeFlowFormPreview(action, DEFAULT_FLOW_CONFIG);
+  assert.equal(incomplete.summary?.validationState, 'neutral');
+  assert.match(incomplete.summary?.effects ?? '', /asked whether to publish/);
+  const valid = describeFlowFormPreview({ ...action, name: '42-fix' }, DEFAULT_FLOW_CONFIG, () => undefined);
+  assert.equal(valid.summary?.branchName, 'hotfix/42-fix');
+  assert.equal(valid.summary?.context, 'From: main');
+  assert.match(valid.summary?.details ?? '', /permissions are not checked/);
+  const equalization = describeFlowFormPreview({ type: 'prepare-flow-equalization', targetRefName: 'release/2', originRefName: 'main' }, DEFAULT_FLOW_CONFIG);
+  assert.equal(equalization.summary?.context, 'Base: release/2\nMerge from: main');
+  assert.match(equalization.summary?.effects ?? '', /no automatic push/);
+});

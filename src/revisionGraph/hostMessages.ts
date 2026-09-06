@@ -131,7 +131,7 @@ export function createFlowFormResultMessage(
 
 export function createFlowFormPreviewMessage(
   request: RevisionGraphProtocol.MessageOf<'preview-flow-form'>,
-  preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text'>
+  preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text' | 'summary'>
 ): RevisionGraphProtocol.FlowFormPreview {
   return { type: 'flow-form-preview', requestId: request.requestId, repositoryPath: request.repositoryPath, ...preview };
 }

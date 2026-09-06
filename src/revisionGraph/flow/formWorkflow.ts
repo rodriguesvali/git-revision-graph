@@ -26,7 +26,7 @@ export class FlowFormWorkflow {
   async preview(request: RevisionGraphProtocol.MessageOf<'preview-flow-form'>): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository || this.disposed || repository.rootUri.fsPath !== request.repositoryPath) return;
-    let preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text'> = {
+    let preview: Pick<RevisionGraphProtocol.FlowFormPreview, 'status' | 'text' | 'summary'> = {
       status: 'unavailable', text: 'Preview unavailable. Review Flow Governance configuration in View.'
     };
     try {

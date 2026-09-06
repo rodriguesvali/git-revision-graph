@@ -5,6 +5,12 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- `1.7.1` reviewed UX summary: Flow previews emphasize the branch name, show origin and operation
+  effects, separate validation, and expose full names and validation scope through a keyboard-accessible
+  disclosure. See `project-context/2.build/features/1.7.1-flow-governance-preview-summary.md`.
+  `npm test` passed 919 tests including build and quality gates; diff checks and Graphify update passed.
+  Manual Extension Development Host visual smoke pending.
+
 - `1.7.1` typing feedback correction: preserve the existing Flow preview during edits, debounce at
   350 ms, and reserve stable preview space to prevent form movement. See
   `project-context/2.build/features/1.7.1-flow-governance-stable-preview.md`.

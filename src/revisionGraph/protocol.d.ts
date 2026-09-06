@@ -74,12 +74,21 @@ declare namespace RevisionGraphProtocol {
   type FlowFormPreviewAction =
     | Omit<Extract<FlowFormAction, { type: 'start-flow-branch' }>, 'description'>
     | Omit<Extract<FlowFormAction, { type: 'prepare-flow-equalization' }>, 'description'>;
+  interface FlowPreviewSummary {
+    readonly branchName: string;
+    readonly context: string;
+    readonly effects: string;
+    readonly validation: string;
+    readonly validationState: 'neutral' | 'valid' | 'invalid';
+    readonly details: string;
+  }
   interface FlowFormPreview {
     readonly type: 'flow-form-preview';
     readonly requestId: number;
     readonly repositoryPath: string;
     readonly status: 'ready' | 'unavailable';
     readonly text: string;
+    readonly summary?: FlowPreviewSummary;
   }
 
   type Message =

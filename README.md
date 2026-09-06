@@ -88,7 +88,8 @@ replacing normal Git Revision Graph behavior.
 - Prepare local `sync/*` equalization branches without automatic push and hand governed integrations
   off to supported Pull Request workflows.
 - Preview the source, target/base, expected branch name, checkout and merge effects before submitting
-  branch or equalization forms. Names follow the repository configuration. Incomplete or invalid names
+  branch or equalization forms. The summary highlights the final name, separates validation feedback,
+  and offers expandable details with the full name. Names follow the repository configuration. Incomplete or invalid names
   show a compatible example or the required pattern. Previews identify conflicts with known local and
   remote-tracking branches; submission rechecks availability.
 - Navigate branch and equalization dialogs with Tab/Shift+Tab. Escape closes idle forms; closing

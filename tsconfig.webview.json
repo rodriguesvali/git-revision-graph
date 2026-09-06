@@ -67,6 +67,7 @@
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/runtime/flowAiTextUi.ts",
     "src/revisionGraph/webview/runtime/flowFormPreview.ts",
+    "src/revisionGraph/webview/runtime/flowPreviewSummary.ts",
     "src/revisionGraph/webview/runtime/flowFormSubmission.ts",
     "src/revisionGraph/webview/runtime/flowDialogFocus.ts",
     "src/revisionGraph/webview/runtime/flowBranchForm.ts",
