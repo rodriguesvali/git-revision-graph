@@ -129,7 +129,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       resize: vertical;
     }
     .flow-ai-field-row {
-      display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: start; gap: 4px;
+      display: flex; align-items: flex-start; gap: 4px;
     }
     .flow-ai-text-action {
       display: inline-flex;
@@ -158,7 +158,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       height: 17px;
       fill: currentColor;
     }
-    .flow-ai-field-row .flow-form-textarea { min-height: 96px; }
+    .flow-ai-field-row .flow-form-textarea { flex: 1; min-width: 0; min-height: 96px; }
     .flow-ai-text-action:disabled { opacity: 0.45; cursor: default; }
     .flow-form-error {
       margin: 0 0 12px;

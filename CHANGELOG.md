@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Keep Open Configuration working across same-repository refreshes and let descriptions use the full
+  form width when the AI action is hidden.
+
 - Finish toggle saving across same-repository refreshes and offer Retry preview after temporary
   unavailability without requiring a name change.
 

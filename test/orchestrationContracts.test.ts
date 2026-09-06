@@ -952,6 +952,7 @@ function installVscodePanelMock(
   t: test.TestContext,
   options: {
     readonly openExternalResult?: boolean;
+    readonly beforeOpenTextDocumentReturn?: () => void;
   } = {}
 ): {
   readonly extensionUri: never;
@@ -1064,6 +1065,7 @@ function installVscodePanelMock(
     workspace: {
       openTextDocument: async (uri: { fsPath: string }) => {
         openedTextDocuments.push(uri.fsPath);
+        options.beforeOpenTextDocumentReturn?.();
         return uri;
       },
       asRelativePath: (value: { fsPath?: string } | string) => typeof value === 'string' ? value : value.fsPath ?? '',
@@ -1109,4 +1111,33 @@ function loadFresh(moduleId: string): unknown {
   const modulePath = require.resolve(moduleId);
   delete require.cache[modulePath];
   return require(moduleId) as unknown;
+}
+
+
+for (const change of ['refresh', 'switch', 'dispose'] as const) {
+  for (const stage of ['inspect', 'show'] as const) {
+    test(`Flow config recovery handles repository ${change} during ${stage}`, async (t) => {
+      const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'flow-config-current-')));
+      t.after(() => rm(root, { recursive: true, force: true }));
+      const configPath = path.join(root, '.git-revision-graph-flow.json');
+      await writeFile(configPath, '{}');
+      let repository = createRepository({ root });
+      let workflow: import('../src/revisionGraph/flow/governanceWorkflow').RevisionGraphFlowGovernanceWorkflow;
+      const changeRepository = () => {
+        if (change === 'dispose') workflow.dispose();
+        else repository = createRepository({ root: change === 'refresh' ? root : '/other' });
+      };
+      const harness = installVscodePanelMock(t, {
+        beforeOpenTextDocumentReturn: stage === 'show' ? changeRepository : undefined
+      });
+      const { RevisionGraphFlowGovernanceWorkflow } = loadFresh('../src/revisionGraph/flow/governanceWorkflow') as typeof import('../src/revisionGraph/flow/governanceWorkflow');
+      workflow = new RevisionGraphFlowGovernanceWorkflow({ getCurrentRepository: () => repository } as never);
+      t.after(() => workflow.dispose());
+      const operation = workflow.openConfig(root);
+      if (stage === 'inspect') changeRepository();
+      await operation;
+      assert.equal(harness.openedTextDocuments.length, stage === 'show' || change === 'refresh' ? 1 : 0);
+      assert.deepEqual(harness.shownTextDocuments, change === 'refresh' ? [{ fsPath: configPath }] : []);
+    });
+  }
 }

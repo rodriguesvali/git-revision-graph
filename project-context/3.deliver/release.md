@@ -1,9 +1,27 @@
 # Release Readiness
 
 Status: `1.7.1` development cycle opened; release verification and publication pending
-Last consolidated: 2026-09-05
+Last consolidated: 2026-09-06
 
 ## Current State
+
+- Final-review P2/P3 corrections implemented on 2026-09-06: Open Configuration tolerates same-path
+  repository wrapper changes during inspection/reveal; Package descriptions reclaim the space of the
+  hidden AI action. See `project-context/2.build/features/1.7.1-flow-governance-review-fixes.md`.
+  `npm test` passed 928 tests including build and quality gates; diff checks and Graphify update passed.
+  Manual smoke and installed-VSIX validation remain pending.
+
+- Final Flow Governance review on 2026-09-06 (`eab71fa`): `npm test` passed all 922 tests including
+  build and quality gates; npm audit (all dependencies and production-only) reported zero known
+  vulnerabilities. After build, `vsce ls` listed 657 files including `out/extension.js` and the browser
+  bundle; this was an inclusion check, not a built/installed VSIX. No packaging or publication ran.
+  P2 found at review (corrected in the follow-up above): `governanceWorkflow.ts` openConfig still compares Repository object identity;
+  same-path wrapper replacement during path inspection silently prevents document opening (reproduced).
+  P3 found at review (corrected in the follow-up above): the description grid reserves 26 px plus a 4 px gap even when Package hides the AI
+  action. Earlier toggle completion and explicit preview retry fixes are present.
+  No P0/P1 identified in this review. Recommend addressing the P2 and completing manual smoke for
+  publication cancellation, partial failures, keyboard interaction and repository switching before
+  release sign-off. Installed-VSIX validation and maintainer publication approval remain outstanding.
 
 - Baseline review fixes: toggle persistence now tolerates same-path Git API wrapper replacement and
   transient preview failures offer Retry preview for unchanged input. See

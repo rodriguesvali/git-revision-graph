@@ -119,7 +119,7 @@ export class RevisionGraphFlowGovernanceWorkflow {
   async openConfig(repositoryPath: string): Promise<void> {
     const repository = this.host.getCurrentRepository();
     if (!repository || repository.rootUri.fsPath !== repositoryPath || this.disposed) return;
-    const isCurrent = () => !this.disposed && this.host.getCurrentRepository() === repository;
+    const isCurrent = () => !this.disposed && this.host.getCurrentRepository()?.rootUri.fsPath === repositoryPath;
     await openFlowConfigForRecovery(repositoryPath, this.resolveSettings(repository).configPath ?? DEFAULT_FLOW_CONFIG_PATH, {
       isCurrent,
       warn: (message) => { void vscode.window.showWarningMessage(message); },
