@@ -15,22 +15,26 @@ function createRevisionGraphFlowPreviewController(
   let repositoryPath: string | undefined;
   let element: HTMLElement | undefined;
   let key = '';
+  let action: RevisionGraphProtocol.FlowFormPreviewAction | undefined;
   function reset(): void {
     window.clearTimeout(timer);
     timer = undefined;
     requestId = 0;
     key = '';
+    if (element) setRevisionGraphFlowPreviewRetry(element);
+    action = undefined;
     element?.removeAttribute('aria-busy');
     element = undefined;
   }
-  return {
-    update(action, nextElement): void {
+  const controller: RevisionGraphFlowPreviewController = {
+    update(nextAction, nextElement): void {
       const nextRepository = getRepositoryPath();
-      const nextKey = JSON.stringify([nextRepository, action]);
+      const nextKey = JSON.stringify([nextRepository, nextAction]);
       if (key === nextKey && element === nextElement) return;
       const retainPreview = element === nextElement && repositoryPath === nextRepository;
       reset();
       key = nextKey;
+      action = nextAction;
       element = nextElement;
       repositoryPath = nextRepository;
       requestId = ++nextFlowPreviewRequestId;
@@ -39,18 +43,26 @@ function createRevisionGraphFlowPreviewController(
       const id = requestId;
       timer = window.setTimeout(() => {
         if (requestId === id && repositoryPath && repositoryPath === getRepositoryPath()) {
-          postMessage({ type: 'preview-flow-form', requestId: id, repositoryPath, action });
+          postMessage({ type: 'preview-flow-form', requestId: id, repositoryPath, action: nextAction });
         }
       }, 350);
     },
     receive(message): void {
       if (!element || message.requestId !== requestId || message.repositoryPath !== repositoryPath
         || message.repositoryPath !== getRepositoryPath()) return;
+      setRevisionGraphFlowPreviewRetry(element);
       renderRevisionGraphFlowPreview(element, message);
       element.setAttribute('aria-busy', 'false');
+      if (message.status === 'unavailable' && !message.summary) {
+        key = '';
+        setRevisionGraphFlowPreviewRetry(element, () => {
+          if (element && action && repositoryPath === getRepositoryPath()) controller.update(action, element);
+        });
+      }
     },
     reset
   };
+  return controller;
 }
 
 function createRevisionGraphFlowPreviews(

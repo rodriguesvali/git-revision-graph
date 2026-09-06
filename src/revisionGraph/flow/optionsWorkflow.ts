@@ -9,7 +9,7 @@ import type { FlowConfigResolution, FlowGovernanceOptionsUpdate, FlowGovernanceS
 
 /** Commits UI activation only after the repository configuration has been persisted and validated. */
 export class FlowGovernanceOptionsWorkflow {
-  private readonly pendingOptions = new Set<Repository>();
+  private readonly pendingOptions = new Set<string>();
   private disposed = false;
 
   constructor(
@@ -29,12 +29,12 @@ export class FlowGovernanceOptionsWorkflow {
 
     const repository = this.host.getCurrentRepository();
     if (!repository || options.enabled === undefined || this.disposed) return;
-    if (this.pendingOptions.has(repository)) {
+    if (this.pendingOptions.has(repository.rootUri.fsPath)) {
       this.host.postCurrentState();
       return;
     }
     const settings = this.resolveSettings(repository);
-    this.pendingOptions.add(repository);
+    this.pendingOptions.add(repository.rootUri.fsPath);
     this.host.setCurrentState({
       ...currentState,
       flowGovernance: { ...flowGovernance, saving: true }
@@ -46,7 +46,7 @@ export class FlowGovernanceOptionsWorkflow {
       const resolution = await resolveFlowConfigForRepository(repository.rootUri.fsPath, settings);
       await this.completeUpdate(repository, result, resolution);
     } catch (error) {
-      if (!this.disposed && this.host.getCurrentRepository() === repository) {
+      if (this.isCurrent(repository)) {
         void vscode.window.showWarningMessage(
           `Could not update Flow Governance config: ${getErrorMessage(error)}. Check the configuration file and try again.`
         );
@@ -61,7 +61,7 @@ export class FlowGovernanceOptionsWorkflow {
     result: RepositoryFlowConfigOptionsUpdateResult,
     resolution: FlowConfigResolution
   ): Promise<void> {
-    if (this.disposed || this.host.getCurrentRepository() !== repository) return;
+    if (!this.isCurrent(repository)) return;
     const latestState = this.host.getCurrentState();
     if (latestState.viewMode !== 'ready' || !latestState.flowGovernance) return;
     const references = classifyFlowBranches(
@@ -83,7 +83,7 @@ export class FlowGovernanceOptionsWorkflow {
     if (result.created) {
       try {
         const document = await vscode.workspace.openTextDocument(vscode.Uri.file(result.path));
-        if (!this.disposed && this.host.getCurrentRepository() === repository) {
+        if (this.isCurrent(repository)) {
           await vscode.window.showTextDocument(document, { preview: false });
         }
       } catch (error) {
@@ -94,9 +94,13 @@ export class FlowGovernanceOptionsWorkflow {
     }
   }
 
+  private isCurrent(repository: Repository): boolean {
+    return !this.disposed && this.host.getCurrentRepository()?.rootUri.fsPath === repository.rootUri.fsPath;
+  }
+
   private clearSaving(repository: Repository): void {
-    this.pendingOptions.delete(repository);
-    if (!this.disposed && this.host.getCurrentRepository() === repository) {
+    this.pendingOptions.delete(repository.rootUri.fsPath);
+    if (this.isCurrent(repository)) {
       const latestState = this.host.getCurrentState();
       if (latestState.flowGovernance?.saving) {
         this.host.setCurrentState({

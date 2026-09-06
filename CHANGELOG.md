@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
+- Finish toggle saving across same-repository refreshes and offer Retry preview after temporary
+  unavailability without requiring a name change.
+
 - Present Flow previews as a structured summary with an emphasized branch name, visible origin and
   operation effects, separate validation, and expandable full-name/validation details.
 

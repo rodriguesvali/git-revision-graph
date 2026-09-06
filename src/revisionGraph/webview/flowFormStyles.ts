@@ -53,6 +53,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       cursor: pointer;
     }
     .flow-preview-toggle:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+    .flow-preview-toggle[hidden] { display: none; }
     .flow-preview-toggle:disabled { opacity: 0.5; cursor: default; }
     .flow-preview-details {
       white-space: pre-wrap;

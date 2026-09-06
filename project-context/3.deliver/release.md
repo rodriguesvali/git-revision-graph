@@ -5,6 +5,12 @@ Last consolidated: 2026-09-05
 
 ## Current State
 
+- Baseline review fixes: toggle persistence now tolerates same-path Git API wrapper replacement and
+  transient preview failures offer Retry preview for unchanged input. See
+  `project-context/2.build/features/1.7.1-flow-governance-review-fixes.md`.
+  `npm test` passed 922 tests including build and quality gates; diff checks and Graphify update passed.
+  Manual Extension Development Host smoke pending.
+
 - Flow dialog width increased by 10% (380 to 418 px) on maintainer request, retaining the small-screen
   viewport cap. `npm run build`, diff checks and Graphify update passed.
 

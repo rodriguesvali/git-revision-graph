@@ -1,6 +1,6 @@
 interface RevisionGraphFlowPreviewParts {
   name: HTMLElement; context: HTMLElement; effects: HTMLElement; status: HTMLElement;
-  toggle: HTMLButtonElement; details: HTMLElement;
+  toggle: HTMLButtonElement; details: HTMLElement; retry: HTMLButtonElement;
 }
 const revisionGraphFlowPreviewParts = new WeakMap<HTMLElement, RevisionGraphFlowPreviewParts>();
 
@@ -41,8 +41,13 @@ function createRevisionGraphFlowPreviewElement(id: string): HTMLElement {
     details.hidden = !details.hidden;
     toggle.setAttribute('aria-expanded', String(!details.hidden));
   });
-  root.append(label, nameBox, context, effects, status, toggle, details);
-  revisionGraphFlowPreviewParts.set(root, { name, context, effects, status, toggle, details });
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'flow-preview-toggle';
+  retry.textContent = 'Retry preview';
+  retry.hidden = true;
+  root.append(label, nameBox, context, effects, status, toggle, details, retry);
+  revisionGraphFlowPreviewParts.set(root, { name, context, effects, status, toggle, details, retry });
   return root;
 }
 
@@ -82,4 +87,15 @@ function renderRevisionGraphFlowPreview(root: HTMLElement, message: Pick<Revisio
     parts.details.textContent = message.text;
   }
   parts.status.setAttribute('aria-busy', 'false');
+}
+
+function setRevisionGraphFlowPreviewRetry(root: HTMLElement, callback?: () => void): void {
+  const parts = revisionGraphFlowPreviewParts.get(root);
+  if (!parts) return;
+  if (!callback && document.activeElement === parts.retry) {
+    parts.status.tabIndex = -1;
+    parts.status.focus();
+  }
+  parts.retry.hidden = !callback;
+  parts.retry.onclick = callback ?? null;
 }

@@ -3856,3 +3856,43 @@ test('Flow preview summary keeps hierarchy, safe full-name disclosure and a sepa
   assert.equal(details.hidden, true);
   assert.equal(toggle.getAttribute('aria-expanded'), 'false');
 });
+
+
+test('Flow preview retries unavailable responses without editing and clears retries on close or repository switch', () => {
+  const runtime = createWebviewRuntime();
+  const timers = new Map<number, () => void>();
+  let timerId = 0;
+  const windowMock = (globalThis as any).window;
+  windowMock.setTimeout = (callback: () => void) => { timers.set(++timerId, callback); return timerId; };
+  windowMock.clearTimeout = (id: number) => timers.delete(id);
+  const flush = () => { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach((callback) => callback()); };
+  let repositoryPath = '/repo/a';
+  const messages: any[] = [];
+  const preview = runtime.context.createRevisionGraphFlowPreviewController(() => repositoryPath, (message: unknown) => messages.push(message));
+  const root = runtime.context.createRevisionGraphFlowPreviewElement('retryPreview');
+  const retry = root.children.at(-1);
+  const action = { type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: '2.0' };
+  const fail = () => preview.receive({ ...messages.at(-1), type: 'flow-form-preview', status: 'unavailable', text: 'Reload the graph' });
+  preview.update(action, root); flush(); fail();
+  assert.equal(retry.hidden, false);
+  retry.onclick();
+  assert.equal(retry.hidden, true);
+  flush();
+  assert.equal(messages.length, 2);
+  assert.deepEqual(messages[1].action, action);
+  assert.notEqual(messages[1].requestId, messages[0].requestId);
+  preview.receive({ ...messages[0], type: 'flow-form-preview', status: 'unavailable', text: 'Old reply' });
+  assert.equal(retry.hidden, true);
+  fail();
+  repositoryPath = '/repo/b';
+  retry.onclick(); flush();
+  assert.equal(messages.length, 2);
+  preview.reset();
+  assert.equal(retry.hidden, true);
+  assert.equal(retry.onclick, null);
+  preview.update(action, root); flush();
+  preview.receive({ ...messages.at(-1), type: 'flow-form-preview', status: 'unavailable', text: 'Invalid name', summary: {
+    branchName: 'Invalid', context: 'From main', effects: 'Create locally', validation: 'Fix name', validationState: 'invalid', details: 'Pattern'
+  } });
+  assert.equal(retry.hidden, true, 'name validation requires correction rather than retry');
+});

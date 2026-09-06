@@ -767,7 +767,7 @@ test('Flow Governance opens a configuration created by enabling the file-backed 
   assert.deepEqual(harness.shownTextDocuments, [{ fsPath: configPath }]);
 });
 
-for (const outcome of ['failure', 'throw', 'success', 'switch', 'dispose', 'invalid'] as const) {
+for (const outcome of ['failure', 'throw', 'success', 'refresh', 'refresh-throw', 'switch', 'dispose', 'invalid'] as const) {
   test(`Flow Governance toggle persistence: ${outcome}`, async (t) => {
     installVscodePanelMock(t);
     const { RevisionGraphFlowGovernanceWorkflow } = loadFresh(
@@ -789,7 +789,7 @@ for (const outcome of ['failure', 'throw', 'success', 'switch', 'dispose', 'inva
     const persistence = new FlowConfigPersistenceCoordinator(async () => {
       writes++;
       await gate.promise;
-      if (outcome === 'throw') throw new Error('Disk unavailable');
+      if (outcome === 'throw' || outcome === 'refresh-throw') throw new Error('Disk unavailable');
       if (outcome === 'failure') return { ok: false, issue: { path: '$', message: 'Read-only file' } };
       await writeFile(configPath, JSON.stringify({ schemaVersion: outcome === 'invalid' ? 99 : 1, enabled: true }));
       return { ok: true, path: configPath, created: false };
@@ -807,6 +807,7 @@ for (const outcome of ['failure', 'throw', 'success', 'switch', 'dispose', 'inva
     const operation = workflow.updateOptions({ enabled: true });
     assert.equal(state.flowGovernance?.enabled, false);
     assert.equal(state.flowGovernance?.saving, true);
+    if (outcome === 'refresh' || outcome === 'refresh-throw') repository = createRepository({ root });
     await workflow.updateOptions({ enabled: true });
     assert.equal(writes, 1, 'duplicate submission must not write twice');
     if (outcome === 'switch') {
@@ -821,7 +822,7 @@ for (const outcome of ['failure', 'throw', 'success', 'switch', 'dispose', 'inva
       assert.equal(state, beforeCompletion, 'stale completion must not change current state');
     } else {
       assert.equal(state.flowGovernance?.saving === true, false);
-      assert.equal(state.flowGovernance?.enabled, outcome === 'success');
+      assert.equal(state.flowGovernance?.enabled, outcome === 'success' || outcome === 'refresh');
       if (outcome === 'invalid') assert.equal(state.flowGovernance?.configSource, 'invalid');
       if (outcome === 'success') assert.equal(state.flowGovernance?.references[0]?.kind, 'main');
     }
