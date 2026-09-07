@@ -1,32 +1,37 @@
 # Release Readiness
 
-Status: `1.7.1` artifacts reviewed; manual validation, VSIX verification and publication pending
-Last consolidated: 2026-09-06
+Status: `1.7.1` publication confirmed by the maintainer on 2026-09-07
+Last consolidated: 2026-09-07
 
-## Current candidate — 1.7.1
+## Published release — 1.7.1
 
+Publication confirmed by the maintainer on 2026-09-07 after announcing VSIX generation and publication.
+This records the maintainer confirmation; the public catalog was not independently checked in this update.
 Artifact review: 2026-09-06, implementation commit `cb3f134`. The table below is the current release
 status; chronological entries below it retain evidence from earlier increments and releases.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified | `package.json`, lockfile version and root package all declare 1.7.1; publisher `rodriguesvali`; VS Code engine ^1.90.0 and API types 1.90.0. |
-| Public documentation | Reviewed | Consolidated CHANGELOG covers final Flow UX and development dependency updates; README documents previews/retry; PUBLISHING points to candidate-specific gates. Keep Unreleased until release approval. |
+| Public documentation | Reviewed | Consolidated CHANGELOG covers final Flow UX and development dependency updates; README documents previews/retry; PUBLISHING points to candidate-specific gates. CHANGELOG release date recorded as 2026-09-07 following maintainer confirmation. |
 | Automated verification | Passed for implementation | 928 tests, including build and quality gates, passed for the final corrections recorded below. Artifact-only edits did not change production code. |
 | Dependencies | Verified | Fresh npm audit reports zero known vulnerabilities; npm ls confirms d3-dag@1.2.2 as the direct runtime dependency. fast-uri@3.1.7 and qs@6.16.0 are development lockfile entries. |
 | Package inclusion | Verified, not a VSIX inspection | `vsce ls` lists 657 files, including manifest, README, CHANGELOG, MIT LICENSE, PNG icon, extension entry point and browser bundle. Source, tests, project-context, Graphify output and .codex files are excluded. |
 | Review findings | Corrected | Toggle/config opening wrapper races, transient preview retry and hidden AI-column spacing are resolved. |
-| Manual Extension Development Host smoke | Pending | Confirm publication/fork cancellation, recoverable/partial failures, configuration/toggle during refresh, Retry preview, keyboard/long-name details, Package description width and repository switching. Screenshots provided during development do not establish a complete final smoke pass. |
-| VSIX packaging and inspection | Pending | After manual smoke and explicit packaging approval: build the VSIX and record filename, embedded version, byte size, SHA-256 and included assets. |
-| Clean-profile VSIX installation | Pending | Install and exercise the inspected VSIX in a clean VS Code profile. |
-| Marketplace publication | Pending | Requires separate maintainer authorization after the preceding gates pass; record publication and installed-version evidence. |
+| Manual Extension Development Host smoke | Not recorded | Confirm publication/fork cancellation, recoverable/partial failures, configuration/toggle during refresh, Retry preview, keyboard/long-name details, Package description width and repository switching. Screenshots provided during development do not establish a complete final smoke pass. |
+| VSIX packaging and inspection | Inspection evidence not recorded | Maintainer handled delivery; filename, embedded version, byte size, SHA-256 and asset inspection were not supplied with the publication confirmation. |
+| Clean-profile VSIX installation | Not recorded | Publication confirmation does not establish a clean-profile installation test. |
+| Marketplace publication | Confirmed by maintainer | Maintainer reported publication completed on 2026-09-07. Exact publication time, independent catalog verification and installed-version evidence were not recorded in this update. |
 
-Rollback before publication: revert the relevant 1.7.1 source, tests and documentation changes as a
-scoped patch. Preserve repository Flow configuration and branches created by users. After publication,
-prefer a corrective patch release under separate approval. Do not use publish:patch for this already
-versioned candidate; publish:current is the documented command when publication is authorized.
+Post-publication rollback: prefer a corrective patch release under separate approval, reverting the
+relevant changes as a scoped patch where needed. Preserve repository Flow configuration and branches
+created by users. Keep the current package version at 1.7.1 until a new release cycle is authorized.
 
 ## Development and release history
+
+- `1.7.1` publication confirmed by the maintainer on 2026-09-07. CHANGELOG dated accordingly;
+  package version remains 1.7.1. This documentation update does not rerun tests or publish a package.
+  Earlier pending checks below describe their status at the time; current evidence is recorded above.
 
 - Final-review P2/P3 corrections implemented on 2026-09-06: Open Configuration tolerates same-path
   repository wrapper changes during inspection/reveal; Package descriptions reclaim the space of the
@@ -118,8 +123,9 @@ versioned candidate; publish:current is the documented command when publication 
   At cycle opening, rollback covered metadata only; the current candidate rollback is defined above.
 
 - Current package version: `1.7.1` in `package.json` and the root `package-lock.json`.
-- Latest recorded Marketplace-published release: `1.7.0`, confirmed by the maintainer and
-  independently verified in the public catalog on 2026-09-04 at 12:04:33 UTC.
+- Latest recorded Marketplace-published release: `1.7.1`, confirmed by the maintainer on 2026-09-07.
+  The preceding `1.7.0` release was independently verified in the public catalog on 2026-09-04
+  at 12:04:33 UTC.
 - Release cycle status: `1.7.0` was opened from the published `1.6.9` baseline on 2026-09-03.
   Its scoped operation-processing feedback and Show Log row refinements are implemented,
   documented, and locally verified. The source delivery was finalized and the Marketplace package

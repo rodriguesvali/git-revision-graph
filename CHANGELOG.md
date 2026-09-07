@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.1 - Unreleased
+## 1.7.1 - 2026-09-07
 
 ### Flow Governance
 
