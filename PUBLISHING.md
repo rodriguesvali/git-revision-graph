@@ -1,6 +1,8 @@
 # Publishing
 
-This project is ready to be distributed either as a local `.vsix` package or through the Visual Studio Marketplace.
+This guide describes how to distribute the extension as a `.vsix` package or through the Visual Studio
+Marketplace. Readiness for the current version is tracked in
+[`project-context/3.deliver/release.md`](project-context/3.deliver/release.md).
 
 ## Marketplace publisher setup (one-time)
 

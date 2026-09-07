@@ -1,9 +1,32 @@
 # Release Readiness
 
-Status: `1.7.1` development cycle opened; release verification and publication pending
+Status: `1.7.1` artifacts reviewed; manual validation, VSIX verification and publication pending
 Last consolidated: 2026-09-06
 
-## Current State
+## Current candidate — 1.7.1
+
+Artifact review: 2026-09-06, implementation commit `cb3f134`. The table below is the current release
+status; chronological entries below it retain evidence from earlier increments and releases.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified | `package.json`, lockfile version and root package all declare 1.7.1; publisher `rodriguesvali`; VS Code engine ^1.90.0 and API types 1.90.0. |
+| Public documentation | Reviewed | Consolidated CHANGELOG covers final Flow UX and development dependency updates; README documents previews/retry; PUBLISHING points to candidate-specific gates. Keep Unreleased until release approval. |
+| Automated verification | Passed for implementation | 928 tests, including build and quality gates, passed for the final corrections recorded below. Artifact-only edits did not change production code. |
+| Dependencies | Verified | Fresh npm audit reports zero known vulnerabilities; npm ls confirms d3-dag@1.2.2 as the direct runtime dependency. fast-uri@3.1.7 and qs@6.16.0 are development lockfile entries. |
+| Package inclusion | Verified, not a VSIX inspection | `vsce ls` lists 657 files, including manifest, README, CHANGELOG, MIT LICENSE, PNG icon, extension entry point and browser bundle. Source, tests, project-context, Graphify output and .codex files are excluded. |
+| Review findings | Corrected | Toggle/config opening wrapper races, transient preview retry and hidden AI-column spacing are resolved. |
+| Manual Extension Development Host smoke | Pending | Confirm publication/fork cancellation, recoverable/partial failures, configuration/toggle during refresh, Retry preview, keyboard/long-name details, Package description width and repository switching. Screenshots provided during development do not establish a complete final smoke pass. |
+| VSIX packaging and inspection | Pending | After manual smoke and explicit packaging approval: build the VSIX and record filename, embedded version, byte size, SHA-256 and included assets. |
+| Clean-profile VSIX installation | Pending | Install and exercise the inspected VSIX in a clean VS Code profile. |
+| Marketplace publication | Pending | Requires separate maintainer authorization after the preceding gates pass; record publication and installed-version evidence. |
+
+Rollback before publication: revert the relevant 1.7.1 source, tests and documentation changes as a
+scoped patch. Preserve repository Flow configuration and branches created by users. After publication,
+prefer a corrective patch release under separate approval. Do not use publish:patch for this already
+versioned candidate; publish:current is the documented command when publication is authorized.
+
+## Development and release history
 
 - Final-review P2/P3 corrections implemented on 2026-09-06: Open Configuration tolerates same-path
   repository wrapper changes during inspection/reveal; Package descriptions reclaim the space of the
@@ -19,7 +42,7 @@ Last consolidated: 2026-09-06
   same-path wrapper replacement during path inspection silently prevents document opening (reproduced).
   P3 found at review (corrected in the follow-up above): the description grid reserves 26 px plus a 4 px gap even when Package hides the AI
   action. Earlier toggle completion and explicit preview retry fixes are present.
-  No P0/P1 identified in this review. Recommend addressing the P2 and completing manual smoke for
+  No P0/P1 identified in this review. The subsequent correction resolves the P2; complete manual smoke for
   publication cancellation, partial failures, keyboard interaction and repository switching before
   release sign-off. Installed-VSIX validation and maintainer publication approval remain outstanding.
 
@@ -92,7 +115,7 @@ Last consolidated: 2026-09-06
   verification passed (`npm test`: 851 tests, including build and quality gate; diff checks passed).
   Graphify was updated; manual Extension Development Host checks remain pending.
   Packaging, Marketplace publication, and source tagging have not been performed for this cycle.
-  Before publication, rollback is limited to reverting this metadata and cycle-opening entry.
+  At cycle opening, rollback covered metadata only; the current candidate rollback is defined above.
 
 - Current package version: `1.7.1` in `package.json` and the root `package-lock.json`.
 - Latest recorded Marketplace-published release: `1.7.0`, confirmed by the maintainer and

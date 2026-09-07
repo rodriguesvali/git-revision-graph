@@ -6,39 +6,24 @@ All notable changes to this project will be documented in this file.
 
 ### Flow Governance
 
-- Keep Open Configuration working across same-repository refreshes and let descriptions use the full
-  form width when the AI action is hidden.
+- Preview branch creation and equalization with a highlighted branch name, source/base, checkout,
+  merge direction and publication behavior. Expand details to read full names and validation scope.
+- Check names against configured patterns and known local/remote-tracking branches before submission,
+  including case-only conflicts. Show compatible examples and offer Retry preview after temporary failures.
+- Keep previews stable during typing, improve name alignment, widen forms, and let descriptions use
+  the full width when the AI action is hidden.
+- Preserve form input during processing and after recoverable failures. Prevent duplicate submissions
+  and recreation after partial completion; finish forms correctly after optional publication cancellation
+  and repository refreshes. Confirm upstream state before reporting successful publication.
+- Keep keyboard focus within forms, skip hidden/disabled controls, and restore a usable control on close.
+- Reflect toggle activation only after saving the repository configuration. Show saving feedback,
+  recover after write failures, and retain completion across same-repository refreshes.
+- Show configuration status and diagnostics in View, with repository-scoped Open Configuration that
+  remains reliable during refreshes.
 
-- Finish toggle saving across same-repository refreshes and offer Retry preview after temporary
-  unavailability without requiring a name change.
+### Maintenance
 
-- Present Flow previews as a structured summary with an emphasized branch name, visible origin and
-  operation effects, separate validation, and expandable full-name/validation details.
-
-- Keep Flow previews visible while typing, update after a brief pause, and reserve stable preview
-  space so loading and validation messages do not move the form fields.
-
-- Complete creation forms after repository refresh replaces the Git API wrapper, fixing stuck
-  Processing after publication cancellation. Verify upstream state before reporting publication.
-
-- Keep keyboard focus within branch and equalization dialogs, skip hidden or disabled controls,
-  preserve focus during processing, and restore a usable control when closing.
-
-- Show branch-name conflicts against known local and remote-tracking branches before submission,
-  including case-only collisions. Offer configuration-compatible examples for incomplete or invalid names.
-
-- Preview branch creation and equalization before submission, including source, target/base, expected
-  configured branch name, checkout, merge direction and publication behavior.
-
-- Preserve branch and equalization form input during processing and after recoverable failures. Close
-  only after success, block duplicate submissions, and prevent resubmission after partial branch creation.
-
-- Show configuration status and validation details in View, offer repository-scoped Open Configuration,
-  and explain disabled or invalid configuration when a governed action is unavailable.
-
-- Confirm toggle activation from the saved configuration, show saving feedback, prevent duplicate
-  submissions, and recover the control after write failures. Ignore completions for another repository
-  or a disposed graph and clarify that activation is stored in the repository configuration file.
+- Update development dependency lockfile entries for `fast-uri` to 3.1.7 and `qs` to 6.16.0.
 
 ## 1.7.0 - 2026-09-04
 
