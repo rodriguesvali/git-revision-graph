@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.7.2 - Unreleased
+
+### Revision Graph
+
+- Disable Center on HEAD with an explanatory tooltip when filters exclude HEAD from the graph.
+  Restore the action when HEAD returns, including when its node is outside the rendered viewport.
+
 ## 1.7.1 - 2026-09-07
 
 ### Flow Governance
