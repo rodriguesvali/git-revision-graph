@@ -882,7 +882,7 @@
         toolbarBusy,
         hasFlowGovernanceState(), currentFlowGovernance?.saving === true
       );
-      syncRevisionGraphWebviewCenterHeadToolbarUi(centerHeadButton, toolbarBusy);
+      syncRevisionGraphWebviewCenterHeadToolbarUi(centerHeadButton, toolbarBusy, getHeadAnchorBounds() !== null);
       syncRevisionGraphWebviewZoomToolbarUi(
         { zoomInButton, zoomOutButton, zoomResetButton, minimapZoomInButton, minimapZoomOutButton, minimapZoomResetButton },
         toolbarBusy, minimapEnabled, canZoomIn, canZoomOut, canResetZoom,

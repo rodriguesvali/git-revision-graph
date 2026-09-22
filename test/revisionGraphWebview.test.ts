@@ -1120,7 +1120,49 @@ test('recenters on initial graph state and exposes a center HEAD action', () => 
   assert.match(html, /updateScenePlacement\(\{ source: 'layout' \}\);/);
   assert.match(html, /centerGraphInViewport\(\{ source: 'layout', syncMinimap: false \}\);/);
   assert.match(html, /shouldPrecenterViewport \? 'action=precentered'/);
-  assert.match(html, /centerHeadButton\.disabled = toolbarBusy;/);
+  assert.match(html, /centerHeadButton\.disabled = toolbarBusy \|\| !hasHeadInGraph;/);
+});
+
+test('disables Center on HEAD when filtering removes HEAD and restores it with HEAD', () => {
+  const runtime = createWebviewRuntime();
+  const state = createReadyGraphState();
+  const button = runtime.elements.get('centerHeadButton');
+  assert.ok(button);
+  runtime.context.handleHostMessage({ type: 'update-state', state });
+  assert.equal(button.disabled, false);
+  assert.equal(button.title, 'Center on HEAD');
+
+  const filteredState = createReadyGraphState({
+    scene: {
+      ...state.scene,
+      nodes: state.scene.nodes.filter((node) => node.hash !== 'head1'),
+      edges: state.scene.edges.filter((edge) => edge.from !== 'head1' && edge.to !== 'head1')
+    },
+    nodeLayouts: state.nodeLayouts.filter((node) => node.hash !== 'head1'),
+    sceneLayoutKey: 'filtered-without-head'
+  });
+  // Retain HEAD metadata: availability must depend on projected nodes.
+  runtime.context.handleHostMessage({ type: 'update-state', state: filteredState });
+  assert.equal(button.disabled, true);
+  assert.equal(button.title, 'HEAD is not available in the current graph');
+  runtime.context.handleHostMessage({ type: 'update-state', state: { ...filteredState, references: [] } });
+  assert.equal(button.disabled, true);
+
+  runtime.context.handleHostMessage({ type: 'update-state', state });
+  assert.equal(button.disabled, false);
+  assert.equal(button.title, 'Center on HEAD');
+  runtime.context.handleHostMessage({ type: 'update-state', state: { ...state, loading: true } });
+  assert.equal(button.disabled, true);
+  runtime.context.handleHostMessage({ type: 'update-state', state });
+  assert.equal(button.disabled, false);
+});
+
+test('keeps Center on HEAD available when HEAD has no mounted DOM element', () => {
+  const runtime = createWebviewRuntime();
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState() });
+  // The mock DOM does not materialize nodes from innerHTML.
+  assert.equal(runtime.elements.has('node-head1'), false);
+  assert.equal(runtime.elements.get('centerHeadButton')?.disabled, false);
 });
 
 test('omits incremental revision graph patch handlers', () => {

@@ -1,13 +1,30 @@
 # Release Readiness
 
-Status: `1.7.1` publication confirmed by the maintainer on 2026-09-07
-Last consolidated: 2026-09-07
+Status: `1.7.2` development cycle open; not packaged or published
+Last consolidated: 2026-09-22
+
+## Current development cycle — 1.7.2
+
+Opened at the maintainer's request on 2026-09-22. Initial scope: the Center on HEAD
+availability correction implemented before the version cycle was opened.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Updated | Manifest, lockfile and root package declare 1.7.2; dependencies unchanged. |
+| Release notes | Updated | CHANGELOG has an unreleased 1.7.2 section for Center on HEAD. |
+| Automated verification | Implementation passed | 930 tests including build, quality check and diff check passed before the metadata bump. Final candidate verification remains required. |
+| Manual Extension Development Host smoke | Pending | Exclude HEAD with a filter, inspect tooltip, clear filter, and center after panning away. |
+| VSIX packaging and clean-profile installation | Pending | Not performed; packaging requires separate authorization. |
+| Marketplace publication | Not authorized | Development cycle only; no release date assigned. |
+
+Rollback before publication: revert the scoped correction and its tests; reconcile
+release notes and package metadata if the cycle is withdrawn. Preserve user Git state.
 
 ## Published release — 1.7.1
 
 Publication confirmed by the maintainer on 2026-09-07 after announcing VSIX generation and publication.
 This records the maintainer confirmation; the public catalog was not independently checked in this update.
-Artifact review: 2026-09-06, implementation commit `cb3f134`. The table below is the current release
+Artifact review: 2026-09-06, implementation commit `cb3f134`. The table below records the published 1.7.1
 status; chronological entries below it retain evidence from earlier increments and releases.
 
 | Gate | Status | Evidence / next step |
@@ -25,7 +42,18 @@ status; chronological entries below it retain evidence from earlier increments a
 
 Post-publication rollback: prefer a corrective patch release under separate approval, reverting the
 relevant changes as a scoped patch where needed. Preserve repository Flow configuration and branches
-created by users. Keep the current package version at 1.7.1 until a new release cycle is authorized.
+created by users. The next development cycle, 1.7.2, was authorized on 2026-09-22.
+
+## 1.7.2 scope — Center on HEAD availability
+
+Center on HEAD is disabled with an explanatory tooltip when HEAD is absent from the
+projected graph; clearing the filter restores availability. See
+`project-context/2.build/features/center-head-availability.md` for verification.
+Verification: `npm test` passed 930 tests including build; quality and diff checks
+passed, and Graphify was updated. The subsequent cycle opening updates package
+metadata to 1.7.2 without dependency or protocol changes. Packaging, publication and
+manual Extension Development Host smoke are not performed. Rollback is a scoped
+revert of the toolbar behavior and tests.
 
 ## Development and release history
 
