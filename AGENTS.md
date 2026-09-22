@@ -68,6 +68,15 @@ This is a published VS Code extension. Apply AAMAD as lightweight product and re
 - Do not publish, bump versions, or run Marketplace deployment commands without explicit human approval.
 <!-- AAMAD-CODEX:END -->
 
+## Jev Support for Development
+
+Use Jev for focused judgments that help clarify requirements, compare approaches, prioritize debugging hypotheses, or review code against acceptance criteria. Codex remains responsible for generating code and verifying the result.
+
+- Follow the `typesafe-ai` skill. Ask narrow questions with explicit criteria and only the relevant current context; exclude secrets.
+- Treat Jev's typed answers and probabilities as supporting evidence. Confirm findings through inspection and tests, preserving project rules and approval requirements.
+- Prefer deterministic checks when sufficient. If Jev is unavailable, continue with those checks and report the limitation; never imply an evaluation ran when it did not.
+- Record judgments that materially influence decisions in the relevant `project-context/` artifact, distinguishing assessments from verified facts.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
