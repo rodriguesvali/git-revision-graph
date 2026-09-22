@@ -1,7 +1,69 @@
 # Release Readiness
 
-Status: `1.7.2` development cycle open; not packaged or published
+Status: `1.7.2` publication confirmed by the maintainer on 2026-09-22
 Last consolidated: 2026-09-22
+
+## Published release — 1.7.2
+
+Identity: `rodriguesvali.git-revision-graph@1.7.2`. Published baseline: `1.7.1`,
+commit `efc82f157d7823cba01a6cc8c9158f27c78e712f`. Reviewed implementation: `b437638`.
+Publication was confirmed by the maintainer on 2026-09-22. The public catalog and
+published-package bytes were not independently checked. This update records delivery
+and inspects the local VSIX; it does not execute packaging or publication.
+
+Scope:
+
+- Publish Branch to Remote in the toolbar, with a cloud-upload icon and automatic
+  transition to Push after publication; force-push options appear only in Push mode.
+- Focus Descendants persists per repository across panel/window reloads and repository
+  switching; Clear, scope changes and Focus Range remove the saved focus.
+- Center on HEAD is disabled with an explanatory tooltip when HEAD is filtered out,
+  and remains available when HEAD is in the graph but outside the rendered viewport.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified | Manifest, lockfile and root package declare 1.7.2; publisher rodriguesvali; VS Code ^1.90.0 and API types 1.90.0. The development-only js-yaml lockfile entry was updated to 4.3.2 before this confirmation. |
+| Public documentation | Updated | README and CHANGELOG cover all three improvements; CHANGELOG dated 2026-09-22 from maintainer confirmation and records the development dependency fix. |
+| Automated verification | Passed for implementation | 937 tests including build; quality and diff checks passed. Production source is unchanged; the subsequent js-yaml development lockfile update was audited, without rerunning the full suite. |
+| Extension Host automation | Passed | VS Code 1.90.0 on Linux/Xvfb: activation, vscode.git discovery and singleton panel in empty and single-repository workspaces. |
+| Independent review | Passed | Round 1 of at most 3, no concrete findings requiring code changes. |
+| Dependencies | Audit passed | Lockfile now contains js-yaml 4.3.2; fresh full npm audit reports zero vulnerabilities. |
+| Package inclusion preview | Verified, not a VSIX inspection | `vsce ls`: 659 files, required extension/webview assets and new persistence/icon-style modules present. Source, tests, project-context, .codex and graphify-out excluded. |
+| Manual Extension Development Host smoke | Not recorded | Publication confirmation does not establish completion of the manual [smoke matrix](extension-host-smoke-matrix.md). |
+| Local VSIX inspection | Passed | git-revision-graph-1.7.2.vsix; 1,139,924 bytes; embedded identity and runtime assets verified. SHA-256 below. Published-package equivalence not checked. |
+| Clean-profile VSIX installation | Not recorded | Result and installed-version evidence were not supplied. |
+| Marketplace publication | Confirmed by maintainer | Completion reported on 2026-09-22; exact timestamp and independent catalog verification not recorded. |
+
+Local artifact: `git-revision-graph-1.7.2.vsix`, 1,139,924 bytes, SHA-256
+`becfc7025ac92ba79396e8ae6ad84336875c7f74f2b27734a0acf3d6776412d5`.
+Embedded identity: `rodriguesvali.git-revision-graph@1.7.2`. Extension entry point,
+webview bundle, descendant-focus persistence and toolbar icon-style modules are present.
+Source, tests, project-context, .codex and graphify-out are absent. This is local
+artifact evidence, not proof of the exact Marketplace upload or clean-profile installation.
+Final release commit/tag and installed-version evidence were not supplied.
+
+Post-publication rollback: prepare an authorized corrective patch; never reuse 1.7.2.
+Persisted `gitRevisionGraph.descendantFocus.v1:` workspace keys may remain unused after a
+revert. Preserve branches, worktrees and user Flow Governance configuration.
+
+## Dependency assessment — 2026-09-22
+
+`npm audit --json` reports one high-severity development dependency finding:
+[js-yaml GHSA-2883-xcg3-v3hh](https://github.com/advisories/GHSA-2883-xcg3-v3hh),
+excessive CPU use with empty YAML merge sources. Installed/locked version: 4.3.1;
+affected range in the audit: >=4.0.0 <4.3.2; npm reports a fix available.
+`npm explain js-yaml` traces it to the @vscode/vsce → secretlint tooling tree.
+`vsce ls` contains no js-yaml files, so the packaged runtime exposure is not indicated
+by this dependency finding. `npm audit --omit=dev` reports zero runtime vulnerabilities.
+The development/packaging toolchain remains affected.
+
+Post-publication update: the existing user change to package-lock.json replaces
+js-yaml 4.3.1 with 4.3.2. A fresh full `npm audit --json` passed with zero findings
+on 2026-09-22. No dependency change was made by this documentation update. The
+937-test result above predates this development lockfile change.
+
+The following feature/review entries retain evidence from implementation time;
+the published-release table above is the current delivery status.
 
 ## Toolbar branch publication — 1.7.2
 
@@ -28,22 +90,19 @@ and multi-repository smoke remains pending. No dependency, manifest, protocol, v
 Rollback: scoped source/test/documentation revert; obsolete workspace keys can be
 left unused without changing Git data.
 
-## Current development cycle — 1.7.2
+## Bounded review — 2026-09-22
 
-Opened at the maintainer's request on 2026-09-22. Initial scope: the Center on HEAD
-availability correction implemented before the version cycle was opened.
+Baseline `efc82f157d7823cba01a6cc8c9158f27c78e712f`; reviewed implementation HEAD
+`b437638`. One independent reviewer completed round 1 of a maximum of 3, with no
+concrete findings requiring code changes. Review covered persistence lifecycle,
+repository isolation, Publish/Push routing and icons, Center HEAD availability,
+existing Git guards, tests and metadata. The consolidated release table was updated
+to reflect the current scope and verification evidence.
 
-| Gate | Status | Evidence / next step |
-| --- | --- | --- |
-| Package metadata | Updated | Manifest, lockfile and root package declare 1.7.2; dependencies unchanged. |
-| Release notes | Updated | CHANGELOG has an unreleased 1.7.2 section for Center on HEAD. |
-| Automated verification | Implementation passed | 930 tests including build, quality check and diff check passed before the metadata bump. Final candidate verification remains required. |
-| Manual Extension Development Host smoke | Pending | Exclude HEAD with a filter, inspect tooltip, clear filter, and center after panning away. |
-| VSIX packaging and clean-profile installation | Pending | Not performed; packaging requires separate authorization. |
-| Marketplace publication | Not authorized | Development cycle only; no release date assigned. |
-
-Rollback before publication: revert the scoped correction and its tests; reconcile
-release notes and package metadata if the cycle is withdrawn. Preserve user Git state.
+Existing 937-test/build and VS Code 1.90.0 empty/repository smoke logs were checked;
+quality and baseline diff checks passed during review. No source changes required,
+so the full test suite was not rerun. Manual visual and focus-restoration smoke
+remain pending; this review does not authorize packaging or publication.
 
 ## Published release — 1.7.1
 

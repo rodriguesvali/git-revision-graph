@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-09-04
+Last consolidated: 2026-09-22
 
 ## Environment
 
@@ -26,7 +26,29 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Published Release: 1.7.0
+## Published Release: 1.7.2
+
+- Publication confirmed by the maintainer on 2026-09-22; public catalog not independently checked.
+- Identity: `rodriguesvali.git-revision-graph@1.7.2`; reviewed implementation: `b437638`.
+- Scope: contextual Publish/Push, persistent Focus Descendants, Center on HEAD availability.
+- Implementation verification: 937 tests/build, quality/diff checks, independent review and
+  VS Code 1.90.0 automated empty/single-repository smoke passed.
+- Local artifact inspected: `git-revision-graph-1.7.2.vsix`, 1,139,924 bytes, SHA-256
+  `becfc7025ac92ba79396e8ae6ad84336875c7f74f2b27734a0acf3d6776412d5`.
+  Embedded identity and extension/webview assets verified; development files excluded.
+  Equivalence to the Marketplace upload was not checked.
+- The user updated the development-only js-yaml lockfile entry to 4.3.2; fresh full npm audit
+  reports zero vulnerabilities. Full tests were not rerun after that lockfile update.
+- Exact publication timestamp, release commit/tag, installed-version evidence, clean-profile
+  installation and final manual smoke results were not supplied.
+- Keep 1.7.2 until the next cycle is authorized. Never reuse a published version for corrections.
+
+## Published Baseline: 1.7.1
+
+Publication was confirmed by the maintainer on 2026-09-07. Inspection and clean-profile
+installation evidence were not supplied. See [release history](release.md).
+
+## Historical Published Release: 1.7.0
 
 - Source delivery was finalized on 2026-09-04 from the published `1.6.9` baseline.
 - `package.json`, `package-lock.json`, and the lockfile root package declare `1.7.0`.

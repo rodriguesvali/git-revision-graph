@@ -1,11 +1,35 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-09-04
+Last updated: 2026-09-22
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.7.2 Release Evidence
+
+Publication confirmed by the maintainer on 2026-09-22. Reviewed implementation: `b437638`.
+Local VSIX inspected; clean-profile installation and final manual results were not supplied.
+Publication confirmation is not treated as a manual smoke pass.
+Automated evidence: 937 tests/build passed; VS Code 1.90.0 Linux/Xvfb smoke passed for
+activation, Git discovery and singleton-panel opening with zero and one repository.
+The automation does not establish the following manual results.
+
+Record operator, date, VS Code version, platform, candidate commit/VSIX and result for
+these scenarios in disposable fixture repositories:
+
+| Scenario | Expected result | Manual result |
+| --- | --- | --- |
+| Untracked current branch | Toolbar shows cloud-upload and Publish tooltip; force-push menu is hidden. | Not recorded |
+| Publish cancel/success | Cancel remote or confirmation without mutation; successful publication establishes upstream and restores Push icon/menu. | Not recorded |
+| Differently named upstream | Publish confirmation explains tracking replacement; cancel preserves existing tracking. | Not recorded |
+| Focus persistence | Apply Focus Descendants, close/reopen panel and reload window; same anchor and filter badge return. | Not recorded |
+| Repository isolation | Choose distinct focus in two repositories, switch back and forth, then reload; each retains its own focus. | Not recorded |
+| Focus removal | Clear, choose another scope or select Focus Range, then reload; descendant focus does not return. | Not recorded |
+| Filtered/offscreen HEAD | Filtered-out HEAD disables Center with explanation; clear filter to restore; panning offscreen still permits centering. | Not recorded |
+| Disabled/accessibility states | Check loading, detached HEAD, keyboard focus, tooltip/icon agreement and light/dark themes. | Not recorded |
+| Installed candidate | Install inspected VSIX in clean profile; confirm 1.7.2 identity and repeat affected workflows. | Not recorded |
 
 ## 1.7.0 Release Evidence
 

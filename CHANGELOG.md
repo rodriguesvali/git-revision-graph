@@ -2,18 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.2 - Unreleased
+## 1.7.2 - 2026-09-22
 
 ### Revision Graph
 
+- Publish the current branch directly from the toolbar when it has no matching upstream.
+  Show a cloud-upload icon, switch to Push after publication, and hide force-push options
+  while publication is needed.
 - Remember Focus Descendants per repository when reopening the graph or reloading the window.
   Clearing the focus, changing scope or selecting Focus Range removes the saved focus.
-
-- Offer Publish Branch to Remote from the toolbar when the current branch has no matching upstream;
-  show a cloud-upload icon, switch to Push after publication and hide force-push options while publication is needed.
-
 - Disable Center on HEAD with an explanatory tooltip when filters exclude HEAD from the graph.
   Restore the action when HEAD returns, including when its node is outside the rendered viewport.
+
+### Maintenance
+
+- Update the development-only `js-yaml` lockfile entry to 4.3.2.
 
 ## 1.7.1 - 2026-09-07
 

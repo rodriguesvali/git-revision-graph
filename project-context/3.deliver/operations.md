@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-07-29
+Last consolidated: 2026-09-22
 
 ## Runtime
 
@@ -27,7 +27,27 @@ multi-repository ownership.
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
 
-## Published Release Watch: 1.6.1
+## Published Release Watch: 1.7.2
+
+Publication confirmed by the maintainer on 2026-09-22. Monitor these behaviors:
+
+- Toolbar action, icon and tooltip agree with current branch tracking; canceling publication
+  leaves Git state unchanged; force-push options are absent in Publish mode.
+- Descendant focus restores on the correct repository after window reload and switching;
+  Clear and scope/range replacement remove the saved focus. Storage failures are logged as
+  `Could not restore Focus Descendants.` or `Could not persist Focus Descendants.`.
+- Center on HEAD availability follows the projected graph, including filtered and offscreen HEAD.
+
+Persistence is workspace-local under versioned `gitRevisionGraph.descendantFocus.v1:` keys,
+separated by normalized repository path. The saved anchor is a commit hash, not a moving
+branch name. If the anchor is outside loaded history, use Clear; an empty focused graph does
+not imply lost Git history. No migration, new setting or runtime dependency is introduced.
+
+For rollback, revert the affected feature slice before publication or ship an approved patch
+afterward. Old preference keys can remain unused; do not delete Git branches or user Flow files.
+Publication evidence and outstanding operational checks are tracked in [release readiness](release.md).
+
+## Historical Published Release Watch: 1.6.1
 
 - Publication was confirmed complete by the maintainer on 2026-07-29.
 - Monitor bounded Flow config loading and persistence failures, stale Compare
