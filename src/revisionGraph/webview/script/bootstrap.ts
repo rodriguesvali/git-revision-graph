@@ -177,7 +177,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
     if (pushButton) {
       pushButton.addEventListener('click', () => {
-        pushCurrentHead('normal');
+        runRevisionGraphWebviewPrimaryPushAction(getCurrentHeadRemoteActionState(), toolbarBusy || pushButton.disabled, postPublishBranch, pushCurrentHead);
       });
     }
     if (pushMenuButton) {

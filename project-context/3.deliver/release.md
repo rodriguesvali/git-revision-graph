@@ -3,6 +3,19 @@
 Status: `1.7.2` development cycle open; not packaged or published
 Last consolidated: 2026-09-22
 
+## Toolbar branch publication — 1.7.2
+
+The Push slot now offers Publish Branch to Remote for current branches without a
+matching upstream, reusing the existing confirmation and publication workflow.
+Publication mode displays a cloud-upload icon matching the Source Control metaphor;
+Push restores its original icon. Force-push options are hidden in publication mode. See
+[feature evidence](../2.build/features/1.7.2-toolbar-branch-publication.md).
+Automated verification: 932 tests passed via `npm test`, including build; quality
+and diff checks passed, and the code graph was updated. Manual publish/cancel, repository switching and
+accessibility/theme smoke remain pending. No dependency, manifest or protocol change;
+no packaging or Marketplace publication performed. Rollback is a scoped source,
+test and documentation revert, preserving user Git state.
+
 ## Current development cycle — 1.7.2
 
 Opened at the maintainer's request on 2026-09-22. Initial scope: the Center on HEAD

@@ -8,6 +8,7 @@ import {
 } from './shared';
 import { renderRevisionGraphFlowFormStyles } from './flowFormStyles';
 import { renderRevisionGraphSearchStyles } from './searchStyles';
+import { renderRevisionGraphToolbarIconStyles } from './toolbarIconStyles';
 
 const DEFAULT_CANVAS_WIDTH = 880;
 const DEFAULT_CANVAS_HEIGHT = 480;
@@ -909,19 +910,7 @@ export function renderRevisionGraphStyles(): string {
       font-size: 15px;
       line-height: 1;
     }
-    .view-controls .toolbar-icon {
-      position: static;
-      inset: auto;
-      width: 16px;
-      height: 16px;
-      display: block;
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 1.35;
-      overflow: visible;
-    }
+    ${renderRevisionGraphToolbarIconStyles()}
     .graph-minimap {
       position: fixed;
       right: calc(10px + var(--viewport-scrollbar-gutter-right));

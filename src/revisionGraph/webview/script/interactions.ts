@@ -770,17 +770,10 @@
     }
 
     function getCurrentHeadRemoteActionState() {
-      const canUseCurrentHeadRemote =
-        currentState &&
-        currentState.viewMode === 'ready' &&
-        !!currentHeadName &&
-        !!currentHeadUpstreamName &&
-        publishedLocalBranchNames.has(currentHeadName) &&
-        references.some((ref) => ref.kind === 'head' && ref.name === currentHeadName);
-      return {
-        canUseCurrentHeadRemote: !!canUseCurrentHeadRemote,
-        upstreamLabel: currentHeadUpstreamName || 'upstream'
-      };
+      return getRevisionGraphWebviewRemoteActionState(
+        currentState?.viewMode === 'ready', references, currentHeadName,
+        currentHeadUpstreamName, publishedLocalBranchNames
+      );
     }
 
     function postStashSave() {
@@ -875,8 +868,12 @@
         { pullButton, pushButton, pushMenuButton, syncButton },
         toolbarBusy,
         remoteActionState.canUseCurrentHeadRemote,
-        remoteActionState.upstreamLabel
+        remoteActionState.upstreamLabel,
+        !!remoteActionState.publishTarget
       );
+      if (toolbarBusy || !remoteActionState.canUseCurrentHeadRemote) {
+        closePushModeMenu();
+      }
       syncRevisionGraphWebviewViewOptionsToolbarUi(
         { showTagsToggle, showRemoteBranchesToggle, showStashesToggle, showMergeCommitsToggle, showMinimapToggle, flowGovernanceEnabledToggle, rangeFilterClearButton, descendantFilterClearButton },
         toolbarBusy,

@@ -20,6 +20,14 @@ type ToolbarIconName =
   | 'sync'
   | 'target';
 
+function renderPublishBranchIcon(): string {
+  return `<svg class="toolbar-icon" data-icon="cloud-upload" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M5.2 12.4H4.4a3 3 0 0 1-.2-6 4.1 4.1 0 0 1 7.8-1 3.4 3.4 0 0 1 .5 6.9h-1.7"></path>
+          <path d="M8 13.5V7.4"></path>
+          <path d="m5.6 9.8 2.4-2.4 2.4 2.4"></path>
+        </svg>`;
+}
+
 function renderToolbarIcon(iconName: ToolbarIconName): string {
   switch (iconName) {
     case 'arrow-up':
@@ -282,7 +290,7 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
             type="button"
             title="Push current branch"
             aria-label="Push current branch"
-          >${renderToolbarIcon('repo-push')}</button>
+          >${renderToolbarIcon('repo-push')}${renderPublishBranchIcon()}</button>
           <button
             id="pushMenuButton"
             class="toolbar-button icon-only split-menu"

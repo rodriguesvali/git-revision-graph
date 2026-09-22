@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Revision Graph
 
+- Offer Publish Branch to Remote from the toolbar when the current branch has no matching upstream;
+  show a cloud-upload icon, switch to Push after publication and hide force-push options while publication is needed.
+
 - Disable Center on HEAD with an explanatory tooltip when filters exclude HEAD from the graph.
   Restore the action when HEAD returns, including when its node is outside the rendered viewport.
 

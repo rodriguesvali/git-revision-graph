@@ -384,7 +384,7 @@ test('reloads the graph from the webview toolbar', () => {
   );
   assert.match(
     html,
-    /pushButton\.addEventListener\('click', \(\) => \{\s*pushCurrentHead\('normal'\);\s*\}\);/s
+    /pushButton\.addEventListener\('click', \(\) => \{\s*runRevisionGraphWebviewPrimaryPushAction\([\s\S]*?postPublishBranch, pushCurrentHead/s
   );
   assert.match(
     html,
@@ -3394,6 +3394,69 @@ test('synchronizes revision graph remote toolbar through the typed DOM adapter',
   assert.equal(syncButton.disabled, true);
 });
 
+test('toolbar publishes the current branch and switches back to push after publication', () => {
+  const runtime = createWebviewRuntime();
+  const push = runtime.elements.get('pushButton')!;
+  const menu = runtime.elements.get('pushMenuButton')!;
+  const update = (overrides: Record<string, unknown>) => runtime.context.handleHostMessage({
+    type: 'update-state', state: createReadyGraphState(overrides)
+  });
+  update({ currentHeadUpstreamName: undefined, publishedLocalBranchNames: [] });
+  assert.equal(push.disabled, false);
+  assert.equal(push.title, 'Publish Branch to Remote');
+  assert.equal(push.getAttribute('data-push-action'), 'publish');
+  assert.equal(push.getAttribute('aria-label'), 'Publish Branch to Remote');
+  assert.equal(menu.hidden, true);
+  assert.equal(menu.disabled, true);
+  push.listeners.click[0]();
+  assert.equal(runtime.postedMessages.at(-1).type, 'publish-branch');
+  assert.equal(runtime.postedMessages.at(-1).refName, 'main');
+  assert.equal(runtime.postedMessages.at(-1).refKind, 'head');
+
+  update({});
+  assert.equal(push.title, 'Push to origin/main');
+  assert.equal(push.getAttribute('data-push-action'), 'push');
+  assert.equal(menu.hidden, false);
+  assert.equal(menu.disabled, false);
+  push.listeners.click[0]();
+  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'push-current-head', mode: 'normal' });
+  menu.listeners.click[0]({ stopPropagation() {} });
+  assert.equal(menu.getAttribute('aria-expanded'), 'true');
+
+  update({ repositoryPath: '/repo/b', currentHeadUpstreamName: 'origin/base', publishedLocalBranchNames: [] });
+  assert.equal(push.title, 'Publish Branch to Remote');
+  assert.equal(push.getAttribute('data-push-action'), 'publish');
+  assert.equal(menu.hidden, true);
+  assert.equal(menu.getAttribute('aria-expanded'), 'false');
+  push.listeners.click[0]();
+  assert.equal(runtime.postedMessages.at(-1).type, 'publish-branch');
+
+  for (const overrides of [
+    { currentHeadName: undefined },
+    { references: [] },
+    { viewMode: 'empty' }
+  ]) {
+    update(overrides);
+    assert.equal(push.disabled, true);
+    const count = runtime.postedMessages.length;
+    push.listeners.click[0]();
+    assert.equal(runtime.postedMessages.length, count);
+  }
+});
+
+test('busy toolbar disables publication without exposing force push', () => {
+  const runtime = createWebviewRuntime();
+  const pushButton = runtime.elements.get('pushButton')!;
+  const pushMenuButton = runtime.elements.get('pushMenuButton')!;
+  runtime.context.syncRevisionGraphWebviewRemoteToolbarUi(
+    { pushButton, pushMenuButton, pullButton: null, syncButton: null }, true, false, 'upstream', true
+  );
+  assert.equal(pushButton.disabled, true);
+  assert.equal(pushButton.title, 'Publish Branch to Remote');
+  assert.equal(pushMenuButton.hidden, true);
+  assert.equal(pushMenuButton.disabled, true);
+});
+
 test('renders revision graph minimap SVG content through the typed module', () => {
   const runtime = createWebviewRuntime();
   const geometry = {
@@ -3700,6 +3763,10 @@ function createWebviewRuntime() {
 
     closest(): null {
       return null;
+    }
+
+    querySelector(selector: string): MockElement | null {
+      return this.querySelectorAll().find((element) => element.tagName === selector.toUpperCase()) ?? null;
     }
 
     querySelectorAll(selector?: string): MockElement[] {

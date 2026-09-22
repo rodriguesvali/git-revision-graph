@@ -9,7 +9,8 @@ function syncRevisionGraphWebviewRemoteToolbarUi(
   controls: RevisionGraphWebviewRemoteToolbarControls,
   toolbarBusy: boolean,
   canUseCurrentHeadRemote: boolean,
-  upstreamLabel: string
+  upstreamLabel: string,
+  canPublishCurrentHead = false
 ): void {
   syncRevisionGraphWebviewRemoteToolbarButton(
     controls.pullButton,
@@ -18,14 +19,18 @@ function syncRevisionGraphWebviewRemoteToolbarUi(
   );
   syncRevisionGraphWebviewRemoteToolbarButton(
     controls.pushButton,
-    toolbarBusy || !canUseCurrentHeadRemote,
-    `Push to ${upstreamLabel}`
+    toolbarBusy || !(canUseCurrentHeadRemote || canPublishCurrentHead),
+    canPublishCurrentHead ? 'Publish Branch to Remote' : `Push to ${upstreamLabel}`
   );
   syncRevisionGraphWebviewRemoteToolbarButton(
     controls.pushMenuButton,
     toolbarBusy || !canUseCurrentHeadRemote,
     `More push options for ${upstreamLabel}`
   );
+  controls.pushButton?.setAttribute('data-push-action', canPublishCurrentHead ? 'publish' : 'push');
+  if (controls.pushMenuButton) {
+    controls.pushMenuButton.hidden = canPublishCurrentHead;
+  }
   syncRevisionGraphWebviewRemoteToolbarButton(
     controls.syncButton,
     toolbarBusy || !canUseCurrentHeadRemote,
@@ -44,4 +49,36 @@ function syncRevisionGraphWebviewRemoteToolbarButton(
   button.disabled = disabled;
   button.title = title;
   button.setAttribute('aria-label', title);
+}
+
+function getRevisionGraphWebviewRemoteActionState(
+  ready: boolean,
+  references: readonly RevisionGraphWebviewHostReference[],
+  headName: string | null,
+  upstreamName: string | null,
+  publishedNames: ReadonlySet<string>
+) {
+  const head = ready ? references.find((ref) => ref.kind === 'head' && ref.name === headName) : undefined;
+  const published = !!headName && publishedNames.has(headName);
+  return {
+    canUseCurrentHeadRemote: !!head && !!upstreamName && published,
+    publishTarget: head && !published ? { ...head, revision: head.name, label: head.name } : undefined,
+    upstreamLabel: upstreamName || 'upstream'
+  };
+}
+
+function runRevisionGraphWebviewPrimaryPushAction(
+  action: ReturnType<typeof getRevisionGraphWebviewRemoteActionState>,
+  disabled: boolean,
+  publish: (target: RevisionGraphWebviewTarget) => void,
+  push: (mode: 'normal') => void
+): void {
+  if (disabled) {
+    return;
+  }
+  if (action.publishTarget) {
+    publish(action.publishTarget);
+  } else if (action.canUseCurrentHeadRemote) {
+    push('normal');
+  }
 }

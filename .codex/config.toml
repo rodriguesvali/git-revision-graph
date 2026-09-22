@@ -14,4 +14,5 @@ CONTEXT7_API_KEY = "ctx7sk-5e6a1d94-7708-4e25-bd69-886df2e86725"
 [mcp_servers.jev]
 command = "npx"
 args = ["-y", "@jkudish/jev-mcp"]
+env_vars = ["TYPESAFE_API_KEY"]
 startup_timeout_sec = 60
