@@ -65,7 +65,7 @@ The graph keeps everyday Git actions close to their revision context:
 
 | Area | Available workflows |
 | --- | --- |
-| Navigation | All refs, current branch, `origin/HEAD`, and local-branch scopes; search by ref, hash, subject, or author; Focus Range; Focus Descendants; relationship highlighting; minimap; zoom; Center HEAD; persisted view options. |
+| Navigation | All refs, current branch, `origin/HEAD`, and local-branch scopes; search by ref, hash, subject, or author; Focus Range; Focus Descendants remembered per repository across window reloads; relationship highlighting; minimap; zoom; Center HEAD; persisted view options. |
 | Branches and tags | Checkout local or remote branches, create a branch or tag from a visible revision, publish a local branch with upstream tracking, push or remove remote tags, and delete supported local or remote refs. |
 | Remote synchronization | Fetch with optional Prune and Tags flags, Pull, Push, confirmed force-push modes, and Sync for the tracked current branch. The toolbar offers Publish Branch to Remote when the current branch has no matching upstream, then switches to Push after publication. Remote work uses nonblocking progress so the graph remains interactive. |
 | History and recovery | Merge into the current branch, abort a conflicted merge, reset to a revision, stash workspace changes, apply/pop/drop visible stashes, and restore selected worktree files. |

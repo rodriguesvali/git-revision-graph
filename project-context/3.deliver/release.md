@@ -16,6 +16,18 @@ accessibility/theme smoke remain pending. No dependency, manifest or protocol ch
 no packaging or Marketplace publication performed. Rollback is a scoped source,
 test and documentation revert, preserving user Git state.
 
+## Persistent Focus Descendants — 1.7.2
+
+Descendant focus now persists per repository in workspace state, including initial
+load and repository switching. Clear, scope changes and Focus Range remove the
+saved focus. See [feature evidence](../2.build/features/1.7.2-persistent-descendant-focus.md).
+Verification: 937 tests including build, quality and diff checks passed; graphify
+updated. VS Code 1.90.0 activation/Git discovery/panel smoke passed for empty and
+single-repository workspaces. Manual focus restoration across panel/window reload
+and multi-repository smoke remains pending. No dependency, manifest, protocol, version or Marketplace change.
+Rollback: scoped source/test/documentation revert; obsolete workspace keys can be
+left unused without changing Git data.
+
 ## Current development cycle — 1.7.2
 
 Opened at the maintainer's request on 2026-09-22. Initial scope: the Center on HEAD

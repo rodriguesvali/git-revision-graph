@@ -655,6 +655,68 @@ test('RevisionGraphController loads empty state and releases Git event subscript
   assert.equal(closeSubscriptionsDisposed, 1);
 });
 
+test('RevisionGraphController restores repository focus before loading and persists explicit clear', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { RevisionGraphController } = loadFresh('../src/revisionGraph/controller') as typeof import('../src/revisionGraph/controller');
+  const { RevisionGraphDescendantFocusPersistence } = await import('../src/revisionGraph/descendantFocusPersistence');
+  const { buildCommitGraph } = await import('../src/revisionGraphData');
+  const root = await mkdtemp(path.join(os.tmpdir(), 'focus-persistence-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const repository = createRepository({ root });
+  const other = createRepository({ root: path.join(root, 'other') });
+  const values = new Map<string, unknown>();
+  const storage = {
+    get<T>(key: string): T | undefined { return values.get(key) as T | undefined; },
+    async update(key: string, value: unknown) { values.set(key, value); }
+  };
+  const focus = { anchorRevision: 'a'.repeat(40), anchorLabel: 'feature/demo' };
+  await new RevisionGraphDescendantFocusPersistence(storage).save(root, focus);
+  const api = createApi([repository]);
+  const graph = buildCommitGraph([{
+    hash: focus.anchorRevision, parents: [], author: 'Ada', date: '2026-09-22', subject: 'Anchor', refs: []
+  }]);
+  const backend = {
+    async loadGraphSnapshot() { return { graph, loadedAt: Date.now(), requestedLimit: 6000 }; },
+    async getMergeBlockedTargets() { return []; }
+  };
+  const makeController = () => new RevisionGraphController(
+    harness.extensionUri, api, backend as never, {} as never, {} as never,
+    undefined, undefined, undefined, undefined, undefined,
+    new RevisionGraphDescendantFocusPersistence(storage)
+  );
+  const controller = makeController();
+  const panel = harness.createPanel();
+  const latest = () => panel.postedMessages
+    .map((message) => (message as { state?: import('../src/revisionGraphTypes').RevisionGraphViewState }).state)
+    .filter((state) => !!state).at(-1)!;
+  await controller.resolveWebviewPanel(panel as never);
+  await controller.refresh();
+  assert.deepEqual(latest().projectionOptions.descendantFocus, focus);
+  assert.equal(latest().scene.nodes.length, 1);
+
+  api.repositories.splice(0, 1, other);
+  await controller.open();
+  assert.equal(latest().projectionOptions.descendantFocus, undefined);
+  api.repositories.splice(0, 1, repository);
+  await controller.open();
+  assert.deepEqual(latest().projectionOptions.descendantFocus, focus);
+
+  panel.receiveMessage({ type: 'set-projection-options', options: { descendantFocus: null } });
+  await waitForAsyncHandlers();
+  await controller.refresh();
+  assert.equal(latest().projectionOptions.descendantFocus, undefined);
+  controller.dispose();
+  const reopened = makeController();
+  const reopenedPanel = harness.createPanel();
+  await reopened.resolveWebviewPanel(reopenedPanel as never);
+  await reopened.refresh();
+  const restoredStates = reopenedPanel.postedMessages
+    .map((message) => (message as { state?: import('../src/revisionGraphTypes').RevisionGraphViewState }).state)
+    .filter((state) => !!state);
+  assert.equal(restoredStates.at(-1)!.projectionOptions.descendantFocus, undefined);
+  reopened.dispose();
+});
+
 test('Flow AI workflow improves Bug branch descriptions without Pull Request context', async (t) => {
   installVscodePanelMock(t);
   const { RevisionGraphFlowAiTextWorkflow } = loadFresh(

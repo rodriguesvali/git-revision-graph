@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Revision Graph
 
+- Remember Focus Descendants per repository when reopening the graph or reloading the window.
+  Clearing the focus, changing scope or selecting Focus Range removes the saved focus.
+
 - Offer Publish Branch to Remote from the toolbar when the current branch has no matching upstream;
   show a cloud-upload icon, switch to Push after publication and hide force-push options while publication is needed.
 

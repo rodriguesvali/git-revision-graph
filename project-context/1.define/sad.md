@@ -227,6 +227,7 @@ expands them.
 - The Source Control-launched editor graph is the single primary graph workspace.
 - Compare Results and Show Log remain on-demand editor panels, not persistent Activity Bar views.
 - Focus Range and Focus Descendants are mutually exclusive projection modes over the loaded snapshot.
+- Persist descendant anchor hashes and labels in versioned, repository-keyed workspace state; restore on initial repository attachment and switching, and remove the saved focus on explicit clear or scope/range replacement. Validate restored data and isolate storage failures from rendering.
 - Descendant focus is based on Git ancestry in the loaded DAG, not visual row, timestamp, or screen position.
 - Projection-only refresh is acceptable only when the loaded snapshot remains compatible and mutable refs/HEAD metadata are reapplied before delivery.
 - Layout and viewport optimizations must retain complete in-memory scene data for minimap, search, selection, navigation, and context menus while mounting only the visible DOM window.

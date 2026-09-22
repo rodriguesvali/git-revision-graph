@@ -1,3 +1,4 @@
+import { RevisionGraphDescendantFocusPersistence } from './revisionGraph/descendantFocusPersistence';
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -79,7 +80,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     backend,
     () => layoutCachePersistence.clear(),
     mutationCoordinator,
-    createWorkbenchAiFlowTextImprover()
+    createWorkbenchAiFlowTextImprover(),
+    new RevisionGraphDescendantFocusPersistence(context.workspaceState)
   );
   const commandServices = createCommandServices(
     revisionGraphEditorPanel,

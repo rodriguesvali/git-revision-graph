@@ -22,7 +22,7 @@ The current package baseline is read from `package.json`. At consolidation time 
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.
-- The graph supports range focus and descendant focus over the currently loaded snapshot.
+- The graph supports range focus and descendant focus over the currently loaded snapshot. Descendant focus is remembered per repository in the workspace across panel and window reloads, until cleared or replaced by a scope/range choice.
 - Users can compare refs, compare with worktree, open unified diffs, inspect logs, checkout, create branches and tags, publish branches, push/delete tags, pull/push/sync the current branch, merge refs, abort conflicted merges, stash/apply/pop/drop, reset the current branch, restore worktree files, and delete local or supported remote refs.
 - The extension preserves native VS Code ergonomics for picks, confirmations, diff editors, Source Control handoff, notifications, and theming.
 - AI assistance is optional and explicitly invoked: Compare Results can generate a bounded review briefing,

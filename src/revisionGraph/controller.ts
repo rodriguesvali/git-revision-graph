@@ -1,3 +1,4 @@
+import { RevisionGraphDescendantFocusPersistence } from './descendantFocusPersistence';
 import * as vscode from 'vscode';
 import { handleAsyncTaskSafely } from '../asyncTaskBoundary';
 import { API, Repository } from '../git';
@@ -191,7 +192,8 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly viewId: string = REVISION_GRAPH_VIEW_ID,
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY,
     private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
-    mutationCoordinator?: RepositoryMutationCoordinator, flowAiTextImprover?: FlowAiTextImprover
+    mutationCoordinator?: RepositoryMutationCoordinator, flowAiTextImprover?: FlowAiTextImprover,
+    private readonly descendantFocusPersistence = new RevisionGraphDescendantFocusPersistence()
   ) {
     this.mutationCoordinator = mutationCoordinator ?? new RepositoryMutationCoordinator();
     this.ownsMutationCoordinator = !mutationCoordinator;
@@ -206,7 +208,8 @@ export class RevisionGraphController implements vscode.Disposable {
       },
       onCurrentRepositoryChanged: (repositoryChanged) => {
         if (repositoryChanged) {
-          this.projectionOptions = createDefaultRevisionGraphProjectionOptions();
+          this.projectionOptions = { ...createDefaultRevisionGraphProjectionOptions(),
+            descendantFocus: this.descendantFocusPersistence.restore(this.currentRepository?.rootUri.fsPath) };
           this.reusableGraphSnapshot = undefined;
         }
         this.syncViewTitle();
@@ -214,9 +217,7 @@ export class RevisionGraphController implements vscode.Disposable {
       onRepositoryClosed: (repository) => {
         this.mutationCoordinator.invalidate(repository.rootUri.fsPath); this.flowGovernanceWorkflow.resetAiText();
       },
-      onRepositorySetChanged: () => {
-        this.handleRepositorySetChanged();
-      },
+      onRepositorySetChanged: () => this.handleRepositorySetChanged(),
       onRepositoryStateChange: (repository, intent, eventKind) => {
         this.runControllerTask(
           () => this.handleRepositoryStateChange(repository, intent, eventKind),
@@ -224,6 +225,8 @@ export class RevisionGraphController implements vscode.Disposable {
         );
       }
     });
+    this.projectionOptions = { ...this.projectionOptions,
+      descendantFocus: this.descendantFocusPersistence.restore(this.currentRepository?.rootUri.fsPath) };
     const workbenchActionServices = createWorkbenchRefActionServices(
       (request) => {
         this.runControllerTask(
@@ -276,10 +279,9 @@ export class RevisionGraphController implements vscode.Disposable {
       getProjectionOptions: () => this.projectionOptions,
       setProjectionOptions: (options) => {
         this.projectionOptions = options;
+        void this.descendantFocusPersistence.save(this.currentRepository?.rootUri.fsPath, options.descendantFocus);
       },
-      refresh: async (request) => {
-        await this.refresh(request);
-      },
+      refresh: (request) => this.refresh(request),
       runFetchCurrentRepository: () => this.runFetchCurrentRepository(),
       postHostMessage: (message) => this.postHostMessage(message),
       postCurrentState: () => this.postCurrentState(),
@@ -590,9 +592,7 @@ export class RevisionGraphController implements vscode.Disposable {
       postCurrentState: () => {
         this.postCurrentState();
       },
-      refresh: async (request) => {
-        await this.refresh(request);
-      },
+      refresh: (request) => this.refresh(request),
       prepareRefresh: (request) => this.prepareRefresh(request),
       createCurrentRepositoryRefreshRequest: () => this.repositoryLifecycle.createCurrentRepositoryActionRefreshRequest('full-rebuild', 'subtle'),
       getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel(),

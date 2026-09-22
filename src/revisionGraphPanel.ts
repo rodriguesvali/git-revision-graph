@@ -1,3 +1,4 @@
+import { RevisionGraphDescendantFocusPersistence } from './revisionGraph/descendantFocusPersistence';
 import * as vscode from 'vscode';
 
 import { CompareResultsPresenter } from './refActions';
@@ -24,7 +25,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     backend: RevisionGraphBackend = createRevisionGraphBackend(),
     clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
     mutationCoordinator?: RepositoryMutationCoordinator,
-    flowAiTextImprover?: FlowAiTextImprover
+    flowAiTextImprover?: FlowAiTextImprover,
+    descendantFocusPersistence?: RevisionGraphDescendantFocusPersistence
   ) {
     this.controller = new RevisionGraphController(
       extensionUri,
@@ -36,7 +38,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       undefined,
       clearLayoutCache,
       mutationCoordinator,
-      flowAiTextImprover
+      flowAiTextImprover,
+      descendantFocusPersistence
     );
   }
 
