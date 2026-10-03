@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 ### Maintenance
 
 - Open the 1.7.3 development cycle and align package and build metadata.
+- Upgrade the development-only `@vscode/vsce` packaging tool to 4.0.0, removing
+  the vulnerable `braces` dependency chain.
 
 ## 1.7.2 - 2026-09-22
 

@@ -10,20 +10,65 @@ versions. Published baseline: `1.7.2`, release commit `9ccffa1`; publication was
 confirmed on 2026-09-22. See the [cycle artifact](../2.build/features/1.7.3-release-cycle-opening.md).
 
 Scope at opening is package/build metadata and release documentation only.
-Functional scope remains pending; runtime behavior and dependencies are unchanged.
+The maintainer subsequently authorized the VSCE 4.0.0 development-tool correction.
+Functional scope remains pending; runtime behavior and runtime dependencies are unchanged.
 Historical verification and VSIX evidence below apply to their recorded releases.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest, lockfile and root package declare `1.7.3`. |
-| Automated verification | Pending | Verify version consistency, run `npm test` including build, and check the final diff. |
+| Automated verification | Passed for cycle opening | On 2026-10-03: all three version fields verified; other manifest/lockfile data unchanged; `npm test` passed 937 tests, including build; staged and unstaged diff checks and `graphify update .` passed. |
+| Development-tool verification | Passed after remediation | VSCE 4.0.0 clean install, 937 tests including build, scanner smoke and package/publish CLI help passed; post-build package preview preserves all 659 paths. |
+| Dependency audit | Passed after remediation | On 2026-10-03: full and runtime-only audits report zero vulnerabilities after the authorized VSCE 4.0.0 upgrade. |
 | Functional scope and manual smoke | Pending scope | Define feature-specific criteria and smoke checks when implementation is authorized. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
 
-Before publication, rollback is a scoped metadata/documentation revert to `1.7.2`.
-No dependency change, source change, Git tag, VSIX or Marketplace action is part of this opening.
+Cycle-opening rollback is a scoped metadata/documentation revert to `1.7.2`.
+For the authorized development-tool correction, revert only its dependency changes
+as described in the remediation artifact, preserving prior user edits.
+No source change, Git tag, VSIX or Marketplace action occurred during this work.
+
+## Dependency assessment — 2026-10-03
+
+Current working-tree audit, with Node `24.21.0` and npm `11.19.0`:
+
+- `npm audit --json` exited 1: six high-severity package entries, zero critical.
+  One underlying advisory affects `braces@3.0.3`:
+  [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+  Deeply nested brace patterns can exhaust the stack and terminate the Node process.
+  The advisory lists affected versions `<=3.0.3` and no patched version; the registry
+  currently reports `3.0.3` as the latest braces release.
+- `npm explain braces` confirms the development-only chain:
+  `@vscode/vsce@3.9.2 → secretlint@10.2.2 → globby@14.1.0 → fast-glob@3.3.3 → micromatch@4.0.8 → braces@3.0.3`.
+- `npm audit --omit=dev --json` exited 0 with zero vulnerabilities.
+  `vsce ls` lists 659 files and excludes all six affected packages. This preview
+  indicates no packaged runtime exposure to this finding; no new VSIX was inspected.
+  Exploitability within the packaging workflow was not demonstrated.
+- npm proposes `@vscode/vsce@4.0.0`, a major upgrade outside the declared `^3.9.2`.
+  Registry metadata requires Node `>=22` and omits the secretlint CLI dependency
+  carrying this chain. Local and CI Node 24 satisfy that engine requirement.
+  A dependency change needs maintainer approval and subsequent build/test, audit,
+  package-inclusion and packaging-compatibility verification.
+
+No dependency modification was performed during the initial assessment. The
+historical zero-finding audit for `1.7.2` below remains evidence from its recorded date.
+
+### Authorized remediation — 2026-10-03
+
+The maintainer authorized upgrading `@vscode/vsce` to `4.0.0`; manifest range is now
+`^4.0.0` and the lockfile removes the vulnerable chain. Full and runtime-only audits
+now pass with zero findings. `npm ci --ignore-scripts` and the reviewed signing
+postinstall hook passed; all 937 tests including build passed. VSCE package/publish
+help and secret-scanner smoke passed. After build completion, `vsce ls` matches all
+659 prior file paths. All production lockfile entries, package scripts and the VS
+Code engine remain unchanged. Prior user lockfile edits were preserved.
+
+See [verification and compatibility notes](../2.build/features/1.7.3-vsce-audit-remediation.md).
+Major credential-backend changes were reviewed against the official release notes
+and installed source; authenticated publishing and VSIX creation were not exercised.
+Packaging, installation and Marketplace publication remain pending separate approval.
 
 ## Published release — 1.7.2
 
