@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.7.3 - Unreleased
+
+### Maintenance
+
+- Open the 1.7.3 development cycle and align package and build metadata.
+
 ## 1.7.2 - 2026-09-22
 
 ### Revision Graph

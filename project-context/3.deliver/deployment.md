@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-09-22
+Last consolidated: 2026-10-03
 
 ## Environment
 
@@ -26,6 +26,13 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
+## Development Cycle: 1.7.3
+
+- Opened with maintainer authorization on 2026-10-03; package/build metadata declares `1.7.3`.
+- Published baseline remains `1.7.2`. Functional scope and delivery gates are tracked in
+  [release readiness](release.md).
+- Packaging and Marketplace publication require separate explicit approval.
+
 ## Published Release: 1.7.2
 
 - Publication confirmed by the maintainer on 2026-09-22; public catalog not independently checked.
@@ -41,7 +48,8 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
   reports zero vulnerabilities. Full tests were not rerun after that lockfile update.
 - Exact publication timestamp, release commit/tag, installed-version evidence, clean-profile
   installation and final manual smoke results were not supplied.
-- Keep 1.7.2 until the next cycle is authorized. Never reuse a published version for corrections.
+- The next development cycle, `1.7.3`, was authorized on 2026-10-03.
+  Never reuse a published version for corrections.
 
 ## Published Baseline: 1.7.1
 

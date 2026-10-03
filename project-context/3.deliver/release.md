@@ -1,7 +1,29 @@
 # Release Readiness
 
-Status: `1.7.2` publication confirmed by the maintainer on 2026-09-22
-Last consolidated: 2026-09-22
+Status: `1.7.3` development cycle open; latest published release `1.7.2`
+Last consolidated: 2026-10-03
+
+## Development cycle — 1.7.3
+
+Opened on 2026-10-03 with explicit maintainer authorization to adjust build artifact
+versions. Published baseline: `1.7.2`, release commit `9ccffa1`; publication was
+confirmed on 2026-09-22. See the [cycle artifact](../2.build/features/1.7.3-release-cycle-opening.md).
+
+Scope at opening is package/build metadata and release documentation only.
+Functional scope remains pending; runtime behavior and dependencies are unchanged.
+Historical verification and VSIX evidence below apply to their recorded releases.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Updated | Manifest, lockfile and root package declare `1.7.3`. |
+| Automated verification | Pending | Verify version consistency, run `npm test` including build, and check the final diff. |
+| Functional scope and manual smoke | Pending scope | Define feature-specific criteria and smoke checks when implementation is authorized. |
+| VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
+| Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
+| Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
+
+Before publication, rollback is a scoped metadata/documentation revert to `1.7.2`.
+No dependency change, source change, Git tag, VSIX or Marketplace action is part of this opening.
 
 ## Published release — 1.7.2
 
