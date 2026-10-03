@@ -10,10 +10,10 @@ import { RevisionGraphRef } from '../model/commitGraphTypes';
 import { buildRevisionGraphRefKinds } from '../source/refIndex';
 import {
   buildRevisionLogGitArgs,
-  matchesRevisionLogFilter,
-  normalizeRevisionLogFilterText,
   parseRevisionLogEntries
 } from '../source/graphGit';
+import { parseRevisionLogQuery, type RevisionLogQuery } from '../source/revisionLogQuery';
+import { filterRevisionLogQueryBatch } from './revisionLogSearch';
 
 export interface RevisionGraphLogBackend {
   loadRevisionLog(
@@ -60,15 +60,15 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
   }> {
     throwIfAborted(signal, 'The revision graph load was aborted.');
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
-    const normalizedFilterText = normalizeRevisionLogFilterText(filterText);
-    if (normalizedFilterText) {
+    const query = parseRevisionLogQuery(filterText);
+    if (query.text || query.file !== undefined || query.change !== undefined) {
       return this.loadFilteredRevisionLog(
         repository,
         source,
         limit,
         skip,
         showAllBranches,
-        normalizedFilterText,
+        query,
         refKindsByName,
         signal
       );
@@ -107,7 +107,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     limit: number,
     skip: number,
     showAllBranches: boolean,
-    normalizedFilterText: string,
+    query: RevisionLogQuery,
     refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>,
     signal?: AbortSignal
   ): Promise<{
@@ -143,11 +143,8 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
         searchTruncated = true;
       }
 
-      for (const entry of entriesToScan) {
-        if (!matchesRevisionLogFilter(entry, normalizedFilterText)) {
-          continue;
-        }
-
+      const matchingEntries = await filterRevisionLogQueryBatch(repository, entriesToScan, query, signal);
+      for (const entry of matchingEntries) {
         if (skippedMatches < skip) {
           skippedMatches += 1;
           continue;

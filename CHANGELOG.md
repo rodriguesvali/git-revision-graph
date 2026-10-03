@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 
 ### Show Log
 
+- Search changed files with `file:` and added/removed text with `change:`; combine
+  literal filters with existing metadata search, within the 2,000-commit scan limit.
+- Explain malformed search filters without also showing a misleading no-match message.
 - Show one vertically centered loading indicator in the header during initial loads and searches;
   keep pagination feedback at the end of the existing commit list.
 

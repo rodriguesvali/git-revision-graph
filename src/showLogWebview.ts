@@ -24,7 +24,7 @@ export function renderShowLogWebviewHtml(): string {
         <div class="summary" id="summary"></div>
         <div class="summary-count" id="summaryCount"></div>
         <div class="filter-control">
-          <input class="filter-input" id="filterInput" type="search" placeholder="Filter commits" aria-label="Filter commits" spellcheck="false" />
+          <input class="filter-input" id="filterInput" type="search" placeholder="Search · file: · change:" aria-label="Filter commits" title="Search commit text, file:src/auth/ or change:&quot;validateToken&quot;. Combine filters with spaces; quote values containing spaces." spellcheck="false" />
           <button class="filter-clear" id="filterClear" type="button" title="Clear filter" aria-label="Clear filter" hidden>×</button>
         </div>
         <label class="toolbar-toggle" id="showAllBranchesControl" hidden>

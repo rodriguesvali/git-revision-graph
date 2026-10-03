@@ -60,11 +60,22 @@ the exact selected target; **Show All Branches** is available when broader histo
 ![Show Log with compact commits, reference badges, and expanded file changes](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/03-show-log.png)
 
 - Inspect compact commit history for one target or an explicit `base..compare` range.
-- Search loaded history, load additional pages automatically, and expand commits for changed files.
+- Search commit metadata, filter by changed files or code, load additional pages automatically,
+  and expand commits for changed files.
 - Open file diffs, compare commits with the worktree, copy hashes and reference names, and open
   supported commits on their hosted remote.
 - Create branches or tags from exact commits, check out a commit to a new branch, reset with
   confirmation, and cherry-pick selected commits with conflict handoff to Source Control.
+
+Show Log accepts `file:src/auth/` for changes to a repository-relative file or directory and
+`change:"validateToken("` for literal text in added or removed text lines. Combine them with
+ordinary metadata text, for example `file:src/auth/ change:"validateToken(" fix parser`, to require
+all conditions. Quote values containing spaces; inside quotes, use `\"` for a quote and `\\` for a
+backslash. File paths and changed text are case-sensitive, without wildcards or regular expressions.
+Paths match their name at each commit; the filter does not follow earlier names across renames.
+Ordinary text retains case-insensitive matching against hashes, authors, messages and references.
+Search checks up to 2,000 commits in the selected scope and identifies results when older history
+was not searched.
 
 ## Work Directly From The Graph
 

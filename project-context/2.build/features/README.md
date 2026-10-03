@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.3-show-log-file-change-search.md`: approved literal `file:` and `change:`
+  filters combined with metadata, bounded native Git batches and actionable errors.
 - `1.7.3-show-log-loading-feedback.md`: remove duplicate initial/search loading
   feedback while retaining pagination, empty/error states and accessible status.
 

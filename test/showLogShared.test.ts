@@ -352,3 +352,11 @@ test('bounds show log cached changes and refreshes recently used commits', () =>
   assert.equal(bounded.a?.[0], changeA);
   assert.equal(bounded.b, undefined);
 });
+
+test('filter errors show actionable feedback without also claiming there were no matches', () => {
+  const state = buildShowLogWebviewState({ ...createHiddenShowLogState(), kind: 'visible',
+    source: { kind: 'target', revision: 'main', label: 'main' }, filterText: 'file:',
+    errorMessage: 'Enter a value after file:.' });
+  assert.equal(state.errorMessage, 'Enter a value after file:.');
+  assert.equal(state.emptyMessage, undefined);
+});

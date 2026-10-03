@@ -41,6 +41,16 @@ with mocked host messages (including three pane widths and two font settings),
 filtered search show one vertically centered header indicator, and pagination shows only its footer
 indicator while retaining the loaded commits. No manual pass is inferred.
 
+### Show Log File/Change Search — Pending
+
+Approved and implemented after the prior smoke confirmation. Automated evidence:
+971 tests including build, quality check, 39 platform tests on Linux and 24 VS Code
+1.90.0 Chromium scenarios passed. Nine browser search checks use mocked host transport
+with the real backend and a disposable Git fixture; 15 cover loading/alignment.
+Validate the search row below, full commit expansion/diff actions and source/repository
+changes in an Extension Development Host. Record operator, environment and outcomes;
+no manual pass is inferred.
+
 ## 1.7.2 Release Evidence
 
 Publication confirmed by the maintainer on 2026-09-22. Reviewed implementation: `b437638`.
@@ -254,6 +264,7 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Compare session isolation | Open a new comparison with the same refs, reversed refs and another repository with identical relative paths. Cancel a loading comparison and review the restored results. | New comparisons reset filters/selection; another repository never inherits file selections; the restored comparison has a stable identity during subsequent updates. |
 | File diff | Open a file diff from Compare Results and Show Log. | `vscode.diff` opens with the expected left/right sides and readable title. |
 | Show Log loading | Open Show Log and search history while loading, then scroll to request another page. | Initial loading and search show only the header status; pagination shows only the footer status; completed empty/error feedback remains visible. |
+| Show Log file/change search | Search `file:src/`, `change:"validateToken("`, their combination with metadata, and a quoted path containing spaces. Try invalid/duplicate filters, all-branches/range scope, paging, rapid replacement/clear and source/repository switching. | Only changed paths/added-or-removed text match; metadata combines with AND; scope/order and the 2,000-commit partial-history notice remain correct; invalid syntax has actionable feedback; older responses are suppressed; expansion and diff actions retain the complete commit. |
 | Show Log | Open Show Log for a ref, range, and loaded commit where available. | Log panel loads entries, commit details, file expansion, and copy actions remain usable. |
 | Hosted commit links | Select `Open on Remote` from Revision Graph and Show Log for GitHub, Azure DevOps, GitLab.com, and CodeCommit repositories. Repeat on Secure Source Manager. | Exact commits open on the first four providers. Secure Source Manager reports that no verified commit link is available; unsupported remotes show concise native feedback without opening a URL. |
 

@@ -88,6 +88,7 @@ export function buildShowLogEmptyMessage(state: ShowLogState): string | undefine
   if (state.loading) {
     return 'Loading log...';
   }
+  if (state.errorMessage) return undefined;
 
   if (state.filterText.trim()) {
     if (state.searchTruncated) {

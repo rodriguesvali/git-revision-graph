@@ -20,7 +20,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /class="table-header"/);
   assert.match(html, /class="summary-count" id="summaryCount"/);
   assert.match(html, /class="filter-input" id="filterInput"/);
-  assert.match(html, /placeholder="Filter commits"/);
+  assert.match(html, /placeholder="Search · file: · change:"/);
+  assert.match(html, /title="Search commit text, file:src\/auth\//);
   assert.match(html, /class="filter-clear" id="filterClear"/);
   assert.match(html, /class="status-card' \+ \(state\.errorMessage \? ' error' : ''\) \+ '" role="status"/);
   assert.match(html, /state\.searchNotice/);

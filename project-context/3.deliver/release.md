@@ -13,7 +13,8 @@ Scope at opening is package/build metadata and release documentation only.
 The maintainer subsequently authorized the VSCE 4.0.0 development-tool correction.
 The functional improvements are full-name readability and keyboard navigation in reference context
 menus, filter/selection retention during updates within the same Compare Results session,
-and removal of duplicate Show Log loading feedback.
+removal of duplicate Show Log loading feedback, and literal `file:`/`change:` search
+combined with existing Show Log metadata filtering.
 Runtime dependencies and Git workflows are unchanged.
 Historical verification and VSIX evidence below apply to their recorded releases.
 
@@ -51,6 +52,15 @@ build, quality checks and 15 VS Code 1.90.0 Chromium scenarios, including alignm
 at three pane widths and two font settings. The focused manual
 Show Log check remains pending and is not inferred from the screenshot.
 
+The [Show Log file/change search](../2.build/features/1.7.3-show-log-file-change-search.md)
+was authorized with "Siga em frente." and is implemented. Native Git checks inspect
+only the original metadata candidates in bounded batches, preserving source scope,
+paging, full commit details and the 2,000-commit scan cap. All 971 tests including
+build, quality (273 files / 2,603 functions), 39 platform checks and 24 minimum-version
+Chromium scenarios passed on Linux. Nine browser cases connect mocked host transport
+to the real backend and a disposable Git repository; 15 retain loading/alignment
+coverage. Focused Extension Host smoke for this additional search scope remains pending.
+
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest, lockfile and root package declare `1.7.3`. |
@@ -61,6 +71,7 @@ Show Log check remains pending and is not inferred from the screenshot.
 | Reference-menu keyboard navigation | Automated checks passed; smoke completed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Final smoke confirmed by maintainer on 2026-10-03. |
 | Compare Results review context | Automated checks passed; focused smoke pending | 958 tests including build, quality check and 16 Chromium scenarios passed. Validate real briefing progress/cancel, restore/unified-diff refresh and repository/new-comparison resets in the Extension Host. |
 | Show Log loading feedback | Automated checks passed; focused smoke pending | Single centered header indicator, search labels, zero-results/error states, pagination and alignment checked in 15 Chromium scenarios; 958 tests/build and quality passed. |
+| Show Log file/change search | Automated checks passed; focused smoke pending | 971 tests/build, quality, 39 platform checks and 24 Chromium scenarios passed. Verify quoted paths/code, combined metadata, range/all-branches scope, paging, rapid replacement/clear, errors and complete commit actions in the Extension Host. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
@@ -73,6 +84,8 @@ state. Compare Results rollback is a scoped revert of review-session wiring, rec
 tests and documentation while preserving the menu improvements. No Git tag, VSIX or
 Marketplace action occurred during this work. Show Log rollback is a scoped revert
 of its rendering conditions, status markup and related documentation.
+File/change search rollback is a scoped revert of the query modules, backend wiring,
+input help, error presentation, tests and documentation. No Git data migration occurs.
 
 ## Dependency assessment — 2026-10-03
 
