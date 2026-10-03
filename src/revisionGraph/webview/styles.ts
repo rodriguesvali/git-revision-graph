@@ -448,7 +448,7 @@ export function renderRevisionGraphStyles(): string {
     }
     .context-menu {
       position: fixed;
-      z-index: 60;
+      z-index: 74;
       min-width: min(250px, calc(100vw - 16px));
       border: 1px solid var(--border);
       border-radius: 10px;

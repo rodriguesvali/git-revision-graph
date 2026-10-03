@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - Size reference context menus to their content and available panel width; wrap
   long names completely so action targets remain readable in narrow editor panes.
+- Open reference actions with Shift+F10 or the Menu key; navigate with arrows and
+  Home/End, close submenus with Esc, and retain focus through remote-tag updates.
 
 ### Maintenance
 

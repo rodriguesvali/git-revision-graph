@@ -29,6 +29,9 @@ multi-repository workspaces.
 Center on HEAD is disabled when HEAD is absent from the current graph, including after filtering.
 Reference context menus adapt to the available panel width and wrap long names so their full
 action targets remain readable.
+With a reference focused, press **Shift+F10** or the **Menu** key to open its actions.
+Use **Up/Down**, **Home/End**, and **Right/Left** to navigate actions and submenus;
+**Enter** activates an action, **Esc** closes one menu level, and **Tab** leaves the menu.
 
 Use graph scopes, search, focus modes, zoom, and the minimap to move from repository-wide context to
 the revisions that matter. Large scenes use bounded history, host-side layout, caching, and

@@ -3,6 +3,7 @@
       readonly primary?: boolean;
       readonly destructive?: boolean;
       readonly disabled?: boolean;
+      readonly action?: string;
     };
     const contextSubmenuCloseScheduler = createRevisionGraphWebviewContextSubmenuCloseScheduler();
     function setZoom(zoom: number, options: { readonly preserveViewport?: boolean } = {}) {
@@ -237,6 +238,8 @@
     }
 
     function openContextMenu(clientX: number, clientY: number, target: RevisionGraphWebviewTarget) {
+      const menuFocus = contextMenuKeyboard.beforeRender();
+      contextSubmenuCloseScheduler.cancel();
       activeContextMenuRequest = { clientX, clientY, target };
       const selectedTargets = selected
         .map((selectionId) => getSelectionTarget(selectionId))
@@ -297,6 +300,7 @@
       }
       contextMenu.classList.add('open');
       placeContextMenu(clientX, clientY);
+      contextMenuKeyboard.afterRender(menuFocus);
     }
 
     function createContextMenuActionHandlers(
@@ -391,6 +395,9 @@
       const button = document.createElement('button');
       button.className = 'context-menu-item context-submenu-trigger';
       button.type = 'button';
+      button.setAttribute('role', 'menuitem');
+      button.tabIndex = -1;
+      button.dataset.menuKey = label;
       button.setAttribute('aria-haspopup', 'menu');
       button.setAttribute('aria-expanded', 'false');
 
@@ -414,20 +421,14 @@
         const submenuButton = document.createElement('button');
         submenuButton.className = 'context-menu-item';
         submenuButton.type = 'button';
+        submenuButton.setAttribute('role', 'menuitem');
+        submenuButton.tabIndex = -1;
+        submenuButton.dataset.menuKey = entry.label;
         submenuButton.textContent = entry.label;
-        submenuButton.addEventListener('click', () => {
+        submenuButton.addEventListener('click', (event) => {
+          contextMenuKeyboard.beforeAction(event);
           entry.onClick();
           closeContextMenu();
-        });
-        submenuButton.addEventListener('keydown', (event) => {
-          if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            closeContextSubmenu(group);
-            button.focus();
-          } else if (event.key === 'Escape') {
-            event.preventDefault();
-            closeContextMenu();
-          }
         });
         submenu.appendChild(submenuButton);
       }
@@ -439,20 +440,11 @@
       group.addEventListener('mouseenter', keepSubmenuOpen);
       submenu.addEventListener('mouseenter', keepSubmenuOpen);
       group.addEventListener('mouseleave', () => contextSubmenuCloseScheduler.schedule(group, () => closeContextSubmenu(group)));
-      group.addEventListener('focusin', keepSubmenuOpen);
+      group.addEventListener('focusin', (event) => { if (event.target !== button) keepSubmenuOpen(); });
+      button.addEventListener('click', keepSubmenuOpen);
       group.addEventListener('focusout', (event) => {
         if (!group.contains(event.relatedTarget instanceof Node ? event.relatedTarget : null)) {
           closeContextSubmenu(group);
-        }
-      });
-      button.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          openContextSubmenu(group);
-          submenu.querySelector<HTMLElement>('.context-menu-item')?.focus();
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          closeContextMenu();
         }
       });
 
@@ -518,6 +510,9 @@
       const button = document.createElement('button');
       button.className = 'context-menu-item';
       button.type = 'button';
+      button.setAttribute('role', 'menuitem');
+      button.tabIndex = -1;
+      button.dataset.menuKey = options.action ?? label;
       if (options.primary) {
         button.classList.add('primary');
       }
@@ -526,7 +521,9 @@
       }
       button.textContent = label;
       button.disabled = !!options.disabled;
-      button.addEventListener('click', () => {
+      button.setAttribute('aria-disabled', String(button.disabled));
+      button.addEventListener('click', (event) => {
+        contextMenuKeyboard.beforeAction(event);
         onClick();
         closeContextMenu();
       });
@@ -591,6 +588,7 @@
     }
 
     function closeContextMenu() {
+      contextMenuKeyboard.closed();
       contextSubmenuCloseScheduler.cancel();
       contextMenu.classList.remove('open');
       contextMenu.innerHTML = '';

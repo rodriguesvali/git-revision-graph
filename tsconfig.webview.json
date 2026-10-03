@@ -73,6 +73,7 @@
     "src/revisionGraph/webview/runtime/flowBranchForm.ts",
     "src/revisionGraph/webview/runtime/flowEqualizationDialog.ts",
     "src/revisionGraph/webview/runtime/contextMenu.ts",
+    "src/revisionGraph/webview/runtime/contextMenuKeyboard.ts",
     "src/revisionGraph/webview/script/messages.ts",
     "src/revisionGraph/webview/runtime/flowAiTextInteractions.ts",
     "src/revisionGraph/webview/script/referenceTooltip.ts",

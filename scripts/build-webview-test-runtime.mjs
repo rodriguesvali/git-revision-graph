@@ -5,6 +5,9 @@ const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const runtimeSourcePath = `${projectRoot}/out/webview/revisionGraph.js`;
 const testRuntimePath = `${projectRoot}/out-test/revisionGraphRuntime.cjs`;
 const exportedNames = [
+  'createRevisionGraphContextMenuKeyboard',
+  'getRevisionGraphMenuNavigationIndex',
+  'isRevisionGraphContextMenuShortcut',
   'applyRevisionGraphWebviewCanvasSize',
   'applyRevisionGraphWebviewSceneGeometry',
   'applyRevisionGraphWebviewScenePlacement',

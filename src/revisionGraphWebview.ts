@@ -453,7 +453,7 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
       </div>
     </div>
   </div>
-  <div class="context-menu" id="contextMenu"></div>
+  <div class="context-menu" id="contextMenu" role="menu" aria-label="Reference actions"></div>
   <div class="reference-tooltip" id="referenceTooltip" role="dialog" aria-label="Reference details" hidden></div>
   <div class="loading-overlay" id="loadingOverlay" aria-hidden="false">
     <div class="loading-card" role="status" aria-live="polite">

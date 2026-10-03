@@ -129,6 +129,13 @@ const VIEWPORT_PADDING_LEFT = 18;
       readonly clientY: number;
       readonly target: RevisionGraphWebviewTarget;
     } | null = null;
+    const contextMenuKeyboard = createRevisionGraphContextMenuKeyboard({
+      menu: contextMenu, references: nodeLayer,
+      getReference: (event) => findEventTargetElement(event, '[data-ref-id]'),
+      getTarget: getSelectionTarget, select: (id, additive) => { toggleSelection(id, additive); syncSelection(); },
+      open: openContextMenu, close: closeContextMenu, hideTooltip: hideReferenceTooltip,
+      openSubmenu: openContextSubmenu, closeSubmenu: closeContextSubmenu
+    });
     let minimapDragState: { active: boolean } | null = null;
     let pendingMinimapSyncFrame = 0;
     let pendingMinimapSyncMode = 'none';
@@ -1499,17 +1506,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       });
       nodeLayer.addEventListener('focusout', handleReferenceTooltipReferenceFocusOut);
       nodeLayer.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        const refElement = findEventTargetElement(event, '[data-ref-id]');
-        const refId = refElement ? refElement.getAttribute('data-ref-id') : '';
-        if (!refId) {
-          return;
-        }
-        event.preventDefault();
-        toggleSelection(refId, event.ctrlKey || event.metaKey);
-        syncSelection();
+        contextMenuKeyboard.referenceKeydown(event);
       });
       nodeLayer.addEventListener('contextmenu', (event) => {
         hideReferenceTooltip();
@@ -1519,6 +1516,7 @@ const VIEWPORT_PADDING_LEFT = 18;
           const refId = refElement.getAttribute('data-ref-id');
           const target = refId ? getSelectionTarget(refId) : null;
           if (target) {
+            contextMenuKeyboard.setInvoker(refElement);
             openContextMenu(event.clientX, event.clientY, target);
           }
           return;
@@ -1535,6 +1533,7 @@ const VIEWPORT_PADDING_LEFT = 18;
           return;
         }
         event.preventDefault();
+        contextMenuKeyboard.setInvoker(nodeElement);
         openContextMenu(event.clientX, event.clientY, target);
       });
 

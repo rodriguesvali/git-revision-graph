@@ -975,6 +975,211 @@ test('renders grouped graph context menus', () => {
   assert.doesNotMatch(html, /appendSelectionAction/);
 });
 
+test('renders keyboard reference menus with scoped navigation and focus lifecycle', () => {
+  const html = renderRevisionGraphShellHtml();
+  assert.match(html, /createRevisionGraphContextMenuKeyboard/);
+  assert.match(html, /contextMenuKeyboard\.referenceKeydown/);
+  assert.match(html, /contextMenuKeyboard\.beforeRender/);
+  assert.match(html, /contextMenuKeyboard\.afterRender/);
+  assert.match(html, /id="contextMenu" role="menu"/);
+  const layer = (selector: string) => Number(html.match(new RegExp(selector + '\\s*\\{[^}]*z-index:\\s*(\\d+)', 's'))?.[1]);
+  assert.ok(layer('\\.context-menu') > layer('\\.view-controls'), 'focused actions must appear above the toolbar');
+  assert.ok(layer('\\.context-menu') < layer('\\.loading-overlay'), 'menus stay below the loading overlay');
+});
+
+test('keyboard reference menus open beside the reference without executing or changing selection', () => {
+  const fixture = createMenuKeyboardFixture();
+  const shortcut = fixture.event('F10', fixture.reference, { shiftKey: true });
+  fixture.controller.referenceKeydown(shortcut);
+  assert.equal(shortcut.prevented, true);
+  assert.deepEqual(fixture.opened, [[28, 45, fixture.target]]);
+  assert.equal(fixture.active(), fixture.first);
+  assert.deepEqual(fixture.selections, []);
+  fixture.controller.referenceKeydown(fixture.event('Enter', fixture.reference, { ctrlKey: true }));
+  assert.deepEqual(fixture.selections, [['branch:feature/demo', true]]);
+  const unrelated = fixture.event('F10', fixture.reference);
+  fixture.controller.referenceKeydown(unrelated);
+  assert.equal(unrelated.prevented, false);
+  assert.equal(fixture.opened.length, 1);
+});
+
+test('keyboard reference menus navigate only the active level and skip disabled actions', () => {
+  const f = createMenuKeyboardFixture();
+  f.first.focus();
+  f.key('ArrowDown');
+  assert.equal(f.active(), f.trigger);
+  f.key('End');
+  assert.equal(f.active(), f.last);
+  assert.equal(f.last.scrolled, true);
+  f.key('ArrowDown');
+  assert.equal(f.active(), f.first);
+  f.key('ArrowUp');
+  assert.equal(f.active(), f.last);
+  f.key('Home');
+  assert.equal(f.active(), f.first);
+  assert.equal(f.key('a').prevented, false);
+});
+
+test('keyboard reference menus close submenus before the parent and restore reference focus', () => {
+  const f = createMenuKeyboardFixture();
+  f.controller.setInvoker(f.reference);
+  f.trigger.focus();
+  f.key('ArrowRight');
+  assert.equal(f.active(), f.copy);
+  assert.equal(f.group.classList.contains('open'), true);
+  f.key('End');
+  assert.equal(f.active(), f.copyName);
+  f.key('ArrowLeft');
+  assert.equal(f.active(), f.trigger);
+  assert.equal(f.group.classList.contains('open'), false);
+  f.key('Enter');
+  assert.equal(f.active(), f.copy);
+  f.key('Escape');
+  assert.equal(f.active(), f.trigger);
+  assert.equal(f.closes(), 0);
+  f.key('Escape');
+  assert.equal(f.active(), f.reference);
+  assert.equal(f.closes(), 1);
+});
+
+test('keyboard reference menus preserve logical submenu focus across rebuilding', () => {
+  const f = createMenuKeyboardFixture();
+  f.controller.setInvoker(f.reference, true);
+  f.controller.beforeRender();
+  f.copyName.focus();
+  const snapshot = f.controller.beforeRender();
+  const replacement = f.element('button', 'context-menu-item');
+  replacement.dataset.menuKey = f.copyName.dataset.menuKey;
+  f.submenu.children.splice(1, 1, replacement);
+  replacement.parentElement = f.submenu;
+  f.controller.afterRender(snapshot);
+  assert.equal(f.active(), replacement);
+  assert.equal(f.group.classList.contains('open'), true);
+  replacement.disabled = true;
+  f.controller.afterRender(snapshot);
+  assert.equal(f.active(), f.first);
+});
+
+test('pointer opening and menu dismissal never steal focus from other controls or action dialogs', () => {
+  const f = createMenuKeyboardFixture();
+  f.last.focus();
+  f.controller.setInvoker(f.reference);
+  assert.equal(f.controller.beforeRender(), null, 'a new pointer invocation is not an async rebuild');
+  f.reference.focus();
+  f.controller.afterRender(null);
+  assert.equal(f.active(), f.reference);
+  f.first.focus();
+  f.controller.beforeAction({ detail: 1 });
+  assert.equal(f.active(), f.first, 'pointer activation does not restore focus');
+  f.controller.beforeAction({ detail: 0 });
+  assert.equal(f.active(), f.reference, 'keyboard activation restores before the action opens UI');
+  const dialog = f.element('input');
+  dialog.focus();
+  f.controller.closed();
+  assert.equal(f.active(), dialog);
+  f.controller.afterRender(null);
+  assert.equal(f.active(), dialog);
+});
+
+test('keyboard reference menus allow native Tab exit and handle replaced or removed references', () => {
+  const f = createMenuKeyboardFixture();
+  f.controller.setInvoker(f.reference);
+  f.first.focus();
+  const tab = f.key('Tab');
+  assert.equal(tab.prevented, false);
+  assert.equal(tab.stopped, true);
+  assert.equal(f.active(), f.reference);
+  assert.equal(f.closes(), 1);
+  f.controller.setInvoker(f.reference);
+  f.reference.isConnected = false;
+  const replacement = f.element('div');
+  replacement.setAttribute('data-ref-id', 'branch:feature/demo');
+  f.references.children.splice(0, 1, replacement);
+  replacement.parentElement = f.references;
+  f.first.focus();
+  f.key('Escape');
+  assert.equal(f.active(), replacement);
+  f.controller.setInvoker(replacement);
+  replacement.isConnected = false;
+  f.references.children.splice(0);
+  f.first.focus();
+  assert.doesNotThrow(() => f.key('Escape'));
+});
+
+test('keyboard menu shortcuts ignore conflicting modifiers and navigation tolerates empty menus', () => {
+  const f = createMenuKeyboardFixture();
+  const shortcut = f.runtime.context.isRevisionGraphContextMenuShortcut;
+  assert.equal(shortcut(f.event('ContextMenu')), true);
+  assert.equal(shortcut(f.event('F10', null, { shiftKey: true })), true);
+  for (const modifier of ['ctrlKey', 'metaKey', 'altKey']) {
+    assert.equal(shortcut(f.event('F10', null, { shiftKey: true, [modifier]: true })), false);
+  }
+  const index = f.runtime.context.getRevisionGraphMenuNavigationIndex;
+  assert.equal(index('ArrowDown', 0, 0), null);
+  assert.equal(index('Tab', 0, 3), null);
+  f.menu.children.splice(0);
+  f.controller.setInvoker(f.reference, true);
+  assert.doesNotThrow(() => f.controller.afterRender(null));
+});
+
+function createMenuKeyboardFixture() {
+  const runtime = createWebviewRuntime();
+  const document = (globalThis as any).document;
+  function element(tag: string, classes = ''): any {
+    const node: any = document.createElement(tag);
+    const classNames = new Set(classes.split(' ').filter(Boolean));
+    node.classList = { ...createClassList(classNames), add: (name: string) => classNames.add(name), contains: (name: string) => classNames.has(name) };
+    const matches = (candidate: any, selector: string) => selector.startsWith('.')
+      ? candidate.classList.contains(selector.slice(1)) : candidate.getAttribute('data-ref-id') !== null;
+    node.closest = (selector: string) => {
+      for (let current = node; current; current = current.parentElement) if (matches(current, selector)) return current;
+      return null;
+    };
+    node.contains = (candidate: any) => {
+      for (let current = candidate; current; current = current.parentElement) if (current === node) return true;
+      return false;
+    };
+    node.querySelectorAll = (selector?: string): any[] => node.children.flatMap((child: any) =>
+      [child, ...child.querySelectorAll()]).filter((child: any) => !selector || matches(child, selector));
+    node.querySelector = (selector: string) => node.querySelectorAll(selector)[0] ?? null;
+    node.scrollIntoView = () => { node.scrolled = true; };
+    return node;
+  }
+  const menu = element('div', 'context-menu');
+  const references = element('div');
+  const reference = element('div');
+  reference.setAttribute('data-ref-id', 'branch:feature/demo');
+  reference.getBoundingClientRect = () => ({ left: 20, bottom: 45 });
+  references.appendChild(reference);
+  const first = element('button', 'context-menu-item'); first.dataset.menuKey = 'show-log';
+  const disabled = element('button', 'context-menu-item'); disabled.disabled = true;
+  const group = element('div', 'context-menu-submenu');
+  const trigger = element('button', 'context-menu-item context-submenu-trigger'); trigger.dataset.menuKey = 'Copy';
+  const submenu = element('div', 'context-submenu');
+  const copy = element('button', 'context-menu-item'); copy.dataset.menuKey = 'Copy Hash';
+  const copyName = element('button', 'context-menu-item'); copyName.dataset.menuKey = 'Copy Ref Name';
+  const last = element('button', 'context-menu-item'); last.dataset.menuKey = 'delete';
+  submenu.append(copy, copyName); group.append(trigger, submenu); menu.append(first, disabled, group, last);
+  const target = createContextMenuTarget('branch', 'feature/demo');
+  const opened: any[] = [], selections: any[] = [];
+  let closeCount = 0;
+  const controller: any = runtime.context.createRevisionGraphContextMenuKeyboard({
+    menu, references, getReference: (event: any) => event.target, getTarget: () => target,
+    select: (id: string, additive: boolean) => selections.push([id, additive]),
+    open: (x: number, y: number, target: any) => { opened.push([x, y, target]); controller.afterRender(controller.beforeRender()); },
+    close: () => { closeCount++; }, hideTooltip() {},
+    openSubmenu: (group: any) => group.classList.add('open'),
+    closeSubmenu: (group: any) => group.classList.remove('open')
+  });
+  function event(key: string, target: any = null, modifiers: Record<string, boolean> = {}): any {
+    return { key, target, ...modifiers, prevented: false, stopped: false,
+      preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; } };
+  }
+  return { runtime, controller, element, menu, references, reference, first, last, trigger, group, submenu, copy, copyName,
+    target, opened, selections, event, active: () => document.activeElement, closes: () => closeCount,
+    key: (key: string) => { const e = event(key, document.activeElement); menu.listeners.keydown[0](e); return e; } };
+}
+
 test('renders a graph minimap overview with viewport navigation handlers', () => {
   const html = renderRevisionGraphShellHtml();
 
