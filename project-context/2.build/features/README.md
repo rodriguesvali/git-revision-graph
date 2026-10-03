@@ -11,6 +11,13 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.3-show-log-loading-feedback.md`: remove duplicate initial/search loading
+  feedback while retaining pagination, empty/error states and accessible status.
+
+- `1.7.3-compare-results-review-context-proposal.md`: approved and implemented
+  filter/selection retention within a comparison, repository/session isolation and
+  refresh reconciliation; build/tests/browser checks passed; focused smoke pending.
+
 - `1.7.3-reference-context-menu-keyboard-proposal.md`: approved and implemented
   keyboard navigation, submenu dismissal and focus restoration; automated tests
   and minimum-version Chromium checks passed; final smoke completed by maintainer confirmation.

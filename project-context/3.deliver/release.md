@@ -11,8 +11,10 @@ confirmed on 2026-09-22. See the [cycle artifact](../2.build/features/1.7.3-rele
 
 Scope at opening is package/build metadata and release documentation only.
 The maintainer subsequently authorized the VSCE 4.0.0 development-tool correction.
-The functional improvements are full-name readability and keyboard navigation in reference context menus;
-runtime dependencies and Git workflows are unchanged.
+The functional improvements are full-name readability and keyboard navigation in reference context
+menus, filter/selection retention during updates within the same Compare Results session,
+and removal of duplicate Show Log loading feedback.
+Runtime dependencies and Git workflows are unchanged.
 Historical verification and VSIX evidence below apply to their recorded releases.
 
 The [reference-menu readability improvement](../2.build/features/1.7.3-reference-context-menu-readability.md)
@@ -33,6 +35,21 @@ host messages. The maintainer subsequently confirmed final smoke completion on
 for scope and evidence limits; individual scenario results and environment details
 were not supplied.
 
+The maintainer approved the [Compare Results review-context improvement](../2.build/features/1.7.3-compare-results-review-context-proposal.md)
+on 2026-10-03. It preserves filters, valid selections and typing/file focus during
+briefing updates and existing worktree refreshes. New comparisons and repository
+changes reset context; zero-count active status chips remain visible. All 958 tests
+including build, the quality gate and 16 minimum-version Chromium scenarios passed.
+The additional focused Extension Development Host smoke remains pending; the prior
+menu smoke confirmation does not cover this later scope.
+
+The [Show Log loading correction](../2.build/features/1.7.3-show-log-loading-feedback.md)
+responds to the maintainer screenshot showing both header and content indicators.
+Initial loads/searches use only the accessible header chip; pagination keeps its
+footer feedback and existing commits. Verification passed all 958 tests including
+build, quality checks and nine VS Code 1.90.0 Chromium scenarios. The focused manual
+Show Log check remains pending and is not inferred from the screenshot.
+
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest, lockfile and root package declare `1.7.3`. |
@@ -41,6 +58,8 @@ were not supplied.
 | Dependency audit | Passed after remediation | On 2026-10-03: full and runtime-only audits report zero vulnerabilities after the authorized VSCE 4.0.0 upgrade. |
 | Reference-menu readability | Automated checks passed; smoke completed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Final smoke confirmed by maintainer on 2026-10-03. |
 | Reference-menu keyboard navigation | Automated checks passed; smoke completed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Final smoke confirmed by maintainer on 2026-10-03. |
+| Compare Results review context | Automated checks passed; focused smoke pending | 958 tests including build, quality check and 16 Chromium scenarios passed. Validate real briefing progress/cancel, restore/unified-diff refresh and repository/new-comparison resets in the Extension Host. |
+| Show Log loading feedback | Automated checks passed; focused smoke pending | Single header indicator, search labels, zero-results/error states and pagination checked in nine Chromium scenarios; 958 tests/build and quality passed. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
@@ -49,7 +68,10 @@ Cycle-opening rollback is a scoped metadata/documentation revert to `1.7.2`.
 For the authorized development-tool correction, revert only its dependency changes
 as described in the remediation artifact, preserving prior user edits.
 Reference-menu rollback is a scoped CSS/test/documentation revert preserving user Git
-state. No Git tag, VSIX or Marketplace action occurred during this work.
+state. Compare Results rollback is a scoped revert of review-session wiring, reconciliation,
+tests and documentation while preserving the menu improvements. No Git tag, VSIX or
+Marketplace action occurred during this work. Show Log rollback is a scoped revert
+of its rendering conditions, status markup and related documentation.
 
 ## Dependency assessment — 2026-10-03
 

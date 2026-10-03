@@ -11,6 +11,17 @@ All notable changes to this project will be documented in this file.
 - Open reference actions with Shift+F10 or the Menu key; navigate with arrows and
   Home/End, close submenus with Esc, and retain focus through remote-tag updates.
 
+### Compare Results
+
+- Keep search/status filters and valid file selections during briefing updates and
+  worktree refreshes within the same comparison; reset them for a new comparison.
+- Keep an active status filter visible when its count reaches zero.
+
+### Show Log
+
+- Show one loading indicator in the header during initial loads and searches;
+  keep pagination feedback at the end of the existing commit list.
+
 ### Maintenance
 
 - Open the 1.7.3 development cycle and align package and build metadata.

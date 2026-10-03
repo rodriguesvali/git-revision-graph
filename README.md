@@ -45,6 +45,8 @@ the current worktree.
 ![Compare Results with status filters and changed files](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/02-compare-results.png)
 
 - Review changed files as a compact queue with status filters and rename-aware paths.
+- Keep filters and valid file selections during briefing updates and worktree refreshes in
+  the same comparison. A new comparison starts with cleared filters and a fresh selection.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
 - Compare an item with the worktree and restore guarded worktree files when needed.
 - Generate an optional, user-initiated AI Briefing through an available GitHub Copilot language

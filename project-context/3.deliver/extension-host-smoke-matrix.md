@@ -16,11 +16,29 @@ risking user work.
 - Operator: maintainer; name not recorded.
 - VS Code version, platform, fixture, candidate commit/VSIX and individual scenario
   results: not supplied and not inferred. The confirmation closes the final smoke
-  follow-up; it does not establish individual outcomes for every scenario below.
+  follow-up for the two menu improvements; it does not establish individual
+  outcomes for every scenario below or cover the later Compare Results and Show Log changes.
 - Automated evidence remains separate: 945 tests including build, the quality gate,
   21 Chromium keyboard scenarios and 36 readability scenarios passed.
 - VSIX packaging/inspection, clean-profile installation and Marketplace publication
   are not established by this smoke confirmation.
+
+### Additional Compare Results Scope — Pending
+
+Approved and implemented after the menu smoke confirmation. Automated evidence:
+958 tests including build, quality check and 16 VS Code 1.90.0 Chromium scenarios
+with mocked host messages passed. Focused Extension Development Host confirmation
+for actual briefing generation/cancel and restore/unified-diff refresh remains pending.
+Validate the review-context rows below and repository/new-comparison resets; record
+operator, environment and outcome.
+
+### Show Log Loading Correction — Pending
+
+The maintainer screenshot reported duplicate initial/search loading feedback. The
+correction passed nine VS Code 1.90.0 Chromium scenarios with mocked host messages,
+958 tests including build and the quality check. Manually verify initial load and
+filtered search show one header indicator, and pagination shows only its footer
+indicator while retaining the loaded commits. No manual pass is inferred.
 
 ## 1.7.2 Release Evidence
 
@@ -231,7 +249,10 @@ selection, native prompts and editors, remote/authentication behavior, themes, o
 | Compare refs | Select two refs and run compare. | Compare Results opens or updates with changed files, loading clears, and file rows are actionable. |
 | Compare with worktree | Select a ref and compare with worktree. | Worktree changes appear; empty comparisons show a concise information message. |
 | AI Compare Briefing | In completed ref/ref and ref/worktree comparisons, invoke the AI sparkle action, review and copy a ready briefing, dismiss/reopen it, and regenerate it. Repeat with model consent denied, no model available, sensitive-only changes, and while replacing the comparison or closing the panel during generation. | AI is invoked only by the explicit action. The plain-text briefing remains bounded and usable; dismissing/reopening a ready result does not regenerate it; unavailable or excluded context leaves review usable; and stale or canceled responses never update a replaced or closed comparison. |
+| Compare review context | Filter by text and status, select multiple files, then generate/cancel/regenerate a briefing and open Unified Diff. Restore one selected worktree file in a disposable fixture. | Same-comparison updates retain filters and existing selected IDs; removed/status-changed IDs disappear from selection; actions use current results; typing and row focus remain usable. A zero-count active category remains visible with All and Clear recovery controls. |
+| Compare session isolation | Open a new comparison with the same refs, reversed refs and another repository with identical relative paths. Cancel a loading comparison and review the restored results. | New comparisons reset filters/selection; another repository never inherits file selections; the restored comparison has a stable identity during subsequent updates. |
 | File diff | Open a file diff from Compare Results and Show Log. | `vscode.diff` opens with the expected left/right sides and readable title. |
+| Show Log loading | Open Show Log and search history while loading, then scroll to request another page. | Initial loading and search show only the header status; pagination shows only the footer status; completed empty/error feedback remains visible. |
 | Show Log | Open Show Log for a ref, range, and loaded commit where available. | Log panel loads entries, commit details, file expansion, and copy actions remain usable. |
 | Hosted commit links | Select `Open on Remote` from Revision Graph and Show Log for GitHub, Azure DevOps, GitLab.com, and CodeCommit repositories. Repeat on Secure Source Manager. | Exact commits open on the first four providers. Secure Source Manager reports that no verified commit link is available; unsupported remotes show concise native feedback without opening a URL. |
 

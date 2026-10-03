@@ -33,6 +33,7 @@ import {
 } from './compareResults/viewState';
 import type { CompareBriefingGenerator } from './compareResults/aiBriefing';
 import { CompareBriefingController } from './compareResults/briefingController';
+import { CompareResultsReviewSessions } from './compareResults/reviewSessions';
 import {
   prepareCompareResultsWorktreeUnifiedDiff,
   refreshCompareResultsWorktreeComparison
@@ -62,6 +63,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private openingUnifiedDiff = false;
   private readonly requestOwner = new CompareResultsRequestOwner();
+  private readonly reviewSessions = new CompareResultsReviewSessions();
   private readonly briefingController: CompareBriefingController;
   private readonly panelDisposables: vscode.Disposable[] = [];
   private readonly messageHandlers: CompareResultsMessageHandlers = {
@@ -289,7 +291,8 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     return createCompareResultsWebviewState(
       this.state,
       this.briefingController.state,
-      this.briefingController.isAvailable
+      this.briefingController.isAvailable,
+      this.reviewSessions.idFor(this.state)
     );
   }
 
@@ -375,6 +378,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
           return;
         }
 
+        this.reviewSessions.preserveWorktreeRefresh(state, preparation.nextState);
         this.state = preparation.nextState;
         if (!preparation.request) {
           this.refresh();
@@ -416,6 +420,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
       return;
     }
 
+    this.reviewSessions.preserveWorktreeRefresh(state, outcome.nextState);
     this.state = outcome.nextState;
     this.resetBriefing();
     if (this.state.kind === 'empty') {

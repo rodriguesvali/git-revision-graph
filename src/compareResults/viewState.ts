@@ -16,11 +16,14 @@ import type { CompareBriefingState } from './aiBriefing';
 export function createCompareResultsWebviewState(
   state: CompareResultsState,
   briefing: CompareBriefingState = { kind: 'idle' },
-  hasBriefingGenerator = false
+  hasBriefingGenerator = false,
+  comparisonId?: string
 ): CompareResultsWebviewState {
+  const reviewIdentity = comparisonId && state.kind !== 'empty' ? { comparisonId } : {};
   if (state.kind === 'empty') {
     return {
       kind: 'empty',
+      ...reviewIdentity,
       summary: '',
       emptyMessage: buildCompareResultsMessage(state),
       canOpenUnifiedDiff: false,
@@ -33,6 +36,7 @@ export function createCompareResultsWebviewState(
   if (state.kind === 'loading') {
     return {
       kind: 'loading',
+      ...reviewIdentity,
       summary: buildCompareResultsMessage(state),
       sourceLabel: state.sourceLabel,
       targetLabel: state.targetLabel,
@@ -45,6 +49,7 @@ export function createCompareResultsWebviewState(
 
   return {
     kind: 'results',
+    ...reviewIdentity,
     summary: buildCompareResultsMessage(state),
     sourceLabel: state.kind === 'between' ? state.left.label : state.target.label,
     targetLabel: state.kind === 'between' ? state.right.label : 'Worktree',

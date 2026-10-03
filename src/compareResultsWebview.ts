@@ -4,6 +4,7 @@ import {
 } from './webviewSecurity';
 import { renderCompareResultsWebviewStyles } from './compareResults/webviewStyles';
 import type { CompareBriefingState } from './compareResults/aiBriefing';
+import { renderCompareResultsReviewContextScript } from './compareResults/webviewReviewContext';
 import {
   renderCompareResultsActionScript,
   renderCompareResultsBriefingAction,
@@ -26,6 +27,7 @@ export interface CompareResultsWebviewItem {
 
 export interface CompareResultsWebviewState {
   readonly kind: 'empty' | 'loading' | 'results';
+  readonly comparisonId?: string;
   readonly summary: string;
   readonly sourceLabel?: string | undefined;
   readonly targetLabel?: string | undefined;
@@ -120,15 +122,7 @@ export function renderCompareResultsWebviewHtml(): string {
     window.addEventListener('message', (event) => {
       const message = event.data;
       if (message && message.type === 'state') {
-        currentState = message.state;
-        syncCompareResultsActionsFromState();
-        searchInput.value = '';
-        activeStatusFilter = 'all';
-        selectedItemIds = currentState.items.length === 1 ? [currentState.items[0].id] : [];
-        selectionAnchorItemId = selectedItemIds[0];
-        resetDoubleClickTracking();
-        closeContextMenu();
-        render();
+        applyCompareResultsState(message.state);
       } else if (message && message.type === 'unifiedDiffProgress') {
         isOpeningUnifiedDiff = message.isOpening === true;
         updateUnifiedDiffButton();
@@ -444,7 +438,7 @@ export function renderCompareResultsWebviewHtml(): string {
         { key: 'changed', label: 'Changed', count: counts.changed }
       ];
       return filters
-        .filter((filter) => filter.key === 'all' || filter.count > 0)
+        .filter((filter) => filter.key === 'all' || filter.count > 0 || filter.key === activeStatusFilter)
         .map((filter) => '<button class="status-filter" type="button" data-status-filter="' + filter.key + '" data-active="' + (activeStatusFilter === filter.key ? 'true' : 'false') + '">' + filter.label + ' ' + filter.count + '</button>')
         .join('');
     }
@@ -683,6 +677,7 @@ export function renderCompareResultsWebviewHtml(): string {
         .replace(/"/g, '&quot;');
     }
 
+    ${renderCompareResultsReviewContextScript()}
     ${renderCompareResultsActionScript()}
     vscode.postMessage({ type: 'ready' });
   </script>

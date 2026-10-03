@@ -49,7 +49,7 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /canGenerateBriefing: false/);
   assert.match(html, /briefing: \{ kind: 'idle' \}/);
   assert.match(html, /let isOpeningUnifiedDiff = false/);
-  assert.match(html, /currentState\.items\.length === 1 \? \[currentState\.items\[0\]\.id\] : \[\]/);
+  assert.match(html, /applyCompareResultsState\(message.state\)/);
   assert.match(html, /Loading results\.\.\./);
   assert.match(html, /class="loading-dialog" role="dialog" aria-modal="true"/);
   assert.match(html, /\.loading-state \{/);

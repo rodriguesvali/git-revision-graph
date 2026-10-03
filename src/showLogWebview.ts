@@ -32,7 +32,7 @@ export function renderShowLogWebviewHtml(): string {
           <span>Show All Branches</span>
         </label>
       </div>
-      <div class="loading-chip" id="loadingChip" data-visible="false">Loading</div>
+      <div class="loading-chip" id="loadingChip" data-visible="false" role="status" aria-atomic="true">Loading</div>
     </div>
     <div class="content" id="content"></div>
   </div>
@@ -110,9 +110,9 @@ export function renderShowLogWebviewHtml(): string {
       if (state.errorMessage || state.searchNotice) {
         sections.push('<div class="status-card' + (state.errorMessage ? ' error' : '') + '" role="status">' + escapeHtml(state.errorMessage || state.searchNotice) + '</div>');
       }
-      if (state.commits.length === 0 && state.emptyMessage) {
+      if (state.commits.length === 0 && state.emptyMessage && !state.loading) {
         sections.push('<div class="empty-state">' + escapeHtml(state.emptyMessage) + '</div>');
-      } else {
+      } else if (state.commits.length > 0) {
         sections.push(renderTableHeader());
         sections.push(renderCommitList(state.commits));
       }
@@ -228,7 +228,7 @@ export function renderShowLogWebviewHtml(): string {
     }
 
     function renderLoadMore(state) {
-      if (!state.hasMore) {
+      if (!state.hasMore || state.loading) {
         return '';
       }
 
