@@ -45,9 +45,10 @@ menu smoke confirmation does not cover this later scope.
 
 The [Show Log loading correction](../2.build/features/1.7.3-show-log-loading-feedback.md)
 responds to the maintainer screenshot showing both header and content indicators.
-Initial loads/searches use only the accessible header chip; pagination keeps its
+Initial loads/searches use only the accessible, vertically centered header chip; pagination keeps its
 footer feedback and existing commits. Verification passed all 958 tests including
-build, quality checks and nine VS Code 1.90.0 Chromium scenarios. The focused manual
+build, quality checks and 15 VS Code 1.90.0 Chromium scenarios, including alignment
+at three pane widths and two font settings. The focused manual
 Show Log check remains pending and is not inferred from the screenshot.
 
 | Gate | Status | Evidence / next step |
@@ -59,7 +60,7 @@ Show Log check remains pending and is not inferred from the screenshot.
 | Reference-menu readability | Automated checks passed; smoke completed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Final smoke confirmed by maintainer on 2026-10-03. |
 | Reference-menu keyboard navigation | Automated checks passed; smoke completed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Final smoke confirmed by maintainer on 2026-10-03. |
 | Compare Results review context | Automated checks passed; focused smoke pending | 958 tests including build, quality check and 16 Chromium scenarios passed. Validate real briefing progress/cancel, restore/unified-diff refresh and repository/new-comparison resets in the Extension Host. |
-| Show Log loading feedback | Automated checks passed; focused smoke pending | Single header indicator, search labels, zero-results/error states and pagination checked in nine Chromium scenarios; 958 tests/build and quality passed. |
+| Show Log loading feedback | Automated checks passed; focused smoke pending | Single centered header indicator, search labels, zero-results/error states, pagination and alignment checked in 15 Chromium scenarios; 958 tests/build and quality passed. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |

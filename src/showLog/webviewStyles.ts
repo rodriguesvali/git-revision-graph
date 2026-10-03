@@ -44,7 +44,7 @@ export function renderShowLogWebviewStyles(): string { return `
       z-index: 3;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 10px;
       padding: 10px 12px 11px;
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
@@ -102,6 +102,7 @@ export function renderShowLogWebviewStyles(): string { return `
     }
     .filter-control {
       position: relative;
+      display: flex;
       flex: 0 1 220px;
       min-width: 150px;
     }
@@ -114,8 +115,7 @@ export function renderShowLogWebviewStyles(): string { return `
       color: var(--vscode-input-foreground);
       background: var(--vscode-input-background);
       outline: none;
-      font-family: inherit;
-      font-size: 11px;
+      font: 11px var(--vscode-font-family);
     }
     .filter-input:focus {
       border-color: var(--vscode-focusBorder);

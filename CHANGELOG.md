@@ -19,7 +19,7 @@ All notable changes to this project will be documented in this file.
 
 ### Show Log
 
-- Show one loading indicator in the header during initial loads and searches;
+- Show one vertically centered loading indicator in the header during initial loads and searches;
   keep pagination feedback at the end of the existing commit list.
 
 ### Maintenance

@@ -35,9 +35,10 @@ operator, environment and outcome.
 ### Show Log Loading Correction — Pending
 
 The maintainer screenshot reported duplicate initial/search loading feedback. The
-correction passed nine VS Code 1.90.0 Chromium scenarios with mocked host messages,
+correction and vertical-alignment follow-up passed 15 VS Code 1.90.0 Chromium scenarios
+with mocked host messages (including three pane widths and two font settings),
 958 tests including build and the quality check. Manually verify initial load and
-filtered search show one header indicator, and pagination shows only its footer
+filtered search show one vertically centered header indicator, and pagination shows only its footer
 indicator while retaining the loaded commits. No manual pass is inferred.
 
 ## 1.7.2 Release Evidence
