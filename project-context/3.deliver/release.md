@@ -18,7 +18,7 @@ Historical verification and VSIX evidence below apply to their recorded releases
 The [reference-menu readability improvement](../2.build/features/1.7.3-reference-context-menu-readability.md)
 is implemented with bounded content-sized width and full-name wrapping. All 937
 tests including build, quality checks and 36 minimum-version Chromium scenarios
-passed. Integrated manual smoke with actual repository refs remains pending.
+passed. Final integrated smoke was completed by maintainer confirmation on 2026-10-03.
 
 The maintainer approved the [keyboard-menu improvement](../2.build/features/1.7.3-reference-context-menu-keyboard-proposal.md)
 on 2026-10-03. It is implemented with explicit reference shortcuts, scoped arrow
@@ -28,7 +28,10 @@ gate, 21 Chromium keyboard scenarios and the 36 readability regression scenarios
 Focused menu actions also render above the toolbar in short panes while remaining
 below dialogs and loading overlays.
 The browser fixture uses the VS Code 1.90.0 Electron/Chromium runtime with mocked
-host messages. Actual Extension Host actions and repository/theme smoke remain pending.
+host messages. The maintainer subsequently confirmed final smoke completion on
+2026-10-03 ("Smoke finalizado."). See the [smoke record](extension-host-smoke-matrix.md)
+for scope and evidence limits; individual scenario results and environment details
+were not supplied.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
@@ -36,8 +39,8 @@ host messages. Actual Extension Host actions and repository/theme smoke remain p
 | Automated verification | Passed for cycle opening | On 2026-10-03: all three version fields verified; other manifest/lockfile data unchanged; `npm test` passed 937 tests, including build; staged and unstaged diff checks and `graphify update .` passed. |
 | Development-tool verification | Passed after remediation | VSCE 4.0.0 clean install, 937 tests including build, scanner smoke and package/publish CLI help passed; post-build package preview preserves all 659 paths. |
 | Dependency audit | Passed after remediation | On 2026-10-03: full and runtime-only audits report zero vulnerabilities after the authorized VSCE 4.0.0 upgrade. |
-| Reference-menu readability | Automated and Chromium checks passed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Real-repository/theme smoke pending. |
-| Reference-menu keyboard navigation | Automated and Chromium checks passed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Integrated Extension Host smoke pending. |
+| Reference-menu readability | Automated checks passed; smoke completed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Final smoke confirmed by maintainer on 2026-10-03. |
+| Reference-menu keyboard navigation | Automated checks passed; smoke completed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Final smoke confirmed by maintainer on 2026-10-03. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |

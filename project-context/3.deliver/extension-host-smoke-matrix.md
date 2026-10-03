@@ -1,11 +1,26 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-09-22
+Last updated: 2026-10-03
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.7.3 Release Evidence
+
+- Result: final integrated smoke completed by maintainer confirmation on 2026-10-03
+  ("Smoke finalizado.").
+- Scope: the approved reference-menu readability and keyboard improvements,
+  including the correction keeping menus above the toolbar in short panes.
+- Operator: maintainer; name not recorded.
+- VS Code version, platform, fixture, candidate commit/VSIX and individual scenario
+  results: not supplied and not inferred. The confirmation closes the final smoke
+  follow-up; it does not establish individual outcomes for every scenario below.
+- Automated evidence remains separate: 945 tests including build, the quality gate,
+  21 Chromium keyboard scenarios and 36 readability scenarios passed.
+- VSIX packaging/inspection, clean-profile installation and Marketplace publication
+  are not established by this smoke confirmation.
 
 ## 1.7.2 Release Evidence
 
