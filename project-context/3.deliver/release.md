@@ -11,8 +11,14 @@ confirmed on 2026-09-22. See the [cycle artifact](../2.build/features/1.7.3-rele
 
 Scope at opening is package/build metadata and release documentation only.
 The maintainer subsequently authorized the VSCE 4.0.0 development-tool correction.
-Functional scope remains pending; runtime behavior and runtime dependencies are unchanged.
+The first functional improvement is full-name readability in reference context menus;
+runtime dependencies and Git workflows are unchanged.
 Historical verification and VSIX evidence below apply to their recorded releases.
+
+The [reference-menu readability improvement](../2.build/features/1.7.3-reference-context-menu-readability.md)
+is implemented with bounded content-sized width and full-name wrapping. All 937
+tests including build, quality checks and 36 minimum-version Chromium scenarios
+passed. Integrated manual smoke with actual repository refs remains pending.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
@@ -20,7 +26,7 @@ Historical verification and VSIX evidence below apply to their recorded releases
 | Automated verification | Passed for cycle opening | On 2026-10-03: all three version fields verified; other manifest/lockfile data unchanged; `npm test` passed 937 tests, including build; staged and unstaged diff checks and `graphify update .` passed. |
 | Development-tool verification | Passed after remediation | VSCE 4.0.0 clean install, 937 tests including build, scanner smoke and package/publish CLI help passed; post-build package preview preserves all 659 paths. |
 | Dependency audit | Passed after remediation | On 2026-10-03: full and runtime-only audits report zero vulnerabilities after the authorized VSCE 4.0.0 upgrade. |
-| Functional scope and manual smoke | Pending scope | Define feature-specific criteria and smoke checks when implementation is authorized. |
+| Reference-menu readability | Automated and Chromium checks passed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Real-repository/theme smoke pending. |
 | VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
 | Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
@@ -28,7 +34,8 @@ Historical verification and VSIX evidence below apply to their recorded releases
 Cycle-opening rollback is a scoped metadata/documentation revert to `1.7.2`.
 For the authorized development-tool correction, revert only its dependency changes
 as described in the remediation artifact, preserving prior user edits.
-No source change, Git tag, VSIX or Marketplace action occurred during this work.
+Reference-menu rollback is a scoped CSS/test/documentation revert preserving user Git
+state. No Git tag, VSIX or Marketplace action occurred during this work.
 
 ## Dependency assessment — 2026-10-03
 

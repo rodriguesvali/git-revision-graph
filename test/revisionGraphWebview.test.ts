@@ -902,9 +902,11 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /function placeReferenceTooltip\(refElement\)/);
   assert.match(html, /tabindex="0" aria-controls="referenceTooltip" aria-haspopup="dialog"/);
   assert.match(html, /const nodeTitle = visibleReferences\.length === 0/);
-  assert.match(html, /\.context-menu \{\s*position: fixed;\s*z-index: 60;\s*width: 250px;/s);
-  assert.match(html, /\.context-menu, \.context-submenu \{[^}]*max-height: calc\(100vh - 16px\);[^}]*overflow-y: auto;[^}]*overscroll-behavior: contain;/s);
-  assert.match(html, /\.context-menu-item \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+  assert.match(html, /\.context-menu \{[^}]*min-width: min\(250px, calc\(100vw - 16px\)\);/s);
+  assert.match(html, /\.context-submenu \{[^}]*min-width: min\(220px, calc\(100vw - 16px\)\);/s);
+  assert.match(html, /\.context-menu, \.context-submenu \{[^}]*width: max-content;[^}]*max-width: min\(480px, calc\(100vw - 16px\)\);[^}]*max-height: calc\(100vh - 16px\);[^}]*overflow-x: hidden;[^}]*overflow-y: auto;[^}]*overscroll-behavior: contain;/s);
+  assert.match(html, /\.context-menu-item \{[^}]*white-space: normal;[^}]*overflow-wrap: anywhere;/s);
+  assert.match(html, /\.context-menu-label \{[^}]*white-space: normal;[^}]*overflow-wrap: anywhere;/s);
   assert.match(html, /\.context-menu-item:not\(:disabled\):hover,[\s\S]*?background: color-mix\(in srgb, var\(--accent\) 12%, transparent\);/);
   assert.match(html, /\.context-menu-submenu \{\s*position: relative;\s*\}/s);
   assert.match(html, /\.context-submenu-trigger \{[^}]*justify-content: space-between;/s);

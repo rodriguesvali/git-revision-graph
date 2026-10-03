@@ -438,16 +438,18 @@ export function renderRevisionGraphStyles(): string {
       color: var(--vscode-textLink-activeForeground, var(--text));
     }
     .context-menu, .context-submenu {
+      width: max-content;
+      max-width: min(480px, calc(100vw - 16px));
       max-height: calc(100vh - 16px);
       box-sizing: border-box;
+      overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
     }
     .context-menu {
       position: fixed;
       z-index: 60;
-      width: 250px;
-      max-width: calc(100vw - 16px);
+      min-width: min(250px, calc(100vw - 16px));
       border: 1px solid var(--border);
       border-radius: 10px;
       background: color-mix(in srgb, var(--bg) 96%, var(--panel));
@@ -495,9 +497,9 @@ export function renderRevisionGraphStyles(): string {
       border-radius: 8px;
       padding: 8px 10px;
       cursor: pointer;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      line-height: 1.4;
     }
     .context-menu-item.primary {
       font-weight: 700;
@@ -522,9 +524,8 @@ export function renderRevisionGraphStyles(): string {
     }
     .context-menu-label {
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
     .context-menu-chevron {
       flex: 0 0 auto;
@@ -533,8 +534,7 @@ export function renderRevisionGraphStyles(): string {
     .context-submenu {
       position: fixed;
       z-index: 61;
-      width: 220px;
-      max-width: calc(100vw - 16px);
+      min-width: min(220px, calc(100vw - 16px));
       border: 1px solid var(--border);
       border-radius: 10px;
       background: color-mix(in srgb, var(--bg) 96%, var(--panel));

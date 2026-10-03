@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.3 - Unreleased
 
+### Revision Graph
+
+- Size reference context menus to their content and available panel width; wrap
+  long names completely so action targets remain readable in narrow editor panes.
+
 ### Maintenance
 
 - Open the 1.7.3 development cycle and align package and build metadata.

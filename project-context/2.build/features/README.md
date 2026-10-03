@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.3-reference-context-menu-readability.md`: implemented adaptive menu width and
+  complete long-name wrapping; automated tests and Chromium visual checks passed.
 - `1.7.3-vsce-audit-remediation.md`: authorized development-tool upgrade to VSCE 4.0.0
   to remove the vulnerable braces dependency chain and verify packaging compatibility.
 - `1.7.3-release-cycle-opening.md`: open the `1.7.3` development cycle from the published

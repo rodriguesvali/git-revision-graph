@@ -27,6 +27,8 @@ multi-repository workspaces.
 ![Revision Graph with branches, tags, remotes, and merge topology](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/01-revision-graph.png)
 
 Center on HEAD is disabled when HEAD is absent from the current graph, including after filtering.
+Reference context menus adapt to the available panel width and wrap long names so their full
+action targets remain readable.
 
 Use graph scopes, search, focus modes, zoom, and the minimap to move from repository-wide context to
 the revisions that matter. Large scenes use bounded history, host-side layout, caching, and
