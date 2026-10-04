@@ -27,10 +27,11 @@ multi-repository ownership.
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
 
-## Prepared Release Watch: 1.7.3
+## Published Release Watch: 1.7.3
 
-Final smoke was confirmed by the maintainer on 2026-10-04; publication is not yet
-recorded. After launch, monitor these behaviors:
+Final smoke and Marketplace publication were confirmed by the maintainer on
+2026-10-04. The local VSIX was inspected; clean-profile installation and exact
+published-package equivalence were not recorded. Monitor these behaviors:
 
 - Complete long reference names remain readable in narrow panes; keyboard menus,
   submenu dismissal and focus restoration work after updates.
@@ -43,9 +44,9 @@ recorded. After launch, monitor these behaviors:
 - The search cap remains 2,000 original commits. Partial-history notices must remain
   visible; timeouts, invalid syntax and Git failures must not be reported as no matches.
 
-No persisted schema or runtime dependency migration is needed. Before publication,
-revert the affected feature slice if required; after publication, prepare an authorized
-later patch and never reuse 1.7.3. Preserve Git state and user Flow Governance files.
+No persisted schema or runtime dependency migration is needed. For a published
+regression, prepare an authorized later patch and never reuse 1.7.3. Preserve Git
+state and user Flow Governance files.
 Feature rollback boundaries and delivery evidence are in [release readiness](release.md).
 
 ## Published Release Watch: 1.7.2

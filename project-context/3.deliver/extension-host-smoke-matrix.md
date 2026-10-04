@@ -9,6 +9,10 @@ risking user work.
 
 ## 1.7.3 Release Evidence
 
+- Publication confirmed by the maintainer on 2026-10-04 ("publicação concluída").
+  Local `git-revision-graph-1.7.3.vsix` inspected; metadata/checksum are recorded in
+  [release readiness](release.md). Clean-profile installation and equality with the
+  published package were not established by this confirmation.
 - Final release smoke: completed by maintainer confirmation on 2026-10-04
   ("smoke finalizado. vamos lançar a versão. Pode ajustar os artefatos da release.").
 - Scope accepted for release: reference-menu readability/keyboard navigation,

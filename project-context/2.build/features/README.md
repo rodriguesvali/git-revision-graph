@@ -11,6 +11,12 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+No new release scope is approved after publication of 1.7.3.
+
+## Recently Completed Release Artifacts
+
+Version 1.7.3 was published by maintainer confirmation on 2026-10-04.
+
 - `1.7.3-show-log-file-change-search.md`: approved literal `file:` and `change:`
   filters combined with metadata, bounded native Git batches and actionable errors;
   automated checks passed; final release smoke completed by maintainer confirmation.
@@ -31,9 +37,7 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 - `1.7.3-vsce-audit-remediation.md`: authorized development-tool upgrade to VSCE 4.0.0
   to remove the vulnerable braces dependency chain and verify packaging compatibility.
 - `1.7.3-release-cycle-opening.md`: open the `1.7.3` development cycle from the published
-  `1.7.2` baseline; package metadata aligned; release candidate prepared on 2026-10-04.
-
-## Recently Completed Release Artifacts
+  `1.7.2` baseline; package metadata aligned; publication confirmed on 2026-10-04.
 
 - `1.7.0-release-cycle-opening.md`: `1.7.0` package metadata, published-baseline record, and release
   guardrails.

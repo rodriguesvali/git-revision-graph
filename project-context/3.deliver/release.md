@@ -1,12 +1,18 @@
 # Release Readiness
 
-Status: `1.7.3` release candidate prepared; final smoke confirmed; latest published release `1.7.2`
+Status: `1.7.3` published by maintainer confirmation; final smoke completed
 Last consolidated: 2026-10-04
 
-## Release candidate — 1.7.3
+## Published release — 1.7.3
+
+Identity: `rodriguesvali.git-revision-graph@1.7.3`. Publication confirmed by the
+maintainer on 2026-10-04 ("publicação concluída"). The public catalog and published
+package bytes were not independently checked. Source HEAD observed at confirmation:
+`48780466ffa8b3569c2b5e7bf9428fa6979476f4`; exact published source/tag not supplied.
+No packaging or publication command was run during this record update.
 
 Opened on 2026-10-03 with explicit maintainer authorization to adjust build artifact
-versions. Published baseline: `1.7.2`, release commit `9ccffa1`; publication was
+versions. Previous published baseline: `1.7.2`, release commit `9ccffa1`; publication was
 confirmed on 2026-09-22. See the [cycle artifact](../2.build/features/1.7.3-release-cycle-opening.md).
 
 Scope at opening is package/build metadata and release documentation only.
@@ -24,8 +30,9 @@ follow-ups for Compare Results, Show Log loading/alignment and file/change searc
 Source baseline observed at preparation: `043bf5f5c1a2d7239b1618db0090a2e379af99c0`.
 Environment and individual smoke outcomes were not supplied; acceptance is recorded
 as maintainer confirmation in the [smoke matrix](extension-host-smoke-matrix.md).
-The changelog is dated 2026-10-04 for the prepared release. Marketplace publication,
-the final release commit/tag and VSIX installation evidence are not yet recorded.
+The changelog is dated 2026-10-04. Marketplace publication is now confirmed by the
+maintainer; final release commit/tag and clean-profile installation evidence were
+not supplied. Local VSIX inspection is recorded below.
 
 The [reference-menu readability improvement](../2.build/features/1.7.3-reference-context-menu-readability.md)
 is implemented with bounded content-sized width and full-name wrapping. All 937
@@ -82,23 +89,32 @@ as completed by the final release confirmation on 2026-10-04.
 | Compare Results review context | Automated checks passed; smoke completed | 958 tests including build, quality and 16 Chromium scenarios passed at implementation; final release smoke confirmed on 2026-10-04. |
 | Show Log loading feedback | Automated checks passed; smoke completed | Single centered header indicator, search labels, zero-results/error states, pagination and alignment checked in 15 Chromium scenarios; final release smoke confirmed on 2026-10-04. |
 | Show Log file/change search | Automated checks passed; smoke completed | 971 tests/build, quality, 39 platform checks and 24 Chromium scenarios passed; final release smoke confirmed on 2026-10-04. |
-| Release documentation | Prepared | Changelog dated 2026-10-04; feature, smoke, deployment and operational handoffs aligned. All three package version fields remain 1.7.3. |
+| Release documentation | Updated for publication | Changelog dated 2026-10-04; feature, smoke, deployment and operational records identify 1.7.3 as published. All three package version fields remain 1.7.3. |
 | Package inclusion preview | Verified; not a VSIX inspection | On 2026-10-04, `vsce ls` lists 663 paths, including extension/webview entry points, query modules and Compare Results review-context modules. Source, tests, project-context, graphify-out and .codex are excluded. |
-| VSIX packaging and inspection | Not performed | Existing `1.7.2` VSIX is historical evidence; record the 1.7.3 filename, size, checksum and embedded assets after packaging. |
-| Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
-| Marketplace publication | Not performed or confirmed | Maintainer requested release preparation on 2026-10-04; this artifact update does not establish publication. |
+| Local VSIX inspection | Passed | git-revision-graph-1.7.3.vsix: 1,146,995 bytes, 665 ZIP entries; embedded identity, query/review-context modules, extension/webview entry points and dated changelog verified. Development artifacts excluded. SHA-256 below. |
+| Clean-profile installation | Not recorded | Environment and installed-version evidence were not supplied. |
+| Marketplace publication | Confirmed by maintainer | On 2026-10-04: "publicação concluída". Exact timestamp, independent catalog verification and published-package equivalence are not recorded. |
 
-Cycle-opening rollback is a scoped metadata/documentation revert to `1.7.2`.
+Local artifact: `git-revision-graph-1.7.3.vsix`, 1,146,995 bytes, SHA-256
+`889968e620a12622b2e9dc33b85db06489afcbce1c44d69d6ea180e78078c37a`.
+Embedded identity and extension/webview runtime assets are present, including the
+Show Log query and Compare Results review-context modules. Packaged README and
+CHANGELOG are present (lowercase names in the ZIP); changelog contains the dated
+1.7.3 notes. Source, tests, project-context, graphify-out and .codex are excluded.
+Inspection evidence: `/tmp/git-revision-graph-1.7.3-published-vsix-inspection.json`.
+This is local artifact evidence, not proof of byte equality with the Marketplace upload.
+
+Historical cycle-opening rollback was a scoped metadata/documentation revert to `1.7.2`.
 For the authorized development-tool correction, revert only its dependency changes
 as described in the remediation artifact, preserving prior user edits.
 Reference-menu rollback is a scoped CSS/test/documentation revert preserving user Git
 state. Compare Results rollback is a scoped revert of review-session wiring, reconciliation,
-tests and documentation while preserving the menu improvements. No Git tag, VSIX or
-Marketplace action occurred during this work. Show Log rollback is a scoped revert
+tests and documentation while preserving the menu improvements. Show Log rollback is a scoped revert
 of its rendering conditions, status markup and related documentation.
 File/change search rollback is a scoped revert of the query modules, backend wiring,
 input help, error presentation, tests and documentation. No Git data migration occurs.
-After publication, corrective changes require a later version; never reuse 1.7.3.
+Post-publication rollback requires an authorized corrective release with a later
+version; never reuse 1.7.3.
 Preserve repository state and user Flow Governance files.
 
 Preparation evidence: fresh full/runtime audit JSON and package file list are under

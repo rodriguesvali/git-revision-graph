@@ -26,8 +26,11 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Release Candidate: 1.7.3
+## Published Release: 1.7.3
 
+- Publication confirmed by the maintainer on 2026-10-04 ("publicação concluída").
+- Identity: `rodriguesvali.git-revision-graph@1.7.3`; observed source HEAD `4878046`.
+  Exact published source/tag and public catalog evidence were not supplied.
 - Opened with maintainer authorization on 2026-10-03; package/build metadata declares `1.7.3`.
 - Final release smoke completed by maintainer confirmation on 2026-10-04.
 - Scope: responsive/keyboard-accessible reference menus, Compare Results review-context
@@ -36,13 +39,16 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
   observed during preparation is `043bf5f`.
 - Latest implementation evidence: 971 tests including build, quality, 39 Linux platform
   checks and browser scenarios recorded per feature. Fresh full/runtime audits passed.
-- Published baseline remains `1.7.2`. Scope and delivery gates are tracked in
+- Previous published baseline: `1.7.2`. Scope and delivery evidence are tracked in
   [release readiness](release.md).
-- Packaging and Marketplace publication require separate explicit approval.
-- To publish the prepared version, use the existing `publish:current` script;
-  `publish:patch` would advance the version beyond 1.7.3.
-- VSIX metadata/inspection, clean-profile installation, final source commit/tag and
-  Marketplace publication have not been recorded for 1.7.3.
+- Local artifact inspected: `git-revision-graph-1.7.3.vsix`, 1,146,995 bytes;
+  SHA-256 `889968e620a12622b2e9dc33b85db06489afcbce1c44d69d6ea180e78078c37a`.
+  Embedded identity, extension/webview runtime, query/review-context modules and
+  changelog verified; development artifacts excluded. Marketplace byte equality
+  was not independently checked.
+- Clean-profile installation, exact publication timestamp, installed-version evidence
+  and final release source/tag were not supplied. No deployment command ran during
+  this documentation update. Never reuse 1.7.3 for a correction.
 
 ## Published Release: 1.7.2
 
