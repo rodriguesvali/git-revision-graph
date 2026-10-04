@@ -1,7 +1,7 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
@@ -9,7 +9,19 @@ risking user work.
 
 ## 1.7.3 Release Evidence
 
-- Result: final integrated smoke completed by maintainer confirmation on 2026-10-03
+- Final release smoke: completed by maintainer confirmation on 2026-10-04
+  ("smoke finalizado. vamos lançar a versão. Pode ajustar os artefatos da release.").
+- Scope accepted for release: reference-menu readability/keyboard navigation,
+  Compare Results review-context retention, Show Log loading/alignment and file/change search.
+- Source baseline observed when recording this confirmation: `043bf5f`; the maintainer
+  did not supply an exact tested commit or VSIX identity.
+- Operator: maintainer; environment and individual scenario outcomes not supplied.
+  This closes the remaining focused manual smoke follow-ups; it does not establish
+  per-scenario evidence, VSIX inspection, clean-profile installation or publication.
+
+### Earlier Menu Smoke — 2026-10-03
+
+- Earlier menu smoke completed by maintainer confirmation on 2026-10-03
   ("Smoke finalizado.").
 - Scope: the approved reference-menu readability and keyboard improvements,
   including the correction keeping menus above the toolbar in short panes.
@@ -17,39 +29,37 @@ risking user work.
 - VS Code version, platform, fixture, candidate commit/VSIX and individual scenario
   results: not supplied and not inferred. The confirmation closes the final smoke
   follow-up for the two menu improvements; it does not establish individual
-  outcomes for every scenario below or cover the later Compare Results and Show Log changes.
+  outcomes for every scenario below. At that date it did not cover the later Compare
+  Results and Show Log changes, now accepted by the final release confirmation above.
 - Automated evidence remains separate: 945 tests including build, the quality gate,
   21 Chromium keyboard scenarios and 36 readability scenarios passed.
 - VSIX packaging/inspection, clean-profile installation and Marketplace publication
   are not established by this smoke confirmation.
 
-### Additional Compare Results Scope — Pending
+### Additional Compare Results Scope — Completed
 
 Approved and implemented after the menu smoke confirmation. Automated evidence:
 958 tests including build, quality check and 16 VS Code 1.90.0 Chromium scenarios
-with mocked host messages passed. Focused Extension Development Host confirmation
-for actual briefing generation/cancel and restore/unified-diff refresh remains pending.
-Validate the review-context rows below and repository/new-comparison resets; record
-operator, environment and outcome.
+with mocked host messages passed. The final release smoke confirmation on 2026-10-04
+closes this scope. Individual briefing, restore/refresh and reset outcomes were not supplied.
 
-### Show Log Loading Correction — Pending
+### Show Log Loading Correction — Completed
 
 The maintainer screenshot reported duplicate initial/search loading feedback. The
 correction and vertical-alignment follow-up passed 15 VS Code 1.90.0 Chromium scenarios
 with mocked host messages (including three pane widths and two font settings),
-958 tests including build and the quality check. Manually verify initial load and
-filtered search show one vertically centered header indicator, and pagination shows only its footer
-indicator while retaining the loaded commits. No manual pass is inferred.
+958 tests including build and the quality check. The final release smoke confirmation
+on 2026-10-04 closes loading/search/pagination and alignment follow-ups. Individual
+scenario outcomes were not supplied.
 
-### Show Log File/Change Search — Pending
+### Show Log File/Change Search — Completed
 
 Approved and implemented after the prior smoke confirmation. Automated evidence:
 971 tests including build, quality check, 39 platform tests on Linux and 24 VS Code
 1.90.0 Chromium scenarios passed. Nine browser search checks use mocked host transport
 with the real backend and a disposable Git fixture; 15 cover loading/alignment.
-Validate the search row below, full commit expansion/diff actions and source/repository
-changes in an Extension Development Host. Record operator, environment and outcomes;
-no manual pass is inferred.
+The final release smoke confirmation on 2026-10-04 closes the search follow-up.
+Individual query, expansion/diff and source/repository-switch outcomes were not supplied.
 
 ## 1.7.2 Release Evidence
 

@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-09-22
+Last consolidated: 2026-10-04
 
 ## Runtime
 
@@ -26,6 +26,27 @@ multi-repository ownership.
 4. Check command, view, manifest, README, and test alignment when contribution surfaces are
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
+
+## Prepared Release Watch: 1.7.3
+
+Final smoke was confirmed by the maintainer on 2026-10-04; publication is not yet
+recorded. After launch, monitor these behaviors:
+
+- Complete long reference names remain readable in narrow panes; keyboard menus,
+  submenu dismissal and focus restoration work after updates.
+- Compare Results retains filters and valid selections during updates to the same
+  comparison; new comparisons and repositories reset context; actions target current files.
+- Show Log shows one centered loading indicator, retaining pagination feedback.
+- `file:` matches changed repository-relative paths and `change:` matches literal,
+  case-sensitive text in added/removed lines. Combined metadata filters use AND.
+  Range/all-branches scope, paging, clear/replacement and repository switching remain usable.
+- The search cap remains 2,000 original commits. Partial-history notices must remain
+  visible; timeouts, invalid syntax and Git failures must not be reported as no matches.
+
+No persisted schema or runtime dependency migration is needed. Before publication,
+revert the affected feature slice if required; after publication, prepare an authorized
+later patch and never reuse 1.7.3. Preserve Git state and user Flow Governance files.
+Feature rollback boundaries and delivery evidence are in [release readiness](release.md).
 
 ## Published Release Watch: 1.7.2
 

@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-03
+Last consolidated: 2026-10-04
 
 ## Environment
 
@@ -26,12 +26,23 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Development Cycle: 1.7.3
+## Release Candidate: 1.7.3
 
 - Opened with maintainer authorization on 2026-10-03; package/build metadata declares `1.7.3`.
-- Published baseline remains `1.7.2`. Functional scope and delivery gates are tracked in
+- Final release smoke completed by maintainer confirmation on 2026-10-04.
+- Scope: responsive/keyboard-accessible reference menus, Compare Results review-context
+  retention, Show Log loading/alignment and literal file/change search; VSCE 4.0.0 remediation.
+- CHANGELOG is dated 2026-10-04. All three package fields remain 1.7.3; source baseline
+  observed during preparation is `043bf5f`.
+- Latest implementation evidence: 971 tests including build, quality, 39 Linux platform
+  checks and browser scenarios recorded per feature. Fresh full/runtime audits passed.
+- Published baseline remains `1.7.2`. Scope and delivery gates are tracked in
   [release readiness](release.md).
 - Packaging and Marketplace publication require separate explicit approval.
+- To publish the prepared version, use the existing `publish:current` script;
+  `publish:patch` would advance the version beyond 1.7.3.
+- VSIX metadata/inspection, clean-profile installation, final source commit/tag and
+  Marketplace publication have not been recorded for 1.7.3.
 
 ## Published Release: 1.7.2
 

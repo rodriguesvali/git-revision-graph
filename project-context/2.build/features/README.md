@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-03
+Last consolidated: 2026-10-04
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -12,13 +12,15 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 ## Current Active Features
 
 - `1.7.3-show-log-file-change-search.md`: approved literal `file:` and `change:`
-  filters combined with metadata, bounded native Git batches and actionable errors.
+  filters combined with metadata, bounded native Git batches and actionable errors;
+  automated checks passed; final release smoke completed by maintainer confirmation.
 - `1.7.3-show-log-loading-feedback.md`: remove duplicate initial/search loading
-  feedback while retaining pagination, empty/error states and accessible status.
+  feedback while retaining pagination, empty/error states and accessible status;
+  final release smoke completed by maintainer confirmation.
 
 - `1.7.3-compare-results-review-context-proposal.md`: approved and implemented
   filter/selection retention within a comparison, repository/session isolation and
-  refresh reconciliation; build/tests/browser checks passed; focused smoke pending.
+  refresh reconciliation; build/tests/browser checks passed; final release smoke completed.
 
 - `1.7.3-reference-context-menu-keyboard-proposal.md`: approved and implemented
   keyboard navigation, submenu dismissal and focus restoration; automated tests
@@ -29,7 +31,7 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 - `1.7.3-vsce-audit-remediation.md`: authorized development-tool upgrade to VSCE 4.0.0
   to remove the vulnerable braces dependency chain and verify packaging compatibility.
 - `1.7.3-release-cycle-opening.md`: open the `1.7.3` development cycle from the published
-  `1.7.2` baseline; align package metadata and record release gates.
+  `1.7.2` baseline; package metadata aligned; release candidate prepared on 2026-10-04.
 
 ## Recently Completed Release Artifacts
 

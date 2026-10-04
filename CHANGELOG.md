@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.3 - Unreleased
+## 1.7.3 - 2026-10-04
 
 ### Revision Graph
 

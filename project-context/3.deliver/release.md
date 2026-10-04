@@ -1,9 +1,9 @@
 # Release Readiness
 
-Status: `1.7.3` development cycle open; latest published release `1.7.2`
-Last consolidated: 2026-10-03
+Status: `1.7.3` release candidate prepared; final smoke confirmed; latest published release `1.7.2`
+Last consolidated: 2026-10-04
 
-## Development cycle — 1.7.3
+## Release candidate — 1.7.3
 
 Opened on 2026-10-03 with explicit maintainer authorization to adjust build artifact
 versions. Published baseline: `1.7.2`, release commit `9ccffa1`; publication was
@@ -15,8 +15,17 @@ The functional improvements are full-name readability and keyboard navigation in
 menus, filter/selection retention during updates within the same Compare Results session,
 removal of duplicate Show Log loading feedback, and literal `file:`/`change:` search
 combined with existing Show Log metadata filtering.
-Runtime dependencies and Git workflows are unchanged.
+Runtime dependencies and workspace-changing Git workflows are unchanged.
 Historical verification and VSIX evidence below apply to their recorded releases.
+
+On 2026-10-04, the maintainer confirmed "smoke finalizado. vamos lançar a versão.
+Pode ajustar os artefatos da release." This closes the remaining manual smoke
+follow-ups for Compare Results, Show Log loading/alignment and file/change search.
+Source baseline observed at preparation: `043bf5f5c1a2d7239b1618db0090a2e379af99c0`.
+Environment and individual smoke outcomes were not supplied; acceptance is recorded
+as maintainer confirmation in the [smoke matrix](extension-host-smoke-matrix.md).
+The changelog is dated 2026-10-04 for the prepared release. Marketplace publication,
+the final release commit/tag and VSIX installation evidence are not yet recorded.
 
 The [reference-menu readability improvement](../2.build/features/1.7.3-reference-context-menu-readability.md)
 is implemented with bounded content-sized width and full-name wrapping. All 937
@@ -41,16 +50,16 @@ on 2026-10-03. It preserves filters, valid selections and typing/file focus duri
 briefing updates and existing worktree refreshes. New comparisons and repository
 changes reset context; zero-count active status chips remain visible. All 958 tests
 including build, the quality gate and 16 minimum-version Chromium scenarios passed.
-The additional focused Extension Development Host smoke remains pending; the prior
-menu smoke confirmation does not cover this later scope.
+The additional focused Extension Development Host smoke is accepted as completed
+by the final release confirmation on 2026-10-04.
 
 The [Show Log loading correction](../2.build/features/1.7.3-show-log-loading-feedback.md)
 responds to the maintainer screenshot showing both header and content indicators.
 Initial loads/searches use only the accessible, vertically centered header chip; pagination keeps its
 footer feedback and existing commits. Verification passed all 958 tests including
 build, quality checks and 15 VS Code 1.90.0 Chromium scenarios, including alignment
-at three pane widths and two font settings. The focused manual
-Show Log check remains pending and is not inferred from the screenshot.
+at three pane widths and two font settings. The focused manual Show Log check is
+accepted as completed by the final release confirmation on 2026-10-04.
 
 The [Show Log file/change search](../2.build/features/1.7.3-show-log-file-change-search.md)
 was authorized with "Siga em frente." and is implemented. Native Git checks inspect
@@ -59,22 +68,25 @@ paging, full commit details and the 2,000-commit scan cap. All 971 tests includi
 build, quality (273 files / 2,603 functions), 39 platform checks and 24 minimum-version
 Chromium scenarios passed on Linux. Nine browser cases connect mocked host transport
 to the real backend and a disposable Git repository; 15 retain loading/alignment
-coverage. Focused Extension Host smoke for this additional search scope remains pending.
+coverage. Focused Extension Host smoke for this additional search scope is accepted
+as completed by the final release confirmation on 2026-10-04.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
-| Package metadata | Updated | Manifest, lockfile and root package declare `1.7.3`. |
-| Automated verification | Passed for cycle opening | On 2026-10-03: all three version fields verified; other manifest/lockfile data unchanged; `npm test` passed 937 tests, including build; staged and unstaged diff checks and `graphify update .` passed. |
+| Package metadata | Verified | Manifest, lockfile and root package declare `1.7.3`; consistency rechecked on 2026-10-04. |
+| Automated verification | Passed for implementation | On 2026-10-03: 971 tests including build, quality (273 production files / 2,603 functions), 39 platform tests and 24 Show Log Chromium scenarios passed. Earlier menu and Compare Results browser evidence remains recorded above. Preparation changes only documentation; retained evidence inspected on 2026-10-04. |
 | Development-tool verification | Passed after remediation | VSCE 4.0.0 clean install, 937 tests including build, scanner smoke and package/publish CLI help passed; post-build package preview preserves all 659 paths. |
-| Dependency audit | Passed after remediation | On 2026-10-03: full and runtime-only audits report zero vulnerabilities after the authorized VSCE 4.0.0 upgrade. |
+| Dependency audit | Passed | Fresh full and runtime-only audits on 2026-10-04 both report zero vulnerabilities. VSCE remains 4.0.0. |
 | Reference-menu readability | Automated checks passed; smoke completed | 480px content-sized cap, viewport margins, full-name wrapping, narrow-pane scrolling and submenu keyboard checks verified. Final smoke confirmed by maintainer on 2026-10-03. |
 | Reference-menu keyboard navigation | Automated checks passed; smoke completed | 945 tests; 21 browser scenarios covering native Shift+F10, arrows, Home/End, Enter, Esc and Tab, disabled actions, clipboard focus, remote-tag refresh and pointer behavior. Final smoke confirmed by maintainer on 2026-10-03. |
-| Compare Results review context | Automated checks passed; focused smoke pending | 958 tests including build, quality check and 16 Chromium scenarios passed. Validate real briefing progress/cancel, restore/unified-diff refresh and repository/new-comparison resets in the Extension Host. |
-| Show Log loading feedback | Automated checks passed; focused smoke pending | Single centered header indicator, search labels, zero-results/error states, pagination and alignment checked in 15 Chromium scenarios; 958 tests/build and quality passed. |
-| Show Log file/change search | Automated checks passed; focused smoke pending | 971 tests/build, quality, 39 platform checks and 24 Chromium scenarios passed. Verify quoted paths/code, combined metadata, range/all-branches scope, paging, rapid replacement/clear, errors and complete commit actions in the Extension Host. |
-| VSIX packaging and inspection | Not performed | Requires separate approval; existing `1.7.2` VSIX is historical evidence. |
+| Compare Results review context | Automated checks passed; smoke completed | 958 tests including build, quality and 16 Chromium scenarios passed at implementation; final release smoke confirmed on 2026-10-04. |
+| Show Log loading feedback | Automated checks passed; smoke completed | Single centered header indicator, search labels, zero-results/error states, pagination and alignment checked in 15 Chromium scenarios; final release smoke confirmed on 2026-10-04. |
+| Show Log file/change search | Automated checks passed; smoke completed | 971 tests/build, quality, 39 platform checks and 24 Chromium scenarios passed; final release smoke confirmed on 2026-10-04. |
+| Release documentation | Prepared | Changelog dated 2026-10-04; feature, smoke, deployment and operational handoffs aligned. All three package version fields remain 1.7.3. |
+| Package inclusion preview | Verified; not a VSIX inspection | On 2026-10-04, `vsce ls` lists 663 paths, including extension/webview entry points, query modules and Compare Results review-context modules. Source, tests, project-context, graphify-out and .codex are excluded. |
+| VSIX packaging and inspection | Not performed | Existing `1.7.2` VSIX is historical evidence; record the 1.7.3 filename, size, checksum and embedded assets after packaging. |
 | Clean-profile installation | Not performed | Requires a packaged `1.7.3` artifact. |
-| Marketplace publication | Not authorized | Development cycle opening does not authorize publication. |
+| Marketplace publication | Not performed or confirmed | Maintainer requested release preparation on 2026-10-04; this artifact update does not establish publication. |
 
 Cycle-opening rollback is a scoped metadata/documentation revert to `1.7.2`.
 For the authorized development-tool correction, revert only its dependency changes
@@ -86,6 +98,12 @@ Marketplace action occurred during this work. Show Log rollback is a scoped reve
 of its rendering conditions, status markup and related documentation.
 File/change search rollback is a scoped revert of the query modules, backend wiring,
 input help, error presentation, tests and documentation. No Git data migration occurs.
+After publication, corrective changes require a later version; never reuse 1.7.3.
+Preserve repository state and user Flow Governance files.
+
+Preparation evidence: fresh full/runtime audit JSON and package file list are under
+`/tmp/git-revision-graph-1.7.3-release-*`. No runtime, dependency or version field
+changed during this documentation preparation, so implementation tests were not rerun.
 
 ## Dependency assessment — 2026-10-03
 
