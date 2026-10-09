@@ -25,6 +25,7 @@ test('dispatchShowLogWebviewMessage routes simple show log commands', async () =
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'toggleCommit', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'toggleShowAllBranches', value: true }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'setFilterText', value: 'fix', sourceToken: '2' }, handlers), true);
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'setCommitFileFilter', commitHash: 'abc123', value: 'change:fix', sourceToken: '2' }, handlers), true);
   assert.equal(await dispatchShowLogWebviewMessage({ type: 'loadMore' }, handlers), true);
 
   assert.deepEqual(calls, [
@@ -32,6 +33,7 @@ test('dispatchShowLogWebviewMessage routes simple show log commands', async () =
     'toggleCommit:abc123',
     'toggleShowAllBranches:true',
     'setFilterText:fix:2',
+    'setCommitFileFilter:abc123:change:fix:2',
     'loadMore'
   ]);
 });
@@ -89,6 +91,9 @@ function createHandlers(calls: string[]): ShowLogMessageHandlers {
     setFilterText(value, sourceToken) {
       calls.push(`setFilterText:${value}:${sourceToken}`);
     },
+    setCommitFileFilter(commitHash, value, sourceToken) {
+      calls.push(`setCommitFileFilter:${commitHash}:${value}:${sourceToken}`);
+    },
     loadMore() {
       calls.push('loadMore');
     },
@@ -139,3 +144,14 @@ function createHandlers(calls: string[]): ShowLogMessageHandlers {
     }
   };
 }
+
+test('file filter messages reject missing scope, malformed values and unbounded payloads', async () => {
+  const calls: string[] = [];
+  for (const message of [
+    {type:'setCommitFileFilter',commitHash:'abc',value:'change:needle'},
+    {type:'setCommitFileFilter',commitHash:'',value:'',sourceToken:'a'},
+    {type:'setCommitFileFilter',commitHash:'abc',value:42,sourceToken:'a'},
+    {type:'setCommitFileFilter',commitHash:'abc',value:'x'.repeat(100_000),sourceToken:'a'}
+  ]) assert.equal(await dispatchShowLogWebviewMessage(message, createHandlers(calls)), false);
+  assert.deepEqual(calls, []);
+});

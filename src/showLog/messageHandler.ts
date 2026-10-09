@@ -10,6 +10,7 @@ export interface ShowLogMessageHandlers {
   readonly toggleCommit: (commitHash: string) => MaybePromise<void>;
   readonly toggleShowAllBranches: (value: boolean) => MaybePromise<void>;
   readonly setFilterText: (value: string, sourceToken: string) => MaybePromise<void>;
+  readonly setCommitFileFilter: (commitHash: string, value: string, sourceToken: string) => MaybePromise<void>;
   readonly loadMore: () => MaybePromise<void>;
   readonly openFile: (commitHash: string, changeId: string) => MaybePromise<void>;
   readonly compareWithWorktree: (commitHash: string, changeId: string) => MaybePromise<void>;
@@ -88,6 +89,9 @@ async function dispatchShowLogCommitAction(
   handlers: ShowLogMessageHandlers
 ): Promise<boolean> {
   switch (message.type) {
+    case 'setCommitFileFilter':
+      await handlers.setCommitFileFilter(message.commitHash, message.value, message.sourceToken);
+      return true;
     case 'toggleCommit':
       await handlers.toggleCommit(message.commitHash);
       return true;

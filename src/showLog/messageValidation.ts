@@ -4,6 +4,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'ready' }
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
   | { readonly type: 'setFilterText'; readonly value: string; readonly sourceToken: string }
+  | { readonly type: 'setCommitFileFilter'; readonly commitHash: string; readonly value: string; readonly sourceToken: string }
   | { readonly type: 'toggleCommit'; readonly commitHash: string }
   | { readonly type: 'compareCommits'; readonly baseCommitHash: string; readonly compareCommitHash: string }
   | { readonly type: 'compareCommitWithWorktree'; readonly commitHash: string }
@@ -63,9 +64,9 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
         ? { type: 'toggleShowAllBranches', value: message.value }
         : undefined;
     case 'setFilterText':
-      return isBoundedString(message.value) && isBoundedString(message.sourceToken)
-        ? { type: 'setFilterText', value: message.value, sourceToken: message.sourceToken }
-        : undefined;
+      return validateFilterTextMessage(message);
+    case 'setCommitFileFilter':
+      return validateCommitFileFilterMessage(message);
     case 'compareCommits':
       return isBoundedNonEmptyString(message.baseCommitHash) && isBoundedNonEmptyString(message.compareCommitHash)
         ? { type: 'compareCommits', baseCommitHash: message.baseCommitHash, compareCommitHash: message.compareCommitHash }
@@ -91,6 +92,18 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
   }
 
   return undefined;
+}
+
+function validateFilterTextMessage(message: Record<string, unknown>): ShowLogWebviewMessage | undefined {
+  return isBoundedString(message.value) && isBoundedString(message.sourceToken)
+    ? { type: 'setFilterText', value: message.value, sourceToken: message.sourceToken }
+    : undefined;
+}
+
+function validateCommitFileFilterMessage(message: Record<string, unknown>): ShowLogWebviewMessage | undefined {
+  return isBoundedNonEmptyString(message.commitHash) && isBoundedString(message.value) && isBoundedString(message.sourceToken)
+    ? { type: 'setCommitFileFilter', commitHash: message.commitHash, value: message.value, sourceToken: message.sourceToken }
+    : undefined;
 }
 
 function isShowLogCommitHashMessageType(value: string): value is ShowLogCommitHashMessageType {

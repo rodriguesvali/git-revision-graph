@@ -30,7 +30,8 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 
 - Opened with explicit maintainer authorization on 2026-10-09.
 - Manifest, top-level lockfile and root package now declare `1.7.4`; CHANGELOG
-  marks the version as Unreleased. Functional scope is pending.
+  marks the version as Unreleased. Approved scope now includes Show Log expanded-file
+  `change:` filtering and automatic propagation; verification is tracked in release readiness.
 - Published baseline remains `1.7.3`, confirmed on 2026-10-04.
 - Opening verification is tracked in [release readiness](release.md) and the
   [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).

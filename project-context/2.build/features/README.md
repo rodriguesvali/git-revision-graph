@@ -11,9 +11,11 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.4-show-log-expanded-change-search.md`: `change:` filtering in expanded
+  commit files, automatic propagation and scoped, cancelable file queries.
 - `1.7.4-release-cycle-opening.md`: authorized opening of the 1.7.4 development
   cycle from published 1.7.3; package metadata and release records aligned.
-  Functional scope is pending.
+  Opening verification passed; approved feature scope is tracked separately.
 
 ## Recently Completed Release Artifacts
 

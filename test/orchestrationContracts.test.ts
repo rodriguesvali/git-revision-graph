@@ -1203,3 +1203,31 @@ for (const change of ['refresh', 'switch', 'dispose'] as const) {
     });
   }
 }
+
+test('Show Log wires expanded file filtering with stable IDs and rejects a stale source', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  const hash = 'a'.repeat(40);
+  const backend = {
+    async loadRevisionLog() {
+      return { entries: [{hash, shortHash:'aaaaaaa',author:'Ada',date:'',subject:'Example',message:'Example',parentHashes:[],references:[],shortStat:undefined}], hasMore:false,searchTruncated:false };
+    },
+    async loadRevisionLogChanges() {
+      return [createChange({uriPath:'/workspace/repo/other.ts'}),createChange({uriPath:'/workspace/repo/target.ts'})];
+    }
+  } as never;
+  const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
+  await provider.showSource(createRepository({root:'/workspace/repo'}), {kind:'target',revision:'main',label:'main'});
+  const panel = harness.panels[0];
+  const latest = () => (panel.postedMessages.at(-1) as {state: import('../src/showLog/viewState').ShowLogWebviewState}).state;
+  panel.receiveMessage({type:'toggleCommit',commitHash:hash});
+  await waitForAsyncHandlers();
+  panel.receiveMessage({type:'setCommitFileFilter',commitHash:hash,value:'TARGET.TS',sourceToken:latest().sourceToken});
+  await waitForAsyncHandlers();
+  assert.deepEqual(latest().commits[0].fileFilter?.visibleChangeIds, [`${hash}:1`]);
+  assert.equal(latest().commits[0].changes.length, 2);
+  panel.receiveMessage({type:'setCommitFileFilter',commitHash:hash,value:'other.ts',sourceToken:'stale'});
+  await waitForAsyncHandlers();
+  assert.equal(latest().commits[0].fileFilter?.text, 'TARGET.TS');
+  provider.dispose();
+});

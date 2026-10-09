@@ -13,6 +13,8 @@ import type { RevisionLogSource } from './revisionGraphTypes';
 import { SHOW_LOG_VIEW_ID } from './revisionGraphTypes';
 import { compareLoadedShowLogCommits, compareLoadedShowLogCommitWithWorktree } from './showLog/commitCompare';
 import { ShowLogExpansionRequests } from './showLog/expansionRequests';
+import { toggleShowLogCommit } from './showLog/commitExpansion';
+import { ShowLogFileSearch } from './showLog/fileSearch';
 import {
   compareShowLogFileChangeWithWorktree,
   openShowLogFileChange
@@ -50,7 +52,6 @@ import {
   buildShowLogWebviewState
 } from './showLog/viewState';
 import {
-  addShowLogCachedChanges,
   createHiddenShowLogState,
   isShowLogStateForRepository,
   ShowLogState
@@ -87,6 +88,10 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private sourceTokenSeed = 0;
   private readonly logLoadRequests = new ShowLogLoadRequests();
   private readonly expansionRequests = new ShowLogExpansionRequests();
+  private readonly fileSearch = new ShowLogFileSearch(
+    () => this.state,
+    (state) => { this.state = state; this.postState(); }
+  );
   private readonly messageHandlers: ShowLogMessageHandlers = {
     ready: () => {
       this.postState();
@@ -94,6 +99,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     toggleCommit: (commitHash) => this.toggleCommit(commitHash),
     toggleShowAllBranches: (value) => this.toggleShowAllBranches(value),
     setFilterText: (value, sourceToken) => this.setFilterText(value, sourceToken),
+    setCommitFileFilter: (commitHash, value, sourceToken) => this.fileSearch.set(commitHash, value, sourceToken),
     loadMore: () => this.loadMore(),
     openFile: (commitHash, changeId) => this.openFileChange(commitHash, changeId),
     compareWithWorktree: (commitHash, changeId) => this.compareFileChangeWithWorktree(commitHash, changeId),
@@ -122,6 +128,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
   dispose(): void {
     this.logLoadRequests.cancelActive();
+    this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.disposePanel();
   }
 
@@ -132,6 +140,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
     this.logLoadRequests.invalidateAndCancel();
     this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.state = createHiddenShowLogState();
     this.disposePanel();
   }
@@ -139,6 +148,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   async showSource(repository: Repository, source: RevisionLogSource): Promise<void> {
     const request = this.logLoadRequests.start();
     this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.state = {
       kind: 'visible',
       sourceToken: this.createSourceToken(),
@@ -156,7 +166,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       expandedCommitHash: undefined,
       loadingCommitHash: undefined,
       expandedCommitError: undefined,
-      cachedChanges: {}
+      cachedChanges: {},
+      fileFilter: undefined
     };
     this.revealPanel();
     this.postState();
@@ -203,6 +214,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   async hideWithRevisionGraph(): Promise<void> {
     this.logLoadRequests.invalidateAndCancel();
     this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.state = createHiddenShowLogState();
     this.postState();
     this.disposePanel();
@@ -213,84 +225,13 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async toggleCommit(commitHash: string): Promise<void> {
-    if (this.state.kind !== 'visible') {
-      return;
-    }
-
-    if (!isLoadedShowLogCommitHash(this.state, commitHash)) {
-      return;
-    }
-
-    if (this.state.expandedCommitHash === commitHash) {
-      this.state = {
-        ...this.state,
-        expandedCommitHash: undefined,
-        loadingCommitHash: undefined,
-        expandedCommitError: undefined
-      };
-      this.postState();
-      return;
-    }
-
-    this.state = {
-      ...this.state,
-      expandedCommitHash: commitHash,
-      loadingCommitHash: undefined,
-      expandedCommitError: undefined
-    };
-    this.postState();
-
-    const cachedChanges = this.state.cachedChanges[commitHash];
-    if (cachedChanges) {
-      this.state = {
-        ...this.state,
-        cachedChanges: addShowLogCachedChanges(this.state.cachedChanges, commitHash, cachedChanges)
-      };
-      return;
-    }
-
-    const entry = this.state.entries.find((item) => item.hash === commitHash);
-    const repository = this.state.repository;
-    if (!entry || !repository) {
-      return;
-    }
-
-    const request = this.expansionRequests.start();
-    this.state = {
-      ...this.state,
-      loadingCommitHash: commitHash,
-      expandedCommitError: undefined
-    };
-    this.postState();
-
-    try {
-      const changes = await this.backend.loadRevisionLogChanges(
-        repository,
-        commitHash,
-        entry.parentHashes[0]
-      );
-      if (!this.expansionRequests.isCurrent(request) || this.state.kind !== 'visible') {
-        return;
-      }
-
-      this.state = {
-        ...this.state,
-        loadingCommitHash: undefined,
-        cachedChanges: addShowLogCachedChanges(this.state.cachedChanges, commitHash, changes)
-      };
-      this.postState();
-    } catch (error) {
-      if (!this.expansionRequests.isCurrent(request) || this.state.kind !== 'visible') {
-        return;
-      }
-
-      this.state = {
-        ...this.state,
-        loadingCommitHash: undefined,
-        expandedCommitError: toOperationError('Could not load the changed files for this commit.', error)
-      };
-      this.postState();
-    }
+    await toggleShowLogCommit(commitHash, {
+      backend: this.backend,
+      requests: this.expansionRequests,
+      fileSearch: this.fileSearch,
+      getState: () => this.state,
+      applyState: (state) => { this.state = state; this.postState(); }
+    });
   }
 
   private async toggleShowAllBranches(value: boolean): Promise<void> {
@@ -310,6 +251,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
     const request = this.logLoadRequests.start();
     this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.state = {
       ...this.state,
       showAllBranches: value,
@@ -322,7 +264,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       expandedCommitHash: undefined,
       loadingCommitHash: undefined,
       expandedCommitError: undefined,
-      cachedChanges: {}
+      cachedChanges: {},
+      fileFilter: undefined
     };
     this.postState();
 
@@ -384,6 +327,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
 
     const request = this.logLoadRequests.start();
     this.expansionRequests.invalidate();
+    this.fileSearch.reset();
     this.state = {
       ...this.state,
       filterText,
@@ -396,7 +340,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       expandedCommitHash: undefined,
       loadingCommitHash: undefined,
       expandedCommitError: undefined,
-      cachedChanges: {}
+      cachedChanges: {},
+      fileFilter: undefined
     };
     this.postState();
 
@@ -758,6 +703,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
           this.panel = undefined;
           this.logLoadRequests.invalidateAndCancel();
           this.expansionRequests.invalidate();
+          this.fileSearch.reset();
           this.state = createHiddenShowLogState();
         }
         this.disposePanelDisposables();

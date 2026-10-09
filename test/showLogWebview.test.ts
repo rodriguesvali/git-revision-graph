@@ -37,7 +37,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /class="commit-files-list"/);
   assert.match(html, /class="commit-file-search-control"/);
   assert.match(html, /class="commit-file-search-input"/);
-  assert.match(html, /placeholder="Filter files\.\.\."/);
+  assert.match(html, /placeholder="Filter files · change:"/);
   assert.match(html, /data-commit-file-filter="/);
   assert.match(html, /class="commit-file-search-clear"/);
   assert.match(html, /data-commit-file-filter-clear="/);
@@ -210,7 +210,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /vscode\.setState\(/);
   assert.match(html, /if \(event\.ctrlKey && event\.button === 0\)/);
   assert.match(html, /selectCommit\(commitHash, true\);\s*closeContextMenu\(\);\s*render\(\);\s*return;/s);
-  assert.match(html, /closeContextMenu\(\);\s*if \(event\.button === 0 && clearSelectedCommitHashes\(\)\) \{\s*render\(\);\s*\}\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
+  assert.match(html, /closeContextMenu\(\);\s*if \(event\.button === 0 && clearSelectedCommitHashes\(\)\) \{\s*render\(\);\s*\}\s*flushPendingCommitFileFilter\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
   assert.doesNotMatch(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
   assert.match(html, /document\.addEventListener\('pointerdown'/);
   assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);

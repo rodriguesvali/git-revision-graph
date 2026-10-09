@@ -12,8 +12,8 @@
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 1040,
     "src/showLog/webviewStyles.ts": 869,
-    "src/showLogView.ts": 805,
-    "src/showLogWebview.ts": 1470
+    "src/showLogView.ts": 751,
+    "src/showLogWebview.ts": 1322
   },
   "functions": {
     "src/refActions/branches.ts::createBranchFromResolvedReference#1": 18,
@@ -25,6 +25,6 @@
     "src/revisionGraph/webview/script/bootstrap.ts::<callback>#35": 22,
     "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 19,
     "src/revisionGraph/webview/shared.ts::buildDynamicVerticalGapByRow#1": 25,
-    "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 29
+    "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 28
   }
 }

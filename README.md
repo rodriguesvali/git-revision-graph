@@ -77,6 +77,11 @@ Ordinary text retains case-insensitive matching against hashes, authors, message
 Search checks up to 2,000 commits in the selected scope and identifies results when older history
 was not searched.
 
+Expand a commit to search its changed files with `change:"validateToken("` in the
+file filter. An active commit-level `change:` search is applied there automatically,
+including its `file:` restriction when present. Edit or clear that filter to explore
+other changes; ordinary text still filters file paths and status without regard to case.
+
 ## Work Directly From The Graph
 
 The graph keeps everyday Git actions close to their revision context:

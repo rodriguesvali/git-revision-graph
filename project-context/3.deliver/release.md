@@ -9,8 +9,10 @@ Opened on 2026-10-09 with explicit maintainer authorization to adjust the system
 version to `1.7.4`. Previous published baseline: `1.7.3`, confirmed by the maintainer
 on 2026-10-04. See the [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).
 
-Opening scope is package/build metadata and release documentation. Functional scope
-is pending; runtime code, dependencies and contribution points are unchanged.
+Opening scope was package/build metadata and release documentation. The maintainer
+subsequently authorized [Show Log expanded-file change search](../2.build/features/1.7.4-show-log-expanded-change-search.md):
+support `change:` within expanded commits and propagate the active global query.
+Dependencies and contribution points are unchanged.
 Historical evidence below applies to its recorded releases.
 
 | Gate | Status | Evidence / next step |
@@ -18,7 +20,7 @@ Historical evidence below applies to its recorded releases.
 | Package metadata | Verified | Manifest, top-level lockfile and root package declare `1.7.4`; all other manifest and lockfile data match HEAD. |
 | Automated verification | Passed for cycle opening | On 2026-10-09, `npm test` passed all 971 tests including build, with zero failures or skips; version consistency and `git diff --check` passed. |
 | Release documentation | Cycle opened | CHANGELOG marks 1.7.4 as Unreleased; build index and deployment record updated. |
-| Functional scope and manual smoke | Pending scope | No runtime behavior changed at opening; select smoke paths when scope is approved. |
+| Show Log expanded-file change search | Implemented; automated verification passed | On 2026-10-09: 984 tests including build plus two added focused debounce/reset tests, quality (277 production files / 2,623 functions), 39 Linux platform checks and 13 minimum-version Chromium scenarios passed. Global propagation, edits/clears, stable actions and the edit/collapse race covered. Focused manual Extension Host smoke remains pending. |
 | Packaging and clean-profile installation | Pending separate authorization | No 1.7.4 VSIX or installation evidence recorded. |
 | Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
 

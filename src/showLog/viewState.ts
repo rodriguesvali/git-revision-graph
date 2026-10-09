@@ -1,7 +1,7 @@
 import { getRepositoryRelativeChangePath, getStatusLabel } from '../changePresentation';
 import type { RevisionLogEntry, RevisionLogSource } from '../revisionGraphTypes';
 import { REVISION_LOG_FILTER_SCAN_MAX_COMMITS } from '../revisionGraph/revisionLogTypes';
-import type { ShowLogState } from '../showLogShared';
+import type { ShowLogFileFilterState, ShowLogState } from '../showLogShared';
 import { buildShowLogLaneRows, type ShowLogLaneRow } from './showLogLanes';
 
 const FILTER_SCAN_LIMIT_LABEL = REVISION_LOG_FILTER_SCAN_MAX_COMMITS.toLocaleString('en-US');
@@ -33,6 +33,7 @@ export interface ShowLogWebviewCommitItem {
   readonly loadingChanges: boolean;
   readonly changeError: string | undefined;
   readonly changes: readonly ShowLogWebviewChangeItem[];
+  readonly fileFilter?: ShowLogFileFilterState;
 }
 
 export interface ShowLogWebviewState {
@@ -177,6 +178,8 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
         expanded: state.expandedCommitHash === entry.hash,
         loadingChanges: state.loadingCommitHash === entry.hash,
         changeError: state.expandedCommitHash === entry.hash ? state.expandedCommitError : undefined,
+        fileFilter: state.expandedCommitHash === entry.hash && state.fileFilter?.commitHash === entry.hash
+          ? state.fileFilter : undefined,
         changes: state.expandedCommitHash === entry.hash
           ? changes.map((change, index) => ({
             id: `${entry.hash}:${index}`,

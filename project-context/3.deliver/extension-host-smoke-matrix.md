@@ -1,11 +1,32 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-04
+Last updated: 2026-10-09
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.7.4 Show Log Expanded Change Search
+
+Status: Focused manual Extension Development Host smoke pending.
+
+Automated evidence on 2026-10-09: full suite/build and quality checks passed;
+39 Linux platform checks passed. VS Code 1.90.0 Chromium 122 fixture passed 13
+cases with mocked host transport, the real native query backend and 301 changed
+files. This is browser evidence, not a completed manual Extension Host smoke.
+See [feature evidence](../2.build/features/1.7.4-show-log-expanded-change-search.md).
+
+- Search commits with `change:"validateToken("`; expand a result and verify the
+  inherited filter shows only files with matching added/removed lines.
+- Combine `file:src/` and `change:`; verify both operators carry into the file filter.
+- Run an independent file-level change query, combine it with path/status text,
+  test quoted values, case sensitivity, invalid syntax and no results.
+- Clear the file filter without clearing the commit query; collapse/reopen and
+  verify explicit edits/clears survive, including typing immediately before collapse.
+- Switch commits, refs and repositories; verify filters and pending results remain scoped.
+- On a filtered file, verify diff, context-menu copy and guarded restore actions.
+- Record operator, date, VS Code version, platform and outcome before release.
 
 ## 1.7.3 Release Evidence
 

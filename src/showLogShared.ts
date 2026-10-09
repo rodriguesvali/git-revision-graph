@@ -3,6 +3,14 @@ import type { RevisionLogEntry, RevisionLogSource } from './revisionGraphTypes';
 
 export const SHOW_LOG_CACHED_CHANGES_MAX_COMMITS = 50;
 
+export interface ShowLogFileFilterState {
+  readonly commitHash: string;
+  readonly text: string;
+  readonly loading: boolean;
+  readonly error?: string;
+  readonly visibleChangeIds?: readonly string[];
+}
+
 export interface ShowLogState {
   readonly kind: 'hidden' | 'visible';
   readonly sourceToken: string;
@@ -21,6 +29,7 @@ export interface ShowLogState {
   readonly loadingCommitHash: string | undefined;
   readonly expandedCommitError: string | undefined;
   readonly cachedChanges: Readonly<Record<string, readonly Change[]>>;
+  readonly fileFilter?: ShowLogFileFilterState;
 }
 
 export function createHiddenShowLogState(): ShowLogState {
