@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-04
+Last consolidated: 2026-10-09
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,7 +11,9 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-No new release scope is approved after publication of 1.7.3.
+- `1.7.4-release-cycle-opening.md`: authorized opening of the 1.7.4 development
+  cycle from published 1.7.3; package metadata and release records aligned.
+  Functional scope is pending.
 
 ## Recently Completed Release Artifacts
 

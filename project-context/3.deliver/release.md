@@ -1,7 +1,29 @@
 # Release Readiness
 
-Status: `1.7.3` published by maintainer confirmation; final smoke completed
-Last consolidated: 2026-10-04
+Status: `1.7.4` development cycle opened; `1.7.3` remains the published baseline
+Last consolidated: 2026-10-09
+
+## Development cycle — 1.7.4
+
+Opened on 2026-10-09 with explicit maintainer authorization to adjust the system
+version to `1.7.4`. Previous published baseline: `1.7.3`, confirmed by the maintainer
+on 2026-10-04. See the [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).
+
+Opening scope is package/build metadata and release documentation. Functional scope
+is pending; runtime code, dependencies and contribution points are unchanged.
+Historical evidence below applies to its recorded releases.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified | Manifest, top-level lockfile and root package declare `1.7.4`; all other manifest and lockfile data match HEAD. |
+| Automated verification | Passed for cycle opening | On 2026-10-09, `npm test` passed all 971 tests including build, with zero failures or skips; version consistency and `git diff --check` passed. |
+| Release documentation | Cycle opened | CHANGELOG marks 1.7.4 as Unreleased; build index and deployment record updated. |
+| Functional scope and manual smoke | Pending scope | No runtime behavior changed at opening; select smoke paths when scope is approved. |
+| Packaging and clean-profile installation | Pending separate authorization | No 1.7.4 VSIX or installation evidence recorded. |
+| Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
+
+Before publication, rollback is a scoped revert of the 1.7.4 metadata/documentation
+change to 1.7.3. Preserve repository state and user Flow Governance files.
 
 ## Published release — 1.7.3
 

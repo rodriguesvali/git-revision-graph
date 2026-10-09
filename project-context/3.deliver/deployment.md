@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-04
+Last consolidated: 2026-10-09
 
 ## Environment
 
@@ -26,16 +26,27 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
+## Development Cycle: 1.7.4
+
+- Opened with explicit maintainer authorization on 2026-10-09.
+- Manifest, top-level lockfile and root package now declare `1.7.4`; CHANGELOG
+  marks the version as Unreleased. Functional scope is pending.
+- Published baseline remains `1.7.3`, confirmed on 2026-10-04.
+- Opening verification is tracked in [release readiness](release.md) and the
+  [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).
+- Packaging, installation, tags and Marketplace publication are pending separate
+  authorization. Existing published VSIX files retain their versions.
+
 ## Published Release: 1.7.3
 
 - Publication confirmed by the maintainer on 2026-10-04 ("publicação concluída").
 - Identity: `rodriguesvali.git-revision-graph@1.7.3`; observed source HEAD `4878046`.
   Exact published source/tag and public catalog evidence were not supplied.
-- Opened with maintainer authorization on 2026-10-03; package/build metadata declares `1.7.3`.
+- Opened with maintainer authorization on 2026-10-03; package/build metadata declared `1.7.3` at publication.
 - Final release smoke completed by maintainer confirmation on 2026-10-04.
 - Scope: responsive/keyboard-accessible reference menus, Compare Results review-context
   retention, Show Log loading/alignment and literal file/change search; VSCE 4.0.0 remediation.
-- CHANGELOG is dated 2026-10-04. All three package fields remain 1.7.3; source baseline
+- CHANGELOG is dated 2026-10-04. All three package fields declared 1.7.3 at publication; source baseline
   observed during preparation is `043bf5f`.
 - Latest implementation evidence: 971 tests including build, quality, 39 Linux platform
   checks and browser scenarios recorded per feature. Fresh full/runtime audits passed.
