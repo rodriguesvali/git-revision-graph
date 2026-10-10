@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "none",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "outFile": "out/webview/revisionGraph.js",
     "strict": true,
     "noUnusedLocals": false,
@@ -64,6 +67,8 @@
     "src/revisionGraph/webview/runtime/flowConfigUi.ts",
     "src/revisionGraph/webview/runtime/centerHeadToolbarUi.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
+    "src/revisionGraph/webview/runtime/bisectDialog.ts",
+    "src/revisionGraph/webview/runtime/bisectValidation.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",
     "src/revisionGraph/webview/runtime/flowAiTextUi.ts",
     "src/revisionGraph/webview/runtime/flowFormPreview.ts",

@@ -7,6 +7,7 @@ import {
   VIEWPORT_PADDING_TOP
 } from './shared';
 import { renderRevisionGraphFlowFormStyles } from './flowFormStyles';
+import { renderBisectStyles } from './bisectStyles';
 import { renderRevisionGraphSearchStyles } from './searchStyles';
 import { renderRevisionGraphToolbarIconStyles } from './toolbarIconStyles';
 
@@ -15,6 +16,7 @@ const DEFAULT_CANVAS_HEIGHT = 480;
 
 export function renderRevisionGraphStyles(): string {
   return `<style>
+    ${renderBisectStyles()}
     :root {
       color-scheme: light dark;
       --bg: var(--vscode-editor-background);
@@ -50,10 +52,7 @@ export function renderRevisionGraphStyles(): string {
       font-family: var(--vscode-font-family);
       overflow: hidden;
     }
-    body.loading {
-      cursor: progress;
-    }
-    body.loading-subtle {
+    body.loading, body.loading-subtle {
       cursor: progress;
     }
     button, select, input {

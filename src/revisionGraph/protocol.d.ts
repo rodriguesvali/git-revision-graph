@@ -1,4 +1,29 @@
 declare namespace RevisionGraphProtocol {
+  type BisectControl = 'start' | 'start-swapped' | 'good' | 'bad' | 'skip' | 'undo' | 'retry' | 'stop' | 'stop-detached' | 'abandon' | 'inspect' | 'copy' | 'scm';
+  interface BisectCommit { readonly hash: string; readonly subject: string }
+  interface BisectView {
+    readonly id: string;
+    readonly version: number;
+    readonly repositoryPath: string;
+    readonly status: 'preparing' | 'testing' | 'found' | 'inconclusive' | 'outside';
+    readonly selected: BisectCommit;
+    readonly original: BisectCommit;
+    readonly branch?: string;
+    readonly swapped: boolean;
+    readonly current?: BisectCommit;
+    readonly candidates: readonly BisectCommit[];
+    readonly history: readonly { readonly commit: BisectCommit; readonly answer: 'good' | 'bad' | 'skip' }[];
+    readonly mergeBaseCheck: boolean;
+    readonly stepsRemaining?: number;
+    readonly busy: boolean;
+    readonly error?: string;
+  }
+  interface BisectStateMessage {
+    readonly type: 'bisect-state';
+    readonly repositoryPath: string;
+    readonly state: BisectView | null;
+    readonly reveal: boolean;
+  }
   type RefKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash';
   type TargetKind = RefKind | 'commit';
   type CheckoutRefKind = Extract<RefKind, 'head' | 'branch' | 'remote'>;
@@ -92,6 +117,8 @@ declare namespace RevisionGraphProtocol {
   }
 
   type Message =
+    | { readonly type: 'start-bug-bisect'; readonly revision: string; readonly refKind: TargetKind }
+    | { readonly type: 'bisect-control'; readonly repositoryPath: string; readonly id: string; readonly version: number; readonly action: BisectControl; readonly commitHash?: string }
     | { readonly type: 'webview-ready' }
     | {
       readonly type: 'load-trace';

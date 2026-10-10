@@ -6,6 +6,7 @@ import {
 type MaybePromise<T> = T | Promise<T>;
 
 export interface ShowLogMessageHandlers {
+  readonly startBugBisect?: (commitHash: string, sourceToken: string) => MaybePromise<void>;
   readonly ready: () => MaybePromise<void>;
   readonly toggleCommit: (commitHash: string) => MaybePromise<void>;
   readonly toggleShowAllBranches: (value: boolean) => MaybePromise<void>;
@@ -89,6 +90,9 @@ async function dispatchShowLogCommitAction(
   handlers: ShowLogMessageHandlers
 ): Promise<boolean> {
   switch (message.type) {
+    case 'startBugBisect':
+      await handlers.startBugBisect?.(message.commitHash, message.sourceToken);
+      return true;
     case 'setCommitFileFilter':
       await handlers.setCommitFileFilter(message.commitHash, message.value, message.sourceToken);
       return true;

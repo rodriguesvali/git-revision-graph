@@ -266,7 +266,6 @@
           : getFocusDescendantsActionLabel(target)
       });
       const actionHandlers = createContextMenuActionHandlers(target, comparisonTargets);
-
       contextMenu.innerHTML = '';
       if (!comparisonTargets && isFlowGovernanceActive() && target.kind !== 'commit') {
         appendFlowGovernanceActions(getFlowBranchInfo(target.name), target);
@@ -319,6 +318,7 @@
         'copy-ref-name': () => postCopyRefName(target),
         'create-branch': () => postCreateBranch(target),
         'create-tag': () => postCreateTag(target),
+        'find-bug': () => vscode.postMessage({ type: 'start-bug-bisect', revision: target.revision, refKind: target.kind }),
         'delete-ref': () => postDelete(target),
         'delete-remote-tag': () => postDeleteRemoteTag(target),
         'focus-descendants': () => postFocusDescendants(target),

@@ -1,6 +1,7 @@
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
+  | { readonly type: 'startBugBisect'; readonly commitHash: string; readonly sourceToken: string }
   | { readonly type: 'ready' }
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
   | { readonly type: 'setFilterText'; readonly value: string; readonly sourceToken: string }
@@ -24,6 +25,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'resetToCommit'; readonly commitHash: string };
 
 type ShowLogCommitHashMessageType =
+  | 'startBugBisect'
   | 'toggleCommit'
   | 'compareCommitWithWorktree'
   | 'openCommitDetails'
@@ -34,6 +36,7 @@ type ShowLogCommitHashMessageType =
   | 'resetToCommit';
 
 const SHOW_LOG_COMMIT_HASH_MESSAGE_TYPES: readonly ShowLogCommitHashMessageType[] = [
+  'startBugBisect',
   'toggleCommit',
   'compareCommitWithWorktree',
   'openCommitDetails',
@@ -50,9 +53,7 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
   }
 
   if (isShowLogCommitHashMessageType(message.type)) {
-    return isBoundedNonEmptyString(message.commitHash)
-      ? { type: message.type, commitHash: message.commitHash }
-      : undefined;
+    return validateCommitHashMessage(message, message.type);
   }
 
   switch (message.type) {
@@ -92,6 +93,15 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
   }
 
   return undefined;
+}
+
+function validateCommitHashMessage(message: Record<string, unknown>, type: ShowLogCommitHashMessageType): ShowLogWebviewMessage | undefined {
+  if (!isBoundedNonEmptyString(message.commitHash)) return undefined;
+  if (type === 'startBugBisect') {
+    return isBoundedNonEmptyString(message.sourceToken)
+      ? { type, commitHash: message.commitHash, sourceToken: message.sourceToken } : undefined;
+  }
+  return { type, commitHash: message.commitHash };
 }
 
 function validateFilterTextMessage(message: Record<string, unknown>): ShowLogWebviewMessage | undefined {

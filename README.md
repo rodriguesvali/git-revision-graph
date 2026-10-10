@@ -84,6 +84,22 @@ other changes; ordinary text still filters file paths and status without regard 
 
 ## Work Directly From The Graph
 
+Use **Find Bug Against HEAD…** on a graph reference or a single Show Log commit
+to find the first revision introducing a bug. Confirm which endpoint has the bug,
+then test each checkout and choose **Bug absent**, **Bug present**, or **Cannot test**.
+Hide the dialog while using editors or terminals and resume from the graph banner;
+**Undo last answer** corrects the preceding decision. Skipped revisions can leave
+several possible culprits.
+
+The chosen repository must have no staged, unstaged, untracked or conflicted files,
+and its open files must be saved before switching revisions. Other workspace
+repositories do not block the search. Finishing or stopping returns to the original
+branch or detached commit. Sessions survive graph closure and window reloads;
+incompatible Git mutations are blocked until the search ends. If external Git
+changes invalidate ownership, **Detach controls (keep Git state)…** releases the
+extension's controls without resetting Git or changing the checkout; restoration
+then remains manual. Test commands are run by you.
+
 The graph keeps everyday Git actions close to their revision context:
 
 | Area | Available workflows |

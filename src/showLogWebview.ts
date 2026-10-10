@@ -694,7 +694,7 @@ export function renderShowLogWebviewHtml(): string {
       const cherryPickCommitHashes = getCherryPickCommitHashes(commitHash);
       contextMenuState = {
         kind: 'commit',
-        commitHash,
+        commitHash, sourceToken: getCurrentSourceToken(),
         commitHashes: cherryPickCommitHashes,
         baseCommitHash: compareSelection?.baseCommitHash,
         compareCommitHash: compareSelection?.compareCommitHash
@@ -718,6 +718,7 @@ export function renderShowLogWebviewHtml(): string {
       contextMenu.innerHTML = ''
         + '<button class="context-menu-item" type="button" data-menu-action="compareCommitWithWorktree">Compare with Worktree</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="openCommitDetails">Open Commit Details</button>'
+        + '<button class="context-menu-item" type="button" data-menu-action="startBugBisect">Find Bug Against HEAD…</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="checkoutCommit">Checkout to this</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="createTagFromCommit">Create Tag</button>'
         + '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick</button>'
@@ -1208,16 +1209,15 @@ export function renderShowLogWebviewHtml(): string {
         if (action === 'createTagFromCommit') {
           vscode.postMessage({ type: 'createTagFromCommit', commitHash: state.commitHash });
         }
+        if (action === 'startBugBisect') vscode.postMessage({ type: 'startBugBisect', commitHash: state.commitHash, sourceToken: state.sourceToken });
         if (action === 'resetToCommit') {
           vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
         }
         if (action === 'copyCommitHash') {
           vscode.postMessage({ type: 'copyCommitHash', commitHash: state.commitHash });
         }
-        if (action === 'copyReferenceName') {
-          if (refName) {
-            vscode.postMessage({ type: 'copyReferenceName', commitHash: state.commitHash, refName });
-          }
+        if (action === 'copyReferenceName' && refName) {
+          vscode.postMessage({ type: 'copyReferenceName', commitHash: state.commitHash, refName });
         }
         return;
       }

@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "none",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -13,6 +15,7 @@
   "files": [
     "src/revisionGraph/webview/runtime/contracts.d.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
+    "src/revisionGraph/webview/runtime/bisectValidation.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts"
   ]
 }

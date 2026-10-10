@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-07-13
+Last consolidated: 2026-10-09
 
 ## Context
 
@@ -9,6 +9,13 @@ Last consolidated: 2026-07-13
 
 ## Active Architecture
 
+- `src/bugBisect/*` owns manual bug-search sessions independently of graph
+  visibility. Native `git bisect --no-checkout` selects revisions; guarded built-in
+  Git checkout applies them. Per-worktree workspace-state recovery retains pinned
+  endpoints, the original attached/detached HEAD, an owned Git log and pending
+  answers. Shared mutation-coordinator reservations exclude incompatible extension
+  operations between user tests. Graph controls use the typed message pipeline;
+  Show Log hands off a validated commit and its repository to the same graph.
 - `package.json` defines the published extension surface, contributed commands, Source Control toolbar entry, settings, extension dependency on `vscode.git`, and packaging scripts.
 - `src/extension.ts` owns activation, Git API acquisition, command registration, document content providers, and shared presenter/service construction.
 - `src/revisionGraphPanel.ts` exposes the revision graph editor panel entrypoints.

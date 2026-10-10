@@ -1,8 +1,9 @@
 import { RevisionGraphDescendantFocusPersistence } from './revisionGraph/descendantFocusPersistence';
+import type { BugBisectSessions } from './bugBisect/session';
 import * as vscode from 'vscode';
 
 import { CompareResultsPresenter } from './refActions';
-import { API } from './git';
+import { API, type Repository } from './git';
 import { createRevisionGraphBackend, RevisionGraphBackend } from './revisionGraph/backend';
 import { RevisionGraphController } from './revisionGraph/controller';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
@@ -26,7 +27,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
     clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
     mutationCoordinator?: RepositoryMutationCoordinator,
     flowAiTextImprover?: FlowAiTextImprover,
-    descendantFocusPersistence?: RevisionGraphDescendantFocusPersistence
+    descendantFocusPersistence?: RevisionGraphDescendantFocusPersistence,
+    bugBisect?: BugBisectSessions
   ) {
     this.controller = new RevisionGraphController(
       extensionUri,
@@ -39,7 +41,8 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
       clearLayoutCache,
       mutationCoordinator,
       flowAiTextImprover,
-      descendantFocusPersistence
+      descendantFocusPersistence,
+      bugBisect
     );
   }
 
@@ -80,6 +83,16 @@ export class RevisionGraphEditorPanel implements vscode.Disposable {
 
   async refresh(request?: RevisionGraphRefreshRequestLike): Promise<void> {
     await this.controller.refresh(request);
+  }
+
+  async showBugBisect(repository: Repository, revision: string): Promise<void> {
+    await this.controller.showBugBisect(repository, revision, false);
+    await this.open({ preserveGraphState: true });
+    await this.controller.showBugBisect(repository, revision);
+  }
+
+  postBugBisect(root: string, state: RevisionGraphProtocol.BisectView | null, reveal: boolean): void {
+    this.controller.postBugBisect(root, state, reveal);
   }
 
   prepareRefresh(request?: RevisionGraphRefreshRequestLike) {

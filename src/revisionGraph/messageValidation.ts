@@ -1,4 +1,5 @@
 import { validateFlowFormPreviewRequest } from './messageValidationFlowPreview';
+import { validateBisectControl, validateBisectStart } from '../bugBisect/messageValidation';
 import type { RevisionGraphMergeRefKind, RevisionGraphMessage, RevisionLogSource } from '../revisionGraphTypes';
 import type { RevisionGraphRef } from './model/commitGraphTypes';
 import { isFlowStartBranchKind } from './flow';
@@ -37,6 +38,8 @@ const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>
 ]);
 
 const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
+  'start-bug-bisect': validateBisectStart,
+  'bisect-control': validateBisectControl,
   'webview-ready': () => ({ type: 'webview-ready' }),
   'load-trace': validateLoadTraceMessage,
   refresh: () => ({ type: 'refresh' }),

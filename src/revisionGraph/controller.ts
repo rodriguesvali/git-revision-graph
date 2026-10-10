@@ -1,3 +1,5 @@
+import { resolveConfiguredGraphLimitPolicy } from './limitPolicy';
+import { createRevisionGraphFetchHost } from './fetchHost';
 import { RevisionGraphDescendantFocusPersistence } from './descendantFocusPersistence';
 import * as vscode from 'vscode';
 import { handleAsyncTaskSafely } from '../asyncTaskBoundary';
@@ -5,6 +7,7 @@ import { API, Repository } from '../git';
 import { toErrorDetail, toOperationError } from '../errorDetail';
 import { handleWebviewMessageSafely } from '../webviewMessageBoundary';
 import { shouldPromptForGraphRepositoryOnOpen } from '../repositorySelection';
+import type { BugBisectSessions } from '../bugBisect/session';
 import {
   CompareResultsPresenter,
   RefActionServices
@@ -66,8 +69,6 @@ import {
 import { showConcurrentRepositoryMutationWarning } from '../repositoryMutationWarning';
 import { RevisionGraphFlowGovernanceWorkflow, type FlowAiTextImprover } from './flow/governanceWorkflow';
 import { RevisionGraphRemoteTagStatePublisher } from './remoteTagStatePublisher';
-const MIN_GRAPH_COMMAND_TIMEOUT_MS = 5000;
-const MAX_GRAPH_COMMAND_TIMEOUT_MS = 300000;
 interface RevisionGraphWebviewSurface {
   readonly webview: vscode.Webview;
   onDidDispose(listener: () => void): vscode.Disposable;
@@ -98,17 +99,6 @@ function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWeb
       panel.title = title;
     }
   };
-}
-
-function resolveGraphCommandTimeoutMs(configuredValue: unknown, fallback: number): number {
-  if (typeof configuredValue !== 'number' || !Number.isFinite(configuredValue)) {
-    return fallback;
-  }
-
-  return Math.min(
-    MAX_GRAPH_COMMAND_TIMEOUT_MS,
-    Math.max(MIN_GRAPH_COMMAND_TIMEOUT_MS, Math.trunc(configuredValue))
-  );
 }
 
 export class RevisionGraphController implements vscode.Disposable {
@@ -160,6 +150,7 @@ export class RevisionGraphController implements vscode.Disposable {
           }
         : undefined;
       this.postHostMessage(createRevisionGraphUpdateStateMessage(result.state));
+      if (this.currentRepository) this.postBugBisect(this.currentRepository.rootUri.fsPath, this.bugBisect?.state(this.currentRepository.rootUri.fsPath) ?? null);
     },
     (error) => {
       this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
@@ -193,7 +184,8 @@ export class RevisionGraphController implements vscode.Disposable {
     private readonly limitPolicy: RevisionGraphLimitPolicy = GRAPH_LIMIT_POLICY,
     private readonly clearLayoutCache: () => PromiseLike<void> | void = () => undefined,
     mutationCoordinator?: RepositoryMutationCoordinator, flowAiTextImprover?: FlowAiTextImprover,
-    private readonly descendantFocusPersistence = new RevisionGraphDescendantFocusPersistence()
+    private readonly descendantFocusPersistence = new RevisionGraphDescendantFocusPersistence(),
+    private readonly bugBisect?: BugBisectSessions
   ) {
     this.mutationCoordinator = mutationCoordinator ?? new RepositoryMutationCoordinator();
     this.ownsMutationCoordinator = !mutationCoordinator;
@@ -260,6 +252,8 @@ export class RevisionGraphController implements vscode.Disposable {
     this.messageHandler = new RevisionGraphMessageHandler({
       actionServices: this.actionServices,
       showLogPresenter,
+      prepareBugBisect: (repository, revision) => this.bugBisect?.prepare(repository, revision) ?? Promise.resolve(),
+      controlBugBisect: (repository, message) => this.bugBisect?.control(repository, message) ?? Promise.resolve(),
       rehydrateWebview: () => {
         this.rehydrateWebview();
       },
@@ -328,6 +322,20 @@ export class RevisionGraphController implements vscode.Disposable {
   }
   private get currentRepository(): Repository | undefined {
     return this.repositoryLifecycle.getCurrentRepository();
+  }
+
+  async showBugBisect(repository: Repository, revision: string, prepareSession = true): Promise<void> {
+    if (this.currentRepository !== repository || this.currentState.repositoryPath !== repository.rootUri.fsPath) {
+      this.repositoryLifecycle.setCurrentRepository(repository);
+      await this.refresh();
+    }
+    if (prepareSession) await this.bugBisect?.prepare(repository, revision);
+  }
+
+  postBugBisect(root: string, state: RevisionGraphProtocol.BisectView | null, reveal = false): void {
+    if (root === this.currentRepository?.rootUri.fsPath) {
+      this.postHostMessage({ type: 'bisect-state', repositoryPath: root, state, reveal });
+    }
   }
 
   dispose(): void {
@@ -551,17 +559,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private resolveLimitPolicy(): RevisionGraphLimitPolicy {
-    const configuredTimeoutMs = vscode.workspace
-      .getConfiguration('gitRevisionGraph')
-      .get<unknown>('graphCommandTimeoutMs', this.limitPolicy.graphCommandTimeoutMs);
-
-    return {
-      ...this.limitPolicy,
-      graphCommandTimeoutMs: resolveGraphCommandTimeoutMs(
-        configuredTimeoutMs,
-        this.limitPolicy.graphCommandTimeoutMs
-      )
-    };
+    return resolveConfiguredGraphLimitPolicy(this.limitPolicy);
   }
 
   private async runFetchCurrentRepository(): Promise<void> {
@@ -586,27 +584,12 @@ export class RevisionGraphController implements vscode.Disposable {
     assertMutationCurrent?: () => void,
     signal?: AbortSignal
   ): RevisionGraphFetchWorkflowHost {
-    return {
-      ui: this.actionServices.ui,
-      progress: this.actionServices.progress!,
-      postCurrentState: () => {
-        this.postCurrentState();
-      },
+    return createRevisionGraphFetchHost(this.actionServices, {
+      postCurrentState: () => this.postCurrentState(),
       refresh: (request) => this.refresh(request),
       prepareRefresh: (request) => this.prepareRefresh(request),
-      createCurrentRepositoryRefreshRequest: () => this.repositoryLifecycle.createCurrentRepositoryActionRefreshRequest('full-rebuild', 'subtle'),
-      getCurrentRepositoryLabel: () => this.getCurrentRepositoryLabel(),
-      assertMutationCurrent,
-      signal
-    };
-  }
-
-  private getCurrentRepositoryLabel(): string {
-    if (!this.currentRepository) {
-      return 'the current repository';
-    }
-
-    return vscode.workspace.asRelativePath(this.currentRepository.rootUri, false) || this.currentRepository.rootUri.fsPath;
+      createCurrentRepositoryRefreshRequest: () => this.repositoryLifecycle.createCurrentRepositoryActionRefreshRequest('full-rebuild', 'subtle')
+    }, () => this.currentRepository, assertMutationCurrent, signal);
   }
 
   private handleRepositorySetChanged(): void {
@@ -716,6 +699,7 @@ export class RevisionGraphController implements vscode.Disposable {
 
   private rehydrateWebview(): void {
     this.postHostMessage(createRevisionGraphInitStateMessage(this.currentState));
+    if (this.currentRepository) this.postBugBisect(this.currentRepository.rootUri.fsPath, this.bugBisect?.state(this.currentRepository.rootUri.fsPath) ?? null);
 
     if (this.currentLoadingLabel) {
       this.postHostMessage(createRevisionGraphLoadingMessage(this.currentLoadingLabel, this.currentLoadingMode));

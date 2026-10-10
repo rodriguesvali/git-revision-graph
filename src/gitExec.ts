@@ -21,6 +21,7 @@ let configuredGitExecutablePath: string | undefined;
 let configuredGitExecutableArgumentPrefix: readonly string[] = [];
 
 export interface GitExecOptions {
+  readonly forceEnglishOutput?: boolean;
   readonly signal?: AbortSignal;
   readonly maxOutputBytes?: number;
   readonly timeoutMs?: number;
@@ -156,9 +157,11 @@ function execGitCapturedWithResult(
     const child = spawn(gitExecutablePath, [...configuredGitExecutableArgumentPrefix, ...args], {
       cwd: repositoryPath,
       detached: process.platform !== 'win32',
-      env: options.gitIndexFile
-        ? { ...process.env, GIT_INDEX_FILE: options.gitIndexFile }
-        : process.env,
+      env: {
+        ...process.env,
+        ...(options.gitIndexFile ? { GIT_INDEX_FILE: options.gitIndexFile } : {}),
+        ...(options.forceEnglishOutput ? { LC_ALL: 'C', LANG: 'C', LANGUAGE: 'C' } : {})
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     });

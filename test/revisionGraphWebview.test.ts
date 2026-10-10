@@ -573,6 +573,7 @@ test('renders structural commit actions for compare and branch creation', () => 
     plan.items.map((item: any) => item.action),
     [
       'show-log-target',
+      'find-bug',
       'copy-hash',
       'compare-with-worktree',
       'focus-descendants',
@@ -834,6 +835,7 @@ test('renders grouped graph context menus', () => {
       'show-log-range',
       'unified-diff',
       'focus-range',
+      'find-bug',
       'copy-hash',
       'copy-ref-name',
       'reset-to-commit',
@@ -3932,6 +3934,11 @@ function createWebviewRuntime() {
     }
     appendChild(child: MockElement): void { child.parentElement = this; this.children.push(child); }
     append(...children: MockElement[]): void { children.forEach((child) => this.appendChild(child)); }
+    replaceChildren(...children: MockElement[]): void {
+      this.children.forEach((child) => { child.parentElement = null; });
+      this.children.length = 0;
+      this.append(...children);
+    }
 
     addEventListener(type: string, listener: (...args: any[]) => unknown): void {
       if (!this.listeners[type]) {

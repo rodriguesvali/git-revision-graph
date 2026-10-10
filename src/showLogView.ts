@@ -5,6 +5,7 @@ import type { Repository } from './git';
 import { showModalErrorMessage } from './workbenchMessages';
 import type { RevisionGraphDocumentBackend, RevisionGraphLogBackend, ShowLogBackend } from './revisionGraph/backend';
 import { openCommitDetails as openRevisionCommitDetails } from './revisionGraph/repository/log';
+import { startShowLogBugBisect } from './showLog/bugBisectAction';
 import {
   type CompareResultsPresenter,
   type RefActionServices
@@ -93,6 +94,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     (state) => { this.state = state; this.postState(); }
   );
   private readonly messageHandlers: ShowLogMessageHandlers = {
+    startBugBisect: (hash, token) => startShowLogBugBisect(this.state, hash, token, this.startBugBisect),
     ready: () => {
       this.postState();
     },
@@ -123,7 +125,8 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     private readonly backend: RevisionGraphLogBackend & RevisionGraphDocumentBackend & ShowLogBackend,
     private readonly compareResultsPresenter: CompareResultsPresenter,
     private readonly getRefActionServices: () => RefActionServices | undefined = () => undefined,
-    private readonly mutationCoordinator?: RepositoryMutationCoordinator
+    private readonly mutationCoordinator?: RepositoryMutationCoordinator,
+    private readonly startBugBisect?: (repository: Repository, hash: string) => Promise<void>
   ) {}
 
   dispose(): void {
@@ -151,7 +154,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     this.fileSearch.reset();
     this.state = {
       kind: 'visible',
-      sourceToken: this.createSourceToken(),
+      sourceToken: String(++this.sourceTokenSeed),
       repository,
       source,
       showAllBranches: false,
@@ -672,11 +675,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
       type: 'append',
       patch
     });
-  }
-
-  private createSourceToken(): string {
-    this.sourceTokenSeed += 1;
-    return String(this.sourceTokenSeed);
   }
 
   private revealPanel(): void {

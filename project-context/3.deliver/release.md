@@ -21,11 +21,15 @@ Historical evidence below applies to its recorded releases.
 | Automated verification | Passed for cycle opening | On 2026-10-09, `npm test` passed all 971 tests including build, with zero failures or skips; version consistency and `git diff --check` passed. |
 | Release documentation | Cycle opened | CHANGELOG marks 1.7.4 as Unreleased; build index and deployment record updated. |
 | Show Log expanded-file change search | Implemented; automated verification passed | On 2026-10-09: 984 tests including build plus two added focused debounce/reset tests, quality (277 production files / 2,623 functions), 39 Linux platform checks and 13 minimum-version Chromium scenarios passed. Global propagation, edits/clears, stable actions and the edit/collapse race covered. Focused manual Extension Host smoke remains pending. |
+| Guided bug bisect | Approved and implemented; automated/Chromium verification passed | On 2026-10-09: 1,013 tests including build, quality (289 files / 2,753 functions), 39 platform checks, 33 graph Chromium scenarios and 14 Show Log scenarios passed. [Feature record](../2.build/features/1.7.4-bug-bisect-spec.md) includes chosen-repo guards, native history selection, recovery and original-HEAD restoration. Focused Extension Host smoke remains pending. |
 | Packaging and clean-profile installation | Pending separate authorization | No 1.7.4 VSIX or installation evidence recorded. |
 | Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
 
 Before publication, rollback is a scoped revert of the 1.7.4 metadata/documentation
 change to 1.7.3. Preserve repository state and user Flow Governance files.
+Before reverting bug-search support, finish/restore owned searches; external Git
+sessions require manual recovery. Then revert the feature's scoped changes.
+Keep recovery controls available while an owned session still needs restoration.
 
 ## Published release — 1.7.3
 

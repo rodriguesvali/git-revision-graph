@@ -3,6 +3,7 @@ const VIEWPORT_PADDING_RIGHT = 0;
 const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
     const vscode = acquireRevisionGraphWebviewApi();
+    const bisectDialog = createBisectDialog(vscode.postMessage.bind(vscode));
     const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
     const {
       viewControls, viewport, canvas, sceneLayer, graphSvg, edgeLayer, nodeLayer,
@@ -687,6 +688,7 @@ const VIEWPORT_PADDING_LEFT = 18;
 
     function handleHostMessage(message: RevisionGraphWebviewHostMessage) {
       switch (message.type) {
+        case 'bisect-state': bisectDialog.receive(message); return;
         case 'init-state':
           applyTracedHostMessage(message, 'webview.apply.init-state', () => {
             applyState(message.state, true);
@@ -728,7 +730,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     ) {
       const previousTraceMessage = activeWebviewTraceMessage;
       activeWebviewTraceMessage = hasWebviewTraceContext(message) ? message : null;
-      const startedAt = getTraceNow();
+      const startedAt = Date.now();
       try {
         apply();
       } finally {
@@ -751,7 +753,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         return work();
       }
 
-      const startedAt = getTraceNow();
+      const startedAt = Date.now();
       try {
         return work();
       } finally {
@@ -769,7 +771,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         return;
       }
 
-      const finishedAt = getTraceNow();
+      const finishedAt = Date.now();
       const durationMs = Math.max(0, finishedAt - startedAt);
       const deliveryMs = Math.max(0, startedAt - message.trace.sentAtMs);
       vscode.postMessage(createRevisionGraphLoadTraceMessage(
@@ -793,10 +795,6 @@ const VIEWPORT_PADDING_LEFT = 18;
         && typeof (trace as Record<string, unknown>).sentAtMs === 'number';
     }
 
-    function getTraceNow() {
-      return Date.now();
-    }
-
     function applyState(
       nextState: RevisionGraphWebviewHostState,
       isInit: boolean,
@@ -810,6 +808,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         return;
       }
 
+      bisectDialog.setRepository(nextState.repositoryPath);
       const previousRepositoryPath = currentState && currentState.repositoryPath ? currentState.repositoryPath : null;
       const selectionSnapshot = options.preserveSelection ? captureSelectionSnapshot() : [];
       const scenePlacementSnapshot = options.preserveViewport ? captureScenePlacementSnapshot() : null;

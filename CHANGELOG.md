@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.4 - Unreleased
 
+### Bug Search
+
+- Start a guided Git bisect from any graph reference or single Show Log commit
+  against HEAD. Test revisions with Bug absent, Bug present or Cannot test; hide
+  and resume the dialog, undo answers, inspect candidates and return to the
+  original branch or detached commit. Require a clean chosen repository, retain
+  sessions across reloads and safely detect external Git state changes.
+
 ### Show Log
 
 - Search expanded commit files with `change:` to identify files containing matching

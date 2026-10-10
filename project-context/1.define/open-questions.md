@@ -1,7 +1,7 @@
 # Open Questions
 
 Status: Active
-Last consolidated: 2026-06-30
+Last consolidated: 2026-10-09
 
 Use this file only for unresolved decisions that still affect future product, architecture, or release work. Historical decisions belong in `project-context/archive/`.
 

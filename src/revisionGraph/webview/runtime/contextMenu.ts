@@ -1,4 +1,5 @@
 type RevisionGraphWebviewContextMenuAction =
+  | 'find-bug'
   | 'abort-merge'
   | 'checkout'
   | 'clear-selection'
@@ -217,6 +218,7 @@ function addRevisionGraphWebviewInspectionItems(
   if (includeTargetLog) {
     addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Show Log', 'show-log-target');
   }
+  addRevisionGraphWebviewContextMenuItem(items, 'Inspect', 'Find Bug Against HEAD…', 'find-bug');
   addRevisionGraphWebviewContextMenuItem(
     items,
     'Inspect',

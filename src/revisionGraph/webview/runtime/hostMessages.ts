@@ -10,6 +10,7 @@ function isRevisionGraphWebviewHostMessage(value: unknown): value is RevisionGra
 
 function isRevisionGraphWebviewStateHostMessage(value: Record<string, unknown>): boolean {
   switch (value.type) {
+    case 'bisect-state': return isBisectStateMessage(value);
     case 'init-state':
     case 'update-state':
       return isRevisionGraphWebviewHostState(value.state)

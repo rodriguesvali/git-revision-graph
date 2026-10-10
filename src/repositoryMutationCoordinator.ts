@@ -23,6 +23,7 @@ export interface RepositoryMutationRunner {
 }
 
 export class RepositoryMutationCoordinator {
+  private readonly reservations = new Map<string, symbol>();
   private readonly activeOperations = new Map<string, {
     readonly token: symbol;
     readonly abortController: AbortController;
@@ -32,10 +33,12 @@ export class RepositoryMutationCoordinator {
 
   async run<T>(
     repositoryPath: string,
-    action: (lease: RepositoryMutationLease) => Promise<T> | T
+    action: (lease: RepositoryMutationLease) => Promise<T> | T,
+    owner?: symbol
   ): Promise<RepositoryMutationOutcome<T>> {
     const key = normalizeRepositoryMutationKey(repositoryPath);
-    if (this.disposed || this.activeOperations.has(key)) {
+    if (this.disposed || this.activeOperations.has(key)
+      || (this.reservations.has(key) && this.reservations.get(key) !== owner)) {
       return { status: 'rejected' };
     }
 
@@ -67,6 +70,15 @@ export class RepositoryMutationCoordinator {
         this.activeOperations.delete(key);
       }
     }
+  }
+
+  reserve(repositoryPath: string, owner: symbol): (() => void) | undefined {
+    const key = normalizeRepositoryMutationKey(repositoryPath);
+    if (this.disposed || this.activeOperations.has(key) || this.reservations.has(key)) return undefined;
+    this.reservations.set(key, owner);
+    return () => {
+      if (this.reservations.get(key) === owner) this.reservations.delete(key);
+    };
   }
 
   invalidate(repositoryPath: string): void {

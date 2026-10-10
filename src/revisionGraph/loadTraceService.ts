@@ -51,6 +51,7 @@ export class RevisionGraphLoadTraceService implements vscode.Disposable {
           }
         };
       case 'set-loading':
+      case 'bisect-state':
       case 'set-error':
       case 'set-remote-tag-state':
       case 'set-commit-short-stat':

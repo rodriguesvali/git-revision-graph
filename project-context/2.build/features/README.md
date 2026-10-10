@@ -11,6 +11,10 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.4-bug-bisect-spec.md`: approved and implemented manual bug search from graph
+  references or Show Log commits against HEAD; recoverable step dialog, chosen-repo
+  clean-worktree guards and original-HEAD restoration. Automated/Chromium checks
+  passed; focused Extension Host smoke remains pending.
 - `1.7.4-show-log-expanded-change-search.md`: `change:` filtering in expanded
   commit files, automatic propagation and scoped, cancelable file queries.
 - `1.7.4-release-cycle-opening.md`: authorized opening of the 1.7.4 development

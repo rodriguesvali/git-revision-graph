@@ -1,13 +1,14 @@
 # Product Requirements Document
 
 Status: Active
-Last consolidated: 2026-06-30
+Last consolidated: 2026-10-09
 
 ## Product
 
 `Git Revision Graph` is a published VS Code extension for browsing Git revision graphs from Source Control and running compare, checkout, branch, merge, sync, delete, diff, reset, stash, tag, and log workflows.
 
-The current package baseline is read from `package.json`. At consolidation time it reports `1.5.5`.
+The current package baseline is read from `package.json`. At consolidation time it reports `1.7.4`;
+published baseline and readiness evidence are recorded in `project-context/3.deliver/release.md`.
 
 ## Users
 
@@ -19,6 +20,11 @@ The current package baseline is read from `package.json`. At consolidation time 
 ## Current Product Shape
 
 - The primary launch point is `View Git Revision Graph` from VS Code Source Control or the Command Palette.
+- Guided bug search starts from graph references or single Show Log commits against
+  the selected repository's pinned HEAD. A recoverable graph dialog controls manual
+  good/bad/skip testing and undo; finishing restores the original revision. Cleanliness
+  applies only to that repository, including unsaved editor files. External state
+  mismatches pause the search and never reset an unowned native bisect session.
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.

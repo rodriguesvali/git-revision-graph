@@ -1,4 +1,5 @@
 import { RevisionGraphDescendantFocusPersistence } from './revisionGraph/descendantFocusPersistence';
+import { createWorkbenchBugBisectSessions } from './workbenchBugBisect';
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -59,13 +60,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     createWorkbenchAiCompareBriefingGenerator()
   );
   let services: RefCommandServices | undefined;
+  let graphPanel: RevisionGraphEditorPanel | undefined;
   const showLogProvider = new ShowLogViewProvider(
     context.extensionUri,
     backend,
     compareResultsProvider,
     () => services,
-    mutationCoordinator
+    mutationCoordinator,
+    async (repository, hash) => { await graphPanel?.showBugBisect(repository, hash); }
   );
+  const bugBisect = createWorkbenchBugBisectSessions(context, git, mutationCoordinator, showLogProvider,
+    (root, state, reveal) => graphPanel?.postBugBisect(root, state, reveal));
   const revisionGraphEditorPanel = new RevisionGraphEditorPanel(
     context.extensionUri,
     git,
@@ -81,8 +86,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     () => layoutCachePersistence.clear(),
     mutationCoordinator,
     createWorkbenchAiFlowTextImprover(),
-    new RevisionGraphDescendantFocusPersistence(context.workspaceState)
+    new RevisionGraphDescendantFocusPersistence(context.workspaceState),
+    bugBisect
   );
+  graphPanel = revisionGraphEditorPanel;
   const commandServices = createCommandServices(
     revisionGraphEditorPanel,
     compareResultsProvider,
@@ -91,6 +98,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   services = commandServices;
 
   context.subscriptions.push(
+    bugBisect,
     compareResultsProvider,
     showLogProvider,
     revisionGraphEditorPanel,

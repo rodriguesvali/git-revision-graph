@@ -17,6 +17,10 @@ const REVISION_GRAPH_REF_KINDS = new Set<RevisionGraphRef['kind']>(['head', 'bra
 const REVISION_GRAPH_MERGE_REF_KINDS = new Set<RevisionGraphMergeRefKind>(['branch', 'remote', 'tag']);
 
 const REVISION_GRAPH_MESSAGE_AUTHORIZATION_POLICIES: RevisionGraphMessageAuthorizationPolicyMap = {
+  'start-bug-bisect': { repositoryScoped: true, isAllowed: (message, state) =>
+    message.refKind === 'commit' ? hasKnownCommitHash(state, message.revision) : hasKnownReference(state, message.revision, message.refKind) },
+  'bisect-control': { repositoryScoped: true, allowedWhileLoading: true,
+    isAllowed: (message, state) => message.repositoryPath === state.repositoryPath },
   'webview-ready': { repositoryScoped: false, isAllowed: allowRevisionGraphMessage },
   'load-trace': { repositoryScoped: false, isAllowed: allowRevisionGraphMessage },
   refresh: { repositoryScoped: false, isAllowed: allowRevisionGraphMessage },
