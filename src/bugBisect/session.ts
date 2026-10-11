@@ -72,7 +72,7 @@ export class BugBisectSessions {
     if (message.action === 'abandon') { await this.abandon(session); return; }
     if (!await this.acceptControl(session, message.action)) return;
     // Confirmation can outlive the current question or repository state.
-    if (session.busy || message.version !== session.version) return;
+    if (this.sessions.get(resolve(root)) !== session || session.busy || message.version !== session.version) return;
     if (!this.reserve(root)) { this.publishError(session, new Error('Another repository operation is active.')); return; }
     this.replace(session, { busy: true, error: undefined });
     try {
@@ -193,6 +193,7 @@ export class BugBisectSessions {
   }
 
   private async ownCommand(git: BisectGit, session: BisectSession, command: () => Promise<BisectSelection>, expected: readonly string[]): Promise<BisectSelection> {
+    await this.assertOwned(git, session);
     const previous = session.log;
     try { return await command(); }
     finally {
@@ -216,6 +217,7 @@ export class BugBisectSessions {
   private async checkoutSelection(repository: Repository, git: BisectGit, session: BisectSession, lease: RepositoryMutationLease): Promise<void> {
     if (session.status !== 'testing' || !session.current) return;
     await this.assertClean(repository, git);
+    await this.assertOwned(git, session);
     lease.assertCurrent();
     // Persist the intended revision before checkout for crash recovery.
     const target = session.current.hash;
@@ -268,6 +270,7 @@ export class BugBisectSessions {
     this.replace(session, { returning: true });
     await this.save();
     await this.assertClean(repository, git);
+    await this.assertOwned(git, session);
     await repository.checkout(destination);
     this.replace(session, { expectedHead: session.original.hash });
     await this.save();

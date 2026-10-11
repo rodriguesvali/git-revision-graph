@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Search
 
+- Revalidate cancelled controls and native bisect ownership before commands and
+  checkouts, preserving external Git sessions changed during persistence.
 - Use **Minimize** / **Expand** to answer Bug absent or Bug present from the compact
   graph banner during active testing, with progress/error feedback and one-time
   result expansion.

@@ -188,6 +188,86 @@ test('cancelling preparation and failed clean checks do not reserve the reposito
   } finally { await f.dispose(); }
 });
 
+test('cancelling preparation invalidates a concurrently submitted start before Git mutation', async () => {
+  const f = await setup();
+  try {
+    await f.prepare();
+    const start = f.message('start');
+    const cancel = f.message('stop');
+    await Promise.all([f.sessions.control(f.repository, start), f.sessions.control(f.repository, cancel)]);
+    assert.equal(f.sessions.state(f.root), null);
+    assert.equal(await f.engine.hasMetadata('BISECT_START'), false);
+    assert.deepEqual(await f.engine.head(), { hash: f.hashes[6], branch: 'refs/heads/main' });
+    assert.equal((await f.coordinator.run(f.root, () => 'available')).status, 'completed');
+    assert.deepEqual(f.stored, []);
+  } finally { await f.dispose(); }
+});
+
+test('detaching controls invalidates a stop confirmation that is still pending', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    f.setUnsaved(true); await f.control('good'); f.setUnsaved(false);
+    let confirm: (value: boolean) => void = () => {};
+    let opened: () => void = () => {};
+    const waiting = new Promise<void>(resolve => { opened = resolve; });
+    f.host.confirmStop = () => { opened(); return new Promise(resolve => { confirm = resolve; }); };
+    const head = await f.engine.head(); const log = await f.engine.log();
+    const stop = f.control('stop'); await waiting;
+    await f.control('abandon');
+    confirm(true); await stop;
+    assert.equal(f.sessions.state(f.root), null);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), log);
+    assert.equal((await f.coordinator.run(f.root, () => 'available')).status, 'completed');
+    assert.deepEqual(f.stored, []);
+  } finally { await f.dispose(); }
+});
+
+test('selection checkout rechecks ownership after persistence and preserves a replacement session', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const head = await f.engine.head(); const save = f.host.save;
+    let replaced = false; let externalLog = '';
+    f.host.save = async sessions => {
+      await save(sessions);
+      const session = sessions[0];
+      if (!replaced && session?.current?.hash !== head.hash && !session?.pendingAnswer) {
+        replaced = true;
+        await f.engine.reset(); await f.engine.start(f.hashes[5], f.hashes[1]);
+        externalLog = await f.engine.log();
+      }
+    };
+    await f.control('good');
+    assert.equal(replaced, true);
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), externalLog);
+  } finally { await f.dispose(); }
+});
+
+test('undo rechecks ownership after reset persistence before restarting native bisect', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await f.control('good');
+    const head = await f.engine.head(); const save = f.host.save;
+    let replaced = false; let externalLog = '';
+    f.host.save = async sessions => {
+      await save(sessions);
+      if (!replaced && sessions[0]?.rebuilding && sessions[0]?.log === '') {
+        replaced = true;
+        await f.engine.start(f.hashes[5], f.hashes[1]); externalLog = await f.engine.log();
+      }
+    };
+    await f.control('undo');
+    assert.equal(replaced, true);
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), externalLog);
+  } finally { await f.dispose(); }
+});
+
 test('detaching controls never resets externally changed Git state or checkout', async () => {
   const f = await setup();
   try {
@@ -214,6 +294,28 @@ test('an invalid endpoint-role choice can be corrected without leaving the origi
     await f.control('start-swapped');
     assert.equal(f.state().error, undefined); assert.equal(f.state().status, 'testing');
     await f.control('stop'); assert.equal((await f.engine.head()).hash, f.hashes[0]);
+  } finally { await f.dispose(); }
+});
+
+test('restoration preserves checkout when another bisect replaces the session during persistence', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const head = await f.engine.head(); const save = f.host.save;
+    let replaced = false; let externalLog = '';
+    f.host.save = async sessions => {
+      await save(sessions);
+      if (!replaced && sessions[0]?.returning) {
+        replaced = true;
+        await f.engine.reset(); await f.engine.start(f.hashes[5], f.hashes[1]);
+        externalLog = await f.engine.log();
+      }
+    };
+    await f.control('stop');
+    assert.equal(replaced, true);
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), externalLog);
   } finally { await f.dispose(); }
 });
 
