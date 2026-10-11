@@ -7,9 +7,13 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
-## 1.7.4 Publication Candidate
+## 1.7.4 Published Release Evidence
 
-Status: Final manual smoke pending; no full-candidate completion reported.
+Status: Publication confirmed on 2026-10-11; full manual smoke evidence not supplied.
+The maintainer reported “publicação finalizada.” Local VSIX inspection is recorded
+in release readiness. Publication confirmation does not establish per-scenario
+smoke results or clean-profile installation; the pending results below remain
+follow-up evidence, not a claim that the release is still unpublished.
 Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b`.
 Operator, test date, VS Code version, platform, repository fixture and exact tested
 commit/VSIX: not supplied. Record these with results before closing this gate.

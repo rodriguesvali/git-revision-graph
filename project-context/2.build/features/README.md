@@ -11,6 +11,12 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+No next development cycle has been authorized. Version 1.7.4 is published by
+maintainer confirmation on 2026-10-11. Remaining manual smoke/installation evidence
+is tracked in the delivery records; the artifacts below describe published scope.
+
+## Published Release Artifacts — 1.7.4
+
 - `1.7.4-tooltip-delay.md`: increase graph and Show Log custom-tooltip activation
   delay from 500 ms to 1 second.
 - `1.7.4-three-review-cycle.md`: three sequential reviews from baseline `574cdb9`;

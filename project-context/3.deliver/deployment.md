@@ -26,17 +26,19 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Release Candidate: 1.7.4
+## Published Release: 1.7.4
 
 - Opened with explicit maintainer authorization on 2026-10-09.
 - Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b`; publication
   artifact changes follow this source commit. Comparison baseline: `574cdb9`.
 - Manifest, top-level lockfile and root package declare `1.7.4`. CHANGELOG is dated
-  2026-10-11 for publication preparation; publication is still pending.
+  2026-10-11. Publication was performed by the maintainer and confirmed on
+  2026-10-11 with “publicação finalizada.”
 - Scope: guided bisect with visual/compact controls and ownership protection,
   expanded-file `change:` search and propagation in Show Log, Feature/Bug from
   Package and Package from Main, and one-second tooltip activation.
-- Published baseline remains `1.7.3`, confirmed on 2026-10-04.
+- Published baseline is now `1.7.4` by maintainer confirmation; previous baseline
+  was `1.7.3`, confirmed on 2026-10-04. No next version has been authorized.
 - Latest verification: 1,039 tests including builds, quality checks, prior 39 Linux
   platform checks / 119 Chromium scenarios, review-cycle CI benchmark and a fresh
   zero-vulnerability dependency audit. Local `vsce ls` preview passed with 679 files;
@@ -46,13 +48,18 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 - [Release readiness](release.md) holds the consolidated gate status and
   [smoke matrix](extension-host-smoke-matrix.md) holds the remaining manual scenarios.
   Manual smoke completion has not been reported for this complete candidate.
-- After smoke and authorized packaging, inspect the VSIX and verify installation
-  in a clean profile before separately authorized Marketplace publication.
-  Record package identity/checksum/size, final source/tag, publication timestamp and
-  installed version. No 1.7.4 VSIX was created during artifact review.
-- No packaging, installation, tag or Marketplace command ran. Existing published
-  VSIX files retain their versions. Use `publish:current` for the approved 1.7.4
-  candidate; version-increment commands belong to a separately approved next release.
+- The maintainer subsequently reported VSIX generation and personally initiated
+  publication. Local `git-revision-graph-1.7.4.vsix` inspection passed: 1,173,397 bytes,
+  SHA-256 `e10612fb169add11683037b6b01d3f52e24f0e123aa5d27878c87a26abce7d30`,
+  identity `rodriguesvali.git-revision-graph@1.7.4`, 679 extension files. Required
+  runtime/worker assets match local output; internal tasks/development artifacts
+  are excluded. Source HEAD observed at handoff: `04996d1`; exact release tag and
+  upload byte identity are not independently established.
+- Clean-profile installation, complete manual smoke, precise publication time
+  and installed-version evidence remain unconfirmed. Public catalog and published
+  byte equality were not independently checked. Record these separately when supplied.
+- The assistant ran no packaging, installation, tag or Marketplace command during
+  the artifact review or handoff. Existing published VSIX files retain their versions.
 
 ## Published Release: 1.7.3
 

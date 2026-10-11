@@ -1,9 +1,9 @@
 # Release Readiness
 
-Status: `1.7.4` publication artifacts prepared; final smoke and VSIX gates pending; `1.7.3` remains published
+Status: `1.7.4` published by maintainer confirmation on 2026-10-11
 Last consolidated: 2026-10-11
 
-## Release candidate — 1.7.4
+## Published release — 1.7.4
 
 Opened on 2026-10-09 with explicit maintainer authorization to adjust the system
 version to `1.7.4`. Previous published baseline: `1.7.3`, confirmed by the maintainer
@@ -12,8 +12,9 @@ on 2026-10-04. See the [cycle artifact](../2.build/features/1.7.4-release-cycle-
 Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b` (2026-10-11).
 Comparison baseline: `574cdb9825bd52c843215a772582adbd76f3e9c9` (published 1.7.3
 documentation baseline). Publication artifact edits follow the source candidate.
-CHANGELOG is dated 2026-10-11 for the planned release; this is not publication
-confirmation. Dependencies, engine `^1.90.0` and contribution points are unchanged.
+CHANGELOG is dated 2026-10-11. The maintainer confirmed publication separately
+with “publicação finalizada.” Dependencies, engine `^1.90.0` and contribution
+points are unchanged. No next development version has been authorized.
 
 Approved release scope:
 
@@ -37,11 +38,39 @@ Approved release scope:
 | Platform/browser coverage | Passed; scoped evidence | 39 Linux platform checks and 119 VS Code 1.90 Chromium scenarios passed during review; later tooltip constants were verified by the final build/tests. Browser fixtures are not full Extension Host smoke. |
 | Graph performance | Passed | Review-cycle CI fixture: 1,200 commits, projection 5.18 ms / layout 117.29 ms. Subsequent source changes affect only tooltip delays. |
 | Dependency audit | Passed | Fresh `npm audit --json` on 2026-10-11: zero vulnerabilities across all severities. No dependency changes made. |
-| Package file preview | Passed; no VSIX created | Initial preview exposed internal `tasks/plan.md` and `tasks/todo.md`. Added `tasks/**` to `.vscodeignore`; fresh production build and final `vsce ls` passed: 679 files, exactly the prior set minus those two planning files. Required extension, webview, layout worker, bisect and file-search assets remain present. Development paths, maps and old VSIX are excluded. This preview does not establish packaged byte identity. |
+| Package file preview | Passed; generated VSIX also inspected | Initial preview exposed internal `tasks/plan.md` and `tasks/todo.md`. Added `tasks/**` to `.vscodeignore`; fresh production build and final `vsce ls` passed: 679 files, exactly the prior set minus those two planning files. Required extension, webview, layout worker, bisect and file-search assets remain present. Development paths, maps and old VSIX are excluded. Local VSIX inspection is recorded below. |
 | User/release documentation | Prepared | README, dated CHANGELOG, deployment record, active artifact index and candidate smoke matrix aligned. |
 | Final Extension Host smoke | Pending maintainer evidence | [Candidate matrix](extension-host-smoke-matrix.md) covers bisect, Show Log, Flow creation, tooltip timing and repository/lifecycle regressions. Record tested commit, operator, environment and result. Earlier UI acceptance does not establish all scenarios. |
-| VSIX inspection and installation | Pending | After authorized packaging, record filename, bytes, SHA-256, embedded identity/assets and clean-profile installation. No 1.7.4 VSIX exists in this workspace. |
-| Marketplace publication | Pending separate authorization | 1.7.3 remains published. Use the current-version publishing flow after remaining gates and record timestamp, source/tag and installed-version evidence. |
+| VSIX inspection and installation | Local inspection passed; installation unconfirmed | Maintainer reported VSIX generation on 2026-10-11. Local package inspected; identity, checksum, size and assets recorded below. Clean-profile installation has not been reported. |
+| Marketplace publication | Confirmed by maintainer | On 2026-10-11, the maintainer reported “publicação finalizada.” Exact timestamp, published-byte equality, final source/tag and installed-version evidence were not supplied. The assistant did not run a publication command or independently verify the public catalog. |
+
+### VSIX and publication handoff — 2026-10-11
+
+The maintainer reported: “visix gerado. a publicação vai ser por minha conta.
+Iniciando a publicação.” This records packaging completion and publication intent;
+it does not establish successful Marketplace publication or manual smoke completion.
+
+Subsequently, on 2026-10-11, the maintainer confirmed “publicação finalizada.”
+`rodriguesvali.git-revision-graph@1.7.4` is now the published baseline by that
+confirmation. Publication was performed by the maintainer. The public catalog
+and upload bytes were not independently checked; the confirmation does not
+establish manual smoke results or clean-profile installation.
+
+Local artifact inspected: `git-revision-graph-1.7.4.vsix`, 1,173,397 bytes.
+SHA-256: `e10612fb169add11683037b6b01d3f52e24f0e123aa5d27878c87a26abce7d30`.
+Embedded identity: `rodriguesvali.git-revision-graph@1.7.4`; 679 extension files.
+Observed source HEAD: `04996d16038787374e478b17f2604a6697e86c3d`, including the
+publication artifacts and planning-file exclusion. This observation is not an
+independently established release tag or exact upload source.
+
+Required extension/webview/bisect/file-search/layout-worker assets are present and
+match local compiled bytes. Embedded changelog matches the dated local notes.
+README matches after the packager's three relative-link rewrites to GitHub URLs.
+Task files, development outputs, source maps and older VSIX files are excluded.
+Clean-profile installation, full manual smoke, exact upload identity, precise
+publication timestamp and installed-version evidence have not been supplied.
+
+No packaging, installation or publication command ran during this handoff update.
 
 ### Implementation checkpoints
 
@@ -65,7 +94,7 @@ their original evidence.
 | Package from main | Implemented; automated/Chromium verification passed | On 2026-10-11: 1,034 tests including builds, quality (294 files / 2,786 functions), mutation review and 13 Chromium checks passed. Main-classified sources expose Start New Package; preparation/preview/submission and guarded creation retain source identity and existing exact-sync policy. Three fixture submissions, no user repository mutations. [Focused record](../2.build/features/1.7.4-package-start-from-main.md). Graphify and diff whitespace checks passed; real Extension Host smoke remains pending. |
 | Three-review cycle from `574cdb9` | Complete; five confirmed safety defects fixed | On 2026-10-11: three sequential main-agent reviews of the delta through `56b2476` plus corrections. [Review record](../2.build/features/1.7.4-three-review-cycle.md) details stale controls and native bisect ownership races, five failing-before/passing-after real Git regressions, and mutation detection. Final gates: 1,039 tests including builds, quality (294 files / 2,786 functions), 39 Linux platform checks and 119 Chromium scenarios passed. Final restored-build CI benchmark passed (1,200 commits; projection 5.18 ms / layout 117.29 ms). Graphify AST update and diff checks passed. Full Extension Host smoke remains pending; corrections subsequently committed as `6bd0d2a`. |
 | Tooltip activation delay | Implemented; automated verification passed | On 2026-10-11: graph and Show Log custom tooltips now wait 1,000 ms. Existing scheduling/cancellation retained; existing assertions updated. `npm test` passed 1,039 tests including builds; quality (294 files / 2,786 functions), generated-runtime inspection, Graphify AST update and diff checks passed. [Focused record](../2.build/features/1.7.4-tooltip-delay.md). Manual Extension Host timing smoke remains pending. |
-| Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
+| Marketplace publication | Subsequently confirmed | Publication was pending during implementation; maintainer completion confirmation on 2026-10-11 establishes 1.7.4 as the new published baseline. |
 
 ### Rollback and handoff
 
