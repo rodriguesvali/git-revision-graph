@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 Status: Active
-Last consolidated: 2026-10-10
+Last consolidated: 2026-10-11
 
 ## Product
 
@@ -27,6 +27,9 @@ published baseline and readiness evidence are recorded in `project-context/3.del
   mismatches pause the search and never reset an unowned native bisect session.
   A temporary visual reference named **Bisect Commit** keeps the current checkout
   visible through graph filters, highlights it and centers each new test step.
+  Minimize keeps the graph available with good/bad controls for a ready test
+  commit; Expand exposes full controls and recovery. Completion opens the result
+  once, while intermediate steps retain compact presentation.
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.

@@ -6,14 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Search
 
+- Use **Minimize** / **Expand** to answer Bug absent or Bug present from the compact
+  graph banner during active testing, with progress/error feedback and one-time
+  result expansion.
 - Refresh visible graph nodes after automatic centering and anchor repeated
   layout updates to Bisect Commit so a step does not require a manual scroll
   gesture to appear.
 - Keep the current test revision visible and highlighted as **Bisect Commit**,
   center it on each step and remove the visual marker when the search ends.
 - Start a guided Git bisect from any graph reference or single Show Log commit
-  against HEAD. Test revisions with Bug absent, Bug present or Cannot test; hide
-  and resume the dialog, undo answers, inspect candidates and return to the
+  against HEAD. Test revisions with Bug absent, Bug present or Cannot test; minimize
+  and expand the dialog, undo answers, inspect candidates and return to the
   original branch or detached commit. Require a clean chosen repository, retain
   sessions across reloads and safely detect external Git state changes.
 

@@ -87,9 +87,11 @@ other changes; ordinary text still filters file paths and status without regard 
 Use **Find Bug Against HEAD…** on a graph reference or a single Show Log commit
 to find the first revision introducing a bug. Confirm which endpoint has the bug,
 then test each checkout and choose **Bug absent**, **Bug present**, or **Cannot test**.
-Hide the dialog while using editors or terminals and resume from the graph banner;
-**Undo last answer** corrects the preceding decision. Skipped revisions can leave
-several possible culprits.
+Use **Minimize** to keep the graph visible and classify ready test commits with
+**Bug absent** / **Bug present** in the compact banner. Use **Expand** for
+**Cannot test**, **Undo last answer**, history and recovery. Decisions remain
+disabled while updating or blocked by an error; completion opens the result once.
+Skipped revisions can leave several possible culprits.
 
 During the search, **Bisect Commit** marks the checked-out test revision in the
 graph, remains visible through scope/focus filters and centers on each new step.

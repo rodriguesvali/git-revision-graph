@@ -28,3 +28,7 @@ recorded in the feature artifact. It has not been reported as completed.
 - [x] Repeated bisect layouts: use the verified test commit as the graph's HEAD
   anchor, including unchanged hashes and successive updates; retain manual
   scrolling on stable updates. Verify with queued frames and Angular graph data.
+
+- [x] Compact bisect controls: implement the approved Minimize / Expand flow,
+  ready-only classification, progress/errors, neutral focus and one-time result
+  reveal; verify guarded progression, keyboard navigation and responsive layout.

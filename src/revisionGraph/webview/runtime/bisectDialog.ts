@@ -4,6 +4,7 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
   let shown = false;
   let pending = false;
   let swapped = false;
+  const revealResult = createBisectResultReveal();
   const banner = element('div', '', 'bisect-banner');
   const backdrop = element('div', '', 'bisect-backdrop');
   const dialog = element('div', '', 'bisect-dialog');
@@ -26,27 +27,31 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
   function show(): void { focus.capture(); shown = true; render(); }
   function request(action: RevisionGraphProtocol.BisectControl, commitHash?: string): void {
     if (!state || pending || state.busy) return;
+    if (isBisectAnswerAction(action) && !canAnswerBisect(state, pending)) return;
     const message: RevisionGraphProtocol.MessageOf<'bisect-control'> = {
       type: 'bisect-control', repositoryPath: state.repositoryPath, id: state.id, version: state.version, action,
       ...(commitHash ? { commitHash } : {})
     };
-    if (action !== 'copy' && action !== 'inspect' && action !== 'scm') { pending = true; render(); }
+    if (action !== 'copy' && action !== 'inspect' && action !== 'scm') {
+      pending = true; announcement.textContent = 'Updating bug search.'; render();
+    }
     post(message);
   }
   function button(label: string, click: () => void, key: string, primary = false): HTMLButtonElement {
     const node = element('button', label, primary ? 'bisect-primary' : ''); node.type = 'button';
-    node.dataset.bisectAction = key; node.disabled = key !== 'hide' && (pending || state?.busy === true);
+    node.dataset.bisectAction = key; node.disabled = key !== 'hide' && key !== 'expand' && (pending || state?.busy === true);
     node.addEventListener('click', click); return node;
   }
   function control(label: string, action: RevisionGraphProtocol.BisectControl, primary = false, hash?: string): HTMLButtonElement {
-    return button(label, () => request(action, hash), `${action}:${hash ?? ''}`, primary);
+    const question = state;
+    return button(label, () => {
+      if (isBisectAnswerAction(action) && state !== question) return;
+      request(action, hash);
+    }, `${action}:${hash ?? ''}`, primary);
   }
   function renderBanner(): void {
-    banner.replaceChildren(); banner.hidden = !state || shown;
-    if (!state) return;
-    const label = state.status === 'preparing' ? 'Bug search ready to start'
-      : state.status === 'testing' ? `Bug search active · testing ${state.current?.hash.slice(0, 7) ?? ''}` : 'Bug search result ready';
-    banner.append(element('span', label), button('Resume', show, 'resume'), control('Stop…', 'stop'));
+    renderBisectCompactBanner({ banner, state, shown, pending, control,
+      expand: () => button('Expand', show, 'expand') });
   }
   function render(): void {
     renderBanner(); backdrop.hidden = !shown || !state;
@@ -58,7 +63,7 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
     dialog.setAttribute('aria-busy', String(state.busy || pending));
     const heading = element('div', '', 'bisect-heading');
     const title = element('h2', 'Find Bug'); title.id = 'bisect-title'; title.tabIndex = -1;
-    heading.append(title, button('Hide', hide, 'hide')); dialog.append(heading);
+    heading.append(title, button('Minimize', hide, 'hide')); dialog.append(heading);
     dialog.append(element('p', `Repository: ${state.repositoryPath}`, 'bisect-muted'));
     const good = (state.status === 'preparing' ? swapped : state.swapped) ? state.original : state.selected;
     const bad = good === state.original ? state.selected : state.original;
@@ -94,7 +99,7 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
     dialog.append(element('p', 'Run your usual reproduction or tests in the editor/terminal, then choose the result for this revision.'));
     const actions = element('div', '', 'bisect-actions bisect-decisions');
     for (const [label, answer] of [['Bug absent', 'good'], ['Bug present', 'bad'], ['Cannot test', 'skip']] as const) {
-      const node = control(label, answer); node.disabled ||= !!state.error; actions.append(node);
+      const node = control(label, answer); node.disabled ||= !canAnswerBisect(state, pending); actions.append(node);
     }
     dialog.append(actions, element('p', 'Cannot test skips a revision that cannot build or reproduce the test.', 'bisect-muted'));
   }
@@ -147,13 +152,14 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
       if (state && message.state?.id === state.id && message.state.version < state.version) return;
       const preparing = !state && message.state?.status === 'preparing';
       state = message.state; pending = false;
+      const completed = revealResult(state);
       announcement.textContent = bisectAnnouncement(state);
       if (!state) { hide(); return; }
-      if (message.reveal || preparing) { swapped = state.swapped; show(); } else render();
+      if (message.reveal || preparing || completed) { swapped = state.swapped; show(); } else render();
     },
     setRepository(repositoryPath: string | undefined): void {
       if (root === repositoryPath) return;
-      root = repositoryPath; state = null; pending = false; hide();
+      root = repositoryPath; state = null; pending = false; revealResult(null); hide();
     }
   };
 }

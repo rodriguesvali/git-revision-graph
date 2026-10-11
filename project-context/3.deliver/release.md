@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: `1.7.4` development cycle opened; `1.7.3` remains the published baseline
-Last consolidated: 2026-10-10
+Last consolidated: 2026-10-11
 
 ## Development cycle — 1.7.4
 
@@ -26,6 +26,7 @@ Historical evidence below applies to its recorded releases.
 | Bisect viewport rendering regression | Fixed; automated/Chromium verification passed | On 2026-10-10: 1,019 tests including build, quality (292 files / 2,774 functions) and 41 Chromium scenarios passed. Two queued-frame regression tests failed before the fix and passed afterward; the production browser runtime now mounts distant test commits without native scroll events. CI benchmark passed (1,200 commits; projection 6.37 ms / layout 135.26 ms). Graphify update and diff whitespace checks passed. Full manual Extension Host smoke remains pending, including the reported Angular repository case. |
 | Bisect centering across repeated layouts | Fixed after maintainer reported continued failure; automated/Chromium verification passed | On 2026-10-10: 1,020 tests including builds, quality (292 files / 2,775 functions) and 41 Chromium session scenarios passed. An additional queued-frame test and read-only Angular graph fixture reproduced the loss of focus before the fix and passed afterward. Bisect Commit now owns the current HEAD anchor through repeated layouts; stable updates retain manual scrolling. Angular's captured checkout remained visible after Hide in both native-scroll and suppressed-scroll fixtures (1,416 / 1,199 nodes). CI benchmark passed (1,200 commits; projection 7.53 ms / layout 131.60 ms). Graphify update and diff whitespace checks passed. Manual Extension Host retesting remains pending. |
 | Packaging and clean-profile installation | Pending separate authorization | No 1.7.4 VSIX or installation evidence recorded. |
+| Compact bisect controls | Approved and implemented; automated/Chromium verification passed | On 2026-10-11: 1,024 tests including builds, quality (293 files / 2,783 functions) and 68 Chromium scenarios passed. Minimize / Expand exposes ready-only good/bad decisions, current step/hash, progress/errors, neutral focus and one-time result reveal. Native progression, dirty guards, undo, restoration, accessible names, keyboard traversal and narrow-panel layout verified with a simulated extension transport. [Focused record](../2.build/features/1.7.4-bug-bisect-compact-controls-proposal.md) contains evidence and manual steps. Graphify and diff whitespace checks passed; focused manual Extension Host smoke remains pending. |
 | Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
 
 Before publication, rollback is a scoped revert of the 1.7.4 metadata/documentation

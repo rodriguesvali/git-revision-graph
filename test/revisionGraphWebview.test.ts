@@ -3985,8 +3985,8 @@ function createWebviewRuntime(options: { deferFrames?: boolean } = {}) {
       return this.attributes.get(name) ?? null;
     }
 
-    contains(): boolean {
-      return false;
+    contains(node: unknown): boolean {
+      return this === node || this.children.some(child => child.contains(node));
     }
 
     focus(): void {
@@ -4167,6 +4167,7 @@ function createWebviewRuntime(options: { deferFrames?: boolean } = {}) {
   const runtimeApi = require(runtimeModulePath) as Record<string, any>;
 
   return {
+    activeElement: () => document.activeElement as MockElement | null,
     flushFrames() {
       for (let turn = 0; frames.size && turn < 20; turn++) {
         const pending = [...frames.values()];
@@ -4183,6 +4184,101 @@ function createWebviewRuntime(options: { deferFrames?: boolean } = {}) {
     windowListeners
   };
 }
+
+function createCompactBisectRuntime() {
+  const runtime = createWebviewRuntime();
+  runtime.context.handleHostMessage({ type: 'init-state', state: createReadyGraphState() });
+  const state = { id: 'compact-test', version: 1, repositoryPath: '/workspace/repo', status: 'preparing',
+    selected: { hash: 'a'.repeat(40), subject: 'Good endpoint' }, original: { hash: 'b'.repeat(40), subject: 'Bad endpoint' },
+    swapped: false, candidates: [], history: [], mergeBaseCheck: false, busy: false };
+  const banner = runtime.createdElements.find(node => node.className === 'bisect-banner')!;
+  const backdrop = runtime.createdElements.find(node => node.className === 'bisect-backdrop')!;
+  const button = (key: string, parent = banner) => parent.querySelectorAll().find(node => node.dataset.bisectAction === key);
+  const click = (key: string, parent = banner) => {
+    const target = button(key, parent); assert.ok(target, key);
+    if (!target.disabled) target.listeners.click[0]();
+  };
+  const send = (extra: Record<string, unknown> = {}) => runtime.context.handleHostMessage({ type: 'bisect-state',
+    repositoryPath: state.repositoryPath, state: { ...state, ...extra }, reveal: false });
+  send();
+  return { runtime, state, banner, backdrop, button, click, send,
+    text: () => banner.querySelectorAll().map(node => node.textContent).join(' ') };
+}
+
+test('compact bisect controls appear only for a current test revision and use Minimize and Expand labels', () => {
+  const ui = createCompactBisectRuntime();
+  assert.equal(ui.button('hide', ui.backdrop)?.textContent, 'Minimize');
+  ui.click('hide', ui.backdrop);
+  assert.equal(ui.button('expand')?.textContent, 'Expand');
+  assert.equal(ui.button('stop:')?.textContent, 'Cancel');
+  assert.equal(ui.button('good:'), undefined);
+  ui.send({ status: 'testing' });
+  assert.equal(ui.button('good:'), undefined, 'no answer is possible without a current commit');
+  ui.send({ status: 'testing', current: ui.state.selected });
+  assert.equal(ui.button('good:')?.disabled, false);
+  assert.equal(ui.button('bad:')?.disabled, false);
+  assert.equal(ui.button('skip:'), undefined, 'skip stays in the expanded dialog');
+  assert.match(ui.text(), /Step 1.*aaaaaaa/);
+});
+
+test('compact bisect answers bind the displayed question, block duplicate submissions and retain neutral focus on updates', () => {
+  const ui = createCompactBisectRuntime();
+  ui.send({ status: 'testing', current: ui.state.selected }); ui.click('hide', ui.backdrop);
+  const oldAnswer = ui.button('good:')!; oldAnswer.focus();
+  ui.click('good:');
+  assert.equal(ui.runtime.postedMessages.at(-1).action, 'good');
+  assert.equal(ui.runtime.postedMessages.at(-1).version, 1);
+  assert.equal(ui.button('good:')?.disabled, true);
+  assert.equal(ui.button('bad:')?.disabled, true);
+  assert.match(ui.text(), /Updating search/);
+  assert.equal(ui.runtime.activeElement(), ui.button('expand'));
+  oldAnswer.listeners.click[0]();
+  assert.equal(ui.runtime.postedMessages.filter(message => message.type === 'bisect-control').length, 1);
+  ui.send({ version: 2, status: 'testing', current: ui.state.original });
+  assert.equal(ui.backdrop.hidden, true, 'the next step stays minimized');
+  assert.match(ui.text(), /bbbbbbb/);
+  oldAnswer.listeners.click[0]();
+  assert.equal(ui.runtime.postedMessages.filter(message => message.type === 'bisect-control').length, 1, 'a detached old answer must not classify the new question');
+  assert.notEqual(ui.runtime.activeElement(), ui.button('good:'));
+  ui.click('bad:');
+  assert.equal(ui.runtime.postedMessages.at(-1).action, 'bad');
+  assert.equal(ui.runtime.postedMessages.at(-1).version, 2);
+});
+
+test('compact bisect exposes blocking feedback while leaving expanded recovery accessible', () => {
+  const ui = createCompactBisectRuntime();
+  ui.send({ status: 'testing', current: ui.state.selected }); ui.click('hide', ui.backdrop);
+  ui.send({ status: 'testing', current: ui.state.selected, busy: true });
+  assert.equal(ui.button('good:')?.disabled, true);
+  assert.equal(ui.button('expand')?.disabled, false);
+  assert.match(ui.text(), /Updating search/);
+  ui.send({ status: 'testing', current: ui.state.selected, error: 'Resolve changes before switching revisions' });
+  assert.equal(ui.button('bad:')?.disabled, true);
+  assert.match(ui.text(), /Search blocked/);
+  ui.click('expand');
+  assert.equal(ui.backdrop.hidden, false);
+  assert.ok(ui.button('retry:', ui.backdrop));
+});
+
+test('compact bisect expands each completed search once after busy state settles and removes the banner at session end', () => {
+  for (const status of ['found', 'inconclusive', 'outside']) {
+    const ui = createCompactBisectRuntime();
+    ui.send({ status: 'testing', current: ui.state.selected }); ui.click('hide', ui.backdrop);
+    ui.send({ status, busy: true, candidates: [ui.state.original] });
+    assert.equal(ui.backdrop.hidden, true);
+    assert.equal(ui.button('good:'), undefined);
+    ui.send({ status, candidates: [ui.state.original] });
+    assert.equal(ui.backdrop.hidden, false, 'completion opens the result');
+    ui.click('hide', ui.backdrop); ui.send({ status, version: 2, candidates: [ui.state.original] });
+    assert.equal(ui.backdrop.hidden, true, 'ordinary result updates must not reopen it');
+    ui.send({ status: 'testing', version: 3, current: ui.state.selected });
+    ui.send({ status, version: 4, candidates: [ui.state.original] });
+    assert.equal(ui.backdrop.hidden, false, 'a result after undo is a new completion');
+    ui.runtime.context.handleHostMessage({ type: 'bisect-state', repositoryPath: ui.state.repositoryPath, state: null, reveal: false });
+    assert.equal(ui.banner.hidden, true);
+    assert.equal(ui.backdrop.hidden, true);
+  }
+});
 
 test('renders a programmatically centered offscreen commit without waiting for native scroll events', () => {
   const runtime = createWebviewRuntime({ deferFrames: true });

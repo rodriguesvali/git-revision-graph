@@ -68,6 +68,7 @@
     "src/revisionGraph/webview/runtime/flowConfigUi.ts",
     "src/revisionGraph/webview/runtime/centerHeadToolbarUi.ts",
     "src/revisionGraph/webview/runtime/hostState.ts",
+    "src/revisionGraph/webview/runtime/bisectBanner.ts",
     "src/revisionGraph/webview/runtime/bisectDialog.ts",
     "src/revisionGraph/webview/runtime/bisectValidation.ts",
     "src/revisionGraph/webview/runtime/hostMessages.ts",

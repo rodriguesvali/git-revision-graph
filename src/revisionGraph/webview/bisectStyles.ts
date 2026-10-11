@@ -9,7 +9,11 @@ export function renderBisectStyles(): string {
       padding: 10px 14px; border: 1px solid var(--vscode-focusBorder);
       background: var(--vscode-editorWidget-background); box-shadow: 0 4px 16px var(--vscode-widget-shadow); }
     .bisect-banner[hidden], .bisect-backdrop[hidden] { display: none; }
-    .bisect-banner span { flex: 1; min-width: 160px; overflow-wrap: anywhere; }
+    .bisect-banner-context { flex: 1; min-width: min(160px, 100%); overflow-wrap: anywhere; }
+    .bisect-banner[data-error="true"] { border-color: var(--vscode-inputValidation-warningBorder); }
+    .bisect-banner-status { display: block; color: var(--vscode-descriptionForeground); font-size: 12px; margin-top: 4px; }
+    .bisect-banner-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bisect-banner button { border-radius: 4px; }
     .bisect-backdrop { position: fixed; inset: 0; z-index: 90; display: grid;
       place-items: center; padding: 16px; background: rgba(0, 0, 0, .35); }
     .bisect-dialog { width: min(600px, 100%); max-height: calc(100vh - 32px); overflow: auto;
@@ -30,7 +34,7 @@ export function renderBisectStyles(): string {
     .bisect-primary { color: var(--vscode-button-foreground); background: var(--vscode-button-background); }
     .bisect-primary:hover { background: var(--vscode-button-hoverBackground); }
     .bisect-dialog :focus-visible, .bisect-banner :focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
-    .bisect-dialog button:disabled { opacity: .5; cursor: default; }
+    .bisect-dialog button:disabled, .bisect-banner button:disabled { opacity: .5; cursor: default; }
     .bisect-status { min-height: 20px; margin: 12px 0; }
     .bisect-error { padding: 10px; border-left: 3px solid var(--vscode-inputValidation-warningBorder);
       background: var(--vscode-inputValidation-warningBackground); overflow-wrap: anywhere; }
@@ -40,6 +44,11 @@ export function renderBisectStyles(): string {
     .bisect-history li { margin: 8px 0; overflow-wrap: anywhere; }
     .bisect-footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
     @media (max-width: 420px) { .bisect-backdrop { padding: 8px; }
+      .bisect-banner { padding: 8px 10px; left: 8px; gap: 6px;
+        max-height: calc(100vh - var(--graph-top-offset) - 24px); overflow: auto; }
+      .bisect-banner-context { flex-basis: 100%; }
+      .bisect-banner-actions { flex: 1; }
+      .bisect-banner-actions button { flex: 1; }
       .bisect-dialog { padding: 14px; max-height: calc(100vh - 16px); }
       .bisect-decisions { flex-direction: column; align-items: stretch; }
       .bisect-decisions button { width: 100%; } }

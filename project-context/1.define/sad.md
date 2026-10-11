@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-10-10
+Last consolidated: 2026-10-11
 
 ## Context
 
@@ -20,6 +20,9 @@ Last consolidated: 2026-10-10
   reference after repository overlay, with a bounded read-only supplement for
   omitted commits. Projection pins it across configured scopes/focus; the browser
   maps its actions to the commit hash and centers changes without Git ref writes.
+  Browser-local `bisectBanner.ts` owns compact eligibility, responsive presentation
+  and one-time result reveal; `bisectDialog.ts` binds both presentations to the
+  same validated session actions. No parallel session or persistence is added.
 - `package.json` defines the published extension surface, contributed commands, Source Control toolbar entry, settings, extension dependency on `vscode.git`, and packaging scripts.
 - `src/extension.ts` owns activation, Git API acquisition, command registration, document content providers, and shared presenter/service construction.
 - `src/revisionGraphPanel.ts` exposes the revision graph editor panel entrypoints.
