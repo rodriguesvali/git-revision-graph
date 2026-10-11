@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Search
 
+- Refresh visible graph nodes after automatic centering and anchor repeated
+  layout updates to Bisect Commit so a step does not require a manual scroll
+  gesture to appear.
+- Keep the current test revision visible and highlighted as **Bisect Commit**,
+  center it on each step and remove the visual marker when the search ends.
 - Start a guided Git bisect from any graph reference or single Show Log commit
   against HEAD. Test revisions with Bug absent, Bug present or Cannot test; hide
   and resume the dialog, undo answers, inspect candidates and return to the

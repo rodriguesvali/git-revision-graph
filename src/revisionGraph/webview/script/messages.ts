@@ -315,7 +315,7 @@
     function assertRevisionGraphWebviewRefKind(
       kind: RevisionGraphWebviewTargetKind,
       action: string
-    ): asserts kind is RevisionGraphWebviewRefKind {
+    ): asserts kind is Exclude<RevisionGraphWebviewRefKind, 'bisect'> {
       if (kind === 'commit') {
         throw new Error(`Cannot ${action} for revision graph target kind: ${kind}`);
       }

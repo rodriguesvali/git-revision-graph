@@ -91,6 +91,10 @@ Hide the dialog while using editors or terminals and resume from the graph banne
 **Undo last answer** corrects the preceding decision. Skipped revisions can leave
 several possible culprits.
 
+During the search, **Bisect Commit** marks the checked-out test revision in the
+graph, remains visible through scope/focus filters and centers on each new step.
+The marker is visual only and disappears when the search ends.
+
 The chosen repository must have no staged, unstaged, untracked or conflicted files,
 and its open files must be saved before switching revisions. Other workspace
 repositories do not block the search. Finishing or stopping returns to the original

@@ -4,6 +4,7 @@ const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
     const vscode = acquireRevisionGraphWebviewApi();
     const bisectDialog = createBisectDialog(vscode.postMessage.bind(vscode));
+    const bisectMarkerViewport = createRevisionGraphBisectMarkerViewport();
     const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
     const {
       viewControls, viewport, canvas, sceneLayer, graphSvg, edgeLayer, nodeLayer,
@@ -804,9 +805,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         readonly invalidateRemoteTagState?: boolean;
       } = {}
     ) {
-      if (!nextState) {
-        return;
-      }
+      if (!nextState) return;
 
       bisectDialog.setRepository(nextState.repositoryPath);
       const previousRepositoryPath = currentState && currentState.repositoryPath ? currentState.repositoryPath : null;
@@ -903,6 +902,8 @@ const VIEWPORT_PADDING_LEFT = 18;
           } else if (shouldRecenter && !shouldPrecenterViewport) {
             centerGraphInViewport();
           }
+          bisectMarkerViewport.update(nextState.repositoryPath, references, centerNodeInViewport);
+          scheduleVirtualSceneRender('viewport-settled');
         }, viewportSnapshot ? 'action=restore' : shouldPrecenterViewport ? 'action=precentered' : shouldRecenter ? 'action=recenter' : 'action=none');
       });
     }
@@ -1157,13 +1158,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     }
 
     function isReferenceVisible(reference: { readonly id: string; readonly hash: string; readonly name: string; readonly kind: string } | null): boolean {
-      if (!reference) {
-        return false;
-      }
-      if (!isFlowGovernanceActive()) {
-        return true;
-      }
-      return true;
+      return reference !== null;
     }
 
     function getVisibleReferences() {
@@ -1658,25 +1653,11 @@ const VIEWPORT_PADDING_LEFT = 18;
         return null;
       }
 
-      return {
-        id: reference.id,
-        hash: reference.hash,
-        name: reference.name,
-        revision: reference.name,
-        label: reference.name,
-        kind: reference.kind
-      };
+      return createRevisionGraphWebviewReferenceTarget(reference);
     }
 
     function getSelectableTargets(): RevisionGraphWebviewSelectionTarget[] {
-      const refTargets: RevisionGraphWebviewSelectionTarget[] = getVisibleReferences().map((reference) => ({
-        id: reference.id,
-        hash: reference.hash,
-        name: reference.name,
-        revision: reference.name,
-        label: reference.name,
-        kind: reference.kind
-      }));
+      const refTargets: RevisionGraphWebviewSelectionTarget[] = getVisibleReferences().map((reference) => createRevisionGraphWebviewReferenceTarget(reference));
       const commitTargets: RevisionGraphWebviewSelectionTarget[] = Array.from(sceneNodeByHash.values())
         .filter((node) => node.refs.length === 0)
         .map((node) => ({

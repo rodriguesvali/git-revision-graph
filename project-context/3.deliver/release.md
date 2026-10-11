@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: `1.7.4` development cycle opened; `1.7.3` remains the published baseline
-Last consolidated: 2026-10-09
+Last consolidated: 2026-10-10
 
 ## Development cycle — 1.7.4
 
@@ -22,6 +22,9 @@ Historical evidence below applies to its recorded releases.
 | Release documentation | Cycle opened | CHANGELOG marks 1.7.4 as Unreleased; build index and deployment record updated. |
 | Show Log expanded-file change search | Implemented; automated verification passed | On 2026-10-09: 984 tests including build plus two added focused debounce/reset tests, quality (277 production files / 2,623 functions), 39 Linux platform checks and 13 minimum-version Chromium scenarios passed. Global propagation, edits/clears, stable actions and the edit/collapse race covered. Focused manual Extension Host smoke remains pending. |
 | Guided bug bisect | Approved and implemented; automated/Chromium verification passed | On 2026-10-09: 1,013 tests including build, quality (289 files / 2,753 functions), 39 platform checks, 33 graph Chromium scenarios and 14 Show Log scenarios passed. [Feature record](../2.build/features/1.7.4-bug-bisect-spec.md) includes chosen-repo guards, native history selection, recovery and original-HEAD restoration. Focused Extension Host smoke remains pending. |
+| Bisect Commit visual reference | Implemented; automated/Chromium verification passed | On 2026-10-10: 1,017 tests including build, quality (292 files / 2,774 functions), 39 platform checks and 40 graph Chromium scenarios passed. Marker remains visible through scope/focus/history limits, tracks the actual checkout, centers changed steps and disappears at session end without Git ref changes. CI benchmark passed (1,200 commits; projection 6.74 ms / layout 165.70 ms). Graphify update and diff whitespace checks passed. Full manual Extension Host smoke remains pending. |
+| Bisect viewport rendering regression | Fixed; automated/Chromium verification passed | On 2026-10-10: 1,019 tests including build, quality (292 files / 2,774 functions) and 41 Chromium scenarios passed. Two queued-frame regression tests failed before the fix and passed afterward; the production browser runtime now mounts distant test commits without native scroll events. CI benchmark passed (1,200 commits; projection 6.37 ms / layout 135.26 ms). Graphify update and diff whitespace checks passed. Full manual Extension Host smoke remains pending, including the reported Angular repository case. |
+| Bisect centering across repeated layouts | Fixed after maintainer reported continued failure; automated/Chromium verification passed | On 2026-10-10: 1,020 tests including builds, quality (292 files / 2,775 functions) and 41 Chromium session scenarios passed. An additional queued-frame test and read-only Angular graph fixture reproduced the loss of focus before the fix and passed afterward. Bisect Commit now owns the current HEAD anchor through repeated layouts; stable updates retain manual scrolling. Angular's captured checkout remained visible after Hide in both native-scroll and suppressed-scroll fixtures (1,416 / 1,199 nodes). CI benchmark passed (1,200 commits; projection 7.53 ms / layout 131.60 ms). Graphify update and diff whitespace checks passed. Manual Extension Host retesting remains pending. |
 | Packaging and clean-profile installation | Pending separate authorization | No 1.7.4 VSIX or installation evidence recorded. |
 | Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
 

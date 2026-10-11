@@ -21,3 +21,8 @@ real minimum-version Chromium checks. Keep manual Extension Host gaps explicit.
 
 The approved flow authorizes these implementation steps; no additional product
 surface, dependencies, Git history rewriting or Marketplace action is proposed.
+
+On 2026-10-10 the maintainer accepted a visual reference named exactly
+**Bisect Commit** to identify the current test checkout. Pin it during projection,
+supplement bounded snapshots only when necessary, center new steps and remove it
+when the session ends. Keep Git refs and existing scope/focus preferences intact.

@@ -107,6 +107,17 @@ function getScopeHashes(
   graph: CommitGraph,
   options: RevisionGraphProjectionOptions
 ): Set<string> {
+  const hashes = getConfiguredScopeHashes(graph, options);
+  for (const commit of graph.orderedCommits) {
+    if (commit.refs.some(ref => ref.kind === 'bisect')) hashes.add(commit.hash);
+  }
+  return hashes;
+}
+
+function getConfiguredScopeHashes(
+  graph: CommitGraph,
+  options: RevisionGraphProjectionOptions
+): Set<string> {
   if (options.descendantFocus) {
     const anchorHash = resolveRevisionHash(graph, options.descendantFocus.anchorRevision);
     if (anchorHash) {

@@ -62,7 +62,7 @@ function getRevisionGraphWebviewRemoteActionState(
   const published = !!headName && publishedNames.has(headName);
   return {
     canUseCurrentHeadRemote: !!head && !!upstreamName && published,
-    publishTarget: head && !published ? { ...head, revision: head.name, label: head.name } : undefined,
+    publishTarget: head && !published ? { ...head, kind: 'head' as const, revision: head.name, label: head.name } : undefined,
     upstreamLabel: upstreamName || 'upstream'
   };
 }

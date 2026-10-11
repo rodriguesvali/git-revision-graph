@@ -62,6 +62,30 @@ function createContextMenuPlan(
   });
 }
 
+test('treats Bisect Commit as a commit target and centers only when the marker or repository changes', () => {
+  const runtime = createWebviewRuntime();
+  const reference = { id: 'a::bisect::Bisect Commit', hash: 'a', kind: 'bisect', name: 'Bisect Commit' };
+  const target = runtime.context.createRevisionGraphWebviewReferenceTarget(reference);
+  assert.equal(target.label, 'Bisect Commit');
+  assert.equal(target.kind, 'commit');
+  assert.equal(target.revision, 'a');
+  assert.equal(target.name, 'a');
+  const plan = createContextMenuPlan(runtime, target);
+  assert.ok(plan.items.some((item: any) => item.action === 'show-log-target'));
+  assert.equal(plan.items.some((item: any) => ['checkout', 'delete-ref', 'copy-ref-name', 'publish-branch', 'merge'].includes(item.action)), false);
+  assert.equal(runtime.context.getRevisionGraphWebviewNodePresentationClass([reference]), 'node-bisect');
+  const viewport = runtime.context.createRevisionGraphBisectMarkerViewport();
+  const centered: string[] = [];
+  const center = (hash: string) => centered.push(hash);
+  viewport.update('/repo', [reference], center);
+  viewport.update('/repo', [reference], center);
+  viewport.update('/repo', [{ ...reference, hash: 'b' }], center);
+  viewport.update('/other', [{ ...reference, hash: 'b' }], center);
+  viewport.update('/other', [], center);
+  viewport.update('/other', [{ ...reference, hash: 'b' }], center);
+  assert.deepEqual(centered, ['a', 'b', 'b', 'b']);
+});
+
 test('renders the revision graph runtime as a nonce-protected external asset', () => {
   const html = renderRevisionGraphShellDocument(testAssets);
 
@@ -3882,7 +3906,9 @@ function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function createWebviewRuntime() {
+function createWebviewRuntime(options: { deferFrames?: boolean } = {}) {
+  let nextFrame = 1;
+  const frames = new Map<number, (timestamp: number) => void>();
 
   class MockElement {
     readonly listeners: Record<string, Array<(...args: any[]) => unknown>> = {};
@@ -4112,6 +4138,11 @@ function createWebviewRuntime() {
     window: windowObject,
     document,
     requestAnimationFrame: (callback: (timestamp: number) => void) => {
+      if (options.deferFrames) {
+        const id = nextFrame++;
+        frames.set(id, callback);
+        return id;
+      }
       callback(0);
       return 1;
     },
@@ -4136,6 +4167,14 @@ function createWebviewRuntime() {
   const runtimeApi = require(runtimeModulePath) as Record<string, any>;
 
   return {
+    flushFrames() {
+      for (let turn = 0; frames.size && turn < 20; turn++) {
+        const pending = [...frames.values()];
+        frames.clear();
+        pending.forEach(callback => callback(turn));
+      }
+      assert.equal(frames.size, 0, 'viewport frames must settle');
+    },
     context: runtimeApi,
     documentElement,
     createdElements,
@@ -4144,6 +4183,72 @@ function createWebviewRuntime() {
     windowListeners
   };
 }
+
+test('renders a programmatically centered offscreen commit without waiting for native scroll events', () => {
+  const runtime = createWebviewRuntime({ deferFrames: true });
+  const original = createReadyGraphState();
+  const state = createReadyGraphState({ baseCanvasWidth: 20000, baseCanvasHeight: 45000,
+    nodeLayouts: original.nodeLayouts.map(node => node.hash === 'feature1'
+      ? { ...node, defaultLeft: 16000, defaultTop: 40000 } : node) });
+  runtime.context.handleHostMessage({ type: 'init-state', state });
+  runtime.flushFrames();
+  assert.ok(!runtime.elements.get('nodeLayer')!.innerHTML.includes('data-node-hash="feature1"'));
+  runtime.context.centerNodeInViewport('feature1');
+  runtime.flushFrames();
+  assert.ok(runtime.elements.get('viewport')!.scrollLeft > 10000);
+  assert.ok(runtime.elements.get('nodeLayer')!.innerHTML.includes('data-node-hash="feature1"'), 'the new viewport must mount the centered commit without a scroll gesture');
+});
+
+test('renders each distant Bisect Commit step after the viewport settles while scroll events are absent', () => {
+  const runtime = createWebviewRuntime({ deferFrames: true });
+  const original = createReadyGraphState();
+  const layouts = original.nodeLayouts.map(node => node.hash === 'head1' ? node : {
+    ...node, defaultLeft: node.hash === 'sync1' ? 8000 : 16000, defaultTop: node.hash === 'sync1' ? 20000 : 40000
+  });
+  const step = (hash: string) => createReadyGraphState({ baseCanvasWidth: 20000, baseCanvasHeight: 45000,
+    sceneLayoutKey: hash, nodeLayouts: layouts,
+    scene: { ...original.scene, nodes: original.scene.nodes.map(node => node.hash === hash
+      ? { ...node, refs: [{ name: 'Bisect Commit', kind: 'bisect' }] } : node) },
+    references: [...original.references.filter(ref => ref.hash !== hash), { id: `${hash}::bisect::Bisect Commit`, hash, name: 'Bisect Commit', kind: 'bisect' }]
+  });
+  for (const hash of ['sync1', 'feature1', 'sync1']) {
+    runtime.context.handleHostMessage({ type: 'update-state', state: step(hash) });
+    runtime.flushFrames();
+    const markup = runtime.elements.get('nodeLayer')!.innerHTML;
+    assert.ok(markup.includes(`data-node-hash="${hash}"`), `test revision ${hash} must be mounted after automatic centering`);
+    assert.ok(markup.includes('Bisect Commit'));
+  }
+});
+
+test('keeps the checked-out bisect revision centered through repeated layout updates and preserves manual scrolling on stable updates', () => {
+  const runtime = createWebviewRuntime({ deferFrames: true });
+  const original = createReadyGraphState();
+  const marker = { id: 'feature1::bisect::Bisect Commit', hash: 'feature1', name: 'Bisect Commit', kind: 'bisect' };
+  const state = createReadyGraphState({ baseCanvasWidth: 20000, baseCanvasHeight: 45000,
+    currentHeadName: undefined,
+    nodeLayouts: original.nodeLayouts.map(node => node.hash === marker.hash
+      ? { ...node, defaultLeft: 16000, defaultTop: 40000 } : node),
+    scene: { ...original.scene, nodes: original.scene.nodes.map(node => node.hash === marker.hash
+      ? { ...node, refs: [marker] } : node) },
+    references: [...original.references, marker]
+  });
+  const update = (sceneLayoutKey: string) => runtime.context.handleHostMessage({ type: 'update-state', state: { ...state, sceneLayoutKey } });
+  const viewport = runtime.elements.get('viewport')!;
+  update('step'); runtime.flushFrames();
+  const centered = { left: viewport.scrollLeft, top: viewport.scrollTop };
+  assert.ok(centered.left > 10000 && centered.top > 30000);
+  for (const key of ['reloaded-layout', 'next-layout']) {
+    update(key); runtime.flushFrames();
+    assert.deepEqual({ left: viewport.scrollLeft, top: viewport.scrollTop }, centered, 'layout refresh must use the test revision instead of another HEAD reference');
+    assert.ok(runtime.elements.get('nodeLayer')!.innerHTML.includes('Bisect Commit'));
+  }
+  update('pending-layout'); update('latest-layout'); runtime.flushFrames();
+  assert.deepEqual({ left: viewport.scrollLeft, top: viewport.scrollTop }, centered);
+  viewport.scrollLeft = 8000; viewport.scrollTop = 20000;
+  update('latest-layout'); runtime.flushFrames();
+  assert.equal(viewport.scrollLeft, 8000, 'ordinary updates must retain manual scrolling');
+  assert.equal(viewport.scrollTop, 20000);
+});
 
 
 test('Flow preview summary keeps hierarchy, safe full-name disclosure and a separate live validation region', () => {

@@ -8,6 +8,7 @@ import { toErrorDetail, toOperationError } from '../errorDetail';
 import { handleWebviewMessageSafely } from '../webviewMessageBoundary';
 import { shouldPromptForGraphRepositoryOnOpen } from '../repositorySelection';
 import type { BugBisectSessions } from '../bugBisect/session';
+import { getBisectMarkerHash } from './bugBisectMarker';
 import {
   CompareResultsPresenter,
   RefActionServices
@@ -320,10 +321,7 @@ export class RevisionGraphController implements vscode.Disposable {
       }
     });
   }
-  private get currentRepository(): Repository | undefined {
-    return this.repositoryLifecycle.getCurrentRepository();
-  }
-
+  private get currentRepository(): Repository | undefined { return this.repositoryLifecycle.getCurrentRepository(); }
   async showBugBisect(repository: Repository, revision: string, prepareSession = true): Promise<void> {
     if (this.currentRepository !== repository || this.currentState.repositoryPath !== repository.rootUri.fsPath) {
       this.repositoryLifecycle.setCurrentRepository(repository);
@@ -333,8 +331,10 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   postBugBisect(root: string, state: RevisionGraphProtocol.BisectView | null, reveal = false): void {
-    if (root === this.currentRepository?.rootUri.fsPath) {
+    const repository = this.currentRepository;
+    if (repository && root === repository.rootUri.fsPath) {
       this.postHostMessage({ type: 'bisect-state', repositoryPath: root, state, reveal });
+      if (!state?.busy && getBisectMarkerHash(repository, state) !== this.currentState.references.find(ref => ref.kind === 'bisect')?.hash) void this.refresh();
     }
   }
 
@@ -500,7 +500,7 @@ export class RevisionGraphController implements vscode.Disposable {
           reusableSnapshot,
           signal,
           trace,
-          { flowGovernanceSettings }
+          { flowGovernanceSettings, bisect: this.bugBisect?.state(repositoryPath) }
         )
       : await buildReadyRevisionGraphViewStateBundle(
           this.currentRepository,
@@ -509,7 +509,7 @@ export class RevisionGraphController implements vscode.Disposable {
           this.resolveLimitPolicy(),
           signal,
           trace,
-          { flowGovernanceSettings }
+          { flowGovernanceSettings, bisect: this.bugBisect?.state(repositoryPath) }
         );
 
     if (!this.isRenderRequestCurrent(renderRequest)) {

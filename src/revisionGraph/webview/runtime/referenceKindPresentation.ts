@@ -6,6 +6,8 @@ interface RevisionGraphWebviewReferenceKindPresentation {
 
 // Reuses the neutral reference shapes already established by the Show Log surface.
 const REVISION_GRAPH_WEBVIEW_REFERENCE_KIND_PRESENTATIONS: Readonly<Record<string, RevisionGraphWebviewReferenceKindPresentation>> = {
+  bisect: { label: 'Bisect Commit', iconName: 'target',
+    svgBody: '<circle cx="8" cy="8" r="5.3"></circle><path d="M8 1v4M8 11v4M1 8h4M11 8h4"></path>' },
   head: {
     label: 'HEAD',
     iconName: 'target',

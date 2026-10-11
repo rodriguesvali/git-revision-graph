@@ -49,6 +49,7 @@ function getRevisionGraphWebviewNodePresentationClass(
   }
 
   const kinds = new Set(references.map((reference) => reference.kind));
+  if (kinds.has('bisect')) return 'node-bisect';
   if (kinds.size === 1 && kinds.has('head')) {
     return 'node-head';
   }

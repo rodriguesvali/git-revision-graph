@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 Status: Active
-Last consolidated: 2026-10-09
+Last consolidated: 2026-10-10
 
 ## Product
 
@@ -25,6 +25,8 @@ published baseline and readiness evidence are recorded in `project-context/3.del
   good/bad/skip testing and undo; finishing restores the original revision. Cleanliness
   applies only to that repository, including unsaved editor files. External state
   mismatches pause the search and never reset an unowned native bisect session.
+  A temporary visual reference named **Bisect Commit** keeps the current checkout
+  visible through graph filters, highlights it and centers each new test step.
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.

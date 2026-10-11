@@ -1,5 +1,7 @@
 export function renderBisectStyles(): string {
   return `
+    .node.node-bisect { border: 2px solid var(--vscode-focusBorder); }
+    .ref-line.kind-bisect { color: var(--vscode-button-foreground); background: var(--vscode-button-background); font-weight: 600; }
     .bisect-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden;
       clip-path: inset(50%); white-space: nowrap; }
     .bisect-banner { position: fixed; bottom: 16px; left: 16px; right: 16px;

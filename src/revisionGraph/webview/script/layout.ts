@@ -185,12 +185,12 @@ type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTra
         paddingLeft: VIEWPORT_PADDING_LEFT,
         paddingTop: VIEWPORT_PADDING_TOP
       });
-      const nextScrollLeft = nextPosition.scrollLeft;
-      const nextScrollTop = nextPosition.scrollTop;
+      const { scrollLeft: nextScrollLeft, scrollTop: nextScrollTop } = nextPosition;
       const shouldScroll = shouldScrollRevisionGraphWebviewViewport(viewport, nextScrollLeft, nextScrollTop);
       traceWebviewPhase('webview.viewport-frame.scroll', () => {
         scrollRevisionGraphWebviewViewportTo(viewport, nextScrollLeft, nextScrollTop);
       }, shouldScroll ? 'action=scroll' : 'action=skip');
+      scheduleVirtualSceneRender('center');
       if (options.syncMinimap !== false) {
         syncMinimap('viewport');
       }
@@ -276,7 +276,7 @@ type RevisionGraphWebviewLegacyMinimapTransform = RevisionGraphWebviewMinimapTra
     }
 
     function getCurrentHeadNodeHash() {
-      const headReference =
+      const headReference = references.find((ref) => ref.kind === 'bisect') ||
         references.find((ref) => ref.kind === 'head') ||
         references.find((ref) => currentHeadName && ref.name === currentHeadName) ||
         null;

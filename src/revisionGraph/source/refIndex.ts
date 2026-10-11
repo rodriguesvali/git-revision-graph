@@ -41,6 +41,8 @@ function toRevisionGraphRefKind(type: RefType): RevisionGraphRef['kind'] {
 
 function getRefKindPriority(kind: RevisionGraphRef['kind']): number {
   switch (kind) {
+    case 'bisect':
+      return -1;
     case 'head':
       return 0;
     case 'branch':

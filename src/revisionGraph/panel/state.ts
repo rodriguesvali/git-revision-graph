@@ -35,6 +35,8 @@ import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, 
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 import type { FlowGovernanceSettings } from '../flow';
 import { loadRevisionGraphReadyStateMetadata } from './readyMetadata';
+import { applyBisectGraphMarker } from '../bugBisectMarker';
+import { sortRevisionGraphRefs } from './refOrdering';
 
 const REVISION_GRAPH_SCENE_LAYOUT_KEY_VERSION = 'fanout-balance-v1';
 
@@ -50,6 +52,7 @@ export interface RevisionGraphRepositoryOverlay {
 }
 
 export interface RevisionGraphViewStateBuildContext {
+  readonly bisect?: RevisionGraphProtocol.BisectView | null;
   readonly repositoryRefs?: readonly Ref[] | PromiseLike<readonly Ref[]>;
   readonly repositoryRefsSource?: RevisionGraphRepositoryRefsSource | PromiseLike<RevisionGraphRepositoryRefsSource>;
   readonly flowGovernanceSettings?: FlowGovernanceSettings;
@@ -156,12 +159,13 @@ async function buildReadyRevisionGraphViewStateFromOverlayedSnapshot(
   context?: RevisionGraphViewStateBuildContext
 ): Promise<RevisionGraphViewState> {
   const projectionStartedAt = nowMs();
-  const projection = projectMajorOperationsGraph(snapshot.graph, projectionOptions);
+  const graph = await applyBisectGraphMarker(snapshot.graph, repository, context?.bisect, signal);
+  const projection = projectMajorOperationsGraph(graph, projectionOptions);
   const automaticLayoutProfile = projectionOptions.layoutPreference === 'auto' ? getProjectedGraphLayoutProfile(projection) : undefined;
   traceDuration(trace, 'state.projectGraph', projectionStartedAt, `nodes=${projection.nodes.length}; edges=${projection.edges.length}`);
-  const scene = await buildRevisionGraphScene(snapshot.graph, projection, trace, signal);
+  const scene = await buildRevisionGraphScene(graph, projection, trace, signal);
   const ancestorsStartedAt = nowMs();
-  const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(snapshot.graph, scene);
+  const primaryAncestorNextByHash = buildPrimaryAncestorNextByHash(graph, scene);
   traceDuration(
     trace,
     'state.primaryAncestorNext',
@@ -619,34 +623,6 @@ function pushRef(
   }
 }
 
-function sortRevisionGraphRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {
-  const dedupedRefs = coalesceHeadBranchRefs(refs);
-  return [...dedupedRefs].sort((left, right) => {
-    const priority = getRevisionGraphRefPriority(left.kind) - getRevisionGraphRefPriority(right.kind);
-    if (priority !== 0) {
-      return priority;
-    }
-
-    const family = getRevisionGraphRefFamilyKey(left).localeCompare(getRevisionGraphRefFamilyKey(right));
-    return family !== 0 ? family : left.name.localeCompare(right.name);
-  });
-}
-
-function getRevisionGraphRefPriority(kind: RevisionGraphRef['kind']): number {
-  switch (kind) {
-    case 'head':
-      return 0;
-    case 'branch':
-      return 1;
-    case 'remote':
-      return 2;
-    case 'stash':
-      return 3;
-    case 'tag':
-      return 4;
-  }
-}
-
 function seedSupplementalRefsByHash(
   sourceNodes: readonly { readonly hash: string; readonly refs: readonly RevisionGraphRef[] }[],
   projectionOptions: RevisionGraphViewState['projectionOptions']
@@ -661,20 +637,6 @@ function seedSupplementalRefsByHash(
   }
 
   return refsByHash;
-}
-
-function coalesceHeadBranchRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {
-  const headNames = new Set(refs.filter((ref) => ref.kind === 'head').map((ref) => ref.name));
-  return refs.filter((ref) => !(ref.kind === 'branch' && headNames.has(ref.name)));
-}
-
-function getRevisionGraphRefFamilyKey(ref: RevisionGraphRef): string {
-  if (ref.kind === 'remote') {
-    const slashIndex = ref.name.indexOf('/');
-    return slashIndex >= 0 ? ref.name.slice(slashIndex + 1) : ref.name;
-  }
-
-  return ref.name;
 }
 
 function areRevisionGraphRefsEqual(

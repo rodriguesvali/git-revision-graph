@@ -120,6 +120,8 @@ function toFullRefName(ref: Pick<RevisionGraphViewReference, 'kind' | 'name'>): 
   }
 
   switch (ref.kind) {
+    case 'bisect':
+      return undefined;
     case 'head':
     case 'branch':
       return `refs/heads/${ref.name}`;

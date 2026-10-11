@@ -61,6 +61,7 @@ export function buildCommitGraphWithSimplification(
 
 function sortRefs(refs: readonly RevisionGraphRef[]): RevisionGraphRef[] {
   const rank: Record<RevisionGraphRef['kind'], number> = {
+    bisect: -1,
     head: 0,
     branch: 1,
     remote: 2,

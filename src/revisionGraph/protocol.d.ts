@@ -24,8 +24,8 @@ declare namespace RevisionGraphProtocol {
     readonly state: BisectView | null;
     readonly reveal: boolean;
   }
-  type RefKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash';
-  type TargetKind = RefKind | 'commit';
+  type RefKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash' | 'bisect';
+  type TargetKind = Exclude<RefKind, 'bisect'> | 'commit';
   type CheckoutRefKind = Extract<RefKind, 'head' | 'branch' | 'remote'>;
   type PublishBranchRefKind = Extract<RefKind, 'head' | 'branch'>;
   type DeletableRefKind = Extract<RefKind, 'branch' | 'remote' | 'tag'>;

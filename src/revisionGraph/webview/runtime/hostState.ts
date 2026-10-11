@@ -57,7 +57,7 @@ function isRevisionGraphWebviewHostReference(value: unknown): value is RevisionG
 }
 
 function isRevisionGraphWebviewRefKind(value: unknown): value is RevisionGraphWebviewRefKind {
-  return value === 'head' || value === 'branch' || value === 'remote' || value === 'tag' || value === 'stash';
+  return value === 'head' || value === 'branch' || value === 'remote' || value === 'tag' || value === 'stash' || value === 'bisect';
 }
 
 function isStringArray(value: unknown): value is readonly string[] {
