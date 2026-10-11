@@ -657,7 +657,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /function postStashPop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashPopMessage\(target\)\);/s);
   assert.match(html, /function postStashDrop\(target\) \{\s*vscode\.postMessage\(createRevisionGraphStashDropMessage\(target\)\);/s);
   assert.match(html, /appendFlowGovernanceActions\(getFlowBranchInfo\(target\.name\), target\);/);
-  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'hotfix'\)\) \}\s*\);/s);
+  assert.match(html, /if \(flowBranch\.kind === 'main'\) \{\s*entries\.push\(\s*\{ label: 'Start New Release', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'release'\)\) \},\s*\{ label: 'Start New Feature', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)\) \},\s*\{ label: 'Start New Package', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'package'\)\) \},\s*\{ label: 'Start New Hot Fix', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'hotfix'\)\) \}\s*\);/s);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Task[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'task'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Package[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'package'\)/);
   assert.match(html, /flowBranch\.kind === 'feature'[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
@@ -665,6 +665,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Start New Feature[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)[\s\S]*?Start New Package[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'package'\)[\s\S]*?Start New Task[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'task'\)[\s\S]*?Start New Bug[\s\S]*?createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)/);
   assert.match(html, /flowBranch\.kind === 'release'[\s\S]*?Prepare Equalization[\s\S]*?showFlowEqualizationForm\(target\)/);
   assert.match(html, /appendMenuSubmenu\('Flow Governance', entries\);/);
+  assert.match(html, /flowBranch\.kind === 'package'\) \{\s*entries\.push\(\s*\{ label: 'Start New Feature', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'feature'\)\) \},\s*\{ label: 'Start New Bug', onClick: \(\) => vscode\.postMessage\(createRevisionGraphPrepareStartFlowBranchMessage\(target, 'bug'\)\) \}\s*\);\s*\}/s);
   assert.match(html, /let remoteTagPublicationState = new Map\(\);/);
   assert.match(html, /let pendingRemoteTagStateRequests = new Set\(\);/);
   assert.match(html, /case 'set-remote-tag-state':\s*setRemoteTagState\(message\.tagName, message\.state\);/);
@@ -685,6 +686,34 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /right: -10px;/);
   assert.match(html, /transform: translate\(100%, -50%\);/);
   assert.doesNotMatch(html, /base-suffix/);
+});
+
+test('main Flow Governance menu starts Package and retains existing actions', () => {
+  for (const sourceRefName of ['main', 'master', 'Latam/Main']) {
+    const runtime = createWebviewRuntime();
+    runtime.context.appendFlowGovernanceActions({ refName: sourceRefName, kind: 'main' }, createContextMenuTarget('head', sourceRefName));
+    const actions = runtime.createdElements.filter(element => element.attributes.get('role') === 'menuitem' && element.textContent);
+    assert.deepEqual(actions.map(element => element.textContent), ['Start New Release', 'Start New Feature', 'Start New Package', 'Start New Hot Fix']);
+    actions.find(element => element.textContent === 'Start New Package')!.listeners.click[0]({ detail: 1 });
+    assert.deepEqual(runtime.postedMessages.at(-1), { type: 'start-flow-branch', phase: 'prepare', branchKind: 'package', sourceRefName });
+  }
+});
+
+test('package Flow Governance menu offers Feature and Bug and routes the selected source', () => {
+  for (const sourceRefName of ['package', 'package/payment', 'Latam/Package/payment']) {
+    const runtime = createWebviewRuntime();
+    const target = createContextMenuTarget('branch', sourceRefName);
+    runtime.context.appendFlowGovernanceActions({ refName: sourceRefName, kind: 'package' }, target);
+    const actions = runtime.createdElements.filter(element => element.attributes.get('role') === 'menuitem' && element.textContent);
+    assert.deepEqual(actions.map(element => element.textContent), ['Start New Feature', 'Start New Bug']);
+    for (const action of actions) {
+      action.listeners.click[0]({ detail: 1 });
+    }
+    assert.deepEqual(runtime.postedMessages.slice(-2), [
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'feature', sourceRefName },
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'bug', sourceRefName }
+    ]);
+  }
 });
 
 test('builds context menu policies for branches, stashes, and remote tags', () => {

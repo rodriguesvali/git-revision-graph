@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.4 - Unreleased
 
+### Flow Governance
+
+- Start Package branches from main using the existing exact-sync preflight and
+  governed creation form.
+- Start Feature and Bug branches from a classified package branch, using the
+  existing creation forms and source synchronization checks.
+
 ### Bug Search
 
 - Use **Minimize** / **Expand** to answer Bug absent or Bug present from the compact

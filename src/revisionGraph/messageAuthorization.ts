@@ -280,13 +280,13 @@ function isAllowedFlowStartSourceKind(
     return sourceKind === 'feature' || sourceKind === 'release';
   }
   if (branchKind === 'package') {
-    return sourceKind === 'feature' || sourceKind === 'release';
+    return sourceKind === 'main' || sourceKind === 'feature' || sourceKind === 'release';
   }
   if (branchKind === 'bug') {
-    return sourceKind === 'release' || sourceKind === 'feature';
+    return sourceKind === 'release' || sourceKind === 'feature' || sourceKind === 'package';
   }
   if (branchKind === 'feature') {
-    return sourceKind === 'main' || sourceKind === 'release';
+    return sourceKind === 'main' || sourceKind === 'release' || sourceKind === 'package';
   }
   return sourceKind === 'main';
 }

@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-09
+Last consolidated: 2026-10-11
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,6 +11,10 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.4-package-start-from-main.md`: Package creation from classified main
+  sources, with existing exact-sync preflight and governed form guards.
+- `1.7.4-flow-start-from-package.md`: Feature and Bug creation from classified
+  package sources; existing forms, preflights and host authorization retained.
 - `1.7.4-bug-bisect-spec.md`: approved and implemented manual bug search from graph
   references or Show Log commits against HEAD; recoverable step dialog, chosen-repo
   clean-worktree guards and original-HEAD restoration. Automated/Chromium checks

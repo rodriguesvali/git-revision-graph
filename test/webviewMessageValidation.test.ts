@@ -15,6 +15,83 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Flow Governance authorizes package from main sources across form stages', () => {
+  for (const sourceRefName of ['main', 'master', 'Latam/Main']) {
+    const state: RevisionGraphViewState = {
+      ...createReadyRevisionGraphState(),
+      references: [{ id: 'main-ref', hash: 'main1', name: sourceRefName, kind: 'branch', title: sourceRefName }],
+      flowGovernance: {
+        enabled: true, configSource: 'repository', diagnostics: [], branchKinds: ['main'],
+        references: [{ refName: sourceRefName, kind: 'main', isEphemeral: false, diagnostics: [] }]
+      }
+    };
+    const action = { type: 'start-flow-branch', branchKind: 'package', sourceRefName, name: 'payment-validation', description: 'Validate payments' } as const;
+    const messages: RevisionGraphProtocol.Message[] = [
+      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'package', sourceRefName },
+      action,
+      { type: 'preview-flow-form', requestId: 1, repositoryPath: state.repositoryPath!, action: {
+        type: 'start-flow-branch', branchKind: 'package', sourceRefName, name: 'payment-validation'
+      } },
+      { type: 'submit-flow-form', requestId: 2, repositoryPath: state.repositoryPath!, action }
+    ];
+    for (const message of messages) {
+      assert.deepEqual(validateRevisionGraphMessage(message), message);
+      assert.equal(isRevisionGraphMessageAllowedForState(message, state), true, `${sourceRefName}: ${message.type}`);
+      assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, references: [] }), false);
+      assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, flowGovernance: { ...state.flowGovernance!, enabled: false } }), false);
+      for (const kind of ['package', 'task', 'bug', 'hotfix', 'unknown'] as const) {
+        assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, flowGovernance: {
+          ...state.flowGovernance!, references: [{ refName: sourceRefName, kind, isEphemeral: false, diagnostics: [] }]
+        } }), false);
+      }
+      assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/another-repo'), false);
+      if (message.type === 'preview-flow-form' || message.type === 'submit-flow-form') {
+        assert.equal(isRevisionGraphMessageAllowedForState({ ...message, repositoryPath: '/another-repo' }, state), false);
+      }
+    }
+  }
+});
+
+for (const branchKind of ['feature', 'bug'] as const) {
+  test(`Flow Governance authorizes ${branchKind} from classified package sources across form stages`, () => {
+    for (const sourceRefName of ['package', 'package/payment', 'Latam/Package/payment']) {
+      const state: RevisionGraphViewState = {
+        ...createReadyRevisionGraphState(),
+        references: [{ id: 'package-ref', hash: 'package1', name: sourceRefName, kind: 'branch', title: sourceRefName }],
+        flowGovernance: {
+          enabled: true, configSource: 'repository', diagnostics: [], branchKinds: ['package'],
+          references: [{ refName: sourceRefName, kind: 'package', isEphemeral: false, diagnostics: [] }]
+        }
+      };
+      const action = { type: 'start-flow-branch', branchKind, sourceRefName, name: '42-payment', description: 'Payment change' } as const;
+      const messages: RevisionGraphProtocol.Message[] = [
+        { type: 'start-flow-branch', phase: 'prepare', branchKind, sourceRefName },
+        action,
+        { type: 'preview-flow-form', requestId: 1, repositoryPath: state.repositoryPath!, action: {
+          type: 'start-flow-branch', branchKind, sourceRefName, name: '42-payment'
+        } },
+        { type: 'submit-flow-form', requestId: 2, repositoryPath: state.repositoryPath!, action },
+        { type: 'improve-flow-branch-text', requestId: 3, branchKind, sourceRefName, branchName: '42-payment', text: 'Payment change' }
+      ];
+      for (const message of messages) {
+        assert.deepEqual(validateRevisionGraphMessage(message), message);
+        assert.equal(isRevisionGraphMessageAllowedForState(message, state), true, `${sourceRefName}: ${message.type}`);
+        assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, references: [] }), false);
+        assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, flowGovernance: { ...state.flowGovernance!, enabled: false } }), false);
+        assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, flowGovernance: { ...state.flowGovernance!, references: [] } }), false);
+        assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/another-repo'), false);
+        assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, { ...state, loading: true }, state.repositoryPath), false);
+        if (message.type === 'preview-flow-form' || message.type === 'submit-flow-form') {
+          assert.equal(isRevisionGraphMessageAllowedForState({ ...message, repositoryPath: '/another-repo' }, state), false);
+        }
+      }
+      for (const otherKind of ['release', 'hotfix', 'task', 'package'] as const) {
+        assert.equal(isRevisionGraphMessageAllowedForState({ ...action, branchKind: otherKind }, state), false);
+      }
+    }
+  });
+}
+
 test('preview requests allow incomplete names but reject malformed or stale input', () => {
   const request = { type: 'preview-flow-form', requestId: 1, repositoryPath: '/workspace/repo', action: {
     type: 'start-flow-branch', branchKind: 'release', sourceRefName: 'main', name: ''

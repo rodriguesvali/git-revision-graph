@@ -252,7 +252,11 @@ expands them.
   available, model output never performs Git operations, and closing/changing forms or repositories
   cancels it.
 - Governed branch creation may offer immediate publication only after the local branch and its metadata are successfully created. Publication requires explicit confirmation, uses a normal Git API push with upstream tracking, and must leave the local branch intact when declined, canceled, unavailable, or failed.
-- Governed package creation starts only from an exactly synchronized feature. Pull Request target
+- Governed package creation starts from an exactly synchronized main, feature or release.
+  Feature and Bug creation also accepts known sources classified as package; the
+  existing feature exact-sync and bug not-behind preflights apply. Host authorization
+  checks source eligibility for preparation, preview, submission and AI text assistance.
+  Pull Request target
   metadata and package-to-feature handoff are no longer part of the active architecture.
 - Release and feature history should be archived once completed; durable conclusions should be promoted into this SAD or the PRD.
 

@@ -128,8 +128,8 @@ replacing normal Git Revision Graph behavior.
 
 - Display compact, theme-aware badges for main, release, feature, package, task, hotfix, bug, and
   synchronization branches.
-- Start releases and hotfixes from main, features from main or a release, packages from a feature or
-  release, tasks from a feature or release, and bugs from a feature or release.
+- Start releases and hotfixes from main, features from main, a release or a package, packages from
+  main, a feature or release, tasks from a feature or release, and bugs from a feature, release or package.
 - Run fetch-first readiness checks, synchronize safe behind-only sources after confirmation, preserve
   ahead-only work, and block divergent sources for manual reconciliation.
 - Prepare local `sync/*` equalization branches without automatic push and hand governed integrations

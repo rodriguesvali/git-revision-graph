@@ -36,6 +36,9 @@ published baseline and readiness evidence are recorded in `project-context/3.del
 - The graph supports range focus and descendant focus over the currently loaded snapshot. Descendant focus is remembered per repository in the workspace across panel and window reloads, until cleared or replaced by a scope/range choice.
 - Users can compare refs, compare with worktree, open unified diffs, inspect logs, checkout, create branches and tags, publish branches, push/delete tags, pull/push/sync the current branch, merge refs, abort conflicted merges, stash/apply/pop/drop, reset the current branch, restore worktree files, and delete local or supported remote refs.
 - The extension preserves native VS Code ergonomics for picks, confirmations, diff editors, Source Control handoff, notifications, and theming.
+- Flow Governance can start Feature and Bug branches from a classified package
+  source, reusing governed forms and existing source synchronization policies.
+  Package creation accepts main, feature or release sources.
 - AI assistance is optional and explicitly invoked: Compare Results can generate a bounded review briefing,
   while Flow Governance can improve existing PR and release-form text without replacing normal defaults.
 

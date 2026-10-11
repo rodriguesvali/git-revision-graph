@@ -656,6 +656,65 @@ test('Flow Governance starts a local feature branch from main', async () => {
   assert.match(informationMessages[0] ?? '', /Feature branch feature\/checkout-redesign was created/);
 });
 
+for (const kind of ['feature', 'bug'] as const) {
+  test(`Flow Governance preserves ${kind} source synchronization guards on package`, async () => {
+    for (const [ahead, behind] of [[0, 0], [2, 0], [0, 1], [2, 1]]) {
+      const sourceBranch = 'package/payment-validation';
+      const repository = createRepository({ root: '/workspace/repo',
+        head: createHead(sourceBranch, ahead, behind, { remote: 'origin', name: sourceBranch }) });
+      const confirmations: Array<{ readonly message: string; readonly confirmLabel: string }> = [];
+      const ready = await prepareFlowBranchStart(repository, { kind, sourceBranch }, createReleaseServices({ confirmations }));
+
+      assert.equal(ready, behind === 0 && (kind === 'bug' || ahead === 0));
+      assert.deepEqual(repository.calls.fetch, [{ remote: 'origin', ref: `refs/heads/${sourceBranch}:refs/remotes/origin/${sourceBranch}` }]);
+      assert.deepEqual(repository.calls.push, []);
+      assert.deepEqual(repository.calls.createBranch, []);
+      if (kind === 'feature' && ahead > 0 || behind > 0 && ahead === 0) {
+        assert.equal(confirmations[0]?.confirmLabel, 'Synchronize and Continue');
+      }
+    }
+  });
+
+  test(`Flow Governance creates and checks out a ${kind} from the selected package`, async () => {
+    const sourceBranch = 'package/payment-validation';
+    const repository = createRepository({ root: '/workspace/repo' });
+    const upstreamClears: string[] = [];
+    const refreshes: unknown[] = [];
+    const services = createReleaseServices({ upstreamClears, refreshes });
+    const descriptions: unknown[] = [];
+
+    const status = await startFlowBranch(repository, {
+      kind, sourceBranch, name: '42-payment', description: 'Payment change', config: DEFAULT_FLOW_CONFIG
+    }, services, { async setDescription(...args) { descriptions.push(args); } });
+
+    assert.equal(status, 'success');
+    assert.deepEqual(repository.calls.createBranch, [{ name: `${kind}/42-payment`, checkout: true, ref: sourceBranch }]);
+    assert.deepEqual(upstreamClears, [`${kind}/42-payment`]);
+    assert.deepEqual(descriptions, [['/workspace/repo', `${kind}/42-payment`, 'Payment change']]);
+    assert.deepEqual(repository.calls.push, []);
+    assert.equal(refreshes.length, 1);
+  });
+}
+
+test('Flow Governance starts and checks out a local package branch from main', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const upstreamClears: string[] = [];
+  const refreshes: unknown[] = [];
+  const descriptions: unknown[] = [];
+  const result = await startFlowBranch(repository, {
+    kind: 'package', sourceBranch: 'main', name: 'payment-validation',
+    description: 'Validate payments from main', config: DEFAULT_FLOW_CONFIG
+  }, createReleaseServices({ upstreamClears, refreshes }), {
+    async setDescription(...args) { descriptions.push(args); }
+  });
+  assert.equal(result, 'success');
+  assert.deepEqual(repository.calls.createBranch, [{ name: 'package/payment-validation', checkout: true, ref: 'main' }]);
+  assert.deepEqual(upstreamClears, ['package/payment-validation']);
+  assert.deepEqual(descriptions, [['/workspace/repo', 'package/payment-validation', 'Validate payments from main']]);
+  assert.deepEqual(repository.calls.push, []);
+  assert.equal(refreshes.length, 1);
+});
+
 test('Flow Governance starts a local package branch from its feature', async () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const informationMessages: string[] = [];
