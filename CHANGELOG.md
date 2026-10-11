@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.4 - Unreleased
+## 1.7.4 - 2026-10-11
 
 ### Tooltips
 
@@ -38,10 +38,6 @@ All notable changes to this project will be documented in this file.
 - Search expanded commit files with `change:` to identify files containing matching
   added or removed text. Automatically apply the active commit change search when
   expanding a result; edit or clear the inherited file filter as needed.
-
-### Maintenance
-
-- Open the 1.7.4 development cycle and align package and build metadata.
 
 ## 1.7.3 - 2026-10-04
 

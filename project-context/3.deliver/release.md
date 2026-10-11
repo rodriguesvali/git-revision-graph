@@ -1,25 +1,59 @@
 # Release Readiness
 
-Status: `1.7.4` development cycle opened; `1.7.3` remains the published baseline
+Status: `1.7.4` publication artifacts prepared; final smoke and VSIX gates pending; `1.7.3` remains published
 Last consolidated: 2026-10-11
 
-## Development cycle — 1.7.4
+## Release candidate — 1.7.4
 
 Opened on 2026-10-09 with explicit maintainer authorization to adjust the system
 version to `1.7.4`. Previous published baseline: `1.7.3`, confirmed by the maintainer
 on 2026-10-04. See the [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).
 
-Opening scope was package/build metadata and release documentation. The maintainer
-subsequently authorized [Show Log expanded-file change search](../2.build/features/1.7.4-show-log-expanded-change-search.md):
-support `change:` within expanded commits and propagate the active global query.
-Dependencies and contribution points are unchanged.
-Historical evidence below applies to its recorded releases.
+Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b` (2026-10-11).
+Comparison baseline: `574cdb9825bd52c843215a772582adbd76f3e9c9` (published 1.7.3
+documentation baseline). Publication artifact edits follow the source candidate.
+CHANGELOG is dated 2026-10-11 for the planned release; this is not publication
+confirmation. Dependencies, engine `^1.90.0` and contribution points are unchanged.
+
+Approved release scope:
+
+- [Guided bug bisect](../2.build/features/1.7.4-bug-bisect-spec.md) from graph refs
+  or Show Log commits against HEAD, chosen-repository cleanliness, persisted recovery,
+  original checkout restoration, Bisect Commit visibility and compact controls.
+- [Show Log expanded-file change search](../2.build/features/1.7.4-show-log-expanded-change-search.md),
+  with automatic propagation of the active global change/file query.
+- Flow Governance: [Feature/Bug from Package](../2.build/features/1.7.4-flow-start-from-package.md)
+  and [Package from Main](../2.build/features/1.7.4-package-start-from-main.md).
+- [One-second tooltip activation](../2.build/features/1.7.4-tooltip-delay.md) in the
+  graph and Show Log; existing cancellation retained.
+
+### Consolidated publication gates — 2026-10-11
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
-| Package metadata | Verified | Manifest, top-level lockfile and root package declare `1.7.4`; all other manifest and lockfile data match HEAD. |
+| Version and Marketplace metadata | Verified | Manifest, lockfile and lockfile root are 1.7.4; publisher is rodriguesvali. Compared to `574cdb9`, only version fields changed in package metadata. |
+| Source review | Complete | Three sequential main-agent reviews from `574cdb9` through `56b2476`, plus five bisect safety corrections committed as `6bd0d2a`. [Review record](../2.build/features/1.7.4-three-review-cycle.md). Later tooltip change committed as `e934ca1`. |
+| Final build/tests and quality | Passed on current source | Latest `npm test`: 1,039 tests passed with no skips/failures, including production and webview builds. Quality: 294 files / 2,786 functions. This run includes the final one-second tooltip change. |
+| Platform/browser coverage | Passed; scoped evidence | 39 Linux platform checks and 119 VS Code 1.90 Chromium scenarios passed during review; later tooltip constants were verified by the final build/tests. Browser fixtures are not full Extension Host smoke. |
+| Graph performance | Passed | Review-cycle CI fixture: 1,200 commits, projection 5.18 ms / layout 117.29 ms. Subsequent source changes affect only tooltip delays. |
+| Dependency audit | Passed | Fresh `npm audit --json` on 2026-10-11: zero vulnerabilities across all severities. No dependency changes made. |
+| Package file preview | Passed; no VSIX created | Initial preview exposed internal `tasks/plan.md` and `tasks/todo.md`. Added `tasks/**` to `.vscodeignore`; fresh production build and final `vsce ls` passed: 679 files, exactly the prior set minus those two planning files. Required extension, webview, layout worker, bisect and file-search assets remain present. Development paths, maps and old VSIX are excluded. This preview does not establish packaged byte identity. |
+| User/release documentation | Prepared | README, dated CHANGELOG, deployment record, active artifact index and candidate smoke matrix aligned. |
+| Final Extension Host smoke | Pending maintainer evidence | [Candidate matrix](extension-host-smoke-matrix.md) covers bisect, Show Log, Flow creation, tooltip timing and repository/lifecycle regressions. Record tested commit, operator, environment and result. Earlier UI acceptance does not establish all scenarios. |
+| VSIX inspection and installation | Pending | After authorized packaging, record filename, bytes, SHA-256, embedded identity/assets and clean-profile installation. No 1.7.4 VSIX exists in this workspace. |
+| Marketplace publication | Pending separate authorization | 1.7.3 remains published. Use the current-version publishing flow after remaining gates and record timestamp, source/tag and installed-version evidence. |
+
+### Implementation checkpoints
+
+The evidence below records implementation milestones; the consolidated gates
+above are the current publication status. Historical release sections retain
+their original evidence.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified | Manifest, top-level lockfile and root package declare `1.7.4`; all other manifest and lockfile data match baseline `574cdb9`. |
 | Automated verification | Passed for cycle opening | On 2026-10-09, `npm test` passed all 971 tests including build, with zero failures or skips; version consistency and `git diff --check` passed. |
-| Release documentation | Cycle opened | CHANGELOG marks 1.7.4 as Unreleased; build index and deployment record updated. |
+| Release documentation | Publication preparation recorded | Cycle opened with Unreleased notes; CHANGELOG now carries planned release date 2026-10-11. This does not confirm publication. |
 | Show Log expanded-file change search | Implemented; automated verification passed | On 2026-10-09: 984 tests including build plus two added focused debounce/reset tests, quality (277 production files / 2,623 functions), 39 Linux platform checks and 13 minimum-version Chromium scenarios passed. Global propagation, edits/clears, stable actions and the edit/collapse race covered. Focused manual Extension Host smoke remains pending. |
 | Guided bug bisect | Approved and implemented; automated/Chromium verification passed | On 2026-10-09: 1,013 tests including build, quality (289 files / 2,753 functions), 39 platform checks, 33 graph Chromium scenarios and 14 Show Log scenarios passed. [Feature record](../2.build/features/1.7.4-bug-bisect-spec.md) includes chosen-repo guards, native history selection, recovery and original-HEAD restoration. Focused Extension Host smoke remains pending. |
 | Bisect Commit visual reference | Implemented; automated/Chromium verification passed | On 2026-10-10: 1,017 tests including build, quality (292 files / 2,774 functions), 39 platform checks and 40 graph Chromium scenarios passed. Marker remains visible through scope/focus/history limits, tracks the actual checkout, centers changed steps and disappears at session end without Git ref changes. CI benchmark passed (1,200 commits; projection 6.74 ms / layout 165.70 ms). Graphify update and diff whitespace checks passed. Full manual Extension Host smoke remains pending. |
@@ -29,15 +63,25 @@ Historical evidence below applies to its recorded releases.
 | Compact bisect controls | Approved and implemented; automated/Chromium verification passed | On 2026-10-11: 1,024 tests including builds, quality (293 files / 2,783 functions) and 68 Chromium scenarios passed. Minimize / Expand exposes ready-only good/bad decisions, current step/hash, progress/errors, neutral focus and one-time result reveal. Native progression, dirty guards, undo, restoration, accessible names, keyboard traversal and narrow-panel layout verified with a simulated extension transport. [Focused record](../2.build/features/1.7.4-bug-bisect-compact-controls-proposal.md) contains evidence and manual steps. Graphify and diff whitespace checks passed; focused manual Extension Host smoke remains pending. |
 | Feature and Bug from package | Implemented; automated/Chromium verification passed | On 2026-10-11: 1,031 tests including builds, quality (294 files / 2,785 functions), mutation review and 25 Chromium checks passed. Package menus, all host form stages, source synchronization and creation guards verified. Six fixture submissions retained their selected package source; no user repository mutated. [Focused record](../2.build/features/1.7.4-flow-start-from-package.md). Graphify AST update and diff whitespace check passed; real Extension Host creation/publication smoke remains pending. |
 | Package from main | Implemented; automated/Chromium verification passed | On 2026-10-11: 1,034 tests including builds, quality (294 files / 2,786 functions), mutation review and 13 Chromium checks passed. Main-classified sources expose Start New Package; preparation/preview/submission and guarded creation retain source identity and existing exact-sync policy. Three fixture submissions, no user repository mutations. [Focused record](../2.build/features/1.7.4-package-start-from-main.md). Graphify and diff whitespace checks passed; real Extension Host smoke remains pending. |
-| Three-review cycle from `574cdb9` | Complete; five confirmed safety defects fixed | On 2026-10-11: three sequential main-agent reviews of the delta through `56b2476` plus corrections. [Review record](../2.build/features/1.7.4-three-review-cycle.md) details stale controls and native bisect ownership races, five failing-before/passing-after real Git regressions, and mutation detection. Final gates: 1,039 tests including builds, quality (294 files / 2,786 functions), 39 Linux platform checks and 119 Chromium scenarios passed. Final restored-build CI benchmark passed (1,200 commits; projection 5.18 ms / layout 117.29 ms). Graphify AST update and diff checks passed. Full Extension Host smoke remains pending; corrections are uncommitted. |
+| Three-review cycle from `574cdb9` | Complete; five confirmed safety defects fixed | On 2026-10-11: three sequential main-agent reviews of the delta through `56b2476` plus corrections. [Review record](../2.build/features/1.7.4-three-review-cycle.md) details stale controls and native bisect ownership races, five failing-before/passing-after real Git regressions, and mutation detection. Final gates: 1,039 tests including builds, quality (294 files / 2,786 functions), 39 Linux platform checks and 119 Chromium scenarios passed. Final restored-build CI benchmark passed (1,200 commits; projection 5.18 ms / layout 117.29 ms). Graphify AST update and diff checks passed. Full Extension Host smoke remains pending; corrections subsequently committed as `6bd0d2a`. |
 | Tooltip activation delay | Implemented; automated verification passed | On 2026-10-11: graph and Show Log custom tooltips now wait 1,000 ms. Existing scheduling/cancellation retained; existing assertions updated. `npm test` passed 1,039 tests including builds; quality (294 files / 2,786 functions), generated-runtime inspection, Graphify AST update and diff checks passed. [Focused record](../2.build/features/1.7.4-tooltip-delay.md). Manual Extension Host timing smoke remains pending. |
 | Marketplace publication | Pending separate authorization | 1.7.3 remains the published baseline. |
 
-Before publication, rollback is a scoped revert of the 1.7.4 metadata/documentation
-change to 1.7.3. Preserve repository state and user Flow Governance files.
-Before reverting bug-search support, finish/restore owned searches; external Git
-sessions require manual recovery. Then revert the feature's scoped changes.
-Keep recovery controls available while an owned session still needs restoration.
+### Rollback and handoff
+
+Before changing or reverting bug-search support, finish/restore owned searches;
+external Git sessions require manual recovery. Keep recovery controls available
+while a session still needs restoration. A source rollback must cover the affected
+1.7.4 behavior and its metadata/docs together; reverting only version fields does
+not remove the new runtime features. Preserve user repository state and Flow files.
+
+After publication, never reuse 1.7.4 for corrected bytes. Prepare an approved
+follow-up patch if a release defect is confirmed. A user-installed previous VSIX
+is a separate recovery option after owned searches have been restored.
+
+Packaging and publishing must follow [deployment](deployment.md) and
+[PUBLISHING.md](../../PUBLISHING.md). Only read-only file previews and a production build ran during this artifact
+review; no VSIX, tag, upload or installation command ran.
 
 ## Published release — 1.7.3
 

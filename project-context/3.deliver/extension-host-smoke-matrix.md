@@ -1,11 +1,40 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.7.4 Publication Candidate
+
+Status: Final manual smoke pending; no full-candidate completion reported.
+Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b`.
+Operator, test date, VS Code version, platform, repository fixture and exact tested
+commit/VSIX: not supplied. Record these with results before closing this gate.
+
+Automated evidence is recorded in [release readiness](release.md): final build and
+1,039 tests, quality checks, 39 Linux platform tests, 119 minimum-version Chromium
+fixture scenarios and CI graph benchmark passed. Browser transport fixtures and
+earlier user UI acceptance do not establish complete manual Extension Host smoke.
+
+| Scenario | Required check | Result |
+| --- | --- | --- |
+| Graph/Show Log bisect entry | Start from a graph ref and single Show Log commit against HEAD; verify chosen repository, endpoints and original return destination. Cancel preparation without Git changes. | Pending |
+| Active bisect and compact controls | Test good/bad/skip, undo and inspect; Minimize exposes only ready good/bad controls. Verify step/hash, disabled pending decisions and result expansion. | Pending |
+| Graph visibility | Bisect Commit stays visible across steps and repeated layouts without manual scrolling; verify narrow panes, focus/scope/history limits and the reported Angular-style large graph. | Pending |
+| Dirty and multiple repositories | Staged/unstaged/untracked/conflicted and unsaved files in the chosen repository block transitions. Changes in another repository do not block it; nested repository ownership remains correct. | Pending |
+| Reload, failure and external state | Reload mid-search and recover; change native bisect/HEAD externally in a disposable fixture and verify checkout/metadata are preserved with actionable recovery. Stop confirmation must not act after controls are detached. | Pending |
+| Completion and restoration | Found/skipped/divergent outcomes are explicit; finish returns attached/detached HEAD, removes marker and releases mutation reservation. A moved original branch is preserved. | Pending |
+| Expanded-file search | Global change/file search propagates; edit/clear and collapse/reopen retain file filter. Rapid replacement/source switches discard stale results; filtered diff/menu actions address the correct file. See focused cases below. | Pending |
+| Flow creation sources | Create Feature and Bug from Package and Package from Main, including configured names. Verify selected source, existing clean/sync guards, form cancellation and explicit publication decisions. | Pending |
+| Tooltip timing and keyboard | Both custom tooltips open after 1 second of hover; graph reference focus also uses this delay. Leaving/opening a menu before activation cancels them. Verify keyboard, theme and narrow-pane behavior. | Pending |
+| Lifecycle regression | Open with zero/one/multiple repositories; switch repositories, close/reopen and reload the graph/Show Log. Verify Compare Results, refs, checkout and existing governed actions. | Pending |
+
+VSIX inspection/clean-profile installation remains a separate post-packaging gate.
+Record artifact identity and installation outcome; manual source smoke does not
+establish packaged byte identity or Marketplace publication.
 
 ## 1.7.4 Show Log Expanded Change Search
 

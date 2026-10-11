@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-09
+Last consolidated: 2026-10-11
 
 ## Environment
 
@@ -26,17 +26,33 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Development Cycle: 1.7.4
+## Release Candidate: 1.7.4
 
 - Opened with explicit maintainer authorization on 2026-10-09.
-- Manifest, top-level lockfile and root package now declare `1.7.4`; CHANGELOG
-  marks the version as Unreleased. Approved scope now includes Show Log expanded-file
-  `change:` filtering and automatic propagation; verification is tracked in release readiness.
+- Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b`; publication
+  artifact changes follow this source commit. Comparison baseline: `574cdb9`.
+- Manifest, top-level lockfile and root package declare `1.7.4`. CHANGELOG is dated
+  2026-10-11 for publication preparation; publication is still pending.
+- Scope: guided bisect with visual/compact controls and ownership protection,
+  expanded-file `change:` search and propagation in Show Log, Feature/Bug from
+  Package and Package from Main, and one-second tooltip activation.
 - Published baseline remains `1.7.3`, confirmed on 2026-10-04.
-- Opening verification is tracked in [release readiness](release.md) and the
-  [cycle artifact](../2.build/features/1.7.4-release-cycle-opening.md).
-- Packaging, installation, tags and Marketplace publication are pending separate
-  authorization. Existing published VSIX files retain their versions.
+- Latest verification: 1,039 tests including builds, quality checks, prior 39 Linux
+  platform checks / 119 Chromium scenarios, review-cycle CI benchmark and a fresh
+  zero-vulnerability dependency audit. Local `vsce ls` preview passed with 679 files;
+  required runtime/worker assets included and development paths/maps/old VSIX excluded.
+  Added `tasks/**` to `.vscodeignore` after preview exposed two internal planning
+  files; a fresh production build and post-build preview passed.
+- [Release readiness](release.md) holds the consolidated gate status and
+  [smoke matrix](extension-host-smoke-matrix.md) holds the remaining manual scenarios.
+  Manual smoke completion has not been reported for this complete candidate.
+- After smoke and authorized packaging, inspect the VSIX and verify installation
+  in a clean profile before separately authorized Marketplace publication.
+  Record package identity/checksum/size, final source/tag, publication timestamp and
+  installed version. No 1.7.4 VSIX was created during artifact review.
+- No packaging, installation, tag or Marketplace command ran. Existing published
+  VSIX files retain their versions. Use `publish:current` for the approved 1.7.4
+  candidate; version-increment commands belong to a separately approved next release.
 
 ## Published Release: 1.7.3
 

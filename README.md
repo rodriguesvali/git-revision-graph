@@ -37,6 +37,8 @@ Use graph scopes, search, focus modes, zoom, and the minimap to move from reposi
 the revisions that matter. Large scenes use bounded history, host-side layout, caching, and
 virtualized rendering to remain responsive.
 
+Custom tooltips in the graph and Show Log appear after 1 second of hover.
+
 ## Compare Without Losing Context
 
 Select two visible references or commits to open **Compare Results**, or compare one revision with

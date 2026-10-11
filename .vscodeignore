@@ -10,6 +10,7 @@ CHECKLIST.md
 CONTRIBUTING.md
 coverage/**
 project-context/**
+tasks/**
 media/marketplace/**
 out-e2e/**
 out-test/**
