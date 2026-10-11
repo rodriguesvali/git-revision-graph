@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.4 - Unreleased
 
+### Tooltips
+
+- Wait 1 second before showing custom tooltips in the graph and Show Log.
+
 ### Flow Governance
 
 - Start Package branches from main using the existing exact-sync preflight and

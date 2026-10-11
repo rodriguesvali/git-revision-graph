@@ -11,6 +11,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
+- `1.7.4-tooltip-delay.md`: increase graph and Show Log custom-tooltip activation
+  delay from 500 ms to 1 second.
 - `1.7.4-three-review-cycle.md`: three sequential reviews from baseline `574cdb9`;
   five bisect concurrency/ownership defects fixed with real Git regressions.
 - `1.7.4-package-start-from-main.md`: Package creation from classified main

@@ -930,7 +930,7 @@ test('renders grouped graph context menus', () => {
   assert.match(html, /reference-tooltip-kind">/);
   assert.match(html, /pointer-events: auto;/);
   assert.match(html, /function bindReferenceTooltipEvents\(\)/);
-  assert.match(html, /const TOOLTIP_SHOW_DELAY_MS = 500;/);
+  assert.match(html, /const TOOLTIP_SHOW_DELAY_MS = 1000;/);
   assert.match(html, /function scheduleShowReferenceTooltip\(refElement\)/);
   assert.match(html, /createRevisionGraphWebviewDelayedActionScheduler\(window, TOOLTIP_SHOW_DELAY_MS\)/);
   assert.match(html, /referenceTooltipShowScheduler\.schedule\(refElement, \(\) => showReferenceTooltip\(refElement\)\);/);

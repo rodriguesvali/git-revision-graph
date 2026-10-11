@@ -140,7 +140,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function cancelCommitTooltipShow\(\)/);
   assert.match(html, /function scheduleHideCommitTooltip\(\)/);
   assert.match(html, /scheduleShowCommitTooltip\(commitHash, event\);/);
-  assert.match(html, /const TOOLTIP_SHOW_DELAY_MS = 500;/);
+  assert.match(html, /const TOOLTIP_SHOW_DELAY_MS = 1000;/);
   assert.match(html, /\}, TOOLTIP_SHOW_DELAY_MS\);/);
   assert.match(html, /content\.addEventListener\('contextmenu', \(event\) => \{\s*hideCommitTooltip\(\);/s);
   assert.match(html, /function cancelCommitTooltipHide\(\)/);

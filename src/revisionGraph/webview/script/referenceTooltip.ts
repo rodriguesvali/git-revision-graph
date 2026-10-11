@@ -1,4 +1,4 @@
-    const TOOLTIP_SHOW_DELAY_MS = 500;
+    const TOOLTIP_SHOW_DELAY_MS = 1000;
     const referenceTooltipShowScheduler = createRevisionGraphWebviewDelayedActionScheduler<HTMLElement>(window, TOOLTIP_SHOW_DELAY_MS);
     const referenceTooltipHideScheduler = createRevisionGraphWebviewDelayedActionScheduler<HTMLElement>(window, 180);
     let activeReferenceTooltipHash = '';

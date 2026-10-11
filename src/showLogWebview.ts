@@ -63,7 +63,7 @@ export function renderShowLogWebviewHtml(): string {
     const GRAPH_MAIN_COMPACT_HEIGHT = 26;
     const GRAPH_MAIN_HEIGHT = 34;
     const GRAPH_MAIN_META_HEIGHT = 42;
-    const TOOLTIP_SHOW_DELAY_MS = 500;
+    const TOOLTIP_SHOW_DELAY_MS = 1000;
     const persistedUiState = vscode.getState() || {};
     let graphWidth = normalizeGraphWidth(persistedUiState[GRAPH_WIDTH_KEY]);
     let resizeState = null;
