@@ -33,6 +33,8 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   external bisect replacements even when endpoints, history and start text match.
 - [1.7.5-bisect-answer-recovery.md](1.7.5-bisect-answer-recovery.md): reconcile
   applied answers after interrupted persistence without classifying them twice.
+- [1.7.5-bisect-target-identity.md](1.7.5-bisect-target-identity.md): preserve the
+  selected reference kind through exact Git resolution and Show Log handoff.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.

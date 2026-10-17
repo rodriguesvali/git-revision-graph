@@ -33,6 +33,8 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Search
 
+- Resolve the selected branch, tag, remote or stash in its own namespace, keeping
+  namesake references from changing the search endpoint.
 - Recover classifications already applied by Git after an interrupted state save,
   resuming or restoring without recording the same answer twice.
 - Verify the native bisect instance as well as its log before changing revisions

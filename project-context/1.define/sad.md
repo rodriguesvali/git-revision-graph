@@ -24,7 +24,10 @@ Last consolidated: 2026-10-17
   Reconciliation is saved at control entry; later command/checkout/reset guards
   remain strict. Shared mutation-coordinator reservations exclude incompatible extension
   operations between user tests. Graph controls use the typed message pipeline;
-  Show Log hands off a validated commit and its repository to the same graph.
+  Named graph targets retain their required kind through host dispatch and exact
+  Git ref lookup before peeling to a pinned commit. Short names are qualified
+  within their own namespace; missing refs cannot fall back to namesake targets.
+  Show Log hands off a validated full commit hash and its repository to the same graph.
   `src/revisionGraph/bugBisectMarker.ts` adds an ephemeral **Bisect Commit**
   reference after repository overlay, with a bounded read-only supplement for
   omitted commits. Projection pins it across configured scopes/focus; the browser

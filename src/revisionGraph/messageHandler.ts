@@ -27,7 +27,7 @@ export interface RevisionGraphMessageHandlerHost
     RevisionGraphRefActionWorkflowHost,
     RevisionGraphViewStateWorkflowHost {
   readonly showLogPresenter: ShowLogPresenter;
-  prepareBugBisect?(repository: Repository, revision: string): Promise<void>;
+  prepareBugBisect?(repository: Repository, revision: string, refKind: RevisionGraphProtocol.TargetKind): Promise<void>;
   controlBugBisect?(repository: Repository, message: RevisionGraphProtocol.MessageOf<'bisect-control'>): Promise<void>;
   rehydrateWebview(): void;
   writeClipboard(text: string): PromiseLike<void>;
@@ -90,7 +90,7 @@ export class RevisionGraphMessageHandler {
 
   private createHandlers(): RevisionGraphMessageHandlerMap {
     return {
-      'start-bug-bisect': async (message) => { await this.runWithCurrentRepository(async (repository) => { await this.host.prepareBugBisect?.(repository, message.revision); }); },
+      'start-bug-bisect': async (message) => { await this.runWithCurrentRepository(async (repository) => { await this.host.prepareBugBisect?.(repository, message.revision, message.refKind); }); },
       'bisect-control': async (message) => { await this.runWithCurrentRepository(async (repository) => { await this.host.controlBugBisect?.(repository, message); }); },
       'webview-ready': async () => {
         this.host.rehydrateWebview();

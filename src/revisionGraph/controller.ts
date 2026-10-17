@@ -253,7 +253,7 @@ export class RevisionGraphController implements vscode.Disposable {
     this.messageHandler = new RevisionGraphMessageHandler({
       actionServices: this.actionServices,
       showLogPresenter,
-      prepareBugBisect: (repository, revision) => this.bugBisect?.prepare(repository, revision) ?? Promise.resolve(),
+      prepareBugBisect: (repository, revision, refKind) => this.bugBisect?.prepare(repository, revision, refKind) ?? Promise.resolve(),
       controlBugBisect: (repository, message) => this.bugBisect?.control(repository, message) ?? Promise.resolve(),
       rehydrateWebview: () => {
         this.rehydrateWebview();
@@ -327,7 +327,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.repositoryLifecycle.setCurrentRepository(repository);
       await this.refresh();
     }
-    if (prepareSession) await this.bugBisect?.prepare(repository, revision);
+    if (prepareSession) await this.bugBisect?.prepare(repository, revision, 'commit');
   }
 
   postBugBisect(root: string, state: RevisionGraphProtocol.BisectView | null, reveal = false): void {

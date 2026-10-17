@@ -7,6 +7,18 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Bisect Target Identity — B3
+
+On 2026-10-17, the actual safety scenario passed on Linux/Xvfb with VS Code
+1.100.0/stable 1.142.0. Real graph menus select the branch or annotated tag at the
+intended commit despite namesake refs at another commit. The real Show Log commit
+menu passes through extension/controller composition to preparation. Canceling
+preparation preserves HEAD attachment, worktree, index and native bisect metadata.
+Full suite: 1,124 passed; quality: 301 files / 2,830 functions; platform: 51 passed.
+See the [B3 record](../2.build/features/1.7.5-bisect-target-identity.md) for packed
+refs, remote/stash collisions, missing-reference failures and harness adaptation.
+Manual prompts/keyboard/theme, large graphs and Windows/macOS remain separate.
+
 ## 1.7.5 Native Bisect Ownership — B1
 
 On 2026-10-17, Node/real-Git tests and the actual graph's safety scenario passed
@@ -125,7 +137,7 @@ earlier user UI acceptance do not establish complete manual Extension Host smoke
 
 | Scenario | Required check | Result |
 | --- | --- | --- |
-| Graph/Show Log bisect entry | Start from a graph ref and single Show Log commit against HEAD; verify chosen repository, endpoints and original return destination. Cancel preparation without Git changes. | Pending |
+| Graph/Show Log bisect entry | Start from namesake branch/tag refs at different commits and a single Show Log commit against HEAD; verify chosen repository, endpoints and original return destination. Cancel preparation without Git changes. | Automated Linux minimum/stable passed for B3; manual acceptance pending |
 | Active bisect and compact controls | Test good/bad/skip, undo and inspect; Minimize exposes only ready good/bad controls. Verify step/hash, disabled pending decisions and result expansion. | Pending |
 | Graph visibility | Bisect Commit stays visible across steps and repeated layouts without manual scrolling; verify narrow panes, focus/scope/history limits and the reported Angular-style large graph. | Pending |
 | Dirty and multiple repositories | Staged/unstaged/untracked/conflicted and unsaved files in the chosen repository block transitions. Changes in another repository do not block it; nested repository ownership remains correct. | Pending |

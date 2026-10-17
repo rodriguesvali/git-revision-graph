@@ -39,13 +39,13 @@ test('graph handlers route preparation and decisions without using normal checko
   const calls: unknown[] = [];
   const host = {
     getCurrentRepository: () => repository,
-    async prepareBugBisect(repo: unknown, revision: string) { calls.push({ repo, revision }); },
+    async prepareBugBisect(repo: unknown, revision: string, refKind: RevisionGraphProtocol.TargetKind) { calls.push({ repo, revision, refKind }); },
     async controlBugBisect(repo: unknown, message: unknown) { calls.push({ repo, message }); }
   } as unknown as RevisionGraphMessageHandlerHost;
   const handler = new RevisionGraphMessageHandler(host);
   await handler.handleMessage({ type: 'start-bug-bisect', revision: 'main', refKind: 'branch' });
   await handler.handleMessage(control);
-  assert.deepEqual(calls, [{ repo: repository, revision: 'main' }, { repo: repository, message: control }]);
+  assert.deepEqual(calls, [{ repo: repository, revision: 'main', refKind: 'branch' }, { repo: repository, message: control }]);
 });
 
 test('Show Log bisect handoff uses the visible repository and rejects unloaded commits', async () => {

@@ -14,12 +14,31 @@ export interface BisectSelection {
 }
 export interface BisectHead { readonly hash: string; readonly branch?: string }
 
+const BISECT_REF_PREFIXES: Readonly<Record<Exclude<RevisionGraphProtocol.TargetKind, 'commit'>, string>> = {
+  head: 'refs/heads/', branch: 'refs/heads/', remote: 'refs/remotes/', tag: 'refs/tags/', stash: 'refs/'
+};
+
 export function isBisectHash(value: unknown): value is string {
   return typeof value === 'string' && /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(value);
 }
 
 export class BisectGit {
   constructor(readonly repositoryPath: string, private readonly signal?: AbortSignal) {}
+
+  async resolveTarget(revision: string, refKind: RevisionGraphProtocol.TargetKind): Promise<BisectCommit> {
+    if (refKind === 'commit') {
+      if (!isBisectHash(revision)) throw new Error('Invalid bisect commit.');
+      return this.resolveCommit(revision);
+    }
+    if (refKind === 'head' && revision === 'HEAD') return this.resolveCommit('HEAD');
+    if (refKind === 'stash' && revision !== 'stash') throw new Error('Invalid bisect stash reference.');
+    // Graph reference names are short names, including literal names starting with refs/.
+    // Exact lookup also prevents fallback when the selected namespace no longer exists.
+    const ref = `${BISECT_REF_PREFIXES[refKind]}${revision}`;
+    const hash = (await this.read(['show-ref', '--verify', '--hash', '--', ref])).trim();
+    if (!isBisectHash(hash)) throw new Error('The selected reference does not resolve to an object.');
+    return this.resolveCommit(hash);
+  }
 
   async resolveCommit(revision: string): Promise<BisectCommit> {
     const hash = (await this.read(['rev-parse', '--verify', '--end-of-options', `${revision}^{commit}`])).trim();

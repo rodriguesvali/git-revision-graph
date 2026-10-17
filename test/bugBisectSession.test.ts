@@ -38,7 +38,7 @@ async function setup() {
     get sessions() { return sessions; }, get stored() { return stored; },
     setFailure(value: boolean) { failure = value; }, setUnsaved(value: boolean) { unsaved = value; },
     setConfirmed(value: boolean) { confirmed = value; },
-    async prepare() { await sessions.prepare(repository, f.hashes[0]); },
+    async prepare() { await sessions.prepare(repository, f.hashes[0], 'commit'); },
     reload(snapshot: unknown = stored) { sessions.dispose(); sessions = new BugBisectSessions(coordinator, host, snapshot); },
     async dispose() { sessions.dispose(); coordinator.dispose(); await f.dispose(); }
   };
@@ -166,7 +166,7 @@ test('swapped endpoints restore the original detached HEAD and cancelled stop is
   const f = await setup();
   try {
     await f.git('checkout', f.hashes[0]);
-    await f.sessions.prepare(f.repository, f.hashes[6]); await f.control('start-swapped');
+    await f.sessions.prepare(f.repository, f.hashes[6], 'commit'); await f.control('start-swapped');
     assert.equal(f.state().swapped, true);
     const head = await f.engine.head();
     f.setConfirmed(false); await f.control('stop'); assert.deepEqual(await f.engine.head(), head);
@@ -289,7 +289,7 @@ test('an invalid endpoint-role choice can be corrected without leaving the origi
   const f = await setup();
   try {
     await f.git('checkout', f.hashes[0]);
-    await f.sessions.prepare(f.repository, f.hashes[6]);
+    await f.sessions.prepare(f.repository, f.hashes[6], 'commit');
     await f.control('start'); assert.ok(f.state().error);
     assert.equal((await f.engine.head()).hash, f.hashes[0]);
     await f.control('start-swapped');
@@ -615,7 +615,7 @@ test('recovered final skip preserves the native inconclusive candidates', async 
   const f = await setup();
   try {
     await f.git('checkout', f.hashes[3]);
-    await f.sessions.prepare(f.repository, f.hashes[1]); await f.control('start');
+    await f.sessions.prepare(f.repository, f.hashes[1], 'commit'); await f.control('start');
     await interruptAfterAnswer(f, 'skip'); await f.control('retry');
     assert.equal(f.state().error, undefined);
     assert.equal(f.state().status, 'inconclusive');
@@ -630,7 +630,7 @@ test('recovered bad merge-base answer keeps the outside-interval result', async 
     await writeFile(join(f.root, 'other.txt'), 'healthy branch');
     await f.git('add', '.'); await f.git('commit', '-m', 'healthy branch');
     const good = (await f.engine.head()).hash; await f.git('checkout', 'main');
-    await f.sessions.prepare(f.repository, good); await f.control('start');
+    await f.sessions.prepare(f.repository, good, 'commit'); await f.control('start');
     assert.equal(f.state().mergeBaseCheck, true);
     await interruptAfterAnswer(f, 'bad'); await f.control('retry');
     assert.equal(f.state().error, undefined);

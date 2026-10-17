@@ -1,8 +1,8 @@
 # Revisão de fragilidades — busca binária de bugs
 
 Data: 2026-10-17. Baseline: pacote 1.7.5, commit `63159a4`.
-Status: diagnóstico do baseline concluído; B1 e B2 corrigidos nos acompanhamentos
-abaixo, B3 pendente.
+Status: diagnóstico do baseline concluído; B1, B2 e B3 corrigidos nos acompanhamentos
+abaixo.
 
 ## Escopo e método
 
@@ -188,3 +188,12 @@ O mantenedor autorizou B2 após o commit de B1. A retomada de respostas aplicada
 com persistência interrompida, suas duas janelas de falha e o replay ordenado do
 Undo estão no [artefato de recuperação](features/1.7.5-bisect-answer-recovery.md).
 B3 permanece pendente; a descrição original de B2 acima é evidência do baseline.
+
+## Acompanhamento — B3
+
+O mantenedor autorizou B3 após o commit de B2. O tipo da referência agora atravessa
+handler, controller e preparação até a consulta exata no namespace Git escolhido.
+A entrada pelo Show Log identifica explicitamente o hash como commit. A correção,
+os testes com nomes homônimos e as verificações pelo Extension Host estão no
+[artefato de identidade do alvo](features/1.7.5-bisect-target-identity.md).
+Os três achados originais acima continuam como diagnóstico histórico do baseline.

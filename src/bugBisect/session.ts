@@ -43,7 +43,7 @@ export class BugBisectSessions {
     this.releases.clear();
   }
 
-  async prepare(repository: Repository, revision: string): Promise<void> {
+  async prepare(repository: Repository, revision: string, refKind: RevisionGraphProtocol.TargetKind): Promise<void> {
     const root = repository.rootUri.fsPath;
     const existing = this.sessions.get(resolve(root));
     if (existing?.started || existing?.busy) { this.publish(existing, true); return; }
@@ -51,7 +51,7 @@ export class BugBisectSessions {
       const git = new BisectGit(root, lease.signal);
       await this.assertClean(repository, git);
       if (await git.hasMetadata('BISECT_START')) throw new Error('A Git bisect is already active. Finish it before starting another search.');
-      const selected = await git.resolveCommit(revision);
+      const selected = await git.resolveTarget(revision, refKind);
       const head = await git.head();
       if (head.hash === selected.hash) throw new Error('Choose a revision different from HEAD.');
       const original = await git.commit(head.hash);

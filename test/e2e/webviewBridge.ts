@@ -179,7 +179,7 @@ function bridgeScript(token: string): string {
      const target = document.querySelector(message.selector);
      if (!target) throw Error('Missing DOM target: ' + message.selector);
      target.dispatchEvent(new MouseEvent('contextmenu', {bubbles:true,clientX:30,clientY:30}));
-     const button = document.querySelector('[data-menu-action="' + message.action + '"]');
+     const button = document.querySelector('[data-menu-action="' + message.action + '"], [data-menu-key="' + message.action + '"]');
      if (!button) throw Error('Missing menu action: ' + message.action);
      button.click();
     }
