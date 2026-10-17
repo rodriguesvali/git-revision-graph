@@ -1,5 +1,6 @@
 import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
+import { getCurrentBranch } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
   prepareFullRebuildRefresh,
@@ -19,7 +20,7 @@ export async function resetCurrentBranchToCommit(
   services: ResetRefActionServices
 ): Promise<boolean> {
   try {
-    const currentBranch = repository.state.HEAD?.name;
+    const currentBranch = getCurrentBranch(repository)?.name;
     if (!currentBranch) {
       await services.ui.showWarningMessage(
         'A local current branch is required before resetting to a commit.',

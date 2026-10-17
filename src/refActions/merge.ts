@@ -1,6 +1,6 @@
 import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
-import { hasMergeConflicts } from '../gitState';
+import { getCurrentBranch, hasMergeConflicts } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
   prepareFullRebuildRefresh,
@@ -15,8 +15,9 @@ export async function mergeResolvedReference(
   services: RefActionServices
 ): Promise<void> {
   try {
-    const currentBranch = repository.state.HEAD?.name ?? 'current HEAD';
-    if (repository.state.HEAD?.name === target.refName) {
+    const branchName = getCurrentBranch(repository)?.name;
+    const currentBranch = branchName ?? 'current HEAD';
+    if (branchName === target.refName) {
       services.ui.showInformationMessage('The current branch cannot be merged into itself.');
       return;
     }
@@ -24,8 +25,8 @@ export async function mergeResolvedReference(
     const qualifiedRefName = qualifyMergeRefName(target);
 
     if (
-      repository.state.HEAD?.name &&
-      await services.ancestryInspector.isRefAncestorOfHead(repository, qualifiedRefName, repository.state.HEAD.name)
+      branchName &&
+      await services.ancestryInspector.isRefAncestorOfHead(repository, qualifiedRefName, branchName)
     ) {
       services.ui.showInformationMessage(`${target.label} is already contained in ${currentBranch}.`);
       return;

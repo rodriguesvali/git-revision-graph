@@ -25,6 +25,9 @@ All notable changes to this project will be documented in this file.
 
 ### Graph Refresh
 
+- Load graphs while detached at a tag, keeping tag names separate from current
+  branch identity. Show detached/tag context in the title and allow checkout of
+  a branch that shares the tag's name.
 - Discard late render results and errors after cancellation, including loads that
   ignore the abort signal. Subsequent refreshes can still complete normally.
 

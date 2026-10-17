@@ -7,6 +7,7 @@ import { command } from './webviewBridge';
 import { SafetyHarness } from './safetyHarness';
 import { runSafetyScenarios } from './safetyScenarios';
 import { GitApiBaselineRepository, verifyGitApiBaseline } from './gitApiBaseline';
+import { verifyTagDetachedHead } from './tagDetachedHead';
 import { matchesRevisionGraphPanelViewType } from './revisionGraphTab';
 
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
@@ -57,6 +58,7 @@ export async function run(): Promise<void> {
     if (harness) {
       const repositories = roots.map(root => git.repositories.find(repository =>
         normalizePath(repository.rootUri.fsPath) === normalizePath(root))!);
+      await verifyTagDetachedHead(harness, repositories[0]);
       await runSafetyScenarios(harness, repositories, extension.extensionPath);
     }
   } finally {

@@ -461,6 +461,16 @@ test('checkoutResolvedReference keeps current branch behavior consistent across 
   assert.equal(harness.refreshCalls, 0);
 });
 
+test('checkoutResolvedReference attaches a branch even when detached at an identically named tag', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo', head: { type: RefType.Tag, name: 'release', commit: 'tag-tip' },
+    refs: [createRef({ type: RefType.Head, name: 'release', commit: 'branch-tip' })]
+  });
+  const harness = createServices();
+  await checkoutResolvedReference(repository, { refName: 'release', label: 'release', kind: 'branch' }, harness.services);
+  assert.deepEqual(repository.calls.checkout, ['release']);
+});
+
 test('checkoutResolvedReference uses the destination branch name in the confirmation action label', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

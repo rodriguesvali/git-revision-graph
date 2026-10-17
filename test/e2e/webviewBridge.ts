@@ -7,6 +7,8 @@ export interface Origin {
 }
 
 export interface PanelState {
+  readonly viewMode?: string;
+  readonly references?: readonly { readonly kind: string; readonly name: string; readonly hash: string }[];
   readonly repositoryPath?: string;
   readonly currentHeadName?: string;
   readonly kind?: string;

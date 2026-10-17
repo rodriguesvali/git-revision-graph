@@ -7,6 +7,21 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Tag-Detached HEAD
+
+Automated Node and Linux/Xvfb host verification passed on 2026-10-17 with VS Code
+1.100.0/stable 1.142.0. A disposable annotated tag exposes the actual API's named
+tag HEAD, loads without a fabricated branch and displays a detached/tag title.
+A same-name branch at another commit remains separate, accepts the actual graph
+checkout workflow and becomes attached. A subsequent plain detached commit clears
+branch state. The existing safety matrix then passes on cleaned-up fixtures.
+See the [feature record](../2.build/features/1.7.5-tag-detached-head.md).
+
+The automated fixtures did not modify the reported Angular environment. On
+2026-10-17 the maintainer confirmed the fix works there. Detailed native
+confirmation, keyboard/theme and other platform checks retain their separate
+manual gates.
+
 ## 1.7.5 Automated Safety Integration — S4
 
 On 2026-10-17, the working tree based on `043bd24` passed empty, single-repository

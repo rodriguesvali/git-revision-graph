@@ -68,6 +68,13 @@ test('applies repository workspace status without rebuilding graph scene state',
   assert.equal(nextState.loadingLabel, undefined);
 });
 
+test('status updates preserve detached HEAD when the Git API names a tag', () => {
+  const repository = createRepository({ root: '/workspace/repo', head: { type: RefType.Tag, name: 'v22.3.0-next.2', commit: 'head1' } });
+  const state = createReadyRevisionGraphState();
+  const nextState = applyRepositoryStatusToRevisionGraphViewState(state, repository);
+  assert.equal(nextState.currentHeadName, undefined);
+});
+
 function createReadyRevisionGraphState(): RevisionGraphViewState {
   return {
     viewMode: 'ready',

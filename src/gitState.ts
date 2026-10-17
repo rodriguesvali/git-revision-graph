@@ -3,6 +3,17 @@ import * as path from 'node:path';
 
 import { Branch, RefType, Repository, UpstreamRef } from './git';
 
+/** A tag can name detached HEAD; only a named Head ref is an attached branch. */
+export function getCurrentBranch(repository: Repository): Branch | undefined {
+  const head = repository.state.HEAD;
+  return head?.type === RefType.Head && head.name ? head : undefined;
+}
+
+export function getCurrentBranchUpstreamLabel(repository: Repository): string | undefined {
+  const upstream = getCurrentBranch(repository)?.upstream;
+  return upstream ? formatUpstreamLabel(upstream.remote, upstream.name) : undefined;
+}
+
 export function formatUpstreamLabel(remoteName: string, refName: string): string {
   return refName.startsWith(`${remoteName}/`) ? refName : `${remoteName}/${refName}`;
 }
@@ -26,8 +37,9 @@ export function getPublishedLocalBranchNames(repository: Repository): readonly s
     }
   }
 
-  if (repository.state.HEAD?.name) {
-    branchesByName.set(repository.state.HEAD.name, repository.state.HEAD);
+  const head = getCurrentBranch(repository);
+  if (head?.name) {
+    branchesByName.set(head.name, head);
   }
 
   return [...branchesByName.values()]

@@ -1,6 +1,6 @@
 import { toOperationError } from '../../errorDetail';
 import type { Branch, Repository } from '../../git';
-import { formatUpstreamLabel } from '../../gitState';
+import { formatUpstreamLabel, getCurrentBranch } from '../../gitState';
 import { syncCurrentHeadWithUpstream } from '../../refActions/currentBranch';
 import { prepareFullRebuildRefresh, runWithRefActionProgress } from '../../refActions/shared';
 import type { RefActionServices } from '../../refActions/types';
@@ -117,7 +117,7 @@ export async function prepareFlowBranchSource(
     return false;
   }
 
-  if (repository.state.HEAD?.name === options.sourceBranch) {
+  if (getCurrentBranch(repository)?.name === options.sourceBranch) {
     return syncCurrentHeadWithUpstream(repository, services);
   }
 

@@ -63,6 +63,10 @@ Last consolidated: 2026-10-17
   defensive; they do not promise continued support for older hosts. The local Git
   declarations remain a narrow, manually maintained contract separate from
   `@types/vscode`.
+- `src/gitState.ts` identifies an attached current branch only when HEAD has
+  `RefType.Head` and a name. The Git API may name a detached HEAD with a tag;
+  that name remains tag context, never a synthesized local branch. Graph
+  overlays/status/merge metadata and branch-specific workflows share this rule.
 - `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
   capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
   construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source

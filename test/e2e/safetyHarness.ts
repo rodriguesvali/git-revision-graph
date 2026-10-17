@@ -8,6 +8,7 @@ export class SafetyHarness implements vscode.Disposable {
   readonly panels: ObservedPanel[] = [];
   readonly errors: string[] = [];
   readonly confirmations: string[] = [];
+  readonly allowedConfirmations = new Set(['Revert File', 'Checkout to: other']);
   selectedRoot: string;
   private readonly restores: (() => void)[] = [];
   constructor(readonly roots: readonly string[], extensionPath: string) {
@@ -30,7 +31,7 @@ export class SafetyHarness implements vscode.Disposable {
       return picked;
     }));
     this.replace(api.window, 'showWarningMessage', (async (message: string, _options: unknown, action: string) => {
-      assert.ok(['Revert File', 'Checkout to: other'].includes(action), `Unexpected warning: ${message}`);
+      assert.ok(this.allowedConfirmations.has(action), `Unexpected warning: ${message}`);
       this.confirmations.push(message);
       return action;
     }));

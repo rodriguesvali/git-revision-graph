@@ -1,5 +1,5 @@
 import { Branch, Repository, RefType } from '../git';
-import { formatUpstreamLabel, hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
+import { formatUpstreamLabel, getCurrentBranch, hasMergeConflicts, hasWorkspaceChanges } from '../gitState';
 import { hasGitErrorCode as matchesGitErrorCode } from '../errorDetail';
 import { formatShortCommitHash } from '../commitHash';
 import { createActionRefreshRequest } from '../revisionGraphRefresh';
@@ -88,7 +88,7 @@ export function getSuggestedNewBranchName(refName: string, kind: RefActionKind):
 }
 
 export function getCurrentHeadSyncState(repository: Repository): HeadSyncState | undefined {
-  const head = repository.state.HEAD;
+  const head = getCurrentBranch(repository);
   if (!head?.name || !head.upstream) {
     return undefined;
   }
@@ -258,7 +258,7 @@ export async function resolveRemoteCheckoutTarget(
 
   const upstreamRef =
     candidates.find((ref) => ref.commit && symbolicRef?.commit && ref.commit === symbolicRef.commit) ??
-    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/${repository.state.HEAD?.name}`) ??
+    candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/${getCurrentBranch(repository)?.name}`) ??
     candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/main`) ??
     candidates.find((ref) => ref.name === `${remoteTarget.remoteName}/master`) ??
     candidates[0];

@@ -1,6 +1,7 @@
 import { Branch, Ref, Repository } from '../../git';
 import {
-  formatUpstreamLabel,
+  getCurrentBranch,
+  getCurrentBranchUpstreamLabel,
   getPublishedLocalBranchNames,
   hasConflictedMerge,
   hasMergeConflicts,
@@ -27,10 +28,8 @@ export function applyRepositoryStatusToRevisionGraphViewState(
 
   const nextState: RevisionGraphViewState = {
     ...state,
-    currentHeadName: repository.state.HEAD?.name,
-    currentHeadUpstreamName: repository.state.HEAD?.upstream
-      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
-      : undefined,
+    currentHeadName: getCurrentBranch(repository)?.name,
+    currentHeadUpstreamName: getCurrentBranchUpstreamLabel(repository),
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     hasMergeConflicts: hasMergeConflicts(repository),

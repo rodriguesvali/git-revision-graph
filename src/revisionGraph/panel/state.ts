@@ -31,7 +31,7 @@ import {
   GRAPH_PADDING_TOP,
   NODE_PADDING_X
 } from '../webview/shared';
-import { formatUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
+import { getCurrentBranch, getCurrentBranchUpstreamLabel, getPublishedLocalBranchNames, hasConflictedMerge, hasMergeConflicts, hasWorkspaceChanges } from '../../gitState';
 import { nowMs, traceDuration, RevisionGraphLoadTraceSink } from '../loadTrace';
 import type { FlowGovernanceSettings } from '../flow';
 import { loadRevisionGraphReadyStateMetadata } from './readyMetadata';
@@ -217,7 +217,7 @@ function buildRevisionGraphRepositoryOverlay(
   repository: Repository,
   refs: readonly Ref[]
 ): RevisionGraphRepositoryOverlay {
-  const currentHeadName = repository.state.HEAD?.name;
+  const currentHeadName = getCurrentBranch(repository)?.name;
   return {
     refs,
     currentHeadName,
@@ -398,10 +398,8 @@ async function buildReadyRevisionGraphViewStateFromParts(
     viewMode: 'ready',
     hasRepositories: true,
     repositoryPath: repository.rootUri.fsPath,
-    currentHeadName: repository.state.HEAD?.name,
-    currentHeadUpstreamName: repository.state.HEAD?.upstream
-      ? formatUpstreamLabel(repository.state.HEAD.upstream.remote, repository.state.HEAD.upstream.name)
-      : undefined,
+    currentHeadName: getCurrentBranch(repository)?.name,
+    currentHeadUpstreamName: getCurrentBranchUpstreamLabel(repository),
     publishedLocalBranchNames: getPublishedLocalBranchNames(repository),
     isWorkspaceDirty: hasWorkspaceChanges(repository),
     hasMergeConflicts: hasMergeConflicts(repository),

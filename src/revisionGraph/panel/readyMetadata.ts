@@ -1,5 +1,6 @@
 import { throwIfAborted } from '../../errors';
 import type { Repository } from '../../git';
+import { getCurrentBranch } from '../../gitState';
 import type { RevisionGraphViewReference } from '../../revisionGraphTypes';
 import type { RevisionGraphStateBackend } from '../backend';
 import type {
@@ -47,7 +48,7 @@ export async function loadRevisionGraphReadyStateMetadata(
     () => backend.getMergeBlockedTargets(
       repository,
       snapshot,
-      repository.state.HEAD?.name,
+      getCurrentBranch(repository)?.name,
       references,
       signal
     ),

@@ -1,4 +1,5 @@
-import { Branch, Ref, RefType, Repository } from './git';
+import { Ref, RefType, Repository } from './git';
+import { getCurrentBranch } from './gitState';
 import { formatShortCommitHash } from './commitHash';
 
 export function getReferenceHandle(ref: Ref): string {
@@ -20,8 +21,8 @@ export function getReferenceShortLabel(ref: Ref): string {
 }
 
 export function getReferenceDescription(repository: Repository, ref: Ref): string | undefined {
-  if (ref.type === RefType.Head && repository.state.HEAD?.name === ref.name) {
-    const head = repository.state.HEAD as Branch;
+  const head = getCurrentBranch(repository);
+  if (ref.type === RefType.Head && head && head.name === ref.name) {
     const counters = [
       typeof head.ahead === 'number' && head.ahead > 0 ? `+${head.ahead}` : undefined,
       typeof head.behind === 'number' && head.behind > 0 ? `-${head.behind}` : undefined

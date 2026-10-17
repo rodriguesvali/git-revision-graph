@@ -27,6 +27,8 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   real multi-repository transport, Git effects, recovery and panel lifecycle checks.
 - [1.7.5-vscode-1.100-baseline.md](1.7.5-vscode-1.100-baseline.md): align the engine,
   types and CI with the approved minimum and verify the real Git API capabilities.
+- [1.7.5-tag-detached-head.md](1.7.5-tag-detached-head.md): distinguish a named
+  detached tag from an attached current branch in graph loading and ref workflows.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.

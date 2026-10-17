@@ -5,7 +5,7 @@ import {
   toOperationError
 } from '../errorDetail';
 import { Repository } from '../git';
-import { formatUpstreamLabel, hasMergeConflicts, isBranchTrackingMatchingUpstream } from '../gitState';
+import { formatUpstreamLabel, getCurrentBranch, hasMergeConflicts, isBranchTrackingMatchingUpstream } from '../gitState';
 import {
   buildSyncResultMessage,
   ensureWorkspaceReadyForMutation,
@@ -194,7 +194,7 @@ export async function pullCurrentBranchFromUpstream(
   services: RefActionServices
 ): Promise<boolean> {
   try {
-    const currentBranch = repository.state.HEAD?.name;
+    const currentBranch = getCurrentBranch(repository)?.name;
     const upstream = repository.state.HEAD?.upstream;
     if (!currentBranch) {
       await services.ui.showWarningMessage(
@@ -254,7 +254,7 @@ export async function pushCurrentBranchToUpstream(
   requestedMode?: CurrentBranchPushMode
 ): Promise<boolean> {
   try {
-    const currentBranch = repository.state.HEAD?.name;
+    const currentBranch = getCurrentBranch(repository)?.name;
     const upstream = repository.state.HEAD?.upstream;
     if (!currentBranch) {
       await services.ui.showWarningMessage(

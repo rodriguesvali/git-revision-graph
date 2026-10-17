@@ -1,5 +1,5 @@
 import { throwIfAborted } from '../../errors';
-import { Repository } from '../../git';
+import { RefType, Repository } from '../../git';
 import { execGit } from '../../gitExec';
 import { RevisionGraphViewReference } from '../../revisionGraphTypes';
 import { collectAncestorHashes } from '../model/commitGraphQueries';
@@ -25,7 +25,7 @@ export class DefaultRevisionGraphMergeAnalysisBackend implements RevisionGraphMe
     signal?: AbortSignal
   ): Promise<string[]> {
     throwIfAborted(signal, 'The revision graph load was aborted.');
-    if (!currentHeadName) {
+    if (!currentHeadName || (repository.state.HEAD && repository.state.HEAD.type !== RefType.Head)) {
       return [];
     }
 

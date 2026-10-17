@@ -1,5 +1,6 @@
 import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
+import { getCurrentBranch } from '../gitState';
 import {
   ensureWorkspaceReadyForMutation,
   getSuggestedNewBranchName,
@@ -17,7 +18,7 @@ export async function checkoutResolvedReference(
   services: BranchRefActionServices
 ): Promise<void> {
   try {
-    if ((target.kind === 'head' || target.kind === 'branch') && repository.state.HEAD?.name === target.refName) {
+    if ((target.kind === 'head' || target.kind === 'branch') && getCurrentBranch(repository)?.name === target.refName) {
       services.ui.showInformationMessage(`${target.label} is already checked out.`);
       return;
     }
@@ -89,7 +90,7 @@ export async function createBranchFromResolvedReference(
     const existingLocalBranch = target.kind === 'remote'
       ? await getLocalBranch(repository, normalizedBranchName)
       : undefined;
-    const didOverwriteCurrentBranch = !!existingLocalBranch && repository.state.HEAD?.name === normalizedBranchName;
+    const didOverwriteCurrentBranch = !!existingLocalBranch && getCurrentBranch(repository)?.name === normalizedBranchName;
     if (existingLocalBranch) {
       if (!branchInput.overrideBranchIfExists) {
         if (didOverwriteCurrentBranch) {
