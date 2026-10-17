@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-11
+Last consolidated: 2026-10-17
 
 ## Environment
 
@@ -26,19 +26,33 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
+## Development Cycle: 1.7.5
+
+- Opened with explicit maintainer authorization on 2026-10-17.
+- Manifest, top-level lockfile and root package target `1.7.5`; CHANGELOG marks it
+  Unreleased. Functional scope is pending; opening changes metadata and records.
+- Published baseline remains `1.7.4`, confirmed by the maintainer on 2026-10-11.
+- Build/test and structural graph verification are tracked in
+  [release readiness](release.md) and the
+  [cycle artifact](../2.build/features/1.7.5-release-cycle-opening.md).
+- Packaging, installation, tags and Marketplace publication require separate
+  authorization. Existing published VSIX files retain their versions.
+- Before publication, rollback of cycle opening reverts its metadata/documentation
+  changes to 1.7.4 while preserving unrelated work.
+
 ## Published Release: 1.7.4
 
 - Opened with explicit maintainer authorization on 2026-10-09.
 - Source candidate: `e934ca1df148d50da83077ed1c27e6ca2f4bfc3b`; publication
   artifact changes follow this source commit. Comparison baseline: `574cdb9`.
-- Manifest, top-level lockfile and root package declare `1.7.4`. CHANGELOG is dated
-  2026-10-11. Publication was performed by the maintainer and confirmed on
+- Manifest, top-level lockfile and root package declared `1.7.4` at publication.
+  CHANGELOG is dated 2026-10-11. Publication was performed by the maintainer and confirmed on
   2026-10-11 with “publicação finalizada.”
 - Scope: guided bisect with visual/compact controls and ownership protection,
   expanded-file `change:` search and propagation in Show Log, Feature/Bug from
   Package and Package from Main, and one-second tooltip activation.
 - Published baseline is now `1.7.4` by maintainer confirmation; previous baseline
-  was `1.7.3`, confirmed on 2026-10-04. No next version has been authorized.
+  was `1.7.3`, confirmed on 2026-10-04. The next cycle is recorded above.
 - Latest verification: 1,039 tests including builds, quality checks, prior 39 Linux
   platform checks / 119 Chromium scenarios, review-cycle CI benchmark and a fresh
   zero-vulnerability dependency audit. Local `vsce ls` preview passed with 679 files;

@@ -1,7 +1,32 @@
 # Release Readiness
 
-Status: `1.7.4` published by maintainer confirmation on 2026-10-11
-Last consolidated: 2026-10-11
+Status: `1.7.5` development cycle open; published baseline `1.7.4`
+Last consolidated: 2026-10-17
+
+## Development release — 1.7.5
+
+Opened on 2026-10-17 with explicit maintainer authorization: “Abra a versão 1.7.5”.
+Previous published baseline: `1.7.4`, confirmed by the maintainer on 2026-10-11.
+See the [cycle artifact](../2.build/features/1.7.5-release-cycle-opening.md).
+
+Opening scope is version metadata and release records. Functional scope is pending.
+The [systemic-fragility review](../2.build/systemic-fragility-review-2026-10-17.md)
+is planning input; none of its proposed corrections are implemented by cycle opening.
+CHANGELOG identifies 1.7.5 as Unreleased. Dependencies, engine and contribution points
+retain the published baseline.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified | All three version fields declare 1.7.5; all non-version manifest and lockfile data match HEAD. |
+| Build and existing tests | Passed on 2026-10-17 | `npm test`: 1,039 tests, zero failures or skips, including production and webview builds. |
+| Whitespace and knowledge graph | Passed | `git diff --check` and `graphify update .` passed; structural extraction preserved existing semantic content. |
+| Functional scope and smoke | Pending scope | Define acceptance criteria and affected smoke scenarios when changes are approved. Opening changes no runtime behavior. |
+| Packaging and Marketplace | Not authorized | No 1.7.5 VSIX, installation, tag or publication has been performed. |
+
+Before publication, rollback of cycle opening consists of reverting only its
+metadata/documentation changes to the 1.7.4 baseline. Preserve unrelated work and
+the review artifact. Published 1.7.4 evidence below remains historical evidence,
+not verification or publication of 1.7.5.
 
 ## Published release — 1.7.4
 
@@ -14,7 +39,8 @@ Comparison baseline: `574cdb9825bd52c843215a772582adbd76f3e9c9` (published 1.7.3
 documentation baseline). Publication artifact edits follow the source candidate.
 CHANGELOG is dated 2026-10-11. The maintainer confirmed publication separately
 with “publicação finalizada.” Dependencies, engine `^1.90.0` and contribution
-points are unchanged. No next development version has been authorized.
+points were unchanged. At publication, no next development version was authorized;
+the subsequent 1.7.5 cycle opening is recorded above.
 
 Approved release scope:
 

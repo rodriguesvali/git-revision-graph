@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-11
+Last consolidated: 2026-10-17
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,9 +11,16 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-No next development cycle has been authorized. Version 1.7.4 is published by
-maintainer confirmation on 2026-10-11. Remaining manual smoke/installation evidence
-is tracked in the delivery records; the artifacts below describe published scope.
+Version 1.7.5 is open for development with maintainer authorization on 2026-10-17.
+The published baseline remains 1.7.4, confirmed on 2026-10-11. Functional scope
+for 1.7.5 is pending.
+
+- [1.7.5-release-cycle-opening.md](1.7.5-release-cycle-opening.md): align package
+  metadata and open unreleased build/delivery records.
+
+The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
+planning input; its proposed corrections are not approved implementation scope.
+Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
 
 ## Published Release Artifacts — 1.7.4
 
