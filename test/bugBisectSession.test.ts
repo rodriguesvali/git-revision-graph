@@ -533,3 +533,281 @@ test('native command recovery cannot adopt a replacement with the exact expected
     assert.equal(await f.engine.log(), log);
   } finally { BisectGit.prototype.answer = answer; await f.dispose(); }
 });
+
+async function interruptAfterAnswer(f: Awaited<ReturnType<typeof setup>>, answer: 'good' | 'bad' | 'skip', saveUpdatedLog = false): Promise<void> {
+  const previous = await f.engine.log(); const save = f.host.save;
+  let interrupted = false;
+  f.host.save = async snapshot => {
+    if (interrupted) throw new Error('Storage unavailable after Git answer');
+    if (snapshot[0]?.pendingAnswer && snapshot[0].log !== previous) {
+      interrupted = true;
+      if (saveUpdatedLog) await save(snapshot);
+      throw new Error('Storage unavailable after Git answer');
+    }
+    await save(snapshot);
+  };
+  await f.control(answer);
+  assert.equal(interrupted, true);
+  assert.match(f.state().error ?? '', /Storage unavailable/);
+  assert.ok(f.stored[0].pendingAnswer);
+  f.host.save = save;
+  f.reload();
+}
+
+for (const answer of ['good', 'bad', 'skip'] as const) {
+  for (const saveUpdatedLog of [false, true]) {
+    test(`reload recovers applied ${answer} exactly once with updated log saved=${saveUpdatedLog}`, async () => {
+      const f = await setup();
+      try {
+        await f.prepare(); await f.control('start');
+        const tested = f.state().current!.hash; const identity = await f.engine.nativeIdentity();
+        await interruptAfterAnswer(f, answer, saveUpdatedLog);
+        await f.control('retry');
+        assert.equal(f.state().error, undefined);
+        assert.equal(f.state().history.length, 1);
+        assert.equal(f.stored[0].pendingAnswer, undefined);
+        assert.equal(await f.engine.nativeIdentity(), identity);
+        assert.equal((await f.engine.log()).split(`git bisect ${answer} ${tested}`).length - 1, 1);
+        assert.equal((await f.engine.head()).hash, f.state().current!.hash);
+        await f.control('stop');
+        assert.equal(f.sessions.state(f.root), null);
+        assert.equal((await f.engine.head()).branch, 'refs/heads/main');
+      } finally { await f.dispose(); }
+    });
+  }
+}
+
+for (const action of ['stop', 'undo'] as const) {
+  test(`${action} can safely recover an applied answer whose updated log was not saved`, async () => {
+    const f = await setup();
+    try {
+      await f.prepare(); await f.control('start');
+      const tested = f.state().current!.hash;
+      await interruptAfterAnswer(f, 'good');
+      await f.control(action);
+      if (action === 'stop') {
+        assert.equal(f.sessions.state(f.root), null);
+        assert.equal((await f.engine.head()).branch, 'refs/heads/main');
+      } else {
+        assert.equal(f.state().error, undefined);
+        assert.equal(f.state().history.length, 0);
+        assert.equal((await f.engine.head()).hash, tested);
+      }
+    } finally { await f.dispose(); }
+  });
+}
+
+test('recovered final classification retains the first bad commit without duplicating the answer', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await f.control('bad');
+    const tested = f.state().current!.hash;
+    await interruptAfterAnswer(f, 'good'); await f.control('retry');
+    assert.equal(f.state().error, undefined);
+    assert.equal(f.state().status, 'found');
+    assert.equal(f.state().candidates[0].hash, f.hashes[3]);
+    assert.equal((await f.engine.log()).split(`git bisect good ${tested}`).length - 1, 1);
+    await f.control('stop'); assert.equal(f.sessions.state(f.root), null);
+  } finally { await f.dispose(); }
+});
+
+test('recovered final skip preserves the native inconclusive candidates', async () => {
+  const f = await setup();
+  try {
+    await f.git('checkout', f.hashes[3]);
+    await f.sessions.prepare(f.repository, f.hashes[1]); await f.control('start');
+    await interruptAfterAnswer(f, 'skip'); await f.control('retry');
+    assert.equal(f.state().error, undefined);
+    assert.equal(f.state().status, 'inconclusive');
+    assert.deepEqual(new Set(f.state().candidates.map(item => item.hash)), new Set([f.hashes[2], f.hashes[3]]));
+  } finally { await f.dispose(); }
+});
+
+test('recovered bad merge-base answer keeps the outside-interval result', async () => {
+  const f = await setup();
+  try {
+    await f.git('checkout', '-b', 'healthy', f.hashes[2]);
+    await writeFile(join(f.root, 'other.txt'), 'healthy branch');
+    await f.git('add', '.'); await f.git('commit', '-m', 'healthy branch');
+    const good = (await f.engine.head()).hash; await f.git('checkout', 'main');
+    await f.sessions.prepare(f.repository, good); await f.control('start');
+    assert.equal(f.state().mergeBaseCheck, true);
+    await interruptAfterAnswer(f, 'bad'); await f.control('retry');
+    assert.equal(f.state().error, undefined);
+    assert.equal(f.state().status, 'outside');
+  } finally { await f.dispose(); }
+});
+
+test('an applied answer cannot be overwritten by a fresh classification message', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+    const log = await f.engine.log();
+    await f.control('bad');
+    assert.match(f.state().error ?? '', /pending answer/);
+    assert.equal(f.state().history.length, 1);
+    assert.equal(f.state().history[0].answer, 'good');
+    assert.equal(await f.engine.log(), log);
+    await f.control('retry'); assert.equal(f.state().error, undefined);
+  } finally { await f.dispose(); }
+});
+
+test('dirty recovery leaves the native answer and checkout untouched until the workspace is clean', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+    const log = await f.engine.log(); const head = await f.engine.head();
+    f.setUnsaved(true); await f.control('retry');
+    assert.match(f.state().error ?? '', /Resolve changes/);
+    assert.equal(await f.engine.log(), log); assert.deepEqual(await f.engine.head(), head);
+    f.setUnsaved(false); await f.control('retry'); assert.equal(f.state().error, undefined);
+  } finally { await f.dispose(); }
+});
+
+for (const replacement of [false, true]) {
+  test(`recovery rejects external native changes after the answer; replacement=${replacement}`, async () => {
+    const f = await setup();
+    try {
+      await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+      if (replacement) await replaceWithIdenticalBisect(f);
+      else await f.engine.answer('skip', f.hashes[5]);
+      const log = await f.engine.log(); const head = await f.engine.head();
+      for (const action of ['retry', 'stop'] as const) {
+        await f.control(action);
+        assert.match(f.state().error ?? '', /state changed outside/);
+        assert.equal(await f.engine.log(), log); assert.deepEqual(await f.engine.head(), head);
+      }
+    } finally { await f.dispose(); }
+  });
+}
+
+test('invalid and legacy pending checkpoints never repeat an uncertain native answer', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good', true);
+    const snapshot = f.stored[0]; const log = await f.engine.log();
+    for (const logBefore of [42, null, 'x'.repeat(4 * 1024 * 1024 + 1)]) {
+      assert.deepEqual(readBisectSessions([{ ...snapshot, pendingAnswer: { ...snapshot.pendingAnswer, logBefore } }]), []);
+    }
+    f.reload([{ ...snapshot, pendingAnswer: { ...snapshot.pendingAnswer, logBefore: 'invalid base' } }]);
+    await f.control('retry'); assert.match(f.state().error ?? '', /checkpoint/);
+    assert.equal(await f.engine.log(), log);
+    f.reload([{ ...snapshot, pendingAnswer: { ...snapshot.pendingAnswer, logBefore: undefined } }]);
+    await f.control('retry'); assert.match(f.state().error ?? '', /checkpoint/);
+    assert.equal(await f.engine.log(), log);
+    await f.control('stop'); assert.equal(f.sessions.state(f.root), null);
+  } finally { await f.dispose(); }
+});
+
+test('another interruption during native selection recovery remains retryable without duplicate answers', async () => {
+  const f = await setup(); const next = BisectGit.prototype.next;
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+    const save = f.host.save; let selected = false;
+    BisectGit.prototype.next = async function () {
+      const result = await next.call(this);
+      if (this.repositoryPath === f.root) selected = true;
+      return result;
+    };
+    f.host.save = async snapshot => {
+      if (selected) throw new Error('Interrupted selection persistence');
+      await save(snapshot);
+    };
+    await f.control('retry');
+    assert.equal(selected, true); assert.match(f.state().error ?? '', /Interrupted selection/);
+    f.host.save = save; BisectGit.prototype.next = next; f.reload();
+    await f.control('retry');
+    assert.equal(f.state().error, undefined); assert.equal(f.state().history.length, 1);
+    assert.equal((await f.engine.log()).split('git bisect good ').length - 1, 1);
+  } finally { BisectGit.prototype.next = next; await f.dispose(); }
+});
+
+test('failed reconciliation persistence prevents native selection and checkout', async () => {
+  const f = await setup(); const next = BisectGit.prototype.next;
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+    const save = f.host.save; const log = await f.engine.log(); const head = await f.engine.head();
+    let selections = 0;
+    BisectGit.prototype.next = async function () { selections++; return next.call(this); };
+    f.host.save = async () => { throw new Error('Reconciliation storage unavailable'); };
+    await f.control('retry');
+    assert.match(f.state().error ?? '', /Reconciliation storage unavailable/);
+    assert.equal(selections, 0); assert.equal(await f.engine.log(), log);
+    assert.deepEqual(await f.engine.head(), head);
+    await f.control('retry');
+    assert.match(f.state().error ?? '', /Reconciliation storage unavailable/);
+    assert.equal(selections, 0, 'In-memory reconciliation must not bypass the failed durable save');
+    f.host.save = save; f.reload(); await f.control('retry');
+    assert.equal(f.state().error, undefined); assert.equal(selections, 1);
+  } finally { BisectGit.prototype.next = next; await f.dispose(); }
+});
+
+test('native identity is rechecked after reconciliation persistence before recovery selection', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start'); await interruptAfterAnswer(f, 'good');
+    const save = f.host.save; const head = await f.engine.head(); let replaced = false; let log = '';
+    f.host.save = async snapshot => {
+      await save(snapshot);
+      if (!replaced) { replaced = true; await replaceWithIdenticalBisect(f); log = await f.engine.log(); }
+    };
+    await f.control('retry');
+    assert.equal(replaced, true); assert.match(f.state().error ?? '', /state changed outside/);
+    assert.equal(await f.engine.log(), log); assert.deepEqual(await f.engine.head(), head);
+  } finally { await f.dispose(); }
+});
+
+test('an answer applied during intent persistence cannot make a prepared command repeat it', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const save = f.host.save; let applied = false;
+    f.host.save = async snapshot => {
+      await save(snapshot);
+      if (!applied && snapshot[0]?.pendingAnswer) {
+        applied = true;
+        const intent = snapshot[0].pendingAnswer;
+        await f.engine.answer(intent.answer, intent.commit.hash);
+      }
+    };
+    await f.control('good');
+    assert.equal(applied, true); assert.match(f.state().error ?? '', /state changed outside/);
+    assert.equal((await f.engine.log()).split('git bisect good ').length - 1, 1);
+    await f.control('retry');
+    assert.equal(f.state().error, undefined); assert.equal(f.state().history.length, 1);
+    assert.equal((await f.engine.log()).split('git bisect good ').length - 1, 1);
+  } finally { await f.dispose(); }
+});
+
+for (const action of ['retry', 'stop'] as const) {
+  test(`interrupted Undo answer replay recovers with ${action} using its saved ordered history`, async () => {
+    const f = await setup();
+    try {
+      await f.prepare(); await f.control('start'); await f.control('good'); await f.control('bad');
+      const undoTarget = f.state().history.at(-1)!.commit.hash;
+      const originalIdentity = f.stored[0].nativeIdentity;
+      const save = f.host.save; let interrupted = false;
+      f.host.save = async snapshot => {
+        if (interrupted) throw new Error('Replay storage unavailable');
+        if (snapshot[0]?.rebuilding && snapshot[0].nativeIdentity
+          && snapshot[0].nativeIdentity !== originalIdentity && snapshot[0].log.includes('git bisect good ')) {
+          interrupted = true; throw new Error('Replay storage unavailable');
+        }
+        await save(snapshot);
+      };
+      await f.control('undo'); assert.equal(interrupted, true);
+      assert.match(f.state().error ?? '', /Replay storage unavailable/);
+      assert.equal(f.stored[0].rebuilding, true);
+      assert.equal(f.stored[0].pendingAnswer, undefined);
+      f.host.save = save; f.reload(); await f.control(action);
+      if (action === 'stop') {
+        assert.equal(f.sessions.state(f.root), null);
+        assert.equal((await f.engine.head()).branch, 'refs/heads/main');
+      } else {
+        assert.equal(f.state().error, undefined); assert.equal(f.state().history.length, 1);
+        assert.equal((await f.engine.head()).hash, undoTarget);
+        assert.equal((await f.engine.log()).split('git bisect good ').length - 1, 1);
+      }
+    } finally { await f.dispose(); }
+  });
+}

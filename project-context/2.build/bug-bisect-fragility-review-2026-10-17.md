@@ -1,8 +1,8 @@
 # Revisão de fragilidades — busca binária de bugs
 
 Data: 2026-10-17. Baseline: pacote 1.7.5, commit `63159a4`.
-Status: diagnóstico do baseline concluído; B1 corrigido no acompanhamento abaixo,
-B2 e B3 pendentes.
+Status: diagnóstico do baseline concluído; B1 e B2 corrigidos nos acompanhamentos
+abaixo, B3 pendente.
 
 ## Escopo e método
 
@@ -181,3 +181,10 @@ O mantenedor autorizou tratar B1 em 2026-10-17. A correção e suas verificaçõ
 estão no [artefato de propriedade nativa](features/1.7.5-bisect-native-ownership.md).
 Os achados e reproduções acima descrevem o baseline `63159a4`; B2 e B3 continuam
 pendentes e não fazem parte dessa implementação.
+
+## Acompanhamento — B2
+
+O mantenedor autorizou B2 após o commit de B1. A retomada de respostas aplicadas
+com persistência interrompida, suas duas janelas de falha e o replay ordenado do
+Undo estão no [artefato de recuperação](features/1.7.5-bisect-answer-recovery.md).
+B3 permanece pendente; a descrição original de B2 acima é evidência do baseline.

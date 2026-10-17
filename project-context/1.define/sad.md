@@ -17,7 +17,12 @@ Last consolidated: 2026-10-17
   bounded content and filesystem creation/change metadata, is host-only and is
   revalidated at mutation/recovery boundaries; equal logs alone do not prove
   ownership. Legacy sessions without a fingerprint retain manual recovery context
-  without adopting active native state. Shared mutation-coordinator reservations exclude incompatible extension
+  without adopting active native state. Pending answers persist their pre-command
+  log; recovery reconciles only the exact intended classification on the verified
+  native instance, then uses native selection without repeating the answer.
+  Interrupted Undo replay similarly accepts only its next ordered history entry.
+  Reconciliation is saved at control entry; later command/checkout/reset guards
+  remain strict. Shared mutation-coordinator reservations exclude incompatible extension
   operations between user tests. Graph controls use the typed message pipeline;
   Show Log hands off a validated commit and its repository to the same graph.
   `src/revisionGraph/bugBisectMarker.ts` adds an ephemeral **Bisect Commit**

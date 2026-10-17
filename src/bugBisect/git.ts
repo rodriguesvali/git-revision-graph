@@ -77,6 +77,8 @@ export class BisectGit {
     return this.select([answer, hash]);
   }
 
+  next(): Promise<BisectSelection> { return this.select(['next']); }
+
   async reset(): Promise<void> {
     // A no-checkout session removes metadata without touching the worktree.
     await this.mutate(['bisect', 'reset', 'HEAD']);

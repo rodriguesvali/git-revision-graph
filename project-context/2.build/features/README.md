@@ -31,12 +31,14 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   detached tag from an attached current branch in graph loading and ref workflows.
 - [1.7.5-bisect-native-ownership.md](1.7.5-bisect-native-ownership.md): reject
   external bisect replacements even when endpoints, history and start text match.
+- [1.7.5-bisect-answer-recovery.md](1.7.5-bisect-answer-recovery.md): reconcile
+  applied answers after interrupted persistence without classifying them twice.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.
 Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
 The [bisect review](../bug-bisect-fragility-review-2026-10-17.md) separately tracks
-B1–B3; the maintainer authorized B1, implemented in the native-ownership artifact.
+B1–B3; B1 and B2 are authorized and implemented in their focused artifacts.
 
 ## Published Release Artifacts — 1.7.4
 

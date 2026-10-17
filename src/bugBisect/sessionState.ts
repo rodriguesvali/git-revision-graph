@@ -8,7 +8,12 @@ export interface BisectSession extends RevisionGraphProtocol.BisectView {
   nativeIdentity?: string;
   rebuilding?: boolean;
   returning?: boolean;
-  pendingAnswer?: { readonly commit: RevisionGraphProtocol.BisectCommit; readonly answer: 'good' | 'bad' | 'skip' };
+  pendingAnswer?: {
+    readonly commit: RevisionGraphProtocol.BisectCommit;
+    readonly answer: 'good' | 'bad' | 'skip';
+    /** Absent only in legacy snapshots, which cannot safely retry classification. */
+    readonly logBefore?: string;
+  };
 }
 
 export function readBisectSessions(value: unknown): BisectSession[] {
@@ -57,12 +62,17 @@ function validData(value: Record<string, unknown>): boolean {
 
 function validHistory(value: Record<string, unknown>): boolean {
   return Array.isArray(value.candidates) && value.candidates.length <= 10000 && value.candidates.every(isCommit)
-    && (value.pendingAnswer === undefined || validAnswer(value.pendingAnswer))
+    && (value.pendingAnswer === undefined || validPendingAnswer(value.pendingAnswer))
     && Array.isArray(value.history) && value.history.length <= 10000 && value.history.every(validAnswer);
 }
 
 function validAnswer(value: unknown): boolean {
   return isRecord(value) && isCommit(value.commit) && ['good', 'bad', 'skip'].includes(String(value.answer));
+}
+
+function validPendingAnswer(value: unknown): boolean {
+  return isRecord(value) && validAnswer(value)
+    && (value.logBefore === undefined || (typeof value.logBefore === 'string' && value.logBefore.length <= 4 * 1024 * 1024));
 }
 
 export function bisectView(session: BisectSession): RevisionGraphProtocol.BisectView {

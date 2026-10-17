@@ -33,6 +33,8 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Search
 
+- Recover classifications already applied by Git after an interrupted state save,
+  resuming or restoring without recording the same answer twice.
 - Verify the native bisect instance as well as its log before changing revisions
   or ending a search, preserving external replacements with identical history.
 - Keep recovery context for older saved searches without a verifiable identity;

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isOwnedBisectLog } from './logOwnership';
+import { isPendingAnswerApplied, isRebuildAnswerApplied } from './answerRecovery';
 import { resolve } from 'node:path';
 import type { Repository } from '../git';
 import { createMutationGuardedRepository, RepositoryMutationCoordinator, type RepositoryMutationLease } from '../repositoryMutationCoordinator';
@@ -81,7 +82,9 @@ export class BugBisectSessions {
       const outcome = await this.coordinator.run(root, async (lease) => {
         const git = new BisectGit(root, lease.signal);
         await this.assertClean(repository, git);
-        await this.assertOwned(git, session);
+        await this.assertOwned(git, session, true);
+        // A prior failed save may have reconciled only the in-memory session.
+        if (session.pendingAnswer || session.rebuilding) await this.save();
         lease.assertCurrent();
         await this.execute(createMutationGuardedRepository(repository, lease), git, session, message.action, lease);
       }, this.owner);
@@ -163,12 +166,17 @@ export class BugBisectSessions {
       await this.checkoutSelection(repository, git, session, lease); return;
     }
     if (action !== 'good' && action !== 'bad' && action !== 'skip') return;
+    await this.recordAnswer(repository, git, session, action, lease);
+  }
+
+  private async recordAnswer(repository: Repository, git: BisectGit, session: BisectSession, action: 'good' | 'bad' | 'skip', lease: RepositoryMutationLease): Promise<void> {
+    if (session.pendingAnswer) throw new Error('Recover the pending answer with Check again or Undo before recording another answer.');
     if (session.status !== 'testing' || !session.current || session.current.hash !== session.expectedHead) {
       throw new Error('Check out the pending test revision before recording an answer.');
     }
     const commit = session.current;
     const answer = { commit, answer: action };
-    this.replace(session, { history: [...session.history, answer], pendingAnswer: answer });
+    this.replace(session, { history: [...session.history, answer], pendingAnswer: { ...answer, logBefore: session.log } });
     await this.save();
     await this.completeAnswer(repository, git, session, lease);
   }
@@ -190,7 +198,12 @@ export class BugBisectSessions {
 
   private async completeAnswer(repository: Repository, git: BisectGit, session: BisectSession, lease: RepositoryMutationLease): Promise<void> {
     const answer = session.pendingAnswer!;
-    const selection = await this.ownCommand(git, session, () => git.answer(answer.answer, answer.commit.hash), [answer.answer, answer.commit.hash]);
+    if (answer.logBefore === undefined) throw new Error('This saved answer has no recovery checkpoint. Undo it or finish and return before continuing.');
+    const applied = isPendingAnswerApplied(session, session.log);
+    if (!applied && session.log !== answer.logBefore) throw new Error('The saved answer checkpoint does not match this search. Undo it or finish and return.');
+    const selection = await this.ownCommand(git, session,
+      () => applied ? git.next() : git.answer(answer.answer, answer.commit.hash),
+      applied ? ['next'] : [answer.answer, answer.commit.hash]);
     await this.applySelection(repository, git, session, selection, lease);
   }
 
@@ -291,22 +304,29 @@ export class BugBisectSessions {
     this.host.changed(session.repositoryPath, null, false);
   }
 
-  private async assertOwned(git: BisectGit, session: BisectSession): Promise<void> {
+  private async assertOwned(git: BisectGit, session: BisectSession, recoverAnswer = false): Promise<void> {
     const head = await git.head();
     const crashCheckout = session.started && (session.current?.hash === head.hash || (session.returning && head.hash === session.original.hash));
     if (head.hash !== session.expectedHead && !crashCheckout) throw new Error('HEAD changed outside this search. Restore the expected revision before continuing.');
     if (crashCheckout) this.replace(session, { expectedHead: head.hash });
-    await this.assertNativeOwned(git, session, head.hash);
+    await this.assertNativeOwned(git, session, head.hash, recoverAnswer);
   }
 
-  private async assertNativeOwned(git: BisectGit, session: BisectSession, headHash: string): Promise<void> {
+  private async assertNativeOwned(git: BisectGit, session: BisectSession, headHash: string, recoverAnswer: boolean): Promise<void> {
     const nativeIdentity = await git.nativeIdentity();
-    if (nativeIdentity && nativeIdentity !== session.nativeIdentity) throw new Error(OWNERSHIP_ERROR);
-    const active = nativeIdentity !== undefined;
-    if (active ? !session.started || !session.log || await git.log() !== session.log
-      : session.started && !!session.log && !session.rebuilding && !(session.returning && headHash === session.original.hash)) {
-      throw new Error(OWNERSHIP_ERROR);
+    if (!nativeIdentity) {
+      if (session.started && session.log && !session.rebuilding && !(session.returning && headHash === session.original.hash)) throw new Error(OWNERSHIP_ERROR);
+      return;
     }
+    if (!session.started || !session.log || nativeIdentity !== session.nativeIdentity) throw new Error(OWNERSHIP_ERROR);
+    const log = await git.log();
+    if (log === session.log) return;
+    // Reconcile only at control entry; a prepared command's guards stay strict.
+    if (!recoverAnswer || !log.startsWith(session.log)
+      || !(isPendingAnswerApplied(session, log) || isRebuildAnswerApplied(session, log))) throw new Error(OWNERSHIP_ERROR);
+    // Persist reconciliation before a selection, checkout, undo or reset can proceed.
+    this.replace(session, { log });
+    await this.save();
   }
 
   private async resetOwned(git: BisectGit, session: BisectSession): Promise<void> {
