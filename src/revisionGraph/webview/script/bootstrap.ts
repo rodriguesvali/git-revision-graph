@@ -14,7 +14,7 @@ const VIEWPORT_PADDING_LEFT = 18;
       loadingOverlay, loadingMessage, reloadButton, reloadMenuButton, fetchAllButton,
       pullButton, pushButton, pushMenuButton, syncButton, scopeSelect, layoutSelect, layoutAutomaticOption, viewOptionsButton,
       viewOptionsMenu, showTagsToggle, showRemoteBranchesToggle, showStashesToggle,
-      showMergeCommitsToggle, showMinimapToggle, flowGovernanceOptions,
+      showMinimapToggle, flowGovernanceOptions,
       flowGovernanceEnabledToggle, searchButton, searchButtonBadge, searchPanel,
       searchInput, searchResultBadge, searchPrevButton,
       searchNextButton, searchCloseButton, rangeFilter, rangeFilterLabel,
@@ -81,7 +81,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showMergeCommits: false,
       showCurrentBranchDescendants: false,
       revisionRange: undefined,
       descendantFocus: undefined
@@ -235,11 +234,6 @@ const VIEWPORT_PADDING_LEFT = 18;
     if (showStashesToggle) {
       showStashesToggle.addEventListener('change', () => {
         postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showStashes: showStashesToggle.checked }), showStashesToggle.checked ? 'Showing stash refs...' : 'Hiding stash refs...', showStashesToggle);
-      });
-    }
-    if (showMergeCommitsToggle) {
-      showMergeCommitsToggle.addEventListener('change', () => {
-        postMessageWithLoading(createRevisionGraphProjectionOptionsMessage({ showMergeCommits: showMergeCommitsToggle.checked }), showMergeCommitsToggle.checked ? 'Showing merge commits...' : 'Hiding merge commits...', showMergeCommitsToggle);
       });
     }
     if (showMinimapToggle) {
@@ -1110,9 +1104,6 @@ const VIEWPORT_PADDING_LEFT = 18;
       }
       if (showStashesToggle) {
         showStashesToggle.checked = !!state.projectionOptions.showStashes;
-      }
-      if (showMergeCommitsToggle) {
-        showMergeCommitsToggle.checked = !!state.projectionOptions.showMergeCommits;
       }
       syncFlowGovernanceControls(state.flowGovernance || null);
 

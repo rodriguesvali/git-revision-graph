@@ -29,7 +29,6 @@ export interface RevisionGraphProjectionOptions {
   readonly showTags: boolean;
   readonly showRemoteBranches: boolean;
   readonly showStashes: boolean;
-  readonly showMergeCommits: boolean;
   readonly showCurrentBranchDescendants: boolean;
   readonly revisionRange: RevisionGraphRevisionRange | undefined;
   readonly descendantFocus: RevisionGraphDescendantFocus | undefined;

@@ -590,7 +590,6 @@
         currentProjectionOptions.showTags ? 'tags' : null,
         currentProjectionOptions.showRemoteBranches ? 'remotes' : null,
         currentProjectionOptions.showStashes ? 'stash' : null,
-        currentProjectionOptions.showMergeCommits ? 'merge commits' : null,
         currentFlowGovernance && currentFlowGovernance.enabled ? 'flow governance' : null,
         minimapEnabled ? 'minimap' : null
       ].filter(Boolean);
@@ -841,7 +840,7 @@
         closePushModeMenu();
       }
       syncRevisionGraphWebviewViewOptionsToolbarUi(
-        { showTagsToggle, showRemoteBranchesToggle, showStashesToggle, showMergeCommitsToggle, showMinimapToggle, flowGovernanceEnabledToggle, rangeFilterClearButton, descendantFilterClearButton },
+        { showTagsToggle, showRemoteBranchesToggle, showStashesToggle, showMinimapToggle, flowGovernanceEnabledToggle, rangeFilterClearButton, descendantFilterClearButton },
         toolbarBusy,
         hasFlowGovernanceState(), currentFlowGovernance?.saving === true
       );
@@ -861,7 +860,6 @@
         showTagsToggle,
         showRemoteBranchesToggle,
         showStashesToggle,
-        showMergeCommitsToggle,
         flowGovernanceEnabledToggle,
         searchButton,
         searchInput,

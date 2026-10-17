@@ -52,7 +52,6 @@ declare namespace RevisionGraphProtocol {
     readonly showTags?: boolean;
     readonly showRemoteBranches?: boolean;
     readonly showStashes?: boolean;
-    readonly showMergeCommits?: boolean;
     readonly showCurrentBranchDescendants?: boolean;
     readonly revisionRange?: RevisionRange | null;
     readonly descendantFocus?: DescendantFocus | null;

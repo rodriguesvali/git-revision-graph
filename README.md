@@ -37,6 +37,10 @@ Use graph scopes, search, focus modes, zoom, and the minimap to move from reposi
 the revisions that matter. Large scenes use bounded history, host-side layout, caching, and
 virtualized rendering to remain responsive.
 
+The graph uses a compact automatic view that preserves references and structural
+connections. Intermediate commits can be compressed into connecting paths;
+**View** controls tags, remote branches, stashes and the minimap.
+
 Custom tooltips in the graph and Show Log appear after 1 second of hover.
 
 ## Compare Without Losing Context

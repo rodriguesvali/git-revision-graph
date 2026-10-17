@@ -10,6 +10,7 @@ import { GitApiBaselineRepository, verifyGitApiBaseline } from './gitApiBaseline
 import { verifyTagDetachedHead } from './tagDetachedHead';
 import { verifyBisectOwnership } from './bisectOwnership';
 import { verifyBisectTargets } from './bisectTargets';
+import { verifyCompactView } from './compactView';
 import { matchesRevisionGraphPanelViewType } from './revisionGraphTab';
 
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
@@ -60,6 +61,7 @@ export async function run(): Promise<void> {
     if (harness) {
       const repositories = roots.map(root => git.repositories.find(repository =>
         normalizePath(repository.rootUri.fsPath) === normalizePath(root))!);
+      await verifyCompactView(harness, repositories[0]);
       await verifyTagDetachedHead(harness, repositories[0]);
       await verifyBisectTargets(harness, repositories[0]);
       await verifyBisectOwnership(harness, repositories[0]);

@@ -14,7 +14,6 @@ const DEFAULT_PROJECTION_OPTIONS: RevisionGraphProjectionOptions = {
   showTags: true,
   showRemoteBranches: true,
   showStashes: true,
-  showMergeCommits: false,
   showCurrentBranchDescendants: false,
   revisionRange: undefined,
   descendantFocus: undefined
@@ -282,12 +281,11 @@ function isMajorOperationsCommitVisible(
   const childCount = visibility.childCountByHash.get(commit.hash) ?? 0;
   const hasVisibleRef = commit.refs.some((ref) => isProjectionRefVisible(ref, options)) ||
     (options.refScope === 'remoteHead' && commit.refs.some(isDefaultRemoteHeadRef));
-  const isMerge = parentCount > 1;
   const isFork = childCount > 1;
   const isRoot = parentCount === 0;
   const isUnreferencedTip = childCount === 0 && commit.refs.length === 0;
 
-  return hasVisibleRef || (isMerge && options.showMergeCommits) || isFork || isRoot || isUnreferencedTip;
+  return hasVisibleRef || isFork || isRoot || isUnreferencedTip;
 }
 
 function isDefaultRemoteHeadRef(ref: RevisionGraphRef): boolean {

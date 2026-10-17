@@ -7,6 +7,19 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Compact Graph And View Menu
+
+On 2026-10-17, the safety scenario passed on Linux/Xvfb with VS Code
+1.100.0/stable 1.142.0. The actual View menu omits Show Merge Commits and retains
+tags/remotes/stash/minimap. Changing Show Tags through the real checkbox updates
+the graph; a legacy merge field is ignored without blocking supported options.
+Existing tag, bisect, compare/restore and lifecycle checks remain green.
+Full suite: 1,136 passed; platform: 51; quality: 301 files / 2,830 functions.
+Real-Git and synthetic regressions preserve referenced/structural merges and exact
+compressed ancestry paths. The CI benchmark passed on the original fixture using
+the sole compact policy. See the [removal record](../2.build/features/1.7.5-remove-merge-visibility-option.md).
+Windows/macOS and broader keyboard/theme acceptance remain manual gates.
+
 ## 1.7.5 Compare Results Revert
 
 The corrected scenario covers **Revert** for branch/tag-to-worktree comparisons,

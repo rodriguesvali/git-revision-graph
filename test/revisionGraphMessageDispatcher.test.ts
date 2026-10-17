@@ -202,7 +202,6 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showMergeCommits: false,
       showCurrentBranchDescendants: true,
       revisionRange: undefined,
       descendantFocus: undefined

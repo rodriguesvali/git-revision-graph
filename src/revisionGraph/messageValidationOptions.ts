@@ -54,7 +54,7 @@ function validateProjectionRefScope(value: RawOptions, options: MutableProjectio
 }
 
 function validateProjectionBooleanOptions(value: RawOptions, options: MutableProjectionOptions): boolean {
-  for (const key of ['showTags', 'showRemoteBranches', 'showStashes', 'showMergeCommits', 'showCurrentBranchDescendants'] as const) {
+  for (const key of ['showTags', 'showRemoteBranches', 'showStashes', 'showCurrentBranchDescendants'] as const) {
     if (value[key] !== undefined) {
       if (!isBoolean(value[key])) {
         return false;

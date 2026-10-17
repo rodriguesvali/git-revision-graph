@@ -45,7 +45,6 @@ const baseProjectionOptions = {
 };
 const projectionOptions = {
   ...baseProjectionOptions,
-  showMergeCommits: true
 };
 const visibleNodeCountStartedAt = performance.now();
 const visibleNodeCount = countMajorOperationsVisibleNodes(graph, projectionOptions);
@@ -65,7 +64,6 @@ const descendantFocusAnchorIndex = Math.floor(tier.commits / 4);
 const descendantFocusProjectionStartedAt = performance.now();
 const descendantFocusProjection = projectMajorOperationsGraph(graph, {
   ...baseProjectionOptions,
-  showMergeCommits: false,
   descendantFocus: {
     anchorRevision: toHash(descendantFocusAnchorIndex),
     anchorLabel: `benchmark commit ${descendantFocusAnchorIndex}`

@@ -11,6 +11,7 @@ export interface PanelState {
   readonly references?: readonly { readonly kind: string; readonly name: string; readonly hash: string }[];
   readonly repositoryPath?: string;
   readonly currentHeadName?: string;
+  readonly projectionOptions?: Readonly<Record<string, unknown>>;
   readonly kind?: string;
   readonly loading?: boolean;
   readonly errorMessage?: string;
@@ -36,6 +37,7 @@ interface Reply {
   readonly sent: readonly Record<string, unknown>[];
   readonly error?: string;
   readonly menuItems?: readonly { readonly action: string; readonly label: string }[];
+  readonly viewOptions?: readonly string[];
 }
 
 export class ObservedPanel {
@@ -176,7 +178,17 @@ function bridgeScript(token: string): string {
    const start = sent.length;
    try {
     if (message.op === 'send') api.postMessage(message.message);
-    let menuItems;
+    let menuItems, viewOptions;
+    if (message.op === 'viewOptions') {
+     document.getElementById('viewOptionsButton').click();
+     viewOptions = Array.from(document.querySelectorAll('#viewOptionsMenu label')).map(label => label.textContent.trim());
+    }
+    if (message.op === 'toggleViewOption') {
+     const control = document.getElementById(message.controlId);
+     if (!control) throw Error('Missing View control: ' + message.controlId);
+     control.checked = message.checked;
+     control.dispatchEvent(new Event('change', {bubbles:true}));
+    }
     if (message.op === 'menu' || message.op === 'inspectMenu') {
      const target = document.querySelector(message.selector);
      if (!target) throw Error('Missing DOM target: ' + message.selector);
@@ -191,7 +203,7 @@ function bridgeScript(token: string): string {
       button.click();
      }
     }
-    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start),menuItems}});
+    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start),menuItems,viewOptions}});
    } catch (error) {
     api.postMessage({type:'__e2e',token,id:message.id,reply:{error:String(error),sent:[]}});
    }

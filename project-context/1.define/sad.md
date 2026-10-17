@@ -74,6 +74,11 @@ Last consolidated: 2026-10-17
   shared boundary serves Compare Results and Show Log without changing the index;
   it provides exception recovery, not atomicity against process termination or
   uncoordinated external writers.
+- Major-operations visibility follows one compact policy: visible references,
+  forks, roots and unreferenced tips are anchors; other commits are compressed
+  through edge paths. There is no merge-visibility boolean in runtime/protocol
+  defaults. Legacy message fields are ignored by option sanitization. Existing
+  Git simplification and history limits remain independent of this UI removal.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
   The supported floor is VS Code 1.100.0, whose Git API exposes separate untracked
   state and checkout events through `getAPI(1)`. Optional field/event guards remain

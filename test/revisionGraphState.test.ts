@@ -655,7 +655,6 @@ test('builds projection-only ready state from a reusable snapshot without loadin
     repository,
     {
       ...createDefaultRevisionGraphProjectionOptions(),
-      showMergeCommits: true
     },
     backend,
     {
@@ -666,10 +665,11 @@ test('builds projection-only ready state from a reusable snapshot without loadin
   );
 
   assert.equal(loadGraphSnapshotCalls, 0);
+  assert.deepEqual(bundle.state.scene.nodes.map(node => node.hash), ['tip', 'left', 'right']);
   assert.equal(bundle.snapshot.graph.orderedCommits.length, graph.orderedCommits.length);
   assert.equal(
     bundle.state.scene.nodes.some((node) => node.hash === 'merge'),
-    true
+    false
   );
 });
 

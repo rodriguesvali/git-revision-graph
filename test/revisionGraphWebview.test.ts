@@ -139,8 +139,8 @@ test('renders a persistent shell for the revision graph webview', () => {
   assert.match(html, /Show Remote Branches/);
   assert.match(html, /id="showStashesToggle"/);
   assert.match(html, /Show Stash/);
-  assert.match(html, /id="showMergeCommitsToggle"/);
-  assert.match(html, /Show Merge Commits/);
+  assert.doesNotMatch(html, /id="showMergeCommitsToggle"/);
+  assert.doesNotMatch(html, /Show Merge Commits/);
   assert.match(html, /id="showMinimapToggle"/);
   assert.match(html, /Show Minimap/);
   assert.match(html, /id="flowGovernanceOptions"/);
@@ -498,7 +498,6 @@ test('center HEAD button does not crash when refs are grouped by families', asyn
         showTags: true,
         showRemoteBranches: true,
         showStashes: true,
-        showMergeCommits: false,
         showCurrentBranchDescendants: true,
         revisionRange: undefined,
         descendantFocus: undefined
@@ -1572,7 +1571,7 @@ test('renders client-side graph search controls and runtime handlers', () => {
   assert.match(html, /bindRevisionGraphSearchPanelEvents\(\{/);
   assert.match(html, /showRemoteBranchesToggle\.addEventListener\('change'/);
   assert.match(html, /showStashesToggle\.addEventListener\('change'/);
-  assert.match(html, /showMergeCommitsToggle\.addEventListener\('change'/);
+  assert.doesNotMatch(html, /showMergeCommitsToggle/);
   assert.doesNotMatch(html, /fetchButton\.addEventListener\('click'/);
   assert.match(html, /function handleRevisionGraphSearchKeyboardEvent\(/);
   assert.match(html, /rangeFilterClearButton\.addEventListener\('click'/);
@@ -3882,7 +3881,6 @@ function createReadyGraphState(overrides: Record<string, unknown> = {}) {
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showMergeCommits: false,
       showCurrentBranchDescendants: false,
       revisionRange: undefined,
       descendantFocus: undefined
@@ -4103,7 +4101,6 @@ function createWebviewRuntime(options: { deferFrames?: boolean } = {}) {
     'showTagsToggle',
     'showRemoteBranchesToggle',
     'showStashesToggle',
-    'showMergeCommitsToggle',
     'showMinimapToggle',
     'flowGovernanceOptions',
     'flowGovernanceEnabledToggle',

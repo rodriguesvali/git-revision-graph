@@ -38,6 +38,8 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
 - [1.7.5-compare-revert-worktree.md](1.7.5-compare-revert-worktree.md):
   show Compare Results Revert for any reference-to-worktree comparison and reject
   restores between references.
+- [1.7.5-remove-merge-visibility-option.md](1.7.5-remove-merge-visibility-option.md):
+  remove the optional merge display mode and keep one compact automatic graph.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.

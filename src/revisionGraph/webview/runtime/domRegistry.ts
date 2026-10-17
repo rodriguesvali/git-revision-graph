@@ -36,7 +36,6 @@ interface RevisionGraphWebviewDom {
   readonly showTagsToggle: HTMLInputElement;
   readonly showRemoteBranchesToggle: HTMLInputElement;
   readonly showStashesToggle: HTMLInputElement;
-  readonly showMergeCommitsToggle: HTMLInputElement;
   readonly showMinimapToggle: HTMLInputElement;
   readonly flowGovernanceOptions: HTMLDivElement;
   readonly flowGovernanceEnabledToggle: HTMLInputElement;
@@ -99,7 +98,6 @@ function createRevisionGraphWebviewDom(): RevisionGraphWebviewDom {
     showTagsToggle: requireRevisionGraphElement<HTMLInputElement>('showTagsToggle'),
     showRemoteBranchesToggle: requireRevisionGraphElement<HTMLInputElement>('showRemoteBranchesToggle'),
     showStashesToggle: requireRevisionGraphElement<HTMLInputElement>('showStashesToggle'),
-    showMergeCommitsToggle: requireRevisionGraphElement<HTMLInputElement>('showMergeCommitsToggle'),
     showMinimapToggle: requireRevisionGraphElement<HTMLInputElement>('showMinimapToggle'),
     flowGovernanceOptions: requireRevisionGraphElement<HTMLDivElement>('flowGovernanceOptions'),
     flowGovernanceEnabledToggle: requireRevisionGraphElement<HTMLInputElement>('flowGovernanceEnabledToggle'),

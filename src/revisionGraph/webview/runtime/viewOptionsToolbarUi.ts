@@ -2,7 +2,6 @@ interface RevisionGraphWebviewViewOptionsToolbarControls {
   readonly showTagsToggle: HTMLInputElement | null;
   readonly showRemoteBranchesToggle: HTMLInputElement | null;
   readonly showStashesToggle: HTMLInputElement | null;
-  readonly showMergeCommitsToggle: HTMLInputElement | null;
   readonly showMinimapToggle: HTMLInputElement | null;
   readonly flowGovernanceEnabledToggle: HTMLInputElement | null;
   readonly rangeFilterClearButton: HTMLButtonElement | null;
@@ -19,7 +18,6 @@ function syncRevisionGraphWebviewViewOptionsToolbarUi(
     controls.showTagsToggle,
     controls.showRemoteBranchesToggle,
     controls.showStashesToggle,
-    controls.showMergeCommitsToggle,
     controls.showMinimapToggle,
     controls.rangeFilterClearButton,
     controls.descendantFilterClearButton

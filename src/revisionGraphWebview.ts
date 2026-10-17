@@ -192,10 +192,6 @@ export function renderRevisionGraphShellHtml(assets: RevisionGraphWebviewAssets 
           <input id="showStashesToggle" type="checkbox" />
           <span>Show Stash</span>
         </label>
-        <label for="showMergeCommitsToggle">
-          <input id="showMergeCommitsToggle" type="checkbox" />
-          <span>Show Merge Commits</span>
-        </label>
         <label for="showMinimapToggle">
           <input id="showMinimapToggle" type="checkbox" />
           <span>Show Minimap</span>

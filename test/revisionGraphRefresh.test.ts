@@ -141,10 +141,7 @@ test('snapshot reuse is limited to options that do not affect Git history loadin
   const options = createDefaultRevisionGraphProjectionOptions();
 
   assert.equal(
-    canReuseSnapshotForProjectionOptions(options, {
-      ...options,
-      showMergeCommits: true
-    }),
+    canReuseSnapshotForProjectionOptions(options, options),
     true
   );
   assert.equal(

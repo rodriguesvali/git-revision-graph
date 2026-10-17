@@ -15,6 +15,14 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('legacy merge-visibility fields are ignored without affecting supported View options', () => {
+  for (const showMergeCommits of [true, false, 'legacy']) {
+    const message = validateRevisionGraphMessage({ type: 'set-projection-options',
+      options: { showTags: false, showMergeCommits } });
+    assert.deepEqual(message, { type: 'set-projection-options', options: { showTags: false } });
+  }
+});
+
 test('Flow Governance authorizes package from main sources across form stages', () => {
   for (const sourceRefName of ['main', 'master', 'Latam/Main']) {
     const state: RevisionGraphViewState = {
@@ -403,7 +411,6 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       options: {
         refScope: 'local',
         showTags: false,
-        showMergeCommits: true,
         unknown: 'ignored'
       }
     }),
@@ -412,7 +419,6 @@ test('validateRevisionGraphMessage accepts and sanitizes graph messages', () => 
       options: {
         refScope: 'local',
         showTags: false,
-        showMergeCommits: true
       }
     }
   );
@@ -1782,7 +1788,6 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
       showTags: true,
       showRemoteBranches: true,
       showStashes: true,
-      showMergeCommits: false,
       showCurrentBranchDescendants: true,
       revisionRange: undefined,
       descendantFocus: undefined

@@ -42,6 +42,9 @@ events. The Git API version remains `getAPI(1)`.
   restoring the selected revision's file into the workspace. Comparisons between
   references omit this action; Show Log retains commit-specific file restoration.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.
+- The graph uses one compact automatic projection preserving references and
+  structural connectors in loaded history. View does not offer a merge-visibility
+  switch; merge/abort workflows and Show Log remain available.
 - The graph supports range focus and descendant focus over the currently loaded snapshot. Descendant focus is remembered per repository in the workspace across panel and window reloads, until cleared or replaced by a scope/range choice.
 - Users can compare refs, compare with worktree, open unified diffs, inspect logs, checkout, create branches and tags, publish branches, push/delete tags, pull/push/sync the current branch, merge refs, abort conflicted merges, stash/apply/pop/drop, reset the current branch, restore worktree files, and delete local or supported remote refs.
 - The extension preserves native VS Code ergonomics for picks, confirmations, diff editors, Source Control handoff, notifications, and theming.

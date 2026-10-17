@@ -27,6 +27,8 @@ All notable changes to this project will be documented in this file.
 
 ### Graph Refresh
 
+- Remove **Show Merge Commits** from View and use one compact automatic projection,
+  preserving referenced commits and structural connections without a separate toggle.
 - Load graphs while detached at a tag, keeping tag names separate from current
   branch identity. Show detached/tag context in the title and allow checkout of
   a branch that shares the tag's name.
