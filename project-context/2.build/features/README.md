@@ -13,7 +13,7 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 Version 1.7.5 is open for development with maintainer authorization on 2026-10-17.
 The published baseline remains 1.7.4, confirmed on 2026-10-11. Approved functional
-work includes S1 file-restore safety, S2 action-origin binding and S3 render cancellation.
+work includes S1–S4 safety corrections/verification and the VS Code 1.100 minimum.
 
 - [1.7.5-release-cycle-opening.md](1.7.5-release-cycle-opening.md): align package
   metadata and open unreleased build/delivery records.
@@ -25,6 +25,8 @@ work includes S1 file-restore safety, S2 action-origin binding and S3 render can
   render results and errors independently of producer cooperation.
 - [1.7.5-extension-host-safety-regressions.md](1.7.5-extension-host-safety-regressions.md):
   real multi-repository transport, Git effects, recovery and panel lifecycle checks.
+- [1.7.5-vscode-1.100-baseline.md](1.7.5-vscode-1.100-baseline.md): align the engine,
+  types and CI with the approved minimum and verify the real Git API capabilities.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.

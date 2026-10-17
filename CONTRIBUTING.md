@@ -6,7 +6,7 @@ Marketplace compatibility.
 
 ## Development Requirements
 
-- Visual Studio Code
+- Visual Studio Code 1.100.0 or newer
 - Node.js 24
 - npm
 - Git
@@ -45,7 +45,7 @@ single-, and multi-repository scenarios when repository lifecycle behavior chang
 ## Extension Host E2E
 
 ```bash
-npm run test:e2e -- --vscode-version 1.90.0
+npm run test:e2e -- --vscode-version 1.100.0
 npm run test:e2e -- --vscode-version stable
 ```
 
@@ -59,6 +59,10 @@ checkout/restore effects, stale action rejection, partial restore recovery and
 close/reopen during a pending load. It supplies fixture-only repository picks and
 confirmation responses; manual prompt, keyboard, theme and packaged-installation
 acceptance remain separate checks.
+
+The safety scenario also verifies the minimum Git API capabilities: real checkout
+events, untracked-file detection in mixed/separate modes and isolation of the
+other repository. Its configuration changes stay in the disposable test profile.
 
 For focused diagnosis, set `VSCODE_E2E_SCENARIO=safety` (or `empty`/`repository`).
 The default CI run executes all three. Optional controls

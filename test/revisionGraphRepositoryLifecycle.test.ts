@@ -28,7 +28,7 @@ test('repository lifecycle enriches refresh requests with the current repository
   });
 });
 
-test('repository lifecycle supports the VS Code 1.90 Git repository contract', () => {
+test('repository lifecycle defensively tolerates a repository without checkout events', () => {
   const { RevisionGraphRepositoryLifecycle } = loadRepositoryLifecycleModule();
   const currentRepository = createRepository({ root: '/workspace/repo' });
   const repository = {

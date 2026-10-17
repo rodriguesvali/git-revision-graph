@@ -180,7 +180,7 @@ on-demand review panels.
 
 ## Requirements And Current Boundaries
 
-- Visual Studio Code `1.90.0` or newer, Git, and the built-in VS Code Git extension.
+- Visual Studio Code `1.100.0` or newer, Git, and the built-in VS Code Git extension.
 - The graph intentionally loads a bounded recent-commit window instead of unbounded full history.
 - Merge conflict resolution is delegated to the standard VS Code Source Control experience.
 - Binary files and unusual encodings may not render meaningfully in textual diffs.

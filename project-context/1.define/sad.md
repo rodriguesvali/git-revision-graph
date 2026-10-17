@@ -58,9 +58,11 @@ Last consolidated: 2026-10-17
   it provides exception recovery, not atomicity against process termination or
   uncoordinated external writers.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
-  Newer separate untracked-file state and checkout events are optional at the
-  current VS Code 1.90 floor. Legacy mixed-mode untracked files remain worktree
-  changes.
+  The supported floor is VS Code 1.100.0, whose Git API exposes separate untracked
+  state and checkout events through `getAPI(1)`. Optional field/event guards remain
+  defensive; they do not promise continued support for older hosts. The local Git
+  declarations remain a narrow, manually maintained contract separate from
+  `@types/vscode`.
 - `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
   capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
   construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source

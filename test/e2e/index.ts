@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { command } from './webviewBridge';
 import { SafetyHarness } from './safetyHarness';
 import { runSafetyScenarios } from './safetyScenarios';
+import { GitApiBaselineRepository, verifyGitApiBaseline } from './gitApiBaseline';
 import { matchesRevisionGraphPanelViewType } from './revisionGraphTab';
 
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
@@ -21,9 +22,7 @@ interface GitExtensionExportsLike {
   getAPI(version: 1): GitApiLike;
 }
 
-interface GitRepositoryLike {
-  readonly rootUri: vscode.Uri;
-}
+type GitRepositoryLike = GitApiBaselineRepository;
 
 export async function run(): Promise<void> {
   const scenario = readScenario();
@@ -45,6 +44,8 @@ export async function run(): Promise<void> {
   try {
     await extension.activate();
     assert.equal(extension.isActive, true, 'The extension must activate successfully.');
+
+    if (harness) await verifyGitApiBaseline(git.repositories, extension.extensionPath);
 
     await command(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
     await waitForGraphTab();

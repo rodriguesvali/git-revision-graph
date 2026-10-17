@@ -17,15 +17,18 @@ approved the [S2 action-origin correction](../2.build/features/1.7.5-webview-act
 for the graph, Compare Results and Show Log, followed by the
 [S3 render-cancellation correction](../2.build/features/1.7.5-render-cancellation.md).
 The maintainer also approved the [S4 Extension Host expansion](../2.build/features/1.7.5-extension-host-safety-regressions.md).
-CHANGELOG identifies 1.7.5 as Unreleased. Dependencies, engine and contribution points
-retain the published baseline.
+The maintainer subsequently approved [VS Code 1.100 as the minimum](../2.build/features/1.7.5-vscode-1.100-baseline.md),
+including matching API types and CI. CHANGELOG identifies 1.7.5 as Unreleased.
+The engine is `^1.100.0` and `@types/vscode` is pinned to `1.100.0`; runtime
+dependencies and contribution points retain the published baseline.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
-| Package metadata | Verified | All three version fields declare 1.7.5; all non-version manifest and lockfile data match HEAD. |
-| Build and existing tests | Passed on 2026-10-17 | S1–S4: `npm test` passed 1,072 tests, zero failures/skips, including production and webview builds; quality passed for 299 files / 2,814 functions. |
-| Real Extension Host safety matrix | Passed on Linux/Xvfb | Empty, single-repository and two-repository safety scenarios passed on 1.90.0, 1.100.0 and resolved stable 1.142.0. Real transport, Compare/Show Log DOM restore, HEAD/reflog/index checks, recovery after partial rename and pending-load close/reopen. Both guard-bypass controls failed as expected. See S4 artifact for exact scope. |
+| Package metadata | Verified | All three version fields remain 1.7.5. Only the engine and exact API type dependency change in the manifest; lockfile changes stay in root metadata and the type package. Runtime dependencies and contributions are unchanged. |
+| Build and existing tests | Passed on 2026-10-17 | After the 1.100 baseline change: `npm test` passed 1,072 tests, zero failures/skips, including production/webview builds and test compilation; quality passed for 299 files / 2,814 functions. |
+| Real Extension Host safety matrix | Passed on Linux/Xvfb | Current 1.100.0/stable 1.142.0 matrix passed empty, single-repository and multi-repository scenarios, including the new Git API capability probe. S4's transport, DOM restores, recovery and pending-load lifecycle checks passed. Earlier 1.90 and guard-bypass evidence remains in the S4 artifact. |
 | Runtime defects exposed by S4 | Fixed; regressions passed | Optional newer Git state avoids 1.90 graph-load crash. Lexical inline emitter preserves native window.postMessage in both review panels. Focused red/green tests and real panel workflows passed. |
+| Git API baseline | Approved; verified on minimum/stable | Minimum raised to 1.100.0, retiring 1.90–1.99. Real Git API checks verified separate untracked state, mixed/separate dirty detection, repository isolation and events from checkout/restoration. The old 1.90 heading observation remains historical; no automatic-fix claim is made. |
 | Render cancellation regressions | Passed: 11 focused tests | Noncooperative late results/errors, cancelled queued work, new requests before/after settlement and synchronous abort-listener scheduling. |
 | Graph benchmark | Passed on 2026-10-17 | `npm run benchmark:ci`: 1,200 commits; projection 5.27 ms, layout 130.88 ms, cached layout 1.74 ms. Scene/projection/cache consistency and descendant anchor checks passed. |
 | Webview origin regressions | Passed | Missing/malformed origins, repository/context replay, identical targets, panel recreation and deferred sends; 12 Chromium/Electron checks passed without JavaScript errors. Browser effects used injected handlers, not real Git mutations; see S2 artifact. |
@@ -46,7 +49,10 @@ together; mixing the two protocol generations would reject valid scoped actions.
 Rollback of S3 reverts the coordinator guards and related regressions/documentation;
 it restores reliance on producers honoring abort and does not change Git data.
 S4 adds verification and the two narrow runtime corrections recorded above. Revert
-their contracts/tests together if required.
+their contracts/tests together if required. Rollback of the 1.100 baseline must
+align engine/types/lockfile, CI, tests and documentation together. Restoring 1.90
+support requires re-evaluating the known separate-untracked gap before claiming
+equivalent Git-state completeness. No packaging or publication is authorized.
 
 ## Published release — 1.7.4
 

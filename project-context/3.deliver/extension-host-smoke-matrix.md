@@ -19,7 +19,13 @@ failed as expected. See the [S4 evidence and limits](../2.build/features/1.7.5-e
 
 Native repository choices and confirmation responses were supplied by the test
 harness. Manual prompt, cancellation, keyboard/theme and packaged-installation
-results below remain unrecorded.
+results below remain unrecorded. The [1.100 assessment](../1.define/vscode-1.100-compatibility-assessment.md)
+also records the legacy separate-untracked gap and heading-refresh follow-up;
+the maintainer subsequently approved retiring 1.90–1.99 support in the
+[1.100 baseline](../2.build/features/1.7.5-vscode-1.100-baseline.md).
+Historical heading observations do not establish a fix on supported versions.
+After the baseline change, all three scenarios passed again on 1.100.0/stable
+1.142.0 with real mixed/separate untracked detection and checkout event checks.
 
 ## 1.7.5 File Restore — S1
 

@@ -1,5 +1,10 @@
 # Extension Host E2E Baseline
 
+Historical baseline: the original 1.90/stable activation matrix below was expanded
+by [S4](1.7.5-extension-host-safety-regressions.md). The current minimum/stable
+matrix and API capability checks are recorded in the
+[VS Code 1.100 baseline](1.7.5-vscode-1.100-baseline.md).
+
 ## Goal
 
 Close the release-assurance gap between Node tests with VS Code fakes and the real Extension Host

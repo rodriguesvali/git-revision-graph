@@ -174,7 +174,7 @@ test('package manifest relies on contributed commands for implicit activation', 
   const manifest = loadPackageManifest();
 
   assert.deepEqual(manifest.activationEvents ?? [], []);
-  assert.equal(manifest.engines?.vscode, '^1.90.0');
+  assert.equal(manifest.engines?.vscode, '^1.100.0');
   assert.deepEqual(
     manifest.contributes.commands.map((command) => command.command).sort(),
     [
@@ -274,8 +274,8 @@ test('package manifest keeps runtime dependencies limited to shipped code depend
 test('package manifest pins VS Code API types to the engine baseline', () => {
   const manifest = loadPackageManifest();
 
-  assert.equal(manifest.engines?.vscode, '^1.90.0');
-  assert.equal(manifest.devDependencies?.['@types/vscode'], '1.90.0');
+  assert.equal(manifest.engines?.vscode, '^1.100.0');
+  assert.equal(manifest.devDependencies?.['@types/vscode'], '1.100.0');
 });
 
 test('test script uses the cross-platform compiled test runner', () => {

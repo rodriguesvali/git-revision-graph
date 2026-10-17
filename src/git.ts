@@ -82,7 +82,7 @@ export interface RefQuery {
   readonly contains?: string;
   readonly count?: number;
   readonly pattern?: string | string[];
-  readonly sort?: 'alphabetically' | 'committerdate' | 'creatordate';
+  readonly sort?: 'alphabetically' | 'committerdate';
 }
 
 export interface FetchOptions {

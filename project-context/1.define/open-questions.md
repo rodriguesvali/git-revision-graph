@@ -20,9 +20,6 @@ Use this file only for unresolved decisions that still affect future product, ar
 
 ## Release Governance
 
-- Investigate automatic graph heading refresh after checkout between branches at
-  the same commit on VS Code 1.90; real HEAD/reflog changed while the observed
-  heading stayed old. S4 checks Git effects separately from that UI behavior.
 - What exact Extension Development Host smoke matrix is mandatory before the next release candidate is considered ready?
 - What Marketplace metadata should be captured for future completed releases: VSIX filename, checksum, size, publication timestamp, and installed-version confirmation?
 - Should the project keep a fixed clean-profile installation checklist for every Marketplace release?

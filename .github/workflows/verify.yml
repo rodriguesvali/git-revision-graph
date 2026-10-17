@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        vscode-version: ['1.90.0', stable]
+        vscode-version: ['1.100.0', stable]
 
     steps:
       - uses: actions/checkout@v4

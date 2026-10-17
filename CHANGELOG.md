@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.5 - Unreleased
 
+### Compatibility
+
+- Require VS Code 1.100.0 or newer for the Git API's separate untracked-file state
+  and checkout events. VS Code 1.90–1.99 are no longer supported by new updates.
+
 ### File Restore
 
 - Validate the complete restore plan before changing worktree files in Compare
