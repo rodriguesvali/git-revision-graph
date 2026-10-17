@@ -13,22 +13,23 @@ test('expanded change search finds root, literal, removed and renamed paths with
   const fixture = await createSharedGitFixture();
   const root = fixture.repositoryPath;
   const repository = createRepository({ root });
+  const literalFileName = process.platform === 'win32' ? 'literal-文件 name.txt' : 'literal-文件\nname.txt';
   const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
   const search = (hash: string, change: string, file?: string) => loadShowLogFileMatchPaths(repository, hash, { text: '', change, file });
   try {
     assert.deepEqual(await search(fixture.initialCommit, 'space'), ['space name.txt']);
     assert.deepEqual(await search(fixture.initialCommit, 'SPACE'), []);
     await fs.writeFile(path.join(root, 'space name.txt'), 'space\nadded\n');
-    await fs.writeFile(path.join(root, 'literal-文件\nname.txt'), 'literal.$+?()[]{}|^\\\nneedle\n');
+    await fs.writeFile(path.join(root, literalFileName), 'literal.$+?()[]{}|^\\\nneedle\n');
     await fs.writeFile(path.join(root, 'unrelated.txt'), 'other\n');
     await git('add', '--', '.'); await git('commit', '-m', 'needle in message');
     const added = await git('rev-parse', 'HEAD');
     assert.deepEqual(await search(added, 'space'), []);
-    assert.deepEqual(await search(added, 'literal.$+?()[]{}|^\\'), ['literal-文件\nname.txt']);
+    assert.deepEqual(await search(added, 'literal.$+?()[]{}|^\\'), [literalFileName]);
     assert.deepEqual(await search(added, 'needle', 'unrelated.txt'), []);
-    await fs.unlink(path.join(root, 'literal-文件\nname.txt'));
+    await fs.unlink(path.join(root, literalFileName));
     await git('add', '--', '.'); await git('commit', '-m', 'delete');
-    assert.deepEqual(await search(await git('rev-parse', 'HEAD'), 'needle'), ['literal-文件\nname.txt']);
+    assert.deepEqual(await search(await git('rev-parse', 'HEAD'), 'needle'), [literalFileName]);
     assert.deepEqual(await search(fixture.renameCommit, 'rename'), []);
     await fs.rename(path.join(root, 'space name.txt'), path.join(root, 'renamed.txt'));
     await fs.writeFile(path.join(root, 'renamed.txt'), 'space\nadded\nrename needle\n');

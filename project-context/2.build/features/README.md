@@ -43,6 +43,8 @@ tag and bisect fixes, Compare Results Revert, compact graph and Flow Governance 
   remove the optional merge display mode and keep one compact automatic graph.
 - [1.7.5-flow-governance-status-copy.md](1.7.5-flow-governance-status-copy.md):
   remove the redundant enabled sentence and empty status spacing; maintainer accepted.
+- [1.7.5-windows-show-log-fixture.md](1.7.5-windows-show-log-fixture.md):
+  use a Windows-valid search fixture name while retaining newline-path coverage elsewhere.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.
