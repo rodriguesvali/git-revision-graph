@@ -29,10 +29,14 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   types and CI with the approved minimum and verify the real Git API capabilities.
 - [1.7.5-tag-detached-head.md](1.7.5-tag-detached-head.md): distinguish a named
   detached tag from an attached current branch in graph loading and ref workflows.
+- [1.7.5-bisect-native-ownership.md](1.7.5-bisect-native-ownership.md): reject
+  external bisect replacements even when endpoints, history and start text match.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.
 Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
+The [bisect review](../bug-bisect-fragility-review-2026-10-17.md) separately tracks
+B1–B3; the maintainer authorized B1, implemented in the native-ownership artifact.
 
 ## Published Release Artifacts — 1.7.4
 

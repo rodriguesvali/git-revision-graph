@@ -7,6 +7,20 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Native Bisect Ownership — B1
+
+On 2026-10-17, Node/real-Git tests and the actual graph's safety scenario passed
+on Linux/Xvfb with VS Code 1.100.0/stable 1.142.0. Normal completion restores the
+owned state; Stop rejects an external restart with identical endpoints/log/start
+contents, and confirmed Detach Controls preserves its native metadata and HEAD.
+The fixture then performs its own cleanup. Full suite: 1,093 passed; platform:
+51 passed. See the [feature record](../2.build/features/1.7.5-bisect-native-ownership.md)
+for legacy recovery, environment troubleshooting and verification limits.
+
+Manual acceptance still includes visible prompt/keyboard/theme behavior, an
+active pre-upgrade session without a fingerprint, and Windows/macOS. These gates
+are not implied by automated confirmation responses.
+
 ## 1.7.5 Tag-Detached HEAD
 
 Automated Node and Linux/Xvfb host verification passed on 2026-10-17 with VS Code
@@ -115,7 +129,7 @@ earlier user UI acceptance do not establish complete manual Extension Host smoke
 | Active bisect and compact controls | Test good/bad/skip, undo and inspect; Minimize exposes only ready good/bad controls. Verify step/hash, disabled pending decisions and result expansion. | Pending |
 | Graph visibility | Bisect Commit stays visible across steps and repeated layouts without manual scrolling; verify narrow panes, focus/scope/history limits and the reported Angular-style large graph. | Pending |
 | Dirty and multiple repositories | Staged/unstaged/untracked/conflicted and unsaved files in the chosen repository block transitions. Changes in another repository do not block it; nested repository ownership remains correct. | Pending |
-| Reload, failure and external state | Reload mid-search and recover; change native bisect/HEAD externally in a disposable fixture and verify checkout/metadata are preserved with actionable recovery. Stop confirmation must not act after controls are detached. | Pending |
+| Reload, failure and external state | Reload mid-search and recover; replace native bisect using identical endpoints/history/start contents and verify checkout/metadata survive rejected decisions, undo and Stop. Legacy saved sessions without an identity must retain manual recovery context without adopting native state. Stop confirmation must not act after controls are detached. | Pending manual acceptance; B1 automated evidence in the native-ownership artifact |
 | Completion and restoration | Found/skipped/divergent outcomes are explicit; finish returns attached/detached HEAD, removes marker and releases mutation reservation. A moved original branch is preserved. | Pending |
 | Expanded-file search | Global change/file search propagates; edit/clear and collapse/reopen retain file filter. Rapid replacement/source switches discard stale results; filtered diff/menu actions address the correct file. See focused cases below. | Pending |
 | Flow creation sources | Create Feature and Bug from Package and Package from Main, including configured names. Verify selected source, existing clean/sync guards, form cancellation and explicit publication decisions. | Pending |

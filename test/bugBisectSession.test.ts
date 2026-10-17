@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { writeFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { BugBisectSessions, type BugBisectHost } from '../src/bugBisect/session';
+import { BisectGit } from '../src/bugBisect/git';
 import { RepositoryMutationCoordinator } from '../src/repositoryMutationCoordinator';
-import type { BisectSession } from '../src/bugBisect/sessionState';
+import { readBisectSessions, type BisectSession } from '../src/bugBisect/sessionState';
 import { createRepository } from './fakes';
 import { createBisectFixture } from './bugBisectFixture';
 
@@ -38,7 +39,7 @@ async function setup() {
     setFailure(value: boolean) { failure = value; }, setUnsaved(value: boolean) { unsaved = value; },
     setConfirmed(value: boolean) { confirmed = value; },
     async prepare() { await sessions.prepare(repository, f.hashes[0]); },
-    reload() { sessions.dispose(); sessions = new BugBisectSessions(coordinator, host, stored); },
+    reload(snapshot: unknown = stored) { sessions.dispose(); sessions = new BugBisectSessions(coordinator, host, snapshot); },
     async dispose() { sessions.dispose(); coordinator.dispose(); await f.dispose(); }
   };
 }
@@ -389,4 +390,146 @@ test('interrupted restoration retains the original destination and can finish af
     assert.equal((await f.engine.head()).branch, 'refs/heads/main');
     assert.equal(await f.engine.hasMetadata('BISECT_START'), false);
   } finally { await f.dispose(); }
+});
+
+async function replaceWithIdenticalBisect(f: Awaited<ReturnType<typeof setup>>): Promise<void> {
+  const session = f.stored[0];
+  const log = await f.engine.log();
+  await f.engine.reset();
+  await f.engine.start(session.swapped ? session.selected.hash : session.original.hash,
+    session.swapped ? session.original.hash : session.selected.hash);
+  for (const entry of session.history) await f.engine.answer(entry.answer, entry.commit.hash);
+  assert.equal(await f.engine.log(), log, 'The replacement must have the exact same log');
+}
+
+for (const action of ['good', 'bad', 'skip', 'undo', 'retry', 'stop', 'stop-detached'] as const) {
+  test(`an external bisect with the same endpoints/history blocks ${action} without changing native state`, async () => {
+    const f = await setup();
+    try {
+      await f.prepare(); await f.control('start'); await f.control('good');
+      await replaceWithIdenticalBisect(f);
+      const head = await f.engine.head(); const log = await f.engine.log();
+      const selection = await f.engine.resolveCommit('BISECT_HEAD');
+      const history = f.state().history;
+      await f.control(action);
+      assert.match(f.state().error ?? '', /state changed outside/);
+      assert.deepEqual(await f.engine.head(), head);
+      assert.equal(await f.engine.log(), log);
+      assert.deepEqual(await f.engine.resolveCommit('BISECT_HEAD'), selection);
+      assert.deepEqual(f.state().history, history);
+      assert.equal(await f.engine.hasMetadata('BISECT_START'), true);
+    } finally { await f.dispose(); }
+  });
+}
+
+test('replacement with identical start contents and log is rejected after reload', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const startPath = join(f.root, (await f.git('rev-parse', '--git-path', 'BISECT_START')).trim());
+    const originalStart = await readFile(startPath, 'utf8');
+    const head = await f.engine.head(); const log = await f.engine.log();
+    await f.engine.reset(); await f.git('checkout', 'main');
+    await f.engine.start(f.hashes[6], f.hashes[0]); await f.git('checkout', head.hash);
+    assert.equal(await readFile(startPath, 'utf8'), originalStart);
+    assert.equal(await f.engine.log(), log);
+    f.reload(); await f.control('stop');
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), log);
+    assert.equal(await f.engine.hasMetadata('BISECT_START'), true);
+  } finally { await f.dispose(); }
+});
+
+test('legacy stored searches retain recovery context but cannot adopt an active native bisect', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const legacy = f.stored.map(({ nativeIdentity: _identity, ...session }) => session);
+    const head = await f.engine.head(); const log = await f.engine.log();
+    f.reload(legacy); await f.control('retry');
+    assert.match(f.state().error ?? '', /native identity cannot be verified/);
+    assert.equal(f.state().original.hash, f.hashes[6]);
+    await f.control('stop'); assert.match(f.state().error ?? '', /native identity cannot be verified/);
+    await f.control('abandon');
+    assert.equal(f.sessions.state(f.root), null);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), log);
+    assert.equal((await f.coordinator.run(f.root, () => 'available')).status, 'completed');
+  } finally { await f.dispose(); }
+});
+
+test('persisted native identity is validated and never exposed to the webview', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    assert.match(f.stored[0].nativeIdentity ?? '', /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(f.state(), 'nativeIdentity'), false);
+    for (const nativeIdentity of ['', 'bad', 'a'.repeat(65), 42, null]) {
+      assert.deepEqual(readBisectSessions([{ ...f.stored[0], nativeIdentity }]), []);
+    }
+    f.reload(); await f.control('good'); await f.control('undo'); await f.control('stop');
+    assert.equal(f.sessions.state(f.root), null);
+    assert.deepEqual(await f.engine.head(), { hash: f.hashes[6], branch: 'refs/heads/main' });
+  } finally { await f.dispose(); }
+});
+
+test('a same-log replacement during selection persistence is rejected before the next checkout', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const head = await f.engine.head(); const save = f.host.save;
+    let replaced = false; let log = '';
+    f.host.save = async sessions => {
+      await save(sessions);
+      if (!replaced && sessions[0]?.current?.hash !== head.hash && !sessions[0]?.pendingAnswer) {
+        replaced = true;
+        await replaceWithIdenticalBisect(f); log = await f.engine.log();
+      }
+    };
+    await f.control('good');
+    assert.equal(replaced, true);
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), log);
+  } finally { await f.dispose(); }
+});
+
+test('a same-log replacement during restoration checkout cannot be reset', async () => {
+  const f = await setup();
+  try {
+    await f.prepare(); await f.control('start');
+    const checkout = f.repository.checkout; let log = '';
+    f.repository.checkout = async ref => {
+      await checkout(ref);
+      if (ref === 'main') { await replaceWithIdenticalBisect(f); log = await f.engine.log(); }
+    };
+    await f.control('stop');
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.equal(await f.engine.log(), log);
+    assert.equal(await f.engine.hasMetadata('BISECT_START'), true);
+  } finally { await f.dispose(); }
+});
+
+test('native command recovery cannot adopt a replacement with the exact expected log extension', async () => {
+  const f = await setup(); const answer = BisectGit.prototype.answer;
+  try {
+    await f.prepare(); await f.control('start');
+    const identity = f.stored[0].nativeIdentity;
+    const head = await f.engine.head(); let replaced = false; let log = '';
+    BisectGit.prototype.answer = async function (classification, hash) {
+      const selection = await answer.call(this, classification, hash);
+      if (this.repositoryPath === f.root && !replaced) {
+        replaced = true;
+        await replaceWithIdenticalBisect(f); log = await f.engine.log();
+      }
+      return selection;
+    };
+    await f.control('good');
+    assert.equal(replaced, true);
+    assert.match(f.state().error ?? '', /state changed outside/);
+    assert.equal(f.stored[0].nativeIdentity, identity, 'A replacement identity must never become owned');
+    assert.deepEqual(await f.engine.head(), head);
+    assert.equal(await f.engine.log(), log);
+  } finally { BisectGit.prototype.answer = answer; await f.dispose(); }
 });

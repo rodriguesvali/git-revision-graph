@@ -1,6 +1,7 @@
 import { stat } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 import { execGit, GIT_EXEC_LOCAL_MUTATION_PROFILE, GIT_EXEC_METADATA_PROFILE } from '../gitExec';
+import { readNativeBisectIdentity } from './nativeIdentity';
 
 export type BisectAnswer = 'good' | 'bad' | 'skip';
 export interface BisectCommit { readonly hash: string; readonly subject: string }
@@ -60,6 +61,11 @@ export class BisectGit {
   }
 
   log(): Promise<string> { return this.read(['bisect', 'log']); }
+
+  async nativeIdentity(): Promise<string | undefined> {
+    const gitPath = (await this.read(['rev-parse', '--git-path', 'BISECT_START'])).trim();
+    return readNativeBisectIdentity(isAbsolute(gitPath) ? gitPath : resolve(this.repositoryPath, gitPath));
+  }
 
   async start(bad: string, good: string): Promise<BisectSelection> {
     if (!isBisectHash(bad) || !isBisectHash(good)) throw new Error('Invalid bisect endpoints.');

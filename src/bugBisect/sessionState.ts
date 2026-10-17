@@ -1,9 +1,11 @@
 import { isBisectHash } from './git';
+import { isNativeBisectIdentity } from './nativeIdentity';
 
 export interface BisectSession extends RevisionGraphProtocol.BisectView {
   started: boolean;
   log: string;
   expectedHead: string;
+  nativeIdentity?: string;
   rebuilding?: boolean;
   returning?: boolean;
   pendingAnswer?: { readonly commit: RevisionGraphProtocol.BisectCommit; readonly answer: 'good' | 'bad' | 'skip' };
@@ -32,6 +34,7 @@ function validIdentity(value: Record<string, unknown>): boolean {
     && Number.isSafeInteger(value.version) && (value.version as number) > 0
     && typeof value.repositoryPath === 'string' && value.repositoryPath.length > 0
     && isBisectHash(value.expectedHead)
+    && (value.nativeIdentity === undefined || isNativeBisectIdentity(value.nativeIdentity))
     && typeof value.log === 'string' && value.log.length <= 4 * 1024 * 1024;
 }
 
@@ -63,6 +66,6 @@ function validAnswer(value: unknown): boolean {
 }
 
 export function bisectView(session: BisectSession): RevisionGraphProtocol.BisectView {
-  const { started: _started, log: _log, expectedHead: _expectedHead, rebuilding: _rebuilding, returning: _returning, pendingAnswer: _pendingAnswer, ...view } = session;
+  const { started: _started, log: _log, expectedHead: _expectedHead, nativeIdentity: _nativeIdentity, rebuilding: _rebuilding, returning: _returning, pendingAnswer: _pendingAnswer, ...view } = session;
   return view;
 }

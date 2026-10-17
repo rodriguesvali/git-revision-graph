@@ -31,6 +31,13 @@ All notable changes to this project will be documented in this file.
 - Discard late render results and errors after cancellation, including loads that
   ignore the abort signal. Subsequent refreshes can still complete normally.
 
+### Bug Search
+
+- Verify the native bisect instance as well as its log before changing revisions
+  or ending a search, preserving external replacements with identical history.
+- Keep recovery context for older saved searches without a verifiable identity;
+  offer detaching controls for manual recovery instead of adopting native state.
+
 ### Maintenance
 
 - Exercise repository isolation, stale actions, restore recovery and panel lifecycle

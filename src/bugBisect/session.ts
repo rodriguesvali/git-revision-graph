@@ -6,6 +6,8 @@ import { createMutationGuardedRepository, RepositoryMutationCoordinator, type Re
 import { BisectGit, type BisectSelection } from './git';
 import { bisectView, readBisectSessions, type BisectSession } from './sessionState';
 
+const OWNERSHIP_ERROR = 'Git bisect state changed outside this search or its native identity cannot be verified. Detach controls to recover manually; no external session will be reset.';
+
 export interface BugBisectHost {
   hasUnsavedDocuments(repository: Repository): boolean;
   save(sessions: readonly BisectSession[]): PromiseLike<void>;
@@ -175,7 +177,7 @@ export class BugBisectSessions {
     if (session.started && session.status !== 'preparing') return;
     if (session.started) {
       await this.resetOwned(git, session);
-      this.replace(session, { started: false, log: '' });
+      this.replace(session, { started: false, log: '', nativeIdentity: undefined });
     }
     this.replace(session, { swapped, started: true });
     await this.save();
@@ -199,11 +201,15 @@ export class BugBisectSessions {
     finally {
       // Capture partial metadata changes as well as success, so failure remains recoverable.
       const recovery = new BisectGit(git.repositoryPath);
-      if (await recovery.hasMetadata('BISECT_START')) {
+      const nativeIdentity = await recovery.nativeIdentity();
+      if (nativeIdentity) {
+        if (session.nativeIdentity ? session.nativeIdentity !== nativeIdentity : previous !== '' || expected[0] !== 'start') {
+          throw new Error(OWNERSHIP_ERROR);
+        }
         const log = await recovery.log();
         if (!isOwnedBisectLog(previous, log, expected)) throw new Error('Git bisect state changed outside this search during the operation.');
-        this.replace(session, { log });
-      }
+        this.replace(session, { log, nativeIdentity });
+      } else if (session.nativeIdentity) throw new Error(OWNERSHIP_ERROR);
       await this.save();
     }
   }
@@ -239,7 +245,7 @@ export class BugBisectSessions {
 
   private async rebuild(git: BisectGit, session: BisectSession, lease: RepositoryMutationLease): Promise<void> {
     await this.resetOwned(git, session);
-    this.replace(session, { log: '' });
+    this.replace(session, { log: '', nativeIdentity: undefined });
     await this.save();
     let selection = await this.ownCommand(git, session, () => git.start(
       session.swapped ? session.selected.hash : session.original.hash,
@@ -290,10 +296,16 @@ export class BugBisectSessions {
     const crashCheckout = session.started && (session.current?.hash === head.hash || (session.returning && head.hash === session.original.hash));
     if (head.hash !== session.expectedHead && !crashCheckout) throw new Error('HEAD changed outside this search. Restore the expected revision before continuing.');
     if (crashCheckout) this.replace(session, { expectedHead: head.hash });
-    const active = await git.hasMetadata('BISECT_START');
+    await this.assertNativeOwned(git, session, head.hash);
+  }
+
+  private async assertNativeOwned(git: BisectGit, session: BisectSession, headHash: string): Promise<void> {
+    const nativeIdentity = await git.nativeIdentity();
+    if (nativeIdentity && nativeIdentity !== session.nativeIdentity) throw new Error(OWNERSHIP_ERROR);
+    const active = nativeIdentity !== undefined;
     if (active ? !session.started || !session.log || await git.log() !== session.log
-      : session.started && !!session.log && !session.rebuilding && !(session.returning && head.hash === session.original.hash)) {
-      throw new Error('Git bisect state changed outside this search. No external session will be reset.');
+      : session.started && !!session.log && !session.rebuilding && !(session.returning && headHash === session.original.hash)) {
+      throw new Error(OWNERSHIP_ERROR);
     }
   }
 

@@ -12,8 +12,12 @@ Last consolidated: 2026-10-17
 - `src/bugBisect/*` owns manual bug-search sessions independently of graph
   visibility. Native `git bisect --no-checkout` selects revisions; guarded built-in
   Git checkout applies them. Per-worktree workspace-state recovery retains pinned
-  endpoints, the original attached/detached HEAD, an owned Git log and pending
-  answers. Shared mutation-coordinator reservations exclude incompatible extension
+  endpoints, the original attached/detached HEAD, an owned Git log, a native
+  `BISECT_START` file-instance fingerprint and pending answers. Identity combines
+  bounded content and filesystem creation/change metadata, is host-only and is
+  revalidated at mutation/recovery boundaries; equal logs alone do not prove
+  ownership. Legacy sessions without a fingerprint retain manual recovery context
+  without adopting active native state. Shared mutation-coordinator reservations exclude incompatible extension
   operations between user tests. Graph controls use the typed message pipeline;
   Show Log hands off a validated commit and its repository to the same graph.
   `src/revisionGraph/bugBisectMarker.ts` adds an ephemeral **Bisect Commit**
