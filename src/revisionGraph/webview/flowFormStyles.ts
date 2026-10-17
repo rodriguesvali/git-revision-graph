@@ -8,6 +8,7 @@ export function renderRevisionGraphFlowFormStyles(): string {
       color: var(--vscode-descriptionForeground);
     }
     .flow-config-details { max-height: 160px; overflow-y: auto; }
+    .flow-config-status:empty, .flow-config-details:empty { display: none; }
     .flow-form-preview {
       padding: 10px;
       margin-bottom: 12px;

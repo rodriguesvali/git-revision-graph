@@ -21,7 +21,7 @@ function syncRevisionGraphWebviewFlowConfigUi(
   const invalid = flow.configSource === 'invalid';
   const hasConfig = flow.configSource === 'repository' || invalid;
   status.textContent = invalid ? 'Configuration error — Flow Governance is unavailable.'
-    : flow.enabled === true ? 'Enabled for this repository.'
+    : flow.enabled === true ? ''
     : hasConfig ? 'Disabled in the repository configuration.'
     : 'No repository configuration. Enable Flow Governance to create it.';
   const diagnostics = Array.isArray(flow.diagnostics) ? flow.diagnostics : [];
