@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-10-11
+Last consolidated: 2026-10-17
 
 ## Context
 
@@ -36,6 +36,13 @@ Last consolidated: 2026-10-11
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
 - `src/refActions.ts` contains testable Git workflows.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
+- `src/compareResultRestoreExecutor.ts` preflights the complete file restore against
+  one resolved commit and uses literal Git pathspecs. `src/compareResultRestoreBackup.ts`
+  captures affected worktree files before mutation and recovers attempted targets
+  after failure, preserving recovery copies when compensation is incomplete. This
+  shared boundary serves Compare Results and Show Log without changing the index;
+  it provides exception recovery, not atomicity against process termination or
+  uncoordinated external writers.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
 - `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
   capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL

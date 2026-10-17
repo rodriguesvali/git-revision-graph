@@ -1,11 +1,27 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-11
+Last updated: 2026-10-17
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
+
+## 1.7.5 File Restore — S1
+
+Status: Automated workflow/fault regressions passed; real Extension Host smoke pending.
+Record operator, platform, VS Code version, source commit and disposable repository.
+
+| Scenario | Expected result | Result |
+| --- | --- | --- |
+| Compare Results restore/cancel | Confirm a modified-file and rename restore; dismiss another confirmation. Correct files are restored; cancellation changes nothing. | Not recorded |
+| Show Log restore | Restore the selected commit's side for a modified file and a rename; verify file modes and staged changes remain appropriate. | Not recorded |
+| Stale reference/source | Prepare a rename comparison, then move the selected branch so a later source is absent. Restoring reports failure without changing either local path. | Not recorded |
+| Execution/recovery failure | With a controlled disposable fixture, fail a later restore write. Previous files are recovered. If the fixture also blocks recovery, the modal identifies retained copies for manual recovery. | Not recorded |
+
+Automated tests execute both real host workflows with native Git and injected CLI
+failures. They do not execute the real VS Code modal/panel transport. See the
+[feature artifact](../2.build/features/1.7.5-safe-file-restore.md).
 
 ## 1.7.4 Published Release Evidence
 

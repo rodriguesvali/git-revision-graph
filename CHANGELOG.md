@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.5 - Unreleased
 
+### File Restore
+
+- Validate the complete restore plan before changing worktree files in Compare
+  Results and Show Log, using one resolved commit and exact file paths.
+- Recover previous file contents after a failed restore; retain recovery copies
+  and report their location if automatic recovery cannot finish.
+
 ### Maintenance
 
 - Open the 1.7.5 development cycle and align package and build metadata.

@@ -3,12 +3,20 @@ import * as path from 'node:path';
 
 import type { CompareResultRestoreAction } from './compareResultRestore';
 import { assertCompareResultRestorePlanInsideRepository } from './compareResultRestore';
-import { hasGitExitCode } from './errorDetail';
+import { assertNoSymlinkedRestoreAncestors, CompareResultRestoreBackup } from './compareResultRestoreBackup';
 import {
   execGitWithResult,
   GIT_EXEC_LOCAL_MUTATION_PROFILE,
   GIT_EXEC_METADATA_PROFILE
 } from './gitExec';
+
+export { assertNoSymlinkedRestoreAncestors } from './compareResultRestoreBackup';
+
+interface PreparedRestoreAction {
+  readonly targetPath: string;
+  readonly targetGitPath: string;
+  readonly sourceExists: boolean;
+}
 
 export async function executeCompareResultRestorePlan(
   repositoryRootPath: string,
@@ -16,14 +24,46 @@ export async function executeCompareResultRestorePlan(
   plan: readonly CompareResultRestoreAction[]
 ): Promise<void> {
   assertCompareResultRestorePlanInsideRepository(repositoryRootPath, plan);
+  if (plan.length === 0) {
+    return;
+  }
 
+  const resolvedRevision = await resolveRestoreRevision(repositoryRootPath, ref);
+  const prepared = await prepareRestoreActions(repositoryRootPath, resolvedRevision, plan);
+  const backup = await CompareResultRestoreBackup.create(repositoryRootPath, prepared.map((action) => action.targetPath));
+  const touchedPaths = new Set<string>();
+  try {
+    for (const action of prepared) {
+      await assertNoSymlinkedRestoreAncestors(repositoryRootPath, action.targetPath);
+      touchedPaths.add(action.targetPath);
+      if (action.sourceExists) {
+        await execGitWithResult(
+          repositoryRootPath,
+          ['--literal-pathspecs', 'restore', `--source=${resolvedRevision}`, '--worktree', '--', action.targetGitPath],
+          GIT_EXEC_LOCAL_MUTATION_PROFILE
+        );
+      } else {
+        await fs.rm(action.targetPath, { force: true, recursive: false });
+      }
+    }
+  } catch (error) {
+    await backup.recover(error, touchedPaths);
+  }
+  await backup.dispose();
+}
+
+async function prepareRestoreActions(
+  repositoryRootPath: string,
+  resolvedRevision: string,
+  plan: readonly CompareResultRestoreAction[]
+): Promise<PreparedRestoreAction[]> {
+  const prepared: PreparedRestoreAction[] = [];
   for (const action of plan) {
     const sourcePath = action.kind === 'write-ref' ? action.refPath : action.targetPath;
     const sourceGitPath = toRepositoryGitPath(repositoryRootPath, sourcePath);
     const targetGitPath = toRepositoryGitPath(repositoryRootPath, action.targetPath);
     await assertNoSymlinkedRestoreAncestors(repositoryRootPath, action.targetPath);
 
-    const resolvedRevision = await resolveRestoreRevision(repositoryRootPath, ref);
     const sourceExists = await doesPathExistAtRevision(
       repositoryRootPath,
       resolvedRevision,
@@ -34,58 +74,19 @@ export async function executeCompareResultRestorePlan(
       if (sourceGitPath !== targetGitPath) {
         throw new Error('Git restore cannot map the selected source path to a different target path.');
       }
-      await assertNoSymlinkedRestoreAncestors(repositoryRootPath, action.targetPath);
-      await execGitWithResult(
-        repositoryRootPath,
-        ['restore', `--source=${resolvedRevision}`, '--worktree', '--', targetGitPath],
-        GIT_EXEC_LOCAL_MUTATION_PROFILE
-      );
-      continue;
-    }
-
-    if (action.kind !== 'delete') {
+    } else if (action.kind !== 'delete') {
       throw new Error(`The selected revision does not contain ${sourceGitPath}.`);
     }
 
-    await assertNoSymlinkedRestoreAncestors(repositoryRootPath, action.targetPath);
-    await fs.rm(action.targetPath, { force: true, recursive: false });
+    prepared.push({ targetPath: action.targetPath, targetGitPath, sourceExists });
   }
-}
-
-export async function assertNoSymlinkedRestoreAncestors(
-  repositoryRootPath: string,
-  candidatePath: string
-): Promise<void> {
-  assertCompareResultRestorePlanInsideRepository(repositoryRootPath, [
-    { kind: 'delete', targetPath: candidatePath }
-  ]);
-  const relativePath = path.relative(path.resolve(repositoryRootPath), path.resolve(candidatePath));
-  const segments = relativePath.split(path.sep).slice(0, -1);
-  let currentPath = path.resolve(repositoryRootPath);
-
-  for (const segment of segments) {
-    currentPath = path.join(currentPath, segment);
-    try {
-      const stat = await fs.lstat(currentPath);
-      if (stat.isSymbolicLink()) {
-        throw new Error('The restore target has a symbolic-link or junction ancestor.');
-      }
-      if (!stat.isDirectory()) {
-        throw new Error('The restore target has a non-directory ancestor.');
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        continue;
-      }
-      throw error;
-    }
-  }
+  return prepared;
 }
 
 async function resolveRestoreRevision(repositoryRootPath: string, ref: string): Promise<string> {
   const { stdout } = await execGitWithResult(
     repositoryRootPath,
-    ['rev-parse', '--verify', `${ref}^{commit}`],
+    ['rev-parse', '--verify', '--end-of-options', `${ref}^{commit}`],
     GIT_EXEC_METADATA_PROFILE
   );
   const resolvedRevision = stdout.trim();
@@ -100,19 +101,18 @@ async function doesPathExistAtRevision(
   resolvedRevision: string,
   gitPath: string
 ): Promise<boolean> {
-  try {
-    await execGitWithResult(
-      repositoryRootPath,
-      ['cat-file', '-e', `${resolvedRevision}:${gitPath}`],
-      GIT_EXEC_METADATA_PROFILE
-    );
-    return true;
-  } catch (error) {
-    if (hasGitExitCode(error, 128)) {
-      return false;
-    }
-    throw error;
+  const { stdout } = await execGitWithResult(
+    repositoryRootPath,
+    ['--literal-pathspecs', 'ls-tree', '-z', '--full-tree', resolvedRevision, '--', gitPath],
+    GIT_EXEC_METADATA_PROFILE
+  );
+  if (!stdout) {
+    return false;
   }
+  if (stdout.split('\0').filter(Boolean).length !== 1 || !/^\d+ blob [0-9a-f]+\t/.test(stdout)) {
+    throw new Error(`The selected revision path ${gitPath} is not a file.`);
+  }
+  return true;
 }
 
 function toRepositoryGitPath(repositoryRootPath: string, candidatePath: string): string {

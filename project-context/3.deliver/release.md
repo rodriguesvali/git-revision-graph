@@ -9,24 +9,30 @@ Opened on 2026-10-17 with explicit maintainer authorization: “Abra a versão 1
 Previous published baseline: `1.7.4`, confirmed by the maintainer on 2026-10-11.
 See the [cycle artifact](../2.build/features/1.7.5-release-cycle-opening.md).
 
-Opening scope is version metadata and release records. Functional scope is pending.
-The [systemic-fragility review](../2.build/systemic-fragility-review-2026-10-17.md)
-is planning input; none of its proposed corrections are implemented by cycle opening.
+Opening scope was version metadata and release records. The maintainer subsequently
+approved the [S1 file-restore correction](../2.build/features/1.7.5-safe-file-restore.md)
+on 2026-10-17: preflight all sources, pin one commit, use exact file paths and recover
+partial mutations in Compare Results and Show Log. The other findings in the
+[systemic review](../2.build/systemic-fragility-review-2026-10-17.md) remain planning input.
 CHANGELOG identifies 1.7.5 as Unreleased. Dependencies, engine and contribution points
 retain the published baseline.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified | All three version fields declare 1.7.5; all non-version manifest and lockfile data match HEAD. |
-| Build and existing tests | Passed on 2026-10-17 | `npm test`: 1,039 tests, zero failures or skips, including production and webview builds. |
-| Whitespace and knowledge graph | Passed | `git diff --check` and `graphify update .` passed; structural extraction preserved existing semantic content. |
-| Functional scope and smoke | Pending scope | Define acceptance criteria and affected smoke scenarios when changes are approved. Opening changes no runtime behavior. |
+| Build and existing tests | Passed on 2026-10-17 | S1 correction: `npm test` passed 1,051 tests, zero failures/skips, including production and webview builds; quality passed for 295 files / 2,795 functions. |
+| File-restore fault regressions | Passed | Real Git checks cover invalid later plans, partial writes/deletions, mode/binary/symlink recovery, unchanged index, branch movement, literal paths and retained copies on recovery failure. Both presenters report failed restores after recovery. |
+| Platform verification | Passed on Linux | `npm run test:platform`: 51 tests, zero failures/skips, including the new restore fault regressions. Windows/macOS execution not performed locally. |
+| Whitespace and knowledge graph | Passed | `git diff --check` and `graphify update .` passed; the structural update preserved existing semantic content. |
+| Focused Extension Host smoke | Pending | Disposable fixtures: confirm/cancel restores in Compare Results and Show Log; check successful renames and actionable failure/recovery messages. Automated host-workflow fixtures do not establish real UI acceptance. |
 | Packaging and Marketplace | Not authorized | No 1.7.5 VSIX, installation, tag or publication has been performed. |
 
 Before publication, rollback of cycle opening consists of reverting only its
 metadata/documentation changes to the 1.7.4 baseline. Preserve unrelated work and
 the review artifact. Published 1.7.4 evidence below remains historical evidence,
 not verification or publication of 1.7.5.
+Rollback of S1 separately reverts its executor, recovery helper, regressions and
+feature documentation; inspect any retained recovery copies before removing them.
 
 ## Published release — 1.7.4
 

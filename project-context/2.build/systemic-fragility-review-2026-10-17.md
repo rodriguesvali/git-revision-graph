@@ -144,3 +144,11 @@ Essa avaliação é evidência auxiliar, não prova de funcionamento nem aprova�
 4. Ampliar S4 junto de cada correção, mantendo os cenários determinísticos e cobrindo a integração real.
 
 Não é necessário substituir a arquitetura publicada: presenters, executor, validador/autorizador e coordenadores existentes já oferecem as fronteiras apropriadas para essas correções.
+
+## Acompanhamento — S1 na versão 1.7.5
+
+Em 2026-10-17, o mantenedor autorizou os ajustes do primeiro achado. A correção,
+as regressões e os limites de recuperação estão registrados no
+[artefato de restauração segura](features/1.7.5-safe-file-restore.md). As evidências
+acima descrevem o baseline anterior à correção. S2–S4 continuam fora do escopo
+aprovado de implementação.
