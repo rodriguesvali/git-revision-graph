@@ -3,6 +3,11 @@
 Status: `1.7.5` development cycle open; published baseline `1.7.4`
 Last consolidated: 2026-10-17
 
+Publication review: [1.7.5 candidate artifacts and remaining gates](1.7.5-publication-review.md).
+Source reviewed: `62a98072a07c36151d3d6d168d6762ffef845fb6`; this review changes
+documentation only. Source verification is recorded; final manual smoke,
+candidate VSIX inspection and clean-profile installation remain pending.
+
 ## Development release — 1.7.5
 
 Opened on 2026-10-17 with explicit maintainer authorization: “Abra a versão 1.7.5”.
@@ -33,7 +38,7 @@ them, preserving the verified native-instance boundary.
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified | All three version fields remain 1.7.5. Only the engine and exact API type dependency change in the manifest; lockfile changes stay in root metadata and the type package. Runtime dependencies and contributions are unchanged. |
-| Build and existing tests | Passed on 2026-10-17 | Merge-option removal verification: 1,136 tests passed, zero failures/skips, including production/webview builds and test compilation; quality passed for 301 files / 2,830 functions with unchanged defaults and tighter file ceilings. See the [removal artifact](../2.build/features/1.7.5-remove-merge-visibility-option.md). |
+| Build and existing tests | Passed on 2026-10-17 | Latest Flow UX source verification: 1,136 tests passed, zero failures/skips, including production/webview builds and test compilation; quality passed for 301 files / 2,830 functions. Prior merge-option checks and tighter file ceilings remain in the [removal artifact](../2.build/features/1.7.5-remove-merge-visibility-option.md). No runtime source changed during the publication review. |
 | Native bisect ownership | Fixed; automated verification passed | B1 regressions remain green for all mutating controls, identical start/log reload, legacy recovery, owned rebuild, command boundaries and worktree identity. Recovery in B2 still requires B1's native fingerprint. |
 | Applied bisect answer recovery | Fixed; regression verification passed | Eight initial red cases reproduce B2. Checkpointed good/bad/skip now resume from old/new log snapshots without a duplicate answer; Stop, Undo, terminal results, repeated interruptions and external-state rejection are covered in disposable real-Git tests. Native selection uses next, not repeated classification. |
 | Bisect target identity | Fixed; regression verification passed | B3 preserves reference kind through dispatch, controller and preparation. Exact namespace lookup prevents selecting namesake branches/tags/remotes/stash or falling back when a selected ref is missing; annotated and packed tags peel correctly. Show Log explicitly supplies commit kind. See the [B3 artifact](../2.build/features/1.7.5-bisect-target-identity.md). |
@@ -49,6 +54,9 @@ them, preserving the verified native-instance boundary.
 | Webview origin regressions | Passed | Missing/malformed origins, repository/context replay, identical targets, panel recreation and deferred sends; 12 Chromium/Electron checks passed without JavaScript errors. Browser effects used injected handlers, not real Git mutations; see S2 artifact. |
 | File-restore fault regressions | Passed | Real Git checks cover invalid later plans, partial writes/deletions, mode/binary/symlink recovery, unchanged index, branch movement, literal paths and retained copies on recovery failure. Both presenters report failed restores after recovery. |
 | Platform verification | Passed on Linux | After the merge-option removal, `npm run test:platform`: 51 tests, zero failures/skips. New real-Git compact projection checks and historical-source restore recovery also pass. Windows/macOS execution not performed locally. |
+| Dependency audits | Passed on 2026-10-17 | Fresh full `npm audit` and runtime `npm audit --omit=dev` both returned zero vulnerabilities; no dependency changes. |
+| Package file preview | Passed; no VSIX generated | Local VSCE 4.0.0 `ls --no-yarn`: 685 files / 228 out assets. All compiled JavaScript, extension/webview runtime and layout worker present; internal sources/tests/planning, maps, old VSIX and repository Flow config excluded. This preview is not archive inspection or installation evidence. |
+| Hosted CI matrix | Configured; run status not verified | Node 24 on Ubuntu/Windows/macOS; actual Extension Host on minimum 1.100.0/stable. No successful hosted run for this source was independently established by this review. |
 | Whitespace and knowledge graph | Passed | `git diff --check` and `graphify update .` passed; the structural update preserved existing semantic content. |
 | Focused manual Extension Host smoke | Pending | S4 automates selected real transport and Git safety scenarios. Native picker/confirmation visuals, cancellation, keyboard/theme and other workflows in the smoke matrix remain manual acceptance; automated supplied UI responses do not establish that acceptance. |
 | Packaging and Marketplace | Not authorized | No 1.7.5 VSIX, installation, tag or publication has been performed. |

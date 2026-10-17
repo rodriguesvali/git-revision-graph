@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-10-04
+Last consolidated: 2026-10-17
 
 ## Runtime
 
@@ -26,6 +26,42 @@ multi-repository ownership.
 4. Check command, view, manifest, README, and test alignment when contribution surfaces are
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
+
+## Candidate Watch: 1.7.5
+
+This candidate remains unreleased; the published baseline is 1.7.4. After an
+authorized release, monitor these changes:
+
+- VS Code 1.100.0 minimum: clients on 1.90–1.99 cannot install new updates.
+- Named detached tags load without a fabricated branch; ref identity remains
+  exact when a branch and tag share a name.
+- Compare Results Revert is available only for reference-to-worktree comparisons. Restore
+  failures recover previous files or identify retained copies; preserve them.
+- Actions from replaced repositories/panels/renders have no effects; canceled
+  graph loads do not replace fresh results or display retired errors.
+- Bisect preserves external replacements, reconciles applied answers after
+  interrupted saves and resolves selected targets in their exact namespace.
+  Older sessions lacking a verifiable identity may require Detach Controls and
+  manual recovery. Never reset external native state to clear an extension error.
+- View uses one compact graph policy; removing Show Merge Commits does not
+  reconstruct commits omitted by bounded loading/Git simplification. The Flow
+  checkbox indicates activation; errors and Saving… remain visible when needed.
+
+No runtime dependency, command or setting was added. Persisted bisect recovery
+fields and engine/type changes require care when reverting a source slice; an
+older build must not be assumed safe to control a current active search.
+Preserve Git state, recovery files and user Flow configuration during rollback.
+Before publication, revert a coherent slice; after publication, prepare an
+authorized later patch and never reuse 1.7.5. See [release readiness](release.md)
+and the [publication review](1.7.5-publication-review.md) for gates and evidence.
+
+## Published Release Watch: 1.7.4
+
+Publication was confirmed by the maintainer on 2026-10-11. Monitor guided bug
+search checkout/restoration and compact controls, Show Log expanded-file change
+search, Feature/Bug from Package, Package from Main and one-second tooltips.
+Known safety corrections for these workflows are included in the 1.7.5 candidate.
+Historical package/installation evidence remains recorded in [deployment](deployment.md).
 
 ## Published Release Watch: 1.7.3
 

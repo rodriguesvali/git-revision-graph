@@ -21,9 +21,23 @@ npx vsce login <publisher-id>
 
 ## Release gates before packaging
 
-Before creating a VSIX, confirm that every required gate for the current candidate is complete in
+Before creating a VSIX, confirm that the source-verification and manual-smoke gates for the
+current candidate are complete in
 [`project-context/3.deliver/release.md`](project-context/3.deliver/release.md), including the final
-Extension Development Host smoke. Obtain explicit maintainer approval for the packaging step.
+Extension Development Host smoke. Finalize the approved release notes and record the source commit.
+Obtain explicit maintainer approval for the packaging step. Archive inspection and clean-profile
+installation follow packaging and must pass before publication.
+
+To preview included files without creating a VSIX or publishing:
+
+```bash
+npm run build
+npx --no-install vsce ls --no-yarn
+```
+
+The listing uses the existing build output and `.vscodeignore`; it does not run the prepublish
+hook. Confirm the extension/webview runtime and layout worker are present and internal artifacts
+are excluded. This preview does not establish that a generated archive or installation works.
 
 ## Package the approved candidate VSIX
 

@@ -13,7 +13,8 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 Version 1.7.5 is open for development with maintainer authorization on 2026-10-17.
 The published baseline remains 1.7.4, confirmed on 2026-10-11. Approved functional
-work includes S1–S4 safety corrections/verification and the VS Code 1.100 minimum.
+work includes S1–S4 safety corrections/verification, the VS Code 1.100 minimum,
+tag and bisect fixes, Compare Results Revert, compact graph and Flow Governance UX.
 
 - [1.7.5-release-cycle-opening.md](1.7.5-release-cycle-opening.md): align package
   metadata and open unreleased build/delivery records.
@@ -40,12 +41,14 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   restores between references.
 - [1.7.5-remove-merge-visibility-option.md](1.7.5-remove-merge-visibility-option.md):
   remove the optional merge display mode and keep one compact automatic graph.
+- [1.7.5-flow-governance-status-copy.md](1.7.5-flow-governance-status-copy.md):
+  remove the redundant enabled sentence and empty status spacing; maintainer accepted.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.
 Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
 The [bisect review](../bug-bisect-fragility-review-2026-10-17.md) separately tracks
-B1–B3; B1 and B2 are authorized and implemented in their focused artifacts.
+B1–B3; all three are authorized and implemented in their focused artifacts.
 
 ## Published Release Artifacts — 1.7.4
 

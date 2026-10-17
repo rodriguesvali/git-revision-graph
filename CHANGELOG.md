@@ -27,7 +27,6 @@ All notable changes to this project will be documented in this file.
 
 ### Graph Refresh
 
-- Remove the redundant enabled-status sentence below the Flow Governance checkbox.
 - Remove **Show Merge Commits** from View and use one compact automatic projection,
   preserving referenced commits and structural connections without a separate toggle.
 - Load graphs while detached at a tag, keeping tag names separate from current
@@ -47,13 +46,16 @@ All notable changes to this project will be documented in this file.
 - Keep recovery context for older saved searches without a verifiable identity;
   offer detaching controls for manual recovery instead of adopting native state.
 
+### Flow Governance
+
+- Remove the redundant enabled-status sentence below the Flow Governance checkbox.
+
 ### Maintenance
 
 - Exercise repository isolation, stale actions, restore recovery and panel lifecycle
   through real Extension Host webviews in the minimum/stable test matrix.
 - Preserve native webview message delivery in Compare Results and Show Log, and
   support Git API states without the newer separate untracked-files field.
-- Open the 1.7.5 development cycle and align package and build metadata.
 
 ## 1.7.4 - 2026-10-11
 

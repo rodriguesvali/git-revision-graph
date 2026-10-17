@@ -30,16 +30,21 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 
 - Opened with explicit maintainer authorization on 2026-10-17.
 - Manifest, top-level lockfile and root package target `1.7.5`; CHANGELOG marks it
-  Unreleased. Opening changed metadata and records. The maintainer subsequently
-  approved the [S1 restore correction](../2.build/features/1.7.5-safe-file-restore.md):
-  complete preflight, a pinned commit and recovery of partial file changes in
-  Compare Results and Show Log.
+  Unreleased. Approved scope now includes S1–S4 safety work, VS Code 1.100 minimum,
+  tag-detached HEAD, B1–B3 bisect fixes, worktree-only Revert, removal of the merge
+  display option and Flow Governance status-copy cleanup.
 - Published baseline remains `1.7.4`, confirmed by the maintainer on 2026-10-11.
 - Build/test and structural graph verification are tracked in
   [release readiness](release.md) and the
   [cycle artifact](../2.build/features/1.7.5-release-cycle-opening.md).
-- S1 automated verification passed: 1,051 tests including builds, quality and 51
-  Linux platform tests. Focused Extension Host smoke remains pending.
+- Latest source verification: 1,136 tests including builds; quality passed for
+  301 files / 2,830 functions. Prior Linux platform (51) and actual minimum/stable
+  host safety checks are scoped in release readiness. The latest Flow UX change
+  was manually accepted; broader manual smoke remains pending.
+- The [publication review](1.7.5-publication-review.md) at source `62a9807` confirms
+  matching metadata, zero-vulnerability full/runtime audits and a read-only VSCE
+  preview of 685 files, including required runtime/worker assets and excluding
+  internal artifacts. No candidate VSIX was created or inspected.
 - Packaging, installation, tags and Marketplace publication require separate
   authorization. Existing published VSIX files retain their versions.
 - Before publication, rollback of cycle opening reverts its metadata/documentation

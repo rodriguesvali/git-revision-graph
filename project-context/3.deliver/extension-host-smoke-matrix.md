@@ -7,6 +7,21 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Publication Checkpoint
+
+Reviewed source: `62a9807` on 2026-10-17. Selected real-host coverage is recorded
+below; a complete manual release smoke has not been reported. Record operator,
+VS Code version, platform and source when completing the remaining scenarios.
+
+| Area | Established evidence | Remaining acceptance |
+| --- | --- | --- |
+| Flow status copy | Maintainer confirmed “Funcionou” after removal of the redundant enabled sentence; build and 1,136 tests passed. Exact host version was not supplied. | This confirms the reported UX change only. |
+| Tag-detached HEAD | Real-host minimum/stable checks and maintainer confirmation in the reported environment. | Broader prompt/keyboard/theme checks. |
+| S1/S2/S3 | S4 adds selected real-host stale-origin, repository isolation, restore recovery and pending close/reopen checks to deterministic regressions. | Native picker/confirmation/cancel UX, wider rapid-switch and failure scenarios; detailed scope below. |
+| B1/B2/B3 | Node/real-Git recovery and ownership tests; minimum/stable safety scenarios. | Legacy pre-upgrade search recovery UX, native prompts and broader keyboard/theme acceptance. B2 storage faults/reload were injected in Node, not the running host. |
+| View/Compare | Actual minimum/stable menu checks, compact option behavior, historical-tag Revert and rejected ref-to-ref restore. | Full visual/keyboard/theme smoke and remaining scenarios below. |
+| Platform/package | Local Linux source evidence; CI matrix configured. | Hosted CI result, Windows/macOS evidence, approved candidate VSIX inspection and clean-profile installation. |
+
 ## 1.7.5 Compact Graph And View Menu
 
 On 2026-10-17, the safety scenario passed on Linux/Xvfb with VS Code
@@ -95,7 +110,8 @@ After the baseline change, all three scenarios passed again on 1.100.0/stable
 
 ## 1.7.5 File Restore — S1
 
-Status: Automated workflow/fault regressions passed; real Extension Host smoke pending.
+Status: Automated workflow/fault regressions and selected real Extension Host checks
+passed (S4 above); full manual UX acceptance remains pending.
 Record operator, platform, VS Code version, source commit and disposable repository.
 
 | Scenario | Expected result | Result |
@@ -113,16 +129,18 @@ See the [S1 feature artifact](../2.build/features/1.7.5-safe-file-restore.md).
 ## 1.7.5 Webview Action Origin — S2
 
 Status: Automated boundary and browser checks recorded in the
-[feature artifact](../2.build/features/1.7.5-webview-action-origin.md); real Extension Host smoke pending.
+[feature artifact](../2.build/features/1.7.5-webview-action-origin.md); selected real
+Extension Host integration passed in S4. The table retains the original detailed
+S2 checklist and does not imply that S4 covers every variant.
 Use two disposable repositories with identical branch names, hashes and relative paths.
 
 | Scenario | Expected result | Result |
 | --- | --- | --- |
-| Graph A→B→A and rerender | Replay a captured old action after each replacement: no workflow/Git call. Fresh action operates on the displayed repository. | Not recorded in Extension Host |
+| Graph A→B→A and rerender | Replay a captured old action after each replacement: no workflow/Git call. Fresh action operates on the displayed repository. | A→B→A stale/fresh checkout effects passed in S4; every rerender variant not established |
 | Deferred graph click | Replace the render before the scheduled frame sends a click. Message retains old origin and is rejected; refresh/ready remain usable. | Not recorded in Extension Host |
-| Comparison replacement | Reuse the same paths/refs in another repository and a new comparison in the original repository. Old restore/diff/copy messages have no effect. Fresh actions work. | Not recorded in Extension Host |
-| Log replacement | Reuse the same commit in another source/repository. Old checkout/tag/restore messages have no effect. Fresh actions, file search and paging work. | Not recorded in Extension Host |
-| Panel lifecycle and empty state | Close/reopen panels and repositories; replay old messages. Reject scoped actions while empty; new panels bootstrap and receive fresh context. | Not recorded in Extension Host |
+| Comparison replacement | Reuse the same paths/refs in another repository and a new comparison in the original repository. Old restore/diff/copy messages have no effect. Fresh actions work. | Cross-repository stale restore/fresh DOM restore passed in S4; full diff/copy/new-comparison matrix pending |
+| Log replacement | Reuse the same commit in another source/repository. Old checkout/tag/restore messages have no effect. Fresh actions, file search and paging work. | Cross-repository stale restore/fresh DOM restore passed in S4; full checkout/tag/search/paging matrix pending |
+| Panel lifecycle and empty state | Close/reopen panels and repositories; replay old messages. Reject scoped actions while empty; new panels bootstrap and receive fresh context. | Graph close/reopen and old-origin replay passed in S4; complete empty/repository-close matrix pending |
 
 Chromium exercises real DOM emitters and host dispatchers with captured messages;
 the original S2 fixtures do not establish real transport or Git mutation acceptance.
@@ -130,14 +148,15 @@ S4 adds those selected integration checks above; native confirmation UX remains 
 
 ## 1.7.5 Render Cancellation — S3
 
-Status: Deterministic coordinator regression checks passed; real Extension Host smoke pending.
+Status: Deterministic coordinator regressions and selected real Extension Host
+lifecycle checks passed; wider rapid-switch and visual/manual acceptance pending.
 See the [feature artifact](../2.build/features/1.7.5-render-cancellation.md).
 Record operator, platform, VS Code version, source commit and disposable repository.
 
 | Scenario | Expected result | Result |
 | --- | --- | --- |
-| Close during a pending load | Close the graph panel during loading; a delayed completion/failure must not publish a graph state or show an error from the retired request. | Not recorded in Extension Host |
-| Reopen and refresh | Reopen the panel and refresh after cancellation; the fresh request renders normally. | Not recorded in Extension Host |
+| Close during a pending load | Close the graph panel during loading; a delayed completion/failure must not publish a graph state or show an error from the retired request. | Cooperative native log passed in S4; noncooperative producer covered by controlled-promise tests |
+| Reopen and refresh | Reopen the panel and refresh after cancellation; the fresh request renders normally. | Passed in S4 |
 | Rapid refresh and repository change | Refresh repeatedly and switch between two repositories; only current results appear and fresh failures remain visible. | Not recorded in Extension Host |
 
 Controlled-promise tests exercise producer noncooperation at the coordinator boundary.
