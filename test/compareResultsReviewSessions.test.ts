@@ -61,3 +61,16 @@ test('empty results carry no review identity', () => {
   assert.equal(sessions.idFor({ kind: 'empty' }), undefined);
   assert.equal(createCompareResultsWebviewState({ kind: 'empty' }, undefined, false, 'old-session').comparisonId, undefined);
 });
+
+test('wire origin agrees with comparison session state and cannot collide across providers', () => {
+  const sessions = new CompareResultsReviewSessions();
+  const state = worktree();
+  const origin = sessions.originFor(state);
+  assert.deepEqual(createCompareResultsWebviewState(state, undefined, false, sessions.idFor(state)).messageOrigin, origin);
+  assert.equal(origin?.repositoryPath, '/repo');
+  assert.notEqual(new CompareResultsReviewSessions().originFor(state)?.contextId, origin?.contextId);
+  assert.equal(sessions.originFor({ kind: 'empty' }), undefined);
+  const refreshed = worktree();
+  sessions.preserveWorktreeRefresh(state, refreshed);
+  assert.deepEqual(sessions.originFor(refreshed), origin);
+});

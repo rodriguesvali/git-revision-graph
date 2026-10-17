@@ -20,7 +20,7 @@ interface RevisionGraphWebviewPersistentState extends Record<string, unknown> {
 
 type RevisionGraphRuntimeVsCodeApi = RevisionGraphWebviewApi<
   RevisionGraphWebviewPersistentState,
-  RevisionGraphWebviewMessage
+  RevisionGraphWebviewMessage | RevisionGraphProtocol.ClientMessage
 >;
 
-declare function acquireVsCodeApi(): RevisionGraphRuntimeVsCodeApi;
+declare function acquireVsCodeApi(): RevisionGraphWebviewApi<RevisionGraphWebviewPersistentState, RevisionGraphProtocol.ClientMessage>;

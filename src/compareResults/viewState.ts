@@ -1,3 +1,4 @@
+import { createWebviewMessageOrigin } from '../webviewMessageOrigin';
 import * as path from 'node:path';
 
 import { getRepositoryRelativeUriPath, getTargetUri } from '../changePresentation';
@@ -19,7 +20,7 @@ export function createCompareResultsWebviewState(
   hasBriefingGenerator = false,
   comparisonId?: string
 ): CompareResultsWebviewState {
-  const reviewIdentity = comparisonId && state.kind !== 'empty' ? { comparisonId } : {};
+  const reviewIdentity = comparisonId && state.kind !== 'empty' ? { comparisonId, messageOrigin: createWebviewMessageOrigin(state.repository.rootUri.fsPath, comparisonId) } : {};
   if (state.kind === 'empty') {
     return {
       kind: 'empty',

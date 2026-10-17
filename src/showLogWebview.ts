@@ -1,3 +1,5 @@
+import { renderShowLogHostMessageScript } from './showLog/webviewHostMessages';
+import { renderScopedWebviewPostMessage } from './webviewMessageOrigin';
 import {
   createWebviewContentSecurityPolicy,
   createWebviewNonce
@@ -42,6 +44,7 @@ export function renderShowLogWebviewHtml(): string {
   <script nonce="${nonce}">
     ${renderWebviewDisplayHelpers()}
     const vscode = acquireVsCodeApi();
+    ${renderScopedWebviewPostMessage()}
     let currentState = null;
     let contextMenuState = null;
     const summary = document.getElementById('summary');
@@ -810,7 +813,7 @@ export function renderShowLogWebviewHtml(): string {
       if (!state || state.kind !== 'visible' || state.loading || state.loadingMore || !state.hasMore) {
         return;
       }
-      vscode.postMessage({ type: 'loadMore' });
+      postMessage({ type: 'loadMore' });
     }
 
     function scheduleFilterUpdate(value) {
@@ -820,7 +823,7 @@ export function renderShowLogWebviewHtml(): string {
         if (sourceToken !== getCurrentSourceToken()) {
           return;
         }
-        vscode.postMessage({ type: 'setFilterText', value, sourceToken });
+        postMessage({ type: 'setFilterText', value, sourceToken });
       }, 250);
     }
 
@@ -981,7 +984,7 @@ export function renderShowLogWebviewHtml(): string {
           render();
         }
         flushPendingCommitFileFilter();
-        vscode.postMessage({ type: 'toggleCommit', commitHash });
+        postMessage({ type: 'toggleCommit', commitHash });
       }
     });
 
@@ -1003,7 +1006,7 @@ export function renderShowLogWebviewHtml(): string {
       event.preventDefault();
       closeContextMenu();
       fileRow.focus();
-      vscode.postMessage({
+      postMessage({
         type: 'openFile',
         commitHash: fileRow.getAttribute('data-commit-hash') || '',
         changeId: fileRow.getAttribute('data-change-id') || ''
@@ -1059,7 +1062,7 @@ export function renderShowLogWebviewHtml(): string {
         const commitHash = target.getAttribute('data-commit-hash') || '';
         closeContextMenu();
         flushPendingCommitFileFilter();
-        vscode.postMessage({ type: 'toggleCommit', commitHash });
+        postMessage({ type: 'toggleCommit', commitHash });
         return;
       }
       if ((event.key === 'Enter' || event.key === ' ') && target.matches('[data-change-id]')) {
@@ -1169,10 +1172,10 @@ export function renderShowLogWebviewHtml(): string {
       }
       event.preventDefault();
       if (action === 'copyCommitHash') {
-        vscode.postMessage({ type: 'copyCommitHash', commitHash });
+        postMessage({ type: 'copyCommitHash', commitHash });
       }
       if (action === 'openCommitOnRemote') {
-        vscode.postMessage({ type: 'openCommitOnRemote', commitHash });
+        postMessage({ type: 'openCommitOnRemote', commitHash });
       }
     });
 
@@ -1188,42 +1191,42 @@ export function renderShowLogWebviewHtml(): string {
 
       if (state.kind === 'commit') {
         if (action === 'openCommitDetails') {
-          vscode.postMessage({ type: 'openCommitDetails', commitHash: state.commitHash });
+          postMessage({ type: 'openCommitDetails', commitHash: state.commitHash });
         }
         if (action === 'compareCommits' && state.baseCommitHash && state.compareCommitHash) {
-          vscode.postMessage({
+          postMessage({
             type: 'compareCommits',
             baseCommitHash: state.baseCommitHash,
             compareCommitHash: state.compareCommitHash
           });
         }
         if (action === 'compareCommitWithWorktree') {
-          vscode.postMessage({ type: 'compareCommitWithWorktree', commitHash: state.commitHash });
+          postMessage({ type: 'compareCommitWithWorktree', commitHash: state.commitHash });
         }
         if (action === 'cherryPickCommits') {
-          vscode.postMessage({ type: 'cherryPickCommits', commitHashes: state.commitHashes || [state.commitHash] });
+          postMessage({ type: 'cherryPickCommits', commitHashes: state.commitHashes || [state.commitHash] });
         }
         if (action === 'checkoutCommit') {
-          vscode.postMessage({ type: 'checkoutCommit', commitHash: state.commitHash });
+          postMessage({ type: 'checkoutCommit', commitHash: state.commitHash });
         }
         if (action === 'createTagFromCommit') {
-          vscode.postMessage({ type: 'createTagFromCommit', commitHash: state.commitHash });
+          postMessage({ type: 'createTagFromCommit', commitHash: state.commitHash });
         }
-        if (action === 'startBugBisect') vscode.postMessage({ type: 'startBugBisect', commitHash: state.commitHash, sourceToken: state.sourceToken });
+        if (action === 'startBugBisect') postMessage({ type: 'startBugBisect', commitHash: state.commitHash, sourceToken: state.sourceToken });
         if (action === 'resetToCommit') {
-          vscode.postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
+          postMessage({ type: 'resetToCommit', commitHash: state.commitHash });
         }
         if (action === 'copyCommitHash') {
-          vscode.postMessage({ type: 'copyCommitHash', commitHash: state.commitHash });
+          postMessage({ type: 'copyCommitHash', commitHash: state.commitHash });
         }
         if (action === 'copyReferenceName' && refName) {
-          vscode.postMessage({ type: 'copyReferenceName', commitHash: state.commitHash, refName });
+          postMessage({ type: 'copyReferenceName', commitHash: state.commitHash, refName });
         }
         return;
       }
 
       if (action === 'openFile' || action === 'compareWithWorktree' || action === 'revertFileToCommit' || action === 'copyFileName' || action === 'copyFullPath') {
-        vscode.postMessage({
+        postMessage({
           type: action,
           commitHash: state.commitHash,
           changeId: state.changeId
@@ -1242,7 +1245,7 @@ export function renderShowLogWebviewHtml(): string {
       if (!(target instanceof HTMLInputElement)) {
         return;
       }
-      vscode.postMessage({ type: 'toggleShowAllBranches', value: target.checked });
+      postMessage({ type: 'toggleShowAllBranches', value: target.checked });
     });
 
     filterInput?.addEventListener('input', (event) => {
@@ -1292,28 +1295,9 @@ export function renderShowLogWebviewHtml(): string {
       maybeLoadMoreFromScroll();
     });
 
-    window.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'state') {
-        const previousSourceToken = getCurrentSourceToken();
-        const previousFilterText = currentState && currentState.filterText;
-        rememberCommitFileFilterFocus();
-        currentState = event.data.state;
-        if (previousSourceToken !== getCurrentSourceToken() || previousFilterText !== currentState.filterText) resetCommitFileFilters();
-        if (previousSourceToken !== getCurrentSourceToken()) {
-          clearPendingFilterUpdate();
-        }
-        render();
-        return;
-      }
+    ${renderShowLogHostMessageScript()}
 
-      if (event.data && event.data.type === 'append') {
-        if (!applyAppendPatch(event.data.patch)) {
-          vscode.postMessage({ type: 'ready' });
-        }
-      }
-    });
-
-    vscode.postMessage({ type: 'ready' });
+    postMessage({ type: 'ready' });
     render();
   </script>
 </body>

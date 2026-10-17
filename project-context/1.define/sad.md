@@ -33,6 +33,14 @@ Last consolidated: 2026-10-17
 - `src/revisionGraph/model/*`, `src/revisionGraph/revisionLogTypes.ts`, `src/revisionGraphData.ts`, and `src/revisionGraphTypes.ts` define graph domain types, serializable scene/view-state contracts, and compatibility re-exports across host and webview boundaries.
 - `src/revisionGraphWebview.ts` and `src/revisionGraph/webview/script/*` generate and run the browser-side graph UI, including virtualization, minimap, search, selection, context menus, and message handling.
 - `src/revisionGraph/messageValidation.ts`, `src/revisionGraph/messageAuthorization.ts`, `src/revisionGraph/messageDispatcher.ts`, and `src/revisionGraph/messageHandler.ts` split webview message parsing, state/current-repository authorization, dispatch, and action handling.
+- Webview action envelopes carry `{ origin: { repositoryPath, contextId } }`.
+  Dispatch validates that origin before resolving targets or entering workflows.
+  Graph renders/surface replacement and repository invalidation rotate or retire
+  the context; delayed frame sends capture the original context before waiting.
+  Compare Results uses its comparison session (including same-session worktree
+  refreshes); Show Log uses its source token (stable through paging/filtering).
+  Empty/hidden states reject scoped actions. Global bootstrap/refresh/repository
+  selection remains usable. Existing state, target and Git mutation guards still apply.
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
 - `src/refActions.ts` contains testable Git workflows.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.

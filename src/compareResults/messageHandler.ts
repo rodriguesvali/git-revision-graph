@@ -1,3 +1,4 @@
+import { isAuthorizedWebviewMessage, type WebviewMessageOrigin } from '../webviewMessageOrigin';
 import { validateCompareResultsWebviewMessage } from './messageValidation';
 
 type MaybePromise<T> = T | Promise<T>;
@@ -17,10 +18,11 @@ export interface CompareResultsMessageHandlers {
 
 export async function dispatchCompareResultsWebviewMessage(
   rawMessage: unknown,
-  handlers: CompareResultsMessageHandlers
+  handlers: CompareResultsMessageHandlers,
+  origin?: WebviewMessageOrigin
 ): Promise<boolean> {
   const message = validateCompareResultsWebviewMessage(rawMessage);
-  if (!message) {
+  if (!isAuthorizedWebviewMessage(message, rawMessage, origin)) {
     return false;
   }
 

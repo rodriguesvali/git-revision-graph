@@ -5,7 +5,7 @@ function isRevisionGraphWebviewHostState(value: unknown): value is RevisionGraph
 
   return (value.viewMode === 'ready' || value.viewMode === 'empty')
     && typeof value.hasRepositories === 'boolean'
-    && isOptionalString(value.repositoryPath)
+    && isRevisionGraphWebviewRepositoryState(value)
     && isOptionalString(value.currentHeadName)
     && isOptionalString(value.currentHeadUpstreamName)
     && isStringArray(value.publishedLocalBranchNames)
@@ -79,4 +79,15 @@ function isOptionalString(value: unknown): value is string | undefined {
 
 function isRevisionGraphWebviewRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isValidRevisionGraphMessageOrigin(value: unknown, repositoryPath: unknown): boolean {
+  return value === undefined || (isRevisionGraphWebviewRecord(value)
+    && typeof value.contextId === 'string' && value.contextId.length > 0
+    && typeof value.repositoryPath === 'string' && value.repositoryPath.length > 0
+    && value.repositoryPath === repositoryPath);
+}
+
+function isRevisionGraphWebviewRepositoryState(value: Record<string, unknown>): boolean {
+  return isOptionalString(value.repositoryPath) && isValidRevisionGraphMessageOrigin(value.messageOrigin, value.repositoryPath);
 }

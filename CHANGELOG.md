@@ -11,6 +11,13 @@ All notable changes to this project will be documented in this file.
 - Recover previous file contents after a failed restore; retain recovery copies
   and report their location if automatic recovery cannot finish.
 
+### Webview Actions
+
+- Reject actions from an earlier repository, graph render, comparison or log source
+  before resolving files and references. Deferred graph actions retain their original context.
+- Close stale action menus when replacing graph/log state and keep compare file
+  identities separate across repositories.
+
 ### Maintenance
 
 - Open the 1.7.5 development cycle and align package and build metadata.

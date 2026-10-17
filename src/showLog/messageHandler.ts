@@ -1,3 +1,4 @@
+import { isAuthorizedWebviewMessage, type WebviewMessageOrigin } from '../webviewMessageOrigin';
 import {
   validateShowLogWebviewMessage,
   type ShowLogWebviewMessage
@@ -32,14 +33,17 @@ export interface ShowLogMessageHandlers {
 
 export async function dispatchShowLogWebviewMessage(
   rawMessage: unknown,
-  handlers: ShowLogMessageHandlers
+  handlers: ShowLogMessageHandlers,
+  origin?: WebviewMessageOrigin
 ): Promise<boolean> {
   const message = validateShowLogWebviewMessage(rawMessage);
-  if (!message) {
+  if (!isAuthorizedWebviewMessage(message, rawMessage, origin)) {
     return false;
   }
 
-  if (await dispatchShowLogCommitAction(message, handlers)) {
+  const commitAction = dispatchShowLogCommitAction(message, handlers);
+  if (commitAction !== false) {
+    await commitAction;
     return true;
   }
 
@@ -85,41 +89,31 @@ export async function dispatchShowLogWebviewMessage(
   return false;
 }
 
-async function dispatchShowLogCommitAction(
+function dispatchShowLogCommitAction(
   message: ShowLogWebviewMessage,
   handlers: ShowLogMessageHandlers
-): Promise<boolean> {
+): MaybePromise<void> | false {
   switch (message.type) {
     case 'startBugBisect':
-      await handlers.startBugBisect?.(message.commitHash, message.sourceToken);
-      return true;
+      return handlers.startBugBisect?.(message.commitHash, message.sourceToken);
     case 'setCommitFileFilter':
-      await handlers.setCommitFileFilter(message.commitHash, message.value, message.sourceToken);
-      return true;
+      return handlers.setCommitFileFilter(message.commitHash, message.value, message.sourceToken);
     case 'toggleCommit':
-      await handlers.toggleCommit(message.commitHash);
-      return true;
+      return handlers.toggleCommit(message.commitHash);
     case 'openCommitOnRemote':
-      await handlers.openCommitOnRemote(message.commitHash);
-      return true;
+      return handlers.openCommitOnRemote(message.commitHash);
     case 'openCommitDetails':
-      await handlers.openCommitDetails(message.commitHash);
-      return true;
+      return handlers.openCommitDetails(message.commitHash);
     case 'compareCommitWithWorktree':
-      await handlers.compareCommitWithWorktree(message.commitHash);
-      return true;
+      return handlers.compareCommitWithWorktree(message.commitHash);
     case 'copyCommitHash':
-      await handlers.copyCommitHash(message.commitHash);
-      return true;
+      return handlers.copyCommitHash(message.commitHash);
     case 'checkoutCommit':
-      await handlers.checkoutCommit(message.commitHash);
-      return true;
+      return handlers.checkoutCommit(message.commitHash);
     case 'createTagFromCommit':
-      await handlers.createTagFromCommit(message.commitHash);
-      return true;
+      return handlers.createTagFromCommit(message.commitHash);
     case 'resetToCommit':
-      await handlers.resetToCommit(message.commitHash);
-      return true;
+      return handlers.resetToCommit(message.commitHash);
     default:
       return false;
   }

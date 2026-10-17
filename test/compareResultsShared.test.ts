@@ -10,6 +10,14 @@ import {
 import { createChange, createRepository } from './fakes';
 import { Status } from '../src/git';
 
+test('identical compare paths and refs in different repositories have different item identities', () => {
+  const items = ['/workspace/one', '/workspace/two'].map((root) => buildCompareResultItems(
+    createRepository({ root }), [createChange({ uriPath: `${root}/same.ts`, status: Status.MODIFIED })],
+    'main', 'feature', undefined, undefined
+  )[0]);
+  assert.notEqual(items[0].id, items[1].id);
+});
+
 test('matches Compare Results state only to its owning repository', () => {
   const repository = createRepository({ root: '/workspace/repo' });
   const otherRepository = createRepository({ root: '/workspace/other' });
@@ -39,7 +47,7 @@ test('buildCompareResultItems marks ref-to-ref entries with the between context 
 
   assert.equal(items.length, 1);
   assert.equal(items[0].label, 'src/b.ts');
-  assert.match(items[0].id, /^src\/b\.ts::Modified::main::release\/2026::$/);
+  assert.deepEqual(JSON.parse(items[0].id), ['/workspace/repo', 'src/b.ts', 'Modified', 'main', 'release/2026', '']);
 });
 
 test('buildCompareResultItems marks worktree entries with the worktree context value', () => {
@@ -55,7 +63,7 @@ test('buildCompareResultItems marks worktree entries with the worktree context v
 
   assert.equal(items.length, 1);
   assert.equal(items[0].worktreeLabel, 'main');
-  assert.match(items[0].id, /^src\/a\.ts::Modified::::::main$/);
+  assert.deepEqual(JSON.parse(items[0].id), ['/workspace/repo', 'src/a.ts', 'Modified', '', '', 'main']);
 });
 
 test('applyCompareResultsWorktreeRefresh clears the view state when the worktree becomes aligned', () => {

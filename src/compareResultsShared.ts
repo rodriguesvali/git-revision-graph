@@ -62,13 +62,13 @@ export function buildCompareResultItems(
     .map<CompareResultItem>((change) => {
       const relativePath = getRepositoryRelativeChangePath(repository.rootUri.fsPath, change);
       return {
-        id: [
-          relativePath,
+        id: JSON.stringify([
+          repository.rootUri.fsPath, relativePath,
           getStatusLabel(change.status),
           leftRef ?? '',
           rightRef ?? '',
           worktreeRef ?? ''
-        ].join('::'),
+        ]),
         repository,
         change,
         label: relativePath,

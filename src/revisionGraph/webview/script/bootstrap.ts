@@ -2,7 +2,7 @@ const EDGE_VERTICAL_INSET = 6; const VIEWPORT_PADDING_TOP = 18;
 const VIEWPORT_PADDING_RIGHT = 0;
 const VIEWPORT_PADDING_BOTTOM = 18;
 const VIEWPORT_PADDING_LEFT = 18;
-    const vscode = acquireRevisionGraphWebviewApi();
+    const vscode = acquireRevisionGraphWebviewApi(function getRenderedState() { return currentState; });
     const bisectDialog = createBisectDialog(vscode.postMessage.bind(vscode));
     const bisectMarkerViewport = createRevisionGraphBisectMarkerViewport();
     const zoomLevels = REVISION_GRAPH_WEBVIEW_ZOOM_LEVELS;
@@ -805,7 +805,7 @@ const VIEWPORT_PADDING_LEFT = 18;
         readonly invalidateRemoteTagState?: boolean;
       } = {}
     ) {
-      if (!nextState) return;
+      closeContextMenu();
 
       bisectDialog.setRepository(nextState.repositoryPath);
       const previousRepositoryPath = currentState && currentState.repositoryPath ? currentState.repositoryPath : null;

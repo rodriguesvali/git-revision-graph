@@ -1,4 +1,7 @@
 declare namespace RevisionGraphProtocol {
+  interface MessageOrigin { readonly repositoryPath: string; readonly contextId: string }
+  type GlobalMessage = Extract<Message, { type: 'webview-ready' | 'refresh' | 'refresh-with-empty-cache' | 'choose-repository' | 'load-trace' }>;
+  type ClientMessage = GlobalMessage | (Exclude<Message, GlobalMessage> & { readonly origin: MessageOrigin });
   type BisectControl = 'start' | 'start-swapped' | 'good' | 'bad' | 'skip' | 'undo' | 'retry' | 'stop' | 'stop-detached' | 'abandon' | 'inspect' | 'copy' | 'scm';
   interface BisectCommit { readonly hash: string; readonly subject: string }
   interface BisectView {

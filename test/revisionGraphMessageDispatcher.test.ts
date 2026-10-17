@@ -4,14 +4,25 @@ import assert from 'node:assert/strict';
 import { RevisionGraphMessageDispatcher } from '../src/revisionGraph/messageDispatcher';
 import { RevisionGraphMessage, RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('graph rejects unbound actions before resolving an identical reference in the current repository', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  let calls = 0;
+  await dispatcher.dispatch({ type: 'checkout', refName: 'main', refKind: 'head' }, {
+    currentState: createReadyRevisionGraphState(), currentRepositoryPath: '/workspace/repo',
+    async handleMessage() { calls++; }
+  });
+  assert.equal(calls, 0);
+});
+
 test('a stale preview request receives rejection feedback without executing an action', async () => {
   const rejected: unknown[] = [];
   const dispatcher = new RevisionGraphMessageDispatcher();
   const request = { type: 'preview-flow-form', requestId: 2, repositoryPath: '/stale', action: {
     type: 'start-flow-branch', sourceRefName: 'main', branchKind: 'release', name: ''
   } };
-  await dispatcher.dispatch(request, {
-    currentState: createReadyRevisionGraphState(), currentRepositoryPath: '/workspace/repo',
+  const state = dispatcher.bindState(createReadyRevisionGraphState());
+  await dispatcher.dispatch({ ...request, origin: state.messageOrigin }, {
+    currentState: state, currentRepositoryPath: '/workspace/repo',
     rejectMessage: (message) => rejected.push(message), async handleMessage() { assert.fail('stale preview'); }
   });
   assert.deepEqual(rejected, [request]);
@@ -23,8 +34,9 @@ test('rejected form submissions receive a recovery response instead of leaving t
   const request = { type: 'submit-flow-form', requestId: 1, repositoryPath: '/stale', action: {
     type: 'prepare-flow-equalization', originRefName: 'main', targetRefName: 'release/2', description: 'Keep me'
   } };
-  await dispatcher.dispatch(request, {
-    currentState: createReadyRevisionGraphState(), currentRepositoryPath: '/workspace/repo',
+  const state = dispatcher.bindState(createReadyRevisionGraphState());
+  await dispatcher.dispatch({ ...request, origin: state.messageOrigin }, {
+    currentState: state, currentRepositoryPath: '/workspace/repo',
     rejectMessage: (message) => rejected.push(message),
     async handleMessage() { assert.fail('stale submission must not execute'); }
   });
@@ -33,12 +45,12 @@ test('rejected form submissions receive a recovery response instead of leaving t
 
 test('configuration recovery dispatches for a disabled current flow but rejects a stale click', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
-  const state = { ...createReadyRevisionGraphState(), flowGovernance: {
+  const state = dispatcher.bindState({ ...createReadyRevisionGraphState(), flowGovernance: {
     enabled: false, configSource: 'invalid' as const, diagnostics: [], branchKinds: [], references: []
-  } };
+  } });
   const dispatched: RevisionGraphMessage[] = [];
   for (const repositoryPath of [state.repositoryPath, '/stale']) {
-    await dispatcher.dispatch({ type: 'open-flow-config', repositoryPath }, {
+    await dispatcher.dispatch({ type: 'open-flow-config', repositoryPath, origin: state.messageOrigin }, {
       currentState: state, currentRepositoryPath: state.repositoryPath,
       async handleMessage(message) { dispatched.push(message); }
     });
@@ -49,10 +61,10 @@ test('configuration recovery dispatches for a disabled current flow but rejects 
 test('RevisionGraphMessageDispatcher dispatches only valid messages allowed for the current state and repository', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
   const dispatchedMessages: RevisionGraphMessage[] = [];
-  const state = createReadyRevisionGraphState();
+  const state = dispatcher.bindState(createReadyRevisionGraphState());
 
   await dispatcher.dispatch(
-    { type: 'checkout', refName: 'main', refKind: 'head' },
+    { type: 'checkout', refName: 'main', refKind: 'head', origin: state.messageOrigin },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/repo',
@@ -62,7 +74,7 @@ test('RevisionGraphMessageDispatcher dispatches only valid messages allowed for 
     }
   );
   await dispatcher.dispatch(
-    { type: 'checkout', refName: 'missing', refKind: 'branch' },
+    { type: 'checkout', refName: 'missing', refKind: 'branch', origin: state.messageOrigin },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/repo',
@@ -72,7 +84,7 @@ test('RevisionGraphMessageDispatcher dispatches only valid messages allowed for 
     }
   );
   await dispatcher.dispatch(
-    { type: 'checkout', refName: 'main', refKind: 'head' },
+    { type: 'checkout', refName: 'main', refKind: 'head', origin: state.messageOrigin },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/other',
@@ -126,7 +138,7 @@ test('RevisionGraphMessageDispatcher still allows unscoped refresh messages whil
 test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for current ready flow state', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
   const dispatchedMessages: RevisionGraphMessage[] = [];
-  const state = {
+  const state = dispatcher.bindState({
     ...createReadyRevisionGraphState(),
     flowGovernance: {
       enabled: true,
@@ -135,10 +147,10 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
       branchKinds: ['main', 'sync', 'unknown'] as const,
       references: []
     }
-  };
+  });
 
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { enabled: false } },
+    { type: 'set-flow-governance-options', options: { enabled: false }, origin: state.messageOrigin },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/repo',
@@ -148,7 +160,7 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
     }
   );
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { enabled: true } },
+    { type: 'set-flow-governance-options', options: { enabled: true }, origin: state.messageOrigin },
     {
       currentState: { ...state, flowGovernance: undefined },
       currentRepositoryPath: '/workspace/repo',
@@ -158,7 +170,7 @@ test('RevisionGraphMessageDispatcher authorizes Flow Governance options only for
     }
   );
   await dispatcher.dispatch(
-    { type: 'set-flow-governance-options', options: { enabled: true } },
+    { type: 'set-flow-governance-options', options: { enabled: true }, origin: state.messageOrigin },
     {
       currentState: state,
       currentRepositoryPath: '/workspace/other',
@@ -227,3 +239,32 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     errorMessage: undefined
   };
 }
+
+test('graph rejects cross-repository, same-repository render and A→B→A replays', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const original = dispatcher.bindState(createReadyRevisionGraphState());
+  dispatcher.invalidate();
+  dispatcher.bindState({ ...original, repositoryPath: '/other' });
+  const current = dispatcher.bindState(createReadyRevisionGraphState());
+  let calls = 0;
+  const context = { currentState: current, currentRepositoryPath: current.repositoryPath,
+    async handleMessage() { calls++; } };
+  for (const origin of [original.messageOrigin, undefined, { ...current.messageOrigin, repositoryPath: '/other' }]) {
+    await dispatcher.dispatch({ type: 'checkout', refName: 'main', refKind: 'head', origin }, context);
+  }
+  assert.equal(calls, 0);
+  await dispatcher.dispatch({ type: 'checkout', refName: 'main', refKind: 'head', origin: current.messageOrigin }, context);
+  assert.equal(calls, 1);
+  dispatcher.invalidate();
+  await dispatcher.dispatch({ type: 'checkout', refName: 'main', refKind: 'head', origin: current.messageOrigin }, context);
+  assert.equal(calls, 1);
+});
+
+test('webview bootstrap remains available without a repository or origin', async () => {
+  let calls = 0;
+  await new RevisionGraphMessageDispatcher().dispatch({ type: 'webview-ready' }, {
+    currentState: { ...createReadyRevisionGraphState(), viewMode: 'empty', repositoryPath: undefined },
+    currentRepositoryPath: undefined, async handleMessage() { calls++; }
+  });
+  assert.equal(calls, 1);
+});

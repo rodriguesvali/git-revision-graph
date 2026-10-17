@@ -1,3 +1,4 @@
+import type { WebviewClientMessage } from '../webviewMessageOrigin';
 import { isBoundedNonEmptyString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type CompareResultsWebviewMessage =
@@ -11,6 +12,8 @@ export type CompareResultsWebviewMessage =
   | { readonly type: 'unifiedDiff' }
   | { readonly type: 'worktree'; readonly itemId: string }
   | { readonly type: 'revert'; readonly itemId: string };
+
+export type CompareResultsClientMessage = WebviewClientMessage<CompareResultsWebviewMessage>;
 
 export function validateCompareResultsWebviewMessage(message: unknown): CompareResultsWebviewMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {

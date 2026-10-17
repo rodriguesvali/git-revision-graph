@@ -49,6 +49,8 @@ the current worktree.
 - Review changed files as a compact queue with status filters and rename-aware paths.
 - Keep filters and valid file selections during briefing updates and worktree refreshes in
   the same comparison. A new comparison starts with cleared filters and a fresh selection.
+- Actions stay bound to the repository and review context that displayed them;
+  delayed clicks from a replaced context are ignored.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
 - Compare an item with the worktree and restore guarded worktree files when needed.
 - Failed file restores attempt to recover the previous files. If automatic recovery

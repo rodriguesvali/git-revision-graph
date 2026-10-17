@@ -1,3 +1,4 @@
+import { createWebviewMessageOrigin, type WebviewMessageOrigin } from '../webviewMessageOrigin';
 import { getRepositoryRelativeChangePath, getStatusLabel } from '../changePresentation';
 import type { RevisionLogEntry, RevisionLogSource } from '../revisionGraphTypes';
 import { REVISION_LOG_FILTER_SCAN_MAX_COMMITS } from '../revisionGraph/revisionLogTypes';
@@ -37,6 +38,7 @@ export interface ShowLogWebviewCommitItem {
 }
 
 export interface ShowLogWebviewState {
+  readonly messageOrigin?: WebviewMessageOrigin;
   readonly kind: 'hidden' | 'visible';
   readonly sourceToken: string;
   readonly loading: boolean;
@@ -139,6 +141,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
 
   return {
     kind: 'visible',
+    messageOrigin: getShowLogMessageOrigin(state),
     sourceToken: state.sourceToken,
     loading: state.loading,
     loadingLabel: state.loadingLabel,
@@ -239,4 +242,8 @@ function formatShortStat(shortStat: RevisionLogEntry['shortStat']): string | und
   }
 
   return parts.join(' • ');
+}
+
+export function getShowLogMessageOrigin(state: ShowLogState): WebviewMessageOrigin | undefined {
+  return state.kind === 'visible' ? createWebviewMessageOrigin(state.repository?.rootUri.fsPath, state.sourceToken) : undefined;
 }

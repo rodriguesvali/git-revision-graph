@@ -88,6 +88,7 @@
     "src/revisionGraph/webview/script/hostStateUpdates.ts",
     "src/revisionGraph/webview/script/flowGovernanceMenu.ts",
     "src/revisionGraph/webview/script/interactions.ts",
+    "src/revisionGraph/webview/script/actionLoading.ts",
     "src/revisionGraph/webview/script/graph.ts",
     "src/revisionGraph/webview/script/layout.ts"
   ]

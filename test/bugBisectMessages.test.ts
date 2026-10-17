@@ -54,7 +54,8 @@ test('Show Log bisect handoff uses the visible repository and rejects unloaded c
     sourceToken: 'source-a', entries: [createRevisionLogEntry({ hash })] } as unknown as ShowLogState;
   const start = async (repo: unknown, revision: string) => { calls.push({ repo, revision }); };
   const handlers = { startBugBisect: (revision: string, token: string) => startShowLogBugBisect(visible, revision, token, start) } as ShowLogMessageHandlers;
-  assert.equal(await dispatchShowLogWebviewMessage({ type: 'startBugBisect', commitHash: hash, sourceToken: 'source-a' }, handlers), true);
+  const origin = { repositoryPath: repository.rootUri.fsPath, contextId: 'source-a' };
+  assert.equal(await dispatchShowLogWebviewMessage({ type: 'startBugBisect', commitHash: hash, sourceToken: 'source-a', origin }, handlers, origin), true);
   await startShowLogBugBisect(visible, 'b'.repeat(40), 'source-a', start);
   await startShowLogBugBisect(createHiddenShowLogState(), hash, 'source-a', start);
   await startShowLogBugBisect(visible, hash, 'stale-source', start);

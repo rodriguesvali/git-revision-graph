@@ -691,17 +691,19 @@ test('renders structural commit actions for compare and branch creation', () => 
 test('main Flow Governance menu starts Package and retains existing actions', () => {
   for (const sourceRefName of ['main', 'master', 'Latam/Main']) {
     const runtime = createWebviewRuntime();
+    runtime.context.handleHostMessage({ type: 'init-state', state: createReadyGraphState() });
     runtime.context.appendFlowGovernanceActions({ refName: sourceRefName, kind: 'main' }, createContextMenuTarget('head', sourceRefName));
     const actions = runtime.createdElements.filter(element => element.attributes.get('role') === 'menuitem' && element.textContent);
     assert.deepEqual(actions.map(element => element.textContent), ['Start New Release', 'Start New Feature', 'Start New Package', 'Start New Hot Fix']);
     actions.find(element => element.textContent === 'Start New Package')!.listeners.click[0]({ detail: 1 });
-    assert.deepEqual(runtime.postedMessages.at(-1), { type: 'start-flow-branch', phase: 'prepare', branchKind: 'package', sourceRefName });
+    assert.deepEqual(runtime.postedMessages.at(-1), { origin: createReadyGraphState().messageOrigin, type: 'start-flow-branch', phase: 'prepare', branchKind: 'package', sourceRefName });
   }
 });
 
 test('package Flow Governance menu offers Feature and Bug and routes the selected source', () => {
   for (const sourceRefName of ['package', 'package/payment', 'Latam/Package/payment']) {
     const runtime = createWebviewRuntime();
+    runtime.context.handleHostMessage({ type: 'init-state', state: createReadyGraphState() });
     const target = createContextMenuTarget('branch', sourceRefName);
     runtime.context.appendFlowGovernanceActions({ refName: sourceRefName, kind: 'package' }, target);
     const actions = runtime.createdElements.filter(element => element.attributes.get('role') === 'menuitem' && element.textContent);
@@ -710,8 +712,8 @@ test('package Flow Governance menu offers Feature and Bug and routes the selecte
       action.listeners.click[0]({ detail: 1 });
     }
     assert.deepEqual(runtime.postedMessages.slice(-2), [
-      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'feature', sourceRefName },
-      { type: 'start-flow-branch', phase: 'prepare', branchKind: 'bug', sourceRefName }
+      { origin: createReadyGraphState().messageOrigin, type: 'start-flow-branch', phase: 'prepare', branchKind: 'feature', sourceRefName },
+      { origin: createReadyGraphState().messageOrigin, type: 'start-flow-branch', phase: 'prepare', branchKind: 'bug', sourceRefName }
     ]);
   }
 });
@@ -1978,7 +1980,7 @@ test('Flow configuration diagnostics are safe text and recovery follows the disp
   assert.equal(details.innerHTML, '');
   assert.equal(button.hidden, false);
   button.onclick?.();
-  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'open-flow-config', repositoryPath: '/repo/a' });
+  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'open-flow-config', repositoryPath: '/repo/a', origin: createReadyGraphState({ repositoryPath: '/repo/a' }).messageOrigin });
   runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({ repositoryPath: '/repo/b', flowGovernance: { ...flow, configSource: 'repository', diagnostics: [] } }) });
   assert.match(status.textContent, /Disabled/);
   assert.equal(details.textContent, '');
@@ -2271,7 +2273,7 @@ test('posts and synchronizes revision graph layout preferences from the webview 
 
   assert.deepEqual(runtime.postedMessages.at(-1), {
     type: 'set-projection-options',
-    options: { layoutPreference: 'fast-two-layer' }
+    options: { layoutPreference: 'fast-two-layer' }, origin: createReadyGraphState().messageOrigin
   });
 });
 
@@ -2488,6 +2490,12 @@ test('rejects malformed host state before applying it to the webview runtime', (
   };
 
   assert.equal(runtime.context.isRevisionGraphWebviewHostMessage(validMessage), true);
+  for (const messageOrigin of [null, [], {}, { repositoryPath: '/other', contextId: 'test-render' },
+    { repositoryPath: '/workspace/repo', contextId: '' }]) {
+    assert.equal(runtime.context.isRevisionGraphWebviewHostMessage({
+      ...validMessage, state: createReadyGraphState({ messageOrigin })
+    }), false);
+  }
   const validStatusMessage = {
     type: 'update-repository-status',
     status: {
@@ -3681,7 +3689,7 @@ test('toolbar publishes the current branch and switches back to push after publi
   assert.equal(menu.hidden, false);
   assert.equal(menu.disabled, false);
   push.listeners.click[0]();
-  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'push-current-head', mode: 'normal' });
+  assert.deepEqual(runtime.postedMessages.at(-1), { type: 'push-current-head', mode: 'normal', origin: createReadyGraphState().messageOrigin });
   menu.listeners.click[0]({ stopPropagation() {} });
   assert.equal(menu.getAttribute('aria-expanded'), 'true');
 
@@ -3859,6 +3867,7 @@ function createSelectionElement(referenceId: string, classes: Set<string>) {
 
 function createReadyGraphState(overrides: Record<string, unknown> = {}) {
   return {
+    messageOrigin: { repositoryPath: overrides.repositoryPath ?? '/workspace/repo', contextId: 'test-render' },
     viewMode: 'ready',
     hasRepositories: true,
     repositoryPath: '/workspace/repo',
@@ -4448,4 +4457,20 @@ test('Flow preview retries unavailable responses without editing and clears retr
     branchName: 'Invalid', context: 'From main', effects: 'Create locally', validation: 'Fix name', validationState: 'invalid', details: 'Pattern'
   } });
   assert.equal(retry.hidden, true, 'name validation requires correction rather than retry');
+});
+
+test('deferred graph actions retain the render origin from the click before the next animation frame', () => {
+  const runtime = createWebviewRuntime({ deferFrames: true });
+  const original = createReadyGraphState();
+  runtime.context.handleHostMessage({ type: 'init-state', state: original });
+  runtime.flushFrames();
+  const select = runtime.elements.get('layoutSelect')!;
+  select.value = 'fast-two-layer';
+  select.listeners.change[0]();
+  runtime.context.handleHostMessage({ type: 'update-state', state: createReadyGraphState({
+    messageOrigin: { repositoryPath: '/workspace/repo', contextId: 'replacement-render' }
+  }) });
+  runtime.flushFrames();
+  const message = runtime.postedMessages.filter(message => message.type === 'set-projection-options').at(-1);
+  assert.deepEqual(message.origin, original.messageOrigin);
 });

@@ -88,16 +88,16 @@ test('renders a dense compare review list with contextual actions', () => {
   assert.match(html, /if \(!currentState\.canOpenUnifiedDiff \|\| isOpeningUnifiedDiff\)/);
   assert.match(html, /isOpeningUnifiedDiff = true/);
   assert.match(html, /updateUnifiedDiffButton\(\)/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'unifiedDiff' \}\)/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'generateBriefing' \}\)/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'cancelBriefing' \}\)/);
+  assert.match(html, /postMessage\(\{ type: 'unifiedDiff' \}\)/);
+  assert.match(html, /postMessage\(\{ type: 'generateBriefing' \}\)/);
+  assert.match(html, /postMessage\(\{ type: 'cancelBriefing' \}\)/);
   assert.match(html, /briefingBody\.textContent = briefing\.kind === 'loading'/);
   assert.doesNotMatch(html, /briefingBody\.innerHTML/);
   assert.match(html, /Show AI briefing/);
   assert.match(html, /Regenerate AI briefing/);
   assert.match(html, /Cancel AI briefing generation/);
   assert.match(html, /briefingCloseButton\.addEventListener\('click', dismissBriefingPanel\)/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'copyBriefing' \}\)/);
+  assert.match(html, /postMessage\(\{ type: 'copyBriefing' \}\)/);
   assert.match(html, /briefingCopyButton\.hidden = briefing\.kind !== 'ready'/);
   assert.match(html, /briefing\.kind === 'idle' \|\| isBriefingDismissed/);
   assert.match(html, /function dismissBriefingPanel\(\)/);
@@ -172,6 +172,6 @@ test('renders a dense compare review list with contextual actions', () => {
   assert.match(html, /postSingleAction\('base', itemId\)/);
   assert.match(html, /function resetDoubleClickTracking\(\)/);
   assert.match(html, /function postMultiAction\(type, itemIds\)/);
-  assert.match(html, /vscode\.postMessage\(\{ type, itemIds \}\)/);
+  assert.match(html, /postMessage\(\{ type, itemIds \}\)/);
   assert.match(html, /item\.fullPath/);
 });

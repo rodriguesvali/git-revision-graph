@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import * as vscode from 'vscode';
 import { toOperationError } from './errorDetail';
 import { isAbortError } from './errors';
@@ -50,7 +51,7 @@ import {
 } from './showLog/stateLookup';
 import {
   buildShowLogWebviewAppendPatch,
-  buildShowLogWebviewState
+  buildShowLogWebviewState, getShowLogMessageOrigin
 } from './showLog/viewState';
 import {
   createHiddenShowLogState,
@@ -86,7 +87,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   private state: ShowLogState = createHiddenShowLogState();
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
-  private sourceTokenSeed = 0;
   private readonly logLoadRequests = new ShowLogLoadRequests();
   private readonly expansionRequests = new ShowLogExpansionRequests();
   private readonly fileSearch = new ShowLogFileSearch(
@@ -154,7 +154,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     this.fileSearch.reset();
     this.state = {
       kind: 'visible',
-      sourceToken: String(++this.sourceTokenSeed),
+      sourceToken: randomUUID(),
       repository,
       source,
       showAllBranches: false,
@@ -224,7 +224,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
-    await dispatchShowLogWebviewMessage(rawMessage, this.messageHandlers);
+    await dispatchShowLogWebviewMessage(rawMessage, this.messageHandlers, getShowLogMessageOrigin(this.state));
   }
 
   private async toggleCommit(commitHash: string): Promise<void> {

@@ -69,7 +69,7 @@ export function renderShowLogFileSearchScript(): string {
       const send = () => {
         const commit = (currentState && currentState.commits || []).find(item => item.hash === commitHash && item.expanded);
         if (sourceToken === getCurrentSourceToken() && commit) {
-          vscode.postMessage({ type: 'setCommitFileFilter', commitHash, value, sourceToken });
+          postMessage({ type: 'setCommitFileFilter', commitHash, value, sourceToken });
         }
       };
       pendingCommitFileFilterSend = send;

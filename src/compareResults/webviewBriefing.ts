@@ -76,7 +76,7 @@ export function renderCompareResultsActionScript(): string {
       updateUnifiedDiffButton();
       closeContextMenu();
       resetDoubleClickTracking();
-      vscode.postMessage({ type: 'unifiedDiff' });
+      postMessage({ type: 'unifiedDiff' });
     });
 
     briefingButton.addEventListener('click', () => {
@@ -84,7 +84,7 @@ export function renderCompareResultsActionScript(): string {
         return;
       }
       if (isGeneratingBriefing) {
-        vscode.postMessage({ type: 'cancelBriefing' });
+        postMessage({ type: 'cancelBriefing' });
         return;
       }
       if (currentState.briefing?.kind === 'ready' && isBriefingDismissed) {
@@ -97,13 +97,13 @@ export function renderCompareResultsActionScript(): string {
       updateBriefingButton();
       closeContextMenu();
       resetDoubleClickTracking();
-      vscode.postMessage({ type: 'generateBriefing' });
+      postMessage({ type: 'generateBriefing' });
     });
 
     briefingCloseButton.addEventListener('click', dismissBriefingPanel);
     briefingCopyButton.addEventListener('click', () => {
       if (currentState.briefing?.kind === 'ready') {
-        vscode.postMessage({ type: 'copyBriefing' });
+        postMessage({ type: 'copyBriefing' });
       }
     });
     briefingPanel.addEventListener('keydown', (event) => {

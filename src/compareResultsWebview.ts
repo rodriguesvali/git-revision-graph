@@ -1,3 +1,4 @@
+import { renderCompareResultsMessageScript } from './compareResults/webviewMessages';
 import {
   createWebviewContentSecurityPolicy,
   createWebviewNonce
@@ -26,6 +27,7 @@ export interface CompareResultsWebviewItem {
 }
 
 export interface CompareResultsWebviewState {
+  readonly messageOrigin?: import('./webviewMessageOrigin').WebviewMessageOrigin;
   readonly kind: 'empty' | 'loading' | 'results';
   readonly comparisonId?: string;
   readonly summary: string;
@@ -89,6 +91,7 @@ export function renderCompareResultsWebviewHtml(): string {
   <div id="contextMenu" class="context-menu" hidden></div>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    ${renderCompareResultsMessageScript()}
     const searchInput = document.getElementById('searchInput');
     const clearSearchButton = document.getElementById('clearSearchButton');
     const comparisonDirection = document.getElementById('comparisonDirection');
@@ -656,14 +659,6 @@ export function renderCompareResultsWebviewHtml(): string {
       }
     }
 
-    function postSingleAction(type, itemId) {
-      vscode.postMessage({ type, itemId });
-    }
-
-    function postMultiAction(type, itemIds) {
-      vscode.postMessage({ type, itemIds });
-    }
-
     function resetDoubleClickTracking() {
       lastPrimaryClickItemId = undefined;
       lastPrimaryClickAt = 0;
@@ -679,7 +674,7 @@ export function renderCompareResultsWebviewHtml(): string {
 
     ${renderCompareResultsReviewContextScript()}
     ${renderCompareResultsActionScript()}
-    vscode.postMessage({ type: 'ready' });
+    postMessage({ type: 'ready' });
   </script>
 </body>
 </html>`;

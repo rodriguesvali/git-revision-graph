@@ -4,16 +4,16 @@
     "maxFunctionComplexity": 15
   },
   "files": {
-    "src/compareResultsWebview.ts": 687,
+    "src/compareResultsWebview.ts": 682,
     "src/revisionGraph/controller.ts": 742,
     "src/revisionGraph/panel/state.ts": 652,
     "src/revisionGraph/webview/script/bootstrap.ts": 1732,
-    "src/revisionGraph/webview/script/interactions.ts": 962,
+    "src/revisionGraph/webview/script/interactions.ts": 892,
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 1039,
     "src/showLog/webviewStyles.ts": 869,
     "src/showLogView.ts": 749,
-    "src/showLogWebview.ts": 1322
+    "src/showLogWebview.ts": 1306
   },
   "functions": {
     "src/refActions/branches.ts::createBranchFromResolvedReference#1": 18,
@@ -23,7 +23,7 @@
     "src/revisionGraph/webview/runtime/hostState.ts::isRevisionGraphWebviewHostState#1": 28,
     "src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts::syncRevisionGraphWebviewRelationshipHighlightsUi#1": 18,
     "src/revisionGraph/webview/script/bootstrap.ts::<callback>#35": 22,
-    "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 19,
+    "src/revisionGraph/webview/script/bootstrap.ts::applyState#1": 18,
     "src/revisionGraph/webview/shared.ts::buildDynamicVerticalGapByRow#1": 25,
     "src/showLog/messageValidation.ts::validateShowLogWebviewMessage#1": 27
   }

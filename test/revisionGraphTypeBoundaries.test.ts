@@ -49,7 +49,7 @@ test('revision graph webview environment does not weaken standard browser global
       `${globalName} must use the standard DOM library type.`
     );
   }
-  assert.match(source, /declare function acquireVsCodeApi\(\): RevisionGraphRuntimeVsCodeApi;/);
+  assert.match(source, /declare function acquireVsCodeApi\(\): RevisionGraphWebviewApi<RevisionGraphWebviewPersistentState, RevisionGraphProtocol.ClientMessage>;/);
   assert.doesNotMatch(source, /:\s*any\b/);
 });
 

@@ -1,3 +1,4 @@
+import type { WebviewClientMessage } from '../webviewMessageOrigin';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
@@ -46,6 +47,8 @@ const SHOW_LOG_COMMIT_HASH_MESSAGE_TYPES: readonly ShowLogCommitHashMessageType[
   'createTagFromCommit',
   'resetToCommit'
 ];
+
+export type ShowLogClientMessage = WebviewClientMessage<ShowLogWebviewMessage>;
 
 export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {

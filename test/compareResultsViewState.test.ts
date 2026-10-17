@@ -115,5 +115,5 @@ test('getCompareResultItems returns item ids for provider lookup', () => {
   });
 
   assert.equal(items.length, 1);
-  assert.equal(items[0].id, 'src/app.ts::Modified::::::main');
+  assert.deepEqual(JSON.parse(items[0].id), ['/workspace/repo', 'src/app.ts', 'Modified', '', '', 'main']);
 });

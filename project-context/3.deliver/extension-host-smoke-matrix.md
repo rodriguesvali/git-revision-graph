@@ -23,6 +23,23 @@ Automated tests execute both real host workflows with native Git and injected CL
 failures. They do not execute the real VS Code modal/panel transport. See the
 [feature artifact](../2.build/features/1.7.5-safe-file-restore.md).
 
+## 1.7.5 Webview Action Origin — S2
+
+Status: Automated boundary and browser checks recorded in the
+[feature artifact](../2.build/features/1.7.5-webview-action-origin.md); real Extension Host smoke pending.
+Use two disposable repositories with identical branch names, hashes and relative paths.
+
+| Scenario | Expected result | Result |
+| --- | --- | --- |
+| Graph A→B→A and rerender | Replay a captured old action after each replacement: no workflow/Git call. Fresh action operates on the displayed repository. | Not recorded in Extension Host |
+| Deferred graph click | Replace the render before the scheduled frame sends a click. Message retains old origin and is rejected; refresh/ready remain usable. | Not recorded in Extension Host |
+| Comparison replacement | Reuse the same paths/refs in another repository and a new comparison in the original repository. Old restore/diff/copy messages have no effect. Fresh actions work. | Not recorded in Extension Host |
+| Log replacement | Reuse the same commit in another source/repository. Old checkout/tag/restore messages have no effect. Fresh actions, file search and paging work. | Not recorded in Extension Host |
+| Panel lifecycle and empty state | Close/reopen panels and repositories; replay old messages. Reject scoped actions while empty; new panels bootstrap and receive fresh context. | Not recorded in Extension Host |
+
+Chromium exercises real DOM emitters and host dispatchers with captured messages;
+it does not establish real VS Code transport, confirmation UI or Git mutation acceptance.
+
 ## 1.7.4 Published Release Evidence
 
 Status: Publication confirmed on 2026-10-11; full manual smoke evidence not supplied.

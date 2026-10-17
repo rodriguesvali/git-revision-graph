@@ -150,5 +150,13 @@ Não é necessário substituir a arquitetura publicada: presenters, executor, va
 Em 2026-10-17, o mantenedor autorizou os ajustes do primeiro achado. A correção,
 as regressões e os limites de recuperação estão registrados no
 [artefato de restauração segura](features/1.7.5-safe-file-restore.md). As evidências
-acima descrevem o baseline anterior à correção. S2–S4 continuam fora do escopo
-aprovado de implementação.
+acima descrevem o baseline anterior à correção. Naquele momento, S2–S4 permaneciam fora do escopo aprovado.
+
+
+## Acompanhamento — S2 na versão 1.7.5
+
+Em 2026-10-17, o mantenedor autorizou tratar o achado 2. O
+[artefato de origem das ações](features/1.7.5-webview-action-origin.md) registra
+as mudanças no protocolo das três superfícies, a rejeição anterior aos efeitos,
+as regressões de troca de contexto e a verificação em Chromium. S3 e a ampliação
+E2E de S4 permanecem pendentes; os novos testes de fronteira não encerram S4.

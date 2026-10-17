@@ -12,16 +12,17 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 ## Current Active Features
 
 Version 1.7.5 is open for development with maintainer authorization on 2026-10-17.
-The published baseline remains 1.7.4, confirmed on 2026-10-11. The first approved
-functional change is the S1 file-restore safety correction.
+The published baseline remains 1.7.4, confirmed on 2026-10-11. Approved functional work includes the S1 file-restore correction and S2 action-origin binding.
 
 - [1.7.5-release-cycle-opening.md](1.7.5-release-cycle-opening.md): align package
   metadata and open unreleased build/delivery records.
 - [1.7.5-safe-file-restore.md](1.7.5-safe-file-restore.md): validate full restore
   plans, pin one commit and recover worktree files after failure in both presenters.
+- [1.7.5-webview-action-origin.md](1.7.5-webview-action-origin.md): bind all scoped
+  actions to the originating repository and render/comparison/log context.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
-planning input. Only S1 is approved; S2–S4 remain outside the implementation scope.
+planning input. S1 and S2 are approved; S3–S4 remain outside the implementation scope.
 Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
 
 ## Published Release Artifacts — 1.7.4

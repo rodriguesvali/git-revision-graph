@@ -210,8 +210,8 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /vscode\.setState\(/);
   assert.match(html, /if \(event\.ctrlKey && event\.button === 0\)/);
   assert.match(html, /selectCommit\(commitHash, true\);\s*closeContextMenu\(\);\s*render\(\);\s*return;/s);
-  assert.match(html, /closeContextMenu\(\);\s*if \(event\.button === 0 && clearSelectedCommitHashes\(\)\) \{\s*render\(\);\s*\}\s*flushPendingCommitFileFilter\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
-  assert.doesNotMatch(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*vscode\.postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
+  assert.match(html, /closeContextMenu\(\);\s*if \(event\.button === 0 && clearSelectedCommitHashes\(\)\) \{\s*render\(\);\s*\}\s*flushPendingCommitFileFilter\(\);\s*postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
+  assert.doesNotMatch(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
   assert.match(html, /document\.addEventListener\('pointerdown'/);
   assert.match(html, /type: 'toggleShowAllBranches', value: target\.checked/);
   assert.match(html, /function scheduleFilterUpdate\(value\)/);
@@ -251,7 +251,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /function syncLoadMoreBlock\(state\)/);
   assert.match(html, /function renderCommitEntry\(commit, index\)/);
   assert.match(html, /event\.data && event\.data\.type === 'append'/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
+  assert.match(html, /postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /Open Commit Details/);
   assert.match(html, /data-menu-action="checkoutCommit">Checkout to this<\/button>/);
   assert.match(html, /data-menu-action="createTagFromCommit">Create Tag<\/button>/);
@@ -280,7 +280,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /data-menu-action="revertFileToCommit">Revert to this<\/button>/);
   assert.match(html, /Copy to Clipboard/);
   assert.match(html, /context-menu-group/);
-  assert.match(html, /vscode\.postMessage\(\{ type: 'ready' \}\);/);
+  assert.match(html, /postMessage\(\{ type: 'ready' \}\);/);
   assert.match(html, /type: 'toggleCommit', commitHash/);
   assert.match(html, /data-menu-action="compareCommits"/);
   assert.match(html, /type: 'compareCommits'/);

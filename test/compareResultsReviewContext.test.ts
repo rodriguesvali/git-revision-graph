@@ -112,7 +112,7 @@ test('refresh closes stale menus and dispatches actions only for current selecte
   assert.equal(view.messages.length, 0);
   openMenu();
   copy();
-  assert.deepEqual(JSON.parse(JSON.stringify(view.messages)), [{ type: 'copyFileName', itemIds: ['src/a.ts'] }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(view.messages)), [{ type: 'copyFileName', itemIds: ['src/a.ts'], origin: state.messageOrigin }]);
 });
 
 test('briefing generation and cancellation keep review context and send the existing actions', () => {
@@ -124,12 +124,12 @@ test('briefing generation and cancellation keep review context and send the exis
   view.update({ ...state, briefing: { kind: 'loading' } });
   view.element('briefingButton').listeners.click[0]();
   view.update({ ...state, briefing: { kind: 'idle' } });
-  assert.deepEqual(JSON.parse(JSON.stringify(view.messages)), [{ type: 'generateBriefing' }, { type: 'cancelBriefing' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(view.messages)), [{ type: 'generateBriefing', origin: state.messageOrigin }, { type: 'cancelBriefing', origin: state.messageOrigin }]);
   assert.deepEqual(view.snapshot(), { query: 'src/', status: 'modified', selected: ['src/a.ts'], anchor: 'src/a.ts' });
 });
 
 function reviewState(overrides: Record<string, unknown> = {}) {
-  return { kind: 'results', comparisonId: 'repo-a/session-1', sourceLabel: 'main', targetLabel: 'Worktree',
+  return { messageOrigin: { repositoryPath: '/repo', contextId: 'repo-a/session-1' }, kind: 'results', comparisonId: 'repo-a/session-1', sourceLabel: 'main', targetLabel: 'Worktree',
     canOpenUnifiedDiff: true, canGenerateBriefing: true, briefing: { kind: 'idle' }, items: [
       { id: 'src/a.ts', path: 'src/a.ts', name: 'a.ts', directory: 'src', fullPath: '/repo/src/a.ts', status: 'Modified', worktreeRef: 'main' },
       { id: 'src/b.ts', path: 'src/b.ts', name: 'b.ts', directory: 'src', fullPath: '/repo/src/b.ts', status: 'Modified', worktreeRef: 'main' },

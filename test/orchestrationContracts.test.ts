@@ -232,7 +232,7 @@ test('Compare Results cancels and ignores an AI briefing when the comparison cha
     { refName: 'feature', label: 'feature' },
     [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
   );
-  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'generateBriefing' });
   await waitForAsyncHandlers();
   assert.ok(harness.panels[0].postedMessages.some((message) =>
     (message as { readonly state?: { readonly briefing?: { readonly kind?: string } } })
@@ -290,11 +290,11 @@ test('Compare Results lets the user cancel AI regeneration and restores the read
     { refName: 'feature', label: 'feature' },
     [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
   );
-  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'generateBriefing' });
   await waitForAsyncHandlers();
-  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'generateBriefing' });
   await waitForAsyncHandlers();
-  harness.panels[0].receiveMessage({ type: 'cancelBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'cancelBriefing' });
   await waitForAsyncHandlers();
 
   assert.equal(regenerationToken?.isCancellationRequested, true);
@@ -342,13 +342,13 @@ test('Compare Results copies only the current generated AI briefing', async (t) 
     { refName: 'feature', label: 'feature' },
     [createChange({ uriPath: '/workspace/repo/src/app.ts' })]
   );
-  harness.panels[0].receiveMessage({ type: 'copyBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'copyBriefing' });
   await waitForAsyncHandlers();
   assert.deepEqual(harness.clipboardWrites, []);
 
-  harness.panels[0].receiveMessage({ type: 'generateBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'generateBriefing' });
   await waitForAsyncHandlers();
-  harness.panels[0].receiveMessage({ type: 'copyBriefing' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'copyBriefing' });
   await waitForAsyncHandlers();
 
   assert.deepEqual(harness.clipboardWrites, ['Summary\nReview src/app.ts.']);
@@ -415,7 +415,7 @@ test('Show Log scopes target sources until all branches is explicitly enabled', 
   assert.deepEqual(showAllBranchesValues, [false]);
   assert.equal(visibleState?.showAllBranches, false);
 
-  harness.panels[0].receiveMessage({ type: 'toggleShowAllBranches', value: true });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'toggleShowAllBranches', value: true });
   await waitForAsyncHandlers();
 
   visibleState = harness.panels[0].postedMessages
@@ -473,7 +473,7 @@ test('Show Log reloads the current commit references after creating a tag', asyn
     repository,
     { kind: 'target', revision: 'main', label: 'main' }
   );
-  harness.panels[0].receiveMessage({
+  sendCurrentPanelMessage(harness.panels[0], {
     type: 'createTagFromCommit',
     commitHash: 'abcdef123456'
   });
@@ -540,7 +540,7 @@ test('Show Log reloads the current commit references after Checkout to this crea
     repository,
     { kind: 'target', revision: 'main', label: 'main' }
   );
-  harness.panels[0].receiveMessage({
+  sendCurrentPanelMessage(harness.panels[0], {
     type: 'checkoutCommit',
     commitHash: 'abcdef123456'
   });
@@ -598,7 +598,7 @@ test('Show Log publishes truthful filtered search truncation state', async (t) =
     .map((message) => (message as { readonly state?: { readonly sourceToken?: string } }).state)
     .filter((state) => !!state)
     .at(-1);
-  harness.panels[0].receiveMessage({
+  sendCurrentPanelMessage(harness.panels[0], {
     type: 'setFilterText',
     value: 'needle',
     sourceToken: initialState?.sourceToken
@@ -701,7 +701,7 @@ test('RevisionGraphController restores repository focus before loading and persi
   await controller.open();
   assert.deepEqual(latest().projectionOptions.descendantFocus, focus);
 
-  panel.receiveMessage({ type: 'set-projection-options', options: { descendantFocus: null } });
+  sendCurrentPanelMessage(panel, { type: 'set-projection-options', options: { descendantFocus: null } });
   await waitForAsyncHandlers();
   await controller.refresh();
   assert.equal(latest().projectionOptions.descendantFocus, undefined);
@@ -1220,14 +1220,91 @@ test('Show Log wires expanded file filtering with stable IDs and rejects a stale
   await provider.showSource(createRepository({root:'/workspace/repo'}), {kind:'target',revision:'main',label:'main'});
   const panel = harness.panels[0];
   const latest = () => (panel.postedMessages.at(-1) as {state: import('../src/showLog/viewState').ShowLogWebviewState}).state;
-  panel.receiveMessage({type:'toggleCommit',commitHash:hash});
+  sendCurrentPanelMessage(panel, {type:'toggleCommit',commitHash:hash});
   await waitForAsyncHandlers();
-  panel.receiveMessage({type:'setCommitFileFilter',commitHash:hash,value:'TARGET.TS',sourceToken:latest().sourceToken});
+  sendCurrentPanelMessage(panel, {type:'setCommitFileFilter',commitHash:hash,value:'TARGET.TS',sourceToken:latest().sourceToken});
   await waitForAsyncHandlers();
   assert.deepEqual(latest().commits[0].fileFilter?.visibleChangeIds, [`${hash}:1`]);
   assert.equal(latest().commits[0].changes.length, 2);
-  panel.receiveMessage({type:'setCommitFileFilter',commitHash:hash,value:'other.ts',sourceToken:'stale'});
+  sendCurrentPanelMessage(panel, {type:'setCommitFileFilter',commitHash:hash,value:'other.ts',sourceToken:'stale'});
   await waitForAsyncHandlers();
   assert.equal(latest().commits[0].fileFilter?.text, 'TARGET.TS');
+  provider.dispose();
+});
+
+function sendCurrentPanelMessage(panel: TestPanel, message: object): void {
+  const state = panel.postedMessages.map((message) => (message as { state?: { messageOrigin?: unknown } }).state)
+    .filter((state) => !!state).at(-1);
+  panel.receiveMessage({ ...message, origin: state?.messageOrigin });
+}
+
+test('Compare Results rejects stale clicks across repositories, replacement comparisons and panel recreation', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
+  const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
+  const show = (root: string) => provider.showBetweenRefs(createRepository({ root }),
+    { refName: 'main', label: 'main' }, { refName: 'feature', label: 'feature' },
+    [createChange({ uriPath: `${root}/same.ts` })]);
+  const latest = (panel: TestPanel) => (panel.postedMessages.at(-1) as {
+    state: import('../src/compareResultsWebview').CompareResultsWebviewState
+  }).state;
+  await show('/repo/a');
+  const panel = harness.panels[0];
+  const original = latest(panel);
+  const stale = { type: 'copyFullPath', itemIds: [original.items[0].id], origin: original.messageOrigin };
+  await show('/repo/b');
+  // Current item IDs cannot turn an old origin into authorization.
+  panel.receiveMessage({ ...stale, itemIds: [latest(panel).items[0].id] });
+  await show('/repo/a');
+  assert.equal(latest(panel).items[0].id, original.items[0].id);
+  panel.receiveMessage(stale);
+  panel.receiveMessage({ ...stale, origin: undefined });
+  await waitForAsyncHandlers();
+  assert.deepEqual(harness.clipboardWrites, []);
+  sendCurrentPanelMessage(panel, { type: 'copyFullPath', itemIds: [latest(panel).items[0].id] });
+  await waitForAsyncHandlers();
+  assert.deepEqual(harness.clipboardWrites, ['/repo/a/same.ts']);
+  panel.dispose();
+  await show('/repo/a');
+  harness.panels[1].receiveMessage(stale);
+  await waitForAsyncHandlers();
+  assert.equal(harness.clipboardWrites.length, 1);
+  assert.notDeepEqual(latest(harness.panels[1]).messageOrigin, original.messageOrigin);
+  provider.dispose();
+});
+
+test('Show Log rejects old sources even when the current repository contains the same commit', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  const hash = 'a'.repeat(40);
+  const backend = { async loadRevisionLog() {
+    return { entries: [createRevisionLogEntry({ hash })], hasMore: false, searchTruncated: false };
+  } } as never;
+  const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
+  const show = (root: string) => provider.showSource(createRepository({ root }),
+    { kind: 'target', revision: 'main', label: 'main' });
+  const latest = (panel: TestPanel) => (panel.postedMessages.at(-1) as {
+    state: import('../src/showLog/viewState').ShowLogWebviewState
+  }).state;
+  await show('/repo/a');
+  const panel = harness.panels[0];
+  const original = latest(panel);
+  const stale = { type: 'copyCommitHash', commitHash: hash, origin: original.messageOrigin };
+  await show('/repo/b');
+  panel.receiveMessage(stale);
+  await show('/repo/a');
+  panel.receiveMessage(stale);
+  panel.receiveMessage({ ...stale, origin: undefined });
+  await waitForAsyncHandlers();
+  assert.deepEqual(harness.clipboardWrites, []);
+  sendCurrentPanelMessage(panel, { type: 'copyCommitHash', commitHash: hash });
+  await waitForAsyncHandlers();
+  assert.deepEqual(harness.clipboardWrites, [hash]);
+  panel.dispose();
+  await show('/repo/a');
+  harness.panels[1].receiveMessage(stale);
+  await waitForAsyncHandlers();
+  assert.equal(harness.clipboardWrites.length, 1);
+  assert.notDeepEqual(latest(harness.panels[1]).messageOrigin, original.messageOrigin);
   provider.dispose();
 });

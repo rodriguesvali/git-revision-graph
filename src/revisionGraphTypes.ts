@@ -28,6 +28,7 @@ export interface RevisionGraphViewReference {
 }
 
 export interface RevisionGraphViewState {
+  readonly messageOrigin?: RevisionGraphProtocol.MessageOrigin;
   readonly viewMode: 'ready' | 'empty';
   readonly hasRepositories: boolean;
   readonly repositoryPath: string | undefined;

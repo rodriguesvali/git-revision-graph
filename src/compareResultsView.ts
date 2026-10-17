@@ -297,7 +297,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   }
 
   private async handleMessage(rawMessage: unknown): Promise<void> {
-    await dispatchCompareResultsWebviewMessage(rawMessage, this.messageHandlers);
+    await dispatchCompareResultsWebviewMessage(rawMessage, this.messageHandlers, this.reviewSessions.originFor(this.state));
   }
 
   private async compareItemWithBase(itemId: string): Promise<void> {

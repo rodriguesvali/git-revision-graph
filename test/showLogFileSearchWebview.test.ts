@@ -12,7 +12,7 @@ function fixture() {
     content: { addEventListener() {} },
     currentState: state,
     getCurrentSourceToken: () => 'source-a',
-    vscode: { postMessage: (message: unknown) => messages.push(message) },
+    postMessage: (message: unknown) => messages.push(message),
     setTimeout: (callback: () => void) => { timers.set(++timerId, callback); return timerId; },
     clearTimeout: (id: number) => timers.delete(id)
   };

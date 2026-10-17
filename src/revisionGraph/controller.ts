@@ -142,7 +142,7 @@ export class RevisionGraphController implements vscode.Disposable {
       this.actionProgress.invalidate(); this.currentLoadingLabel = undefined;
       this.currentLoadingMode = undefined;
       this.currentErrorMessage = undefined;
-      this.currentState = result.state;
+      this.currentState = this.messageDispatcher.bindState(result.state);
       this.reusableGraphSnapshot = result.snapshot && result.repositoryPath && result.snapshotOptions
         ? {
             repositoryPath: result.repositoryPath,
@@ -150,7 +150,7 @@ export class RevisionGraphController implements vscode.Disposable {
             snapshotOptions: result.snapshotOptions
           }
         : undefined;
-      this.postHostMessage(createRevisionGraphUpdateStateMessage(result.state));
+      this.postHostMessage(createRevisionGraphUpdateStateMessage(this.currentState));
       if (this.currentRepository) this.postBugBisect(this.currentRepository.rootUri.fsPath, this.bugBisect?.state(this.currentRepository.rootUri.fsPath) ?? null);
     },
     (error) => {
@@ -196,7 +196,7 @@ export class RevisionGraphController implements vscode.Disposable {
     );
     this.repositoryLifecycle = new RevisionGraphRepositoryLifecycle(git, {
       onCurrentRepositoryChanging: (repository) => {
-        this.actionProgress.invalidate(); this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
+        this.messageDispatcher.invalidate(); this.actionProgress.invalidate(); this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
         this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
       },
       onCurrentRepositoryChanged: (repositoryChanged) => {
@@ -346,7 +346,7 @@ export class RevisionGraphController implements vscode.Disposable {
     if (this.ownsMutationCoordinator) {
       this.mutationCoordinator.dispose();
     }
-    this.actionProgress.invalidate(); this.renderCoordinator.cancel();
+    this.messageDispatcher.invalidate(); this.actionProgress.invalidate(); this.renderCoordinator.cancel();
     this.disposeViewDisposables();
     this.loadTrace.dispose();
     this.repositoryLifecycle.dispose();
@@ -357,13 +357,13 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private async resolveWebviewSurface(view: RevisionGraphWebviewSurface): Promise<void> {
-    this.disposeViewDisposables();
+    this.currentState = this.messageDispatcher.bindState(this.currentState); this.disposeViewDisposables();
     this.view = view;
     this.syncViewTitle();
     this.viewDisposables.push(
       view.onDidDispose(() => {
         if (this.view === view) {
-          this.actionProgress.invalidate(); this.renderCoordinator.cancel();
+          this.messageDispatcher.invalidate(); this.actionProgress.invalidate(); this.renderCoordinator.cancel();
           this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
           this.view = undefined;
         }

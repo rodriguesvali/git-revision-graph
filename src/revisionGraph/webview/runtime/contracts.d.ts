@@ -30,6 +30,7 @@ interface RevisionGraphWebviewHostScene extends Record<string, unknown> {
 }
 
 interface RevisionGraphWebviewHostState extends Record<string, unknown> {
+  readonly messageOrigin?: RevisionGraphProtocol.MessageOrigin;
   readonly viewMode: 'ready' | 'empty';
   readonly hasRepositories: boolean;
   readonly repositoryPath?: string;

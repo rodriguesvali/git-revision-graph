@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  dispatchCompareResultsWebviewMessage,
+  dispatchCompareResultsWebviewMessage as dispatchRaw,
   type CompareResultsMessageHandlers
 } from '../src/compareResults/messageHandler';
 
 test('dispatchCompareResultsWebviewMessage ignores malformed messages', async () => {
   const calls: string[] = [];
-  const handled = await dispatchCompareResultsWebviewMessage(
+  const handled = await dispatchCurrent(
     { type: 'base', itemId: '' },
     createHandlers(calls)
   );
@@ -21,16 +21,16 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
   const calls: string[] = [];
   const handlers = createHandlers(calls);
 
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'ready' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'base', itemId: 'src/app.ts:0' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyFileName', itemIds: ['src/app.ts:0', 'src/util.ts:1'] }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyFullPath', itemIds: ['src/app.ts:0'] }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'copyBriefing' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'cancelBriefing' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'generateBriefing' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'unifiedDiff' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'worktree', itemId: 'src/app.ts:0' }, handlers), true);
-  assert.equal(await dispatchCompareResultsWebviewMessage({ type: 'revert', itemId: 'src/app.ts:0' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'ready' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'base', itemId: 'src/app.ts:0' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'copyFileName', itemIds: ['src/app.ts:0', 'src/util.ts:1'] }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'copyFullPath', itemIds: ['src/app.ts:0'] }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'copyBriefing' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'cancelBriefing' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'generateBriefing' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'unifiedDiff' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'worktree', itemId: 'src/app.ts:0' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'revert', itemId: 'src/app.ts:0' }, handlers), true);
 
   assert.deepEqual(calls, [
     'ready',
@@ -80,3 +80,22 @@ function createHandlers(calls: string[]): CompareResultsMessageHandlers {
     }
   };
 }
+
+const currentOrigin = { repositoryPath: '/workspace/repo', contextId: 'current' };
+function dispatchCurrent(message: object, handlers: CompareResultsMessageHandlers): Promise<boolean> {
+  return dispatchRaw({ ...message, origin: currentOrigin }, handlers, currentOrigin);
+}
+
+test('rejects missing, malformed, cross-repository and superseded origins without invoking handlers', async () => {
+  const calls: string[] = [];
+  const handlers = createHandlers(calls);
+  const message = { type: 'revert', itemId: 'same-file' };
+  for (const origin of [undefined, {}, [], { ...currentOrigin, repositoryPath: '/other' },
+    { ...currentOrigin, contextId: 'previous' }, { ...currentOrigin, contextId: '' }]) {
+    assert.equal(await dispatchRaw({ ...message, origin }, handlers, currentOrigin), false);
+  }
+  assert.equal(await dispatchRaw({ ...message, origin: currentOrigin }, handlers), false);
+  assert.deepEqual(calls, []);
+  assert.equal(await dispatchRaw({ ...message, origin: currentOrigin }, handlers, currentOrigin), true);
+  assert.equal(calls.length, 1);
+});
