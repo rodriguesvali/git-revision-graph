@@ -20,6 +20,7 @@ export interface CompareResultsWebviewItem {
   readonly directory: string;
   readonly fullPath: string;
   readonly status: string;
+  readonly canRevert: boolean;
   readonly leftRef: string | undefined;
   readonly rightRef: string | undefined;
   readonly worktreeRef: string | undefined;
@@ -497,12 +498,10 @@ export function renderCompareResultsWebviewHtml(): string {
       }
 
       const item = items[0];
-      const actions = [
-        { action: 'base', label: 'Open Diff' }
-      ];
+      const actions = [{ action: 'base', label: 'Open Diff' }];
 
-      if (item.worktreeRef || item.rightRef || item.leftRef) {
-        actions.push({ action: 'revert', label: 'Revert to this' });
+      if (item.canRevert) {
+        actions.push({ action: 'revert', label: 'Revert' });
       }
       if (!item.worktreeRef && (item.leftRef || item.rightRef)) {
         actions.push({ action: 'worktree', label: 'Compare with Worktree' });

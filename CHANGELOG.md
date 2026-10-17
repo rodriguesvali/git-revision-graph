@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 
 ### File Restore
 
+- Show **Revert** in Compare Results for comparisons with the worktree, including
+  historical tags; hide and reject restores from comparisons between references.
 - Validate the complete restore plan before changing worktree files in Compare
   Results and Show Log, using one resolved commit and exact file paths.
 - Recover previous file contents after a failed restore; retain recovery copies

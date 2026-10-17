@@ -4,7 +4,7 @@
     "maxFunctionComplexity": 15
   },
   "files": {
-    "src/compareResultsWebview.ts": 682,
+    "src/compareResultsWebview.ts": 681,
     "src/revisionGraph/controller.ts": 742,
     "src/revisionGraph/panel/state.ts": 650,
     "src/revisionGraph/webview/script/bootstrap.ts": 1732,

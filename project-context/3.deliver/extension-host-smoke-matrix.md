@@ -7,6 +7,18 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Compare Results Revert
+
+The corrected scenario covers **Revert** for branch/tag-to-worktree comparisons,
+including `v22.3.0-next.2 → Worktree` while HEAD is main. It clicks the tag's real
+menu action, checks the historical file contents, and preserves the current branch
+and index. Between-ref comparisons omit Revert and reject forged restore requests.
+Original historical-source rename recovery and Show Log actions remain covered.
+On 2026-10-17, this scenario passed on Linux/Xvfb with VS Code 1.100.0/stable 1.142.0.
+Full suite: 1,133 passed; platform: 51; quality: 301 files / 2,831 functions.
+See the [feature record](../2.build/features/1.7.5-compare-revert-worktree.md)
+for the scope correction and remaining manual/platform gaps.
+
 ## 1.7.5 Bisect Target Identity — B3
 
 On 2026-10-17, the actual safety scenario passed on Linux/Xvfb with VS Code
@@ -75,7 +87,7 @@ Record operator, platform, VS Code version, source commit and disposable reposit
 
 | Scenario | Expected result | Result |
 | --- | --- | --- |
-| Compare Results restore/cancel | Confirm a modified-file and rename restore; dismiss another confirmation. Correct files are restored; cancellation changes nothing. | Not recorded |
+| Compare Results restore/cancel | Compare a branch or historical tag with the worktree, confirm a modified-file and rename Revert, and dismiss another confirmation. Correct source files are restored; cancellation changes nothing. Comparisons between refs must omit Revert. | Automated Linux checks recorded above; manual confirmation acceptance pending |
 | Show Log restore | Restore the selected commit's side for a modified file and a rename; verify file modes and staged changes remain appropriate. | Not recorded |
 | Stale reference/source | Prepare a rename comparison, then move the selected branch so a later source is absent. Restoring reports failure without changing either local path. | Not recorded |
 | Execution/recovery failure | With a controlled disposable fixture, fail a later restore write. Previous files are recovered. If the fixture also blocks recovery, the modal identifies retained copies for manual recovery. | Not recorded |

@@ -35,6 +35,7 @@ interface Reply {
   readonly state?: PanelState;
   readonly sent: readonly Record<string, unknown>[];
   readonly error?: string;
+  readonly menuItems?: readonly { readonly action: string; readonly label: string }[];
 }
 
 export class ObservedPanel {
@@ -175,15 +176,22 @@ function bridgeScript(token: string): string {
    const start = sent.length;
    try {
     if (message.op === 'send') api.postMessage(message.message);
-    if (message.op === 'menu') {
+    let menuItems;
+    if (message.op === 'menu' || message.op === 'inspectMenu') {
      const target = document.querySelector(message.selector);
      if (!target) throw Error('Missing DOM target: ' + message.selector);
      target.dispatchEvent(new MouseEvent('contextmenu', {bubbles:true,clientX:30,clientY:30}));
-     const button = document.querySelector('[data-menu-action="' + message.action + '"], [data-menu-key="' + message.action + '"]');
-     if (!button) throw Error('Missing menu action: ' + message.action);
-     button.click();
+     if (message.op === 'inspectMenu') {
+      menuItems = Array.from(document.querySelectorAll('[data-menu-action], [data-menu-key]')).map(button => ({
+       action:button.getAttribute('data-menu-action') || button.getAttribute('data-menu-key'), label:button.textContent
+      }));
+     } else {
+      const button = document.querySelector('[data-menu-action="' + message.action + '"], [data-menu-key="' + message.action + '"]');
+      if (!button) throw Error('Missing menu action: ' + message.action);
+      button.click();
+     }
     }
-    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start)}});
+    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start),menuItems}});
    } catch (error) {
     api.postMessage({type:'__e2e',token,id:message.id,reply:{error:String(error),sent:[]}});
    }

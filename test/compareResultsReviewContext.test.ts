@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { renderCompareResultsWebviewHtml } from '../src/compareResultsWebview';
+import { createCompareResultsWebviewState } from '../src/compareResults/viewState';
+import { createBranch, createChange, createRepository } from './fakes';
+import { RefType } from '../src/git';
 
 test('Compare Results retains filters and selection through briefing progress, result and cancellation', () => {
   const view = createReviewWebview();
@@ -128,6 +131,40 @@ test('briefing generation and cancellation keep review context and send the exis
   assert.deepEqual(view.snapshot(), { query: 'src/', status: 'modified', selected: ['src/a.ts'], anchor: 'src/a.ts' });
 });
 
+test('Compare Results hides Revert for comparisons between references', () => {
+  const view = createReviewWebview();
+  for (const leftRef of ['feature', 'HEAD~1', 'refs/tags/release']) {
+    const state = reviewState();
+    view.update({ ...state, items: [{ ...state.items[0], worktreeRef: undefined, leftRef, rightRef: 'HEAD', canRevert: false }] });
+    view.element('content').listeners.contextmenu[0]({ target: view.element('content').rows[0],
+      preventDefault() {}, clientX: 20, clientY: 20 });
+    assert.doesNotMatch(view.element('contextMenu').innerHTML, /data-menu-action="revert"/);
+  }
+});
+
+test('reported tag-to-worktree comparison projects and renders Revert while workspace is on main', () => {
+  const view = createReviewWebview();
+  const repository = createRepository({ root: '/repo', head: createBranch({ name: 'main', type: RefType.Head }) });
+  const state = createCompareResultsWebviewState({ kind: 'worktree', repository,
+    target: { refName: 'v22.3.0-next.2', label: 'v22.3.0-next.2' },
+    changes: [createChange({ uriPath: '/repo/engine.rs' })] });
+  assert.equal(state.items[0].canRevert, true);
+  view.update(state);
+  view.element('content').listeners.contextmenu[0]({ target: view.element('content').rows[0],
+    preventDefault() {}, clientX: 20, clientY: 20 });
+  assert.match(view.element('contextMenu').innerHTML, /data-menu-action="revert">Revert<\/button>/);
+});
+
+test('Compare Results renders the eligible single-file action as Revert', () => {
+  const view = createReviewWebview();
+  const state = reviewState();
+  view.update({ ...state, items: [{ ...state.items[0], canRevert: true }] });
+  view.element('content').listeners.contextmenu[0]({ target: view.element('content').rows[0],
+    preventDefault() {}, clientX: 20, clientY: 20 });
+  assert.match(view.element('contextMenu').innerHTML, /data-menu-action="revert">Revert<\/button>/);
+  assert.doesNotMatch(view.element('contextMenu').innerHTML, /Revert to this/);
+});
+
 function reviewState(overrides: Record<string, unknown> = {}) {
   return { messageOrigin: { repositoryPath: '/repo', contextId: 'repo-a/session-1' }, kind: 'results', comparisonId: 'repo-a/session-1', sourceLabel: 'main', targetLabel: 'Worktree',
     canOpenUnifiedDiff: true, canGenerateBriefing: true, briefing: { kind: 'idle' }, items: [
@@ -163,7 +200,7 @@ function createReviewWebview() {
       if (id !== 'content') return;
       if (node.rows.includes(document.activeElement)) document.activeElement = null;
       node.rows = [...value.matchAll(/data-item-id="([^"]+)"/g)].map((match) => {
-        const row = element(`row-${rowSequence++}`); row.setAttribute('data-item-id', match[1]); return row;
+        const row = element(`row-${rowSequence++}`); row.setAttribute('data-item-id', match[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')); return row;
       });
     } });
     elements.set(id, node);

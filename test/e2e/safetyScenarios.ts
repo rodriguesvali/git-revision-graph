@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import { SafetyHarness } from './safetyHarness';
 import { command, ObservedPanel, waitFor } from './webviewBridge';
 import { checkoutLog, contents, git, GitFault, indexState } from './gitSafetyFixture';
+import { verifyCompareRevertPolicy } from './compareRevertPolicy';
 const GRAPH = 'gitRefs.revisionGraphEditorPanel';
 const COMPARE = 'gitRefs.compareResultsView';
 const LOG = 'gitRefs.showLogView';
@@ -28,6 +29,7 @@ export async function runSafetyScenarios(harness: SafetyHarness, repositories: r
     console.log('[e2e:safety] graph cross-repository and A→B→A replay / fresh Git checkout passed');
     await compareReplay(harness, repositories);
     console.log('[e2e:safety] Compare Results stale restore / fresh DOM restore / repository isolation passed');
+    await verifyCompareRevertPolicy(harness, repositories[0]);
     await logReplay(harness, graph);
     console.log('[e2e:safety] Show Log stale source / fresh DOM restore / identical commit passed');
     await restoreFailure(harness, repositories, extensionPath);

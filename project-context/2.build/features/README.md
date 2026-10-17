@@ -35,6 +35,9 @@ work includes S1–S4 safety corrections/verification and the VS Code 1.100 mini
   applied answers after interrupted persistence without classifying them twice.
 - [1.7.5-bisect-target-identity.md](1.7.5-bisect-target-identity.md): preserve the
   selected reference kind through exact Git resolution and Show Log handoff.
+- [1.7.5-compare-revert-worktree.md](1.7.5-compare-revert-worktree.md):
+  show Compare Results Revert for any reference-to-worktree comparison and reject
+  restores between references.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
 planning input. S1–S4 are approved and tracked in the focused artifacts above.

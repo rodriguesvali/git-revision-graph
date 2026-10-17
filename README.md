@@ -52,7 +52,8 @@ the current worktree.
 - Actions stay bound to the repository and review context that displayed them;
   delayed clicks from a replaced context are ignored.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
-- Compare an item with the worktree and restore guarded worktree files when needed.
+- Compare an item with the worktree. Use **Revert** to restore the selected
+  revision's file into the worktree. Comparisons between references omit this action.
 - Failed file restores attempt to recover the previous files. If automatic recovery
   cannot finish, the error identifies retained copies for manual recovery.
 - Generate an optional, user-initiated AI Briefing through an available GitHub Copilot language

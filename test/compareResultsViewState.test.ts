@@ -5,8 +5,21 @@ import {
   createCompareResultsWebviewState,
   getCompareResultItems
 } from '../src/compareResults/viewState';
-import { Status } from '../src/git';
-import { createChange, createRepository } from './fakes';
+import { RefType, Status } from '../src/git';
+import { createBranch, createChange, createRepository } from './fakes';
+
+test('Compare Results projects Revert for reference-to-worktree comparisons, including the reported tag', () => {
+  const repository = createRepository({ root: '/repo', head: createBranch({ type: RefType.Head, name: 'main' }) });
+  const changes = [createChange({ uriPath: '/repo/file.txt' })];
+  for (const refName of ['main', 'refs/heads/main', 'HEAD', 'feature', 'v22.3.0-next.2', 'refs/tags/main']) {
+    const state = createCompareResultsWebviewState({ kind: 'worktree', repository,
+      target: { refName, label: 'HEAD' }, changes });
+    assert.equal(state.items[0].canRevert, true);
+  }
+  const between = createCompareResultsWebviewState({ kind: 'between', repository,
+    left: { refName: 'feature', label: 'feature' }, right: { refName: 'HEAD', label: 'HEAD' }, changes });
+  assert.equal(between.items[0].canRevert, false);
+});
 
 test('createCompareResultsWebviewState builds an empty compare results state', () => {
   assert.deepEqual(createCompareResultsWebviewState({ kind: 'empty' }), {

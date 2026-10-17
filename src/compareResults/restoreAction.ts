@@ -1,6 +1,6 @@
 import { toOperationError } from '../errorDetail';
 import type { Change, Repository } from '../git';
-import type { CompareResultItem } from '../compareResultsShared';
+import { canRevertCompareResultItem, type CompareResultItem } from '../compareResultsShared';
 import type { CompareResultRestoreSourceSide } from '../compareResultRestore';
 import { isAbortError } from '../errors';
 import { showModalErrorMessage } from '../workbenchMessages';
@@ -83,26 +83,10 @@ export function buildCompareResultRestoreConfirmationMessage(item: CompareResult
 function getCompareResultRestoreSource(
   item: CompareResultItem
 ): { readonly ref: string; readonly label: string; readonly sourceSide: CompareResultRestoreSourceSide } | undefined {
-  if (item.worktreeRef) {
+  if (canRevertCompareResultItem(item) && item.worktreeRef) {
     return {
       ref: item.worktreeRef,
       label: item.worktreeLabel ?? item.worktreeRef,
-      sourceSide: 'left'
-    };
-  }
-
-  if (item.rightRef) {
-    return {
-      ref: item.rightRef,
-      label: item.rightRef,
-      sourceSide: 'right'
-    };
-  }
-
-  if (item.leftRef) {
-    return {
-      ref: item.leftRef,
-      label: item.leftRef,
       sourceSide: 'left'
     };
   }

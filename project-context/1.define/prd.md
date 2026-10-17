@@ -38,6 +38,9 @@ events. The Git API version remains `getAPI(1)`.
   once, while intermediate steps retain compact presentation.
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
+- Compare Results offers **Revert** for reference-to-worktree comparisons,
+  restoring the selected revision's file into the workspace. Comparisons between
+  references omit this action; Show Log retains commit-specific file restoration.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.
 - The graph supports range focus and descendant focus over the currently loaded snapshot. Descendant focus is remembered per repository in the workspace across panel and window reloads, until cleared or replaced by a scope/range choice.
 - Users can compare refs, compare with worktree, open unified diffs, inspect logs, checkout, create branches and tags, publish branches, push/delete tags, pull/push/sync the current branch, merge refs, abort conflicted merges, stash/apply/pop/drop, reset the current branch, restore worktree files, and delete local or supported remote refs.

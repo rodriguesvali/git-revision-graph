@@ -62,6 +62,11 @@ Last consolidated: 2026-10-17
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
 - `src/refActions.ts` contains testable Git workflows.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
+- `src/compareResultsShared.ts` owns worktree-destination Revert eligibility. The
+  host projects `canRevert` from its own item context and checks that policy before
+  inspection or restoration. Source kind and attached/detached HEAD do not gate
+  this action; ref-to-ref comparisons cannot restore. Origin and mutation guards
+  continue to reject stale actions.
 - `src/compareResultRestoreExecutor.ts` preflights the complete file restore against
   one resolved commit and uses literal Git pathspecs. `src/compareResultRestoreBackup.ts`
   captures affected worktree files before mutation and recovers attempted targets

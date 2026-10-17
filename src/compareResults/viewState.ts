@@ -4,6 +4,7 @@ import * as path from 'node:path';
 import { getRepositoryRelativeUriPath, getTargetUri } from '../changePresentation';
 import {
   buildCompareResultItems,
+  canRevertCompareResultItem,
   buildCompareResultsMessage,
   type CompareResultItem,
   type CompareResultsState
@@ -103,6 +104,7 @@ export function toCompareResultsWebviewItem(
     directory: path.dirname(item.label) === '.' ? '' : path.dirname(item.label),
     fullPath: getTargetUri(item.change).fsPath,
     status: item.detail,
+    canRevert: canRevertCompareResultItem(item),
     leftRef: item.leftRef,
     rightRef: item.rightRef,
     worktreeRef: item.worktreeRef,

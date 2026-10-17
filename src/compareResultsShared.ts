@@ -50,6 +50,10 @@ export interface CompareResultItem {
   readonly worktreeLabel: string | undefined;
 }
 
+export function canRevertCompareResultItem(item: Pick<CompareResultItem, 'repository' | 'worktreeRef'>): boolean {
+  return !!item.worktreeRef;
+}
+
 export function buildCompareResultItems(
   repository: Repository,
   changes: readonly Change[],

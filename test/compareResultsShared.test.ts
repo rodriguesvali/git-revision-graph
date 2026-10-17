@@ -5,10 +5,27 @@ import {
   applyCompareResultsWorktreeRefresh,
   buildCompareResultItems,
   buildCompareResultsMessage,
+  canRevertCompareResultItem,
   isCompareResultsStateForRepository
 } from '../src/compareResultsShared';
-import { createChange, createRepository } from './fakes';
-import { Status } from '../src/git';
+import { createBranch, createChange, createRepository } from './fakes';
+import { RefType, Status } from '../src/git';
+
+test('Revert eligibility follows the worktree destination for any source revision', () => {
+  const repository = createRepository({ root: '/repo', head: createBranch({ type: RefType.Head, name: 'main' }) });
+  for (const worktreeRef of ['main', 'HEAD', 'feature', 'refs/tags/v22.3.0-next.2', 'refs/remotes/origin/main', 'a'.repeat(40), 'HEAD~1']) {
+    assert.equal(canRevertCompareResultItem({ repository, worktreeRef }), true, worktreeRef);
+  }
+  assert.equal(canRevertCompareResultItem({ repository, worktreeRef: undefined }), false);
+  assert.equal(canRevertCompareResultItem({ repository, worktreeRef: '' }), false);
+});
+
+test('Revert remains available against the worktree while HEAD is detached', () => {
+  for (const head of [undefined, createBranch({ name: 'v22.3.0-next.2', type: RefType.Tag })]) {
+    const repository = createRepository({ root: '/repo', head });
+    assert.equal(canRevertCompareResultItem({ repository, worktreeRef: 'v22.3.0-next.2' }), true);
+  }
+});
 
 test('identical compare paths and refs in different repositories have different item identities', () => {
   const items = ['/workspace/one', '/workspace/two'].map((root) => buildCompareResultItems(
