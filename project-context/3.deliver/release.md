@@ -16,22 +16,23 @@ partial mutations in Compare Results and Show Log. On the same date, the maintai
 approved the [S2 action-origin correction](../2.build/features/1.7.5-webview-action-origin.md)
 for the graph, Compare Results and Show Log, followed by the
 [S3 render-cancellation correction](../2.build/features/1.7.5-render-cancellation.md).
-The broader S4 E2E expansion in the
-[systemic review](../2.build/systemic-fragility-review-2026-10-17.md) remains planning input.
+The maintainer also approved the [S4 Extension Host expansion](../2.build/features/1.7.5-extension-host-safety-regressions.md).
 CHANGELOG identifies 1.7.5 as Unreleased. Dependencies, engine and contribution points
 retain the published baseline.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified | All three version fields declare 1.7.5; all non-version manifest and lockfile data match HEAD. |
-| Build and existing tests | Passed on 2026-10-17 | S1–S3: `npm test` passed 1,068 tests, zero failures/skips, including production and webview builds; quality passed for 299 files / 2,814 functions. |
+| Build and existing tests | Passed on 2026-10-17 | S1–S4: `npm test` passed 1,072 tests, zero failures/skips, including production and webview builds; quality passed for 299 files / 2,814 functions. |
+| Real Extension Host safety matrix | Passed on Linux/Xvfb | Empty, single-repository and two-repository safety scenarios passed on 1.90.0, 1.100.0 and resolved stable 1.142.0. Real transport, Compare/Show Log DOM restore, HEAD/reflog/index checks, recovery after partial rename and pending-load close/reopen. Both guard-bypass controls failed as expected. See S4 artifact for exact scope. |
+| Runtime defects exposed by S4 | Fixed; regressions passed | Optional newer Git state avoids 1.90 graph-load crash. Lexical inline emitter preserves native window.postMessage in both review panels. Focused red/green tests and real panel workflows passed. |
 | Render cancellation regressions | Passed: 11 focused tests | Noncooperative late results/errors, cancelled queued work, new requests before/after settlement and synchronous abort-listener scheduling. |
 | Graph benchmark | Passed on 2026-10-17 | `npm run benchmark:ci`: 1,200 commits; projection 5.27 ms, layout 130.88 ms, cached layout 1.74 ms. Scene/projection/cache consistency and descendant anchor checks passed. |
 | Webview origin regressions | Passed | Missing/malformed origins, repository/context replay, identical targets, panel recreation and deferred sends; 12 Chromium/Electron checks passed without JavaScript errors. Browser effects used injected handlers, not real Git mutations; see S2 artifact. |
 | File-restore fault regressions | Passed | Real Git checks cover invalid later plans, partial writes/deletions, mode/binary/symlink recovery, unchanged index, branch movement, literal paths and retained copies on recovery failure. Both presenters report failed restores after recovery. |
 | Platform verification | Passed on Linux | `npm run test:platform`: 51 tests, zero failures/skips, including the new restore fault regressions. Windows/macOS execution not performed locally. |
 | Whitespace and knowledge graph | Passed | `git diff --check` and `graphify update .` passed; the structural update preserved existing semantic content. |
-| Focused Extension Host smoke | Pending | Disposable fixtures: confirm/cancel restores in Compare Results and Show Log; check successful renames and actionable failure/recovery messages. Also exercise S2 switching/replay/panel lifecycle and S3 pending-load close/reopen/recovery in the smoke matrix. Automated host-workflow fixtures do not establish real UI acceptance. |
+| Focused manual Extension Host smoke | Pending | S4 automates selected real transport and Git safety scenarios. Native picker/confirmation visuals, cancellation, keyboard/theme and other workflows in the smoke matrix remain manual acceptance; automated supplied UI responses do not establish that acceptance. |
 | Packaging and Marketplace | Not authorized | No 1.7.5 VSIX, installation, tag or publication has been performed. |
 
 Before publication, rollback of cycle opening consists of reverting only its
@@ -44,6 +45,8 @@ Rollback of S2 must revert browser emitters, host gates and protocol/state chang
 together; mixing the two protocol generations would reject valid scoped actions.
 Rollback of S3 reverts the coordinator guards and related regressions/documentation;
 it restores reliance on producers honoring abort and does not change Git data.
+S4 adds verification and the two narrow runtime corrections recorded above. Revert
+their contracts/tests together if required.
 
 ## Published release — 1.7.4
 

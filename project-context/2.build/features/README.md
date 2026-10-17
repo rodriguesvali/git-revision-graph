@@ -23,9 +23,11 @@ work includes S1 file-restore safety, S2 action-origin binding and S3 render can
   actions to the originating repository and render/comparison/log context.
 - [1.7.5-render-cancellation.md](1.7.5-render-cancellation.md): discard cancelled
   render results and errors independently of producer cooperation.
+- [1.7.5-extension-host-safety-regressions.md](1.7.5-extension-host-safety-regressions.md):
+  real multi-repository transport, Git effects, recovery and panel lifecycle checks.
 
 The [systemic-fragility review](../systemic-fragility-review-2026-10-17.md) is
-planning input. S1–S3 are approved; the broader S4 E2E expansion remains outside implementation scope.
+planning input. S1–S4 are approved and tracked in the focused artifacts above.
 Remaining 1.7.4 manual smoke/installation evidence is tracked in delivery records.
 
 ## Published Release Artifacts — 1.7.4

@@ -3,6 +3,9 @@ import { realpathSync } from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 
+import { command } from './webviewBridge';
+import { SafetyHarness } from './safetyHarness';
+import { runSafetyScenarios } from './safetyScenarios';
 import { matchesRevisionGraphPanelViewType } from './revisionGraphTab';
 
 const EXTENSION_ID = 'rodriguesvali.git-revision-graph';
@@ -26,39 +29,54 @@ export async function run(): Promise<void> {
   const scenario = readScenario();
   const workspacePath = readRequiredEnvironmentVariable('GIT_REVISION_GRAPH_E2E_WORKSPACE');
 
-  assertWorkspace(workspacePath);
+  const roots = JSON.parse(process.env.GIT_REVISION_GRAPH_E2E_ROOTS ?? JSON.stringify([workspacePath])) as string[];
+  assertWorkspace(roots);
 
   const git = await activateGitExtension();
   await waitFor(
     () => git.repositories.length === scenario.expectedRepositoryCount,
     `vscode.git to expose ${scenario.expectedRepositoryCount} repositories`
   );
-  assertRepositories(git.repositories, workspacePath, scenario.expectedRepositoryCount);
+  assertRepositories(git.repositories, roots, scenario.expectedRepositoryCount);
 
   const extension = vscode.extensions.getExtension(EXTENSION_ID);
   assert.ok(extension, `Extension ${EXTENSION_ID} must be available in the Extension Host.`);
-  await extension.activate();
-  assert.equal(extension.isActive, true, 'The extension must activate successfully.');
+  const harness = scenario.name === 'safety' ? new SafetyHarness(roots, extension.extensionPath) : undefined;
+  try {
+    await extension.activate();
+    assert.equal(extension.isActive, true, 'The extension must activate successfully.');
 
-  await vscode.commands.executeCommand(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
-  await waitForGraphTab();
+    await command(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
+    await waitForGraphTab();
 
-  await vscode.commands.executeCommand(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
-  const graphTabs = getGraphTabs();
-  assert.equal(graphTabs.length, 1, 'Opening the graph twice must reveal the existing singleton panel.');
+    await command(OPEN_GRAPH_COMMAND, { preserveGraphState: true });
+    const graphTabs = getGraphTabs();
+    assert.equal(graphTabs.length, 1, 'Opening the graph twice must reveal the existing singleton panel.');
+
+    if (harness) {
+      const repositories = roots.map(root => git.repositories.find(repository =>
+        normalizePath(repository.rootUri.fsPath) === normalizePath(root))!);
+      await runSafetyScenarios(harness, repositories, extension.extensionPath);
+    }
+  } finally {
+    harness?.dispose();
+  }
 
   console.log(
     `[e2e:${scenario.name}] activation, vscode.git (${scenario.expectedRepositoryCount} repositories), and singleton panel passed.`
   );
 }
 
-function readScenario(): { readonly name: string; readonly expectedRepositoryCount: 0 | 1 } {
+function readScenario(): { readonly name: string; readonly expectedRepositoryCount: 0 | 1 | 2 } {
   const name = readRequiredEnvironmentVariable('GIT_REVISION_GRAPH_E2E_SCENARIO');
   if (name === 'empty') {
     return { name, expectedRepositoryCount: 0 };
   }
   if (name === 'repository') {
     return { name, expectedRepositoryCount: 1 };
+  }
+  if (name === 'safety') {
+    return { name, expectedRepositoryCount: 2 };
   }
   throw new Error(`Unsupported E2E scenario: ${name}`);
 }
@@ -71,10 +89,9 @@ function readRequiredEnvironmentVariable(name: string): string {
   return value;
 }
 
-function assertWorkspace(workspacePath: string): void {
+function assertWorkspace(roots: readonly string[]): void {
   const folders = vscode.workspace.workspaceFolders;
-  assert.equal(folders?.length, 1, 'The E2E host must open exactly one workspace folder.');
-  assert.equal(normalizePath(folders[0].uri.fsPath), normalizePath(workspacePath));
+  assert.deepEqual(folders?.map(folder => normalizePath(folder.uri.fsPath)).sort(), roots.map(normalizePath).sort());
 }
 
 async function activateGitExtension(): Promise<GitApiLike> {
@@ -86,12 +103,12 @@ async function activateGitExtension(): Promise<GitApiLike> {
 
 function assertRepositories(
   repositories: readonly GitRepositoryLike[],
-  workspacePath: string,
-  expectedCount: 0 | 1
+  roots: readonly string[],
+  expectedCount: 0 | 1 | 2
 ): void {
   assert.equal(repositories.length, expectedCount);
-  if (expectedCount === 1) {
-    assert.equal(normalizePath(repositories[0].rootUri.fsPath), normalizePath(workspacePath));
+  if (expectedCount > 0) {
+    assert.deepEqual(repositories.map(repository => normalizePath(repository.rootUri.fsPath)).sort(), roots.map(normalizePath).sort());
   }
 }
 

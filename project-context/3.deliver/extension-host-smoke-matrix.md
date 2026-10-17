@@ -7,6 +7,20 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.5 Automated Safety Integration — S4
+
+On 2026-10-17, the working tree based on `043bd24` passed empty, single-repository
+and two-repository safety scenarios on Linux/Xvfb with VS Code 1.90.0, 1.100.0 and
+stable 1.142.0. Codex operated disposable fixture repositories and profiles.
+Actual production panels, webview transport, built-in Git checkout and DOM restore
+actions exercised stale-origin rejection, repository isolation, partial rename
+recovery and graph close/reopen during pending Git log. Guard-bypass controls
+failed as expected. See the [S4 evidence and limits](../2.build/features/1.7.5-extension-host-safety-regressions.md).
+
+Native repository choices and confirmation responses were supplied by the test
+harness. Manual prompt, cancellation, keyboard/theme and packaged-installation
+results below remain unrecorded.
+
 ## 1.7.5 File Restore — S1
 
 Status: Automated workflow/fault regressions passed; real Extension Host smoke pending.
@@ -19,9 +33,10 @@ Record operator, platform, VS Code version, source commit and disposable reposit
 | Stale reference/source | Prepare a rename comparison, then move the selected branch so a later source is absent. Restoring reports failure without changing either local path. | Not recorded |
 | Execution/recovery failure | With a controlled disposable fixture, fail a later restore write. Previous files are recovered. If the fixture also blocks recovery, the modal identifies retained copies for manual recovery. | Not recorded |
 
-Automated tests execute both real host workflows with native Git and injected CLI
-failures. They do not execute the real VS Code modal/panel transport. See the
-[feature artifact](../2.build/features/1.7.5-safe-file-restore.md).
+The original S1 tests execute both host workflows with native Git and injected CLI
+failures outside the real panel transport. S4 above adds selected real panel/DOM
+coverage; supplied confirmations still leave native modal UX acceptance manual.
+See the [S1 feature artifact](../2.build/features/1.7.5-safe-file-restore.md).
 
 ## 1.7.5 Webview Action Origin — S2
 
@@ -38,7 +53,8 @@ Use two disposable repositories with identical branch names, hashes and relative
 | Panel lifecycle and empty state | Close/reopen panels and repositories; replay old messages. Reject scoped actions while empty; new panels bootstrap and receive fresh context. | Not recorded in Extension Host |
 
 Chromium exercises real DOM emitters and host dispatchers with captured messages;
-it does not establish real VS Code transport, confirmation UI or Git mutation acceptance.
+the original S2 fixtures do not establish real transport or Git mutation acceptance.
+S4 adds those selected integration checks above; native confirmation UX remains manual.
 
 ## 1.7.5 Render Cancellation — S3
 
@@ -53,7 +69,8 @@ Record operator, platform, VS Code version, source commit and disposable reposit
 | Rapid refresh and repository change | Refresh repeatedly and switch between two repositories; only current results appear and fresh failures remain visible. | Not recorded in Extension Host |
 
 Controlled-promise tests exercise producer noncooperation at the coordinator boundary.
-They do not establish visual reproduction or acceptance through the full VS Code host.
+S4 separately verifies a cooperative native load through the real host lifecycle.
+Visual/manual acceptance and the wider rapid-switch matrix remain pending.
 
 ## 1.7.4 Published Release Evidence
 

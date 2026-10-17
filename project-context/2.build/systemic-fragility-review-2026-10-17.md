@@ -169,4 +169,14 @@ Em 2026-10-17, o mantenedor autorizou tratar o achado 3. O
 registra a invalidação de geração antes do abortamento, o descarte de resultados
 ou erros tardios e a retomada de agendamentos após o cancelamento. Os testes com
 Promises controladas reproduzem as duas violações do contrato no baseline e
-verificam a correção sem depender da cooperação do produtor. S4 permanece pendente.
+verificam a correção sem depender da cooperação do produtor. Naquele momento, S4 permanecia pendente.
+
+## Acompanhamento — S4 na versão 1.7.5
+
+Em 2026-10-17, o mantenedor autorizou tratar o achado 4. O
+[artefato de integração real](features/1.7.5-extension-host-safety-regressions.md)
+registra a ampliação para duas raízes, transporte real das webviews, efeitos Git,
+falha parcial de restauração e fechamento/reabertura com carga pendente. A execução
+também revelou o campo Git ausente no VS Code mínimo e a colisão do emissor de S2
+com `window.postMessage`; ambos receberam correções e regressões. Os resultados
+por versão e os limites de aceitação manual estão no artefato e na entrega.

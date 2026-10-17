@@ -53,6 +53,19 @@ The first command verifies the minimum supported VS Code release; the second che
 stable release. Linux environments require Electron desktop libraries and an active display. CI
 runs both versions through `xvfb`.
 
+Each run opens isolated empty, single-repository and two-repository workspaces.
+The safety scenario exercises production panels and webview transport, real Git
+checkout/restore effects, stale action rejection, partial restore recovery and
+close/reopen during a pending load. It supplies fixture-only repository picks and
+confirmation responses; manual prompt, keyboard, theme and packaged-installation
+acceptance remain separate checks.
+
+For focused diagnosis, set `VSCODE_E2E_SCENARIO=safety` (or `empty`/`repository`).
+The default CI run executes all three. Optional controls
+`VSCODE_E2E_NEGATIVE_CONTROL=allow-stale` and `skip-recovery`, used with `safety`,
+temporarily disable one guard inside the disposable test host. Each control must
+produce a failing run; never use these settings for a passing verification gate.
+
 ## Project Map
 
 - `src/extension.ts`: activation, command registration, and VS Code composition.

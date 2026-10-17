@@ -59,7 +59,7 @@ export function hasWorkspaceChanges(repository: Repository): boolean {
     repository.state.mergeChanges.length > 0
     || repository.state.indexChanges.length > 0
     || repository.state.workingTreeChanges.length > 0
-    || repository.state.untrackedChanges.length > 0
+    || (repository.state.untrackedChanges?.length ?? 0) > 0
   );
 }
 

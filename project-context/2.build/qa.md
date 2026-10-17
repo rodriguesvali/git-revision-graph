@@ -8,6 +8,10 @@ Last consolidated: 2026-06-30
 - `npm run build` after meaningful changes.
 - `npm test` for behavior, command, controller, graph, Git workflow, webview, or release-bound
   changes.
+- `npm run test:e2e` runs empty, single-repository and two-repository safety scenarios
+  in real VS Code hosts. CI covers the declared minimum and stable. See the
+  [S4 artifact](features/1.7.5-extension-host-safety-regressions.md) for real transport,
+  Git/fault assertions and the boundary between automated checks and manual UX.
 - `git diff --check` before release-candidate handoff.
 
 ## Manual Smoke Areas

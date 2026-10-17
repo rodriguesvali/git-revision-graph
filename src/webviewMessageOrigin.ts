@@ -25,11 +25,11 @@ export function createWebviewMessageOrigin(
 
 /** Shared by the two inline runtimes; the typed graph runtime has its own bridge. */
 export function renderScopedWebviewPostMessage(): string {
-  return `function postMessage(message) {
+  return `const postMessage = (message) => {
     if (message.type === 'ready') return vscode.postMessage(message);
     if (!currentState || !currentState.messageOrigin) return false;
     return vscode.postMessage({ ...message, origin: currentState.messageOrigin });
-  }`;
+  };`;
 }
 
 export function isAuthorizedWebviewMessage<Message extends { readonly type: string }>(

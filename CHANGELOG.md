@@ -25,6 +25,10 @@ All notable changes to this project will be documented in this file.
 
 ### Maintenance
 
+- Exercise repository isolation, stale actions, restore recovery and panel lifecycle
+  through real Extension Host webviews in the minimum/stable test matrix.
+- Preserve native webview message delivery in Compare Results and Show Log, and
+  support Git API states without the newer separate untracked-files field.
 - Open the 1.7.5 development cycle and align package and build metadata.
 
 ## 1.7.4 - 2026-10-11

@@ -15,13 +15,16 @@ const requestedVersion = resolveRequestedVersion(
   process.argv.slice(2),
   process.env.VSCODE_E2E_VERSION
 );
+const allScenarios = ['empty', 'repository', 'safety'];
+const selectedScenario = process.env.VSCODE_E2E_SCENARIO;
+if (selectedScenario && !allScenarios.includes(selectedScenario)) throw new Error(`Unsupported E2E scenario: ${selectedScenario}`);
 const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'git-revision-graph-e2e-'));
 
 try {
   const vscodeExecutablePath = process.env.VSCODE_E2E_EXECUTABLE_PATH
     ?? await downloadAndUnzipVSCode(requestedVersion);
 
-  for (const scenario of ['empty', 'repository']) {
+  for (const scenario of selectedScenario ? [selectedScenario] : allScenarios) {
     await runScenario(vscodeExecutablePath, scenario);
   }
 } finally {
@@ -42,6 +45,15 @@ async function runScenario(vscodeExecutablePath, scenario) {
     await createGitFixture(workspacePath);
   }
 
+  let launchPath = workspacePath;
+  let roots = [workspacePath];
+  if (scenario === 'safety') {
+    roots = [path.join(workspacePath, 'a'), path.join(workspacePath, 'b')];
+    await createSafetyFixtures(roots);
+    launchPath = path.join(workspacePath, 'safety.code-workspace');
+    await writeFile(launchPath, JSON.stringify({ folders: roots.map(root => ({ path: root })) }));
+  }
+
   console.log(`[e2e:${scenario}] launching VS Code ${requestedVersion}`);
   await runTests({
     vscodeExecutablePath,
@@ -49,10 +61,13 @@ async function runScenario(vscodeExecutablePath, scenario) {
     extensionTestsPath,
     extensionTestsEnv: {
       GIT_REVISION_GRAPH_E2E_SCENARIO: scenario,
-      GIT_REVISION_GRAPH_E2E_WORKSPACE: workspacePath
+      GIT_REVISION_GRAPH_E2E_WORKSPACE: workspacePath,
+      GIT_REVISION_GRAPH_E2E_ROOTS: JSON.stringify(roots),
+      GIT_REVISION_GRAPH_E2E_FIXTURE_ROOT: workspacePath,
+      GIT_REVISION_GRAPH_E2E_NODE: process.execPath
     },
     launchArgs: [
-      workspacePath,
+      launchPath,
       `--user-data-dir=${userDataPath}`,
       `--extensions-dir=${extensionsPath}`
     ]
@@ -66,6 +81,27 @@ async function createGitFixture(workspacePath) {
   runGit(workspacePath, ['config', 'user.email', 'e2e@example.invalid']);
   runGit(workspacePath, ['add', 'README.md']);
   runGit(workspacePath, ['commit', '-m', 'Initial fixture']);
+}
+
+async function createSafetyFixtures([a, b]) {
+  await mkdir(a, { recursive: true });
+  runGit(a, ['init', '--initial-branch=main']);
+  for (const [key, value] of [['user.name', 'E2E'], ['user.email', 'e2e@example.invalid'], ['core.autocrlf', 'false']]) {
+    runGit(a, ['config', key, value]);
+  }
+  const contents = Array.from({ length: 100 }, (_, index) => `fixture line ${index}`).join('\n') + '\n';
+  await writeFile(path.join(a, 'original.txt'), contents);
+  runGit(a, ['add', '.']);
+  runGit(a, ['commit', '-m', 'original']);
+  runGit(a, ['branch', 'baseline']);
+  runGit(a, ['mv', 'original.txt', 'same.txt']);
+  runGit(a, ['commit', '-m', 'rename']);
+  for (const branch of ['side', 'other']) runGit(a, ['branch', branch]);
+  execFileSync('git', ['clone', '--no-local', a, b], { encoding: 'utf8', stdio: 'pipe' });
+  for (const branch of ['baseline', 'side', 'other']) runGit(b, ['branch', branch, `origin/${branch}`]);
+  runGit(b, ['config', 'user.name', 'E2E']);
+  runGit(b, ['config', 'user.email', 'e2e@example.invalid']);
+  runGit(b, ['config', 'core.autocrlf', 'false']);
 }
 
 function runGit(workspacePath, args) {

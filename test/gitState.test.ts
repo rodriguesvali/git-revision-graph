@@ -4,9 +4,26 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { hasConflictedMerge, isCherryPickInProgress, isMergeInProgress } from '../src/gitState';
+import { hasConflictedMerge, hasWorkspaceChanges, isCherryPickInProgress, isMergeInProgress } from '../src/gitState';
 import { Status } from '../src/git';
 import { createChange, createRepository } from './fakes';
+
+test('a clean legacy Git API state without untrackedChanges remains readable', () => {
+  const repository = createRepository({ root: '/repo' });
+  Reflect.deleteProperty(repository.state, 'untrackedChanges');
+  assert.equal(hasWorkspaceChanges(repository), false);
+});
+
+test('legacy Git API untracked files in workingTreeChanges still block clean-worktree actions', () => {
+  const repository = createRepository({ root: '/repo', workingTreeChanges: [createChange({ uriPath: '/repo/new.txt', status: Status.UNTRACKED })] });
+  Reflect.deleteProperty(repository.state, 'untrackedChanges');
+  assert.equal(hasWorkspaceChanges(repository), true);
+});
+
+test('modern Git API untrackedChanges still blocks clean-worktree actions', () => {
+  const repository = createRepository({ root: '/repo', untrackedChanges: [createChange({ uriPath: '/repo/new.txt', status: Status.UNTRACKED })] });
+  assert.equal(hasWorkspaceChanges(repository), true);
+});
 
 test('hasConflictedMerge requires unresolved changes and a merge head', () => {
   const workspacePath = createTempWorkspace();

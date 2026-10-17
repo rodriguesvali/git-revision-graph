@@ -45,6 +45,8 @@ Last consolidated: 2026-10-17
   refreshes); Show Log uses its source token (stable through paging/filtering).
   Empty/hidden states reject scoped actions. Global bootstrap/refresh/repository
   selection remains usable. Existing state, target and Git mutation guards still apply.
+  The inline scoped emitter uses a lexical binding to preserve the browser's
+  native `window.postMessage`, which VS Code uses for inbound host delivery.
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
 - `src/refActions.ts` contains testable Git workflows.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
@@ -56,6 +58,9 @@ Last consolidated: 2026-10-17
   it provides exception recovery, not atomicity against process termination or
   uncoordinated external writers.
 - `src/git.ts` defines the minimal subset of the built-in Git API used by this project.
+  Newer separate untracked-file state and checkout events are optional at the
+  current VS Code 1.90 floor. Legacy mixed-mode untracked files remain worktree
+  changes.
 - `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
   capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
   construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
