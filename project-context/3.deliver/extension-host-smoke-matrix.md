@@ -40,6 +40,21 @@ Use two disposable repositories with identical branch names, hashes and relative
 Chromium exercises real DOM emitters and host dispatchers with captured messages;
 it does not establish real VS Code transport, confirmation UI or Git mutation acceptance.
 
+## 1.7.5 Render Cancellation — S3
+
+Status: Deterministic coordinator regression checks passed; real Extension Host smoke pending.
+See the [feature artifact](../2.build/features/1.7.5-render-cancellation.md).
+Record operator, platform, VS Code version, source commit and disposable repository.
+
+| Scenario | Expected result | Result |
+| --- | --- | --- |
+| Close during a pending load | Close the graph panel during loading; a delayed completion/failure must not publish a graph state or show an error from the retired request. | Not recorded in Extension Host |
+| Reopen and refresh | Reopen the panel and refresh after cancellation; the fresh request renders normally. | Not recorded in Extension Host |
+| Rapid refresh and repository change | Refresh repeatedly and switch between two repositories; only current results appear and fresh failures remain visible. | Not recorded in Extension Host |
+
+Controlled-promise tests exercise producer noncooperation at the coordinator boundary.
+They do not establish visual reproduction or acceptance through the full VS Code host.
+
 ## 1.7.4 Published Release Evidence
 
 Status: Publication confirmed on 2026-10-11; full manual smoke evidence not supplied.

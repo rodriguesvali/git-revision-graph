@@ -18,6 +18,11 @@ All notable changes to this project will be documented in this file.
 - Close stale action menus when replacing graph/log state and keep compare file
   identities separate across repositories.
 
+### Graph Refresh
+
+- Discard late render results and errors after cancellation, including loads that
+  ignore the abort signal. Subsequent refreshes can still complete normally.
+
 ### Maintenance
 
 - Open the 1.7.5 development cycle and align package and build metadata.

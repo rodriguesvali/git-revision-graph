@@ -28,6 +28,10 @@ Last consolidated: 2026-10-17
 - `src/revisionGraphPanel.ts` exposes the revision graph editor panel entrypoints.
 - `src/revisionGraph/controller.ts` coordinates the graph webview surface, render state, repository lifecycle integration, webview messages, and graph-side actions.
 - `src/revisionGraph/repository/lifecycle.ts` owns repository attachment, repository-set changes, repository state signatures, active-repository transitions, and refresh request enrichment.
+- `src/revisionGraph/renderCoordinator.ts` invalidates the request generation before
+  aborting a cancelled render. It discards results and errors from stale or aborted
+  work independently of producer cooperation; later requests and burst coalescing
+  remain supported. Controller/loader identity and signal checks remain additional guards.
 - `src/revisionGraph/backend.ts`, `src/revisionGraph/backendServices/*`, `src/revisionGraph/source/graphGit.ts`, and `src/revisionGraph/repository/snapshot.ts` load graph snapshots, revision logs, diffs, commit details, and merge-blocked metadata.
 - `src/revisionGraph/projection/*`, `src/revisionGraph/layout/*`, and model/query modules shape commit graph data, projection options, focus modes, layout, and cache behavior.
 - `src/revisionGraph/model/*`, `src/revisionGraph/revisionLogTypes.ts`, `src/revisionGraphData.ts`, and `src/revisionGraphTypes.ts` define graph domain types, serializable scene/view-state contracts, and compatibility re-exports across host and webview boundaries.

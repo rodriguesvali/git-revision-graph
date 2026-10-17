@@ -158,5 +158,15 @@ acima descrevem o baseline anterior à correção. Naquele momento, S2–S4 perm
 Em 2026-10-17, o mantenedor autorizou tratar o achado 2. O
 [artefato de origem das ações](features/1.7.5-webview-action-origin.md) registra
 as mudanças no protocolo das três superfícies, a rejeição anterior aos efeitos,
-as regressões de troca de contexto e a verificação em Chromium. S3 e a ampliação
-E2E de S4 permanecem pendentes; os novos testes de fronteira não encerram S4.
+as regressões de troca de contexto e a verificação em Chromium. Naquele momento, S3 e a ampliação
+E2E de S4 permaneciam pendentes; os novos testes de fronteira não encerram S4.
+
+
+## Acompanhamento — S3 na versão 1.7.5
+
+Em 2026-10-17, o mantenedor autorizou tratar o achado 3. O
+[artefato de cancelamento de render](features/1.7.5-render-cancellation.md)
+registra a invalidação de geração antes do abortamento, o descarte de resultados
+ou erros tardios e a retomada de agendamentos após o cancelamento. Os testes com
+Promises controladas reproduzem as duas violações do contrato no baseline e
+verificam a correção sem depender da cooperação do produtor. S4 permanece pendente.

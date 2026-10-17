@@ -45,6 +45,8 @@ export class RevisionGraphRenderCoordinator<TResult> {
   }
 
   cancel(): void {
+    // Retire this generation before abort listeners can schedule a replacement.
+    this.latestRequestedId += 1;
     this.pendingRender = false;
     this.latestBuild = undefined;
     this.activeAbortController?.abort();
@@ -65,7 +67,7 @@ export class RevisionGraphRenderCoordinator<TResult> {
 
       try {
         const result = await build(requestId, abortController.signal);
-        if (result === undefined || requestId !== this.latestRequestedId) {
+        if (result === undefined || requestId !== this.latestRequestedId || abortController.signal.aborted) {
           this.requestOutcomes.set(requestId, 'discarded');
           continue;
         }
@@ -73,7 +75,7 @@ export class RevisionGraphRenderCoordinator<TResult> {
         this.requestOutcomes.set(requestId, 'applied');
         this.onResult(result);
       } catch (error) {
-        if (requestId !== this.latestRequestedId || isAbortError(error)) {
+        if (requestId !== this.latestRequestedId || abortController.signal.aborted || isAbortError(error)) {
           this.requestOutcomes.set(requestId, 'discarded');
           continue;
         }
