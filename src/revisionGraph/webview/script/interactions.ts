@@ -311,7 +311,8 @@
       return {
         'abort-merge': () => postAbortMerge(),
         checkout: () => postCheckout(target),
-        'clear-selection': () => clearContextMenuSelection(),
+        'clear-selection': () => { selected.splice(0, selected.length); syncSelection(); },
+        'open-file-at-revision': () => vscode.postMessage({ type: 'open-file-at-revision', commitHash: target.hash }),
         'compare-selected': () => postCompareSelected(base, compare),
         'compare-with-worktree': () => postCompareWithWorktree(target),
         'copy-hash': () => postCopyCommitHash(target.hash),
@@ -337,10 +338,6 @@
         'stash-save': () => postStashSave(),
         'unified-diff': () => postUnifiedDiff(base, compare)
       };
-    }
-    function clearContextMenuSelection() {
-      selected.splice(0, selected.length);
-      syncSelection();
     }
 
     function appendMenuSection(label: string) {

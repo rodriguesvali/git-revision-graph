@@ -267,3 +267,20 @@ test('webview bootstrap remains available without a repository or origin', async
   });
   assert.equal(calls, 1);
 });
+
+test('graph file opening rejects old render/repository origins and unknown commits', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher();
+  const base = createReadyRevisionGraphState();
+  const commitHash = 'a'.repeat(40);
+  const state = dispatcher.bindState({ ...base, scene: { ...base.scene, nodes: base.scene.nodes.map(node => ({ ...node, hash: commitHash })) } });
+  const calls: string[] = [];
+  const context = { currentState: state, currentRepositoryPath: state.repositoryPath,
+    async handleMessage(message: { type: string }) { calls.push(message.type); } };
+  for (const origin of [undefined, {}, { ...state.messageOrigin, contextId: 'old' }, { ...state.messageOrigin, repositoryPath: '/other' }]) {
+    await dispatcher.dispatch({ type: 'open-file-at-revision', commitHash, origin }, context);
+  }
+  await dispatcher.dispatch({ type: 'open-file-at-revision', commitHash: 'b'.repeat(40), origin: state.messageOrigin }, context);
+  assert.deepEqual(calls, []);
+  await dispatcher.dispatch({ type: 'open-file-at-revision', commitHash, origin: state.messageOrigin }, context);
+  assert.deepEqual(calls, ['open-file-at-revision']);
+});

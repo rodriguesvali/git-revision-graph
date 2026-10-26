@@ -1856,3 +1856,18 @@ function createReadyRevisionGraphState(): RevisionGraphViewState {
     errorMessage: undefined
   };
 }
+
+test('graph file opening validates an immutable known commit and current repository', () => {
+  const commitHash = 'a'.repeat(40);
+  const message = { type: 'open-file-at-revision', commitHash } as const;
+  assert.deepEqual(validateRevisionGraphMessage(message), message);
+  for (const hash of ['', 'main', '--option', 'a'.repeat(65)]) {
+    assert.equal(validateRevisionGraphMessage({ ...message, commitHash: hash }), undefined);
+  }
+  const base = createReadyRevisionGraphState();
+  const state = { ...base, scene: { ...base.scene, nodes: base.scene.nodes.map(node => ({ ...node, hash: commitHash })) } };
+  assert.equal(isRevisionGraphMessageAllowedForState(message, state), true);
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...message, commitHash: 'b'.repeat(40) }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/other'), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, { ...state, loading: true }, state.repositoryPath), false);
+});

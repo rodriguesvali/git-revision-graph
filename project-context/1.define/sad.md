@@ -1,7 +1,7 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-10-17
+Last consolidated: 2026-10-26
 
 ## Context
 
@@ -93,6 +93,19 @@ Last consolidated: 2026-10-17
   capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
   construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
   Manager without provider authentication.
+
+## File Opening from the Graph
+
+`src/revisionGraph/revisionFilePicker.ts` owns one cancellable request per graph
+controller. The typed graph action carries only a known displayed commit hash;
+existing origin/state/repository gates authorize it. `source/revisionTreeFiles.ts`
+loads the full Git tree with bounded, abortable reads and NUL-delimited paths.
+`workbenchRevisionFilePicker.ts` composes that loader, a native searchable picker
+and existing read-only file opening. Only returned tree paths may be selected.
+Controller repository transitions and view disposal cancel requests, including
+A→B→A. The current-repository guard uses path identity: vscode.git returns fresh
+API wrapper objects from its repositories getter. Same-repository refreshes do
+not change the pinned commit or cancel a valid selection.
 
 ## File Opening in Review Panels
 

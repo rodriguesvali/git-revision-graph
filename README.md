@@ -103,6 +103,12 @@ other changes; ordinary text still filters file paths and status without regard 
 
 ## Work Directly From The Graph
 
+Use **Open File at Revision…** on a graph branch, tag or commit to search all
+files present at that revision and open one read-only. The selected commit stays
+fixed if a branch advances. Canceling the picker changes nothing; switching
+repositories or closing the graph cancels the request. No checkout is required.
+
+
 Use **Find Bug Against HEAD…** on a graph reference or a single Show Log commit
 to find the first revision introducing a bug. Confirm which endpoint has the bug,
 then test each checkout and choose **Bug absent**, **Bug present**, or **Cannot test**.

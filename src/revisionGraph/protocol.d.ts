@@ -119,6 +119,7 @@ declare namespace RevisionGraphProtocol {
   }
 
   type Message =
+    | { readonly type: 'open-file-at-revision'; readonly commitHash: string }
     | { readonly type: 'start-bug-bisect'; readonly revision: string; readonly refKind: TargetKind }
     | { readonly type: 'bisect-control'; readonly repositoryPath: string; readonly id: string; readonly version: number; readonly action: BisectControl; readonly commitHash?: string }
     | { readonly type: 'webview-ready' }

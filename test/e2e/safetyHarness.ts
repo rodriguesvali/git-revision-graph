@@ -6,6 +6,7 @@ import { ObservedPanel, waitFor } from './webviewBridge';
 /** Decorate real APIs at the test boundary; production commands and listeners remain intact. */
 export class SafetyHarness implements vscode.Disposable {
   readonly panels: ObservedPanel[] = [];
+  readonly quickPicks: vscode.QuickPick<vscode.QuickPickItem>[] = [];
   readonly errors: string[] = [];
   readonly confirmations: string[] = [];
   readonly allowedConfirmations = new Set(['Revert File', 'Checkout to: other']);
@@ -20,6 +21,12 @@ export class SafetyHarness implements vscode.Disposable {
       this.panels.push(observed);
       return observed.proxy;
     }) as typeof createPanel);
+    const createQuickPick = api.window.createQuickPick;
+    this.replace(api.window, 'createQuickPick', <T extends vscode.QuickPickItem>() => {
+      const picker = createQuickPick<T>();
+      this.quickPicks.push(picker as vscode.QuickPick<vscode.QuickPickItem>);
+      return picker;
+    });
     this.replace(api.window, 'showQuickPick', (async (items: unknown) => {
       const resolved = await items as readonly {
         repository?: {

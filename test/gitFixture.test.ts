@@ -101,3 +101,21 @@ test('worktree unified diff aggregates unusual untracked paths without changing 
     await fixture.dispose();
   }
 });
+
+test('revision tree lists the snapshot, including unchanged files and the historical rename path', async () => {
+  const { loadRevisionTreeFiles } = await import('../src/revisionGraph/source/revisionTreeFiles');
+  const fixture = await createSharedGitFixture();
+  try {
+    const before = (await execFile('git', ['status', '--porcelain=v1'], { cwd: fixture.repositoryPath })).stdout;
+    const controller = new AbortController();
+    const files = await loadRevisionTreeFiles(fixture.repositoryPath, fixture.initialCommit, controller.signal);
+    assert.ok(files.includes('nested/old name.txt'));
+    assert.equal(files.includes('nested/new name.txt'), false);
+    for (const file of ['space name.txt', 'unicodé-文件.txt', 'empty.txt', 'binary.bin', '-option-like.txt']) assert.ok(files.includes(file));
+    const after = await loadRevisionTreeFiles(fixture.repositoryPath, fixture.renameCommit, controller.signal);
+    assert.ok(after.includes('nested/new name.txt'));
+    assert.equal(after.includes('nested/old name.txt'), false);
+    assert.equal((await execFile('git', ['rev-parse', 'HEAD'], { cwd: fixture.repositoryPath })).stdout.trim(), fixture.renameCommit);
+    assert.equal((await execFile('git', ['status', '--porcelain=v1'], { cwd: fixture.repositoryPath })).stdout, before);
+  } finally { await fixture.dispose(); }
+});

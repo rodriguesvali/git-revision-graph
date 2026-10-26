@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### File Opening
 
+- Open a file directly from a graph reference or commit with **Open File at
+  Revision…**, using a searchable snapshot file list and a read-only editor.
+- Keep the selected commit fixed during browsing and cancel obsolete pickers
+  when changing repositories or closing the graph.
+
 - Open current worktree files directly from Compare Results and expanded Show Log
   files, preserving unsaved edits and the existing double-click diff workflow.
 - Open explicitly labeled historical versions read-only, with the original path

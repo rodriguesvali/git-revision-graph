@@ -1,4 +1,5 @@
 import { resolveConfiguredGraphLimitPolicy } from './limitPolicy';
+import { RevisionFilePicker } from './revisionFilePicker';
 import { createRevisionGraphFetchHost } from './fetchHost';
 import { RevisionGraphDescendantFocusPersistence } from './descendantFocusPersistence';
 import * as vscode from 'vscode';
@@ -103,6 +104,7 @@ function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWeb
 }
 
 export class RevisionGraphController implements vscode.Disposable {
+  private readonly revisionFilePicker = new RevisionFilePicker();
   private view: RevisionGraphWebviewSurface | undefined;
   private readonly viewDisposables: vscode.Disposable[] = [];
   private readonly repositoryLifecycle: RevisionGraphRepositoryLifecycle;
@@ -196,6 +198,7 @@ export class RevisionGraphController implements vscode.Disposable {
     );
     this.repositoryLifecycle = new RevisionGraphRepositoryLifecycle(git, {
       onCurrentRepositoryChanging: (repository) => {
+        this.revisionFilePicker.cancel();
         this.messageDispatcher.invalidate(); this.actionProgress.invalidate(); this.mutationCoordinator.invalidate(repository.rootUri.fsPath);
         this.abortCommitShortStatRequests(); this.flowGovernanceWorkflow.resetAiText();
       },
@@ -262,6 +265,7 @@ export class RevisionGraphController implements vscode.Disposable {
       pickRepository: () => pickRevisionGraphRepository(this.git, true),
       openUnifiedDiff: (repository, left, right) =>
         openUnifiedDiffDocument(repository, left, right, this.backend),
+      openFileAtRevision: (repository, commit) => this.revisionFilePicker.open(repository, commit, () => this.currentRepository?.rootUri.fsPath === repository.rootUri.fsPath),
       loadCommitShortStat: (repository, commitHash) =>
         loadCommitShortStat(repository.rootUri.fsPath, commitHash, this.commitShortStatAbortController.signal),
       openCommitOnRemote: (repository, commitHash) =>
@@ -298,7 +302,7 @@ export class RevisionGraphController implements vscode.Disposable {
         return this.clearLayoutCache();
       },
       traceWebviewLoadEvent: (phase, durationMs, detail, requestId) => {
-        this.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
+        this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
       },
       createRemoteTagPublicationRequestContext: (repository) =>
         this.remoteTagStatePublisher.createRequestContext(repository),
@@ -712,6 +716,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private disposeViewDisposables(): void {
+    this.revisionFilePicker.cancel();
     while (this.viewDisposables.length > 0) {
       this.viewDisposables.pop()?.dispose();
     }
@@ -730,12 +735,4 @@ export class RevisionGraphController implements vscode.Disposable {
     this.view.setTitle(getRevisionGraphViewTitle(this.currentRepository));
   }
 
-  private traceWebviewLoadEvent(
-    phase: string,
-    durationMs: number,
-    detail: string | undefined,
-    requestId: number | undefined
-  ): void {
-    this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
-  }
 }

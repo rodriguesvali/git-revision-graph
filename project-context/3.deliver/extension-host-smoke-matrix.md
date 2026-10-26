@@ -7,6 +7,21 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.6 Graph Open File at Revision
+
+Automated by Codex on 2026-10-26 on Linux/Xvfb, working tree from 7c0486a,
+actual VS Code 1.100.0 and stable 1.143.1. Both complete safety scenarios passed.
+See the [graph feature record](../2.build/features/1.7.6-graph-open-file.md).
+
+| Scenario | Evidence / remaining acceptance |
+| --- | --- |
+| Graph reference action and native selector | Actual branch context menu, pinned hash title, complete initial-snapshot paths, native filtering and acceptance passed |
+| Branch advances during selection | Original historical filename/content opened read-only at the pinned commit; Git API wrapper replacement regression fixed and exercised |
+| Cancel / A→B→A | Native picker hide causes no opening; repository transitions cancel requests and do not revive an old selection |
+| Tags/remotes/commits, bounds, empty trees, unusual paths | Menu/protocol/parser and real-Git tests passed; dedicated native empty/error UX and broader target selection remain manual |
+| Repository and editor safety | HEAD, index and worktree unchanged by opening; full two-repository transport and existing review actions passed |
+| Remaining manual release smoke | Windows paths, visual themes, physical keyboard/Escape navigation and closing the graph during a picker |
+
 ## 1.7.6 Open File — Implementation Acceptance
 
 Automated on 2026-10-26 by Codex on Linux/Xvfb, VS Code 1.100.0 and stable

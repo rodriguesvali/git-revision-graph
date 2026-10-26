@@ -1,3 +1,4 @@
+import { verifyGraphOpenFile } from './graphOpenFile';
 import { verifyOpenFile } from './openFile';
 import assert from 'node:assert/strict';
 import { realpathSync } from 'node:fs';
@@ -64,6 +65,7 @@ export async function run(): Promise<void> {
         normalizePath(repository.rootUri.fsPath) === normalizePath(root))!);
       await verifyCompactView(harness, repositories[0]);
       await verifyOpenFile(harness, repositories[0]);
+      await verifyGraphOpenFile(harness, repositories);
       await verifyTagDetachedHead(harness, repositories[0]);
       await verifyBisectTargets(harness, repositories[0]);
       await verifyBisectOwnership(harness, repositories[0]);

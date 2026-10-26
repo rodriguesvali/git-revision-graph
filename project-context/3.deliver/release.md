@@ -17,6 +17,11 @@ Current-file and explicit historical opening are implemented in Compare Results
 and expanded Show Log, preserving diff behavior and side availability. Production
 comparisons resolve immutable revisions before loading changes.
 
+The maintainer separately authorized graph **Open File at Revision…** after its
+workflow discussion. The [graph feature record](../2.build/features/1.7.6-graph-open-file.md)
+tracks searchable full-snapshot file selection, pinned opening and lifecycle
+cancellation, extending the original review-panel scope.
+
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified on 2026-10-26 | All three fields declare 1.7.6; JSON comparison against HEAD confirms every other manifest/lockfile field is unchanged. |
@@ -24,8 +29,9 @@ comparisons resolve immutable revisions before loading changes.
 | Build artifacts | Implemented and documented | The versioned build and opening files were missing from the committed baseline and are restored. Scope, snapshot decision, tests, manual gaps and rollback are recorded. |
 | Opening document checks | Passed on 2026-10-26 | 105 local Markdown links resolve; final diff review and `git diff --check` passed. |
 | Open File implementation | Passed automated verification on 2026-10-26 | Current and read-only historical opening; disabled absent sides, original/renamed paths, pinned refs and stale-origin guards. `npm test`: 1,157 passed, zero failures/cancellations/skips, including production/webview builds. |
+| Graph Open File at Revision | Implemented; verified on 2026-10-26 | Full suite: 1,171 passed, zero failures/skips, including builds. Real VS Code 1.100.0/stable 1.143.1 branch menu/native search/acceptance, original path after branch advancement, cancel and A→B→A passed. Context guards use repository paths because vscode.git returns fresh wrapper objects. Empty/large-tree and malformed/stale inputs have deterministic coverage; manual keyboard/theme/Windows remain pending. |
 | Feature regression and host smoke | Automated minimum/stable checks passed on Linux/Xvfb | Real VS Code 1.100.0 and stable 1.143.1: current/dirty editors, pinned source/target rename after branch movement and Show Log opening. Full existing two-repository safety scenarios also pass. Manual keyboard/theme, Windows paths and current non-text editor checks remain in the [smoke matrix](extension-host-smoke-matrix.md). |
-| Platform/quality and candidate checks | Local checks passed; final hosted CI/package pending | 52 platform tests passed on Linux; quality passed for 310 files / 2,858 functions. File ceilings dropped to 653/1,289 lines and the Show Log validator complexity ceiling to 25. Graphify AST refresh: 6,682 nodes / 13,851 edges / 504 communities. No gate was weakened. |
+| Platform/quality and candidate checks | Local checks passed; final hosted CI/package pending | Latest Linux checks: 53 platform tests; quality passed for 313 files / 2,882 functions. Graph controller/interactions ceilings reduced to 739/887 lines; prior review-panel reductions retained. Graphify AST refresh: 6,720 nodes / 13,953 edges / 508 communities. No gate was weakened. |
 | VSIX, install, tag and Marketplace | Not performed in this cycle | Opening does not authorize packaging or publication. Record final artifact/source identity and explicit delivery authorization separately. |
 
 Before publication, rollback of cycle opening restores only the 1.7.5 version and

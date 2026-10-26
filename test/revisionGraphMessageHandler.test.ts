@@ -468,6 +468,7 @@ function createHost(
       return undefined;
     },
     async openUnifiedDiff() {},
+    async openFileAtRevision() {},
     async loadCommitShortStat() {
       return undefined;
     },
@@ -646,3 +647,16 @@ function createRepository(repositoryPath: string): Repository {
     }
   } as unknown as Repository;
 }
+
+test('graph file opening routes the current repository and pinned commit', async () => {
+  const { createRepository } = await import('./fakes');
+  const repository = createRepository({ root: '/workspace/repo' });
+  const opened: string[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    getCurrentRepository: () => repository,
+    async openFileAtRevision(repo, commit) { assert.equal(repo, repository); opened.push(commit); }
+  }));
+  const commitHash = 'a'.repeat(40);
+  await handler.handleMessage({ type: 'open-file-at-revision', commitHash });
+  assert.deepEqual(opened, [commitHash]);
+});

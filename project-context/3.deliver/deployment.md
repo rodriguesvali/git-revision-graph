@@ -28,6 +28,13 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 
 ## Development Cycle: 1.7.6
 
+- Graph [Open File at Revision…](../2.build/features/1.7.6-graph-open-file.md) is
+  implemented after separate maintainer authorization. Latest source checks:
+  1,171 tests including builds, 53 Linux platform tests, quality (313 files /
+  2,882 functions), actual VS Code 1.100.0/stable 1.143.1 safety scenarios, graph
+  refresh and whitespace checks passed. Manual/platform/package gates remain
+  separate; the following opening/review-panel counts are historical checkpoints.
+
 - Opened on 2026-10-26 with explicit maintainer authorization to prepare build
   artifacts. Manifest and both lockfile version fields target 1.7.6; CHANGELOG
   marks it Unreleased. Runtime/dependency/contribution baselines are unchanged.

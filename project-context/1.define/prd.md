@@ -74,7 +74,9 @@ The 1.7.6 cycle implements Open File in Compare Results and expanded Show Log
 files: current-worktree editing and explicit read-only historical opening.
 Additions and deletions expose only existing historical sides; local availability
 is checked independently. Comparisons pin revisions before loading their changes.
-This is unreleased behavior. See the [build artifact](../2.build/features/1.7.6-open-file.md).
+Graph references/commits additionally offer Open File at Revision… with a
+searchable file list pinned to the displayed commit, without checkout. Repository
+switching and graph disposal cancel obsolete requests. This is unreleased behavior. See the [build artifact](../2.build/features/1.7.6-open-file.md).
 
 Future work should strengthen the current product rather than introduce a second product shape. Preferred areas are:
 

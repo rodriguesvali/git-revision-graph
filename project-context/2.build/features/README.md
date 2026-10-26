@@ -16,6 +16,9 @@ The published baseline is 1.7.5 by maintainer confirmation on the same date.
 
 - [1.7.6-release-cycle-opening.md](1.7.6-release-cycle-opening.md): align version
   metadata, release records and opening verification.
+- [1.7.6-graph-open-file.md](1.7.6-graph-open-file.md): Open File at Revision…
+  from graph references/commits, bounded snapshot listing, native search and
+  lifecycle cancellation, reusing historical file opening.
 - [1.7.6-open-file.md](1.7.6-open-file.md): implemented current/historical opening
   in Compare Results and Show Log, snapshot consistency, side availability and
   passing automated checks and remaining manual delivery evidence.

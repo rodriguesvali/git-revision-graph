@@ -596,6 +596,7 @@ test('renders structural commit actions for compare and branch creation', () => 
     plan.items.map((item: any) => item.action),
     [
       'show-log-target',
+      'open-file-at-revision',
       'find-bug',
       'copy-hash',
       'compare-with-worktree',
@@ -4470,4 +4471,14 @@ test('deferred graph actions retain the render origin from the click before the 
   runtime.flushFrames();
   const message = runtime.postedMessages.filter(message => message.type === 'set-projection-options').at(-1);
   assert.deepEqual(message.origin, original.messageOrigin);
+});
+
+test('single graph targets expose historical file opening in the inspection menu', () => {
+  const runtime = createWebviewRuntime();
+  for (const kind of ['head', 'branch', 'remote', 'tag', 'commit']) {
+    const target = createContextMenuTarget(kind, 'example');
+    const plan = createContextMenuPlan(runtime, target);
+    assert.ok(plan.items.some((item: { action: string; label: string; section: string }) =>
+      item.action === 'open-file-at-revision' && item.label === 'Open File at Revision…' && item.section === 'Inspect'));
+  }
 });
