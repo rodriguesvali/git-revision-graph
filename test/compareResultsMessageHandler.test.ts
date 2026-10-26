@@ -48,6 +48,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
 
 function createHandlers(calls: string[]): CompareResultsMessageHandlers {
   return {
+    openFileVersion(itemId, side) { calls.push(`openFileVersion:${itemId}:${side}`); },
     ready() {
       calls.push('ready');
     },
@@ -98,4 +99,18 @@ test('rejects missing, malformed, cross-repository and superseded origins withou
   assert.deepEqual(calls, []);
   assert.equal(await dispatchRaw({ ...message, origin: currentOrigin }, handlers, currentOrigin), true);
   assert.equal(calls.length, 1);
+});
+
+test('file opening actions route their exact side and reject stale origins', async () => {
+  const calls: string[] = [];
+  const handlers = createHandlers(calls);
+  for (const type of ['openWorktreeFile', 'openSourceFile', 'openTargetFile']) {
+    const message = { type, itemId: 'file' };
+    assert.equal(await dispatchCurrent(message, handlers), true);
+    assert.equal(await dispatchRaw({ ...message, origin: { ...currentOrigin, contextId: 'stale' } }, handlers, currentOrigin), false);
+  }
+  assert.equal(calls.length, 3);
+  assert.ok(calls[0].endsWith(':worktree'));
+  assert.ok(calls[1].endsWith(':source'));
+  assert.ok(calls[2].endsWith(':target'));
 });

@@ -40,10 +40,13 @@ test('Compare Results keeps the latest same-repository comparison when requests 
   const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
   const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
   const first = createDeferred<Change[]>();
+  const firstStarted = createDeferred<void>();
   const second = createDeferred<Change[]>();
   const repository = createRepository({ root: '/workspace/repo' });
-  repository.diffBetween = async (_left, right) =>
-    right === 'feature/first' ? first.promise : second.promise;
+  repository.diffBetween = async (_left, right) => {
+    if (right === 'feature/first') { firstStarted.resolve(undefined); return first.promise; }
+    return second.promise;
+  };
   const messages: string[] = [];
   const services = createCompareActionServices(provider, messages);
 
@@ -53,6 +56,7 @@ test('Compare Results keeps the latest same-repository comparison when requests 
     { refName: 'feature/first', label: 'feature/first' },
     services
   );
+  await firstStarted.promise;
   const secondOperation = compareResolvedRefs(
     repository,
     { refName: 'main', label: 'main' },
@@ -88,10 +92,11 @@ test('Compare Results ignores stale errors after a newer repository owns the pan
   const { CompareResultsViewProvider } = loadFresh('../src/compareResultsView') as typeof import('../src/compareResultsView');
   const provider = new CompareResultsViewProvider(harness.extensionUri, {} as never);
   const stale = createDeferred<Change[]>();
+  const staleStarted = createDeferred<void>();
   const latest = createDeferred<Change[]>();
   const staleRepository = createRepository({ root: '/workspace/stale-repo' });
   const latestRepository = createRepository({ root: '/workspace/latest-repo' });
-  staleRepository.diffBetween = async () => stale.promise;
+  staleRepository.diffBetween = async () => { staleStarted.resolve(undefined); return stale.promise; };
   latestRepository.diffBetween = async () => latest.promise;
   const messages: string[] = [];
   const services = createCompareActionServices(provider, messages);
@@ -102,6 +107,7 @@ test('Compare Results ignores stale errors after a newer repository owns the pan
     { refName: 'feature', label: 'stale-feature' },
     services
   );
+  await staleStarted.promise;
   const latestOperation = compareResolvedRefs(
     latestRepository,
     { refName: 'main', label: 'latest-main' },

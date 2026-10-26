@@ -1,6 +1,6 @@
 # Open File — Feasibility and Placement
 
-Status: Discovery input for the 1.7.6 build plan; no functional implementation
+Status: Historical discovery input; implementation tracked in 1.7.6-open-file.md
 Date: 2026-10-26
 Baseline: package 1.7.5; VS Code ^1.100.0; @types/vscode 1.100.0
 

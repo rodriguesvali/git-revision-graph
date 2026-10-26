@@ -1,7 +1,9 @@
+import { getFileOpenSide, type FileOpenMessageType } from '../fileOpen';
 import type { WebviewClientMessage } from '../webviewMessageOrigin';
 import { isBoolean, isBoundedNonEmptyString, isBoundedString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type ShowLogWebviewMessage =
+  | { readonly type: FileOpenMessageType; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'startBugBisect'; readonly commitHash: string; readonly sourceToken: string }
   | { readonly type: 'ready' }
   | { readonly type: 'toggleShowAllBranches'; readonly value: boolean }
@@ -59,6 +61,8 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
     return validateCommitHashMessage(message, message.type);
   }
 
+  if (getFileOpenSide(message.type)) return validateFileOpenMessage(message, message.type as FileOpenMessageType);
+
   switch (message.type) {
     case 'ready':
     case 'loadMore':
@@ -80,11 +84,7 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
         ? { type: 'copyReferenceName', commitHash: message.commitHash, refName: message.refName }
         : undefined;
     case 'cherryPickCommits':
-      return isBoundedStringArray(message.commitHashes)
-        && message.commitHashes.length > 0
-        && message.commitHashes.every((hash) => hash.trim().length > 0)
-        ? { type: 'cherryPickCommits', commitHashes: message.commitHashes }
-        : undefined;
+      return validateCherryPickMessage(message);
     case 'openFile':
     case 'compareWithWorktree':
     case 'revertFileToCommit':
@@ -121,4 +121,17 @@ function validateCommitFileFilterMessage(message: Record<string, unknown>): Show
 
 function isShowLogCommitHashMessageType(value: string): value is ShowLogCommitHashMessageType {
   return SHOW_LOG_COMMIT_HASH_MESSAGE_TYPES.includes(value as ShowLogCommitHashMessageType);
+}
+
+function validateFileOpenMessage(message: Record<string, unknown>, type: FileOpenMessageType): ShowLogWebviewMessage | undefined {
+  return isBoundedNonEmptyString(message.commitHash) && isBoundedNonEmptyString(message.changeId)
+    ? { type, commitHash: message.commitHash, changeId: message.changeId } : undefined;
+}
+
+function validateCherryPickMessage(message: Record<string, unknown>): ShowLogWebviewMessage | undefined {
+  return isBoundedStringArray(message.commitHashes)
+    && message.commitHashes.length > 0
+    && message.commitHashes.every((hash) => hash.trim().length > 0)
+    ? { type: 'cherryPickCommits', commitHashes: message.commitHashes }
+    : undefined;
 }

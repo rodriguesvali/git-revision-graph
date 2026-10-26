@@ -11,6 +11,7 @@ export interface RefContentRequest {
   readonly repositoryPath: string;
   readonly ref: string;
   readonly filePath: string;
+  readonly textOnly?: boolean;
 }
 
 export type RefContentExecutor = (
@@ -42,7 +43,7 @@ export async function loadRefContent(
   }
 
   try {
-    return await executeGit(
+    const content = await executeGit(
       repository.rootUri.fsPath,
       ['show', '--end-of-options', `${request.ref}:${relativePath.split(path.sep).join('/')}`],
       {
@@ -50,6 +51,10 @@ export async function loadRefContent(
         timeoutMs: REF_CONTENT_TIMEOUT_MS
       }
     );
+    if (request.textOnly && content.includes('\0')) {
+      throw new Error('Historical binary files cannot be opened as text. Open the current worktree file instead.');
+    }
+    return content;
   } catch (error) {
     throw new Error(toOperationError('Could not load the selected revision content.', error));
   }

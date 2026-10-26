@@ -1,7 +1,9 @@
+import { getFileOpenSide, type FileOpenMessageType } from '../fileOpen';
 import type { WebviewClientMessage } from '../webviewMessageOrigin';
 import { isBoundedNonEmptyString, isBoundedStringArray, isRecord, isString } from '../webviewMessageValidation';
 
 export type CompareResultsWebviewMessage =
+  | { readonly type: FileOpenMessageType; readonly itemId: string }
   | { readonly type: 'ready' }
   | { readonly type: 'base'; readonly itemId: string }
   | { readonly type: 'copyFileName'; readonly itemIds: readonly string[] }
@@ -20,6 +22,8 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
     return undefined;
   }
 
+  if (getFileOpenSide(message.type)) return validateItemMessage(message, message.type as FileOpenMessageType);
+
   switch (message.type) {
     case 'ready':
       return { type: 'ready' };
@@ -34,9 +38,7 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
     case 'base':
     case 'worktree':
     case 'revert':
-      return isBoundedNonEmptyString(message.itemId)
-        ? { type: message.type, itemId: message.itemId }
-        : undefined;
+      return validateItemMessage(message, message.type);
     case 'copyFileName':
     case 'copyFullPath':
       return isBoundedStringArray(message.itemIds)
@@ -45,4 +47,8 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
   }
 
   return undefined;
+}
+
+function validateItemMessage(message: Record<string, unknown>, type: FileOpenMessageType | 'base' | 'worktree' | 'revert'): CompareResultsWebviewMessage | undefined {
+  return isBoundedNonEmptyString(message.itemId) ? { type, itemId: message.itemId } : undefined;
 }

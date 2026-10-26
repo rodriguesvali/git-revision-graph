@@ -1,9 +1,11 @@
+import { getFileOpenSide, type FileOpenSide } from '../fileOpen';
 import { isAuthorizedWebviewMessage, type WebviewMessageOrigin } from '../webviewMessageOrigin';
 import { validateCompareResultsWebviewMessage } from './messageValidation';
 
 type MaybePromise<T> = T | Promise<T>;
 
 export interface CompareResultsMessageHandlers {
+  readonly openFileVersion: (itemId: string, side: FileOpenSide) => MaybePromise<void>;
   readonly ready: () => MaybePromise<void>;
   readonly base: (itemId: string) => MaybePromise<void>;
   readonly copyFileName: (itemIds: readonly string[]) => MaybePromise<void>;
@@ -29,6 +31,11 @@ export async function dispatchCompareResultsWebviewMessage(
   switch (message.type) {
     case 'ready':
       await handlers.ready();
+      return true;
+    case 'openWorktreeFile':
+    case 'openSourceFile':
+    case 'openTargetFile':
+      await handlers.openFileVersion(message.itemId, getFileOpenSide(message.type)!);
       return true;
     case 'base':
       await handlers.base(message.itemId);

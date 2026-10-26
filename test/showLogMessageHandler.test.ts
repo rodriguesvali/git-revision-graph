@@ -79,6 +79,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
 
 function createHandlers(calls: string[]): ShowLogMessageHandlers {
   return {
+    openFileVersion(commitHash, changeId, side) { calls.push(`openFileVersion:${commitHash}:${changeId}:${side}`); },
     ready() {
       calls.push('ready');
     },
@@ -183,4 +184,18 @@ test('file action captures the validated context before the next microtask can c
     { ...createHandlers(calls), revertFileToCommit: () => { calls.push(context); } }, currentOrigin);
   await pending;
   assert.deepEqual(calls, ['original']);
+});
+
+test('file opening actions route their exact side and reject stale origins', async () => {
+  const calls: string[] = [];
+  const handlers = createHandlers(calls);
+  for (const type of ['openWorktreeFile', 'openSourceFile', 'openTargetFile']) {
+    const message = { type, commitHash: 'commit', changeId: 'commit:0' };
+    assert.equal(await dispatchCurrent(message, handlers), true);
+    assert.equal(await dispatchRaw({ ...message, origin: { ...currentOrigin, contextId: 'stale' } }, handlers, currentOrigin), false);
+  }
+  assert.equal(calls.length, 3);
+  assert.ok(calls[0].endsWith(':worktree'));
+  assert.ok(calls[1].endsWith(':source'));
+  assert.ok(calls[2].endsWith(':target'));
 });

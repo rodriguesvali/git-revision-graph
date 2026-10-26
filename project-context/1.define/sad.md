@@ -94,6 +94,20 @@ Last consolidated: 2026-10-17
   construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
   Manager without provider authentication.
 
+## File Opening in Review Panels
+
+Current-file effects live in `src/workbenchFileOpen.ts`; explicit target selection
+and guarded dispatch live in `src/fileOpen.ts`, `src/compareResults/fileOpen.ts`
+and `src/showLog/fileOpen.ts`. Webviews emit bounded file identities and three
+known opening intents; existing origin/session gates remain authoritative.
+Production comparison services resolve named refs to immutable commits before
+reading diffs and retain human labels. Show Log uses its loaded commit hashes.
+The shared `src/refDocumentUri.ts` preserves repository/path identity and gives
+single-file historical editors a revision label. The existing textual provider
+owns read-only content, path containment and bounded Git reads; its single-file
+mode rejects NUL-containing binary content. Opening never restores files or
+changes Git state. Dedicated browser menu renderers preserve the inline CSP model.
+
 ## Product Surfaces
 
 - Primary command: `gitRefs.openRevisionGraphEditor`.

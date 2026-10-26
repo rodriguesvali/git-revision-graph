@@ -70,11 +70,11 @@ events. The Git API version remains `getAPI(1)`.
 
 ## Scope For Future Evolution
 
-The 1.7.6 cycle includes build planning for Open File in Compare Results and
-expanded Show Log files: current-worktree opening first, explicit read-only
-historical opening second. Additions and deletions expose only existing historical
-sides; local availability is checked independently. This is planned behavior,
-not a shipped capability. See the [build artifact](../2.build/features/1.7.6-open-file.md).
+The 1.7.6 cycle implements Open File in Compare Results and expanded Show Log
+files: current-worktree editing and explicit read-only historical opening.
+Additions and deletions expose only existing historical sides; local availability
+is checked independently. Comparisons pin revisions before loading their changes.
+This is unreleased behavior. See the [build artifact](../2.build/features/1.7.6-open-file.md).
 
 Future work should strengthen the current product rather than introduce a second product shape. Preferred areas are:
 

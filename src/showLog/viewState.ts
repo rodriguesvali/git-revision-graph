@@ -1,4 +1,5 @@
 import { createWebviewMessageOrigin, type WebviewMessageOrigin } from '../webviewMessageOrigin';
+import { getShowLogFileActions } from './fileOpen';
 import { getRepositoryRelativeChangePath, getStatusLabel } from '../changePresentation';
 import type { RevisionLogEntry, RevisionLogSource } from '../revisionGraphTypes';
 import { REVISION_LOG_FILTER_SCAN_MAX_COMMITS } from '../revisionGraph/revisionLogTypes';
@@ -8,6 +9,7 @@ import { buildShowLogLaneRows, type ShowLogLaneRow } from './showLogLanes';
 const FILTER_SCAN_LIMIT_LABEL = REVISION_LOG_FILTER_SCAN_MAX_COMMITS.toLocaleString('en-US');
 
 export interface ShowLogWebviewChangeItem {
+  readonly fileOpenActions?: readonly import('../fileOpen').FileOpenAction[];
   readonly id: string;
   readonly path: string;
   readonly status: string;
@@ -185,6 +187,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
           ? state.fileFilter : undefined,
         changes: state.expandedCommitHash === entry.hash
           ? changes.map((change, index) => ({
+            fileOpenActions: getShowLogFileActions(change, entry),
             id: `${entry.hash}:${index}`,
             path: getRepositoryRelativeChangePath(state.repository?.rootUri.fsPath ?? '', change),
             status: getStatusLabel(change.status)

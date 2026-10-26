@@ -1,3 +1,4 @@
+import { openShowLogFile } from './showLog/fileOpen';
 import { randomUUID } from 'node:crypto';
 import * as vscode from 'vscode';
 import { toOperationError } from './errorDetail';
@@ -67,7 +68,6 @@ import {
   RepositoryMutationCoordinator
 } from './repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
-
 const SHOW_LOG_PAGE_SIZE = 50;
 function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited<ReturnType<RevisionGraphLogBackend['loadRevisionLog']>>): ShowLogState {
   return {
@@ -95,6 +95,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
   );
   private readonly messageHandlers: ShowLogMessageHandlers = {
     startBugBisect: (hash, token) => startShowLogBugBisect(this.state, hash, token, this.startBugBisect),
+    openFileVersion: (hash, id, side) => openShowLogFile(() => this.state, hash, id, side),
     ready: () => {
       this.postState();
     },
@@ -119,7 +120,6 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     createTagFromCommit: (commitHash) => this.runCommitRefAction(commitHash, 'create-tag'),
     resetToCommit: (commitHash) => this.resetToCommit(commitHash)
   };
-
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly backend: RevisionGraphLogBackend & RevisionGraphDocumentBackend & ShowLogBackend,

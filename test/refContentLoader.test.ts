@@ -56,3 +56,10 @@ test('ref content loader rejects stale repositories and outside paths', async ()
     /outside its repository/
   );
 });
+
+test('single-file historical opening rejects binary content but preserves empty text files', async () => {
+  const repository = createRepository({ root: '/workspace/repo' });
+  const request = { repositoryPath: repository.rootUri.fsPath, ref: 'a'.repeat(40), filePath: '/workspace/repo/a.txt', textOnly: true };
+  await assert.rejects(loadRefContent(request, [repository], async () => 'binary\0content'), /Historical binary files/);
+  assert.equal(await loadRefContent(request, [repository], async () => ''), '');
+});

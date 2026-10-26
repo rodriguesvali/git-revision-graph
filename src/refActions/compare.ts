@@ -3,7 +3,7 @@ import { Repository } from '../git';
 import { isCompareResultsRequestCurrent } from '../compareResults/requestOwnership';
 import { RefActionServices, RefSelection } from './types';
 
-type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter'>;
+type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter' | 'resolveComparisonRevision'>;
 
 export async function compareResolvedRefs(
   repository: Repository,
@@ -19,7 +19,11 @@ export async function compareResolvedRefs(
       right,
       { request }
     );
-    const changes = await repository.diffBetween(left.refName, right.refName);
+    const [source, target] = await Promise.all([
+      pinSelection(repository, left, services), pinSelection(repository, right, services)
+    ]);
+    if (!isCompareResultsRequestCurrent(request, repository)) return;
+    const changes = await repository.diffBetween(source.refName, target.refName);
     if (!isCompareResultsRequestCurrent(request, repository)) {
       return;
     }
@@ -33,8 +37,8 @@ export async function compareResolvedRefs(
     }
     await services.compareResultsPresenter.showBetweenRefs(
       repository,
-      left,
-      right,
+      source,
+      target,
       changes,
       { request }
     );
@@ -65,7 +69,9 @@ export async function compareResolvedRefWithWorktree(
       target,
       { request }
     );
-    const changes = await repository.diffWith(target.refName);
+    const snapshot = await pinSelection(repository, target, services);
+    if (!isCompareResultsRequestCurrent(request, repository)) return;
+    const changes = await repository.diffWith(snapshot.refName);
     if (!isCompareResultsRequestCurrent(request, repository)) {
       return;
     }
@@ -79,7 +85,7 @@ export async function compareResolvedRefWithWorktree(
     }
     await services.compareResultsPresenter.showWithWorktree(
       repository,
-      target,
+      snapshot,
       changes,
       { request }
     );
@@ -96,4 +102,10 @@ export async function compareResolvedRefWithWorktree(
       { modal: true }
     );
   }
+}
+
+async function pinSelection(repository: Repository, selection: RefSelection, services: CompareRefActionServices): Promise<RefSelection> {
+  return services.resolveComparisonRevision
+    ? { ...selection, refName: await services.resolveComparisonRevision(repository, selection.refName) }
+    : selection;
 }

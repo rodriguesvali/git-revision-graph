@@ -56,6 +56,10 @@ the current worktree.
 - Actions stay bound to the repository and review context that displayed them;
   delayed clicks from a replaced context are ignored.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
+- Use **Open File** to edit the current worktree file, or open a labeled historical
+  source/target version read-only. Comparisons pin their revisions when loaded.
+  Added files have no source version; deleted files have no target version.
+  Historical availability is independent of whether the file exists locally.
 - Compare an item with the worktree. Use **Revert** to restore the selected
   revision's file into the worktree. Comparisons between references omit this action.
 - Failed file restores attempt to recover the previous files. If automatic recovery
@@ -75,6 +79,10 @@ the exact selected target; **Show All Branches** is available when broader histo
   and expand commits for changed files.
 - Open file diffs, compare commits with the worktree, copy hashes and reference names, and open
   supported commits on their hosted remote.
+- From an expanded file, use **Open File** for the current version or open the
+  commit version read-only. For deletions, open the explicitly labeled parent
+  version. Missing local files are reported without creating or restoring them.
+  Historical single-file opening supports text; binary previews are not provided.
 - Create branches or tags from exact commits, check out a commit to a new branch, reset with
   confirmation, and cherry-pick selected commits with conflict handoff to Source Control.
 

@@ -1,3 +1,4 @@
+import { openCompareResultFile } from './compareResults/fileOpen';
 import * as vscode from 'vscode';
 
 import type { Change, Repository } from './git';
@@ -55,7 +56,6 @@ import {
   RepositoryMutationCoordinator
 } from './repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
-
 export const COMPARE_RESULTS_VIEW_ID = 'gitRefs.compareResultsView';
 
 export class CompareResultsViewProvider implements vscode.Disposable {
@@ -67,6 +67,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private readonly briefingController: CompareBriefingController;
   private readonly panelDisposables: vscode.Disposable[] = [];
   private readonly messageHandlers: CompareResultsMessageHandlers = {
+    openFileVersion: (id, side) => openCompareResultFile(() => this.state, this.findItem(id), side),
     ready: () => {
       this.postState();
     },
@@ -201,7 +202,6 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   async openItem(item: CompareResultItem): Promise<void> {
     await openCompareResultItem(item);
   }
-
   async compareWithBase(item: CompareResultItem): Promise<void> {
     await this.openItem(item);
   }

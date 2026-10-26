@@ -7,10 +7,6 @@ Use this file only for unresolved decisions that still affect future product, ar
 
 ## Product Direction
 
-- For the historical Open File slice, should comparisons capture immutable commit
-  hashes when loading the file list, or invalidate and refresh the list if a named
-  reference moves? The [1.7.6 build plan](../2.build/features/1.7.6-open-file.md)
-  requires snapshot consistency; the implementation approach remains open.
 - Should pull, push, sync, and fetch actions remain graph actions long term, or should some move back toward the built-in VS Code Source Control experience to reduce workflow overlap?
 - Which graph parity gap should lead the next larger product cycle: commit-centric rendering, richer filtering, saved graph focus states, layout stability, or full-history/windowing work?
 - Should Git Flow or other branching workflow profiles become a `1.6.0` preset, and can that be done without depending on an external Git Flow CLI?

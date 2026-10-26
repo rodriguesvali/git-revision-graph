@@ -26,7 +26,7 @@ export class RefContentProvider implements vscode.TextDocumentContentProvider {
     }
 
     return loadRefContent(
-      { repositoryPath, ref, filePath },
+      { repositoryPath, ref, filePath, textOnly: params.get('textOnly') === 'true' },
       this.git.repositories
     );
   }

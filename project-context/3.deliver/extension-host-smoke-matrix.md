@@ -7,22 +7,24 @@ Use this matrix before a release candidate is considered ready. Run it in an Ext
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
-## 1.7.6 Open File — Planned Acceptance
+## 1.7.6 Open File — Implementation Acceptance
 
-Status: Pending implementation; no 1.7.6 feature smoke has run. Record operator,
-source, VS Code version, platform and result independently of historical results.
+Automated on 2026-10-26 by Codex on Linux/Xvfb, VS Code 1.100.0 and stable
+1.143.1, working tree based on bd98709. The actual opening menu/editor scenarios
+and full existing two-repository safety scenario passed without webview script
+errors. These results do not replace the remaining manual checks below.
 See the [build plan](../2.build/features/1.7.6-open-file.md).
 
 | Scenario | Expected result | Status |
 | --- | --- | --- |
-| Compare Results and expanded Show Log menus | Current file opens in native editor; keyboard access works; double-click still opens diff | Pending |
-| Additions and deletions | Only existing historical sides are enabled; local opening depends on worktree availability, including a historically deleted file present locally | Pending |
-| Missing file / local unsaved editor | No file creation or restore; clear missing-path message; existing dirty buffer preserved | Pending |
-| Rename / root / merge | Original/target paths and first-parent labeling correct; no empty placeholder opened | Pending |
-| Historical identity and moved branch | Read-only content matches displayed snapshot policy; same path at distinct commits is distinguishable | Pending |
-| Two repositories / delayed click / repository closure | Correct repository; stale or invalid requests cause no editor/Git effect | Pending |
-| Current text/image/notebook and historical unsupported binary | Native current editor selected; historical limitation handled clearly | Pending |
-| Minimum/stable, Windows paths, keyboard and light/dark | Behavior and presentation accepted in recorded environments | Pending |
+| Compare Results and expanded Show Log menus | Current file opens in native editor; keyboard access works; double-click still opens diff | Automated mouse opening passed; keyboard manual |
+| Additions and deletions | Only existing historical sides are enabled; local opening depends on worktree availability, including a historically deleted file present locally | Automated target rules passed; dedicated host side smoke pending |
+| Missing file / local unsaved editor | No file creation or restore; clear missing-path message; existing dirty buffer preserved | Missing-path unit tests and dirty-editor host checks passed |
+| Rename / root / merge | Original/target paths and first-parent labeling correct; no empty placeholder opened | Rename host and root/parent target tests passed; merge host smoke pending |
+| Historical identity and moved branch | Read-only content matches displayed snapshot policy; same path at distinct commits is distinguishable | Passed in both real hosts |
+| Two repositories / delayed click / repository closure | Correct repository; stale or invalid requests cause no editor/Git effect | New protocol tests and existing two-repository host transport matrix passed |
+| Current text/image/notebook and historical unsupported binary | Native current editor selected; historical limitation handled clearly | Text host and binary-loader tests passed; image/notebook manual |
+| Minimum/stable, Windows paths, keyboard and light/dark | Behavior and presentation accepted in recorded environments | Minimum/stable Linux passed; Windows/keyboard/themes manual |
 
 Verify worktree bytes, index and HEAD remain unchanged by all opening actions.
 

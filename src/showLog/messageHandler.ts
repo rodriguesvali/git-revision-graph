@@ -1,3 +1,4 @@
+import { getFileOpenSide, type FileOpenSide } from '../fileOpen';
 import { isAuthorizedWebviewMessage, type WebviewMessageOrigin } from '../webviewMessageOrigin';
 import {
   validateShowLogWebviewMessage,
@@ -7,6 +8,7 @@ import {
 type MaybePromise<T> = T | Promise<T>;
 
 export interface ShowLogMessageHandlers {
+  readonly openFileVersion: (commitHash: string, changeId: string, side: FileOpenSide) => MaybePromise<void>;
   readonly startBugBisect?: (commitHash: string, sourceToken: string) => MaybePromise<void>;
   readonly ready: () => MaybePromise<void>;
   readonly toggleCommit: (commitHash: string) => MaybePromise<void>;
@@ -94,6 +96,10 @@ function dispatchShowLogCommitAction(
   handlers: ShowLogMessageHandlers
 ): MaybePromise<void> | false {
   switch (message.type) {
+    case 'openWorktreeFile':
+    case 'openSourceFile':
+    case 'openTargetFile':
+      return handlers.openFileVersion(message.commitHash, message.changeId, getFileOpenSide(message.type)!);
     case 'startBugBisect':
       return handlers.startBugBisect?.(message.commitHash, message.sourceToken);
     case 'setCommitFileFilter':

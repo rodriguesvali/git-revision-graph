@@ -33,14 +33,19 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
   marks it Unreleased. Runtime/dependency/contribution baselines are unchanged.
 - Published baseline is 1.7.5, confirmed by the maintainer on 2026-10-26; exact
   publication date and package/source evidence were not supplied.
-- [Open File](../2.build/features/1.7.6-open-file.md) has prepared build tasks for
-  current-worktree and explicit historical opening in Compare Results and Show Log.
-  No functional implementation is included in cycle opening.
+- [Open File](../2.build/features/1.7.6-open-file.md) is implemented after separate
+  maintainer authorization to begin implementation: current-worktree editing and
+  explicit historical reading in Compare Results and Show Log, with pinned refs
+  and addition/deletion/rename availability. No new dependency or contribution.
 - Fresh opening verification passed: 1,136 tests with zero failures/skips, including
   clean production/webview builds; version consistency, local links and whitespace
   checks passed. Evidence is recorded in [release readiness](release.md) and
   the [cycle artifact](../2.build/features/1.7.6-release-cycle-opening.md).
-  Feature smoke, final-candidate CI/package checks and installation are pending.
+  Fresh implementation verification: 1,157 tests including builds, 52 Linux
+  platform tests and quality (310 files / 2,858 functions) passed. Actual minimum
+  1.100.0/stable 1.143.1 host safety scenarios passed, including new opening tests.
+  Manual keyboard/theme/Windows/non-text editor checks, final hosted CI/package
+  checks and installation remain separate pending delivery evidence.
 - No VSIX, tag, installation or Marketplace action is part of this task. Packaging
   and publication require separate explicit authorization.
 - Before publication, rollback restores the 1.7.5 metadata baseline and reverts only

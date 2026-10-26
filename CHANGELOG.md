@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.6 - Unreleased
 
+### File Opening
+
+- Open current worktree files directly from Compare Results and expanded Show Log
+  files, preserving unsaved edits and the existing double-click diff workflow.
+- Open explicitly labeled historical versions read-only, with the original path
+  for renamed source files and the parent version for deleted Show Log files.
+- Disable absent historical sides for additions/deletions and report missing local
+  files without creating or restoring them.
+- Pin comparison revisions before loading changes so later branch movement does
+  not change the historical content opened from the comparison.
+
 ### Maintenance
 
 - Open the 1.7.6 development cycle and align package/build metadata.

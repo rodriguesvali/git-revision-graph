@@ -3007,3 +3007,19 @@ test('deleteResolvedReference surfaces git stderr details for local branch failu
     "Could not delete the reference. error: Cannot delete branch 'teste01' checked out at '/tmp/worktree' [WorktreeBranchAlreadyUsed] (exit code: 1)"
   );
 });
+
+test('comparison pins refs before reading changes and retains the displayed labels', async () => {
+  const harness = createServices();
+  const repository = createRepository({ root: '/workspace/repo' });
+  const source = 'a'.repeat(40), target = 'b'.repeat(40);
+  const compared: string[][] = [];
+  repository.diffBetween = async (left, right) => {
+    compared.push([left, right]);
+    return [createChange({ uriPath: '/workspace/repo/file.ts' })];
+  };
+  const services = Object.assign({}, harness.services, {
+    async resolveComparisonRevision(_repository: unknown, ref: string) { return ref === 'main' ? source : target; }
+  });
+  await compareResolvedRefs(repository, { refName: 'main', label: 'Main' }, { refName: 'feature', label: 'Feature' }, services);
+  assert.deepEqual(compared, [[source, target]]);
+});

@@ -11,20 +11,21 @@ como publicada.” Previous published baseline is therefore 1.7.5 by confirmatio
 exact publication date and uploaded package/source evidence were not supplied.
 
 See the [cycle artifact](../2.build/features/1.7.6-release-cycle-opening.md) and
-[Open File build plan](../2.build/features/1.7.6-open-file.md). Opening prepares
-metadata and scoped implementation tasks; Open File has not been implemented.
-The plan covers current-file opening first, historical opening second, preserving
-diff behavior and defining addition/deletion/rename availability.
+[Open File build record](../2.build/features/1.7.6-open-file.md). After cycle opening,
+the maintainer authorized implementation with “pode iniciar a implementação”.
+Current-file and explicit historical opening are implemented in Compare Results
+and expanded Show Log, preserving diff behavior and side availability. Production
+comparisons resolve immutable revisions before loading changes.
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified on 2026-10-26 | All three fields declare 1.7.6; JSON comparison against HEAD confirms every other manifest/lockfile field is unchanged. |
 | Opening build and tests | Passed on 2026-10-26 | `npm test`: 1,136 passed, zero failures/cancellations/skips, including clean production/webview builds and test compilation. No runtime source changed. |
-| Build artifacts | Prepared | Open File has ordered tasks, module ownership, snapshot decision, tests, manual matrix and rollback. Functional tasks are pending. |
+| Build artifacts | Implemented and documented | The versioned build and opening files were missing from the committed baseline and are restored. Scope, snapshot decision, tests, manual gaps and rollback are recorded. |
 | Opening document checks | Passed on 2026-10-26 | 105 local Markdown links resolve; final diff review and `git diff --check` passed. |
-| Open File implementation | Not started | No new editor action exists yet; historical reference snapshot policy remains open before its slice. |
-| Feature regression and host smoke | Pending implementation | Use the 1.7.6 section of the [smoke matrix](extension-host-smoke-matrix.md); do not reuse prior release acceptance. |
-| CI/platform and candidate checks | Pending for final candidate | Run affected checks against final code; previous 1.7.5 results remain historical. |
+| Open File implementation | Passed automated verification on 2026-10-26 | Current and read-only historical opening; disabled absent sides, original/renamed paths, pinned refs and stale-origin guards. `npm test`: 1,157 passed, zero failures/cancellations/skips, including production/webview builds. |
+| Feature regression and host smoke | Automated minimum/stable checks passed on Linux/Xvfb | Real VS Code 1.100.0 and stable 1.143.1: current/dirty editors, pinned source/target rename after branch movement and Show Log opening. Full existing two-repository safety scenarios also pass. Manual keyboard/theme, Windows paths and current non-text editor checks remain in the [smoke matrix](extension-host-smoke-matrix.md). |
+| Platform/quality and candidate checks | Local checks passed; final hosted CI/package pending | 52 platform tests passed on Linux; quality passed for 310 files / 2,858 functions. File ceilings dropped to 653/1,289 lines and the Show Log validator complexity ceiling to 25. Graphify AST refresh: 6,682 nodes / 13,851 edges / 504 communities. No gate was weakened. |
 | VSIX, install, tag and Marketplace | Not performed in this cycle | Opening does not authorize packaging or publication. Record final artifact/source identity and explicit delivery authorization separately. |
 
 Before publication, rollback of cycle opening restores only the 1.7.5 version and

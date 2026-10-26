@@ -135,6 +135,7 @@ export interface AncestryInspector {
 }
 
 export interface RefActionServices {
+  readonly resolveComparisonRevision?: (repository: Repository, revision: string) => Promise<string>;
   readonly ui: RefActionUi;
   readonly diffPresenter: DiffPresenter;
   readonly compareResultsPresenter: CompareResultsPresenter;

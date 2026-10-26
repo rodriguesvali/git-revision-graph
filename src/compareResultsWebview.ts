@@ -1,3 +1,5 @@
+import { renderFileOpenMenuScript } from './fileOpenMenu';
+import { renderCompareResultsFileMenuScript } from './compareResults/webviewFileMenu';
 import { renderCompareResultsMessageScript } from './compareResults/webviewMessages';
 import {
   createWebviewContentSecurityPolicy,
@@ -13,6 +15,7 @@ import {
 } from './compareResults/webviewBriefing';
 
 export interface CompareResultsWebviewItem {
+  readonly fileOpenActions?: readonly import('./fileOpen').FileOpenAction[];
   readonly id: string;
   readonly path: string;
   readonly originalPath: string | undefined;
@@ -93,6 +96,7 @@ export function renderCompareResultsWebviewHtml(): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     ${renderCompareResultsMessageScript()}
+    ${renderFileOpenMenuScript()}
     const searchInput = document.getElementById('searchInput');
     const clearSearchButton = document.getElementById('clearSearchButton');
     const comparisonDirection = document.getElementById('comparisonDirection');
@@ -484,39 +488,7 @@ export function renderCompareResultsWebviewHtml(): string {
       return currentState.items.find((item) => item.id === itemId);
     }
 
-    function getMenuActions(items) {
-      if (items.length > 1) {
-        return [
-          {
-            label: 'Copy to Clipboard',
-            submenu: [
-              { action: 'copyFileName', label: 'File Name' },
-              { action: 'copyFullPath', label: 'Full Path' }
-            ]
-          }
-        ];
-      }
-
-      const item = items[0];
-      const actions = [{ action: 'base', label: 'Open Diff' }];
-
-      if (item.canRevert) {
-        actions.push({ action: 'revert', label: 'Revert' });
-      }
-      if (!item.worktreeRef && (item.leftRef || item.rightRef)) {
-        actions.push({ action: 'worktree', label: 'Compare with Worktree' });
-      }
-
-      actions.push({
-        label: 'Copy to Clipboard',
-        submenu: [
-          { action: 'copyFileName', label: 'File Name' },
-          { action: 'copyFullPath', label: 'Full Path' }
-        ]
-      });
-
-      return actions;
-    }
+    ${renderCompareResultsFileMenuScript()}
 
     function updateSelection(itemId, event) {
       const isToggleSelection = event.ctrlKey || event.metaKey;
@@ -622,7 +594,7 @@ export function renderCompareResultsWebviewHtml(): string {
             + '</div>';
         }
 
-        return '<button class="context-menu-item" type="button" data-menu-action="' + escapeHtml(entry.action) + '">' + escapeHtml(entry.label) + '</button>';
+        return renderFileOpenButton(entry);
       }).join('');
       contextMenu.hidden = false;
       contextMenu.style.left = '0px';

@@ -16,9 +16,9 @@ The published baseline is 1.7.5 by maintainer confirmation on the same date.
 
 - [1.7.6-release-cycle-opening.md](1.7.6-release-cycle-opening.md): align version
   metadata, release records and opening verification.
-- [1.7.6-open-file.md](1.7.6-open-file.md): prepared build scope, ordered tasks and
-  acceptance criteria for local/historical opening in Compare Results and Show Log.
-  Planning only; functional implementation has not started.
+- [1.7.6-open-file.md](1.7.6-open-file.md): implemented current/historical opening
+  in Compare Results and Show Log, snapshot consistency, side availability and
+  passing automated checks and remaining manual delivery evidence.
 - [open-file-feasibility.md](open-file-feasibility.md): discovery evidence and
   alternatives supporting the 1.7.6 plan.
 

@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 
 import { getLeftUri, getRightUri, isAddition, isDeletion } from './changePresentation';
 import { Change, Repository } from './git';
-import { EMPTY_SCHEME, REF_SCHEME } from './refContentProvider';
+import { EMPTY_SCHEME } from './refContentProvider';
+import { buildRefUri } from './refDocumentUri';
 import { DiffPresenter } from './refActions';
 
 export function createWorkbenchDiffPresenter(): DiffPresenter {
@@ -14,18 +15,6 @@ export function createWorkbenchDiffPresenter(): DiffPresenter {
       await openChangeDiffWithWorktree(repository, change, ref);
     }
   };
-}
-
-function buildRefUri(repository: Repository, ref: string, filePath: string): vscode.Uri {
-  return vscode.Uri.from({
-    scheme: REF_SCHEME,
-    path: filePath,
-    query: new URLSearchParams({
-      repo: repository.rootUri.fsPath,
-      ref,
-      path: filePath
-    }).toString()
-  });
 }
 
 function buildEmptyUri(filePath: string): vscode.Uri {

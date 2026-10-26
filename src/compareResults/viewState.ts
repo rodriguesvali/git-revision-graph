@@ -1,4 +1,5 @@
 import { createWebviewMessageOrigin } from '../webviewMessageOrigin';
+import { getCompareResultFileActions } from './fileOpen';
 import * as path from 'node:path';
 
 import { getRepositoryRelativeUriPath, getTargetUri } from '../changePresentation';
@@ -58,7 +59,8 @@ export function createCompareResultsWebviewState(
     canOpenUnifiedDiff: true,
     canGenerateBriefing: hasBriefingGenerator,
     briefing,
-    items: getCompareResultItems(state).map((item) => toCompareResultsWebviewItem(item))
+    items: getCompareResultItems(state).map((item) => toCompareResultsWebviewItem(item,
+      state.kind === 'between' ? state.left.label : state.target.label, state.kind === 'between' ? state.right.label : ''))
   };
 }
 
@@ -89,7 +91,9 @@ export function getCompareResultItems(state: CompareResultsState): CompareResult
 }
 
 export function toCompareResultsWebviewItem(
-  item: CompareResultItem
+  item: CompareResultItem,
+  sourceLabel = item.worktreeLabel ?? item.leftRef ?? '',
+  targetLabel = item.rightRef ?? ''
 ): CompareResultsWebviewItem {
   const originalPath = getRepositoryRelativeUriPath(
     item.repository.rootUri.fsPath,
@@ -97,6 +101,7 @@ export function toCompareResultsWebviewItem(
   );
   const isRename = !!item.change.renameUri && originalPath !== item.label;
   return {
+    fileOpenActions: getCompareResultFileActions(item, sourceLabel, targetLabel),
     id: item.id,
     path: item.label,
     originalPath: isRename ? originalPath : undefined,
