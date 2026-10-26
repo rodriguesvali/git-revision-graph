@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.5 - Unreleased
+## 1.7.6 - Unreleased
+
+### Maintenance
+
+- Open the 1.7.6 development cycle and align package/build metadata.
+
+## 1.7.5
+
+Publication confirmed by the maintainer on 2026-10-26; the publication date was not supplied.
 
 ### Compatibility
 

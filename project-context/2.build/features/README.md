@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-17
+Last consolidated: 2026-10-26
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -11,10 +11,22 @@ Completed feature artifacts are archived in `project-context/archive/features/`.
 
 ## Current Active Features
 
-Version 1.7.5 is open for development with maintainer authorization on 2026-10-17.
-The published baseline remains 1.7.4, confirmed on 2026-10-11. Approved functional
-work includes S1–S4 safety corrections/verification, the VS Code 1.100 minimum,
-tag and bisect fixes, Compare Results Revert, compact graph and Flow Governance UX.
+Version 1.7.6 is open for development with maintainer authorization on 2026-10-26.
+The published baseline is 1.7.5 by maintainer confirmation on the same date.
+
+- [1.7.6-release-cycle-opening.md](1.7.6-release-cycle-opening.md): align version
+  metadata, release records and opening verification.
+- [1.7.6-open-file.md](1.7.6-open-file.md): prepared build scope, ordered tasks and
+  acceptance criteria for local/historical opening in Compare Results and Show Log.
+  Planning only; functional implementation has not started.
+- [open-file-feasibility.md](open-file-feasibility.md): discovery evidence and
+  alternatives supporting the 1.7.6 plan.
+
+## Published Release Artifacts — 1.7.5
+
+Publication confirmed on 2026-10-26; exact publication date/source/tag and package
+evidence were not supplied. Prior evidence below remains scoped to its original
+candidate; it does not establish verification of 1.7.6.
 
 - [1.7.5-release-cycle-opening.md](1.7.5-release-cycle-opening.md): align package
   metadata and open unreleased build/delivery records.

@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-17
+Last consolidated: 2026-10-26
 
 ## Environment
 
@@ -26,14 +26,39 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Development Cycle: 1.7.5
+## Development Cycle: 1.7.6
+
+- Opened on 2026-10-26 with explicit maintainer authorization to prepare build
+  artifacts. Manifest and both lockfile version fields target 1.7.6; CHANGELOG
+  marks it Unreleased. Runtime/dependency/contribution baselines are unchanged.
+- Published baseline is 1.7.5, confirmed by the maintainer on 2026-10-26; exact
+  publication date and package/source evidence were not supplied.
+- [Open File](../2.build/features/1.7.6-open-file.md) has prepared build tasks for
+  current-worktree and explicit historical opening in Compare Results and Show Log.
+  No functional implementation is included in cycle opening.
+- Fresh opening verification passed: 1,136 tests with zero failures/skips, including
+  clean production/webview builds; version consistency, local links and whitespace
+  checks passed. Evidence is recorded in [release readiness](release.md) and
+  the [cycle artifact](../2.build/features/1.7.6-release-cycle-opening.md).
+  Feature smoke, final-candidate CI/package checks and installation are pending.
+- No VSIX, tag, installation or Marketplace action is part of this task. Packaging
+  and publication require separate explicit authorization.
+- Before publication, rollback restores the 1.7.5 metadata baseline and reverts only
+  these planning edits, preserving user files and published fixes.
+
+## Published Release: 1.7.5
+
+Publication confirmed by the maintainer on 2026-10-26. Exact publication date,
+uploaded bytes, source/tag and installation evidence were not supplied. The
+following statements describe the earlier 2026-10-17 candidate checkpoint;
+pending evidence is preserved and must not be interpreted as 1.7.6 verification.
 
 - Opened with explicit maintainer authorization on 2026-10-17.
-- Manifest, top-level lockfile and root package target `1.7.5`; CHANGELOG marks it
-  Unreleased. Approved scope now includes S1–S4 safety work, VS Code 1.100 minimum,
+- Manifest, top-level lockfile and root package targeted `1.7.5`; CHANGELOG marked
+  it Unreleased at that checkpoint. Approved scope included S1–S4 safety work, VS Code 1.100 minimum,
   tag-detached HEAD, B1–B3 bisect fixes, worktree-only Revert, removal of the merge
   display option and Flow Governance status-copy cleanup.
-- Published baseline remains `1.7.4`, confirmed by the maintainer on 2026-10-11.
+- Previous published baseline was `1.7.4`, confirmed by the maintainer on 2026-10-11.
 - Build/test and structural graph verification are tracked in
   [release readiness](release.md) and the
   [cycle artifact](../2.build/features/1.7.5-release-cycle-opening.md).

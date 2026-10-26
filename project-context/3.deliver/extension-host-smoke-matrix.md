@@ -1,13 +1,36 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-17
+Last updated: 2026-10-26
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without
 risking user work.
 
+## 1.7.6 Open File — Planned Acceptance
+
+Status: Pending implementation; no 1.7.6 feature smoke has run. Record operator,
+source, VS Code version, platform and result independently of historical results.
+See the [build plan](../2.build/features/1.7.6-open-file.md).
+
+| Scenario | Expected result | Status |
+| --- | --- | --- |
+| Compare Results and expanded Show Log menus | Current file opens in native editor; keyboard access works; double-click still opens diff | Pending |
+| Additions and deletions | Only existing historical sides are enabled; local opening depends on worktree availability, including a historically deleted file present locally | Pending |
+| Missing file / local unsaved editor | No file creation or restore; clear missing-path message; existing dirty buffer preserved | Pending |
+| Rename / root / merge | Original/target paths and first-parent labeling correct; no empty placeholder opened | Pending |
+| Historical identity and moved branch | Read-only content matches displayed snapshot policy; same path at distinct commits is distinguishable | Pending |
+| Two repositories / delayed click / repository closure | Correct repository; stale or invalid requests cause no editor/Git effect | Pending |
+| Current text/image/notebook and historical unsupported binary | Native current editor selected; historical limitation handled clearly | Pending |
+| Minimum/stable, Windows paths, keyboard and light/dark | Behavior and presentation accepted in recorded environments | Pending |
+
+Verify worktree bytes, index and HEAD remain unchanged by all opening actions.
+
 ## 1.7.5 Publication Checkpoint
+
+Follow-up on 2026-10-26: the maintainer confirmed 1.7.5 as published. Historical
+pending smoke details below remain unverified individually; publication
+confirmation does not supply their missing environment or scenario results.
 
 Reviewed source: `62a9807` on 2026-10-17. Selected real-host coverage is recorded
 below; a complete manual release smoke has not been reported. Record operator,

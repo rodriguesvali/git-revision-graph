@@ -1,14 +1,15 @@
 # Product Requirements Document
 
 Status: Active
-Last consolidated: 2026-10-17
+Last consolidated: 2026-10-26
 
 ## Product
 
 `Git Revision Graph` is a published VS Code extension for browsing Git revision graphs from Source Control and running compare, checkout, branch, merge, sync, delete, diff, reset, stash, tag, and log workflows.
 
-The current package baseline is read from `package.json`: `1.7.5` in development;
-the published baseline is `1.7.4`. Readiness evidence is recorded in
+The current package baseline is read from `package.json`: `1.7.6` in development;
+the published baseline is `1.7.5`, confirmed by the maintainer on 2026-10-26.
+Readiness evidence is recorded in
 `project-context/3.deliver/release.md`.
 
 Starting with the 1.7.5 cycle, the supported minimum is VS Code `1.100.0` with the
@@ -68,6 +69,12 @@ events. The Git API version remains `getAPI(1)`.
 - Promote durable product or architecture learning into `prd.md` or `sad.md`; archive completed feature and release artifacts.
 
 ## Scope For Future Evolution
+
+The 1.7.6 cycle includes build planning for Open File in Compare Results and
+expanded Show Log files: current-worktree opening first, explicit read-only
+historical opening second. Additions and deletions expose only existing historical
+sides; local availability is checked independently. This is planned behavior,
+not a shipped capability. See the [build artifact](../2.build/features/1.7.6-open-file.md).
 
 Future work should strengthen the current product rather than introduce a second product shape. Preferred areas are:
 

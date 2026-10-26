@@ -1,14 +1,53 @@
 # Release Readiness
 
-Status: `1.7.5` development cycle open; published baseline `1.7.4`
-Last consolidated: 2026-10-17
+Status: `1.7.6` development cycle open; published baseline `1.7.5`
+Last consolidated: 2026-10-26
 
-Publication review: [1.7.5 candidate artifacts and remaining gates](1.7.5-publication-review.md).
+## Development release — 1.7.6
+
+Opened on 2026-10-26 with explicit maintainer authorization: “abre o release 1.7.6:
+prepare os artefatos de build”. The maintainer then confirmed “considere a 1.7.5
+como publicada.” Previous published baseline is therefore 1.7.5 by confirmation;
+exact publication date and uploaded package/source evidence were not supplied.
+
+See the [cycle artifact](../2.build/features/1.7.6-release-cycle-opening.md) and
+[Open File build plan](../2.build/features/1.7.6-open-file.md). Opening prepares
+metadata and scoped implementation tasks; Open File has not been implemented.
+The plan covers current-file opening first, historical opening second, preserving
+diff behavior and defining addition/deletion/rename availability.
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Verified on 2026-10-26 | All three fields declare 1.7.6; JSON comparison against HEAD confirms every other manifest/lockfile field is unchanged. |
+| Opening build and tests | Passed on 2026-10-26 | `npm test`: 1,136 passed, zero failures/cancellations/skips, including clean production/webview builds and test compilation. No runtime source changed. |
+| Build artifacts | Prepared | Open File has ordered tasks, module ownership, snapshot decision, tests, manual matrix and rollback. Functional tasks are pending. |
+| Opening document checks | Passed on 2026-10-26 | 105 local Markdown links resolve; final diff review and `git diff --check` passed. |
+| Open File implementation | Not started | No new editor action exists yet; historical reference snapshot policy remains open before its slice. |
+| Feature regression and host smoke | Pending implementation | Use the 1.7.6 section of the [smoke matrix](extension-host-smoke-matrix.md); do not reuse prior release acceptance. |
+| CI/platform and candidate checks | Pending for final candidate | Run affected checks against final code; previous 1.7.5 results remain historical. |
+| VSIX, install, tag and Marketplace | Not performed in this cycle | Opening does not authorize packaging or publication. Record final artifact/source identity and explicit delivery authorization separately. |
+
+Before publication, rollback of cycle opening restores only the 1.7.5 version and
+planning baseline. Preserve published 1.7.5 fixes, user files and the existing
+feasibility analysis. Functional rollback is described in the Open File plan.
+
+## Published release — 1.7.5
+
+Publication confirmed by the maintainer on 2026-10-26. This establishes 1.7.5 as the
+published baseline, without independently verifying Marketplace bytes, upload date,
+release source/tag or clean-profile installation. The assistant ran no packaging,
+installation, tag or publication command during this follow-up. The following
+review and gates retain their original candidate-specific evidence and pending
+observations; they are not retroactively marked passed by publication confirmation.
+
+### Implementation and pre-publication checkpoint — 2026-10-17
+
+Historical publication review: [1.7.5 candidate artifacts and remaining gates](1.7.5-publication-review.md).
 Source reviewed: `62a98072a07c36151d3d6d168d6762ffef845fb6`; this review changes
 documentation only. Source verification is recorded; final manual smoke,
 candidate VSIX inspection and clean-profile installation remain pending.
 
-## Development release — 1.7.5
+### Development-cycle history — 1.7.5
 
 Opened on 2026-10-17 with explicit maintainer authorization: “Abra a versão 1.7.5”.
 Previous published baseline: `1.7.4`, confirmed by the maintainer on 2026-10-11.
@@ -23,7 +62,8 @@ for the graph, Compare Results and Show Log, followed by the
 [S3 render-cancellation correction](../2.build/features/1.7.5-render-cancellation.md).
 The maintainer also approved the [S4 Extension Host expansion](../2.build/features/1.7.5-extension-host-safety-regressions.md).
 The maintainer subsequently approved [VS Code 1.100 as the minimum](../2.build/features/1.7.5-vscode-1.100-baseline.md),
-including matching API types and CI. CHANGELOG identifies 1.7.5 as Unreleased.
+including matching API types and CI. CHANGELOG identified 1.7.5 as Unreleased at
+that checkpoint; the publication follow-up above supersedes that release status.
 The engine is `^1.100.0` and `@types/vscode` is pinned to `1.100.0`; runtime
 dependencies and contribution points retain the published baseline.
 The reported Angular tag checkout also received the
