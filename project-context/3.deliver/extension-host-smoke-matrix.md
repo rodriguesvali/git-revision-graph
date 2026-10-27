@@ -1,7 +1,46 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-26
+Last updated: 2026-10-27
+
+## Patch Workflows — 1.7.6
+
+Scope: [build record](../2.build/features/1.7.6-patch-workflows.md).
+Automated evidence uses disposable Linux repositories and supplied native dialog
+choices; it does not establish manual visual or keyboard acceptance.
+
+- Show Log: Format Patch on a non-merge/root commit saves exactly that commit's
+  author/message and patch. Merge is unavailable. Cancel/close/switch during Save
+  must not write an obsolete export.
+- Endpoint comparison: export predecessor → main, apply on a sibling branch from
+  the predecessor and commit. Sibling → main must report no differences if their
+  contents match, in graph and Show Log. Changes exclusive to either side must
+  appear with the correct direction and rename paths; root commits must expand.
+- Show Log multi-selection: Ctrl/Cmd + click two or more commits, then Format Patch
+  to a folder. Verify one numbered file per exact commit, including nonadjacent
+  selections; no implicit range, merge inclusion or existing-file overwrite. Cancel
+  the folder picker; switch/close the source during generation and verify cleanup.
+- Compare Results: Save Patch is beside Unified Diff. With search/status filters,
+  selected rows and scrolling, export still includes every changed file, including
+  rename/add/delete/binary and worktree untracked additions. Save dirty editors first.
+- Save Patch filenames: verify ordered 8-character source/target hashes and the
+  incremental suffix, `toworktree`, cancellation without number consumption, existing
+  matching names, repeated saves outside the repository and an editable native dialog.
+- Graph: Apply Patch appears only on the checked-out local branch, not historical
+  commits, other refs, multi-selection or detached HEAD. Dirty staged/unstaged/
+  untracked files and unsaved editors block it; unrelated repositories remain isolated.
+- Apply: verify native file selection, destination/summary confirmation, cancellation,
+  compatibility failures, and preserved HEAD/index after success. Reopen the menu
+  after a branch/HEAD/repository change; old dialogs must not apply after graph close.
+- Invalid/oversized/series/submodule and sparse-checkout cases fail explicitly.
+  Test Windows paths, symlinks/modes/EOLs, themes and keyboard navigation. Exercise
+  filesystem failures and inspect actual state; no automatic reverse/reset is offered.
+
+Final minimum/stable automated results are recorded in release readiness and the
+build record: 1.100.0/stable 1.143.1 passed on Linux/Xvfb on 2026-10-27, including
+real filtered comparison exports, single/multi commit exports, dirty-editor/menu blocking and native
+worktree application with unchanged HEAD/index. All manual entries above remain pending until an operator records
+platform, VS Code version and result.
 
 Use this matrix before a release candidate is considered ready. Run it in an Extension Development
 Host with a disposable Git fixture repository so destructive actions can be validated without

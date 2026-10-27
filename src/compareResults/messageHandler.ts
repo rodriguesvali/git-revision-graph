@@ -14,6 +14,7 @@ export interface CompareResultsMessageHandlers {
   readonly cancelBriefing: () => MaybePromise<void>;
   readonly generateBriefing: () => MaybePromise<void>;
   readonly unifiedDiff: () => MaybePromise<void>;
+  readonly savePatch: () => MaybePromise<void>;
   readonly worktree: (itemId: string) => MaybePromise<void>;
   readonly revert: (itemId: string) => MaybePromise<void>;
 }
@@ -27,15 +28,15 @@ export async function dispatchCompareResultsWebviewMessage(
   if (!isAuthorizedWebviewMessage(message, rawMessage, origin)) {
     return false;
   }
+  const side = getFileOpenSide(message.type);
+  if (side && 'itemId' in message) {
+    await handlers.openFileVersion(message.itemId, side);
+    return true;
+  }
 
   switch (message.type) {
     case 'ready':
       await handlers.ready();
-      return true;
-    case 'openWorktreeFile':
-    case 'openSourceFile':
-    case 'openTargetFile':
-      await handlers.openFileVersion(message.itemId, getFileOpenSide(message.type)!);
       return true;
     case 'base':
       await handlers.base(message.itemId);
@@ -58,6 +59,9 @@ export async function dispatchCompareResultsWebviewMessage(
     case 'unifiedDiff':
       await handlers.unifiedDiff();
       return true;
+    case 'savePatch':
+      await handlers.savePatch();
+      return true;
     case 'worktree':
       await handlers.worktree(message.itemId);
       return true;
@@ -65,4 +69,5 @@ export async function dispatchCompareResultsWebviewMessage(
       await handlers.revert(message.itemId);
       return true;
   }
+  return false;
 }

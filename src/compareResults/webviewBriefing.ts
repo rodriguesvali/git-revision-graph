@@ -121,6 +121,7 @@ export function renderCompareResultsActionScript(): string {
     }
 
     function updateCompareResultsActions() {
+      updateSavePatchButton();
       updateUnifiedDiffButton();
       updateBriefingButton();
       updateBriefingPanel();

@@ -1,7 +1,7 @@
 # Product Requirements Document
 
 Status: Active
-Last consolidated: 2026-10-26
+Last consolidated: 2026-10-27
 
 ## Product
 
@@ -39,6 +39,15 @@ events. The Git API version remains `getAPI(1)`.
   once, while intermediate steps retain compact presentation.
 - The revision graph opens as a singleton editor `WebviewPanel`.
 - Compare Results and Show Log open as on-demand editor panels while those workflows are active.
+- Reference/commit comparisons use the two final revision contents, consistently
+  across lists, individual diffs, Unified Diff and patch export. Independent commits
+  with equal trees report no differences; merge-base review is not an implicit mode.
+- Patch workflows export selected non-merge commits from Show Log, one file per
+  commit (native Save dialog for one; folder picker for multiple), or every change in
+  Compare Results, regardless of filters/selection. Apply Patch is available only
+  on the checked-out local branch's graph menu with a clean chosen repository,
+  including unsaved editors; application changes the worktree without staging or
+  creating commits. Series imports and detached HEAD application are outside scope.
 - Compare Results offers **Revert** for reference-to-worktree comparisons,
   restoring the selected revision's file into the workspace. Comparisons between
   references omit this action; Show Log retains commit-specific file restoration.

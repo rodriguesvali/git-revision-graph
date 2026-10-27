@@ -6,6 +6,15 @@ import { createCompareResultsWebviewState } from '../src/compareResults/viewStat
 import { createBranch, createChange, createRepository } from './fakes';
 import { RefType } from '../src/git';
 
+test('Save Patch sends one comparison-wide action despite filters and selected rows', () => {
+  const view = createReviewWebview(); const state = reviewState();
+  view.update(state); view.review('src/a', 'modified', ['src/a.ts']);
+  view.element('savePatchButton').listeners.click[0]();
+  view.element('savePatchButton').listeners.click[0]();
+  assert.deepEqual(JSON.parse(JSON.stringify(view.messages)), [{ type: 'savePatch', origin: state.messageOrigin }]);
+  assert.equal(view.element('savePatchButton').disabled, true);
+});
+
 test('Compare Results retains filters and selection through briefing progress, result and cancellation', () => {
   const view = createReviewWebview();
   const state = reviewState();
@@ -215,7 +224,7 @@ function createReviewWebview() {
   messages.length = 0; // Ignore the initial host handshake when checking user actions.
   const snapshot = () => JSON.parse(JSON.stringify(vm.runInContext(
     '({ query:searchInput.value,status:activeStatusFilter,selected:selectedItemIds,anchor:selectionAnchorItemId })', context)));
-  const update = (state: any) => windowListeners.message[0]({ data: { type: 'state', state } });
+  const update = (state: any) => windowListeners.message.forEach(listener => listener({ data: { type: 'state', state } }));
   function review(query: string, status: string, selected: string[]) {
     element('searchInput').value = query;
     element('searchInput').listeners.input[0]();

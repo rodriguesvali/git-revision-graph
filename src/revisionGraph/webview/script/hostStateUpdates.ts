@@ -41,6 +41,7 @@ function applyRepositoryStatusUpdate(status: RevisionGraphWebviewRepositoryStatu
     currentHeadUpstreamName: status.currentHeadUpstreamName,
     publishedLocalBranchNames: status.publishedLocalBranchNames,
     isWorkspaceDirty: status.isWorkspaceDirty,
+    hasUnsavedChanges: status.hasUnsavedChanges,
     hasMergeConflicts: status.hasMergeConflicts,
     hasConflictedMerge: status.hasConflictedMerge,
     loading: false,

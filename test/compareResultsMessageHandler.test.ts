@@ -29,6 +29,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
   assert.equal(await dispatchCurrent({ type: 'cancelBriefing' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'generateBriefing' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'unifiedDiff' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'savePatch' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'worktree', itemId: 'src/app.ts:0' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'revert', itemId: 'src/app.ts:0' }, handlers), true);
 
@@ -41,6 +42,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
     'cancelBriefing',
     'generateBriefing',
     'unifiedDiff',
+    'savePatch',
     'worktree:src/app.ts:0',
     'revert:src/app.ts:0'
   ]);
@@ -48,6 +50,7 @@ test('dispatchCompareResultsWebviewMessage routes compare results commands', asy
 
 function createHandlers(calls: string[]): CompareResultsMessageHandlers {
   return {
+    savePatch() { calls.push('savePatch'); },
     openFileVersion(itemId, side) { calls.push(`openFileVersion:${itemId}:${side}`); },
     ready() {
       calls.push('ready');

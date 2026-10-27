@@ -1,4 +1,6 @@
 export { isAbortError } from '../errors';
+import type { ShowLogState } from '../showLogShared';
+import type { RevisionGraphLogBackend } from '../revisionGraph/backend';
 
 export interface ShowLogLoadRequest {
   readonly id: number;
@@ -48,4 +50,14 @@ export class ShowLogLoadRequests {
     this.activeAbortController?.abort();
     this.activeAbortController = undefined;
   }
+}
+
+export function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited<ReturnType<RevisionGraphLogBackend['loadRevisionLog']>>): ShowLogState {
+  return {
+    ...state,
+    loading: false,
+    entries: [...result.entries],
+    hasMore: result.hasMore,
+    searchTruncated: result.searchTruncated
+  };
 }

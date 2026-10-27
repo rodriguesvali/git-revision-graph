@@ -1,4 +1,7 @@
+import { replaceLoadedShowLogEntries } from './showLog/loadRequests';
 import { openShowLogFile } from './showLog/fileOpen';
+import { formatShowLogPatch } from './showLog/patchExport';
+import { PatchExportRequest } from './patches/exportWorkflow';
 import { randomUUID } from 'node:crypto';
 import * as vscode from 'vscode';
 import { toOperationError } from './errorDetail';
@@ -69,21 +72,12 @@ import {
 } from './repositoryMutationCoordinator';
 import { showConcurrentRepositoryMutationWarning } from './repositoryMutationWarning';
 const SHOW_LOG_PAGE_SIZE = 50;
-function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited<ReturnType<RevisionGraphLogBackend['loadRevisionLog']>>): ShowLogState {
-  return {
-    ...state,
-    loading: false,
-    entries: [...result.entries],
-    hasMore: result.hasMore,
-    searchTruncated: result.searchTruncated
-  };
-}
-
 export interface ShowLogPresenter {
   showSource(repository: Repository, source: RevisionLogSource): Promise<void>;
 }
 
 export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter {
+  private readonly patchExport = new PatchExportRequest();
   private state: ShowLogState = createHiddenShowLogState();
   private panel: vscode.WebviewPanel | undefined;
   private readonly panelDisposables: vscode.Disposable[] = [];
@@ -113,6 +107,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     copyReferenceName: (commitHash, refName) => this.copyReferenceName(commitHash, refName),
     openCommitOnRemote: (commitHash) => this.openCommitOnRemote(commitHash),
     openCommitDetails: (commitHash) => this.openCommitDetails(commitHash),
+    formatPatch: (hash) => this.patchExport.run(() => formatShowLogPatch(() => this.state, hash)),
     compareCommits: (baseCommitHash, compareCommitHash) => this.compareCommits(baseCommitHash, compareCommitHash),
     compareCommitWithWorktree: (commitHash) => this.compareCommitWithWorktree(commitHash),
     cherryPickCommits: (commitHashes) => this.cherryPickCommits(commitHashes),

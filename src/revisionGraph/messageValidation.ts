@@ -38,6 +38,9 @@ const REVISION_GRAPH_TARGET_KINDS = new Set<RevisionGraphRef['kind'] | 'commit'>
 ]);
 
 const REVISION_GRAPH_MESSAGE_VALIDATORS: RevisionGraphMessageValidatorMap = {
+  'apply-patch': message => isBoundedNonEmptyString(message.refName)
+    && isBoundedNonEmptyString(message.commitHash, 64) && /^[0-9a-f]{40,64}$/i.test(message.commitHash)
+    ? { type: 'apply-patch', refName: message.refName, commitHash: message.commitHash } : undefined,
   'open-file-at-revision': (message) => isBoundedNonEmptyString(message.commitHash, 64)
     && /^[0-9a-f]{40,64}$/i.test(message.commitHash)
     ? { type: 'open-file-at-revision', commitHash: message.commitHash } : undefined,

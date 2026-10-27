@@ -193,6 +193,7 @@ function createActionServices(
   uiOverrides: Partial<RefActionServices['ui']> = {}
 ): RefActionServices {
   return {
+    loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
     ui: {
       async pickChange() {
         return undefined;

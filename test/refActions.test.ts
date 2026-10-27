@@ -133,6 +133,7 @@ function createServices(overrides: Partial<RefActionServices['ui']> = {}): {
   const overrideConfirm = overrides.confirm;
 
   const services: RefActionServices = {
+    loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
     progress: {
       async run(label, mode, operation) {
         progressEvents.push({ phase: 'start', label, mode });

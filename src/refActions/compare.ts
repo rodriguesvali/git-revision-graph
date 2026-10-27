@@ -3,7 +3,7 @@ import { Repository } from '../git';
 import { isCompareResultsRequestCurrent } from '../compareResults/requestOwnership';
 import { RefActionServices, RefSelection } from './types';
 
-type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter' | 'resolveComparisonRevision'>;
+type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter' | 'resolveComparisonRevision' | 'loadComparisonChanges'>;
 
 export async function compareResolvedRefs(
   repository: Repository,
@@ -23,7 +23,7 @@ export async function compareResolvedRefs(
       pinSelection(repository, left, services), pinSelection(repository, right, services)
     ]);
     if (!isCompareResultsRequestCurrent(request, repository)) return;
-    const changes = await repository.diffBetween(source.refName, target.refName);
+    const changes = await services.loadComparisonChanges(repository, source.refName, target.refName);
     if (!isCompareResultsRequestCurrent(request, repository)) {
       return;
     }

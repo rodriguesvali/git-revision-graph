@@ -297,6 +297,7 @@ function createServices(options: { readonly confirmResult?: boolean; readonly co
 
   return {
     services: {
+      loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
       progress: {
         async run(label, mode, operation) {
           progressEvents.push({ phase: 'start', label, mode });

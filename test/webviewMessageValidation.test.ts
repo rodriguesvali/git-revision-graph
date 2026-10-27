@@ -15,6 +15,27 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Apply Patch authorizes only exact clean HEAD, refusing same-hash aliases and stale targets', () => {
+  const hash = 'a'.repeat(40);
+  const state = { ...createReadyRevisionGraphState(), currentHeadName: 'main',
+    references: [{ id: 'head', name: 'main', kind: 'head' as const, hash, title: 'main' }] };
+  const message = { type: 'apply-patch' as const, refName: 'main', commitHash: hash };
+  assert.deepEqual(validateRevisionGraphMessage(message), message);
+  assert.equal(validateRevisionGraphMessage({ ...message, commitHash: '--bad' }), undefined);
+  assert.equal(isRevisionGraphMessageAllowedForState(message, state), true);
+  for (const changes of [{ isWorkspaceDirty: true }, { hasMergeConflicts: true }, { references: [] },
+    { currentHeadName: undefined }, { hasUnsavedChanges: true }]) {
+    assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, ...changes }), false);
+  }
+  for (const kind of ['branch', 'tag', 'remote'] as const) {
+    assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state,
+      references: [{ ...state.references[0], kind }] }), false);
+  }
+  assert.equal(isRevisionGraphMessageAllowedForState({ ...message, commitHash: 'b'.repeat(40) }, state), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, { ...state, loading: true }, state.repositoryPath), false);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/another'), false);
+});
+
 test('legacy merge-visibility fields are ignored without affecting supported View options', () => {
   for (const showMergeCommits of [true, false, 'legacy']) {
     const message = validateRevisionGraphMessage({ type: 'set-projection-options',
@@ -1592,6 +1613,11 @@ test('validateCompareResultsWebviewMessage rejects malformed compare result mess
 });
 
 test('validateShowLogWebviewMessage rejects malformed show log messages', () => {
+  for (const commitHashes of [undefined, [], 'abc', [''], ['  '], [1], Array(1001).fill('abc')]) {
+    assert.equal(validateShowLogWebviewMessage({ type: 'formatPatch', commitHashes }), undefined);
+  }
+  assert.deepEqual(validateShowLogWebviewMessage({ type: 'formatPatch', commitHashes: ['abc', 'def'] }),
+    { type: 'formatPatch', commitHashes: ['abc', 'def'] });
   assert.equal(validateShowLogWebviewMessage({ type: 'toggleShowAllBranches', value: 'true' }), undefined);
   assert.equal(validateShowLogWebviewMessage({ type: 'openFile', commitHash: 'abc123' }), undefined);
   assert.equal(validateShowLogWebviewMessage({ type: 'revertFileToCommit', commitHash: 'abc123' }), undefined);

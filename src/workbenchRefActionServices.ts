@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { resolveComparisonRevision } from './compareResults/revisionSnapshot';
+import { loadComparisonChanges } from './compareResults/endpointChanges';
 
 import { PreparedRefreshHandle, RefActionServices } from './refActions';
 import { RevisionGraphRefreshRequestLike } from './revisionGraphRefresh';
@@ -31,6 +32,7 @@ export function createWorkbenchRefActionServices(
   compareResultsPresenter?: RefActionServices['compareResultsPresenter']
 ): RefActionServices {
   return {
+    loadComparisonChanges,
     resolveComparisonRevision,
     ui: createWorkbenchRefActionUi(),
     diffPresenter: createWorkbenchDiffPresenter(),

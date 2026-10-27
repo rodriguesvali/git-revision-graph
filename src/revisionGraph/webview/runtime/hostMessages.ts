@@ -37,7 +37,7 @@ function isRevisionGraphWebviewRepositoryStatusUpdate(
     && isOptionalString(value.currentHeadName)
     && isOptionalString(value.currentHeadUpstreamName)
     && isStringArray(value.publishedLocalBranchNames)
-    && typeof value.isWorkspaceDirty === 'boolean'
+    && isPatchWorkspaceState(value)
     && typeof value.hasMergeConflicts === 'boolean'
     && typeof value.hasConflictedMerge === 'boolean';
 }

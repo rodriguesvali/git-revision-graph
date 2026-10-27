@@ -12,10 +12,16 @@ export type CompareResultsWebviewMessage =
   | { readonly type: 'cancelBriefing' }
   | { readonly type: 'generateBriefing' }
   | { readonly type: 'unifiedDiff' }
+  | { readonly type: 'savePatch' }
   | { readonly type: 'worktree'; readonly itemId: string }
   | { readonly type: 'revert'; readonly itemId: string };
 
 export type CompareResultsClientMessage = WebviewClientMessage<CompareResultsWebviewMessage>;
+
+type SimpleCompareMessage = Extract<CompareResultsWebviewMessage, { readonly type: 'ready' | 'copyBriefing' | 'cancelBriefing' | 'generateBriefing' | 'unifiedDiff' | 'savePatch' }>;
+function isSimpleCompareMessage(type: string): type is SimpleCompareMessage['type'] {
+  return ['ready', 'copyBriefing', 'cancelBriefing', 'generateBriefing', 'unifiedDiff', 'savePatch'].includes(type);
+}
 
 export function validateCompareResultsWebviewMessage(message: unknown): CompareResultsWebviewMessage | undefined {
   if (!isRecord(message) || !isString(message.type)) {
@@ -23,18 +29,9 @@ export function validateCompareResultsWebviewMessage(message: unknown): CompareR
   }
 
   if (getFileOpenSide(message.type)) return validateItemMessage(message, message.type as FileOpenMessageType);
+  if (isSimpleCompareMessage(message.type)) return { type: message.type };
 
   switch (message.type) {
-    case 'ready':
-      return { type: 'ready' };
-    case 'copyBriefing':
-      return { type: 'copyBriefing' };
-    case 'cancelBriefing':
-      return { type: 'cancelBriefing' };
-    case 'generateBriefing':
-      return { type: 'generateBriefing' };
-    case 'unifiedDiff':
-      return { type: 'unifiedDiff' };
     case 'base':
     case 'worktree':
     case 'revert':

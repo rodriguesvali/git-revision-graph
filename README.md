@@ -43,10 +43,19 @@ connections. Intermediate commits can be compressed into connecting paths;
 
 Custom tooltips in the graph and Show Log appear after 1 second of hover.
 
+Use **Apply Patch…** from the currently checked-out branch's context menu. The
+chosen repository must have no staged/unstaged changes, untracked files or unsaved
+editors. Select one patch and confirm its destination and change summary.
+Changes remain unstaged; no commit is created. Detached HEAD, patch series and
+submodule imports and sparse-checkout application are not supported. Keep an input patch outside the repository
+if it would otherwise be an untracked file.
+
 ## Compare Without Losing Context
 
 Select two visible references or commits to open **Compare Results**, or compare one revision with
 the current worktree.
+Comparisons between revisions use their final contents directly. Branches with
+identical contents report no differences even when their commit histories differ.
 
 ![Compare Results with status filters and changed files](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/02-compare-results.png)
 
@@ -56,6 +65,13 @@ the current worktree.
 - Actions stay bound to the repository and review context that displayed them;
   delayed clicks from a replaced context are ignored.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
+- Use **Save Patch…** beside Unified Diff to save all changes from source to target,
+  including binary files. Search/status filters and selection do not restrict export.
+  The suggested name is `from<source-hash>to<target-hash>compare_<number>.patch`,
+  using 8-character hashes (`worktree` for a workspace target). Numbers advance per
+  comparison after successful saves and account for matching files in the default folder.
+  Save unsaved editors before exporting a worktree comparison.
+  In sparse checkouts, export a reference-to-reference comparison instead.
 - Use **Open File** to edit the current worktree file, or open a labeled historical
   source/target version read-only. Comparisons pin their revisions when loaded.
   Added files have no source version; deleted files have no target version.
@@ -79,6 +95,11 @@ the exact selected target; **Show All Branches** is available when broader histo
   and expand commits for changed files.
 - Open file diffs, compare commits with the worktree, copy hashes and reference names, and open
   supported commits on their hosted remote.
+- Use **Format Patch…** to export non-merge commits with author and message metadata.
+  Select multiple commits with **Ctrl/Cmd + click**, then choose a destination folder:
+  each selected commit gets its own numbered `.patch` file, in reverse displayed
+  history order. Existing files are never overwritten by a batch export. A single
+  commit uses the Save dialog. Applying a patch to the worktree does not create a commit.
 - From an expanded file, use **Open File** for the current version or open the
   commit version read-only. For deletions, open the explicitly labeled parent
   version. Missing local files are reported without creating or restoring them.

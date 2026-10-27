@@ -1135,6 +1135,7 @@ function createReleaseServices(options: {
   readonly progressEvents?: string[];
 } = {}): RefActionServices {
   return {
+    loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
     ui: {
       async pickChange() { return undefined; },
       async pickRemoteName(names, placeHolder) {

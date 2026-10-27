@@ -4,16 +4,16 @@
     "maxFunctionComplexity": 15
   },
   "files": {
-    "src/compareResultsWebview.ts": 653,
-    "src/revisionGraph/controller.ts": 739,
+    "src/compareResultsWebview.ts": 627,
+    "src/revisionGraph/controller.ts": 736,
     "src/revisionGraph/panel/state.ts": 650,
     "src/revisionGraph/webview/script/bootstrap.ts": 1723,
-    "src/revisionGraph/webview/script/interactions.ts": 887,
+    "src/revisionGraph/webview/script/interactions.ts": 885,
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 1039,
     "src/showLog/webviewStyles.ts": 869,
-    "src/showLogView.ts": 749,
-    "src/showLogWebview.ts": 1289
+    "src/showLogView.ts": 744,
+    "src/showLogWebview.ts": 1252
   },
   "functions": {
     "src/refActions/branches.ts::createBranchFromResolvedReference#1": 18,

@@ -1,13 +1,27 @@
 # Solution Architecture Document
 
 Status: Active
-Last consolidated: 2026-10-26
+Last consolidated: 2026-10-27
 
 ## Context
 
 `Git Revision Graph` is a VS Code extension with an editor-area revision graph webview and native workbench workflows for Git review and mutation actions. AAMAD is documentation and release governance around this existing system; it is not runtime architecture.
 
 ## Active Architecture
+
+- `src/compareResults/endpointChanges.ts` owns bounded endpoint change-list reads.
+  Graph/ref actions inject it through `RefActionServices`; Show Log comparisons and
+  parent/root expansion share it. The native Git API's merge-base `diffBetween`
+  semantics are unsuitable for these endpoint review surfaces.
+
+- `src/patches/` owns binary-safe commit/comparison export and guarded patch input/
+  preflight workflows. Workbench adapters own native dialogs, dirty-editor readiness
+  and built-in Git `Repository.apply()`; import runs under the shared mutation
+  coordinator. Worktree export uses a private index and preserves the real staging
+  area. Show Log sends an explicit bounded selected-hash list; host authorization
+  requires every commit in the captured loaded context. Batch export prepares all
+  payloads before exclusive file creation, with stale-context checks and owned-file
+  cleanup. This adds no commit-import session, dependency or manifest contribution.
 
 - `src/bugBisect/*` owns manual bug-search sessions independently of graph
   visibility. Native `git bisect --no-checkout` selects revisions; guarded built-in

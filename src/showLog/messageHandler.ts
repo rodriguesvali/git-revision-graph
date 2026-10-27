@@ -25,6 +25,7 @@ export interface ShowLogMessageHandlers {
   readonly copyReferenceName: (commitHash: string, refName: string) => MaybePromise<void>;
   readonly openCommitOnRemote: (commitHash: string) => MaybePromise<void>;
   readonly openCommitDetails: (commitHash: string) => MaybePromise<void>;
+  readonly formatPatch: (commitHashes: readonly string[]) => MaybePromise<void>;
   readonly compareCommits: (baseCommitHash: string, compareCommitHash: string) => MaybePromise<void>;
   readonly compareCommitWithWorktree: (commitHash: string) => MaybePromise<void>;
   readonly cherryPickCommits: (commitHashes: readonly string[]) => MaybePromise<void>;
@@ -110,6 +111,8 @@ function dispatchShowLogCommitAction(
       return handlers.openCommitOnRemote(message.commitHash);
     case 'openCommitDetails':
       return handlers.openCommitDetails(message.commitHash);
+    case 'formatPatch':
+      return handlers.formatPatch(message.commitHashes);
     case 'compareCommitWithWorktree':
       return handlers.compareCommitWithWorktree(message.commitHash);
     case 'copyCommitHash':

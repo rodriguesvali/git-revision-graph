@@ -17,3 +17,13 @@ export function createRetainedScriptWebviewPanelOptions(
     retainContextWhenHidden: true
   };
 }
+
+export function createWebviewPanelSurface(panel: vscode.WebviewPanel) {
+  return {
+    webview: panel.webview,
+    onDidDispose: (listener: () => void) => panel.onDidDispose(listener),
+    setTitle: (title: string) => {
+      panel.title = title;
+    }
+  };
+}

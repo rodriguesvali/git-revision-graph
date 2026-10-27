@@ -38,6 +38,7 @@ interface RevisionGraphWebviewHostState extends Record<string, unknown> {
   readonly currentHeadUpstreamName?: string;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphWebviewProjectionOptions;
@@ -64,6 +65,7 @@ interface RevisionGraphWebviewRepositoryStatusUpdate extends Record<string, unkn
   readonly currentHeadUpstreamName?: string;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
 }

@@ -4,6 +4,7 @@ import type { CompareResultsPresenter } from '../refActions';
 import { isCompareResultsRequestCurrent } from '../compareResults/requestOwnership';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
 import { showModalErrorMessage } from '../workbenchMessages';
+import { loadComparisonChanges, type ComparisonChangesLoader } from '../compareResults/endpointChanges';
 
 export interface ShowLogCommitCompareUi {
   showInformationMessage(message: string): void;
@@ -16,7 +17,8 @@ export async function compareLoadedShowLogCommits(
   baseCommitHash: string,
   compareCommitHash: string,
   compareResultsPresenter: CompareResultsPresenter,
-  ui?: ShowLogCommitCompareUi
+  ui?: ShowLogCommitCompareUi,
+  loadChanges: ComparisonChangesLoader = loadComparisonChanges
 ): Promise<void> {
   const base = entries.find((entry) => entry.hash === baseCommitHash);
   const compare = entries.find((entry) => entry.hash === compareCommitHash);
@@ -32,7 +34,7 @@ export async function compareLoadedShowLogCommits(
       { refName: compare.hash, label: compare.shortHash },
       { source: 'showLog', request }
     );
-    const changes = await repository.diffBetween(base.hash, compare.hash);
+    const changes = await loadChanges(repository, base.hash, compare.hash);
     if (!isCompareResultsRequestCurrent(request, repository)) {
       return;
     }

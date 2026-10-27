@@ -208,7 +208,7 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.match(html, /if \(selectedCommitHashes\.length !== 2 \|\| !selectedCommitHashes\.includes\(commitHash\)\)/);
   assert.match(html, /function getCherryPickCommitHashes\(commitHash\)/);
   assert.match(html, /vscode\.setState\(/);
-  assert.match(html, /if \(event\.ctrlKey && event\.button === 0\)/);
+  assert.match(html, /if \(\(event\.ctrlKey \|\| event\.metaKey\) && event\.button === 0\)/);
   assert.match(html, /selectCommit\(commitHash, true\);\s*closeContextMenu\(\);\s*render\(\);\s*return;/s);
   assert.match(html, /closeContextMenu\(\);\s*if \(event\.button === 0 && clearSelectedCommitHashes\(\)\) \{\s*render\(\);\s*\}\s*flushPendingCommitFileFilter\(\);\s*postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
   assert.doesNotMatch(html, /selectCommit\(commitHash, false\);\s*closeContextMenu\(\);\s*render\(\);\s*postMessage\(\{ type: 'toggleCommit', commitHash \}\);/s);
@@ -266,12 +266,12 @@ test('renders a table-like show log webview shell with graph column and inline c
   assert.doesNotMatch(html, /Copy Reference Name/);
   assert.match(html, /type: 'copyCommitHash', commitHash: state\.commitHash/);
   assert.match(html, /type: 'copyReferenceName', commitHash: state\.commitHash, refName/);
-  assert.match(html, /data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*copyReferenceNameMenu/s);
+  assert.match(html, /data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*formatPatchMenu\s*\+\s*copyReferenceNameMenu/s);
   assert.doesNotMatch(html, /data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="copyCommitHash">Copy Hash<\/button>'/s);
   assert.match(html, /data-menu-action="cherryPickCommits">Cherry Pick<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="resetToCommit">Reset to this<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="copyCommitHash">Copy Hash<\/button>'\s*\+\s*copyReferenceNameMenu/s);
   assert.match(html, /function isMultiSelectedContext\(commitHash\)/);
   assert.match(html, /if \(compareSelection\) \{\s*contextMenu\.innerHTML = ''\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="compareCommits">Compare<\/button>'\s*\+\s*'<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>'/s);
-  assert.match(html, /if \(compareSelection\) \{[\s\S]*?return;\s*\}\s*if \(isMultiSelectedContext\(commitHash\)\) \{\s*contextMenu\.innerHTML = '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>';/s);
+  assert.match(html, /if \(compareSelection\) \{[\s\S]*?return;\s*\}\s*if \(isMultiSelectedContext\(commitHash\)\) \{\s*contextMenu\.innerHTML = '<button class="context-menu-item" type="button" data-menu-action="cherryPickCommits">Cherry Pick<\/button>' \+ formatPatchMenu;/s);
   assert.doesNotMatch(html, /if \(isMultiSelectedContext\(commitHash\)\) \{[\s\S]*?copyCommitHash[\s\S]*?showContextMenuAt\(clientX, clientY\);\s*return;/s);
   assert.doesNotMatch(html, /canCompareWithWorktree/);
   assert.doesNotMatch(html, /function isSingleSelectedCommit\(commitHash\)/);

@@ -4,6 +4,20 @@ import assert from 'node:assert/strict';
 import { RevisionGraphMessageDispatcher } from '../src/revisionGraph/messageDispatcher';
 import { RevisionGraphMessage, RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Apply Patch rejects missing and replayed repository origins before routing', async () => {
+  const dispatcher = new RevisionGraphMessageDispatcher(); const hash = 'a'.repeat(40);
+  const state = dispatcher.bindState({ ...createReadyRevisionGraphState(), currentHeadName: 'main',
+    references: [{ id: 'head', name: 'main', kind: 'head', hash, title: 'main' }] });
+  const message = { type: 'apply-patch', refName: 'main', commitHash: hash };
+  let calls = 0;
+  for (const origin of [undefined, {}, { ...state.messageOrigin, repositoryPath: '/other' },
+    { ...state.messageOrigin, contextId: 'old' }, state.messageOrigin]) {
+    await dispatcher.dispatch({ ...message, origin }, { currentState: state, currentRepositoryPath: state.repositoryPath,
+      async handleMessage() { calls++; } });
+  }
+  assert.equal(calls, 1);
+});
+
 test('graph rejects unbound actions before resolving an identical reference in the current repository', async () => {
   const dispatcher = new RevisionGraphMessageDispatcher();
   let calls = 0;

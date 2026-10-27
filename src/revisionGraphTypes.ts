@@ -36,6 +36,7 @@ export interface RevisionGraphViewState {
   readonly currentHeadUpstreamName: string | undefined;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
   readonly projectionOptions: RevisionGraphProjectionOptions;
@@ -75,6 +76,7 @@ export interface RevisionGraphRepositoryStatusUpdate {
   readonly currentHeadUpstreamName: string | undefined;
   readonly publishedLocalBranchNames: readonly string[];
   readonly isWorkspaceDirty: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
 }

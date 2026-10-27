@@ -1,5 +1,7 @@
 import { resolveConfiguredGraphLimitPolicy } from './limitPolicy';
 import { RevisionFilePicker } from './revisionFilePicker';
+import { applyPatchFromGraph } from '../workbenchPatchApply';
+import { withPatchEditorState, watchPatchEditors } from '../workbenchPatchFiles';
 import { createRevisionGraphFetchHost } from './fetchHost';
 import { RevisionGraphDescendantFocusPersistence } from './descendantFocusPersistence';
 import * as vscode from 'vscode';
@@ -62,7 +64,7 @@ import {
   RevisionGraphRefreshRequestLike,
   RevisionGraphRepositoryEventKind
 } from '../revisionGraphRefresh';
-import { createScriptOnlyWebviewOptions } from '../webviewOptions';
+import { createScriptOnlyWebviewOptions, createWebviewPanelSurface } from '../webviewOptions';
 import {
   createMutationGuardedRepository,
   RepositoryMutationCoordinator,
@@ -91,16 +93,6 @@ interface ReusableRevisionGraphSnapshot {
   readonly repositoryPath: string;
   readonly snapshot: RevisionGraphSnapshot;
   readonly snapshotOptions: RevisionGraphProjectionOptions;
-}
-
-function createWebviewPanelSurface(panel: vscode.WebviewPanel): RevisionGraphWebviewSurface {
-  return {
-    webview: panel.webview,
-    onDidDispose: (listener) => panel.onDidDispose(listener),
-    setTitle: (title) => {
-      panel.title = title;
-    }
-  };
 }
 
 export class RevisionGraphController implements vscode.Disposable {
@@ -258,14 +250,18 @@ export class RevisionGraphController implements vscode.Disposable {
       showLogPresenter,
       prepareBugBisect: (repository, revision, refKind) => this.bugBisect?.prepare(repository, revision, refKind) ?? Promise.resolve(),
       controlBugBisect: (repository, message) => this.bugBisect?.control(repository, message) ?? Promise.resolve(),
-      rehydrateWebview: () => {
-        this.rehydrateWebview();
-      },
+      rehydrateWebview: () => this.rehydrateWebview(),
       writeClipboard: (text) => vscode.env.clipboard.writeText(text),
       pickRepository: () => pickRevisionGraphRepository(this.git, true),
       openUnifiedDiff: (repository, left, right) =>
         openUnifiedDiffDocument(repository, left, right, this.backend),
       openFileAtRevision: (repository, commit) => this.revisionFilePicker.open(repository, commit, () => this.currentRepository?.rootUri.fsPath === repository.rootUri.fsPath),
+      applyPatch: (repository, branchName, commitHash) => {
+        const view = this.view;
+        return applyPatchFromGraph(repository, { branchName, commitHash }, this.mutationCoordinator,
+          () => !!view && this.view === view && this.currentRepository?.rootUri.fsPath === repository.rootUri.fsPath,
+          () => this.refresh('full-rebuild'));
+      },
       loadCommitShortStat: (repository, commitHash) =>
         loadCommitShortStat(repository.rootUri.fsPath, commitHash, this.commitShortStatAbortController.signal),
       openCommitOnRemote: (repository, commitHash) =>
@@ -301,9 +297,7 @@ export class RevisionGraphController implements vscode.Disposable {
       clearLayoutCache: () => {
         return this.clearLayoutCache();
       },
-      traceWebviewLoadEvent: (phase, durationMs, detail, requestId) => {
-        this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId);
-      },
+      traceWebviewLoadEvent: (phase, durationMs, detail, requestId) => this.loadTrace.traceWebviewLoadEvent(phase, durationMs, detail, requestId),
       createRemoteTagPublicationRequestContext: (repository) =>
         this.remoteTagStatePublisher.createRequestContext(repository),
       postRemoteTagStateIfCurrent: (requestContext, tagName, state) => {
@@ -365,6 +359,9 @@ export class RevisionGraphController implements vscode.Disposable {
     this.view = view;
     this.syncViewTitle();
     this.viewDisposables.push(
+      watchPatchEditors(() => {
+        if (this.currentRepository && !this.currentState.loading) this.postHostMessage(createRevisionGraphRepositoryStatusUpdateMessage(this.currentRepository.rootUri.fsPath, this.currentState));
+      }),
       view.onDidDispose(() => {
         if (this.view === view) {
           this.messageDispatcher.invalidate(); this.actionProgress.invalidate(); this.renderCoordinator.cancel();
@@ -672,7 +669,7 @@ export class RevisionGraphController implements vscode.Disposable {
   }
 
   private postHostMessage(message: RevisionGraphViewHostMessage): void {
-    void this.view?.webview.postMessage(this.loadTrace.withHostTraceContext(message));
+    void this.view?.webview.postMessage(this.loadTrace.withHostTraceContext(withPatchEditorState(message)));
   }
 
   private postCurrentState(): void {

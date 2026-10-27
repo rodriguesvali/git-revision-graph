@@ -2,6 +2,7 @@ import { ChangeQuickPickItem } from '../changePresentation';
 import { Repository } from '../git';
 import type { CompareResultsRequest } from '../compareResults/requestOwnership';
 import { RevisionGraphRefreshRequestLike } from '../revisionGraphRefresh';
+import type { ComparisonChangesLoader } from '../compareResults/endpointChanges';
 
 export type RefActionKind = 'head' | 'branch' | 'remote' | 'tag' | 'stash' | 'commit';
 export type MergeRefActionKind = Extract<RefActionKind, 'branch' | 'remote' | 'tag'>;
@@ -135,6 +136,7 @@ export interface AncestryInspector {
 }
 
 export interface RefActionServices {
+  readonly loadComparisonChanges: ComparisonChangesLoader;
   readonly resolveComparisonRevision?: (repository: Repository, revision: string) => Promise<string>;
   readonly ui: RefActionUi;
   readonly diffPresenter: DiffPresenter;

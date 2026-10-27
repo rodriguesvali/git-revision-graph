@@ -167,6 +167,7 @@ export function createRepository(options: {
     async show(_ref: string, _path: string): Promise<string> {
       return '';
     },
+    async apply(_patch: string, _reverse?: boolean): Promise<void> {},
     async diffBetween(_ref1: string, _ref2: string): Promise<Change[]> {
       return diffBetween;
     },

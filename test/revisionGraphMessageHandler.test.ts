@@ -453,11 +453,22 @@ test('RevisionGraphMessageHandler posts current state when stash removal is canc
   assert.equal(currentStatePosts, 1);
 });
 
+test('graph Apply Patch routes its exact branch and pinned HEAD through the current repository', async () => {
+  const repository = createRepository('/repo'); const calls: unknown[] = [];
+  const handler = new RevisionGraphMessageHandler(createHost({
+    getCurrentRepository: () => repository,
+    async applyPatch(repo, branch, hash) { calls.push([repo, branch, hash]); }
+  }));
+  await handler.handleMessage({ type: 'apply-patch', refName: 'main', commitHash: 'a'.repeat(40) });
+  assert.deepEqual(calls, [[repository, 'main', 'a'.repeat(40)]]);
+});
+
 function createHost(
   overrides: Partial<RevisionGraphMessageHandlerHost> = {}
 ): RevisionGraphMessageHandlerHost {
   const state = createReadyRevisionGraphState();
   const host: RevisionGraphMessageHandlerHost = {
+    async applyPatch() {},
     actionServices: createActionServices([]),
     showLogPresenter: {
       async showSource() {}
@@ -516,6 +527,7 @@ function createHost(
 
 function createActionServices(informationMessages: string[]): RefActionServices {
   return {
+    loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
     ui: {
       async pickChange() {
         return undefined;

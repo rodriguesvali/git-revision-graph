@@ -1,4 +1,5 @@
 type RevisionGraphWebviewContextMenuAction =
+  | 'apply-patch'
   | 'open-file-at-revision'
   | 'find-bug'
   | 'abort-merge'
@@ -49,6 +50,7 @@ interface RevisionGraphWebviewContextMenuPlanInput {
   readonly currentHeadName: string | null;
   readonly publishedLocalBranchNames: ReadonlySet<string>;
   readonly isWorkspaceDirty: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly hasMergeConflicts: boolean;
   readonly hasConflictedMerge: boolean;
   readonly mergeBlockedTargets: ReadonlySet<string>;
@@ -196,6 +198,11 @@ function createRevisionGraphWebviewTargetContextMenuPlan(
 ): RevisionGraphWebviewContextMenuPlan {
   const items: RevisionGraphWebviewContextMenuItem[] = [];
   addRevisionGraphWebviewInspectionItems(items, input.target, true);
+  if (input.target.kind === 'head' && input.target.name === input.currentHeadName) {
+    addRevisionGraphWebviewContextMenuItem(items, 'Workspace', 'Apply Patch…', 'apply-patch', {
+      disabled: input.isWorkspaceDirty || input.hasUnsavedChanges || input.hasMergeConflicts || input.hasConflictedMerge
+    });
+  }
   addRevisionGraphWebviewContextMenuItem(
     items,
     'Compare',

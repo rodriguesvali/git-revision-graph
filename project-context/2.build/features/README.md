@@ -1,7 +1,7 @@
 # Feature Build Artifacts
 
 Status: Active
-Last consolidated: 2026-10-26
+Last consolidated: 2026-10-27
 
 Use the `Current Active Features` list below as the authoritative index for active or next-release
 work. Older artifacts may remain in this directory to preserve release links and implementation
@@ -16,6 +16,11 @@ The published baseline is 1.7.5 by maintainer confirmation on the same date.
 
 - [1.7.6-release-cycle-opening.md](1.7.6-release-cycle-opening.md): align version
   metadata, release records and opening verification.
+- [1.7.6-compare-endpoints.md](1.7.6-compare-endpoints.md): align comparison lists with
+  exact endpoint file diffs and patch export, including independently committed equal trees.
+- [1.7.6-patch-workflows.md](1.7.6-patch-workflows.md): Show Log Format Patch (one
+  file per selected commit),
+  complete Compare Results Save Patch and guarded clean-HEAD worktree application.
 - [1.7.6-graph-open-file.md](1.7.6-graph-open-file.md): Open File at Revision…
   from graph references/commits, bounded snapshot listing, native search and
   lifecycle cancellation, reusing historical file opening.
@@ -24,6 +29,12 @@ The published baseline is 1.7.5 by maintainer confirmation on the same date.
   passing automated checks and remaining manual delivery evidence.
 - [open-file-feasibility.md](open-file-feasibility.md): discovery evidence and
   alternatives supporting the 1.7.6 plan.
+
+Discovery supporting the approved patch implementation:
+
+- [patch-workflows-feasibility.md](patch-workflows-feasibility.md): Format Patch
+  from Show Log commits, Save Patch for every comparison file beside Unified Diff,
+  and Apply Patch only on the clean, checked-out branch's graph menu.
 
 ## Published Release Artifacts — 1.7.5
 

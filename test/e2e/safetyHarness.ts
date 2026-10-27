@@ -8,13 +8,26 @@ export class SafetyHarness implements vscode.Disposable {
   readonly panels: ObservedPanel[] = [];
   readonly quickPicks: vscode.QuickPick<vscode.QuickPickItem>[] = [];
   readonly errors: string[] = [];
+  readonly information: string[] = [];
   readonly confirmations: string[] = [];
   readonly allowedConfirmations = new Set(['Revert File', 'Checkout to: other']);
+  saveDestination: vscode.Uri | undefined;
+  readonly saveSuggestions: vscode.Uri[] = [];
+  patchInput: vscode.Uri | undefined;
+  patchDirectory: vscode.Uri | undefined;
   selectedRoot: string;
   private readonly restores: (() => void)[] = [];
   constructor(readonly roots: readonly string[], extensionPath: string) {
     const api = createRequire(path.join(extensionPath, 'out', 'extension.js'))('vscode') as typeof vscode;
     this.selectedRoot = roots[0];
+    this.replace(api.window, 'showSaveDialog', async (options: vscode.SaveDialogOptions) => {
+      if (options.defaultUri) this.saveSuggestions.push(options.defaultUri);
+      return this.saveDestination;
+    });
+    this.replace(api.window, 'showOpenDialog', async (options: vscode.OpenDialogOptions) => {
+      const selected = options.canSelectFolders ? this.patchDirectory : this.patchInput;
+      return selected ? [selected] : undefined;
+    });
     const createPanel = api.window.createWebviewPanel;
     this.replace(api.window, 'createWebviewPanel', ((...args: Parameters<typeof createPanel>) => {
       const observed = new ObservedPanel(createPanel(...args), args[0]);
@@ -46,6 +59,9 @@ export class SafetyHarness implements vscode.Disposable {
       this.errors.push(message);
       return undefined;
     }));
+    this.replace(api.window, 'showInformationMessage', async (message: string) => {
+      this.information.push(message); return undefined;
+    });
   }
   async panel(viewType: string): Promise<ObservedPanel> {
     await waitFor(() => this.panels.some(panel => panel.viewType === viewType && !panel.disposed), viewType);

@@ -1,6 +1,7 @@
 import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Change, Repository } from '../../git';
+import { loadComparisonChanges } from '../../compareResults/endpointChanges';
 import {
   REVISION_LOG_FILTER_SCAN_MAX_COMMITS,
   type RevisionLogEntry,
@@ -98,7 +99,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     commitHash: string,
     parentHash?: string
   ): Promise<readonly Change[]> {
-    return repository.diffBetween(parentHash ?? EMPTY_TREE_HASH, commitHash);
+    return loadComparisonChanges(repository, parentHash ?? EMPTY_TREE_HASH, commitHash);
   }
 
   private async loadFilteredRevisionLog(

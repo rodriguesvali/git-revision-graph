@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.6 - Unreleased
 
+### Comparisons
+
+- Compare the two selected revision endpoints consistently in the file list,
+  individual diffs, Unified Diff and Save Patch. Independently committed branches
+  with identical contents no longer list changes from their common ancestor.
+- Expand root commits against the empty tree without requiring a merge base.
+
+### Patches
+
+- Suggest comparison patch filenames with the source/target short hashes and an
+  incremental suffix; worktree targets are explicit and cancelled saves keep the number.
+- Export non-merge Show Log commits with **Format Patch…**, including multi-selection
+  with one numbered `.patch` file per commit in a chosen folder.
+- Save every file change in Compare Results with **Save Patch…** beside Unified
+  Diff, including binary content and ignoring active filters or row selection.
+- Apply one patch from the checked-out branch's graph menu with a clean workspace
+  and no unsaved editors. Check applicability and confirm before changing files;
+  changes remain unstaged and no commit is created.
+
 ### File Opening
 
 - Open a file directly from a graph reference or commit with **Open File at

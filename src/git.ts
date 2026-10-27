@@ -102,6 +102,7 @@ export interface Repository {
   show(ref: string, path: string): Promise<string>;
   diffBetween(ref1: string, ref2: string): Promise<Change[]>;
   diffWith(ref: string): Promise<Change[]>;
+  apply(patch: string, reverse?: boolean): Promise<void>;
   checkout(treeish: string): Promise<void>;
   createBranch(name: string, checkout: boolean, ref?: string): Promise<void>;
   deleteBranch(name: string, force?: boolean): Promise<void>;

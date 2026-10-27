@@ -55,7 +55,7 @@ test('compares two loaded show log commits through compare results', async () =>
       async showErrorMessage(message) {
         messages.push(message);
       }
-    }
+    }, (repository, left, right) => repository.diffBetween(left, right)
   );
 
   assert.deepEqual(comparisons, [
@@ -109,7 +109,7 @@ test('ignores a stale Show Log comparison after newer Compare Results ownership'
       async showErrorMessage(message) {
         messages.push(message);
       }
-    }
+    }, (repository, left, right) => repository.diffBetween(left, right)
   );
 
   assert.equal(compareCalls, 0);
@@ -141,7 +141,7 @@ test('compares two loaded show log commits without a custom UI on non-empty diff
         comparisons.push({ left, right, changes });
       },
       async showWithWorktree() {}
-    }
+    }, undefined, (repository, left, right) => repository.diffBetween(left, right)
   );
 
   assert.deepEqual(comparisons, [
@@ -174,7 +174,7 @@ test('ignores show log commit comparisons when a commit is not loaded', async ()
     {
       showInformationMessage() {},
       async showErrorMessage() {}
-    }
+    }, (repository, left, right) => repository.diffBetween(left, right)
   );
 
   assert.equal(compareCalls, 0);
@@ -208,7 +208,7 @@ test('reports when loaded show log commits have no differences', async () => {
       async showErrorMessage(message) {
         messages.push(message);
       }
-    }
+    }, (repository, left, right) => repository.diffBetween(left, right)
   );
 
   assert.deepEqual(messages, ['No differences found between aaaaaaa and bbbbbbb.']);

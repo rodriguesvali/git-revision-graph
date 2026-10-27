@@ -1,7 +1,7 @@
 # Release Readiness
 
 Status: `1.7.6` development cycle open; published baseline `1.7.5`
-Last consolidated: 2026-10-26
+Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
@@ -22,6 +22,10 @@ workflow discussion. The [graph feature record](../2.build/features/1.7.6-graph-
 tracks searchable full-snapshot file selection, pinned opening and lifecycle
 cancellation, extending the original review-panel scope.
 
+The maintainer then approved [patch workflows](../2.build/features/1.7.6-patch-workflows.md):
+Show Log Format Patch (one file per selected commit), comparison-wide Save Patch beside Unified Diff, and Apply Patch
+only from the clean checked-out branch's graph menu. Import changes only the worktree.
+
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Verified on 2026-10-26 | All three fields declare 1.7.6; JSON comparison against HEAD confirms every other manifest/lockfile field is unchanged. |
@@ -30,8 +34,12 @@ cancellation, extending the original review-panel scope.
 | Opening document checks | Passed on 2026-10-26 | 105 local Markdown links resolve; final diff review and `git diff --check` passed. |
 | Open File implementation | Passed automated verification on 2026-10-26 | Current and read-only historical opening; disabled absent sides, original/renamed paths, pinned refs and stale-origin guards. `npm test`: 1,157 passed, zero failures/cancellations/skips, including production/webview builds. |
 | Graph Open File at Revision | Implemented; verified on 2026-10-26 | Full suite: 1,171 passed, zero failures/skips, including builds. Real VS Code 1.100.0/stable 1.143.1 branch menu/native search/acceptance, original path after branch advancement, cancel and A→B→A passed. Context guards use repository paths because vscode.git returns fresh wrapper objects. Empty/large-tree and malformed/stale inputs have deterministic coverage; manual keyboard/theme/Windows remain pending. |
+| Patch workflows | Implemented; automated verification passed on 2026-10-27 | `npm test`: 1,204 passed, zero failures/skips, including builds. Native VS Code 1.100.0/stable 1.143.1 full safety matrices passed on Linux/Xvfb: all comparison files despite zero filter matches, Show Log single/multi Format Patch (one numbered file per exact selected commit), dirty-editor/menu updates and native worktree import with unchanged HEAD/index. Private index/input snapshots, exact origin/HEAD guards, 32 MiB bounds and sparse-checkout rejection are covered; Windows/dialog/keyboard/theme checks remain manual. |
+| Endpoint comparison correction | Automated verification passed on 2026-10-27 | [Exact endpoints](../2.build/features/1.7.6-compare-endpoints.md): graph/Show Log lists now match file diffs, Unified Diff and Save Patch, including independently committed equal trees, one-sided changes, renames and root commits. `npm test`: 1,208 passed; platform: 53 passed; minimum 1.100.0/stable 1.143.1 full native safety matrices passed on Linux/Xvfb. Manual original-repository/Windows/keyboard/theme smoke remains pending. |
+| Comparison patch filenames | Automated verification passed on 2026-10-27 | Save Patch suggests `from<source8>to<target8>compare_<number>.patch` (`toworktree` for workspace targets), per ordered comparison/repository. Existing matching names in the default folder and successful session saves determine the next number; cancel/failure does not consume it. `npm test`: 1,211 passed; platform: 53 passed. Native minimum/stable full safety matrices passed, including consecutive suggestions while saving outside the default folder. |
+| Dependency audit | Known development-only findings; maintainer chose to await upstream stable integration | Audit on 2026-10-26 reported two high entries for the same MSAL advisory through VSCE/Azure Identity; production-only audit reported zero. No override or dependency change was applied. Re-audit before publication and revisit if stable upstream integration is still unavailable. |
 | Feature regression and host smoke | Automated minimum/stable checks passed on Linux/Xvfb | Real VS Code 1.100.0 and stable 1.143.1: current/dirty editors, pinned source/target rename after branch movement and Show Log opening. Full existing two-repository safety scenarios also pass. Manual keyboard/theme, Windows paths and current non-text editor checks remain in the [smoke matrix](extension-host-smoke-matrix.md). |
-| Platform/quality and candidate checks | Local checks passed; final hosted CI/package pending | Latest Linux checks: 53 platform tests; quality passed for 313 files / 2,882 functions. Graph controller/interactions ceilings reduced to 739/887 lines; prior review-panel reductions retained. Graphify AST refresh: 6,720 nodes / 13,953 edges / 508 communities. No gate was weakened. |
+| Platform/quality and candidate checks | Local checks passed on 2026-10-27; final hosted CI/package pending | 53 platform tests; quality passed for 330 files / 2,961 functions. Compare/controller/interactions/Show Log ceilings only tightened. Graphify AST refresh: 6,853 nodes / 14,416 edges / 518 communities. VSCE preview lists 714 files, including patch modules and excluding development sources; this is not archive/install evidence. No gate was weakened. |
 | VSIX, install, tag and Marketplace | Not performed in this cycle | Opening does not authorize packaging or publication. Record final artifact/source identity and explicit delivery authorization separately. |
 
 Before publication, rollback of cycle opening restores only the 1.7.5 version and

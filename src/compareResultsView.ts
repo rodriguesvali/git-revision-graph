@@ -1,4 +1,6 @@
+import { openCompareUnifiedDiff } from './compareResults/unifiedDiff';
 import { openCompareResultFile } from './compareResults/fileOpen';
+import { saveComparePatch } from './compareResults/patchExport';
 import * as vscode from 'vscode';
 
 import type { Change, Repository } from './git';
@@ -36,7 +38,6 @@ import type { CompareBriefingGenerator } from './compareResults/aiBriefing';
 import { CompareBriefingController } from './compareResults/briefingController';
 import { CompareResultsReviewSessions } from './compareResults/reviewSessions';
 import {
-  prepareCompareResultsWorktreeUnifiedDiff,
   refreshCompareResultsWorktreeComparison
 } from './compareResults/worktreeRefresh';
 import {
@@ -44,10 +45,6 @@ import {
   type CompareResultsRequest
 } from './compareResults/requestOwnership';
 import type { RevisionGraphDocumentBackend } from './revisionGraph/backend';
-import {
-  openUnifiedDiffDocument,
-  openUnifiedDiffWithWorktreeDocument
-} from './revisionGraph/repository/log';
 import type { CompareResultsRevealOptions, RefSelection } from './refActions';
 import { createRetainedScriptWebviewPanelOptions } from './webviewOptions';
 import { handleWebviewMessageSafely } from './webviewMessageBoundary';
@@ -62,6 +59,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
   private state: CompareResultsState = { kind: 'empty' };
   private panel: vscode.WebviewPanel | undefined;
   private openingUnifiedDiff = false;
+  private savingPatch = false;
   private readonly requestOwner = new CompareResultsRequestOwner();
   private readonly reviewSessions = new CompareResultsReviewSessions();
   private readonly briefingController: CompareBriefingController;
@@ -78,6 +76,7 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     cancelBriefing: () => this.briefingController.cancel(),
     generateBriefing: () => this.briefingController.generate(),
     unifiedDiff: () => this.openUnifiedDiff(),
+    savePatch: () => this.savePatch(),
     worktree: (itemId) => this.compareItemWithWorktree(itemId),
     revert: (itemId) => this.revertItem(itemId)
   };
@@ -337,6 +336,17 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     this.briefingController.reset();
   }
 
+  private async savePatch(): Promise<void> {
+    if (this.savingPatch) return;
+    this.savingPatch = true;
+    void this.panel?.webview.postMessage({ type: 'patchProgress', saving: true });
+    try { await saveComparePatch(() => this.state); }
+    finally {
+      this.savingPatch = false;
+      void this.panel?.webview.postMessage({ type: 'patchProgress', saving: false });
+    }
+  }
+
   private async openUnifiedDiff(): Promise<void> {
     if (this.openingUnifiedDiff) {
       return;
@@ -349,55 +359,9 @@ export class CompareResultsViewProvider implements vscode.Disposable {
     this.openingUnifiedDiff = true;
     this.postUnifiedDiffProgress(true);
     try {
-      if (this.state.kind === 'between') {
-        await openUnifiedDiffDocument(
-          this.state.repository,
-          this.state.left.refName,
-          this.state.right.refName,
-          this.backend
-        );
-      } else {
-        const state = this.state;
-        let preparation;
-        try {
-          preparation = await prepareCompareResultsWorktreeUnifiedDiff(
-            state,
-            () => this.state
-          );
-        } catch (error) {
-          await showModalErrorMessage(
-            toOperationError(
-              'Could not refresh Compare Results before opening the unified diff.',
-              error
-            ),
-            { modal: true }
-          );
-          return;
-        }
-        if (!preparation) {
-          return;
-        }
-
-        this.reviewSessions.preserveWorktreeRefresh(state, preparation.nextState);
-        this.state = preparation.nextState;
-        if (!preparation.request) {
-          this.refresh();
-          this.disposePanel();
-          if (preparation.infoMessage) {
-            void vscode.window.showInformationMessage(preparation.infoMessage);
-          }
-          return;
-        }
-
-        this.refresh();
-        await openUnifiedDiffWithWorktreeDocument(
-          preparation.request.repository,
-          preparation.request.refName,
-          preparation.request.label,
-          preparation.request.untrackedPaths,
-          this.backend
-        );
-      }
+      await openCompareUnifiedDiff({ getState: () => this.state,
+        update: state => { this.reviewSessions.preserveWorktreeRefresh(this.state, state); this.state = state; this.refresh(); },
+        close: () => this.disposePanel() }, this.backend);
     } finally {
       this.openingUnifiedDiff = false;
       this.postUnifiedDiffProgress(false);

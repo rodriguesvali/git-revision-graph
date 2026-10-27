@@ -9,7 +9,7 @@ function isRevisionGraphWebviewHostState(value: unknown): value is RevisionGraph
     && isOptionalString(value.currentHeadName)
     && isOptionalString(value.currentHeadUpstreamName)
     && isStringArray(value.publishedLocalBranchNames)
-    && typeof value.isWorkspaceDirty === 'boolean'
+    && isPatchWorkspaceState(value)
     && typeof value.hasMergeConflicts === 'boolean'
     && typeof value.hasConflictedMerge === 'boolean'
     && isRevisionGraphWebviewProjectionState(value.projectionOptions, value.automaticLayoutProfile)
@@ -26,6 +26,11 @@ function isRevisionGraphWebviewHostState(value: unknown): value is RevisionGraph
     && typeof value.loading === 'boolean'
     && isOptionalString(value.loadingLabel)
     && isOptionalString(value.errorMessage);
+}
+
+function isPatchWorkspaceState(value: Record<string, unknown>): boolean {
+  return typeof value.isWorkspaceDirty === 'boolean'
+    && (value.hasUnsavedChanges === undefined || typeof value.hasUnsavedChanges === 'boolean');
 }
 
 function isRevisionGraphWebviewProjectionState(options: unknown, automaticProfile: unknown): boolean {

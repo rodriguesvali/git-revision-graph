@@ -51,6 +51,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
   assert.equal(await dispatchCurrent({ type: 'copyReferenceName', commitHash: 'abc123', refName: 'origin/main' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'openCommitOnRemote', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'openCommitDetails', commitHash: 'abc123' }, handlers), true);
+  assert.equal(await dispatchCurrent({ type: 'formatPatch', commitHashes: ['abc123'] }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'compareCommits', baseCommitHash: 'abc123', compareCommitHash: 'def456' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'compareCommitWithWorktree', commitHash: 'abc123' }, handlers), true);
   assert.equal(await dispatchCurrent({ type: 'cherryPickCommits', commitHashes: ['abc123', 'def456'] }, handlers), true);
@@ -68,6 +69,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
     'copyReferenceName:abc123:origin/main',
     'openCommitOnRemote:abc123',
     'openCommitDetails:abc123',
+    'formatPatch:abc123',
     'compareCommits:abc123:def456',
     'compareCommitWithWorktree:abc123',
     'cherryPickCommits:abc123,def456',
@@ -79,6 +81,7 @@ test('dispatchShowLogWebviewMessage routes file and commit actions', async () =>
 
 function createHandlers(calls: string[]): ShowLogMessageHandlers {
   return {
+    formatPatch(hash) { calls.push(`formatPatch:${hash}`); },
     openFileVersion(commitHash, changeId, side) { calls.push(`openFileVersion:${commitHash}:${changeId}:${side}`); },
     ready() {
       calls.push('ready');
@@ -198,4 +201,14 @@ test('file opening actions route their exact side and reject stale origins', asy
   assert.ok(calls[0].endsWith(':worktree'));
   assert.ok(calls[1].endsWith(':source'));
   assert.ok(calls[2].endsWith(':target'));
+});
+
+test('Format Patch routes the explicit selection and rejects stale or unbounded requests', async () => {
+  const calls: string[] = [], handlers = createHandlers(calls);
+  const message = { type: 'formatPatch', commitHashes: ['first', 'third'] };
+  assert.equal(await dispatchCurrent(message, handlers), true);
+  assert.deepEqual(calls, ['formatPatch:first,third']);
+  assert.equal(await dispatchRaw({ ...message, origin: { ...currentOrigin, contextId: 'stale' } }, handlers, currentOrigin), false);
+  assert.equal(await dispatchCurrent({ ...message, commitHashes: Array(1001).fill('first') }, handlers), false);
+  assert.equal(calls.length, 1);
 });

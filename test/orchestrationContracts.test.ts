@@ -10,7 +10,7 @@ import {
   createRepository,
   createRevisionLogEntry
 } from './fakes';
-import type { Change } from '../src/git';
+import type { Change, Repository } from '../src/git';
 import { compareResolvedRefs } from '../src/refActions/compare';
 import { compareLoadedShowLogCommits } from '../src/showLog/commitCompare';
 import { CONCURRENT_REPOSITORY_MUTATION_MESSAGE } from '../src/repositoryMutationWarning';
@@ -199,7 +199,7 @@ test('Compare Results does not recreate a request after its repository closes', 
     ],
     'a'.repeat(40),
     'b'.repeat(40),
-    provider
+    provider, undefined, (repository, left, right) => repository.diffBetween(left, right)
   );
   provider.handleRepositoryClosed(closingRepository);
   stale.resolve([createChange({ uriPath: '/workspace/closing-repo/src/stale.ts' })]);
@@ -910,6 +910,7 @@ function createCompareActionServices(
   messages: string[]
 ): never {
   return {
+    loadComparisonChanges: (repository: Repository, left: string, right: string) => repository.diffBetween(left, right),
     compareResultsPresenter,
     ui: {
       showInformationMessage(message: string) {
@@ -1131,6 +1132,10 @@ function installVscodePanelMock(
       createOutputChannel: () => ({ appendLine() {}, dispose() {} })
     },
     workspace: {
+      textDocuments: [],
+      onDidChangeTextDocument: () => ({ dispose() {} }),
+      onDidSaveTextDocument: () => ({ dispose() {} }),
+      onDidCloseTextDocument: () => ({ dispose() {} }),
       openTextDocument: async (uri: { fsPath: string }) => {
         openedTextDocuments.push(uri.fsPath);
         options.beforeOpenTextDocumentReturn?.();

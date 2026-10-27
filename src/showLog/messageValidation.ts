@@ -19,6 +19,7 @@ export type ShowLogWebviewMessage =
   | { readonly type: 'copyFileName'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'copyFullPath'; readonly commitHash: string; readonly changeId: string }
   | { readonly type: 'openCommitDetails'; readonly commitHash: string }
+  | { readonly type: 'formatPatch'; readonly commitHashes: readonly string[] }
   | { readonly type: 'copyCommitHash'; readonly commitHash: string }
   | { readonly type: 'copyReferenceName'; readonly commitHash: string; readonly refName: string }
   | { readonly type: 'cherryPickCommits'; readonly commitHashes: readonly string[] }
@@ -62,6 +63,7 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
   }
 
   if (getFileOpenSide(message.type)) return validateFileOpenMessage(message, message.type as FileOpenMessageType);
+  if (isCommitHashesMessageType(message.type)) return validateCommitHashesMessage(message, message.type);
 
   switch (message.type) {
     case 'ready':
@@ -83,8 +85,6 @@ export function validateShowLogWebviewMessage(message: unknown): ShowLogWebviewM
       return isBoundedNonEmptyString(message.commitHash) && isBoundedNonEmptyString(message.refName)
         ? { type: 'copyReferenceName', commitHash: message.commitHash, refName: message.refName }
         : undefined;
-    case 'cherryPickCommits':
-      return validateCherryPickMessage(message);
     case 'openFile':
     case 'compareWithWorktree':
     case 'revertFileToCommit':
@@ -128,10 +128,14 @@ function validateFileOpenMessage(message: Record<string, unknown>, type: FileOpe
     ? { type, commitHash: message.commitHash, changeId: message.changeId } : undefined;
 }
 
-function validateCherryPickMessage(message: Record<string, unknown>): ShowLogWebviewMessage | undefined {
+function validateCommitHashesMessage(message: Record<string, unknown>, type: 'formatPatch' | 'cherryPickCommits'): ShowLogWebviewMessage | undefined {
   return isBoundedStringArray(message.commitHashes)
     && message.commitHashes.length > 0
     && message.commitHashes.every((hash) => hash.trim().length > 0)
-    ? { type: 'cherryPickCommits', commitHashes: message.commitHashes }
+    ? { type, commitHashes: message.commitHashes }
     : undefined;
+}
+
+function isCommitHashesMessageType(type: string): type is 'formatPatch' | 'cherryPickCommits' {
+  return type === 'formatPatch' || type === 'cherryPickCommits';
 }

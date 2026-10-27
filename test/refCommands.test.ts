@@ -27,6 +27,7 @@ function createServices(overrides: Partial<RefCommandServices['ui']> = {}): {
   const refreshRequests: RevisionGraphRefreshRequest[] = [];
 
   const services: RefCommandServices = {
+    loadComparisonChanges: (repository, left, right) => repository.diffBetween(left, right),
     ui: {
       async pickRepository(items) {
         return items[0]?.repository;

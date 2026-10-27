@@ -62,6 +62,24 @@ function createContextMenuPlan(
   });
 }
 
+test('Apply Patch appears only on HEAD and is disabled for dirty files or unsaved editors', () => {
+  const runtime = createWebviewRuntime();
+  const target = createContextMenuTarget('head', 'main');
+  const action = (overrides: Record<string, unknown>) => createContextMenuPlan(runtime, target, overrides)
+    .items.find((item: any) => item.action === 'apply-patch');
+  assert.equal(action({}).disabled, false);
+  for (const flag of ['isWorkspaceDirty', 'hasUnsavedChanges', 'hasMergeConflicts', 'hasConflictedMerge']) {
+    assert.equal(action({ [flag]: true }).disabled, true);
+  }
+  for (const kind of ['branch', 'tag', 'remote', 'commit', 'stash']) {
+    const plan = createContextMenuPlan(runtime, createContextMenuTarget(kind, 'main'));
+    assert.equal(plan.items.some((item: any) => item.action === 'apply-patch'), false);
+    assert.equal(plan.items.some((item: any) => item.label === 'Format Patch…'), false);
+  }
+  assert.equal(action({ currentHeadName: null }), undefined);
+  assert.equal(action({ comparisonTargets: { base: target, compare: createContextMenuTarget('branch', 'other') } }), undefined);
+});
+
 test('treats Bisect Commit as a commit target and centers only when the marker or repository changes', () => {
   const runtime = createWebviewRuntime();
   const reference = { id: 'a::bisect::Bisect Commit', hash: 'a', kind: 'bisect', name: 'Bisect Commit' };
@@ -620,7 +638,7 @@ test('renders structural commit actions for compare and branch creation', () => 
   assert.match(html, /base\.hash === target\.hash/);
   assert.match(html, /compare\.hash === target\.hash/);
   assert.match(html, /function postCompareWithWorktree\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCompareWithWorktreeMessage\(target\)\);/s);
-  assert.match(html, /function postCopyCommitHash\(commitHash\) \{\s*vscode\.postMessage\(createRevisionGraphCopyCommitHashMessage\(commitHash\)\);/s);
+  assert.match(html, /'copy-hash': \(\) => vscode\.postMessage\(createRevisionGraphCopyCommitHashMessage\(target\.hash\)\)/);
   assert.doesNotMatch(html, /Copy Commit Hash/);
   assert.match(html, /function postCopyRefName\(target\) \{\s*vscode\.postMessage\(createRevisionGraphCopyRefNameMessage\(target\)\);/s);
   assert.doesNotMatch(html, /Copy ref name to clipboard/);

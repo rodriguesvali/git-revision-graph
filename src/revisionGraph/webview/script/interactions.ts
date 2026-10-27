@@ -254,6 +254,7 @@
         currentHeadName,
         publishedLocalBranchNames,
         isWorkspaceDirty,
+        hasUnsavedChanges: currentState?.hasUnsavedChanges,
         hasMergeConflicts,
         hasConflictedMerge,
         mergeBlockedTargets,
@@ -309,13 +310,14 @@
       const base = comparisonTargets?.base || target;
       const compare = comparisonTargets?.compare || target;
       return {
+        'apply-patch': () => vscode.postMessage({ type: 'apply-patch', refName: target.name, commitHash: target.hash }),
         'abort-merge': () => postAbortMerge(),
         checkout: () => postCheckout(target),
         'clear-selection': () => { selected.splice(0, selected.length); syncSelection(); },
         'open-file-at-revision': () => vscode.postMessage({ type: 'open-file-at-revision', commitHash: target.hash }),
         'compare-selected': () => postCompareSelected(base, compare),
         'compare-with-worktree': () => postCompareWithWorktree(target),
-        'copy-hash': () => postCopyCommitHash(target.hash),
+        'copy-hash': () => vscode.postMessage(createRevisionGraphCopyCommitHashMessage(target.hash)),
         'copy-ref-name': () => postCopyRefName(target),
         'create-branch': () => postCreateBranch(target),
         'create-tag': () => postCreateTag(target),
@@ -705,10 +707,6 @@
 
     function postCompareWithWorktree(target: RevisionGraphWebviewTarget) {
       vscode.postMessage(createRevisionGraphCompareWithWorktreeMessage(target));
-    }
-
-    function postCopyCommitHash(commitHash: string) {
-      vscode.postMessage(createRevisionGraphCopyCommitHashMessage(commitHash));
     }
 
     function postCopyRefName(target: RevisionGraphWebviewTarget) {

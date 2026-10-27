@@ -1,4 +1,5 @@
 import { renderFileOpenMenuScript } from './fileOpenMenu';
+import { renderCompareResultsPatchScript } from './compareResults/webviewPatch';
 import { renderCompareResultsFileMenuScript } from './compareResults/webviewFileMenu';
 import { renderCompareResultsMessageScript } from './compareResults/webviewMessages';
 import {
@@ -6,7 +7,6 @@ import {
   createWebviewNonce
 } from './webviewSecurity';
 import { renderCompareResultsWebviewStyles } from './compareResults/webviewStyles';
-import type { CompareBriefingState } from './compareResults/aiBriefing';
 import { renderCompareResultsReviewContextScript } from './compareResults/webviewReviewContext';
 import {
   renderCompareResultsActionScript,
@@ -14,35 +14,7 @@ import {
   renderCompareResultsBriefingPanel
 } from './compareResults/webviewBriefing';
 
-export interface CompareResultsWebviewItem {
-  readonly fileOpenActions?: readonly import('./fileOpen').FileOpenAction[];
-  readonly id: string;
-  readonly path: string;
-  readonly originalPath: string | undefined;
-  readonly name: string;
-  readonly directory: string;
-  readonly fullPath: string;
-  readonly status: string;
-  readonly canRevert: boolean;
-  readonly leftRef: string | undefined;
-  readonly rightRef: string | undefined;
-  readonly worktreeRef: string | undefined;
-  readonly worktreeLabel: string | undefined;
-}
-
-export interface CompareResultsWebviewState {
-  readonly messageOrigin?: import('./webviewMessageOrigin').WebviewMessageOrigin;
-  readonly kind: 'empty' | 'loading' | 'results';
-  readonly comparisonId?: string;
-  readonly summary: string;
-  readonly sourceLabel?: string | undefined;
-  readonly targetLabel?: string | undefined;
-  readonly emptyMessage?: string | undefined;
-  readonly canOpenUnifiedDiff: boolean;
-  readonly canGenerateBriefing: boolean;
-  readonly briefing: CompareBriefingState;
-  readonly items: readonly CompareResultsWebviewItem[];
-}
+export type { CompareResultsWebviewItem, CompareResultsWebviewState } from './compareResults/webviewTypes';
 
 export function renderCompareResultsWebviewHtml(): string {
   const nonce = createWebviewNonce();
@@ -67,6 +39,7 @@ export function renderCompareResultsWebviewHtml(): string {
         </div>
         <div class="comparison-meta">
           <button id="unifiedDiffButton" class="toolbar-action" type="button" hidden>Unified Diff</button>
+          <button id="savePatchButton" class="toolbar-action" type="button" hidden>Save Patch…</button>
           ${renderCompareResultsBriefingAction()}
           <div class="result-count" id="resultCount"></div>
           <div id="selectionSummary" class="selection-summary"></div>
@@ -96,6 +69,7 @@ export function renderCompareResultsWebviewHtml(): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     ${renderCompareResultsMessageScript()}
+    ${renderCompareResultsPatchScript()}
     ${renderFileOpenMenuScript()}
     const searchInput = document.getElementById('searchInput');
     const clearSearchButton = document.getElementById('clearSearchButton');

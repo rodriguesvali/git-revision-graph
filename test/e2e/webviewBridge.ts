@@ -14,6 +14,7 @@ export interface PanelState {
   readonly projectionOptions?: Readonly<Record<string, unknown>>;
   readonly kind?: string;
   readonly loading?: boolean;
+  readonly hasUnsavedChanges?: boolean;
   readonly errorMessage?: string;
   readonly messageOrigin?: Origin;
   readonly sourceToken?: string;
@@ -36,7 +37,7 @@ interface Reply {
   readonly state?: PanelState;
   readonly sent: readonly Record<string, unknown>[];
   readonly error?: string;
-  readonly menuItems?: readonly { readonly action: string; readonly label: string }[];
+  readonly menuItems?: readonly { readonly action: string; readonly label: string; readonly disabled?: boolean }[];
   readonly viewOptions?: readonly string[];
 }
 
@@ -178,6 +179,16 @@ function bridgeScript(token: string): string {
    const start = sent.length;
    try {
     if (message.op === 'send') api.postMessage(message.message);
+    if (message.op === 'click') {
+      const control = document.querySelector(message.selector);
+      if (!control || control.disabled || control.hidden) throw Error('Unavailable control: ' + message.selector);
+      control.dispatchEvent(new MouseEvent('click', {bubbles:true, ctrlKey:!!message.ctrlKey, metaKey:!!message.metaKey}));
+    }
+    if (message.op === 'filterCompare') {
+      const input = document.getElementById('searchInput');
+      input.value = message.value;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+    }
     let menuItems, viewOptions;
     if (message.op === 'viewOptions') {
      document.getElementById('viewOptionsButton').click();
@@ -195,7 +206,8 @@ function bridgeScript(token: string): string {
      target.dispatchEvent(new MouseEvent('contextmenu', {bubbles:true,clientX:30,clientY:30}));
      if (message.op === 'inspectMenu') {
       menuItems = Array.from(document.querySelectorAll('[data-menu-action], [data-menu-key]')).map(button => ({
-       action:button.getAttribute('data-menu-action') || button.getAttribute('data-menu-key'), label:button.textContent
+       action:button.getAttribute('data-menu-action') || button.getAttribute('data-menu-key'), label:button.textContent,
+       ...(button.disabled ? {disabled:true} : {})
       }));
      } else {
       const button = document.querySelector('[data-menu-action="' + message.action + '"], [data-menu-key="' + message.action + '"]');

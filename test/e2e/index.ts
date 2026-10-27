@@ -1,4 +1,6 @@
 import { verifyGraphOpenFile } from './graphOpenFile';
+import { verifyPatchWorkflows } from './patchWorkflows';
+import { verifyEndpointComparison } from './endpointComparison';
 import { verifyOpenFile } from './openFile';
 import assert from 'node:assert/strict';
 import { realpathSync } from 'node:fs';
@@ -66,6 +68,8 @@ export async function run(): Promise<void> {
       await verifyCompactView(harness, repositories[0]);
       await verifyOpenFile(harness, repositories[0]);
       await verifyGraphOpenFile(harness, repositories);
+      await verifyPatchWorkflows(harness, repositories[0]);
+      await verifyEndpointComparison(harness, repositories[0]);
       await verifyTagDetachedHead(harness, repositories[0]);
       await verifyBisectTargets(harness, repositories[0]);
       await verifyBisectOwnership(harness, repositories[0]);
