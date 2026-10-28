@@ -96,6 +96,24 @@ test('worktree export includes staged, unstaged, untracked and ignored-but-stage
   assert.deepEqual(f.git('status', '--porcelain=v1', '-z'), before);
 });
 
+test('worktree export handles a staged addition removed from disk and preserves tracked deletions', async t => {
+  const f = await fixture(t);
+  await f.write('staged then removed.txt', 'temporary\n');
+  f.git('add', 'staged then removed.txt');
+  await fs.unlink(path.join(f.root, 'staged then removed.txt'));
+  await fs.unlink(path.join(f.root, 'text.txt'));
+  await f.write('new worktree.txt', 'different new worktree content\n');
+  const before = f.git('status', '--porcelain=v1', '-z');
+  const index = await fs.readFile(path.join(f.root, '.git', 'index'));
+  const patch = await loadComparisonPatch(f.root, f.target);
+  assert.match(patch.toString(), /deleted file mode 100644/);
+  assert.match(patch.toString(), /text\.txt/);
+  assert.match(patch.toString(), /new worktree\.txt/);
+  assert.doesNotMatch(patch.toString(), /staged then removed\.txt/);
+  assert.deepEqual(f.git('status', '--porcelain=v1', '-z'), before);
+  assert.deepEqual(await fs.readFile(path.join(f.root, '.git', 'index')), index);
+});
+
 test('commit export pins exactly one commit, supports roots, and refuses merges', async t => {
   const f = await fixture(t);
   assert.match((await loadCommitPatch(f.root, f.base)).toString(), new RegExp(`^From ${f.base} `));

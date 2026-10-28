@@ -5,6 +5,11 @@ Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
+Worktree patch export now handles staged additions removed from disk without
+blocking other changes. Automated Git-fixture and platform verification cover
+index preservation; manual Compare Results Save Patch smoke remains pending.
+Rollback reverts the export path filtering without changing user files or indices.
+
 Opened on 2026-10-26 with explicit maintainer authorization: “abre o release 1.7.6:
 prepare os artefatos de build”. The maintainer then confirmed “considere a 1.7.5
 como publicada.” Previous published baseline is therefore 1.7.5 by confirmation;

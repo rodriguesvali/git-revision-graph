@@ -15,11 +15,16 @@ export async function loadWorktreePatch(root: string, source: string, signal?: A
     const paths = (await execGitBinaryWithResult(root, [
       'ls-files', '-z', '--cached', '--others', '--exclude-standard'
     ], options)).stdout;
+    // A staged addition removed from disk is absent from HEAD and cannot be
+    // added to the temporary index. HEAD-tracked deletions remain visible to diff.
+    const deleted = (await execGitBinaryWithResult(root, ['ls-files', '-z', '--deleted'], options)).stdout;
+    const missing = new Set(splitPaths(deleted).map(file => file.toString('hex')));
+    const existingPaths = splitPaths(paths).filter(file => !missing.has(file.toString('hex')));
     const gitIndexFile = path.join(temporaryRoot, 'index');
     const pathspec = path.join(temporaryRoot, 'paths');
-    await fs.writeFile(pathspec, paths, { flag: 'wx', mode: 0o600 });
+    await fs.writeFile(pathspec, Buffer.concat(existingPaths.flatMap(file => [file, Buffer.from([0])])), { flag: 'wx', mode: 0o600 });
     await execGit(root, ['read-tree', 'HEAD'], { ...options, gitIndexFile });
-    if (paths.length) {
+    if (existingPaths.length) {
       await execGit(root, ['--literal-pathspecs', 'add', '--force', '--intent-to-add', '--ignore-removal',
         `--pathspec-from-file=${pathspec}`, '--pathspec-file-nul'], { ...options, gitIndexFile });
     }
@@ -30,4 +35,14 @@ export async function loadWorktreePatch(root: string, source: string, signal?: A
   } finally {
     await fs.rm(temporaryRoot, { recursive: true, force: true });
   }
+}
+
+function splitPaths(output: Buffer): Buffer[] {
+  const paths: Buffer[] = [];
+  let start = 0;
+  for (let end = 0; end < output.length; end++) {
+    if (output[end] === 0) { paths.push(output.subarray(start, end)); start = end + 1; }
+  }
+  if (start !== output.length) throw new Error('Git returned an incomplete worktree file list.');
+  return paths;
 }

@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Patches
 
+- Preserve worktree patch export when a staged new file has subsequently been removed.
 - Suggest comparison patch filenames with the source/target short hashes and an
   incremental suffix; worktree targets are explicit and cancelled saves keep the number.
 - Export non-merge Show Log commits with **Format Patch…**, including multi-selection
