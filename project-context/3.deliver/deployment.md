@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-26
+Last consolidated: 2026-10-28
 
 ## Environment
 
@@ -28,6 +28,18 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 
 ## Development Cycle: 1.7.6
 
+- Publication artifacts prepared on 2026-10-28 at the maintainer's request;
+  the maintainer will perform publication. The latest source verification passed
+  1,229 tests, 53 platform tests and the quality gate. The maintainer reported
+  the three review-correction smoke tests passed without environment details.
+- Manifest and both lockfile versions are 1.7.6. A read-only `vsce ls` preview
+  listed 716 entries and included the host, webview, layout worker and the new
+  reference/empty-tree modules. No VSIX or installation was inspected.
+- Fresh `npm audit` reported two high development-only entries for
+  GHSA-xcx6-jx8p-x3h5; `npm audit --omit=dev` reported no vulnerabilities.
+  The prior maintainer decision to await upstream stable integration remains
+  recorded in [release readiness](release.md).
+
 - Graph [Open File at Revision…](../2.build/features/1.7.6-graph-open-file.md) is
   implemented after separate maintainer authorization. Latest source checks:
   1,171 tests including builds, 53 Linux platform tests, quality (313 files /
@@ -37,7 +49,7 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 
 - Opened on 2026-10-26 with explicit maintainer authorization to prepare build
   artifacts. Manifest and both lockfile version fields target 1.7.6; CHANGELOG
-  marks it Unreleased. Runtime/dependency/contribution baselines are unchanged.
+  was initially marked Unreleased. Runtime/dependency/contribution baselines are unchanged.
 - Published baseline is 1.7.5, confirmed by the maintainer on 2026-10-26; exact
   publication date and package/source evidence were not supplied.
 - [Open File](../2.build/features/1.7.6-open-file.md) is implemented after separate
@@ -53,8 +65,8 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
   1.100.0/stable 1.143.1 host safety scenarios passed, including new opening tests.
   Manual keyboard/theme/Windows/non-text editor checks, final hosted CI/package
   checks and installation remain separate pending delivery evidence.
-- No VSIX, tag, installation or Marketplace action is part of this task. Packaging
-  and publication require separate explicit authorization.
+- No VSIX, tag, installation or Marketplace action was performed during artifact
+  preparation; the maintainer retained responsibility for publication.
 - Before publication, rollback restores the 1.7.5 metadata baseline and reverts only
   these planning edits, preserving user files and published fixes.
 

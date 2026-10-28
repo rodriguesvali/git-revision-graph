@@ -1,9 +1,16 @@
 # Release Readiness
 
-Status: `1.7.6` development cycle open; published baseline `1.7.5`
+Status: `1.7.6` release artifacts prepared for maintainer publication; published baseline `1.7.5`
 Last consolidated: 2026-10-28
 
 ## Development release — 1.7.6
+
+The maintainer requested publication artifacts on 2026-10-28 and will publish
+personally. The 1.7.6 changelog is prepared without asserting a publication date.
+The final VSIX, clean-profile installation, release identity and Marketplace
+publication have not been verified or performed. Other manual matrix gaps listed
+below remain distinct from the maintainer-confirmed smoke tests for the three
+review corrections.
 
 Show Log now selects the correct empty tree for root commits in SHA-1 and
 SHA-256 repositories. See the [root commit record](../2.build/features/1.7.6-sha256-root-commit.md).
@@ -66,11 +73,13 @@ only from the clean checked-out branch's graph menu. Import changes only the wor
 | Graph Open File at Revision | Implemented; verified on 2026-10-26 | Full suite: 1,171 passed, zero failures/skips, including builds. Real VS Code 1.100.0/stable 1.143.1 branch menu/native search/acceptance, original path after branch advancement, cancel and A→B→A passed. Context guards use repository paths because vscode.git returns fresh wrapper objects. Empty/large-tree and malformed/stale inputs have deterministic coverage; manual keyboard/theme/Windows remain pending. |
 | Patch workflows | Implemented; automated verification passed on 2026-10-27 | `npm test`: 1,204 passed, zero failures/skips, including builds. Native VS Code 1.100.0/stable 1.143.1 full safety matrices passed on Linux/Xvfb: all comparison files despite zero filter matches, Show Log single/multi Format Patch (one numbered file per exact selected commit), dirty-editor/menu updates and native worktree import with unchanged HEAD/index. Private index/input snapshots, exact origin/HEAD guards, 32 MiB bounds and sparse-checkout rejection are covered; Windows/dialog/keyboard/theme checks remain manual. |
 | Endpoint comparison correction | Automated verification passed on 2026-10-27 | [Exact endpoints](../2.build/features/1.7.6-compare-endpoints.md): graph/Show Log lists now match file diffs, Unified Diff and Save Patch, including independently committed equal trees, one-sided changes, renames and root commits. `npm test`: 1,208 passed; platform: 53 passed; minimum 1.100.0/stable 1.143.1 full native safety matrices passed on Linux/Xvfb. Manual original-repository/Windows/keyboard/theme smoke remains pending. |
-| Comparison patch filenames | Automated verification passed on 2026-10-27 | Save Patch suggests `from<source8>to<target8>compare_<number>.patch` (`toworktree` for workspace targets), per ordered comparison/repository. Existing matching names in the default folder and successful session saves determine the next number; cancel/failure does not consume it. `npm test`: 1,211 passed; platform: 53 passed. Native minimum/stable full safety matrices passed, including consecutive suggestions while saving outside the default folder. |
-| Dependency audit | Known development-only findings; maintainer chose to await upstream stable integration | Audit on 2026-10-26 reported two high entries for the same MSAL advisory through VSCE/Azure Identity; production-only audit reported zero. No override or dependency change was applied. Re-audit before publication and revisit if stable upstream integration is still unavailable. |
+| Comparison patch filenames | Automated verification passed on 2026-10-27 | Save Patch suggests sanitized labels and 8-character hashes, with an incrementing suffix and `worktree` for workspace targets. Existing matching names in the default folder and successful session saves determine the next number; cancel/failure does not consume it. `npm test`: 1,211 passed; platform: 53 passed. Native minimum/stable full safety matrices passed, including consecutive suggestions while saving outside the default folder. |
+| Latest source checks | Passed on 2026-10-28 | `npm test`: 1,229 passed; `npm run test:platform`: 53 passed; `npm run quality:check` passed. Source commit `0a0a0d7` was followed only by documentation changes through `f86e5a6`. The maintainer reported the three review-correction smoke tests passed; platform, VS Code version and individual scenarios were not supplied. |
+| Dependency audit | Known development-only findings; maintainer previously chose to await upstream stable integration | Fresh audit on 2026-10-28 reports two high entries for [GHSA-xcx6-jx8p-x3h5](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5) through VSCE/Azure Identity; production-only audit reports zero. No override or dependency change was applied. |
+| Package file preview | Read-only preview passed on 2026-10-28 | `vsce ls` lists 716 entries, including extension host, webview, layout worker and new reference/empty-tree modules. This is not a VSIX inspection or installation. |
 | Feature regression and host smoke | Automated minimum/stable checks passed on Linux/Xvfb | Real VS Code 1.100.0 and stable 1.143.1: current/dirty editors, pinned source/target rename after branch movement and Show Log opening. Full existing two-repository safety scenarios also pass. Manual keyboard/theme, Windows paths and current non-text editor checks remain in the [smoke matrix](extension-host-smoke-matrix.md). |
 | Platform/quality and candidate checks | Local checks passed on 2026-10-27; final hosted CI/package pending | 53 platform tests; quality passed for 330 files / 2,961 functions. Compare/controller/interactions/Show Log ceilings only tightened. Graphify AST refresh: 6,853 nodes / 14,416 edges / 518 communities. VSCE preview lists 714 files, including patch modules and excluding development sources; this is not archive/install evidence. No gate was weakened. |
-| VSIX, install, tag and Marketplace | Not performed in this cycle | Opening does not authorize packaging or publication. Record final artifact/source identity and explicit delivery authorization separately. |
+| VSIX, install, tag and Marketplace | Pending maintainer action | The maintainer will publish personally. Record the final artifact/source identity, clean-profile installation and publication evidence when available. |
 
 Before publication, rollback of cycle opening restores only the 1.7.5 version and
 planning baseline. Preserve published 1.7.5 fixes, user files and the existing

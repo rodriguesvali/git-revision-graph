@@ -2,22 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.6 - Unreleased
+## 1.7.6
 
 ### Comparisons
 
 - Compare the two selected revision endpoints consistently in the file list,
   individual diffs, Unified Diff and Save Patch. Independently committed branches
   with identical contents no longer list changes from their common ancestor.
-- Expand root commits against the empty tree without requiring a merge base.
+- Expand root commits against the correct empty tree in SHA-1 and SHA-256 repositories.
+- Compare the selected branch, tag or remote even when references share a name.
+
+### Git Safety
+
+- Require a clean workspace before and after confirmation when overwriting the
+  checked-out branch from a remote, preventing a hard reset from discarding local changes.
+- Create branches and tags from the selected reference even when another reference
+  has the same name.
 
 ### Patches
 
-- Suggest readable comparison patch filenames using reference labels and short hashes.
+- Suggest readable comparison patch filenames using reference labels, short hashes
+  and an incremental suffix; worktree targets are explicit and cancelled saves keep the number.
 - Explain how to preserve an exported empty commit when its mailbox is selected in Apply Patch.
 - Preserve worktree patch export when a staged new file has subsequently been removed.
-- Suggest comparison patch filenames with the source/target short hashes and an
-  incremental suffix; worktree targets are explicit and cancelled saves keep the number.
 - Export non-merge Show Log commits with **Format Patch…**, including multi-selection
   with one numbered `.patch` file per commit in a chosen folder.
 - Save every file change in Compare Results with **Save Patch…** beside Unified
@@ -32,7 +39,6 @@ All notable changes to this project will be documented in this file.
   Revision…**, using a searchable snapshot file list and a read-only editor.
 - Keep the selected commit fixed during browsing and cancel obsolete pickers
   when changing repositories or closing the graph.
-
 - Open current worktree files directly from Compare Results and expanded Show Log
   files, preserving unsaved edits and the existing double-click diff workflow.
 - Open explicitly labeled historical versions read-only, with the original path
@@ -41,10 +47,6 @@ All notable changes to this project will be documented in this file.
   files without creating or restoring them.
 - Pin comparison revisions before loading changes so later branch movement does
   not change the historical content opened from the comparison.
-
-### Maintenance
-
-- Open the 1.7.6 development cycle and align package/build metadata.
 
 ## 1.7.5
 

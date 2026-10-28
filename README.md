@@ -58,6 +58,7 @@ Select two visible references or commits to open **Compare Results**, or compare
 the current worktree.
 Comparisons between revisions use their final contents directly. Branches with
 identical contents report no differences even when their commit histories differ.
+When a branch and tag share a name, comparison uses the selected reference.
 
 ![Compare Results with status filters and changed files](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/02-compare-results.png)
 
@@ -96,6 +97,7 @@ the exact selected target; **Show All Branches** is available when broader histo
 - Inspect compact commit history for one target or an explicit `base..compare` range.
 - Search commit metadata, filter by changed files or code, load additional pages automatically,
   and expand commits for changed files.
+- Expand root commits in both SHA-1 and SHA-256 repositories.
 - Open file diffs, compare commits with the worktree, copy hashes and reference names, and open
   supported commits on their hosted remote.
 - Use **Format Patch…** to export non-merge commits with author and message metadata.
@@ -169,6 +171,7 @@ The graph keeps everyday Git actions close to their revision context:
 Workspace-changing actions use confirmations, clean-worktree and conflict checks, repository-scoped
 mutation coordination, and actionable failure messages. Conflicts remain in VS Code Source Control,
 where the normal resolution workflow is already available.
+Overwriting the checked-out branch from a remote requires a clean workspace before and after confirmation.
 
 ## Optional Flow Governance
 
