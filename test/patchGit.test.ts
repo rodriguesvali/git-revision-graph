@@ -152,6 +152,25 @@ test('invalid and multi-message patches are rejected before application', async 
   await assert.rejects(checkPatch(f.root, input.filePath));
 });
 
+test('empty commit mailbox remains exportable and explains why Apply Patch cannot use it', async t => {
+  const f = await fixture(t);
+  f.git('commit', '--allow-empty', '-qm', 'empty commit');
+  const hash = f.git('rev-parse', 'HEAD').toString().trim();
+  const patch = await loadCommitPatch(f.root, hash);
+  assert.match(patch.toString(), new RegExp(`^From ${hash} `));
+  const index = await fs.readFile(path.join(f.root, '.git', 'index'));
+  await assert.rejects(preparePatchInput(patch), /no recognizable patch.*does not create commits.*git am --empty=keep/i);
+  assert.equal(f.git('rev-parse', 'HEAD').toString().trim(), hash);
+  assert.deepEqual(await fs.readFile(path.join(f.root, '.git', 'index')), index);
+  f.git('checkout', '-q', '--detach', f.target);
+  const mailbox = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'grg-empty-mailbox-')), 'empty.patch');
+  t.after(() => fs.rm(path.dirname(mailbox), { recursive: true, force: true }));
+  await fs.writeFile(mailbox, patch);
+  f.git('am', '--empty=keep', mailbox);
+  assert.equal(f.git('show', '-s', '--format=%s', 'HEAD').toString().trim(), 'empty commit');
+  assert.equal(f.git('diff', '--name-only', 'HEAD^', 'HEAD').length, 0);
+});
+
 test('apply check refuses path traversal and protected Git paths without writing files', async t => {
   const f = await fixture(t);
   for (const name of ['../outside.txt', '.git/config']) {

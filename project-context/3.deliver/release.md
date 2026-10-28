@@ -5,6 +5,11 @@ Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
+Empty-commit mailboxes remain exportable. Apply Patch now explains that a mailbox
+without recognizable patch content cannot change the worktree and identifies
+`git am --empty=keep` for preserving an empty commit. Manual error presentation
+remains pending; rollback removes the input check and associated documentation.
+
 Worktree patch export now handles staged additions removed from disk without
 blocking other changes. Automated Git-fixture and platform verification cover
 index preservation; manual Compare Results Save Patch smoke remains pending.

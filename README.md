@@ -49,6 +49,8 @@ editors. Select one patch and confirm its destination and change summary.
 Changes remain unstaged; no commit is created. Detached HEAD, patch series and
 submodule imports and sparse-checkout application are not supported. Keep an input patch outside the repository
 if it would otherwise be an untracked file.
+An exported empty commit contains no file changes to apply; use `git am --empty=keep`
+if you want to recreate that commit from its mailbox.
 
 ## Compare Without Losing Context
 

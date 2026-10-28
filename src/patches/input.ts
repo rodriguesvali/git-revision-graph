@@ -12,11 +12,15 @@ export interface PatchInput {
 export function validatePatchBytes(bytes: Buffer): void {
   if (!bytes.length) throw new Error('The patch is empty.');
   if (bytes.length > PATCH_MAX_BYTES) throw new Error('The patch exceeds the 32 MiB limit.');
-  const messages = bytes.toString('latin1').match(/^From [0-9a-f]{40,64} Mon Sep 17 00:00:00 2001\r?$/gm);
+  const text = bytes.toString('latin1');
+  const messages = text.match(/^From [0-9a-f]{40,64} Mon Sep 17 00:00:00 2001\r?$/gm);
   if ((messages?.length ?? 0) > 1) {
     throw new Error('Patch series are not supported. Apply one patch at a time; this action does not create commits.');
   }
-  if (/^(?:index [^\r\n]+ |(?:new|old|deleted file|new file) mode )160000\r?$/m.test(bytes.toString('latin1'))) {
+  if (messages?.length === 1 && !/^(?:diff |--- )/m.test(text)) {
+    throw new Error('This mailbox contains no recognizable patch. Apply Patch does not create commits; to preserve an empty commit, use git am --empty=keep.');
+  }
+  if (/^(?:index [^\r\n]+ |(?:new|old|deleted file|new file) mode )160000\r?$/m.test(text)) {
     throw new Error('Submodule patches are not supported.');
   }
 }
