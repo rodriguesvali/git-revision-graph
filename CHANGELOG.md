@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Patches
 
+- Suggest readable comparison patch filenames using reference labels and short hashes.
 - Explain how to preserve an exported empty commit when its mailbox is selected in Apply Patch.
 - Preserve worktree patch export when a staged new file has subsequently been removed.
 - Suggest comparison patch filenames with the source/target short hashes and an

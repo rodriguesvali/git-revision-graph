@@ -1,9 +1,10 @@
 import type { Repository } from '../git';
 import type { loadCommitPatch, loadComparisonPatch } from './exportGit';
 import type { CommitPatchFile } from './files';
+import type { RefSelection } from '../refActions/types';
 
 export interface PatchExportServices {
-  suggestComparisonFileName(source: string, target?: string): Promise<string>;
+  suggestComparisonFileName(source: RefSelection, target?: RefSelection): Promise<string>;
   chooseDirectory(): Promise<string | undefined>;
   writeCommitPatches(directory: string, files: readonly CommitPatchFile[], isCurrent: () => boolean): Promise<void>;
   chooseDestination(defaultName: string): Promise<string | undefined>;

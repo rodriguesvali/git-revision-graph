@@ -24,7 +24,7 @@ export async function verifyPatchWorkflows(harness: SafetyHarness, repository: G
   await compare.control('click', { selector: '#savePatchButton' });
   await waitFor(async () => fs.stat(output).then(() => true, () => false), 'full patch saved despite filter');
   const patch = await fs.readFile(output, 'utf8');
-  const prefix = `from${baseline.slice(0, 8)}to${before.slice(0, 8)}compare_`;
+  const prefix = `baseline-${baseline.slice(0, 8)}-to-HEAD-${before.slice(0, 8)}-`;
   assert.equal(path.basename(harness.saveSuggestions.at(-1)!.fsPath), `${prefix}1.patch`);
   await waitFor(() => compare.posted.filter(message => message.type === 'patchProgress').length >= 2, 'first patch export finished');
   const secondOutput = path.join(fixture, 'comparison-next.patch');

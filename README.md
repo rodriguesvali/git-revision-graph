@@ -69,8 +69,9 @@ identical contents report no differences even when their commit histories differ
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
 - Use **Save Patch…** beside Unified Diff to save all changes from source to target,
   including binary files. Search/status filters and selection do not restrict export.
-  The suggested name is `from<source-hash>to<target-hash>compare_<number>.patch`,
-  using 8-character hashes (`worktree` for a workspace target). Numbers advance per
+  The suggested name is `<source>-<hash>-to-<target>-<hash>-<number>.patch`,
+  using reference labels and 8-character hashes (`worktree` for a workspace target).
+  Commit-only selections use their hashes without repeating them. Numbers advance per
   comparison after successful saves and account for matching files in the default folder.
   Save unsaved editors before exporting a worktree comparison.
   In sparse checkouts, export a reference-to-reference comparison instead.

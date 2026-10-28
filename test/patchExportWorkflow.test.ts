@@ -40,6 +40,7 @@ test('Save Patch passes the complete comparison, no selected IDs or filtered pat
   const h = harness(); const repository = createRepository({ root: '/repo' });
   const state: CompareResultsState = { kind: 'between', repository,
     left: { refName: 'a'.repeat(40), label: 'source' }, right: { refName: 'b'.repeat(40), label: 'target' }, changes: [] };
+  h.services.chooseDestination = async name => { assert.equal(name, 'source-aaaaaaaa-to-target-bbbbbbbb-1.patch'); return '/out.patch'; };
   h.services.loadComparison = async (root, source, target) => {
     assert.equal(root, '/repo'); assert.equal(source, state.left.refName); assert.equal(target, state.right.refName);
     return Buffer.from('complete');

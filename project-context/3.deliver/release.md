@@ -5,6 +5,10 @@ Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
+Comparison patch suggestions now include sanitized reference labels alongside
+the pinned short hashes and direction. Native Save dialog and cross-platform
+filename smoke remain pending; rollback restores the earlier suggestion format.
+
 Empty-commit mailboxes remain exportable. Apply Patch now explains that a mailbox
 without recognizable patch content cannot change the worktree and identifies
 `git am --empty=keep` for preserving an empty commit. Manual error presentation

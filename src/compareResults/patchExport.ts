@@ -6,8 +6,8 @@ export async function saveComparePatch(getState: () => CompareResultsState, supp
   if (state.kind !== 'between' && state.kind !== 'worktree') return;
   const services = await patchExportServices(state.repository, supplied);
   const name = await (state.kind === 'between'
-    ? services.suggestComparisonFileName(state.left.refName, state.right.refName)
-    : services.suggestComparisonFileName(state.target.refName));
+    ? services.suggestComparisonFileName(state.left, state.right)
+    : services.suggestComparisonFileName(state.target));
   await savePatchExport(name, async () => {
     if (state.kind === 'worktree' && services.hasDirtyEditors(state.repository.rootUri.fsPath)) {
       throw new Error('Save unsaved editors before exporting the worktree patch.');
