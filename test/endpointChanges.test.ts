@@ -8,8 +8,11 @@ import { loadComparisonChanges } from '../src/compareResults/endpointChanges';
 import { loadComparisonPatch } from '../src/patches/exportGit';
 import { createRepository, createUri } from './fakes';
 import { Status } from '../src/git';
+import { DefaultRevisionLogBackend } from '../src/revisionGraph/backendServices/revisionLog';
+import { getShowLogFileChangeParentHash } from '../src/showLog/fileActions';
+import { createRevisionLogEntry } from './fakes';
 
-async function fixture(t: test.TestContext) {
+async function fixture(t: test.TestContext, objectFormat: 'sha1' | 'sha256' = 'sha1') {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'grg-endpoints-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const git = (...args: string[]) => execFileSync('git', ['-C', root, ...args], {
@@ -17,7 +20,7 @@ async function fixture(t: test.TestContext) {
       GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
       GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' }, stdio: 'pipe'
   });
-  git('init', '-q', '-b', 'main');
+  git('init', '-q', '-b', 'main', `--object-format=${objectFormat}`);
   const write = (file: string, text: string) => fs.writeFile(path.join(root, file), text);
   await write('one.txt', 'before\n'); await write('two.txt', 'before\n');
   git('add', '.'); git('commit', '-qm', 'base');
@@ -72,6 +75,26 @@ test('root commit compares against the empty tree without a merge base', async t
   assert.equal(changes.length, 2);
   assert.ok(changes.every(change => change.status === Status.INDEX_ADDED));
 });
+
+for (const format of ['sha1', 'sha256'] as const) {
+  test(`Show Log loads root changes with ${format} object IDs`, async t => {
+    const f = await fixture(t, format);
+    const backend = new DefaultRevisionLogBackend((repository, left, right) =>
+      loadComparisonChanges(repository, left, right, options));
+    const emptyTree = f.git('hash-object', '-t', 'tree', '--stdin').toString().trim();
+    const before = f.git('status', '--porcelain=v1').toString();
+    const changes = await backend.loadRevisionLogChanges(f.repository, f.base);
+    assert.equal(changes.length, 2);
+    assert.ok(changes.every(change => change.status === Status.INDEX_ADDED));
+    assert.equal(getShowLogFileChangeParentHash([createRevisionLogEntry({ hash: f.base, parentHashes: [] })], f.base), emptyTree);
+    assert.equal(f.git('status', '--porcelain=v1').toString(), before);
+    await f.write('one.txt', 'after\n');
+    const next = f.commit('next');
+    const nonRoot = await backend.loadRevisionLogChanges(f.repository, next, f.base);
+    assert.equal(nonRoot.length, 1);
+    assert.equal(nonRoot[0].status, Status.MODIFIED);
+  });
+}
 
 test('endpoint comparison rejects range/option revisions and honors cancellation', async t => {
   const f = await fixture(t);

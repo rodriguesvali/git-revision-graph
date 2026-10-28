@@ -1,7 +1,8 @@
 import { throwIfAborted } from '../../errors';
 import { execGit } from '../../gitExec';
 import { Change, Repository } from '../../git';
-import { loadComparisonChanges } from '../../compareResults/endpointChanges';
+import { loadComparisonChanges, type ComparisonChangesLoader } from '../../compareResults/endpointChanges';
+import { emptyTreeHashForCommit } from '../../emptyTree';
 import {
   REVISION_LOG_FILTER_SCAN_MAX_COMMITS,
   type RevisionLogEntry,
@@ -43,9 +44,9 @@ export interface RevisionLogChangesBackend {
 const REVISION_LOG_MAX_OUTPUT_BYTES = 12 * 1024 * 1024;
 const REVISION_LOG_FILTER_SCAN_BATCH_SIZE = 200;
 const DEFAULT_GIT_COMMAND_TIMEOUT_MS = 15000;
-const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, RevisionLogChangesBackend {
+  constructor(private readonly loadChanges: ComparisonChangesLoader = loadComparisonChanges) {}
   async loadRevisionLog(
     repository: Repository,
     source: RevisionLogSource,
@@ -99,7 +100,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     commitHash: string,
     parentHash?: string
   ): Promise<readonly Change[]> {
-    return loadComparisonChanges(repository, parentHash ?? EMPTY_TREE_HASH, commitHash);
+    return this.loadChanges(repository, parentHash ?? emptyTreeHashForCommit(commitHash), commitHash);
   }
 
   private async loadFilteredRevisionLog(

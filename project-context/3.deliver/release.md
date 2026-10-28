@@ -5,6 +5,11 @@ Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
+Show Log now selects the correct empty tree for root commits in SHA-1 and
+SHA-256 repositories. See the [root commit record](../2.build/features/1.7.6-sha256-root-commit.md).
+Manual Extension Development Host smoke remains pending; rollback restores the
+previous SHA-1-only behavior.
+
 Comparisons and reference creation now preserve the selected branch, tag or
 remote identity when names collide. See the [identity record](../2.build/features/1.7.6-reference-identity.md).
 Extension Development Host smoke remains pending; rollback restores the previous resolution behavior.

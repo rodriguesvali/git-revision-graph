@@ -3,8 +3,7 @@ import * as path from 'node:path';
 import { getTargetUri } from '../changePresentation';
 import type { Change, Repository } from '../git';
 import type { RevisionLogEntry } from '../revisionGraphTypes';
-
-export const SHOW_LOG_EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+import { emptyTreeHashForCommit } from '../emptyTree';
 
 export interface ShowLogFileDiffServices {
   openChangeDiffBetweenRefs(
@@ -50,7 +49,7 @@ export function getShowLogFileChangeParentHash(
   entries: readonly RevisionLogEntry[],
   commitHash: string
 ): string {
-  return entries.find((entry) => entry.hash === commitHash)?.parentHashes[0] ?? SHOW_LOG_EMPTY_TREE_HASH;
+  return entries.find((entry) => entry.hash === commitHash)?.parentHashes[0] ?? emptyTreeHashForCommit(commitHash);
 }
 
 export function getShowLogChangeFileName(change: Change): string {
