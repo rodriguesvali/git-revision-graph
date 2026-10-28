@@ -106,9 +106,9 @@
     function createRevisionGraphCompareSelectedMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'compare-selected'> {
       return {
         type: 'compare-selected',
-        baseRevision: base.revision,
+        baseRevision: base.hash,
         baseLabel: base.label,
-        compareRevision: compare.revision,
+        compareRevision: compare.hash,
         compareLabel: compare.label
       };
     }
@@ -129,8 +129,8 @@
     function createRevisionGraphUnifiedDiffMessage(base: RevisionGraphWebviewTarget, compare: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'open-unified-diff'> {
       return {
         type: 'open-unified-diff',
-        baseRevision: base.revision,
-        compareRevision: compare.revision
+        baseRevision: base.hash,
+        compareRevision: compare.hash
       };
     }
 
@@ -168,7 +168,7 @@
     }
 
     function createRevisionGraphCompareWithWorktreeMessage(target: RevisionGraphWebviewTarget): RevisionGraphWebviewMessageOf<'compare-with-worktree'> {
-      return { type: 'compare-with-worktree', revision: target.revision, label: target.label };
+      return { type: 'compare-with-worktree', revision: target.hash, label: target.label };
     }
 
     function createRevisionGraphCopyCommitHashMessage(commitHash: string): RevisionGraphWebviewMessageOf<'copy-commit-hash'> {

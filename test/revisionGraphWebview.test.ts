@@ -1722,6 +1722,20 @@ test('adapts the Focus Range context action to the active interval', () => {
   );
 });
 
+test('comparison actions send the selected commit hashes for namesake references', () => {
+  const runtime = createWebviewRuntime();
+  const branch = { hash: 'a'.repeat(40), revision: 'release', label: 'release', kind: 'branch' };
+  const tag = { hash: 'b'.repeat(40), revision: 'release', label: 'release', kind: 'tag' };
+  const compared = runtime.context.createRevisionGraphCompareSelectedMessage(branch, tag);
+  const unified = runtime.context.createRevisionGraphUnifiedDiffMessage(branch, tag);
+  const worktree = runtime.context.createRevisionGraphCompareWithWorktreeMessage(branch);
+  assert.equal(compared.baseRevision, branch.hash);
+  assert.equal(compared.compareRevision, tag.hash);
+  assert.equal(unified.baseRevision, branch.hash);
+  assert.equal(unified.compareRevision, tag.hash);
+  assert.equal(worktree.revision, branch.hash);
+});
+
 test('presents active Focus Descendants as a descriptive toolbar state', () => {
   const runtime = createWebviewRuntime();
   const descendantFilter = runtime.elements.get('descendantFilter');

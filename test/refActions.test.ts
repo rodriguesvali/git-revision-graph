@@ -531,7 +531,7 @@ test('checkoutResolvedReference resolves remote HEAD to a concrete upstream bran
   );
 
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'main', checkout: true, ref: 'origin/main' }
+    { name: 'main', checkout: true, ref: 'refs/remotes/origin/main' }
   ]);
   assert.deepEqual(repository.calls.setBranchUpstream, [
     { name: 'main', upstream: 'origin/main' }
@@ -557,7 +557,7 @@ test('checkoutResolvedReference creates a branch from tags instead of checking t
 
   assert.deepEqual(repository.calls.checkout, []);
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
+    { name: 'v1.2.3', checkout: true, ref: 'refs/tags/v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.deepEqual(harness.prepareRequests, []);
@@ -736,7 +736,7 @@ test('createBranchFromResolvedReference creates a new branch from a local branch
 
   assert.deepEqual(repository.calls.checkout, []);
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'release/2026-copy', checkout: true, ref: 'release/2026' }
+    { name: 'release/2026-copy', checkout: true, ref: 'refs/heads/release/2026' }
   ]);
   assert.deepEqual(harness.upstreamClears, ['release/2026-copy']);
   assert.deepEqual(repository.calls.setBranchUpstream, []);
@@ -766,7 +766,7 @@ test('createBranchFromResolvedReference allows creating and checking out a branc
 
   assert.deepEqual(harness.warningMessages, []);
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'feature/wip', checkout: true, ref: 'main' }
+    { name: 'feature/wip', checkout: true, ref: 'refs/heads/main' }
   ]);
   assert.deepEqual(harness.upstreamClears, ['feature/wip']);
   assert.equal(harness.infoMessages[0], 'Branch feature/wip was created and checked out from main.');
@@ -851,7 +851,7 @@ test('createBranchFromResolvedReference keeps tracking information for remote re
   );
 
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'feature/demo', checkout: true, ref: 'origin/feature/demo' }
+    { name: 'feature/demo', checkout: true, ref: 'refs/remotes/origin/feature/demo' }
   ]);
   assert.deepEqual(harness.upstreamClears, []);
   assert.deepEqual(repository.calls.setBranchUpstream, [
@@ -896,7 +896,7 @@ test('createBranchFromResolvedReference overwrites an existing local branch for 
     }
   ]);
   assert.deepEqual(harness.resetBranches, [
-    { branchName: 'feature/demo', refName: 'origin/feature/demo' }
+    { branchName: 'feature/demo', refName: 'refs/remotes/origin/feature/demo' }
   ]);
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.checkout, ['feature/demo']);
@@ -1032,7 +1032,7 @@ test('checkoutResolvedReference overwrites the current local branch from a remot
     }
   ]);
   assert.deepEqual(harness.resetBranches, []);
-  assert.deepEqual(harness.resetCurrentBranchRefs, ['origin/feature/demo']);
+  assert.deepEqual(harness.resetCurrentBranchRefs, ['refs/remotes/origin/feature/demo']);
   assert.deepEqual(repository.calls.createBranch, []);
   assert.deepEqual(repository.calls.checkout, []);
   assert.deepEqual(repository.calls.setBranchUpstream, [
@@ -1179,7 +1179,7 @@ test('createTagFromResolvedReference creates a local tag from a branch reference
   );
 
   assert.deepEqual(harness.createdTags, [
-    { tagName: 'v1.2.0', refName: 'release/2026' }
+    { tagName: 'v1.2.0', refName: 'refs/heads/release/2026' }
   ]);
   assert.equal(harness.infoMessages[0], 'Tag v1.2.0 was created from release/2026.');
   assert.equal(harness.refreshCalls, 1);
@@ -3049,4 +3049,20 @@ test('comparison pins refs before reading changes and retains the displayed labe
   });
   await compareResolvedRefs(repository, { refName: 'main', label: 'Main' }, { refName: 'feature', label: 'Feature' }, services);
   assert.deepEqual(compared, [[source, target]]);
+});
+
+test('comparison resolves same-named branch and tag in their own namespaces', async () => {
+  const harness = createServices();
+  const repository = createRepository({ root: '/workspace/repo' });
+  const lookedUp: string[] = [];
+  const services = Object.assign({}, harness.services, {
+    async resolveComparisonRevision(_repository: unknown, ref: string) {
+      lookedUp.push(ref);
+      return (ref.startsWith('refs/heads/') ? 'a' : 'b').repeat(40);
+    }
+  });
+  await compareResolvedRefs(repository,
+    { refName: 'release', label: 'branch', kind: 'branch' },
+    { refName: 'release', label: 'tag', kind: 'tag' }, services);
+  assert.deepEqual(lookedUp, ['refs/heads/release', 'refs/tags/release']);
 });

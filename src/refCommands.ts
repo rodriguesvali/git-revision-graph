@@ -59,7 +59,7 @@ export async function compareRefs(
   const second = await pickReference(
     repository,
     `Compare ${first.label} with...`,
-    first.refName,
+    first,
     services
   );
   if (!second) {
@@ -68,8 +68,8 @@ export async function compareRefs(
 
   await compareResolvedRefs(
     repository,
-    { refName: first.refName, label: first.label },
-    { refName: second.refName, label: second.label },
+    { refName: first.refName, label: first.label, kind: toActionKind(first.ref) },
+    { refName: second.refName, label: second.label, kind: toActionKind(second.ref) },
     services
   );
 }
@@ -93,7 +93,7 @@ export async function compareWithWorktree(
 
   await compareResolvedRefWithWorktree(
     repository,
-    { refName: selected.refName, label: selected.label },
+    { refName: selected.refName, label: selected.label, kind: toActionKind(selected.ref) },
     services
   );
 }
@@ -200,14 +200,14 @@ async function resolveRepository(
 async function pickReference(
   repository: Repository,
   placeHolder: string,
-  excludeRefName: string | undefined,
+  excluded: RefQuickPickItem | undefined,
   services: RefCommandServices
 ): Promise<RefQuickPickItem | undefined> {
   const refs = await repository.getRefs({ sort: 'alphabetically' });
   const items = refs
     .filter((ref) => {
       const refName = getReferenceHandle(ref);
-      return refName.length > 0 && refName !== excludeRefName;
+      return refName.length > 0 && !(refName === excluded?.refName && ref.type === excluded.ref.type);
     })
     .sort((left, right) => left.name?.localeCompare(right.name ?? '') ?? 0)
     .map((ref) => toQuickPickItem(repository, ref));

@@ -11,6 +11,7 @@ export type CurrentBranchPushMode = 'normal' | 'force-with-lease' | 'force';
 export interface RefSelection {
   readonly refName: string;
   readonly label: string;
+  readonly kind?: RefActionKind;
 }
 
 export interface MergeRefSelection extends RefSelection {

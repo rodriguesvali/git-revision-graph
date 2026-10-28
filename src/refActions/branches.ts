@@ -9,8 +9,9 @@ import {
 } from './shared';
 import { validateGitBranchName } from './branchValidation';
 import { BranchCreationTarget, RefActionServices, RefActionTarget } from './types';
+import { qualifiedRevision } from './qualifiedRevision';
 
-type BranchRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager' | 'progress'>;
+type BranchRefActionServices = Pick<RefActionServices, 'ui' | 'referenceManager' | 'progress' | 'resolveComparisonRevision'>;
 
 export async function checkoutResolvedReference(
   repository: Repository,
@@ -108,6 +109,7 @@ export async function createBranchFromResolvedReference(
         return;
       }
 
+      const startPoint = await resolveBranchStart(repository, branchCreation.startPointRefName, target.kind, services);
       if (!await confirmBranchOverwrite(repository, normalizedBranchName, branchCreation.startPointRefName, didOverwriteCurrentBranch, services)) {
         return;
       }
@@ -118,9 +120,9 @@ export async function createBranchFromResolvedReference(
         'blocking',
         async () => {
           if (didOverwriteCurrentBranch) {
-            await services.referenceManager.resetCurrentBranch(repository, branchCreation.startPointRefName);
+            await services.referenceManager.resetCurrentBranch(repository, startPoint);
           } else {
-            await services.referenceManager.resetBranch(repository, normalizedBranchName, branchCreation.startPointRefName);
+            await services.referenceManager.resetBranch(repository, normalizedBranchName, startPoint);
             await repository.checkout(normalizedBranchName);
           }
 
@@ -139,12 +141,13 @@ export async function createBranchFromResolvedReference(
       );
       return;
     } else {
+      const startPoint = await resolveBranchStart(repository, branchCreation.startPointRefName, target.kind, services);
       await runWithRefActionProgress(
         services,
         `Creating branch ${normalizedBranchName}...`,
         'blocking',
         async () => {
-          await repository.createBranch(normalizedBranchName, true, branchCreation.startPointRefName);
+          await repository.createBranch(normalizedBranchName, true, startPoint);
           if (branchCreation.upstreamRefName) {
             await repository.setBranchUpstream(normalizedBranchName, branchCreation.upstreamRefName);
           } else {
@@ -162,6 +165,11 @@ export async function createBranchFromResolvedReference(
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
+}
+
+async function resolveBranchStart(repository: Repository, name: string, kind: RefActionTarget['kind'], services: BranchRefActionServices): Promise<string> {
+  const revision = qualifiedRevision(name, kind);
+  return services.resolveComparisonRevision ? services.resolveComparisonRevision(repository, revision) : revision;
 }
 
 async function confirmBranchOverwrite(

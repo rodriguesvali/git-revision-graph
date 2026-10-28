@@ -2,6 +2,7 @@ import { toOperationError } from '../errorDetail';
 import { Repository } from '../git';
 import { isCompareResultsRequestCurrent } from '../compareResults/requestOwnership';
 import { RefActionServices, RefSelection } from './types';
+import { qualifiedRevision } from './qualifiedRevision';
 
 type CompareRefActionServices = Pick<RefActionServices, 'ui' | 'compareResultsPresenter' | 'resolveComparisonRevision' | 'loadComparisonChanges'>;
 
@@ -106,6 +107,6 @@ export async function compareResolvedRefWithWorktree(
 
 async function pinSelection(repository: Repository, selection: RefSelection, services: CompareRefActionServices): Promise<RefSelection> {
   return services.resolveComparisonRevision
-    ? { ...selection, refName: await services.resolveComparisonRevision(repository, selection.refName) }
+    ? { ...selection, refName: await services.resolveComparisonRevision(repository, qualifiedRevision(selection.refName, selection.kind)) }
     : selection;
 }

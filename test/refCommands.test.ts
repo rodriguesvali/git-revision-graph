@@ -191,6 +191,30 @@ test('compareWithWorktree reports when there are no changes', async () => {
   assert.equal(harness.infoMessages[0], 'The worktree is already aligned with main.');
 });
 
+test('reference picker permits comparing a branch and tag with the same name', async () => {
+  const repository = createRepository({
+    root: '/workspace/repo',
+    refs: [createRef({ type: RefType.Head, name: 'release' }), createRef({ type: RefType.Tag, name: 'release' })],
+    diffBetween: [createChange({ uriPath: '/workspace/repo/file' })]
+  });
+  let picks = 0;
+  const harness = createServices({
+    async pickReference(items) {
+      picks++;
+      if (picks === 1) return items.find(item => item.ref.type === RefType.Head);
+      return items.find(item => item.ref.type === RefType.Tag);
+    }
+  });
+  const lookedUp: string[] = [];
+  const services = { ...harness.services, async resolveComparisonRevision(_repo: unknown, ref: string) {
+    lookedUp.push(ref); return (ref.startsWith('refs/heads/') ? 'a' : 'b').repeat(40);
+  } };
+  await compareRefs(createApi([repository]), undefined, services);
+  assert.equal(picks, 2);
+  assert.deepEqual(lookedUp, ['refs/heads/release', 'refs/tags/release']);
+  assert.equal(harness.compareResultsCalls.length, 1);
+});
+
 test('checkoutReference short-circuits when the selected branch is already current', async () => {
   const repository = createRepository({
     root: '/workspace/repo',
@@ -216,7 +240,7 @@ test('checkoutReference creates and tracks a local branch for remote refs with n
   await checkoutReference(createApi([repository]), undefined, harness.services);
 
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'feature/demo', checkout: true, ref: 'origin/feature/demo' }
+    { name: 'feature/demo', checkout: true, ref: 'refs/remotes/origin/feature/demo' }
   ]);
   assert.deepEqual(repository.calls.setBranchUpstream, [
     { name: 'feature/demo', upstream: 'origin/feature/demo' }
@@ -236,7 +260,7 @@ test('checkoutReference creates a branch when the selected reference is a tag', 
 
   assert.deepEqual(repository.calls.checkout, []);
   assert.deepEqual(repository.calls.createBranch, [
-    { name: 'v1.2.3', checkout: true, ref: 'v1.2.3' }
+    { name: 'v1.2.3', checkout: true, ref: 'refs/tags/v1.2.3' }
   ]);
   assert.equal(harness.infoMessages[0], 'Branch v1.2.3 was created and checked out from v1.2.3.');
   assert.equal(harness.refreshCalls, 0);

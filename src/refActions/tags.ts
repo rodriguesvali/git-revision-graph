@@ -9,6 +9,7 @@ import { hasMergeConflicts } from '../gitState';
 import { pickRemote, prepareFullRebuildRefresh, runWithRefActionProgress } from './shared';
 import { validateGitTagName } from './tagValidation';
 import { RefActionServices, RefActionTarget } from './types';
+import { qualifiedRevision } from './qualifiedRevision';
 
 export async function createTagFromResolvedReference(
   repository: Repository,
@@ -43,7 +44,10 @@ export async function createTagFromResolvedReference(
 
     const preparedRefresh = prepareFullRebuildRefresh(repository, services);
     try {
-      await services.referenceManager.createTag(repository, tagName, target.refName);
+      const revision = qualifiedRevision(target.refName, target.kind);
+      const commit = services.resolveComparisonRevision
+        ? await services.resolveComparisonRevision(repository, revision) : revision;
+      await services.referenceManager.createTag(repository, tagName, commit);
     } catch (error) {
       preparedRefresh.cancel();
       throw error;
