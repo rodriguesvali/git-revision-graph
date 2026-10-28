@@ -16,7 +16,7 @@
     "src/showLogWebview.ts": 1252
   },
   "functions": {
-    "src/refActions/branches.ts::createBranchFromResolvedReference#1": 18,
+    "src/refActions/branches.ts::createBranchFromResolvedReference#1": 17,
     "src/refActions/currentBranch.ts::syncCurrentHeadWithUpstream#1": 14,
     "src/revisionGraph/flow/flowConfigPathSafety.ts::inspectRepositoryConfigPath#1": 17,
     "src/revisionGraph/layout/d3DagSugiyamaLayout.ts::estimateMaxLayerNodeCount#1": 16,

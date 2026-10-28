@@ -1045,6 +1045,32 @@ test('checkoutResolvedReference overwrites the current local branch from a remot
   );
 });
 
+for (const phase of ['before confirmation', 'during confirmation'] as const) {
+  for (const area of ['workingTreeChanges', 'indexChanges', 'untrackedChanges'] as const) {
+    test(`current branch overwrite refuses ${area} ${phase}`, async () => {
+      const changes = phase === 'before confirmation' ? [createChange({ uriPath: '/workspace/repo/file.txt' })] : [];
+      const repository = createRepository({
+        root: '/workspace/repo', head: createHead('main'), [area]: changes,
+        refs: [createRef({ type: RefType.Head, name: 'main' }),
+          createRef({ type: RefType.RemoteHead, remote: 'origin', name: 'origin/main' })]
+      });
+      const harness = createServices({
+        async promptRemoteBranchCheckout() { return { branchName: 'main', overrideBranchIfExists: true }; },
+        async confirm() {
+          if (phase === 'during confirmation') changes.push(createChange({ uriPath: '/workspace/repo/file.txt' }));
+          return true;
+        }
+      });
+
+      await checkoutResolvedReference(repository, { refName: 'origin/main', label: 'origin/main', kind: 'remote' }, harness.services);
+
+      assert.deepEqual(harness.resetCurrentBranchRefs, []);
+      assert.deepEqual(repository.calls.setBranchUpstream, []);
+      assert.match(harness.warningMessages[0], /workspace must be clean/i);
+    });
+  }
+}
+
 test('checkoutResolvedReference cancels current local branch overwrite when destructive confirmation is dismissed', async () => {
   const repository = createRepository({
     root: '/workspace/repo',

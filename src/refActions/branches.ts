@@ -108,15 +108,7 @@ export async function createBranchFromResolvedReference(
         return;
       }
 
-      const overwriteConfirmed = await services.ui.confirm({
-        message: buildBranchOverwriteConfirmationMessage(
-          normalizedBranchName,
-          branchCreation.startPointRefName,
-          didOverwriteCurrentBranch
-        ),
-        confirmLabel: didOverwriteCurrentBranch ? 'Overwrite Current Branch' : 'Overwrite Branch'
-      });
-      if (!overwriteConfirmed) {
+      if (!await confirmBranchOverwrite(repository, normalizedBranchName, branchCreation.startPointRefName, didOverwriteCurrentBranch, services)) {
         return;
       }
 
@@ -170,6 +162,19 @@ export async function createBranchFromResolvedReference(
   } catch (error) {
     await services.ui.showErrorMessage(toOperationError('Could not create the branch.', error));
   }
+}
+
+async function confirmBranchOverwrite(
+  repository: Repository, branchName: string, startPoint: string, isCurrent: boolean,
+  services: BranchRefActionServices
+): Promise<boolean> {
+  const isReady = () => ensureWorkspaceReadyForMutation(repository, `overwriting ${branchName}`, services);
+  if (isCurrent && !await isReady()) return false;
+  const confirmed = await services.ui.confirm({
+    message: buildBranchOverwriteConfirmationMessage(branchName, startPoint, isCurrent),
+    confirmLabel: isCurrent ? 'Overwrite Current Branch' : 'Overwrite Branch'
+  });
+  return confirmed && (!isCurrent || await isReady());
 }
 
 function buildBranchOverwriteConfirmationMessage(

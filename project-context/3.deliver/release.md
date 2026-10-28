@@ -5,6 +5,10 @@ Last consolidated: 2026-10-27
 
 ## Development release — 1.7.6
 
+Current-branch overwrite from a remote now checks for a clean workspace before
+and after confirmation. See the [safety record](../2.build/features/1.7.6-current-branch-overwrite-safety.md).
+Native prompt smoke is pending; rollback restores the previous overwrite behavior.
+
 Comparison patch suggestions now include sanitized reference labels alongside
 the pinned short hashes and direction. Native Save dialog and cross-platform
 filename smoke remain pending; rollback restores the earlier suggestion format.
