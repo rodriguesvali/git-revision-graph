@@ -1,16 +1,16 @@
 # Release Readiness
 
-Status: `1.7.6` release artifacts prepared for maintainer publication; published baseline `1.7.5`
+Status: `1.7.6` published, confirmed by the maintainer; previous published baseline `1.7.5`
 Last consolidated: 2026-10-28
 
-## Development release — 1.7.6
+## Published release — 1.7.6
 
-The maintainer requested publication artifacts on 2026-10-28 and will publish
-personally. The 1.7.6 changelog is prepared without asserting a publication date.
-The final VSIX, clean-profile installation, release identity and Marketplace
-publication have not been verified or performed. Other manual matrix gaps listed
-below remain distinct from the maintainer-confirmed smoke tests for the three
-review corrections.
+The maintainer confirmed publication on 2026-10-28. This establishes 1.7.6 as
+the published baseline by maintainer confirmation; the publication timestamp,
+uploaded package bytes, release source/tag, and clean-profile installation
+evidence were not supplied or independently verified. Other manual matrix gaps
+listed below remain distinct from the maintainer-confirmed smoke tests for the
+three review corrections.
 
 Show Log now selects the correct empty tree for root commits in SHA-1 and
 SHA-256 repositories. See the [root commit record](../2.build/features/1.7.6-sha256-root-commit.md).
@@ -79,11 +79,11 @@ only from the clean checked-out branch's graph menu. Import changes only the wor
 | Package file preview | Read-only preview passed on 2026-10-28 | `vsce ls` lists 716 entries, including extension host, webview, layout worker and new reference/empty-tree modules. This is not a VSIX inspection or installation. |
 | Feature regression and host smoke | Automated minimum/stable checks passed on Linux/Xvfb | Real VS Code 1.100.0 and stable 1.143.1: current/dirty editors, pinned source/target rename after branch movement and Show Log opening. Full existing two-repository safety scenarios also pass. Manual keyboard/theme, Windows paths and current non-text editor checks remain in the [smoke matrix](extension-host-smoke-matrix.md). |
 | Platform/quality and candidate checks | Local checks passed on 2026-10-27; final hosted CI/package pending | 53 platform tests; quality passed for 330 files / 2,961 functions. Compare/controller/interactions/Show Log ceilings only tightened. Graphify AST refresh: 6,853 nodes / 14,416 edges / 518 communities. VSCE preview lists 714 files, including patch modules and excluding development sources; this is not archive/install evidence. No gate was weakened. |
-| VSIX, install, tag and Marketplace | Pending maintainer action | The maintainer will publish personally. Record the final artifact/source identity, clean-profile installation and publication evidence when available. |
+| VSIX, install, tag and Marketplace | Publication confirmed by maintainer on 2026-10-28 | Record the package checksum/size, source/tag, publication timestamp and clean-profile installation evidence when available. The assistant did not perform the publication or inspect the published artifact. |
 
-Before publication, rollback of cycle opening restores only the 1.7.5 version and
-planning baseline. Preserve published 1.7.5 fixes, user files and the existing
-feasibility analysis. Functional rollback is described in the Open File plan.
+After publication, corrective rollback requires a follow-up release or an
+appropriate Marketplace action. Preserve user files and repository configuration;
+functional rollback options are described in the individual feature records.
 
 ## Published release — 1.7.5
 

@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.6
 
+Publication confirmed by the maintainer on 2026-10-28; the publication timestamp was not supplied.
+
 ### Comparisons
 
 - Compare the two selected revision endpoints consistently in the file list,

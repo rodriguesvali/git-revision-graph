@@ -26,10 +26,15 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Development Cycle: 1.7.6
+## Published Release: 1.7.6
+
+- Publication confirmed by the maintainer on 2026-10-28. The exact publication
+  timestamp, uploaded package bytes, source/tag and clean-profile installation
+  evidence were not supplied or independently verified. The current published
+  baseline is 1.7.6.
 
 - Publication artifacts prepared on 2026-10-28 at the maintainer's request;
-  the maintainer will perform publication. The latest source verification passed
+  the maintainer performed publication. The latest source verification passed
   1,229 tests, 53 platform tests and the quality gate. The maintainer reported
   the three review-correction smoke tests passed without environment details.
 - Manifest and both lockfile versions are 1.7.6. A read-only `vsce ls` preview
@@ -50,7 +55,7 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 - Opened on 2026-10-26 with explicit maintainer authorization to prepare build
   artifacts. Manifest and both lockfile version fields target 1.7.6; CHANGELOG
   was initially marked Unreleased. Runtime/dependency/contribution baselines are unchanged.
-- Published baseline is 1.7.5, confirmed by the maintainer on 2026-10-26; exact
+- The previous published baseline was 1.7.5, confirmed by the maintainer on 2026-10-26; exact
   publication date and package/source evidence were not supplied.
 - [Open File](../2.build/features/1.7.6-open-file.md) is implemented after separate
   maintainer authorization to begin implementation: current-worktree editing and
@@ -67,8 +72,8 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
   checks and installation remain separate pending delivery evidence.
 - No VSIX, tag, installation or Marketplace action was performed during artifact
   preparation; the maintainer retained responsibility for publication.
-- Before publication, rollback restores the 1.7.5 metadata baseline and reverts only
-  these planning edits, preserving user files and published fixes.
+- After publication, corrective rollback requires a follow-up release or an
+  appropriate Marketplace action; preserve user files and repository configuration.
 
 ## Published Release: 1.7.5
 
