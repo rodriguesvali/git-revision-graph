@@ -1,7 +1,24 @@
 # Release Readiness
 
-Status: `1.7.6` published, confirmed by the maintainer; previous published baseline `1.7.5`
-Last consolidated: 2026-10-28
+Status: `1.7.7` development cycle open; published baseline `1.7.6` confirmed by the maintainer
+Last consolidated: 2026-10-31
+
+## Development cycle — 1.7.7
+
+Opened on 2026-10-31 at the maintainer's request. Scope for this opening is
+version metadata and release records; no feature scope has been selected yet.
+See the [cycle artifact](../2.build/features/1.7.7-release-cycle-opening.md).
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.7. |
+| Build and tests | Passed on 2026-10-31 | `npm test`: production and webview builds and 1,229 tests passed; zero failures, cancellations or skips. |
+| Scope and release notes | Pending | Record approved changes and user-facing notes as work is selected. |
+| VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
+
+Before publication, rollback of the opening restores the prior version metadata
+and removes its pending release records. After publication, correction requires a
+follow-up release or appropriate Marketplace action; preserve user files.
 
 ## Published release — 1.7.6
 
