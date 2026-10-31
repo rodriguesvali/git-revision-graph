@@ -163,7 +163,6 @@ export function buildRevisionLogGitArgs(
       if (showAllBranches) {
         args.push('--all');
       } else {
-        args.push('--first-parent');
         args.push('--end-of-options');
         args.push(source.revision);
       }

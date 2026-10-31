@@ -1,8 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as vm from 'node:vm';
 
 import { renderShowLogWebviewHtml } from '../src/showLogWebview';
 import { renderShowLogWebviewStyles } from '../src/showLog/webviewStyles';
+
+test('renders converging lanes to the commit and stops them in expanded rows', () => {
+  const html = renderShowLogWebviewHtml();
+  const topologyScript = html.slice(html.indexOf('    function renderTopology('), html.indexOf('    function getMainGraphHeight('));
+  const continuationScript = html.slice(html.indexOf('    function renderContinuationTopology('), html.indexOf('    function renderContinuationRows('));
+  const context = vm.createContext({ GRAPH_LANE_SPACING: 10, GRAPH_LEFT_INSET: 8, GRAPH_RIGHT_PADDING: 6,
+    LANE_COLORS: ['color0', 'color1', 'color2'], getGraphContentWidth: () => 40,
+    getLaneColor: (value: number) => `color${value}`, laneX: (lane: number) => 8 + lane * 10 });
+  vm.runInContext(`${topologyScript}\n${continuationScript}`, context);
+  const topology = { laneCount: 3, nodeLane: 0, continuingLanes: [0, 1, 2],
+    secondaryParentLanes: [], mergeStartLanes: [], convergingLanes: [1, 2], colorByLane: { 0: 0, 1: 1, 2: 2 } };
+  const rendered: string = context.renderTopology(topology, false, false, 26);
+  assert.match(rendered, /M 18 -2 C 18 7, 8 7, 8 11.*stroke="color1"/);
+  assert.match(rendered, /M 28 -2 C 28 7, 8 7, 8 11.*stroke="color2"/);
+  const continuation: string = context.renderContinuationTopology(topology);
+  assert.match(continuation, /stroke="color0"/);
+  assert.doesNotMatch(continuation, /stroke="color[12]"/);
+});
 
 test('composes the Show Log shell with its dedicated style module', () => {
   const styles = renderShowLogWebviewStyles();

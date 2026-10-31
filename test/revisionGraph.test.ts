@@ -163,7 +163,6 @@ test('builds show log git args for a target revision', () => {
       '--skip=100',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
-      '--first-parent',
       '--end-of-options',
       'feature/demo'
     ]
@@ -242,7 +241,6 @@ test('builds show log git args with an option terminator before option-like revi
       '--skip=0',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
-      '--first-parent',
       '--end-of-options',
       '-malicious'
     ]

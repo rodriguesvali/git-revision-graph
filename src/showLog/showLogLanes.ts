@@ -6,6 +6,7 @@ export interface ShowLogLaneRow {
   readonly continuingLanes: readonly number[];
   readonly secondaryParentLanes: readonly number[];
   readonly mergeStartLanes: readonly number[];
+  readonly convergingLanes: readonly number[];
   readonly colorByLane: Readonly<Record<number, number>>;
 }
 
@@ -33,6 +34,10 @@ export function buildShowLogLaneRows(entries: readonly RevisionLogEntry[]): Map<
     const nodeColorIndex = laneColors.get(nodeLane) ?? DEFAULT_COLOR_INDEX;
     const activeBefore = listActiveLanes(activeLanes);
     const nextActive = [...activeLanes];
+    const convergingLanes = activeBefore.filter((lane) => lane !== nodeLane && activeLanes[lane] === entry.hash);
+    for (const lane of convergingLanes) {
+      nextActive[lane] = undefined;
+    }
     nextActive[nodeLane] = undefined;
 
     if (entry.parentHashes.length > 0) {
@@ -46,7 +51,7 @@ export function buildShowLogLaneRows(entries: readonly RevisionLogEntry[]): Map<
     for (const parentHash of entry.parentHashes.slice(1)) {
       let parentLane = nextActive.indexOf(parentHash);
       if (parentLane < 0) {
-        parentLane = firstEmptyLane(nextActive);
+        parentLane = nextActive.findIndex((value, lane) => !value && !convergingLanes.includes(lane));
         if (parentLane === -1) {
           parentLane = nextActive.length;
         }
@@ -71,9 +76,13 @@ export function buildShowLogLaneRows(entries: readonly RevisionLogEntry[]): Map<
       continuingLanes,
       secondaryParentLanes,
       mergeStartLanes,
+      convergingLanes,
       colorByLane
     });
 
+    for (const lane of convergingLanes) {
+      laneColors.delete(lane);
+    }
     activeLanes.splice(0, activeLanes.length, ...nextActive);
   }
 

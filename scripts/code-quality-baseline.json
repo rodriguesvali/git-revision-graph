@@ -13,7 +13,7 @@
     "src/revisionGraph/webview/styles.ts": 1039,
     "src/showLog/webviewStyles.ts": 869,
     "src/showLogView.ts": 744,
-    "src/showLogWebview.ts": 1252
+    "src/showLogWebview.ts": 1173
   },
   "functions": {
     "src/refActions/branches.ts::createBranchFromResolvedReference#1": 17,

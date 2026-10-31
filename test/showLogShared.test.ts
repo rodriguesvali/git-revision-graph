@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createChange, createRepository } from './fakes';
+import { createChange, createRepository, createRevisionLogEntry } from './fakes';
 import {
   addShowLogCachedChanges,
   createHiddenShowLogState,
@@ -237,6 +237,14 @@ test('builds incremental show log append patches from appended commits', () => {
   assert.equal(patch?.commits[0]?.refs[0]?.label, 'tag:v1.0.0');
   assert.equal(patch?.commits[0]?.stats, '2 files • +5 • -1');
   assert.deepEqual(patch?.commits[0]?.topology.continuingLanes, [0]);
+
+  const entry = (hash: string, ...parents: string[]) => createRevisionLogEntry({ hash, parentHashes: parents });
+  const pagedState = { ...state, entries: [entry('merge', 'main', 'side'), entry('side', 'base'),
+    entry('main', 'base'), entry('base', 'older'), entry('older')] };
+  const pagedPatch = buildShowLogWebviewAppendPatch(pagedState, 3);
+  assert.equal(pagedPatch?.commits[0]?.hash, 'base');
+  assert.deepEqual(pagedPatch?.commits[0]?.topology.convergingLanes, [1]);
+  assert.deepEqual(pagedPatch?.commits[1]?.topology.continuingLanes, [0]);
 });
 
 test('builds a filtered empty message for show log searches with no matches', () => {

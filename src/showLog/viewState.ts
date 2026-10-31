@@ -178,6 +178,7 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
           continuingLanes: [0],
           secondaryParentLanes: [],
           mergeStartLanes: [],
+          convergingLanes: [],
           colorByLane: { 0: 0 }
         },
         expanded: state.expandedCommitHash === entry.hash,

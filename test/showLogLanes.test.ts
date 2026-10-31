@@ -57,3 +57,35 @@ test('allocates an extra lane for merge parents', () => {
   assert.deepEqual(mergeRow.mergeStartLanes, [1]);
   assert.equal(typeof mergeRow.colorByLane[1], 'number');
 });
+
+test('joins all branches at their common ancestor and releases their lanes', () => {
+  const entry = (hash: string, ...parents: string[]) => createRevisionLogEntry({ hash, parentHashes: parents });
+  const entries = [
+    entry('merge-two', 'merge-one', 'side-two'),
+    entry('side-two', 'base'),
+    entry('merge-one', 'main', 'side-one'),
+    entry('side-one', 'base'),
+    entry('main', 'base'),
+    entry('base', 'older'),
+    entry('older')
+  ];
+  const rows = buildShowLogLaneRows(entries);
+  const fork = rows.get('base') as (ReturnType<typeof rows.get> & { convergingLanes: readonly number[] });
+  assert.deepEqual(fork.convergingLanes, [1, 2]);
+  assert.equal(fork.nodeLane, 0);
+  assert.deepEqual(rows.get('older')?.continuingLanes, [0]);
+  assert.deepEqual(buildShowLogLaneRows(entries.slice(0, 5)).get('main'), rows.get('main'));
+});
+
+test('keeps existing lanes when a new merge starts at the convergence commit', () => {
+  const entry = (hash: string, ...parents: string[]) => createRevisionLogEntry({ hash, parentHashes: parents });
+  const rows = buildShowLogLaneRows([
+    entry('merge', 'main', 'side'), entry('side', 'base'), entry('main', 'base'),
+    entry('base', 'older', 'other'), entry('other', 'older'), entry('older')
+  ]);
+  const fork = rows.get('base') as (ReturnType<typeof rows.get> & { convergingLanes: readonly number[] });
+  assert.deepEqual(fork.convergingLanes, [1]);
+  assert.ok(!fork.secondaryParentLanes.includes(1));
+  const older = rows.get('older') as (ReturnType<typeof rows.get> & { convergingLanes: readonly number[] });
+  assert.equal(older.convergingLanes.length, 1);
+});

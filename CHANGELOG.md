@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.7 — Unreleased
 
+### Show Log
+
+- Include commits from merged branches in the selected branch's history. Enable
+  **Show All Branches** to include histories that have not been merged.
+- Connect merged branch lines to their common ancestor in the Show Log graph.
+
 ## 1.7.6
 
 Publication confirmed by the maintainer on 2026-10-28; the publication timestamp was not supplied.
