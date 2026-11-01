@@ -24,7 +24,7 @@ export async function verifyEndpointComparison(harness: SafetyHarness, repositor
     await waitFor(() => harness.information.length > informationCount, 'graph reports no endpoint differences');
     assert.equal(harness.information.at(-1), `No differences found between ${branch} and main.`);
 
-    await graph.send({ type: 'show-log', source: { kind: 'target', revision: sibling, label: branch },
+    await graph.send({ type: 'show-log', source: { kind: 'target', revision: sibling, label: branch, refKind: 'commit' },
       origin: (await graph.snapshot()).messageOrigin });
     const log = await harness.panel('gitRefs.showLogView');
     await waitFor(() => !log.state?.loading && !!log.state?.commits?.some(commit => commit.hash === sibling), 'fresh sibling history');

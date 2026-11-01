@@ -104,6 +104,16 @@ test('treats Bisect Commit as a commit target and centers only when the marker o
   assert.deepEqual(centered, ['a', 'b', 'b', 'b']);
 });
 
+test('Show Log target message preserves the selected reference kind', () => {
+  const runtime = createWebviewRuntime();
+  for (const kind of ['branch', 'tag', 'remote', 'head', 'stash', 'commit']) {
+    const target = createContextMenuTarget(kind, 'release');
+    const message = runtime.context.createRevisionGraphShowLogTargetMessage(target);
+    assert.equal(message.source.revision, target.revision);
+    assert.equal(message.source.refKind, kind);
+  }
+});
+
 test('renders the revision graph runtime as a nonce-protected external asset', () => {
   const html = renderRevisionGraphShellDocument(testAssets);
 

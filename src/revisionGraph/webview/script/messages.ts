@@ -162,7 +162,8 @@
         source: {
           kind: 'target',
           revision: target.revision,
-          label: target.label
+          label: target.label,
+          refKind: target.kind
         }
       };
     }

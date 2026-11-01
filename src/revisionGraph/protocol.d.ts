@@ -66,6 +66,7 @@ declare namespace RevisionGraphProtocol {
       readonly kind: 'target';
       readonly revision: string;
       readonly label: string;
+      readonly refKind?: TargetKind;
     }
     | {
       readonly kind: 'range';

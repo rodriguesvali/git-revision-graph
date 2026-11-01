@@ -14,6 +14,7 @@ export interface PanelState {
   readonly projectionOptions?: Readonly<Record<string, unknown>>;
   readonly kind?: string;
   readonly loading?: boolean;
+  readonly showAllBranches?: boolean;
   readonly hasUnsavedChanges?: boolean;
   readonly errorMessage?: string;
   readonly messageOrigin?: Origin;

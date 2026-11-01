@@ -119,7 +119,7 @@ async function compareReplay(harness: SafetyHarness, repositories: readonly Repo
 
 async function showLog(harness: SafetyHarness, graph: ObservedPanel, root: string): Promise<ObservedPanel> {
   await choose(harness, graph, root);
-  await graph.send({ type: 'show-log', source: { kind: 'target', revision: 'main', label: 'main' }, origin: (await graph.snapshot()).messageOrigin });
+  await graph.send({ type: 'show-log', source: { kind: 'target', revision: 'main', label: 'main', refKind: 'head' }, origin: (await graph.snapshot()).messageOrigin });
   const log = await harness.panel(LOG);
   await waitFor(() => log.state?.messageOrigin?.repositoryPath === root && !log.state.loading && !!log.state.commits?.length, 'log loaded');
   const state = await log.snapshot();

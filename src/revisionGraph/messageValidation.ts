@@ -403,8 +403,8 @@ function validateRevisionLogSource(value: unknown): RevisionLogSource | undefine
     return undefined;
   }
   if (value.kind === 'target') {
-    return isBoundedNonEmptyString(value.revision) && isBoundedString(value.label)
-      ? { kind: 'target', revision: value.revision, label: value.label }
+    return isBoundedNonEmptyString(value.revision) && isBoundedString(value.label) && isRevisionGraphTargetKind(value.refKind)
+      ? { kind: 'target', revision: value.revision, label: value.label, refKind: value.refKind }
       : undefined;
   }
   if (value.kind === 'range') {

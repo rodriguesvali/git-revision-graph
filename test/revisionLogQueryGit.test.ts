@@ -10,6 +10,33 @@ import { DefaultRevisionLogBackend } from '../src/revisionGraph/backendServices/
 
 const execFile = promisify(execFileCallback);
 
+test('Show Log resolves the selected branch, tag and remote by exact identity', async () => {
+  const fixture = await createSharedGitFixture();
+  const root = fixture.repositoryPath;
+  const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+  try {
+    await git('branch', 'collision', fixture.initialCommit);
+    await git('tag', '-a', 'collision', fixture.renameCommit, '-m', 'tag');
+    await git('update-ref', 'refs/remotes/collision', fixture.initialCommit);
+    const backend = new DefaultRevisionLogBackend();
+    const repository = createRepository({ root });
+    for (const [refKind, expected] of [['branch', fixture.initialCommit], ['tag', fixture.renameCommit],
+      ['remote', fixture.initialCommit]] as const) {
+      for (const all of [false, true]) {
+        const source = { kind: 'target' as const, revision: 'collision', label: 'collision', refKind };
+        assert.equal((await backend.loadRevisionLog(repository, source, 1, 0, all)).entries[0]?.hash, expected);
+      }
+    }
+    await git('update-ref', 'refs/heads/collision', fixture.renameCommit);
+    const branch = { kind: 'target' as const, revision: 'collision', label: 'collision', refKind: 'branch' as const };
+    assert.equal((await backend.loadRevisionLog(repository, branch, 1, 0, false)).entries[0]?.hash, fixture.renameCommit);
+    await git('branch', '-D', 'collision');
+    for (const all of [false, true]) await assert.rejects(backend.loadRevisionLog(repository, branch, 1, 0, all));
+  } finally {
+    await fixture.dispose();
+  }
+});
+
 test('all branches starts at the selected historical tag for paging and search', async () => {
   const fixture = await createSharedGitFixture();
   const root = fixture.repositoryPath;

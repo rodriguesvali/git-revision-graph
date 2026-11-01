@@ -15,6 +15,23 @@ import { validateCompareResultsWebviewMessage } from '../src/compareResults/mess
 import { validateShowLogWebviewMessage } from '../src/showLog/messageValidation';
 import { RevisionGraphViewState } from '../src/revisionGraphTypes';
 
+test('Show Log validates and authorizes the exact selected reference kind', () => {
+  const hash = 'a'.repeat(40);
+  const state = { ...createReadyRevisionGraphState(), references: [
+    { id: 'b', name: 'release', kind: 'branch' as const, hash, title: 'release' },
+    { id: 't', name: 'release', kind: 'tag' as const, hash: 'b'.repeat(40), title: 'release' }
+  ] };
+  const source = { kind: 'target' as const, revision: 'release', label: 'release', refKind: 'branch' as const };
+  const message = { type: 'show-log' as const, source };
+  assert.deepEqual(validateRevisionGraphMessage(message), message);
+  assert.equal(isRevisionGraphMessageAllowedForState(message, state), true);
+  assert.equal(isRevisionGraphMessageAllowedForState(message, { ...state, references: state.references.slice(1) }), false);
+  assert.equal(validateRevisionGraphMessage({ type: 'show-log', source: { ...source, refKind: 'invalid' } }), undefined);
+  const { refKind: _kind, ...missingKind } = source;
+  assert.equal(validateRevisionGraphMessage({ type: 'show-log', source: missingKind }), undefined);
+  assert.equal(isRevisionGraphMessageAllowedForCurrentRepository(message, state, '/another'), false);
+});
+
 test('Apply Patch authorizes only exact clean HEAD, refusing same-hash aliases and stale targets', () => {
   const hash = 'a'.repeat(40);
   const state = { ...createReadyRevisionGraphState(), currentHeadName: 'main',

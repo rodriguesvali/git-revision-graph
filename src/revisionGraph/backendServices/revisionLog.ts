@@ -16,6 +16,7 @@ import {
 } from '../source/graphGit';
 import { parseRevisionLogQuery, type RevisionLogQuery } from '../source/revisionLogQuery';
 import { filterRevisionLogQueryBatch } from './revisionLogSearch';
+import { qualifiedRevision } from '../../refActions/qualifiedRevision';
 
 export interface RevisionGraphLogBackend {
   loadRevisionLog(
@@ -63,12 +64,15 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     readonly searchTruncated: boolean;
   }> {
     throwIfAborted(signal, 'The revision graph load was aborted.');
-    const anchor = showAllBranches && source.kind === 'target'
-      ? await findAllBranchesAnchor(repository, source.revision, signal)
-      : undefined;
-    const effectiveSource: RevisionLogSource = anchor && source.kind === 'target'
-      ? { ...source, revision: anchor.hash }
+    const resolvedSource = source.kind === 'target' && source.refKind
+      ? { ...source, revision: await resolveLogTarget(repository, source.revision, source.refKind, signal) }
       : source;
+    const anchor = showAllBranches && resolvedSource.kind === 'target'
+      ? await findAllBranchesAnchor(repository, resolvedSource.revision, signal)
+      : undefined;
+    const effectiveSource: RevisionLogSource = anchor && resolvedSource.kind === 'target'
+      ? { ...resolvedSource, revision: anchor.hash }
+      : resolvedSource;
     const anchorOffset = anchor?.offset ?? 0;
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const query = parseRevisionLogQuery(filterText);
@@ -180,6 +184,18 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
       searchTruncated
     };
   }
+}
+
+async function resolveLogTarget(repository: Repository, revision: string, kind: RevisionGraphProtocol.TargetKind, signal?: AbortSignal): Promise<string> {
+  if (kind === 'stash' && revision !== 'stash') throw new Error('Invalid stash reference.');
+  const qualified = qualifiedRevision(revision, kind);
+  const options = { signal, timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS, maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES };
+  const object = qualified.startsWith('refs/')
+    ? (await execGit(repository.rootUri.fsPath, ['show-ref', '--verify', '--hash', '--', qualified], options)).trim()
+    : qualified;
+  const hash = (await execGit(repository.rootUri.fsPath, ['rev-parse', '--verify', '--end-of-options', `${object}^{commit}`], options)).trim();
+  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(hash)) throw new Error('The selected reference does not resolve to a commit.');
+  return hash;
 }
 
 async function findAllBranchesAnchor(repository: Repository, revision: string, signal?: AbortSignal): Promise<{ hash: string; offset: number }> {

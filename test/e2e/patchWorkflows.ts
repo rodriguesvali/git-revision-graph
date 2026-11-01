@@ -34,7 +34,7 @@ export async function verifyPatchWorkflows(harness: SafetyHarness, repository: G
   assert.equal(path.basename(harness.saveSuggestions.at(-1)!.fsPath), `${prefix}2.patch`);
   assert.ok(patch.includes('original.txt') && patch.includes('same.txt'));
   assert.equal(indexState(root), index);
-  await graph.send({ type: 'show-log', source: { kind: 'target', revision: before, label: 'HEAD' }, origin: (await graph.snapshot()).messageOrigin });
+    await graph.send({ type: 'show-log', source: { kind: 'target', revision: before, label: 'HEAD', refKind: 'commit' }, origin: (await graph.snapshot()).messageOrigin });
   const log = await harness.panel('gitRefs.showLogView');
   await waitFor(() => !!log.state?.commits?.length && !log.state.loading, 'Show Log patch commit');
   harness.saveDestination = vscode.Uri.file(formatted);

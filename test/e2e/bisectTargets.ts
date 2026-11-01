@@ -27,7 +27,17 @@ export async function verifyBisectTargets(harness: SafetyHarness, repository: Gi
       await cancel();
     }
 
-    await graph.send({ type: 'show-log', source: { kind: 'target', revision: 'main', label: 'main' },
+    for (const [kind, expected] of [['branch', good], ['tag', head]] as const) {
+      await graph.menu(`[data-ref-name="${names[0]}"][data-ref-kind="${kind}"]`, 'show-log-target');
+      const log = await harness.panel('gitRefs.showLogView');
+      await waitFor(() => !log.state?.loading && log.state?.commits?.[0]?.hash === expected, `Show Log ${kind} identity`);
+      await log.send({ type: 'toggleShowAllBranches', value: true, origin: (await log.snapshot()).messageOrigin });
+      await waitFor(() => !log.state?.loading && log.state?.showAllBranches === true
+        && log.state?.commits?.[0]?.hash === expected, `Show Log all branches ${kind} identity`);
+      log.panel.dispose();
+    }
+
+    await graph.send({ type: 'show-log', source: { kind: 'target', revision: 'main', label: 'main', refKind: 'head' },
       origin: (await graph.snapshot()).messageOrigin });
     const log = await harness.panel('gitRefs.showLogView');
     await waitFor(() => log.state?.kind === 'visible' && !log.state.loading

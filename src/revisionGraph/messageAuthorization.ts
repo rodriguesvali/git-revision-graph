@@ -308,7 +308,9 @@ function isKnownFlowKind(
 
 function isKnownRevisionLogSource(state: RevisionGraphViewState, source: RevisionLogSource): boolean {
   return source.kind === 'target'
-    ? hasKnownRevision(state, source.revision)
+    ? source.refKind === 'commit'
+      ? hasKnownCommitHash(state, source.revision)
+      : source.refKind !== undefined && hasKnownReference(state, source.revision, source.refKind)
     : hasKnownRevision(state, source.baseRevision) && hasKnownRevision(state, source.compareRevision);
 }
 

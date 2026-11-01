@@ -34,7 +34,7 @@ export async function verifyOpenFile(harness: SafetyHarness, repository: Pick<Re
   } finally {
     git(root, ['update-ref', 'refs/heads/baseline', baseline]);
   }
-  await graph.send({ type: 'show-log', source: { kind: 'target', revision: head, label: 'Main' }, origin: (await graph.snapshot()).messageOrigin });
+  await graph.send({ type: 'show-log', source: { kind: 'target', revision: head, label: 'Main', refKind: 'commit' }, origin: (await graph.snapshot()).messageOrigin });
   const log = await harness.panel('gitRefs.showLogView');
   await waitFor(() => !!log.state?.commits?.some(entry => entry.hash === head) && !log.loading, 'Open File Show Log');
   await log.send({ type: 'toggleCommit', commitHash: head, origin: (await log.snapshot()).messageOrigin });

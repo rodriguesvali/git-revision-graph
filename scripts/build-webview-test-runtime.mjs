@@ -39,6 +39,7 @@ const exportedNames = [
   'createRevisionGraphFocusDescendantsMessage',
   'createRevisionGraphFocusRangeMessage',
   'createRevisionGraphCompareSelectedMessage',
+  'createRevisionGraphShowLogTargetMessage',
   'createRevisionGraphCompareWithWorktreeMessage',
   'createRevisionGraphUnifiedDiffMessage',
   'createRevisionGraphWebviewContextMenuPlan',
