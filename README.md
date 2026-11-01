@@ -122,7 +122,9 @@ backslash. File paths and changed text are case-sensitive, without wildcards or 
 Paths match their name at each commit; the filter does not follow earlier names across renames.
 Ordinary text retains case-insensitive matching against hashes, authors, messages and references.
 Search checks up to 2,000 commits in the selected scope and identifies results when older history
-was not searched.
+was not searched. Commit ancestry lines are hidden while a filter is active because intermediate
+commits may be omitted. Clear the filter to restore the graph. Loading more pages keeps the
+original history snapshot; refresh the log to include subsequent reference changes.
 
 Expand a commit to search its changed files with `change:"validateToken("` in the
 file filter. An active commit-level `change:` search is applied there automatically,

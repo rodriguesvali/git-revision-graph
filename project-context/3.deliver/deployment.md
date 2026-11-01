@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-10-28
+Last consolidated: 2026-11-01
 
 ## Environment
 
@@ -25,6 +25,24 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 6. Publish only after approval.
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
+
+## Candidate: 1.7.7
+
+- Publication artifacts describe the Show Log history, reference identity,
+  pagination and filtered ancestry changes. Manifest and both root lockfile
+  version fields declare 1.7.7. See [release readiness](release.md) and the
+  [smoke matrix](extension-host-smoke-matrix.md) for evidence and pending gates.
+- On 2026-11-01, the production/webview builds and all 1,244 tests passed via
+  `npm test`; quality and whitespace checks passed. A read-only VSCE file-list
+  preview completed; no candidate VSIX was inspected.
+- The candidate has not been confirmed published. Final manual smoke, hosted CI,
+  VSIX inspection and clean-profile installation remain unrecorded. Production
+  audit found zero vulnerabilities; full audit reported two moderate development
+  entries needing disposition, as recorded in release readiness. Packaging and
+  publication require separate maintainer authorization.
+- Before publication, stop or revert the affected candidate changes as needed.
+  After publication, use an authorized follow-up release or Marketplace action;
+  preserve user repositories and configuration.
 
 ## Published Release: 1.7.6
 

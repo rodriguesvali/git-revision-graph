@@ -27,10 +27,25 @@ multi-repository ownership.
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
 
-## Candidate Watch: 1.7.5
+## Candidate Watch: 1.7.7
 
-This candidate remains unreleased; the published baseline is 1.7.4. After an
-authorized release, monitor these changes:
+The published baseline is 1.7.6 by maintainer confirmation; 1.7.7 remains
+unreleased. After publication monitor Show Log's merged-branch origins, exact
+branch/tag selection, all-branches historical boundary and pagination when
+refs move. Filtered histories intentionally hide ancestry lines until the filter
+is cleared; check the notice and file actions against actual parent commits.
+
+History snapshots can become unavailable if an external Git garbage collection
+removes unreferenced objects; subsequent loading should report an error. Preserve
+user repositories and configuration during investigation or rollback. After a
+publication, correct regressions with an authorized later release rather than
+reusing the published version. See [release readiness](release.md).
+
+## Historical Candidate Watch: 1.7.5
+
+At this historical checkpoint the candidate was unreleased and the baseline was
+1.7.4. Subsequent releases are recorded above and in release readiness. The
+checkpoint identified these behaviors to monitor:
 
 - VS Code 1.100.0 minimum: clients on 1.90–1.99 cannot install new updates.
 - Named detached tags load without a fabricated branch; ref identity remains

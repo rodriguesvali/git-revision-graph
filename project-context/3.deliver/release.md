@@ -1,19 +1,22 @@
 # Release Readiness
 
-Status: `1.7.7` development cycle open; published baseline `1.7.6` confirmed by the maintainer
-Last consolidated: 2026-10-31
+Status: `1.7.7` publication preparation; published baseline `1.7.6` confirmed by the maintainer
+Last consolidated: 2026-11-01
 
 ## Development cycle — 1.7.7
 
-Opened on 2026-10-31 at the maintainer's request. Scope for this opening is
-version metadata and release records; no feature scope has been selected yet.
+Opened on 2026-10-31 at the maintainer's request. The candidate includes Show Log
+merged history and branch origins, exact reference selection, an all-branches
+boundary, stable history snapshots and clear filtered-ancestry presentation.
+The lockfile also updates development dependencies. CHANGELOG and README describe
+the user-facing behavior; publication has not been confirmed.
 See the [cycle artifact](../2.build/features/1.7.7-release-cycle-opening.md).
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.7. |
-| Build and tests | Passed on 2026-10-31 | `npm test`: production and webview builds and 1,229 tests passed; zero failures, cancellations or skips. |
-| Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
+| Build and tests | Passed on 2026-11-01 | `npm test` built the production and webview bundles and passed 1,244 tests, with zero failures, cancellations or skips. `npm run quality:check` passed for 334 files and 2,983 functions; `git diff --check` passed. |
+| Scope and release notes | Prepared | README and the unreleased 1.7.7 CHANGELOG entry describe the Show Log changes. |
 | Show Log merged history | Automated verification passed on 2026-10-31; manual smoke pending | [Feature record](../2.build/features/1.7.7-show-log-merged-history.md): include selected target ancestry, including merged side branches; retain explicit all-ref mode. `npm test`: 1,229 passed; quality check passed. |
 | Show Log branch origins | Automated verification passed on 2026-10-31; manual smoke pending | Connect all lanes at their shared ancestor; the supplied CadCraft history confirms the reported topology. `npm test`: 1,232 passed; quality check passed. |
 | Show Log all-branches anchor | Automated verification passed on 2026-10-31; manual smoke pending | [Feature record](../2.build/features/1.7.7-show-log-all-branches-anchor.md): start all-reference history at the selected commit; filters and pages share the boundary. `npm test`: 1,233 passed; quality check passed. |
@@ -21,11 +24,14 @@ See the [cycle artifact](../2.build/features/1.7.7-release-cycle-opening.md).
 | Show Log anchor snapshot | Automated and Extension Host verification passed on 2026-11-01 | [Feature record](../2.build/features/1.7.7-show-log-anchor-snapshot.md): consistent all-ref snapshot within each load; 1,240 tests and 55 platform tests passed; VS Code 1.100.0 Linux/Xvfb safety passed with previously recorded cancellation warnings. |
 | Show Log pagination snapshot | Automated and Extension Host verification passed on 2026-11-01 | [Feature record](../2.build/features/1.7.7-show-log-paging-snapshot.md): retain the original Git history across pages and recapture on a new view; 1,242 tests, quality check and VS Code 1.100.0 Linux/Xvfb safety passed, with previously recorded cancellation warnings. |
 | Show Log filtered ancestry | Automated and Extension Host verification passed on 2026-11-01 | [Feature record](../2.build/features/1.7.7-show-log-filtered-ancestry.md): hide unexplained filtered ancestry lines with a notice; 1,244 tests, quality check and VS Code 1.100.0 Linux/Xvfb safety passed, with previously recorded cancellation warnings. |
+| Dependency audit | Production passed; development finding needs disposition | On 2026-11-01 `npm audit --omit=dev` reported zero vulnerabilities. Full `npm audit` reported two moderate entries, `minimatch` and its dependent `@vscode/vsce`, for [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249); npm reports no fix available. Maintainer disposition remains pending. |
+| Package file preview | Passed on 2026-11-01 | `vsce ls` completed and listed 717 entries, including README and CHANGELOG; this is not a VSIX inspection or installation. |
+| Manual acceptance and hosted CI | Pending | Record final-candidate smoke results and environment using the [matrix](extension-host-smoke-matrix.md); Windows/macOS, latest-stable host and hosted CI evidence remain unrecorded. Investigate the recorded cancellation warnings. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
 
-Before publication, rollback of the opening restores the prior version metadata
-and removes its pending release records. After publication, correction requires a
-follow-up release or appropriate Marketplace action; preserve user files.
+Before publication, stop the candidate or revert the affected changes and their
+documentation as appropriate. After publication, correction requires a follow-up
+release or appropriate Marketplace action; preserve user files and configuration.
 
 ## Published release — 1.7.6
 

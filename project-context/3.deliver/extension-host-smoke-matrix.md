@@ -1,7 +1,28 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-10-27
+Last updated: 2026-11-01
+
+## Show Log — 1.7.7 candidate
+
+Automated Linux/Xvfb Extension Host safety tests on VS Code 1.100.0 cover
+reference identity, paging after branch movement, filtered ancestry notice and
+restoration in both branch scopes. These are not a manual visual acceptance.
+On a disposable repository, record operator, date, platform and VS Code version:
+
+- Inspect merged branch origins and merge commits; compare with Git history.
+- Select a tag behind branch tips and check both Show All Branches states, exact
+  namesake branch/tag targeting, and exclusion of commits ahead of the selection.
+- Move a branch between pages: existing pages stay consistent; refresh picks up
+  the new tip. Repeat with Show All Branches and with a search.
+- Filter a history with hidden intermediate commits: markers and the explanatory
+  notice remain visible, ancestry lines are hidden, and clearing the filter
+  restores them. Expand a commit and verify file actions use its true parent.
+- Check narrow panes, keyboard use, theme contrast and repository switching.
+
+Manual acceptance, Windows/macOS coverage and latest-stable-host checks for the
+final candidate remain unrecorded. Prior Extension Host safety runs logged known
+cancellation warnings in separate repository-switch scenarios.
 
 ## Patch Workflows — 1.7.6
 
