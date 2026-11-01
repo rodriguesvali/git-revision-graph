@@ -13,11 +13,12 @@ exhaustive audit of every extension capability. No runtime change was made.
    reproduced the wrong commit in both toggle modes. Carry an authorized exact
    ref kind or an authorized immutable commit identity through the workflow.
    Implemented and verified in [the feature record](features/1.7.7-show-log-reference-identity.md).
-2. **P2 — All-branches anchor offset can become stale inside one load.** The
+2. **P2 — All-branches anchor offset can become stale inside one load (corrected).** The
    offset comes from `rev-list`, then a separate `git log --all` reads current
    refs. A test wrapper updated another branch after the first command; the
    returned page began at the new descendant instead of the selected tag.
    Pin a consistent ref snapshot or detect changes and retry.
+   Implemented and verified in [the feature record](features/1.7.7-show-log-anchor-snapshot.md).
 3. **P2 — Paging a moving reference duplicates or omits commits.** Loading a
    page, adding a commit, then loading the next page by numeric skip returned the
    same commit twice in a real Git fixture. The provider appends the duplicate.

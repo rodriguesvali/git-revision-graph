@@ -113,6 +113,22 @@ test('execGit scopes an alternate index to the requested Git process', async () 
   );
 });
 
+test('execGit supplies complete stdin and closes it', async () => {
+  await withFakeGitProgram(
+    "let s='';process.stdin.setEncoding('utf8');process.stdin.on('data',v=>s+=v);process.stdin.on('end',()=>process.stdout.write(s));",
+    async (repositoryPath) => {
+      const input = 'revision\n'.repeat(20000);
+      assert.equal(await execGit(repositoryPath, ['rev-list'], { stdin: input }), input);
+    }
+  );
+});
+
+test('execGit handles a child closing stdin before all input is written', async () => {
+  await withFakeGitProgram('process.stdin.destroy();process.stdout.write("done");', async (repositoryPath) => {
+    assert.equal(await execGit(repositoryPath, ['rev-list'], { stdin: 'x'.repeat(1024 * 1024) }), 'done');
+  });
+});
+
 test('execGit reads large git output without failing on a fixed maxBuffer', async () => {
   const repositoryPath = await createTemporaryRepository();
 

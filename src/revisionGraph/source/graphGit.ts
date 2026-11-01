@@ -145,7 +145,8 @@ export function buildRevisionLogGitArgs(
   source: RevisionLogSource,
   limit: number,
   skip = 0,
-  showAllBranches = source.kind === 'range'
+  showAllBranches = source.kind === 'range',
+  useRefSnapshot = false
 ): string[] {
   const args = [
     'log',
@@ -161,7 +162,7 @@ export function buildRevisionLogGitArgs(
   switch (source.kind) {
     case 'target':
       if (showAllBranches) {
-        args.push('--all');
+        args.push(useRefSnapshot ? '--stdin' : '--all');
         args.push('--end-of-options', source.revision);
       } else {
         args.push('--end-of-options');

@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Show Log
 
 - Open the selected branch, tag or remote even when references share a name.
+- Keep the selected all-branches history boundary stable if refs change while loading.
 - Include commits from merged branches in the selected branch's history. Enable
   **Show All Branches** to include histories that have not been merged.
 - Connect merged branch lines to their common ancestor in the Show Log graph.

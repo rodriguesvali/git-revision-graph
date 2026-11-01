@@ -67,8 +67,11 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     const resolvedSource = source.kind === 'target' && source.refKind
       ? { ...source, revision: await resolveLogTarget(repository, source.revision, source.refKind, signal) }
       : source;
-    const anchor = showAllBranches && resolvedSource.kind === 'target'
-      ? await findAllBranchesAnchor(repository, resolvedSource.revision, signal)
+    const refSnapshot = showAllBranches && resolvedSource.kind === 'target'
+      ? await captureRevisionTips(repository, signal)
+      : undefined;
+    const anchor = refSnapshot !== undefined && resolvedSource.kind === 'target'
+      ? await findAllBranchesAnchor(repository, resolvedSource.revision, refSnapshot, signal)
       : undefined;
     const effectiveSource: RevisionLogSource = anchor && resolvedSource.kind === 'target'
       ? { ...resolvedSource, revision: anchor.hash }
@@ -86,15 +89,17 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
         query,
         refKindsByName,
         anchorOffset,
+        refSnapshot,
         signal
       );
     }
 
     const stdout = await execGit(
       repository.rootUri.fsPath,
-      buildRevisionLogGitArgs(effectiveSource, limit + 1, anchorOffset + skip, showAllBranches),
+      buildRevisionLogGitArgs(effectiveSource, limit + 1, anchorOffset + skip, showAllBranches, refSnapshot !== undefined),
       {
         signal,
+        stdin: refSnapshot,
         maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
         timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
       }
@@ -126,6 +131,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     query: RevisionLogQuery,
     refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>,
     anchorOffset: number,
+    refSnapshot: string | undefined,
     signal?: AbortSignal
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
@@ -145,9 +151,10 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
       const requestedBatchSize = batchSize + (isFinalScanBatch ? 1 : 0);
       const stdout = await execGit(
         repository.rootUri.fsPath,
-        buildRevisionLogGitArgs(source, requestedBatchSize, anchorOffset + scannedCommits, showAllBranches),
+        buildRevisionLogGitArgs(source, requestedBatchSize, anchorOffset + scannedCommits, showAllBranches, refSnapshot !== undefined),
         {
           signal,
+          stdin: refSnapshot,
           maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
           timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS
         }
@@ -198,15 +205,25 @@ async function resolveLogTarget(repository: Repository, revision: string, kind: 
   return hash;
 }
 
-async function findAllBranchesAnchor(repository: Repository, revision: string, signal?: AbortSignal): Promise<{ hash: string; offset: number }> {
+async function captureRevisionTips(repository: Repository, signal?: AbortSignal): Promise<string> {
+  const output = await execGit(repository.rootUri.fsPath, ['rev-list', '--no-walk=unsorted', '--all'],
+    { signal, timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS, maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES });
+  const hashes = output.trim() ? output.trim().split(/\r?\n/) : [];
+  if (hashes.some(hash => !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(hash))) {
+    throw new Error('Could not capture valid repository revision tips.');
+  }
+  return hashes.length ? `${hashes.join('\n')}\n` : '';
+}
+
+async function findAllBranchesAnchor(repository: Repository, revision: string, refSnapshot: string, signal?: AbortSignal): Promise<{ hash: string; offset: number }> {
   const options = { signal, timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS, maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES };
   const hash = (await execGit(repository.rootUri.fsPath,
     ['rev-parse', '--verify', '--end-of-options', `${revision}^{commit}`], options)).trim();
   if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(hash)) throw new Error('Could not resolve the selected revision to a commit.');
   for (let offset = 0; offset < REVISION_LOG_ANCHOR_SCAN_MAX_COMMITS; offset += REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE) {
     const output = await execGit(repository.rootUri.fsPath,
-      ['rev-list', '--topo-order', '--all', `--max-count=${REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE}`,
-        `--skip=${offset}`, '--end-of-options', hash], options);
+      ['rev-list', '--topo-order', '--stdin', `--max-count=${REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE}`,
+        `--skip=${offset}`, '--end-of-options', hash], { ...options, stdin: refSnapshot });
     const hashes = output.trim() ? output.trim().split('\n') : [];
     const index = hashes.indexOf(hash);
     if (index >= 0) return { hash, offset: offset + index };

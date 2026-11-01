@@ -27,6 +27,7 @@ export interface GitExecOptions {
   readonly timeoutMs?: number;
   readonly allowedExitCodes?: readonly number[];
   readonly gitIndexFile?: string;
+  readonly stdin?: string;
 }
 
 export interface GitExecResult {
@@ -162,9 +163,14 @@ function execGitCapturedWithResult(
         ...(options.gitIndexFile ? { GIT_INDEX_FILE: options.gitIndexFile } : {}),
         ...(options.forceEnglishOutput ? { LC_ALL: 'C', LANG: 'C', LANGUAGE: 'C' } : {})
       },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: [options.stdin === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
       windowsHide: true
     });
+    if (!child.stdout || !child.stderr) {
+      child.kill();
+      reject(new Error('Could not create Git output streams.'));
+      return;
+    }
 
     let stdout = '';
     const stdoutChunks: Buffer[] = [];
@@ -247,6 +253,12 @@ function execGitCapturedWithResult(
     };
 
     options.signal?.addEventListener('abort', abortChildProcess, { once: true });
+    if (child.stdin) {
+      child.stdin.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code !== 'EPIPE' && !settled) terminateAndReject(error);
+      });
+      child.stdin.end(options.stdin);
+    }
     if (options.timeoutMs !== undefined) {
       timeout = setTimeout(timeoutChildProcess, options.timeoutMs);
     }

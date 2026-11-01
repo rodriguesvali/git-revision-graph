@@ -2,13 +2,75 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as os from 'node:os';
 import { execFile as execFileCallback } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createSharedGitFixture } from './gitFixture';
 import { createRepository } from './fakes';
 import { DefaultRevisionLogBackend } from '../src/revisionGraph/backendServices/revisionLog';
+import { configureGitExecutablePath } from '../src/gitExec';
 
 const execFile = promisify(execFileCallback);
+
+test('all-branches anchor and pages use one ref snapshot when another branch moves mid-load', async () => {
+  const fixture = await createSharedGitFixture();
+  const root = fixture.repositoryPath;
+  const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+  try {
+    await git('tag', 'anchor', fixture.renameCommit);
+    const later = await git('commit-tree', `${fixture.renameCommit}^{tree}`, '-p', fixture.renameCommit, '-m', 'later injected');
+    const wrapper = path.join(root, 'wrapper.cjs');
+    const marker = path.join(root, 'marker');
+    await fs.writeFile(wrapper, `const c=require('node:child_process'),f=require('node:fs');
+      const a=process.argv.slice(2),r=c.spawnSync('git',a,{encoding:'utf8',input:a.includes('--stdin')?f.readFileSync(0):undefined});
+      if(a[0]==='rev-list'&&r.status===0&&!f.existsSync(${JSON.stringify(marker)})) {
+        f.writeFileSync(${JSON.stringify(marker)},'done');
+        c.execFileSync('git',['update-ref','refs/heads/injected',${JSON.stringify(later)}]);
+      }
+      process.stdout.write(r.stdout||'');process.stderr.write(r.stderr||'');process.exit(r.status??1);`);
+    const repository = createRepository({ root });
+    const backend = new DefaultRevisionLogBackend();
+    const source = { kind: 'target' as const, revision: 'refs/tags/anchor', label: 'anchor' };
+    for (const filter of [undefined, 'rename']) {
+      await fs.rm(marker, { force: true });
+      await git('update-ref', '-d', 'refs/heads/injected');
+      configureGitExecutablePath(process.execPath, [wrapper]);
+      try {
+        const result = await backend.loadRevisionLog(repository, source, 20, 0, true, filter);
+        assert.equal(result.entries[0]?.hash, fixture.renameCommit);
+        assert.ok(!result.entries.some(entry => entry.hash === later));
+      } finally {
+        configureGitExecutablePath(undefined);
+      }
+    }
+  } finally {
+    configureGitExecutablePath(undefined);
+    await fixture.dispose();
+  }
+});
+
+test('all-branches snapshot preserves Git ordering and detached linked-worktree heads', async () => {
+  const fixture = await createSharedGitFixture();
+  const root = fixture.repositoryPath;
+  const worktree = await fs.mkdtemp(path.join(os.tmpdir(), 'grg-log-worktree-'));
+  const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+  try {
+    await git('worktree', 'add', '--detach', worktree, fixture.initialCommit);
+    await fs.writeFile(path.join(worktree, 'worktree-only.txt'), 'linked worktree\n');
+    await execFile('git', ['add', 'worktree-only.txt'], { cwd: worktree });
+    await execFile('git', ['commit', '-m', 'Linked worktree commit'], { cwd: worktree });
+    const detached = (await execFile('git', ['rev-parse', 'HEAD'], { cwd: worktree })).stdout.trim();
+    const source = { kind: 'target' as const, revision: detached, label: 'linked worktree' };
+    const expected = (await git('rev-list', '--topo-order', '--all', '--end-of-options', detached)).split('\n');
+    const anchor = expected.indexOf(detached);
+    assert.ok(anchor >= 0);
+    const result = await new DefaultRevisionLogBackend().loadRevisionLog(createRepository({ root }), source, 50, 0, true);
+    assert.deepEqual(result.entries.map(entry => entry.hash), expected.slice(anchor));
+  } finally {
+    await git('worktree', 'remove', '--force', worktree);
+    await fixture.dispose();
+  }
+});
 
 test('Show Log resolves the selected branch, tag and remote by exact identity', async () => {
   const fixture = await createSharedGitFixture();
