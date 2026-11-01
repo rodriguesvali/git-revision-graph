@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Open the selected branch, tag or remote even when references share a name.
 - Keep the selected all-branches history boundary stable if refs change while loading.
 - Keep loaded history pages consistent when a branch advances between pages.
+- Avoid misleading ancestry lines in filtered Show Log results; clear the filter to restore the graph.
 - Include commits from merged branches in the selected branch's history. Enable
   **Show All Branches** to include histories that have not been merged.
 - Connect merged branch lines to their common ancestor in the Show Log graph.

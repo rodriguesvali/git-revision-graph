@@ -23,6 +23,23 @@ test('renders converging lanes to the commit and stops them in expanded rows', (
   assert.doesNotMatch(continuation, /stroke="color[12]"/);
 });
 
+test('renders filtered commits and expanded rows without invented ancestry lines', () => {
+  const html = renderShowLogWebviewHtml();
+  const topologyScript = html.slice(html.indexOf('    function renderTopology('), html.indexOf('    function getMainGraphHeight('));
+  const continuationScript = html.slice(html.indexOf('    function renderContinuationTopology('), html.indexOf('    function renderContinuationRows('));
+  const context = vm.createContext({ GRAPH_LANE_SPACING: 10, GRAPH_LEFT_INSET: 8, GRAPH_RIGHT_PADDING: 6, LANE_COLORS: ['color0'],
+    getGraphContentWidth: () => 30, getLaneColor: () => 'color0', laneX: () => 8 });
+  vm.runInContext(`${topologyScript}\n${continuationScript}`, context);
+  const topology = { laneCount: 1, nodeLane: 0, continuingLanes: [], secondaryParentLanes: [],
+    mergeStartLanes: [], convergingLanes: [], colorByLane: { 0: 0 } };
+  for (const merge of [false, true]) {
+    const rendered: string = context.renderTopology(topology, merge, false, 26);
+    assert.match(rendered, /graph-node-marker/);
+    assert.doesNotMatch(rendered, /<path/);
+  }
+  assert.doesNotMatch(context.renderContinuationTopology(topology), /<path/);
+});
+
 test('composes the Show Log shell with its dedicated style module', () => {
   const styles = renderShowLogWebviewStyles();
   const html = renderShowLogWebviewHtml();

@@ -9,8 +9,46 @@ import { createSharedGitFixture } from './gitFixture';
 import { createRepository } from './fakes';
 import { DefaultRevisionLogBackend } from '../src/revisionGraph/backendServices/revisionLog';
 import { configureGitExecutablePath } from '../src/gitExec';
+import { createHiddenShowLogState } from '../src/showLogShared';
+import { buildShowLogWebviewAppendPatch, buildShowLogWebviewState } from '../src/showLog/viewState';
 
 const execFile = promisify(execFileCallback);
+
+test('filtered history hides unknown ancestry without changing actual commit parents or paging', async () => {
+  const fixture = await createSharedGitFixture();
+  const root = fixture.repositoryPath;
+  const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+  try {
+    const tree = await git('rev-parse', 'HEAD^{tree}');
+    const base = await git('commit-tree', tree, '-p', fixture.renameCommit, '-m', 'match base');
+    const hidden = await git('commit-tree', tree, '-p', base, '-m', 'hidden middle');
+    const tip = await git('commit-tree', tree, '-p', hidden, '-m', 'match tip');
+    const backend = new DefaultRevisionLogBackend();
+    const repository = createRepository({ root });
+    const source = { kind: 'target' as const, revision: tip, label: 'tip' };
+    const first = await backend.loadRevisionLog(repository, source, 1, 0, false, 'match', undefined, 'capture');
+    const second = await backend.loadRevisionLog(repository, source, 1, 1, false, 'match', undefined, first.snapshot);
+    assert.deepEqual(first.entries.map(entry => entry.hash), [tip]);
+    assert.deepEqual(second.entries.map(entry => entry.hash), [base]);
+    assert.deepEqual(first.entries[0].parentHashes, [hidden]);
+    const state = { ...createHiddenShowLogState(), kind: 'visible' as const, repository, source,
+      filterText: 'match', entries: [...first.entries, ...second.entries] };
+    const view = buildShowLogWebviewState(state);
+    assert.match(view.searchNotice ?? '', /ancestry.*hidden/i);
+    for (const commit of view.commits) {
+      assert.equal(commit.topology.nodeLane, 0);
+      assert.deepEqual(commit.topology.continuingLanes, []);
+      assert.deepEqual(commit.topology.secondaryParentLanes, []);
+    }
+    assert.deepEqual(buildShowLogWebviewAppendPatch(state, 1)?.commits[0].topology, view.commits[1].topology);
+    const unfiltered = buildShowLogWebviewState({ ...state, filterText: '', entries: [first.entries[0],
+      { ...first.entries[0], hash: hidden, parentHashes: [base] }, second.entries[0]] });
+    assert.deepEqual(unfiltered.commits[0].topology.continuingLanes, [0]);
+    assert.equal(unfiltered.searchNotice, undefined);
+  } finally {
+    await fixture.dispose();
+  }
+});
 
 test('paging keeps its original target, range and all-ref snapshot after refs move', async () => {
   for (const mode of ['target', 'filtered', 'all', 'range'] as const) {

@@ -111,11 +111,14 @@ export function buildShowLogEmptyMessage(state: ShowLogState): string | undefine
 }
 
 export function buildShowLogSearchNotice(state: ShowLogState): string | undefined {
-  if (!state.searchTruncated || state.entries.length === 0) {
+  if (state.entries.length === 0) {
     return undefined;
   }
 
-  return `Showing matches from the first ${FILTER_SCAN_LIMIT_LABEL} commits. Older history was not searched.`;
+  const notices: string[] = [];
+  if (state.filterText.trim()) notices.push('Commit ancestry lines are hidden while filtering. Clear the filter to see the graph.');
+  if (state.searchTruncated) notices.push(`Showing matches from the first ${FILTER_SCAN_LIMIT_LABEL} commits. Older history was not searched.`);
+  return notices.length ? notices.join(' ') : undefined;
 }
 
 export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewState {
@@ -139,7 +142,8 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
     };
   }
 
-  const topologyByHash = buildShowLogLaneRows(state.entries);
+  const filtered = !!state.filterText.trim();
+  const topologyByHash = filtered ? undefined : buildShowLogLaneRows(state.entries);
 
   return {
     kind: 'visible',
@@ -172,10 +176,10 @@ export function buildShowLogWebviewState(state: ShowLogState): ShowLogWebviewSta
           kind: ref.kind
         })),
         stats: formatShortStat(entry.shortStat),
-        topology: topologyByHash.get(entry.hash) ?? {
+        topology: topologyByHash?.get(entry.hash) ?? {
           laneCount: 1,
           nodeLane: 0,
-          continuingLanes: [0],
+          continuingLanes: filtered ? [] : [0],
           secondaryParentLanes: [],
           mergeStartLanes: [],
           convergingLanes: [],

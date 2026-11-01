@@ -23,11 +23,12 @@ exhaustive audit of every extension capability. No runtime change was made.
    page, adding a commit, then loading the next page by numeric skip returned the
    same commit twice in a real Git fixture. The provider appends the duplicate.
    The history is pinned across pages, as verified in [the feature record](features/1.7.7-show-log-paging-snapshot.md).
-4. **P2 — Filtered history misrepresents ancestry.** Filtering three linear
+4. **P2 — Filtered history misrepresents ancestry (corrected).** Filtering three linear
    commits down to the first and third allocates the third to a new lane while
    the first lane remains open, suggesting unrelated histories. Real Git and
    the lane builder reproduced this. Project the topology through hidden
-   commits or explicitly represent disconnected/unknown filtered edges.
+   commits or explicitly represent disconnected/unknown filtered edges. Filtered
+   results now hide ancestry lines and explain why; see [the feature record](features/1.7.7-show-log-filtered-ancestry.md).
 
 ## Verification
 

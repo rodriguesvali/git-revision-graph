@@ -319,7 +319,7 @@ test('builds truthful filtered search truncation presentation', () => {
   assert.equal(resultState.emptyMessage, undefined);
   assert.equal(
     resultState.searchNotice,
-    'Showing matches from the first 2,000 commits. Older history was not searched.'
+    'Commit ancestry lines are hidden while filtering. Clear the filter to see the graph. Showing matches from the first 2,000 commits. Older history was not searched.'
   );
   assert.equal(appendPatch?.commits.length, 1);
 });

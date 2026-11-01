@@ -15,6 +15,7 @@ export interface PanelState {
   readonly kind?: string;
   readonly loading?: boolean;
   readonly showAllBranches?: boolean;
+  readonly filterText?: string;
   readonly hasUnsavedChanges?: boolean;
   readonly errorMessage?: string;
   readonly messageOrigin?: Origin;
@@ -40,6 +41,9 @@ interface Reply {
   readonly error?: string;
   readonly menuItems?: readonly { readonly action: string; readonly label: string; readonly disabled?: boolean }[];
   readonly viewOptions?: readonly string[];
+  readonly graphLines?: number;
+  readonly graphNodes?: number;
+  readonly statusText?: string;
 }
 
 export class ObservedPanel {
@@ -197,6 +201,11 @@ function bridgeScript(token: string): string {
       input.value = message.value;
       input.dispatchEvent(new Event('input', {bubbles:true}));
     }
+    if (message.op === 'filterShowLog') {
+      const input = document.getElementById('filterInput');
+      input.value = message.value;
+      input.dispatchEvent(new Event('input', {bubbles:true}));
+    }
     let menuItems, viewOptions;
     if (message.op === 'viewOptions') {
      document.getElementById('viewOptionsButton').click();
@@ -223,7 +232,10 @@ function bridgeScript(token: string): string {
       button.click();
      }
     }
-    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start),menuItems,viewOptions}});
+    const graphLines = document.querySelectorAll('.graph-main .graph-line').length;
+    const graphNodes = document.querySelectorAll('.graph-main .graph-node-marker').length;
+    const statusText = document.querySelector('.status-card')?.textContent || '';
+    api.postMessage({type:'__e2e',token,id:message.id,reply:{state,sent:sent.slice(start),menuItems,viewOptions,graphLines,graphNodes,statusText}});
    } catch (error) {
     api.postMessage({type:'__e2e',token,id:message.id,reply:{error:String(error),sent:[]}});
    }

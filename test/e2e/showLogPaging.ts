@@ -40,6 +40,16 @@ export async function verifyShowLogPaging(harness: SafetyHarness, graph: Observe
       assert.equal(after.commits![count].hash, nextExpected);
       assert.equal(new Set(after.commits!.map(commit => commit.hash)).size, after.commits!.length);
       assert.ok(!after.commits!.some(commit => commit.hash === newTip));
+      await log.control('filterShowLog', { value: 'paging 5' });
+      await waitFor(() => !log.state?.loading && log.state?.filterText === 'paging 5', 'filtered paging log');
+      const filtered = await log.control('snapshot');
+      assert.ok((filtered.graphNodes ?? 0) > 1);
+      assert.equal(filtered.graphLines, 0);
+      assert.match(filtered.statusText ?? '', /ancestry lines are hidden/i);
+      await log.control('filterShowLog', { value: '' });
+      await waitFor(() => !log.state?.loading && log.state?.filterText === '', 'unfiltered paging log');
+      const restored = await log.control('snapshot');
+      assert.ok((restored.graphLines ?? 0) > 0);
       tip = newTip;
       log.panel.dispose();
     }
