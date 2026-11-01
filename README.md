@@ -91,7 +91,8 @@ When a branch and tag share a name, comparison uses the selected reference.
 
 Open **Show Log** from any visible branch, tag, remote reference, stash, or commit. The log starts on
 the selected target and all commits merged into its history; **Show All Branches**
-also includes histories not merged into that target.
+also includes other histories from the selected target's position downward in
+the topologically ordered all-reference log.
 
 ![Show Log with compact commits, reference badges, and expanded file changes](https://raw.githubusercontent.com/rodriguesvali/git-revision-graph/main/media/marketplace/03-show-log.png)
 

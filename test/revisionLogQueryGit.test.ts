@@ -10,6 +10,38 @@ import { DefaultRevisionLogBackend } from '../src/revisionGraph/backendServices/
 
 const execFile = promisify(execFileCallback);
 
+test('all branches starts at the selected historical tag for paging and search', async () => {
+  const fixture = await createSharedGitFixture();
+  const root = fixture.repositoryPath;
+  const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+  try {
+    await git('tag', '-a', 'selected', '-m', 'Selected');
+    await fs.writeFile(path.join(root, 'later.txt'), 'target-later\n');
+    await git('add', '--', 'later.txt');
+    await git('commit', '-m', 'Later than selected');
+    const descendant = await git('rev-parse', 'HEAD');
+    const backend = new DefaultRevisionLogBackend();
+    const repo = createRepository({ root });
+    const source = { kind: 'target' as const, revision: 'refs/tags/selected', label: 'selected' };
+    const first = await backend.loadRevisionLog(repo, source, 1, 0, true);
+    const next = await backend.loadRevisionLog(repo, source, 1, 1, true);
+    assert.deepEqual(first.entries.map(e => e.hash), [fixture.renameCommit]);
+    assert.equal(first.hasMore, true);
+    assert.deepEqual(next.entries.map(e => e.hash), [fixture.initialCommit]);
+    assert.equal(next.hasMore, false);
+    assert.deepEqual((await backend.loadRevisionLog(repo, source, 50, 0, true, 'Later than selected')).entries, []);
+    assert.deepEqual((await backend.loadRevisionLog(repo, source, 50, 0, true, 'file:later.txt')).entries, []);
+    assert.deepEqual((await backend.loadRevisionLog(repo, source, 50, 0, true, 'file:"nested/new name.txt"')).entries.map(e => e.hash), [fixture.renameCommit]);
+    assert.ok(!(await backend.loadRevisionLog(repo, source, 50, 0, true)).entries.some(e => e.hash === descendant));
+    const detached = await git('commit-tree', fixture.renameCommit + '^{tree}', '-p', fixture.renameCommit, '-m', 'Detached');
+    const detachedSource = { kind: 'target' as const, revision: detached, label: detached };
+    const detachedPage = await backend.loadRevisionLog(repo, detachedSource, 1, 0, true);
+    assert.deepEqual(detachedPage.entries.map(e => e.hash), [detached]);
+  } finally {
+    await fixture.dispose();
+  }
+});
+
 test('file and change search finds changed code with literal punctuation and pages the current scope', async () => {
   const fixture = await createSharedGitFixture();
   const root = fixture.repositoryPath;

@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Include commits from merged branches in the selected branch's history. Enable
   **Show All Branches** to include histories that have not been merged.
 - Connect merged branch lines to their common ancestor in the Show Log graph.
+- Start **Show All Branches** at the selected reference, hiding entries above it.
 
 ## 1.7.6
 

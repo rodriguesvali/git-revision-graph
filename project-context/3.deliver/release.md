@@ -16,6 +16,7 @@ See the [cycle artifact](../2.build/features/1.7.7-release-cycle-opening.md).
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
 | Show Log merged history | Automated verification passed on 2026-10-31; manual smoke pending | [Feature record](../2.build/features/1.7.7-show-log-merged-history.md): include selected target ancestry, including merged side branches; retain explicit all-ref mode. `npm test`: 1,229 passed; quality check passed. |
 | Show Log branch origins | Automated verification passed on 2026-10-31; manual smoke pending | Connect all lanes at their shared ancestor; the supplied CadCraft history confirms the reported topology. `npm test`: 1,232 passed; quality check passed. |
+| Show Log all-branches anchor | Automated verification passed on 2026-10-31; manual smoke pending | [Feature record](../2.build/features/1.7.7-show-log-all-branches-anchor.md): start all-reference history at the selected commit; filters and pages share the boundary. `npm test`: 1,233 passed; quality check passed. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
 
 Before publication, rollback of the opening restores the prior version metadata

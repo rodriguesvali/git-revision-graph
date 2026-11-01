@@ -190,7 +190,9 @@ test('builds show log git args for a target revision with all branches enabled',
       '--skip=0',
       '--pretty=format:%x00%H%x00%P%x00%an%x00%ad%x00%D%x00%s%x00%b',
       '--shortstat',
-      '--all'
+      '--all',
+      '--end-of-options',
+      'feature/demo'
     ]
   );
 });

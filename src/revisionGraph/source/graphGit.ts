@@ -162,6 +162,7 @@ export function buildRevisionLogGitArgs(
     case 'target':
       if (showAllBranches) {
         args.push('--all');
+        args.push('--end-of-options', source.revision);
       } else {
         args.push('--end-of-options');
         args.push(source.revision);

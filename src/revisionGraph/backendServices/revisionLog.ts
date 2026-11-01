@@ -44,6 +44,8 @@ export interface RevisionLogChangesBackend {
 const REVISION_LOG_MAX_OUTPUT_BYTES = 12 * 1024 * 1024;
 const REVISION_LOG_FILTER_SCAN_BATCH_SIZE = 200;
 const DEFAULT_GIT_COMMAND_TIMEOUT_MS = 15000;
+const REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE = 10000;
+const REVISION_LOG_ANCHOR_SCAN_MAX_COMMITS = 200000;
 
 export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, RevisionLogChangesBackend {
   constructor(private readonly loadChanges: ComparisonChangesLoader = loadComparisonChanges) {}
@@ -61,24 +63,32 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     readonly searchTruncated: boolean;
   }> {
     throwIfAborted(signal, 'The revision graph load was aborted.');
+    const anchor = showAllBranches && source.kind === 'target'
+      ? await findAllBranchesAnchor(repository, source.revision, signal)
+      : undefined;
+    const effectiveSource: RevisionLogSource = anchor && source.kind === 'target'
+      ? { ...source, revision: anchor.hash }
+      : source;
+    const anchorOffset = anchor?.offset ?? 0;
     const refKindsByName = buildRevisionGraphRefKinds(repository.state.refs);
     const query = parseRevisionLogQuery(filterText);
     if (query.text || query.file !== undefined || query.change !== undefined) {
       return this.loadFilteredRevisionLog(
         repository,
-        source,
+        effectiveSource,
         limit,
         skip,
         showAllBranches,
         query,
         refKindsByName,
+        anchorOffset,
         signal
       );
     }
 
     const stdout = await execGit(
       repository.rootUri.fsPath,
-      buildRevisionLogGitArgs(source, limit + 1, skip, showAllBranches),
+      buildRevisionLogGitArgs(effectiveSource, limit + 1, anchorOffset + skip, showAllBranches),
       {
         signal,
         maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
@@ -111,6 +121,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
     showAllBranches: boolean,
     query: RevisionLogQuery,
     refKindsByName: ReadonlyMap<string, RevisionGraphRef['kind']>,
+    anchorOffset: number,
     signal?: AbortSignal
   ): Promise<{
     readonly entries: readonly RevisionLogEntry[];
@@ -130,7 +141,7 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
       const requestedBatchSize = batchSize + (isFinalScanBatch ? 1 : 0);
       const stdout = await execGit(
         repository.rootUri.fsPath,
-        buildRevisionLogGitArgs(source, requestedBatchSize, scannedCommits, showAllBranches),
+        buildRevisionLogGitArgs(source, requestedBatchSize, anchorOffset + scannedCommits, showAllBranches),
         {
           signal,
           maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES,
@@ -169,4 +180,21 @@ export class DefaultRevisionLogBackend implements RevisionGraphLogBackend, Revis
       searchTruncated
     };
   }
+}
+
+async function findAllBranchesAnchor(repository: Repository, revision: string, signal?: AbortSignal): Promise<{ hash: string; offset: number }> {
+  const options = { signal, timeoutMs: DEFAULT_GIT_COMMAND_TIMEOUT_MS, maxOutputBytes: REVISION_LOG_MAX_OUTPUT_BYTES };
+  const hash = (await execGit(repository.rootUri.fsPath,
+    ['rev-parse', '--verify', '--end-of-options', `${revision}^{commit}`], options)).trim();
+  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(hash)) throw new Error('Could not resolve the selected revision to a commit.');
+  for (let offset = 0; offset < REVISION_LOG_ANCHOR_SCAN_MAX_COMMITS; offset += REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE) {
+    const output = await execGit(repository.rootUri.fsPath,
+      ['rev-list', '--topo-order', '--all', `--max-count=${REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE}`,
+        `--skip=${offset}`, '--end-of-options', hash], options);
+    const hashes = output.trim() ? output.trim().split('\n') : [];
+    const index = hashes.indexOf(hash);
+    if (index >= 0) return { hash, offset: offset + index };
+    if (hashes.length < REVISION_LOG_ANCHOR_SCAN_BATCH_SIZE) break;
+  }
+  throw new Error('The selected revision could not be located within the first 200,000 commits of the all-branches history.');
 }
