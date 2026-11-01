@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-10-17
+Last consolidated: 2026-11-01
 
 ## Runtime
 
@@ -27,10 +27,9 @@ multi-repository ownership.
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
 
-## Candidate Watch: 1.7.7
+## Published Release Watch: 1.7.7
 
-The published baseline is 1.7.6 by maintainer confirmation; 1.7.7 remains
-unreleased. After publication monitor Show Log's merged-branch origins, exact
+The maintainer confirmed publication of 1.7.7 on 2026-11-01. Monitor Show Log's merged-branch origins, exact
 branch/tag selection, all-branches historical boundary and pagination when
 refs move. Filtered histories intentionally hide ancestry lines until the filter
 is cleared; check the notice and file actions against actual parent commits.

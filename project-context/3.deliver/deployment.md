@@ -26,7 +26,7 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
 
-## Candidate: 1.7.7
+## Published Release: 1.7.7
 
 - Publication artifacts describe the Show Log history, reference identity,
   pagination and filtered ancestry changes. Manifest and both root lockfile
@@ -35,21 +35,21 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 - On 2026-11-01, the production/webview builds and all 1,244 tests passed via
   `npm test`; quality and whitespace checks passed. A read-only VSCE file-list
   preview completed; no candidate VSIX was inspected.
-- The candidate has not been confirmed published. Final manual smoke, hosted CI,
-  VSIX inspection and clean-profile installation remain unrecorded. Production
+- Publication was confirmed by the maintainer on 2026-11-01. Exact publication
+  timestamp, uploaded package bytes and source/tag were not supplied or independently
+  verified. Final manual smoke, hosted CI, VSIX inspection and clean-profile
+  installation remain unrecorded. Production
   audit found zero vulnerabilities; full audit reported two moderate development
-  entries needing disposition, as recorded in release readiness. Packaging and
-  publication require separate maintainer authorization.
-- Before publication, stop or revert the affected candidate changes as needed.
-  After publication, use an authorized follow-up release or Marketplace action;
-  preserve user repositories and configuration.
+  entries needing disposition, as recorded in release readiness.
+- Use an authorized follow-up release or Marketplace action for corrections;
+  preserve user repositories and configuration. Do not reuse 1.7.7.
 
 ## Published Release: 1.7.6
 
 - Publication confirmed by the maintainer on 2026-10-28. The exact publication
   timestamp, uploaded package bytes, source/tag and clean-profile installation
-  evidence were not supplied or independently verified. The current published
-  baseline is 1.7.6.
+  evidence were not supplied or independently verified. The next published
+  baseline is 1.7.7, as recorded above.
 
 - Publication artifacts prepared on 2026-10-28 at the maintainer's request;
   the maintainer performed publication. The latest source verification passed

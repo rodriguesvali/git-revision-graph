@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.7 — Unreleased
+## 1.7.7
+
+Publication confirmed by the maintainer on 2026-11-01; the publication timestamp was not supplied.
 
 ### Show Log
 
