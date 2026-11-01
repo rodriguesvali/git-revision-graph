@@ -12,6 +12,50 @@ import { configureGitExecutablePath } from '../src/gitExec';
 
 const execFile = promisify(execFileCallback);
 
+test('paging keeps its original target, range and all-ref snapshot after refs move', async () => {
+  for (const mode of ['target', 'filtered', 'all', 'range'] as const) {
+    const fixture = await createSharedGitFixture();
+    const root = fixture.repositoryPath;
+    const git = async (...args: string[]) => (await execFile('git', args, { cwd: root })).stdout.trim();
+    try {
+      await git('checkout', '-b', 'paging');
+      for (let i = 0; i < 3; i++) {
+        await fs.writeFile(path.join(root, 'paging.txt'), `${i}\n`);
+        await git('add', 'paging.txt');
+        await git('commit', '-m', `paging ${i}`);
+      }
+      const source = mode === 'range'
+        ? { kind: 'range' as const, baseRevision: fixture.initialCommit, baseLabel: 'base', compareRevision: 'paging', compareLabel: 'paging' }
+        : { kind: 'target' as const, revision: 'paging', label: 'paging', refKind: 'branch' as const };
+      const backend = new DefaultRevisionLogBackend();
+      const load = backend.loadRevisionLog.bind(backend) as (...args: any[]) => Promise<any>;
+      const repo = createRepository({ root });
+      const all = mode === 'all';
+      const filter = mode === 'filtered' ? 'paging' : undefined;
+      const first = await load(repo, source, 1, 0, all, filter, undefined, 'capture');
+      assert.equal(first.entries[0]?.subject, 'paging 2');
+      assert.ok(first.snapshot);
+      await assert.rejects(load(repo, source, 1, 1, all, 'another filter', undefined, first.snapshot), /snapshot does not match/);
+      await assert.rejects(load(createRepository({ root: '/different-repository' }), source, 1, 1, all, filter, undefined, first.snapshot), /snapshot does not match/);
+      await fs.writeFile(path.join(root, 'paging.txt'), 'new\n');
+      await git('commit', '-am', 'paging new');
+      const second = await load(repo, source, 1, 1, all, filter, undefined, first.snapshot);
+      assert.equal(second.entries[0]?.subject, 'paging 1', mode);
+      assert.notEqual(first.entries[0]?.hash, second.entries[0]?.hash);
+      const refreshed = await load(repo, source, 1, 0, all, filter, undefined, 'capture');
+      assert.equal(refreshed.entries[0]?.subject, 'paging new', mode);
+      if (mode === 'target') {
+        await git('checkout', '--detach');
+        await git('branch', '-D', 'paging');
+        const stillPinned = await load(repo, source, 1, 1, all, filter, undefined, first.snapshot);
+        assert.equal(stillPinned.entries[0]?.subject, 'paging 1');
+      }
+    } finally {
+      await fixture.dispose();
+    }
+  }
+});
+
 test('all-branches anchor and pages use one ref snapshot when another branch moves mid-load', async () => {
   const fixture = await createSharedGitFixture();
   const root = fixture.repositoryPath;

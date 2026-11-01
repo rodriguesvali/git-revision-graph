@@ -13,6 +13,7 @@ import type { RevisionGraphChangedPathOptions } from './backendServices/document
 import type { RevisionGraphMergeAnalysisBackend } from './backendServices/mergeAnalysis';
 import type { RevisionGraphLimitPolicy, RevisionGraphSnapshotBackend, RevisionGraphSnapshotLoadContext } from './backendServices/snapshot';
 import type { RevisionGraphLogBackend, RevisionLogChangesBackend } from './backendServices/revisionLog';
+import type { RevisionLogHistorySnapshot } from './revisionLogTypes';
 
 export type {
   RevisionGraphChangedPath,
@@ -65,7 +66,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
     skip = 0,
     showAllBranches?: boolean,
     filterText?: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    snapshot?: RevisionLogHistorySnapshot | 'capture'
   ): ReturnType<RevisionGraphLogBackend['loadRevisionLog']> {
     return this.revisionLogBackend.loadRevisionLog(
       repository,
@@ -74,7 +76,8 @@ export class DefaultRevisionGraphBackend implements RevisionGraphBackend, ShowLo
       skip,
       showAllBranches,
       filterText,
-      signal
+      signal,
+      snapshot
     );
   }
 

@@ -182,7 +182,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         this.state.showAllBranches,
         this.state.filterText,
-        activeRequest.signal
+        activeRequest.signal, 'capture'
       );
       if (!this.logLoadRequests.isCurrent(activeRequest)) {
         return;
@@ -252,7 +252,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     this.fileSearch.reset();
     this.state = {
       ...this.state,
-      showAllBranches: value,
+      showAllBranches: value, historySnapshot: undefined,
       loading: true,
       loadingMore: false,
       errorMessage: undefined,
@@ -276,7 +276,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         value,
         this.state.filterText,
-        activeRequest.signal
+        activeRequest.signal, 'capture'
       );
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
@@ -328,7 +328,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
     this.fileSearch.reset();
     this.state = {
       ...this.state,
-      filterText,
+      filterText, historySnapshot: undefined,
       loading: true,
       loadingMore: false,
       errorMessage: undefined,
@@ -352,7 +352,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         0,
         this.state.showAllBranches,
         filterText,
-        activeRequest.signal
+        activeRequest.signal, 'capture'
       );
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;
@@ -404,7 +404,7 @@ export class ShowLogViewProvider implements vscode.Disposable, ShowLogPresenter 
         skip,
         this.state.showAllBranches,
         this.state.filterText,
-        activeRequest.signal
+        activeRequest.signal, this.state.historySnapshot
       );
       if (!this.logLoadRequests.isCurrent(activeRequest) || this.state.kind !== 'visible') {
         return;

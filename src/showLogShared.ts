@@ -1,5 +1,6 @@
 import type { Change, Repository } from './git';
 import type { RevisionLogEntry, RevisionLogSource } from './revisionGraphTypes';
+import type { RevisionLogHistorySnapshot } from './revisionGraph/revisionLogTypes';
 
 export const SHOW_LOG_CACHED_CHANGES_MAX_COMMITS = 50;
 
@@ -16,6 +17,7 @@ export interface ShowLogState {
   readonly sourceToken: string;
   readonly repository: Repository | undefined;
   readonly source: RevisionLogSource | undefined;
+  readonly historySnapshot?: RevisionLogHistorySnapshot;
   readonly showAllBranches: boolean;
   readonly filterText: string;
   readonly entries: readonly RevisionLogEntry[];

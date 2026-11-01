@@ -35,7 +35,8 @@ export async function refreshVisibleShowLog(options: RefreshVisibleShowLogOption
       0,
       initialState.showAllBranches,
       initialState.filterText,
-      activeRequest.signal
+      activeRequest.signal,
+      'capture'
     );
     const currentState = options.getState();
     if (
@@ -51,6 +52,7 @@ export async function refreshVisibleShowLog(options: RefreshVisibleShowLogOption
       loading: false,
       loadingMore: false,
       entries: [...result.entries],
+      historySnapshot: result.snapshot,
       hasMore: result.hasMore,
       searchTruncated: result.searchTruncated,
       errorMessage: undefined

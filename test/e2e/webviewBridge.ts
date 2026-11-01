@@ -174,6 +174,13 @@ function bridgeScript(token: string): string {
    const message = event.data;
    if (!message) return;
    if (['state', 'init-state', 'update-state'].includes(message.type) && message.state) state = message.state;
+   if (message.type === 'append' && state && message.patch
+    && message.patch.sourceToken === state.sourceToken
+    && message.patch.previousCommitCount === state.commits.length) {
+    state = {...state, summaryCount:message.patch.summaryCount || state.summaryCount,
+     loadingMore:!!message.patch.loadingMore, errorMessage:message.patch.errorMessage,
+     commits:state.commits.concat(message.patch.commits || []), hasMore:!!message.patch.hasMore};
+   }
    if (message.type === 'update-repository-status' && state
     && message.status.repositoryPath === state.repositoryPath && message.status.sceneLayoutKey === state.sceneLayoutKey) state = {...state,...message.status};
    if (message.type !== '__e2e-control' || message.token !== token || !api) return;

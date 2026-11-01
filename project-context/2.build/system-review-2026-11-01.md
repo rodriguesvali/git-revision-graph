@@ -19,10 +19,10 @@ exhaustive audit of every extension capability. No runtime change was made.
    returned page began at the new descendant instead of the selected tag.
    Pin a consistent ref snapshot or detect changes and retry.
    Implemented and verified in [the feature record](features/1.7.7-show-log-anchor-snapshot.md).
-3. **P2 — Paging a moving reference duplicates or omits commits.** Loading a
+3. **P2 — Paging a moving reference duplicates or omits commits (corrected).** Loading a
    page, adding a commit, then loading the next page by numeric skip returned the
    same commit twice in a real Git fixture. The provider appends the duplicate.
-   Pin the history or invalidate and reload when its snapshot changes.
+   The history is pinned across pages, as verified in [the feature record](features/1.7.7-show-log-paging-snapshot.md).
 4. **P2 — Filtered history misrepresents ancestry.** Filtering three linear
    commits down to the first and third allocates the third to a new lane while
    the first lane remains open, suggesting unrelated histories. Real Git and

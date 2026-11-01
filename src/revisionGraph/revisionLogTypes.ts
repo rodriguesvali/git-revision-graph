@@ -4,6 +4,15 @@ export type RevisionLogSource = RevisionGraphProtocol.RevisionLogSource;
 
 export const REVISION_LOG_FILTER_SCAN_MAX_COMMITS = 2000;
 
+/** Host-only history identity retained across pages of one Show Log view. */
+export interface RevisionLogHistorySnapshot {
+  readonly repositoryPath: string;
+  readonly requestKey: string;
+  readonly source: RevisionLogSource;
+  readonly refSnapshot?: string;
+  readonly anchorOffset: number;
+}
+
 export interface RevisionLogEntry {
   readonly hash: string;
   readonly shortHash: string;

@@ -7,6 +7,7 @@ import { SafetyHarness } from './safetyHarness';
 import { command, ObservedPanel, waitFor } from './webviewBridge';
 import { checkoutLog, contents, git, GitFault, indexState } from './gitSafetyFixture';
 import { verifyCompareRevertPolicy } from './compareRevertPolicy';
+import { verifyShowLogPaging } from './showLogPaging';
 const GRAPH = 'gitRefs.revisionGraphEditorPanel';
 const COMPARE = 'gitRefs.compareResultsView';
 const LOG = 'gitRefs.showLogView';
@@ -36,6 +37,9 @@ export async function runSafetyScenarios(harness: SafetyHarness, repositories: r
     console.log('[e2e:safety] partial rename restore failure / recovery of both paths and index passed');
     await pendingClose(harness, graph, extensionPath);
     console.log('[e2e:safety] pending load / close / reopen / stale message rejection passed');
+    const pagingGraph = await harness.panel(GRAPH);
+    await choose(harness, pagingGraph, a);
+    await verifyShowLogPaging(harness, pagingGraph);
     assert.equal(git(a, ['symbolic-ref', '--short', 'HEAD']), 'main');
     assert.equal(git(b, ['symbolic-ref', '--short', 'HEAD']), 'main');
     assert.deepEqual(harness.panels.flatMap(panel => panel.received.filter(message => message.type === '__e2e-browser-error')), [], 'Actual webviews must not report JavaScript errors');

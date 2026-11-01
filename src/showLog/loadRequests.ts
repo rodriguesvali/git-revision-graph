@@ -57,6 +57,7 @@ export function replaceLoadedShowLogEntries(state: ShowLogState, result: Awaited
     ...state,
     loading: false,
     entries: [...result.entries],
+    historySnapshot: result.snapshot,
     hasMore: result.hasMore,
     searchTruncated: result.searchTruncated
   };

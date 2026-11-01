@@ -433,6 +433,31 @@ test('Show Log scopes target sources until all branches is explicitly enabled', 
   provider.dispose();
 });
 
+test('Show Log reuses its history snapshot for pagination and recaptures it for a new scope', async (t) => {
+  const harness = installVscodePanelMock(t);
+  const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
+  const calls: unknown[] = [];
+  const firstSnapshot = { identity: 'first' };
+  const secondSnapshot = { identity: 'second' };
+  const backend = { async loadRevisionLog(_repository: unknown, _source: unknown, _limit: number,
+    skip: number, _all: boolean, _filter: string, _signal: AbortSignal, snapshot: unknown) {
+    calls.push(snapshot);
+    return { entries: [createRevisionLogEntry({ hash: String(calls.length) })], hasMore: skip === 0,
+      searchTruncated: false, snapshot: calls.length < 3 ? firstSnapshot : secondSnapshot };
+  } } as never;
+  const provider = new ShowLogViewProvider(harness.extensionUri, backend, {} as never);
+  await provider.showSource(createRepository({ root: '/workspace/repo' }),
+    { kind: 'target', revision: 'main', label: 'main' });
+  sendCurrentPanelMessage(harness.panels[0], { type: 'loadMore' });
+  await waitForAsyncHandlers();
+  sendCurrentPanelMessage(harness.panels[0], { type: 'toggleShowAllBranches', value: true });
+  await waitForAsyncHandlers();
+  sendCurrentPanelMessage(harness.panels[0], { type: 'loadMore' });
+  await waitForAsyncHandlers();
+  assert.deepEqual(calls, ['capture', firstSnapshot, 'capture', secondSnapshot]);
+  provider.dispose();
+});
+
 test('Show Log reloads the current commit references after creating a tag', async (t) => {
   const harness = installVscodePanelMock(t);
   const { ShowLogViewProvider } = loadFresh('../src/showLogView') as typeof import('../src/showLogView');
