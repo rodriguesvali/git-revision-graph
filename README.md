@@ -116,6 +116,7 @@ the topologically ordered all-reference log.
 - Create branches or tags from exact commits, check out a commit to a new branch, reset with
   confirmation, and cherry-pick selected commits with conflict handoff to Source Control.
 
+Open **Search help** beside the Show Log search field for examples and search limits.
 Show Log accepts `file:src/auth/` for changes to a repository-relative file or directory and
 `change:"validateToken("` for literal text in added or removed text lines. Combine them with
 ordinary metadata text, for example `file:src/auth/ change:"validateToken(" fix parser`, to require

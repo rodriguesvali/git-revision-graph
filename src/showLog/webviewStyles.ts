@@ -1,3 +1,4 @@
+import { renderShowLogSearchStyles } from './webviewSearchHelp';
 export function renderShowLogWebviewStyles(): string { return `
     :root {
       color-scheme: var(--vscode-color-scheme);
@@ -100,55 +101,7 @@ export function renderShowLogWebviewStyles(): string { return `
     .toolbar-toggle input {
       margin: 0;
     }
-    .filter-control {
-      position: relative;
-      display: flex;
-      flex: 0 1 220px;
-      min-width: 150px;
-    }
-    .filter-input {
-      width: 100%;
-      height: 24px;
-      padding: 3px 24px 3px 8px;
-      border: 1px solid var(--vscode-input-border, transparent);
-      border-radius: 4px;
-      color: var(--vscode-input-foreground);
-      background: var(--vscode-input-background);
-      outline: none;
-      font: 11px var(--vscode-font-family);
-    }
-    .filter-input:focus {
-      border-color: var(--vscode-focusBorder);
-    }
-    .filter-input::placeholder {
-      color: var(--vscode-input-placeholderForeground);
-    }
-    .filter-clear {
-      position: absolute;
-      top: 50%;
-      right: 4px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      padding: 0;
-      border: 0;
-      border-radius: 3px;
-      color: var(--vscode-descriptionForeground);
-      background: transparent;
-      transform: translateY(-50%);
-      cursor: pointer;
-    }
-    .filter-clear:hover,
-    .filter-clear:focus-visible {
-      color: var(--vscode-foreground);
-      background: var(--vscode-toolbar-hoverBackground);
-      outline: none;
-    }
-    .filter-clear[hidden] {
-      display: none;
-    }
+    ${renderShowLogSearchStyles()}
     .loading-chip {
       display: none;
       flex-shrink: 0;

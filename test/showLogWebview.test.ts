@@ -4,6 +4,7 @@ import * as vm from 'node:vm';
 
 import { renderShowLogWebviewHtml } from '../src/showLogWebview';
 import { renderShowLogWebviewStyles } from '../src/showLog/webviewStyles';
+import { parseRevisionLogQuery } from '../src/revisionGraph/source/revisionLogQuery';
 
 test('renders converging lanes to the commit and stops them in expanded rows', () => {
   const html = renderShowLogWebviewHtml();
@@ -38,6 +39,22 @@ test('renders filtered commits and expanded rows without invented ancestry lines
     assert.doesNotMatch(rendered, /<path/);
   }
   assert.doesNotMatch(context.renderContinuationTopology(topology), /<path/);
+});
+
+test('Show Log offers keyboard-accessible search help with useful examples and limits', () => {
+  const html = renderShowLogWebviewHtml();
+  assert.match(html, /<details class="search-help"[^>]*>/);
+  assert.match(html, /<summary[^>]*aria-label="Search help"[^>]*>/);
+  assert.match(html, /file:src\/auth\//);
+  assert.match(html, /change:&quot;validateToken\(&quot;/);
+  assert.match(html, /case-sensitive/);
+  assert.match(html, /2,000 commits/);
+  assert.match(html, /older history/i);
+  assert.match(html, /search-help-panel/);
+  const combinedExample = html.match(/<code>(file:src\/auth\/ change:&quot;validateToken\(&quot; fix parser)<\/code>/)?.[1];
+  assert.ok(combinedExample);
+  assert.deepEqual(parseRevisionLogQuery(combinedExample.replaceAll('&quot;', '"')),
+    { text: 'fix parser', file: 'src/auth/', change: 'validateToken(' });
 });
 
 test('composes the Show Log shell with its dedicated style module', () => {

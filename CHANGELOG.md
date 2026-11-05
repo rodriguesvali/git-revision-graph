@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.8 — Unreleased
 
+- Add accessible Show Log search help with examples and search limits.
+
 - Guide selection of two revisions and offer a direct Compare action in the graph.
 
 - Show clearer progress, commit context and blocking errors in the compact Find Bug controls.

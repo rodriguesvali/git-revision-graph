@@ -11,7 +11,7 @@
     "src/revisionGraph/webview/script/interactions.ts": 881,
     "src/revisionGraph/webview/script/layout.ts": 510,
     "src/revisionGraph/webview/styles.ts": 979,
-    "src/showLog/webviewStyles.ts": 869,
+    "src/showLog/webviewStyles.ts": 822,
     "src/showLogView.ts": 744,
     "src/showLogWebview.ts": 1173
   },

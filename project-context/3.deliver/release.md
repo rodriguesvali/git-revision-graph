@@ -17,6 +17,7 @@ metadata and release records; no feature scope has been selected. See the
 | Apply Patch unavailable reasons | Automated verification passed; manual smoke pending | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
 | Find Bug compact feedback | Automated verification passed; manual smoke pending | Clarify start/update state, test commit and blocking error; `npm test`: 1,250 passed; quality check passed; [feature record](../2.build/features/1.7.8-bisect-compact-feedback.md). |
 | Graph comparison discovery | Automated verification passed; manual smoke pending | Contextual dismissible selection hint and direct Compare action; `npm test`: 1,251 passed; quality check passed; [feature record](../2.build/features/1.7.8-comparison-discovery.md). |
+| Show Log search help | Automated verification passed on rerun; manual smoke pending | Search examples and limits; full rerun: 1,252 tests passed; an initial Git search test failed once and passed in isolation and on rerun. See [feature record](../2.build/features/1.7.8-show-log-search-help.md). |
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
 

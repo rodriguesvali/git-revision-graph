@@ -9,12 +9,11 @@ import {
   createWebviewNonce
 } from './webviewSecurity';
 import { renderShowLogWebviewStyles } from './showLog/webviewStyles';
+import { renderShowLogSearchHelp } from './showLog/webviewSearchHelp';
 import { renderWebviewDisplayHelpers } from './webviewDisplayHelpers';
 import { renderShowLogFileSearchScript } from './showLog/webviewFileSearch';
-
 export function renderShowLogWebviewHtml(): string {
   const nonce = createWebviewNonce();
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +33,7 @@ export function renderShowLogWebviewHtml(): string {
           <input class="filter-input" id="filterInput" type="search" placeholder="Search · file: · change:" aria-label="Filter commits" title="Search commit text, file:src/auth/ or change:&quot;validateToken&quot;. Combine filters with spaces; quote values containing spaces." spellcheck="false" />
           <button class="filter-clear" id="filterClear" type="button" title="Clear filter" aria-label="Clear filter" hidden>×</button>
         </div>
+        ${renderShowLogSearchHelp()}
         <label class="toolbar-toggle" id="showAllBranchesControl" hidden>
           <input type="checkbox" id="showAllBranchesToggle" />
           <span>Show All Branches</span>
