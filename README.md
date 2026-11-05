@@ -45,7 +45,8 @@ Custom tooltips in the graph and Show Log appear after 1 second of hover.
 
 Use **Apply Patch…** from the currently checked-out branch's context menu. The
 chosen repository must have no staged/unstaged changes, untracked files or unsaved
-editors. Select one patch and confirm its destination and change summary.
+editors. When the action is unavailable, its menu explains the conditions to resolve.
+Select one patch and confirm its destination and change summary.
 Changes remain unstaged; no commit is created. Detached HEAD, patch series and
 submodule imports and sparse-checkout application are not supported. Keep an input patch outside the repository
 if it would otherwise be an untracked file.

@@ -95,3 +95,11 @@ type RevisionGraphWebviewHostMessage =
   }
   | { readonly type: 'set-loading'; readonly label: string; readonly mode?: 'blocking' | 'subtle' }
   | { readonly type: 'set-error'; readonly message: string };
+
+interface RevisionGraphWebviewMenuItemOptions {
+  readonly primary?: boolean;
+  readonly destructive?: boolean;
+  readonly disabled?: boolean;
+  readonly disabledReason?: string;
+  readonly action?: string;
+}

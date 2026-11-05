@@ -14,6 +14,7 @@ metadata and release records; no feature scope has been selected. See the
 | Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.8. |
 | Build and tests | Passed on 2026-11-05 | `npm test` built production and webview bundles and passed 1,244 tests; zero failures, cancellations or skips. Version fields and `git diff --check` passed. |
 | Find Bug start UX | Automated verification passed; manual smoke pending | Minimize the confirmation dialog when starting; progress and recovery remain available in the compact banner. `npm test`: 1,245 passed; quality check passed. See [feature record](../2.build/features/1.7.8-bisect-start-minimize.md). |
+| Apply Patch unavailable reasons | Automated verification passed; manual smoke pending | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
 

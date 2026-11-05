@@ -37,6 +37,7 @@ interface RevisionGraphWebviewContextMenuItem {
   readonly primary?: boolean;
   readonly destructive?: boolean;
   readonly disabled?: boolean;
+  readonly disabledReason?: string;
 }
 
 interface RevisionGraphWebviewContextMenuComparisonTargets {
@@ -62,6 +63,13 @@ interface RevisionGraphWebviewContextMenuPlanInput {
 interface RevisionGraphWebviewContextMenuPlan {
   readonly items: readonly RevisionGraphWebviewContextMenuItem[];
   readonly shouldRequestRemoteTagState: boolean;
+}
+
+function appendRevisionGraphMenuDisabledReason(button: HTMLButtonElement, reasonText: string): void {
+  const reason = document.createElement('span');
+  reason.className = 'context-menu-disabled-reason';
+  reason.textContent = reasonText;
+  button.appendChild(reason);
 }
 
 interface RevisionGraphWebviewContextSubmenuPlacementInput {
@@ -199,8 +207,14 @@ function createRevisionGraphWebviewTargetContextMenuPlan(
   const items: RevisionGraphWebviewContextMenuItem[] = [];
   addRevisionGraphWebviewInspectionItems(items, input.target, true);
   if (input.target.kind === 'head' && input.target.name === input.currentHeadName) {
+    const reasons: string[] = [];
+    if (input.hasConflictedMerge) reasons.push('Resolve conflicts and complete or abort the merge.');
+    else if (input.hasMergeConflicts) reasons.push('Resolve conflicts in Source Control.');
+    if (input.isWorkspaceDirty) reasons.push('Clear workspace changes, including untracked files.');
+    if (input.hasUnsavedChanges) reasons.push('Save open files in this repository.');
     addRevisionGraphWebviewContextMenuItem(items, 'Workspace', 'Apply Patch…', 'apply-patch', {
-      disabled: input.isWorkspaceDirty || input.hasUnsavedChanges || input.hasMergeConflicts || input.hasConflictedMerge
+      disabled: reasons.length > 0,
+      ...(reasons.length ? { disabledReason: reasons.join(' ') } : {})
     });
   }
   addRevisionGraphWebviewContextMenuItem(
@@ -429,7 +443,7 @@ function addRevisionGraphWebviewContextMenuItem(
   action: RevisionGraphWebviewContextMenuAction,
   options: Pick<
     RevisionGraphWebviewContextMenuItem,
-    'primary' | 'destructive' | 'disabled' | 'submenu'
+    'primary' | 'destructive' | 'disabled' | 'disabledReason' | 'submenu'
   > = {}
 ): void {
   items.push({ section, label, action, ...options });

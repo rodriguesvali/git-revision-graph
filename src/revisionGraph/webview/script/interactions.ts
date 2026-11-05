@@ -1,10 +1,4 @@
     type RevisionGraphWebviewMenuEntry = { readonly label: string; readonly onClick: () => void };
-    type RevisionGraphWebviewMenuItemOptions = {
-      readonly primary?: boolean;
-      readonly destructive?: boolean;
-      readonly disabled?: boolean;
-      readonly action?: string;
-    };
     const contextSubmenuCloseScheduler = createRevisionGraphWebviewContextSubmenuCloseScheduler();
     function setZoom(zoom: number, options: { readonly preserveViewport?: boolean } = {}) {
       const shouldPreserveViewport = options.preserveViewport !== false;
@@ -487,9 +481,11 @@
         button.classList.add('destructive');
       }
       button.textContent = label;
-      button.disabled = !!options.disabled;
-      button.setAttribute('aria-disabled', String(button.disabled));
+      button.disabled = !!options.disabled && !options.disabledReason;
+      button.setAttribute('aria-disabled', String(!!options.disabled));
+      if (options.disabledReason) appendRevisionGraphMenuDisabledReason(button, options.disabledReason);
       button.addEventListener('click', (event) => {
+        if (options.disabled) { event.preventDefault(); return; }
         contextMenuKeyboard.beforeAction(event);
         onClick();
         closeContextMenu();

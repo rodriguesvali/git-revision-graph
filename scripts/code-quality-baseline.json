@@ -8,9 +8,9 @@
     "src/revisionGraph/controller.ts": 736,
     "src/revisionGraph/panel/state.ts": 650,
     "src/revisionGraph/webview/script/bootstrap.ts": 1723,
-    "src/revisionGraph/webview/script/interactions.ts": 885,
+    "src/revisionGraph/webview/script/interactions.ts": 881,
     "src/revisionGraph/webview/script/layout.ts": 510,
-    "src/revisionGraph/webview/styles.ts": 1039,
+    "src/revisionGraph/webview/styles.ts": 979,
     "src/showLog/webviewStyles.ts": 869,
     "src/showLogView.ts": 744,
     "src/showLogWebview.ts": 1173

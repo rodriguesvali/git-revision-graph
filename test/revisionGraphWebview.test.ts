@@ -80,6 +80,47 @@ test('Apply Patch appears only on HEAD and is disabled for dirty files or unsave
   assert.equal(action({ comparisonTargets: { base: target, compare: createContextMenuTarget('branch', 'other') } }), undefined);
 });
 
+test('Apply Patch explains every active blocker and clears explanations when ready', () => {
+  const runtime = createWebviewRuntime();
+  const target = createContextMenuTarget('head', 'main');
+  const item = (overrides: Record<string, unknown>) => createContextMenuPlan(runtime, target, overrides)
+    .items.find((entry: any) => entry.action === 'apply-patch');
+  assert.equal(item({}).disabledReason, undefined);
+  assert.match(item({ isWorkspaceDirty: true }).disabledReason, /workspace changes/i);
+  assert.match(item({ hasUnsavedChanges: true }).disabledReason, /save.*open files/i);
+  assert.match(item({ hasMergeConflicts: true }).disabledReason, /resolve.*conflicts/i);
+  assert.match(item({ hasConflictedMerge: true }).disabledReason, /merge/i);
+  const combined = item({ isWorkspaceDirty: true, hasUnsavedChanges: true, hasMergeConflicts: true }).disabledReason;
+  assert.match(combined, /workspace changes/i);
+  assert.match(combined, /save.*open files/i);
+  assert.match(combined, /resolve.*conflicts/i);
+});
+
+test('Apply Patch menu presents blockers and cannot dispatch until ready', () => {
+  for (const dirty of [true, false]) {
+    const runtime = createWebviewRuntime();
+    runtime.context.handleHostMessage({ type: 'init-state', state: createReadyGraphState({ isWorkspaceDirty: dirty }) });
+    (globalThis as any).Element = (globalThis as any).HTMLElement;
+    const nodeLayer = runtime.elements.get('nodeLayer')!;
+    const reference = (globalThis as any).document.createElement('div');
+    reference.setAttribute('data-ref-id', 'head1::head::main');
+    reference.closest = (selector: string) => selector === '[data-ref-id]' ? reference : null;
+    nodeLayer.appendChild(reference);
+    nodeLayer.listeners.contextmenu[0]({ target: reference, clientX: 10, clientY: 10, preventDefault() {} });
+    const menu = runtime.elements.get('contextMenu')!;
+    const item = menu.children.find(node => node.dataset.menuKey === 'apply-patch');
+    assert.ok(item);
+    assert.equal(item.disabled, false);
+    assert.equal(item.getAttribute('aria-disabled'), String(dirty));
+    assert.equal(item.children.some(node => /workspace changes/i.test(node.textContent)), dirty);
+    const before = runtime.postedMessages.length;
+    item.listeners.click[0]({ detail: 1, preventDefault() {} });
+    if (dirty) item.listeners.click[0]({ detail: 0, preventDefault() {} });
+    assert.equal(runtime.postedMessages.length, before + (dirty ? 0 : 1));
+    if (!dirty) assert.equal(runtime.postedMessages.at(-1).type, 'apply-patch');
+  }
+});
+
 test('treats Bisect Commit as a commit target and centers only when the marker or repository changes', () => {
   const runtime = createWebviewRuntime();
   const reference = { id: 'a::bisect::Bisect Commit', hash: 'a', kind: 'bisect', name: 'Bisect Commit' };
@@ -1103,6 +1144,19 @@ test('keyboard reference menus navigate only the active level and skip disabled 
   f.key('Home');
   assert.equal(f.active(), f.first);
   assert.equal(f.key('a').prevented, false);
+});
+
+test('keyboard menus can focus a disabled action with an explanation', () => {
+  const f = createMenuKeyboardFixture();
+  const explained = f.element('button', 'context-menu-item');
+  explained.setAttribute('aria-disabled', 'true');
+  explained.textContent = 'Apply Patch… Clear workspace changes.';
+  f.menu.children.splice(1, 0, explained);
+  explained.parentElement = f.menu;
+  f.first.focus();
+  f.key('ArrowDown');
+  assert.equal(f.active(), explained);
+  assert.match(f.active().textContent, /workspace changes/i);
 });
 
 test('keyboard reference menus close submenus before the parent and restore reference focus', () => {
