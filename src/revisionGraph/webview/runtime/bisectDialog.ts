@@ -33,7 +33,9 @@ function createBisectDialog(post: (message: RevisionGraphProtocol.MessageOf<'bis
       ...(commitHash ? { commitHash } : {})
     };
     if (action !== 'copy' && action !== 'inspect' && action !== 'scm') {
-      pending = true; announcement.textContent = 'Updating bug search.'; render();
+      pending = true; announcement.textContent = 'Updating bug search.';
+      if (action === 'start' || action === 'start-swapped') hide();
+      render();
     }
     post(message);
   }

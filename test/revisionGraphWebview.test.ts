@@ -4283,6 +4283,31 @@ function createCompactBisectRuntime() {
     text: () => banner.querySelectorAll().map(node => node.textContent).join(' ') };
 }
 
+test('starting a bug search minimizes the dialog and keeps progress and recovery available', () => {
+  for (const swapped of [false, true]) {
+    const ui = createCompactBisectRuntime();
+    assert.equal(ui.backdrop.hidden, false, 'initial confirmation is visible');
+    if (swapped) ui.click('swap', ui.backdrop);
+    ui.click('start', ui.backdrop);
+    assert.equal(ui.runtime.postedMessages.at(-1).action, swapped ? 'start-swapped' : 'start');
+    assert.equal(ui.backdrop.hidden, true);
+    assert.equal(ui.banner.hidden, false);
+    assert.match(ui.text(), /Updating search/);
+    ui.send({ status: 'preparing', version: 2, error: 'Resolve changes before starting' });
+    assert.match(ui.text(), /Search blocked/);
+    ui.click('expand');
+    assert.equal(ui.backdrop.hidden, false);
+    assert.ok(ui.button(swapped ? 'start-swapped:' : 'start:', ui.backdrop), 'retry remains available');
+  }
+  const ui = createCompactBisectRuntime();
+  ui.click('start', ui.backdrop);
+  ui.send({ status: 'testing', version: 2, current: ui.state.selected });
+  assert.equal(ui.backdrop.hidden, true);
+  assert.match(ui.text(), /Step 1.*aaaaaaa/);
+  assert.equal(ui.button('good:')?.disabled, false);
+  assert.notEqual(ui.runtime.activeElement(), ui.button('good:'));
+});
+
 test('compact bisect controls appear only for a current test revision and use Minimize and Expand labels', () => {
   const ui = createCompactBisectRuntime();
   assert.equal(ui.button('hide', ui.backdrop)?.textContent, 'Minimize');

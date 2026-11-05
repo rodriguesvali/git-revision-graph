@@ -142,7 +142,7 @@ repositories or closing the graph cancels the request. No checkout is required.
 Use **Find Bug Against HEAD…** on a graph reference or a single Show Log commit
 to find the first revision introducing a bug. Confirm which endpoint has the bug,
 then test each checkout and choose **Bug absent**, **Bug present**, or **Cannot test**.
-Use **Minimize** to keep the graph visible and classify ready test commits with
+The dialog minimizes when the search starts, keeping the graph visible. Classify ready test commits with
 **Bug absent** / **Bug present** in the compact banner. Use **Expand** for
 **Cannot test**, **Undo last answer**, history and recovery. Decisions remain
 disabled while updating or blocked by an error; completion opens the result once.
