@@ -144,7 +144,8 @@ Use **Find Bug Against HEAD…** on a graph reference or a single Show Log commi
 to find the first revision introducing a bug. Confirm which endpoint has the bug,
 then test each checkout and choose **Bug absent**, **Bug present**, or **Cannot test**.
 The dialog minimizes when the search starts, keeping the graph visible. Classify ready test commits with
-**Bug absent** / **Bug present** in the compact banner. Use **Expand** for
+**Bug absent** / **Bug present** in the compact banner, which shows the test commit
+and a concise message when the search is blocked. Use **Expand** for
 **Cannot test**, **Undo last answer**, history and recovery. Decisions remain
 disabled while updating or blocked by an error; completion opens the result once.
 Skipped revisions can leave several possible culprits.

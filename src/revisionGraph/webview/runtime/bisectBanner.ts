@@ -27,19 +27,31 @@ interface BisectCompactBannerInput {
   readonly control: (label: string, action: RevisionGraphProtocol.BisectControl) => HTMLButtonElement;
 }
 
-function getBisectCompactLabel(state: RevisionGraphProtocol.BisectView): string {
+function getBisectCompactLabel(state: RevisionGraphProtocol.BisectView, pending: boolean): string {
+  if (pending || state.busy) return state.status === 'preparing' ? 'Starting search…' : 'Updating search…';
+  if (state.error && state.status === 'preparing') return 'Bug search blocked';
   if (state.status === 'preparing') return 'Bug search ready to start';
   if (state.status !== 'testing') return 'Bug search result ready';
-  return state.current ? `Step ${state.history.length + 1} · ${state.current.hash.slice(0, 7)}` : 'Waiting for test revision';
+  return state.current
+    ? `Step ${state.history.length + 1} · Test this commit: ${state.current.hash.slice(0, 7)} · ${compactBisectText(state.current.subject, 100)}`
+    : 'Waiting for test revision';
+}
+
+function compactBisectText(value: string, limit: number): string {
+  const line = value.split(/\r?\n/, 1)[0].trim();
+  return line.length > limit ? `${line.slice(0, limit - 1)}…` : line;
 }
 
 function createBisectCompactContext(state: RevisionGraphProtocol.BisectView, pending: boolean): HTMLElement {
   const context = document.createElement('div'); context.className = 'bisect-banner-context';
-  const label = document.createElement('span'); label.textContent = getBisectCompactLabel(state);
+  const label = document.createElement('span'); label.textContent = getBisectCompactLabel(state, pending);
   context.title = state.current ? `${state.current.hash} · ${state.current.subject}` : state.repositoryPath;
-  label.setAttribute('aria-label', `${label.textContent}${state.current ? ` · ${state.current.subject}` : ''}`);
+  if (state.status === 'testing' && state.current && !pending && !state.busy) {
+    label.setAttribute('aria-label', `Step ${state.history.length + 1} · Test this commit: ${state.current.hash.slice(0, 7)} · ${state.current.subject}`);
+  }
   context.append(label);
-  const feedback = pending || state.busy ? 'Updating search…' : state.error ? 'Search blocked. Expand for details.' : '';
+  const feedback = !pending && !state.busy && state.error
+    ? `Search blocked: ${compactBisectText(state.error, 140)} · Expand for details.` : '';
   if (feedback) {
     const status = document.createElement('span'); status.className = 'bisect-banner-status'; status.textContent = feedback;
     if (state.error && !pending && !state.busy) { status.title = state.error; status.setAttribute('aria-label', state.error); }

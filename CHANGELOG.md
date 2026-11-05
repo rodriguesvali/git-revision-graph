@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.8 — Unreleased
 
+- Show clearer progress, commit context and blocking errors in the compact Find Bug controls.
+
 - Explain why Apply Patch is unavailable and how to resolve each reported blocker.
 
 - Minimize the Find Bug dialog when starting a search so the graph remains accessible while testing.

@@ -4346,9 +4346,11 @@ test('starting a bug search minimizes the dialog and keeps progress and recovery
     assert.equal(ui.runtime.postedMessages.at(-1).action, swapped ? 'start-swapped' : 'start');
     assert.equal(ui.backdrop.hidden, true);
     assert.equal(ui.banner.hidden, false);
-    assert.match(ui.text(), /Updating search/);
+    assert.match(ui.text(), /Starting search/);
+    assert.doesNotMatch(ui.text(), /ready to start/i);
     ui.send({ status: 'preparing', version: 2, error: 'Resolve changes before starting' });
-    assert.match(ui.text(), /Search blocked/);
+    assert.match(ui.text(), /Search blocked.*Resolve changes before starting/);
+    assert.doesNotMatch(ui.text(), /ready to start/i);
     ui.click('expand');
     assert.equal(ui.backdrop.hidden, false);
     assert.ok(ui.button(swapped ? 'start-swapped:' : 'start:', ui.backdrop), 'retry remains available');
@@ -4357,7 +4359,7 @@ test('starting a bug search minimizes the dialog and keeps progress and recovery
   ui.click('start', ui.backdrop);
   ui.send({ status: 'testing', version: 2, current: ui.state.selected });
   assert.equal(ui.backdrop.hidden, true);
-  assert.match(ui.text(), /Step 1.*aaaaaaa/);
+  assert.match(ui.text(), /Step 1.*Test this commit.*aaaaaaa.*Good endpoint/);
   assert.equal(ui.button('good:')?.disabled, false);
   assert.notEqual(ui.runtime.activeElement(), ui.button('good:'));
 });
@@ -4400,6 +4402,33 @@ test('compact bisect answers bind the displayed question, block duplicate submis
   ui.click('bad:');
   assert.equal(ui.runtime.postedMessages.at(-1).action, 'bad');
   assert.equal(ui.runtime.postedMessages.at(-1).version, 2);
+});
+
+test('compact bisect shows host progress and bounds long commit subjects', () => {
+  const ui = createCompactBisectRuntime();
+  ui.click('hide', ui.backdrop);
+  ui.send({ busy: true });
+  assert.match(ui.text(), /Starting search/);
+  assert.doesNotMatch(ui.text(), /ready to start/i);
+  const subject = 'Long commit subject '.repeat(20);
+  ui.send({ status: 'testing', current: { ...ui.state.selected, subject } });
+  assert.match(ui.text(), /Test this commit.*aaaaaaa.*Long commit subject/);
+  assert.ok(ui.text().length < 300);
+  const label = ui.banner.querySelectorAll().find(node => node.getAttribute('aria-label')?.includes('Test this commit'));
+  assert.match(label?.getAttribute('aria-label') ?? '', new RegExp(subject.trim()));
+});
+
+test('compact bisect bounds error summaries and keeps full recovery details', () => {
+  const ui = createCompactBisectRuntime();
+  ui.click('start', ui.backdrop);
+  const error = 'Resolve changes before switching revisions. ' + 'details '.repeat(60) + '\nFull diagnostic';
+  ui.send({ status: 'testing', current: ui.state.selected, error });
+  assert.match(ui.text(), /Search blocked.*Resolve changes before switching revisions/);
+  assert.doesNotMatch(ui.text(), /Full diagnostic/);
+  assert.ok(ui.text().length < 400, 'compact feedback remains bounded');
+  assert.equal(ui.button('good:')?.disabled, true);
+  ui.click('expand');
+  assert.ok(ui.backdrop.querySelectorAll().some(node => node.textContent === error));
 });
 
 test('compact bisect exposes blocking feedback while leaving expanded recovery accessible', () => {
