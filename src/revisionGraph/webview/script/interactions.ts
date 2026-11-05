@@ -58,7 +58,6 @@
         setMinimapZoom(nextZoom);
       }
     }
-
     function syncSelection(options: { readonly syncMinimap?: boolean } = {}) {
       const baseTarget = selected[0] ? getSelectionTarget(selected[0]) : null;
       const compareTarget = selected[1] ? getSelectionTarget(selected[1]) : null;
@@ -71,6 +70,7 @@
         compareTarget && typeof compareTarget.hash === 'string' ? compareTarget.hash : null,
         selected.length === 2
       );
+      comparisonGuidance.sync();
       syncRelationshipHighlights();
       syncSearchHighlights();
       options.syncMinimap !== false && syncMinimap();

@@ -62,6 +62,53 @@ function createContextMenuPlan(
   });
 }
 
+test('selection guidance explains comparison and compares the current ordered pair', () => {
+  const runtime = createWebviewRuntime();
+  (globalThis as any).Element = (globalThis as any).HTMLElement;
+  runtime.context.handleHostMessage({ type: 'init-state', state: createReadyGraphState() });
+  const layer = runtime.elements.get('nodeLayer')!;
+  const reference = (id: string) => {
+    const element = (globalThis as any).document.createElement('div');
+    element.setAttribute('data-ref-id', id);
+    element.closest = (selector: string) => selector === '[data-ref-id]' ? element : null;
+    layer.appendChild(element);
+    return element;
+  };
+  const first = reference('head1::head::main');
+  const second = reference('feature1::branch::feature/demo');
+  const click = (target: any, additive = false) => layer.listeners.click[0]({ target, ctrlKey: additive, metaKey: false });
+  const guide = runtime.createdElements.find(node => node.className === 'comparison-guidance');
+  assert.ok(guide);
+  assert.equal(guide.hidden, true);
+  click(first);
+  assert.equal(guide.hidden, false);
+  assert.ok(guide.children.some(node => /Ctrl\/Cmd.*another revision/.test(node.textContent)));
+  click(second, true);
+  const compare = guide.children.find(node => node.textContent === 'Compare');
+  assert.ok(compare);
+  assert.equal(compare.hidden, false);
+  compare.listeners.click[0]();
+  const message = runtime.postedMessages.at(-1);
+  assert.equal(message.type, 'compare-selected');
+  assert.equal(message.baseRevision, 'head1');
+  assert.equal(message.compareRevision, 'feature1');
+  click(second, true);
+  assert.equal(compare.hidden, true);
+  const messageCount = runtime.postedMessages.length;
+  compare.listeners.click[0]();
+  assert.equal(runtime.postedMessages.length, messageCount, 'stale Compare cannot submit a single revision');
+  const dismiss = guide.children.find(node => node.getAttribute('aria-label') === 'Dismiss comparison hint');
+  assert.ok(dismiss);
+  dismiss.listeners.click[0]();
+  assert.equal(guide.hidden, true);
+  assert.equal(runtime.activeElement(), runtime.elements.get('viewOptionsButton'));
+  click(first);
+  click(first);
+  assert.equal(guide.hidden, true, 'dismissal lasts for the webview session');
+  click(second, true);
+  assert.equal(compare.hidden, false, 'dismissing the hint does not hide Compare');
+});
+
 test('Apply Patch appears only on HEAD and is disabled for dirty files or unsaved editors', () => {
   const runtime = createWebviewRuntime();
   const target = createContextMenuTarget('head', 'main');

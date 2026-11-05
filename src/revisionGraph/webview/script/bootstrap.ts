@@ -91,6 +91,7 @@ const VIEWPORT_PADDING_LEFT = 18;
     let graphNodes: RevisionGraphWebviewLegacyNodeLayout[] = [];
     let graphEdges: RevisionGraphWebviewLegacyEdge[] = [];
     let selected: string[] = [];
+    const comparisonGuidance = createRevisionGraphComparisonGuidance(viewControls, captureSelectionSnapshot, getSelectionTarget, postCompareSelected, viewOptionsButton);
     let nodeElements = new Map<string, HTMLElement>();
     let sceneNodeByHash = new Map<string, RevisionGraphWebviewLegacySceneNode>();
     let edgeElements: Element[] = [];
@@ -954,7 +955,6 @@ const VIEWPORT_PADDING_LEFT = 18;
         );
       }
     }
-
     function captureSelectionSnapshot() {
       return selected
         .map((selectionId) => getSelectionTarget(selectionId))

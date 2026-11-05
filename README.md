@@ -55,8 +55,9 @@ if you want to recreate that commit from its mailbox.
 
 ## Compare Without Losing Context
 
-Select two visible references or commits to open **Compare Results**, or compare one revision with
-the current worktree.
+Select two visible references or commits, then choose **Compare** to open **Compare Results**,
+or compare one revision with the current worktree. After the first selection, a dismissible
+hint explains how to add another revision.
 Comparisons between revisions use their final contents directly. Branches with
 identical contents report no differences even when their commit histories differ.
 When a branch and tag share a name, comparison uses the selected reference.

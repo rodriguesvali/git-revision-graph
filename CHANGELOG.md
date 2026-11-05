@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.8 — Unreleased
 
+- Guide selection of two revisions and offer a direct Compare action in the graph.
+
 - Show clearer progress, commit context and blocking errors in the compact Find Bug controls.
 
 - Explain why Apply Patch is unavailable and how to resolve each reported blocker.

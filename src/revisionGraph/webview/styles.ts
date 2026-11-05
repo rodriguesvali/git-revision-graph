@@ -7,17 +7,17 @@ import {
   VIEWPORT_PADDING_TOP
 } from './shared';
 import { renderRevisionGraphFlowFormStyles } from './flowFormStyles';
+import { renderRevisionGraphComparisonGuidanceStyles } from './comparisonGuidanceStyles';
 import { renderRevisionGraphContextMenuStyles } from './contextMenuStyles';
 import { renderBisectStyles } from './bisectStyles';
 import { renderRevisionGraphSearchStyles } from './searchStyles';
 import { renderRevisionGraphToolbarIconStyles } from './toolbarIconStyles';
-
 const DEFAULT_CANVAS_WIDTH = 880;
 const DEFAULT_CANVAS_HEIGHT = 480;
 
 export function renderRevisionGraphStyles(): string {
   return `<style>
-    ${renderBisectStyles()}
+    ${renderBisectStyles()} ${renderRevisionGraphComparisonGuidanceStyles()}
     :root {
       color-scheme: light dark;
       --bg: var(--vscode-editor-background);

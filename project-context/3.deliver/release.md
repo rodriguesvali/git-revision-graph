@@ -16,6 +16,7 @@ metadata and release records; no feature scope has been selected. See the
 | Find Bug start UX | Automated verification passed; manual smoke pending | Minimize the confirmation dialog when starting; progress and recovery remain available in the compact banner. `npm test`: 1,245 passed; quality check passed. See [feature record](../2.build/features/1.7.8-bisect-start-minimize.md). |
 | Apply Patch unavailable reasons | Automated verification passed; manual smoke pending | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
 | Find Bug compact feedback | Automated verification passed; manual smoke pending | Clarify start/update state, test commit and blocking error; `npm test`: 1,250 passed; quality check passed; [feature record](../2.build/features/1.7.8-bisect-compact-feedback.md). |
+| Graph comparison discovery | Automated verification passed; manual smoke pending | Contextual dismissible selection hint and direct Compare action; `npm test`: 1,251 passed; quality check passed; [feature record](../2.build/features/1.7.8-comparison-discovery.md). |
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
 
