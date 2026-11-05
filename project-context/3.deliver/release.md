@@ -1,7 +1,24 @@
 # Release Readiness
 
-Status: `1.7.7` published, confirmed by the maintainer on 2026-11-01
-Last consolidated: 2026-11-01
+Status: `1.7.8` development cycle open; published baseline `1.7.7` confirmed by the maintainer
+Last consolidated: 2026-11-05
+
+## Development cycle — 1.7.8
+
+Opened on 2026-11-05 at the maintainer's request. This opening covers version
+metadata and release records; no feature scope has been selected. See the
+[cycle artifact](../2.build/features/1.7.8-release-cycle-opening.md).
+
+| Gate | Status | Evidence / next step |
+| --- | --- | --- |
+| Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.8. |
+| Build and tests | Passed on 2026-11-05 | `npm test` built production and webview bundles and passed 1,244 tests; zero failures, cancellations or skips. Version fields and `git diff --check` passed. |
+| Scope and release notes | Pending | Record approved changes and user-facing notes as work is selected. |
+| VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
+
+Before publication, rollback of the opening restores the prior version metadata
+and removes its pending release records. After publication, correction requires a
+follow-up release or appropriate Marketplace action; preserve user files.
 
 ## Published release — 1.7.7
 
