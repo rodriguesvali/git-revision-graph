@@ -1,9 +1,9 @@
 # Release Readiness
 
-Status: `1.7.8` publication being initiated by the maintainer; published baseline `1.7.7`
+Status: `1.7.8` published, confirmed by the maintainer on 2026-11-06
 Last consolidated: 2026-11-06
 
-## Development cycle — 1.7.8
+## Published release — 1.7.8
 
 Opened on 2026-11-05 at the maintainer's request. The cycle includes the UX
 improvements listed below. See the
@@ -21,16 +21,15 @@ improvements listed below. See the
 | Show Log no-results recovery | Automated verification passed; manual smoke confirmed by maintainer | Clear the active search from the empty state while preserving search-limit notices; `npm test`: 1,254 passed; quality check passed; [feature record](../2.build/features/1.7.8-show-log-empty-search-recovery.md). |
 | Compare Results patch scope | Automated verification passed; manual smoke confirmed by maintainer | Explain that patch export includes all changes regardless of filters or selection; `npm test`: 1,256 passed; quality check passed; [feature record](../2.build/features/1.7.8-compare-patch-scope.md). |
 | Dependency audit | Awaiting upstream fix | On 2026-11-06, `npm audit` reported two moderate entries for [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249): development tool `@vscode/vsce@4.1.0` uses `minimatch@10.2.6`. `npm audit --omit=dev` reported zero vulnerabilities. The maintainer chose to await a compatible upstream fix; `npm audit fix --force` proposes downgrading VSCE to 3.9.1. |
-| Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
-| VSIX, installation and Marketplace | Maintainer initiating publication | On 2026-11-06, the maintainer stated they would initiate publication. Packaging, installation and publication completion have not been confirmed. |
+| Scope and release notes | Prepared | README and CHANGELOG describe the published UX improvements. |
+| VSIX, installation and Marketplace | Publication confirmed by maintainer on 2026-11-06 | Exact publication time, uploaded package bytes, VSIX filename, checksum, size, source/tag and clean-profile installation evidence were not supplied or independently verified. |
 
 The maintainer confirmed on 2026-11-06 that smoke testing of the implemented UX
 improvements passed. The specific scenarios, platform, VS Code version and test
 date were not supplied; do not infer detailed matrix coverage.
 
-Before publication, rollback of the opening restores the prior version metadata
-and removes its pending release records. After publication, correction requires a
-follow-up release or appropriate Marketplace action; preserve user files.
+Corrections require an authorized follow-up release or appropriate Marketplace
+action; preserve user files and configuration. Do not reuse version 1.7.8.
 
 ## Published release — 1.7.7
 

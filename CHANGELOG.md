@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.7.8 — Unreleased
+## 1.7.8
+
+Publication confirmed by the maintainer on 2026-11-06; the publication timestamp was not supplied.
 
 - Clarify that Save Patch exports the full comparison regardless of filters or selection.
 

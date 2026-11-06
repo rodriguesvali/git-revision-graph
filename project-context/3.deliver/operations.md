@@ -1,7 +1,7 @@
 # Operations
 
 Status: Active
-Last consolidated: 2026-11-01
+Last consolidated: 2026-11-06
 
 ## Runtime
 
@@ -26,6 +26,16 @@ multi-repository ownership.
 4. Check command, view, manifest, README, and test alignment when contribution surfaces are
    affected.
 5. Prepare a patch release plan if a published regression is confirmed.
+
+## Published Release Watch: 1.7.8
+
+The maintainer confirmed publication on 2026-11-06. Monitor Find Bug startup and
+compact controls, Apply Patch availability explanations, comparison selection,
+Show Log search help and recovery, and patch-export scope messaging. Follow the
+upstream development-dependency audit finding in [release readiness](release.md).
+Preserve user repositories and configuration during investigation. Correct
+regressions through an authorized follow-up release or Marketplace action; do
+not reuse 1.7.8.
 
 ## Published Release Watch: 1.7.7
 
