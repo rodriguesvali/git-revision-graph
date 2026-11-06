@@ -1,27 +1,32 @@
 # Release Readiness
 
 Status: `1.7.8` development cycle open; published baseline `1.7.7` confirmed by the maintainer
-Last consolidated: 2026-11-05
+Last consolidated: 2026-11-06
 
 ## Development cycle — 1.7.8
 
-Opened on 2026-11-05 at the maintainer's request. This opening covers version
-metadata and release records; no feature scope has been selected. See the
+Opened on 2026-11-05 at the maintainer's request. The cycle includes the UX
+improvements listed below. See the
 [cycle artifact](../2.build/features/1.7.8-release-cycle-opening.md).
 
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.8. |
 | Build and tests | Passed on 2026-11-05 | `npm test` built production and webview bundles and passed 1,244 tests; zero failures, cancellations or skips. Version fields and `git diff --check` passed. |
-| Find Bug start UX | Automated verification passed; manual smoke pending | Minimize the confirmation dialog when starting; progress and recovery remain available in the compact banner. `npm test`: 1,245 passed; quality check passed. See [feature record](../2.build/features/1.7.8-bisect-start-minimize.md). |
-| Apply Patch unavailable reasons | Automated verification passed; manual smoke pending | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
-| Find Bug compact feedback | Automated verification passed; manual smoke pending | Clarify start/update state, test commit and blocking error; `npm test`: 1,250 passed; quality check passed; [feature record](../2.build/features/1.7.8-bisect-compact-feedback.md). |
-| Graph comparison discovery | Automated verification passed; manual smoke pending | Contextual dismissible selection hint and direct Compare action; `npm test`: 1,251 passed; quality check passed; [feature record](../2.build/features/1.7.8-comparison-discovery.md). |
-| Show Log search help | Automated verification passed on rerun; manual smoke pending | Search examples and limits; full rerun: 1,252 tests passed; an initial Git search test failed once and passed in isolation and on rerun. See [feature record](../2.build/features/1.7.8-show-log-search-help.md). |
-| Show Log no-results recovery | Automated verification passed; manual smoke pending | Clear the active search from the empty state while preserving search-limit notices; `npm test`: 1,254 passed; quality check passed; [feature record](../2.build/features/1.7.8-show-log-empty-search-recovery.md). |
-| Compare Results patch scope | Automated verification passed; manual smoke pending | Explain that patch export includes all changes regardless of filters or selection; `npm test`: 1,256 passed; quality check passed; [feature record](../2.build/features/1.7.8-compare-patch-scope.md). |
+| Find Bug start UX | Automated verification passed; manual smoke confirmed by maintainer | Minimize the confirmation dialog when starting; progress and recovery remain available in the compact banner. `npm test`: 1,245 passed; quality check passed. See [feature record](../2.build/features/1.7.8-bisect-start-minimize.md). |
+| Apply Patch unavailable reasons | Automated verification passed; manual smoke confirmed by maintainer | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
+| Find Bug compact feedback | Automated verification passed; manual smoke confirmed by maintainer | Clarify start/update state, test commit and blocking error; `npm test`: 1,250 passed; quality check passed; [feature record](../2.build/features/1.7.8-bisect-compact-feedback.md). |
+| Graph comparison discovery | Automated verification passed; manual smoke confirmed by maintainer | Contextual dismissible selection hint and direct Compare action; `npm test`: 1,251 passed; quality check passed; [feature record](../2.build/features/1.7.8-comparison-discovery.md). |
+| Show Log search help | Automated verification passed on rerun; manual smoke confirmed by maintainer | Search examples and limits; full rerun: 1,252 tests passed; an initial Git search test failed once and passed in isolation and on rerun. See [feature record](../2.build/features/1.7.8-show-log-search-help.md). |
+| Show Log no-results recovery | Automated verification passed; manual smoke confirmed by maintainer | Clear the active search from the empty state while preserving search-limit notices; `npm test`: 1,254 passed; quality check passed; [feature record](../2.build/features/1.7.8-show-log-empty-search-recovery.md). |
+| Compare Results patch scope | Automated verification passed; manual smoke confirmed by maintainer | Explain that patch export includes all changes regardless of filters or selection; `npm test`: 1,256 passed; quality check passed; [feature record](../2.build/features/1.7.8-compare-patch-scope.md). |
+| Dependency audit | Awaiting upstream fix | On 2026-11-06, `npm audit` reported two moderate entries for [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249): development tool `@vscode/vsce@4.1.0` uses `minimatch@10.2.6`. `npm audit --omit=dev` reported zero vulnerabilities. The maintainer chose to await a compatible upstream fix; `npm audit fix --force` proposes downgrading VSCE to 3.9.1. |
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
 | VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
+
+The maintainer confirmed on 2026-11-06 that smoke testing of the implemented UX
+improvements passed. The specific scenarios, platform, VS Code version and test
+date were not supplied; do not infer detailed matrix coverage.
 
 Before publication, rollback of the opening restores the prior version metadata
 and removes its pending release records. After publication, correction requires a

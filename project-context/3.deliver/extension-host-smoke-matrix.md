@@ -1,7 +1,14 @@
 # Extension Development Host Smoke Matrix
 
 Status: Active
-Last updated: 2026-11-01
+Last updated: 2026-11-06
+
+## UX improvements — 1.7.8
+
+On 2026-11-06, the maintainer confirmed successful smoke testing of the
+implemented UX improvements. Specific scenarios, operator environment, VS Code
+version and test date were not supplied; this confirmation does not establish a
+per-scenario or cross-platform matrix.
 
 ## Show Log — 1.7.7 candidate
 
