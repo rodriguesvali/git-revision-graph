@@ -18,7 +18,6 @@ export type { CompareResultsWebviewItem, CompareResultsWebviewState } from './co
 
 export function renderCompareResultsWebviewHtml(): string {
   const nonce = createWebviewNonce();
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +38,7 @@ export function renderCompareResultsWebviewHtml(): string {
         </div>
         <div class="comparison-meta">
           <button id="unifiedDiffButton" class="toolbar-action" type="button" hidden>Unified Diff</button>
-          <button id="savePatchButton" class="toolbar-action" type="button" hidden>Save Patch…</button>
+          <button id="savePatchButton" class="toolbar-action" type="button" aria-describedby="patchScopeNote" hidden>Save Patch…</button>
           ${renderCompareResultsBriefingAction()}
           <div class="result-count" id="resultCount"></div>
           <div id="selectionSummary" class="selection-summary"></div>
@@ -62,6 +61,7 @@ export function renderCompareResultsWebviewHtml(): string {
         </div>
       </div>
     </div>
+    <p id="patchScopeNote" class="patch-scope-note" hidden>Patch includes all changes in this comparison; filters and selection do not limit export.</p>
     ${renderCompareResultsBriefingPanel()}
     <div id="content"></div>
   </div>

@@ -63,6 +63,12 @@ test('renders compare results webview shell with inline search', () => {
   assert.match(html, /No files match/);
 });
 
+test('Save Patch explains its scope next to the comparison actions', () => {
+  const html = renderCompareResultsWebviewHtml();
+  assert.match(html, /id="savePatchButton"[^>]*aria-describedby="patchScopeNote"/);
+  assert.match(html, /id="patchScopeNote"[^>]*>[^<]*all changes[^<]*filters and selection/i);
+});
+
 test('renders a dense compare review list with contextual actions', () => {
   const html = renderCompareResultsWebviewHtml();
 

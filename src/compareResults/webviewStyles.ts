@@ -39,6 +39,11 @@ export function renderCompareResultsWebviewStyles(): string {
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-panel-border));
       background: var(--vscode-sideBar-background);
     }
+    .patch-scope-note {
+      margin: 0; padding: 5px 12px; font-size: 11px; line-height: 1.4;
+      color: var(--vscode-descriptionForeground); overflow-wrap: anywhere;
+    }
+    .patch-scope-note[hidden] { display: none; }
     .comparison-row,
     .controls-row {
       display: flex;

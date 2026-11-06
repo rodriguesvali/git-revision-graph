@@ -15,6 +15,23 @@ test('Save Patch sends one comparison-wide action despite filters and selected r
   assert.equal(view.element('savePatchButton').disabled, true);
 });
 
+test('patch scope remains explicit regardless of filters, selection and progress', () => {
+  const view = createReviewWebview();
+  const state = reviewState();
+  const scope = view.element('patchScopeNote');
+  const button = view.element('savePatchButton');
+  view.update(state);
+  assert.equal(scope.hidden, false);
+  view.review('src/a', 'modified', ['src/a.ts']);
+  assert.equal(scope.hidden, false);
+  button.listeners.click[0]();
+  assert.equal(scope.hidden, false);
+  view.update(reviewState({ kind: 'loading', items: [] }));
+  assert.equal(scope.hidden, true);
+  view.update(reviewState({ kind: 'empty', items: [] }));
+  assert.equal(scope.hidden, true);
+});
+
 test('Compare Results retains filters and selection through briefing progress, result and cancellation', () => {
   const view = createReviewWebview();
   const state = reviewState();

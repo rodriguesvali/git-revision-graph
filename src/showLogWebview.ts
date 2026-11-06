@@ -10,6 +10,7 @@ import {
 } from './webviewSecurity';
 import { renderShowLogWebviewStyles } from './showLog/webviewStyles';
 import { renderShowLogSearchHelp } from './showLog/webviewSearchHelp';
+import { renderShowLogEmptyStateScript } from './showLog/webviewEmptyState';
 import { renderWebviewDisplayHelpers } from './webviewDisplayHelpers';
 import { renderShowLogFileSearchScript } from './showLog/webviewFileSearch';
 export function renderShowLogWebviewHtml(): string {
@@ -88,6 +89,7 @@ export function renderShowLogWebviewHtml(): string {
 
     applyGraphColumnWidth(graphWidth);
 
+    ${renderShowLogEmptyStateScript()}
     function render() {
       if (!summary || !summaryCount || !content || !loadingChip) {
         return;
@@ -116,7 +118,7 @@ export function renderShowLogWebviewHtml(): string {
         sections.push('<div class="status-card' + (state.errorMessage ? ' error' : '') + '" role="status">' + escapeHtml(state.errorMessage || state.searchNotice) + '</div>');
       }
       if (state.commits.length === 0 && state.emptyMessage && !state.loading) {
-        sections.push('<div class="empty-state">' + escapeHtml(state.emptyMessage) + '</div>');
+        sections.push(renderShowLogEmptyState(state));
       } else if (state.commits.length > 0) {
         sections.push(renderTableHeader());
         sections.push(renderCommitList(state.commits));
@@ -824,6 +826,7 @@ export function renderShowLogWebviewHtml(): string {
       if (!(target instanceof HTMLElement)) {
         return;
       }
+      if (target.closest('[data-clear-show-log-filter]')) { clearShowLogFilter(); return; }
       if (target.closest('#graphResizer')) {
         return;
       }
@@ -1124,12 +1127,7 @@ export function renderShowLogWebviewHtml(): string {
     });
 
     filterClear?.addEventListener('click', () => {
-      if (!(filterInput instanceof HTMLInputElement)) {
-        return;
-      }
-      filterInput.value = '';
-      filterInput.focus();
-      scheduleFilterUpdate('');
+      clearShowLogFilter();
     });
 
     document.addEventListener('pointerdown', (event) => {

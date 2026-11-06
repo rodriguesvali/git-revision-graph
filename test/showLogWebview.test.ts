@@ -57,6 +57,58 @@ test('Show Log offers keyboard-accessible search help with useful examples and l
     { text: 'fix parser', file: 'src/auth/', change: 'validateToken(' });
 });
 
+test('filtered empty results offer a scoped clear action and preserve the history limit notice', () => {
+  const html = renderShowLogWebviewHtml();
+  const start = html.indexOf('    function renderShowLogEmptyState(');
+  const end = html.indexOf('    function render()', start);
+  assert.ok(start >= 0 && end > start, 'empty-state helpers are present');
+  const scheduled: string[] = [];
+  class Input { value = 'needle'; focused = false; focus() { this.focused = true; } }
+  const input = new Input();
+  const context = vm.createContext({ escapeHtml: (text: string) => text.replaceAll('<', '&lt;'),
+    filterInput: input, HTMLInputElement: Input, scheduleFilterUpdate: (value: string) => scheduled.push(value),
+    currentState: null as any });
+  vm.runInContext(html.slice(start, end), context);
+  const state = { kind: 'visible', filterText: 'needle', loading: false, errorMessage: undefined,
+    emptyMessage: 'No results in the first 2,000 commits. Older history was not searched.', commits: [] };
+  const rendered: string = context.renderShowLogEmptyState(state);
+  assert.match(rendered, /Older history was not searched/);
+  assert.match(rendered, /<button[^>]*data-clear-show-log-filter[^>]*>Clear search<\/button>/);
+  assert.doesNotMatch(context.renderShowLogEmptyState({ ...state, filterText: '' }), /data-clear-show-log-filter/);
+  assert.doesNotMatch(context.renderShowLogEmptyState({ ...state, kind: 'hidden' }), /data-clear-show-log-filter/);
+  assert.doesNotMatch(context.renderShowLogEmptyState({ ...state, errorMessage: 'Error' }), /data-clear-show-log-filter/);
+  assert.doesNotMatch(context.renderShowLogEmptyState({ ...state, loading: true }), /data-clear-show-log-filter/);
+  assert.match(context.renderShowLogEmptyState({ ...state, emptyMessage: '<unsafe>' }), /&lt;unsafe>/);
+  assert.match(html, /target\.closest\('\[data-clear-show-log-filter\]'\).*clearShowLogFilter\(\)/);
+  context.currentState = state;
+  context.clearShowLogFilter();
+  assert.equal(input.value, '');
+  assert.equal(input.focused, true);
+  assert.deepEqual(scheduled, ['']);
+  context.currentState = { ...state, kind: 'hidden' };
+  input.value = 'another search';
+  context.clearShowLogFilter();
+  assert.equal(input.value, 'another search');
+  assert.deepEqual(scheduled, ['']);
+});
+
+test('clearing an empty search cannot update a replacement Show Log source', () => {
+  const html = renderShowLogWebviewHtml();
+  const start = html.indexOf('    function scheduleFilterUpdate(');
+  const end = html.indexOf('    function normalizeSelectedCommitHashes(', start);
+  assert.ok(start >= 0 && end > start);
+  let callback: (() => void) | undefined;
+  const posted: unknown[] = [];
+  const context = vm.createContext({ currentState: { sourceToken: 'source-a' }, filterDebounceTimer: 0,
+    window: { clearTimeout() {}, setTimeout(fn: () => void) { callback = fn; return 1; } },
+    postMessage: (message: unknown) => posted.push(message) });
+  vm.runInContext(html.slice(start, end), context);
+  context.scheduleFilterUpdate('');
+  context.currentState = { sourceToken: 'source-b' };
+  callback?.();
+  assert.deepEqual(posted, []);
+});
+
 test('composes the Show Log shell with its dedicated style module', () => {
   const styles = renderShowLogWebviewStyles();
   const html = renderShowLogWebviewHtml();

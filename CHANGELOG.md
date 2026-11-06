@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 1.7.8 — Unreleased
 
+- Clarify that Save Patch exports the full comparison regardless of filters or selection.
+
 - Clear a Show Log search directly from the no-results message.
 
 - Add accessible Show Log search help with examples and search limits.

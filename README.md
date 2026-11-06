@@ -71,7 +71,8 @@ When a branch and tag share a name, comparison uses the selected reference.
   delayed clicks from a replaced context are ignored.
 - Open file changes in VS Code's native diff editor or inspect the complete Unified Diff.
 - Use **Save Patch…** beside Unified Diff to save all changes from source to target,
-  including binary files. Search/status filters and selection do not restrict export.
+  including binary files. Compare Results displays a reminder that search/status filters and
+  selection do not restrict export.
   The suggested name is `<source>-<hash>-to-<target>-<hash>-<number>.patch`,
   using reference labels and 8-character hashes (`worktree` for a workspace target).
   Commit-only selections use their hashes without repeating them. Numbers advance per
@@ -125,7 +126,8 @@ backslash. File paths and changed text are case-sensitive, without wildcards or 
 Paths match their name at each commit; the filter does not follow earlier names across renames.
 Ordinary text retains case-insensitive matching against hashes, authors, messages and references.
 Search checks up to 2,000 commits in the selected scope and identifies results when older history
-was not searched. Commit ancestry lines are hidden while a filter is active because intermediate
+was not searched. When a search finds no commits, use **Clear search** in the empty state
+to remove the filter. Commit ancestry lines are hidden while a filter is active because intermediate
 commits may be omitted. Clear the filter to restore the graph. Loading more pages keeps the
 original history snapshot; refresh the log to include subsequent reference changes.
 

@@ -1,3 +1,4 @@
+import { renderShowLogEmptyStateStyles } from './webviewEmptyState';
 import { renderShowLogSearchStyles } from './webviewSearchHelp';
 export function renderShowLogWebviewStyles(): string { return `
     :root {
@@ -120,16 +121,7 @@ export function renderShowLogWebviewStyles(): string { return `
       gap: 0;
       padding: 0 0 14px;
     }
-    .status-card,
-    .empty-state {
-      margin: 10px 12px 0;
-      padding: 10px 12px;
-      border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 72%, transparent);
-      border-radius: 10px;
-      color: var(--vscode-descriptionForeground);
-      background: color-mix(in srgb, var(--vscode-editorWidget-background) 55%, transparent);
-      line-height: 1.45;
-    }
+    ${renderShowLogEmptyStateStyles()}
     .status-card.error {
       color: var(--vscode-errorForeground);
       border-color: color-mix(in srgb, var(--vscode-errorForeground) 45%, transparent);
