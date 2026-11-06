@@ -1,6 +1,6 @@
 # Release Readiness
 
-Status: `1.7.8` development cycle open; published baseline `1.7.7` confirmed by the maintainer
+Status: `1.7.8` publication being initiated by the maintainer; published baseline `1.7.7`
 Last consolidated: 2026-11-06
 
 ## Development cycle — 1.7.8
@@ -12,7 +12,7 @@ improvements listed below. See the
 | Gate | Status | Evidence / next step |
 | --- | --- | --- |
 | Package metadata | Updated | Manifest and both root lockfile version fields target 1.7.8. |
-| Build and tests | Passed on 2026-11-05 | `npm test` built production and webview bundles and passed 1,244 tests; zero failures, cancellations or skips. Version fields and `git diff --check` passed. |
+| Build and tests | Build confirmed by maintainer; automated tests passed | On 2026-11-06, the maintainer reported a successful build; command and environment were not supplied. The latest recorded `npm test` passed 1,256 tests including builds. |
 | Find Bug start UX | Automated verification passed; manual smoke confirmed by maintainer | Minimize the confirmation dialog when starting; progress and recovery remain available in the compact banner. `npm test`: 1,245 passed; quality check passed. See [feature record](../2.build/features/1.7.8-bisect-start-minimize.md). |
 | Apply Patch unavailable reasons | Automated verification passed; manual smoke confirmed by maintainer | Show actionable blockers within the keyboard-accessible menu; `npm test`: 1,248 passed; quality check passed; [feature record](../2.build/features/1.7.8-apply-patch-disabled-reasons.md). |
 | Find Bug compact feedback | Automated verification passed; manual smoke confirmed by maintainer | Clarify start/update state, test commit and blocking error; `npm test`: 1,250 passed; quality check passed; [feature record](../2.build/features/1.7.8-bisect-compact-feedback.md). |
@@ -22,7 +22,7 @@ improvements listed below. See the
 | Compare Results patch scope | Automated verification passed; manual smoke confirmed by maintainer | Explain that patch export includes all changes regardless of filters or selection; `npm test`: 1,256 passed; quality check passed; [feature record](../2.build/features/1.7.8-compare-patch-scope.md). |
 | Dependency audit | Awaiting upstream fix | On 2026-11-06, `npm audit` reported two moderate entries for [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249): development tool `@vscode/vsce@4.1.0` uses `minimatch@10.2.6`. `npm audit --omit=dev` reported zero vulnerabilities. The maintainer chose to await a compatible upstream fix; `npm audit fix --force` proposes downgrading VSCE to 3.9.1. |
 | Scope and release notes | In progress | Record approved changes and user-facing notes as work is selected. |
-| VSIX, installation and Marketplace | Not started | Packaging and publication require separate maintainer authorization; verify the candidate and installation before release. |
+| VSIX, installation and Marketplace | Maintainer initiating publication | On 2026-11-06, the maintainer stated they would initiate publication. Packaging, installation and publication completion have not been confirmed. |
 
 The maintainer confirmed on 2026-11-06 that smoke testing of the implemented UX
 improvements passed. The specific scenarios, platform, VS Code version and test

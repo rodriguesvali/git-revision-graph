@@ -1,7 +1,7 @@
 # Deployment
 
 Status: Active
-Last consolidated: 2026-11-01
+Last consolidated: 2026-11-06
 
 ## Environment
 
@@ -25,6 +25,14 @@ Visual Studio Marketplace for publisher `rodriguesvali`, as declared in `package
 6. Publish only after approval.
 7. Record VSIX filename, checksum, size, Marketplace publication timestamp, and clean-profile
    install result when available.
+
+## Release in progress: 1.7.8
+
+On 2026-11-06, the maintainer reported that the build succeeded and stated they
+would initiate publication. The build command and environment were not supplied.
+Package creation, installation and Marketplace publication have not been
+confirmed. See [release readiness](release.md) for the recorded smoke test and
+dependency-audit disposition.
 
 ## Published Release: 1.7.7
 
