@@ -194,8 +194,8 @@ replacing normal Git Revision Graph behavior.
   main, a feature or release, tasks from a feature or release, and bugs from a feature, release or package.
 - Run fetch-first readiness checks, synchronize safe behind-only sources after confirmation, preserve
   ahead-only work, and block divergent sources for manual reconciliation.
-- Prepare local `sync/*` equalization branches without automatic push and hand governed integrations
-  off to supported Pull Request workflows.
+- Prepare local `sync/*` equalization branches without automatic push. Review and publish the
+  branch, then open a Pull Request through your usual repository workflow.
 - Preview the source, target/base, expected branch name, checkout and merge effects before submitting
   branch or equalization forms. The summary highlights the final name, separates validation feedback,
   and offers expandable details with the full name. Names follow the repository configuration. Incomplete or invalid names
@@ -231,7 +231,7 @@ on-demand review panels.
 | Setting | Purpose | Default |
 | --- | --- | --- |
 | `gitRevisionGraph.traceLoading` | Writes graph loading diagnostics to the Git Revision Graph output channel. | `false` |
-| `gitRevisionGraph.graphCommandTimeoutMs` | Sets the bounded timeout for revision-history Git commands. | `60000` ms |
+| `gitRevisionGraph.graphCommandTimeoutMs` | Sets the timeout for the Git log command used to load the revision graph. Show Log uses a separate timeout. | `60000` ms |
 | `gitRevisionGraph.flowGovernance.configPath` | Selects the repository-relative Flow Governance configuration path. | `.git-revision-graph-flow.json` |
 
 ## Requirements And Current Boundaries
@@ -240,8 +240,7 @@ on-demand review panels.
 - The graph intentionally loads a bounded recent-commit window instead of unbounded full history.
 - Merge conflict resolution is delegated to the standard VS Code Source Control experience.
 - Binary files and unusual encodings may not render meaningfully in textual diffs.
-- Hosted commit and Pull Request actions depend on the configured remote provider and supported URL
-  shape.
+- Hosted commit actions depend on the configured remote provider and supported URL shape.
 
 ## Project Links
 

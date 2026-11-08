@@ -7,10 +7,8 @@ Last consolidated: 2026-10-27
 
 `Git Revision Graph` is a published VS Code extension for browsing Git revision graphs from Source Control and running compare, checkout, branch, merge, sync, delete, diff, reset, stash, tag, and log workflows.
 
-The current package baseline is read from `package.json`: `1.7.6` in development;
-the published baseline is `1.7.5`, confirmed by the maintainer on 2026-10-26.
-Readiness evidence is recorded in
-`project-context/3.deliver/release.md`.
+Read the current package version from `package.json` and the published baseline and
+readiness evidence from `project-context/3.deliver/release.md`.
 
 Starting with the 1.7.5 cycle, the supported minimum is VS Code `1.100.0` with the
 built-in Git extension and Git installed. The maintainer approved retiring
@@ -62,7 +60,7 @@ events. The Git API version remains `getAPI(1)`.
   source, reusing governed forms and existing source synchronization policies.
   Package creation accepts main, feature or release sources.
 - AI assistance is optional and explicitly invoked: Compare Results can generate a bounded review briefing,
-  while Flow Governance can improve existing PR and release-form text without replacing normal defaults.
+  while Flow Governance can improve branch descriptions without replacing normal defaults.
 
 ## Product Principles
 
@@ -77,7 +75,7 @@ events. The Git API version remains `getAPI(1)`.
 - Keep feature slices small enough to verify with deterministic tests plus focused manual smoke paths.
 - Promote durable product or architecture learning into `prd.md` or `sad.md`; archive completed feature and release artifacts.
 
-## Scope For Future Evolution
+## Published File Opening
 
 The 1.7.6 cycle implements Open File in Compare Results and expanded Show Log
 files: current-worktree editing and explicit read-only historical opening.
@@ -85,7 +83,10 @@ Additions and deletions expose only existing historical sides; local availabilit
 is checked independently. Comparisons pin revisions before loading their changes.
 Graph references/commits additionally offer Open File at Revision… with a
 searchable file list pinned to the displayed commit, without checkout. Repository
-switching and graph disposal cancel obsolete requests. This is unreleased behavior. See the [build artifact](../2.build/features/1.7.6-open-file.md).
+switching and graph disposal cancel obsolete requests. This behavior was included in the
+published 1.7.6 release. See the [build artifact](../2.build/features/1.7.6-open-file.md).
+
+## Scope For Future Evolution
 
 Future work should strengthen the current product rather than introduce a second product shape. Preferred areas are:
 
