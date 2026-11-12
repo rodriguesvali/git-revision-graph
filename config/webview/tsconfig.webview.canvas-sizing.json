@@ -11,6 +11,6 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/canvasSizing.ts"
+    "../../src/revisionGraph/webview/runtime/canvasSizing.ts"
   ]
 }

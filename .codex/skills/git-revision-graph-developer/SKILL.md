@@ -70,7 +70,7 @@ description: Develop, diagnose, review, and release the GIT Revision Graph VS Co
 - Keep host state JSON-serializable and scoped to the active repository.
 - Keep policy, config parsing, provider resolution, and Git mutations in the extension host; let the webview render host-provided state and emit explicit user intent.
 - Preserve nonce-based CSP, narrow `localResourceRoots`, typed host-state guards, and the named `initializeRevisionGraphWebviewRuntime` ownership boundary.
-- Add every new browser TypeScript source to the explicit `files` list in `tsconfig.webview.json`; let `npm run build` generate `out/webview/revisionGraph.js`.
+- Add every new browser TypeScript source to the explicit `files` list in `config/webview/tsconfig.webview.json`; let `npm run build` generate `out/webview/revisionGraph.js`.
 - Never edit generated `out/`, `out-test/`, or `out-e2e/` files.
 
 ### Product and manifest safety

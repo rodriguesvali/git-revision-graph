@@ -11,7 +11,7 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/contracts.d.ts",
-    "src/revisionGraph/webview/runtime/remoteToolbarUi.ts"
+    "../../src/revisionGraph/webview/runtime/contracts.d.ts",
+    "../../src/revisionGraph/webview/runtime/remoteToolbarUi.ts"
   ]
 }

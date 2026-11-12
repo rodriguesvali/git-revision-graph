@@ -11,6 +11,6 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/dom.ts"
+    "../../src/revisionGraph/webview/runtime/dom.ts"
   ]
 }

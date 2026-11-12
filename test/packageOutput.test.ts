@@ -128,9 +128,9 @@ test('code quality gate requires explicit baselines to match current measurement
 
 test('webview build discovers every isolated config and keeps the bundle last', () => {
   const projectRoot = process.cwd();
-  const expectedIsolatedConfigs = readdirSync(projectRoot, { withFileTypes: true })
+  const expectedIsolatedConfigs = readdirSync(path.join(projectRoot, 'config/webview'), { withFileTypes: true })
     .filter((entry) => entry.isFile() && /^tsconfig\.webview\..+\.json$/.test(entry.name))
-    .map((entry) => entry.name)
+    .map((entry) => `config/webview/${entry.name}`)
     .sort((left, right) => left.localeCompare(right));
   const result = spawnSync(process.execPath, ['scripts/build-webview.mjs', '--list'], {
     cwd: projectRoot,
@@ -140,7 +140,7 @@ test('webview build discovers every isolated config and keeps the bundle last', 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(
     result.stdout.trim().split(/\r?\n/),
-    [...expectedIsolatedConfigs, 'tsconfig.webview.json']
+    [...expectedIsolatedConfigs, 'config/webview/tsconfig.webview.json']
   );
 });
 
@@ -157,7 +157,7 @@ test('webview build verifies that every TypeScript source is included in the bun
   assert.equal(result.status, 0, result.stderr);
   assert.match(
     result.stdout,
-    /Webview source coverage: \d+\/\d+ TypeScript files included in tsconfig\.webview\.json\./
+    /Webview source coverage: \d+\/\d+ TypeScript files included in config\/webview\/tsconfig\.webview\.json\./
   );
 });
 
@@ -225,7 +225,7 @@ test('VSIX file list contains runtime assets and excludes development-only artif
   const developmentOnlyFiles = packagedFiles.filter((file) =>
     file === '.git-revision-graph-flow.json'
     || file === 'tsconfig.e2e.json'
-    || file.startsWith('tsconfig.webview')
+    || file.startsWith('config/webview/')
     || file.startsWith('out-e2e/')
   );
   assert.deepEqual(

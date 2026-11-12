@@ -48,7 +48,7 @@ Keep artifacts concise. Include sources, assumptions, open questions, touched fi
 - Add host message and browser host-state guard tests.
 - Add direct tests for pure runtime modules and focused DOM adapter tests.
 - Update HTML/security tests for CSP, nonce, asset URI, resource roots, escaping, accessibility, and persistent shell behavior.
-- Add new runtime files to `tsconfig.webview.json`; never patch generated bundle output.
+- Add new runtime files to `config/webview/tsconfig.webview.json`; never patch generated bundle output.
 
 ### Flow Governance and hosted remotes
 

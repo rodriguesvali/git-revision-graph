@@ -27,7 +27,7 @@ const outputWatcher = watch(outputDirectory, (_eventType, filename) => {
 });
 const compiler = spawn(
   'npx',
-  ['tsc', '--watch', '-p', './tsconfig.webview.json'],
+  ['tsc', '--watch', '-p', './config/webview/tsconfig.webview.json'],
   { cwd: projectRoot, stdio: 'inherit', shell: process.platform === 'win32' }
 );
 

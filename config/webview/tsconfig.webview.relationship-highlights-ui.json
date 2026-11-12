@@ -11,7 +11,7 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/relationshipHighlights.ts",
-    "src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts"
+    "../../src/revisionGraph/webview/runtime/relationshipHighlights.ts",
+    "../../src/revisionGraph/webview/runtime/relationshipHighlightsUi.ts"
   ]
 }

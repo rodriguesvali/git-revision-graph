@@ -100,7 +100,7 @@ browser intent
 
 - Build the extension host with strict CommonJS TypeScript from `src`, excluding browser runtime sources.
 - Build the graph browser runtime with strict ES2022 DOM types, `module: none`, no Node/VS Code ambient types, and one explicit `outFile`.
-- Keep every runtime source discoverable and listed in `tsconfig.webview.json`; the build gate compares the directory contents with that list.
+- Keep every runtime source discoverable and listed in `config/webview/tsconfig.webview.json`; the build gate compares the directory contents with that list.
 - Keep state, host-message validation, DOM adapters, search, highlights, layout, minimap, virtual rendering, and toolbar behavior in focused typed modules.
 - Keep `bootstrap.ts` as composition glue; extract new rules instead of adding implicit globals.
 - Preserve the external nonce-bearing asset, narrow CSP/resource roots, source map handling, and idempotent runtime wrapper.

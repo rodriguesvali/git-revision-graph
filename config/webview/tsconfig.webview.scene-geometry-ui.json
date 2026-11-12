@@ -11,7 +11,7 @@
     "noEmit": true
   },
   "files": [
-    "src/revisionGraph/webview/runtime/sceneGeometryUi.ts",
-    "src/revisionGraph/webview/runtime/scenePlacement.ts"
+    "../../src/revisionGraph/webview/runtime/sceneGeometryUi.ts",
+    "../../src/revisionGraph/webview/runtime/scenePlacement.ts"
   ]
 }

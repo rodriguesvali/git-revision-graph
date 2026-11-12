@@ -7,7 +7,8 @@ import { join, relative, sep } from 'node:path';
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const require = createRequire(import.meta.url);
 const typescriptCompiler = require.resolve('typescript/bin/tsc');
-const bundleConfig = 'tsconfig.webview.json';
+const configDirectory = 'config/webview';
+const bundleConfig = `${configDirectory}/tsconfig.webview.json`;
 const webviewSourceDirectories = [
   'src/revisionGraph/webview/runtime',
   'src/revisionGraph/webview/script'
@@ -29,7 +30,7 @@ export function getBundledWebviewSourceFiles(root = projectRoot) {
   return config.files
     .filter((file) => typeof file === 'string')
     .map((file) => file.split('/').join(sep))
-    .map((file) => relative(root, join(root, file)).split(sep).join('/'))
+    .map((file) => relative(root, join(root, configDirectory, file)).split(sep).join('/'))
     .sort((left, right) => left.localeCompare(right));
 }
 
@@ -48,10 +49,11 @@ export function assertWebviewSourceCoverage(root = projectRoot) {
 }
 
 export function discoverWebviewTypecheckConfigs(root = projectRoot) {
-  return readdirSync(root, { withFileTypes: true })
+  return readdirSync(join(root, configDirectory), { withFileTypes: true })
     .filter((entry) => entry.isFile())
     .map((entry) => entry.name)
     .filter((name) => /^tsconfig\.webview\..+\.json$/.test(name))
+    .map((name) => `${configDirectory}/${name}`)
     .sort((left, right) => left.localeCompare(right));
 }
 
