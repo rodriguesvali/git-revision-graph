@@ -74,7 +74,8 @@ Last consolidated: 2026-10-27
   The inline scoped emitter uses a lexical binding to preserve the browser's
   native `window.postMessage`, which VS Code uses for inbound host delivery.
 - `src/compareResultsView.ts` and the Show Log presenter provide on-demand editor review panels.
-- `src/refActions.ts` contains testable Git workflows.
+- `src/refActions/*` contains testable Git workflows; `src/refActions.ts` re-exports
+  their public functions and types as a compatibility facade.
 - `src/workbenchRefActionServices.ts`, `src/workbenchRefActionUi.ts`, `src/workbenchDiffPresenter.ts`, `src/workbenchReferenceManager.ts`, and `src/workbenchCompareResultRestore.ts` adapt those workflows to VS Code UI, diff presentation, reference mutation, ancestry, refresh, and Compare Results restore helpers.
 - `src/compareResultsShared.ts` owns worktree-destination Revert eligibility. The
   host projects `canRevert` from its own item context and checks that policy before
@@ -104,9 +105,10 @@ Last consolidated: 2026-10-27
   that name remains tag context, never a synthesized local branch. Graph
   overlays/status/merge metadata and branch-specific workflows share this rule.
 - `src/hostedGitRemote.ts` owns provider-neutral remote selection, fetch/push identity checks, and
-  capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and browser URL
-  construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
-  Manager without provider authentication.
+  capability dispatch; `src/hostedGitProviders/*` owns trusted clone-host parsing and repository
+  URL construction for GitHub, Azure DevOps, GitLab.com, AWS CodeCommit, and Google Secure Source
+  Manager without provider authentication. Commit URLs are supported for the first four providers;
+  the Google Secure Source Manager adapter does not provide a verified commit URL.
 
 ## File Opening from the Graph
 

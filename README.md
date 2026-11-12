@@ -178,6 +178,9 @@ The graph keeps everyday Git actions close to their revision context:
 | Hosted remotes | Open exact commits on supported GitHub, Azure DevOps, GitLab.com, and AWS CodeCommit remotes. |
 | Repository support | Automatic repository-state refresh, actionable empty states, and explicit selection for multi-repository workspaces. |
 
+The `origin/HEAD` scope includes history associated with any available `origin/HEAD`,
+`origin/main`, and `origin/master` references, including their relevant descendant branches.
+
 Workspace-changing actions use confirmations, clean-worktree and conflict checks, repository-scoped
 mutation coordination, and actionable failure messages. Conflicts remain in VS Code Source Control,
 where the normal resolution workflow is already available.

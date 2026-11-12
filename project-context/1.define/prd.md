@@ -50,6 +50,8 @@ events. The Git API version remains `getAPI(1)`.
   restoring the selected revision's file into the workspace. Comparisons between
   references omit this action; Show Log retains commit-specific file restoration.
 - The graph supports scopes for all refs, current branch, `origin/HEAD`, and local branches.
+  The `origin/HEAD` scope combines the available `origin/HEAD`, `origin/main`, and
+  `origin/master` histories and relevant descendant branches.
 - The graph uses one compact automatic projection preserving references and
   structural connectors in loaded history. View does not offer a merge-visibility
   switch; merge/abort workflows and Show Log remain available.
